@@ -1,0 +1,10 @@
+[package]
+name = "wisdom"
+version = "0.1.0"
+authors = ["sal <1564319846@qq.com>"]
+description = "standard library"
+license = "MIT"
+edition = "2018"
+
+[features]
+no_std = []

@@ -1,0 +1,27 @@
+package org.wisdom.consortium.vm.wasm.section;
+
+import org.wisdom.consortium.vm.wasm.BytesReader;
+
+public class SectionReader {
+    private BytesReader reader;
+
+    public SectionReader(BytesReader reader) {
+        this.reader = reader;
+    }
+
+    <T extends Section> T readSection(Class<T> clazz) throws RuntimeException {
+        SectionID id = SectionID.values()[reader.read()];
+
+        int size = reader.readVarUint32();
+        BytesReader contents = reader.readAsReader(size);
+        T section = null;
+        try {
+            section = clazz.getConstructor(SectionID.class, long.class, BytesReader.class).newInstance(id, size, contents);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        section.readPayload();
+        section.clearPayload();
+        return section;
+    }
+}

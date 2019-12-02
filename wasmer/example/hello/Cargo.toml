@@ -1,0 +1,15 @@
+[package]
+name = "hello"
+version = "0.1.0"
+authors = ["sal <1564319846@qq.com>"]
+description = "hello example"
+license = "MIT"
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+
+[dependencies]
+wisdom = { path = "../wisdom" }
