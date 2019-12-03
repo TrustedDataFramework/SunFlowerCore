@@ -13,7 +13,7 @@ spring:
 
 
 
-# consortium configurations
+# sunflower configurations
 consortium:
   consensus:
     name: 'none'
