@@ -2,7 +2,7 @@
 # for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 spring:
   datasource:
-    url: 'jdbc:postgresql://localhost:5432/your-data-base' # SPRING_DATASOURCE_URL
+    url: 'jdbc:h2:mem:testdb' # SPRING_DATASOURCE_URL
     username: 'username'
     password: 'password'
 
@@ -13,7 +13,6 @@ spring:
 
 
 
-# sunflower configurations
 sunflower:
   consensus:
     name: 'none'
@@ -24,7 +23,7 @@ sunflower:
 
   p2p:
 
-    name: 'websocket' # choose p2p protocol, gRPC is default optional: websocket
+    name: 'none' # choose p2p protocol, gRPC is default optional: websocket
     # name: 'websocket'
     max-peers: '16' # maximum peers
     address: 'node://localhost:9999'

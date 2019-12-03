@@ -1,6 +1,5 @@
 package org.tdf.sunflower.vm;
 
-import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Bytes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,12 +7,10 @@ import org.junit.runners.JUnit4;
 import org.tdf.common.HexBytes;
 import org.tdf.lotusvm.runtime.ModuleInstance;
 import org.tdf.sunflower.TestUtils;
-import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
 
 @RunWith(JUnit4.class)
 public class RuntimeTest {
@@ -27,7 +24,8 @@ public class RuntimeTest {
         ModuleInstance instance = new ModuleInstance(
                 ModuleInstance.Config.builder()
                         .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
-                        .hostFunctions(new Hosts().withPayload(data).getAll())
+                        .hostFunctions(new Hosts().withContext(Context.builder().build())
+                                .withPayload(data).getAll())
                         .build()
         );
         instance.execute("invoke");
@@ -70,7 +68,7 @@ public class RuntimeTest {
                 .build();
         ModuleInstance instance = new ModuleInstance(
                 ModuleInstance.Config.builder()
-                        .binary(ByteStreams.toByteArray(FileUtils.getResource(System.getenv("FILE_PATH")).getInputStream()))
+                        .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
                         .hostFunctions(new Hosts().withContext(context).getAll())
                         .build()
         );
@@ -79,12 +77,10 @@ public class RuntimeTest {
 
     @Test
     public void testJsonBuilderPutJson() throws Exception {
-        String filename = System.getenv("FILE_PATH");
-        if (filename == null || "".equals(filename.trim())) return;
         ModuleInstance instance = new ModuleInstance(
                 ModuleInstance.Config.builder()
-                        .binary(ByteStreams.toByteArray(FileUtils.getResource(System.getenv("FILE_PATH")).getInputStream()))
-                        .hostFunctions(new Hosts().getAll())
+                        .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
+                        .hostFunctions(new Hosts().withContext(Context.builder().build()).getAll())
                         .build());
         instance.execute("testJSON");
 
@@ -92,12 +88,10 @@ public class RuntimeTest {
 
     @Test
     public void testDecimalHostFunction() throws Exception {
-        String filename = System.getenv("FILE_PATH");
-        if (filename == null || "".equals(filename.trim())) return;
         ModuleInstance instance = new ModuleInstance(
                 ModuleInstance.Config.builder()
-                        .binary(ByteStreams.toByteArray(FileUtils.getResource(System.getenv("FILE_PATH")).getInputStream()))
-                        .hostFunctions(new Hosts().getAll())
+                        .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
+                        .hostFunctions(new Hosts().withContext(Context.builder().build()).getAll())
                         .build());
         instance.execute("addtest");
     }
@@ -108,7 +102,7 @@ public class RuntimeTest {
         if (filename == null || "".equals(filename.trim())) return;
         ModuleInstance instance = new ModuleInstance(
                 ModuleInstance.Config.builder()
-                        .binary(ByteStreams.toByteArray(FileUtils.getResource(System.getenv("FILE_PATH")).getInputStream()))
+                        .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
                         .hostFunctions(new Hosts().getAll())
                         .build());
         Exception e = null;

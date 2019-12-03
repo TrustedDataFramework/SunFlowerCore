@@ -1,4 +1,4 @@
-package org.wisdom.consortium;
+package org.tdf.sunflower;
 
 import org.apache.commons.codec.binary.Hex;
 import org.junit.Test;
@@ -8,7 +8,6 @@ import org.tdf.common.*;
 import org.tdf.serialize.ChainCacheSerializerDeserializer;
 import org.tdf.serialize.SerializeDeserializer;
 import org.tdf.store.ByteArrayMapStore;
-import org.tdf.sunflower.SourceDbProperties;
 import org.tdf.util.BufferUtil;
 
 import java.util.*;

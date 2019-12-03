@@ -1,4 +1,4 @@
-package org.wisdom.consortium;
+package org.tdf.sunflower;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Bytes;
@@ -9,7 +9,6 @@ import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 import org.tdf.common.HexBytes;
 import org.tdf.common.Transaction;
-import org.tdf.sunflower.Start;
 import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.util.FileUtils;
@@ -19,7 +18,6 @@ import org.wisdom.crypto.ed25519.Ed25519PrivateKey;
 
 import java.nio.charset.StandardCharsets;
 
-@RunWith(JUnit4.class)
 public class CoinContractTest {
 
     private static final String TEST_PRIVATE_KEY = "a9ce809d201b28e3fd00b269ab042ed27c6ccd6d330a03c13102556b9c958178";
@@ -27,7 +25,6 @@ public class CoinContractTest {
 
     private static final String TEST_RECIPIENT_PUBLIC_KEY = "36ddb2d6686a827e7edc751f7304d59ea749cd045a7945a028cb4d92a71db870";
 
-    @Test
     public void testDeployContract() throws Exception {
         byte[] binary = ByteStreams.toByteArray(FileUtils.getResource(System.getenv("FILE_PATH")).getInputStream());
         HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY);
@@ -55,7 +52,6 @@ public class CoinContractTest {
         System.out.println(resp.getBody());
     }
 
-    @Test
     public void testContractCall() throws Exception {
         HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY);
         PublicKeyHash to = PublicKeyHash.fromPublicKey(from.getBytes());

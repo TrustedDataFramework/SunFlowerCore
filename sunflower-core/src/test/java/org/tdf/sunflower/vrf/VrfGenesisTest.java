@@ -1,4 +1,4 @@
-package org.wisdom.consortium.vrf;
+package org.tdf.sunflower.vrf;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

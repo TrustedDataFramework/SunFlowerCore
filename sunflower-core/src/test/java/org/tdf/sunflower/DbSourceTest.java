@@ -1,9 +1,8 @@
-package org.wisdom.consortium;
+package org.tdf.sunflower;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.sunflower.SourceDbProperties;
 import org.tdf.sunflower.db.PersistentBinaryDataStore;
 import org.tdf.sunflower.db.PersistentDataStoreFactory;
 import org.tdf.sunflower.db.RocksDb;
