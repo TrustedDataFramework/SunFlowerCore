@@ -15,8 +15,15 @@ repositories {
     maven {
         url 'http://maven.aliyun.com/nexus/content/repositories/jcenter'
     }
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/TrustedDataFramework/LotusVM")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
     mavenCentral()
-    mavenLocal()
 }
 
 dependencies {
