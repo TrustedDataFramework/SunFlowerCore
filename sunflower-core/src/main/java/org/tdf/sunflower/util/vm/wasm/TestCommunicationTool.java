@@ -1,4 +1,4 @@
-package org.wisdom.consortium.util.vm.wasm;
+package org.tdf.sunflower.util.vm.wasm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.*;
