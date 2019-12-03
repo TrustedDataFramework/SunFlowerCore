@@ -13,7 +13,7 @@ import org.tdf.lotusvm.runtime.ModuleInstance;
 import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.Hosts;
-import org.wisdom.crypto.ed25519.Ed25519;
+import org.tdf.crypto.ed25519.Ed25519;
 
 import java.util.Arrays;
 import java.util.Set;

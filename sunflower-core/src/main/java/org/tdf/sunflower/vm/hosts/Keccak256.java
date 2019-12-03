@@ -4,7 +4,7 @@ import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.runtime.ModuleInstance;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
-import org.wisdom.crypto.HashFunctions;
+import org.tdf.crypto.HashFunctions;
 
 import java.util.ArrayList;
 import java.util.Arrays;

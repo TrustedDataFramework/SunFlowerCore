@@ -1,8 +1,8 @@
 package org.tdf.sunflower.consensus.vrf;
 
-import org.wisdom.crypto.CryptoException;
-import org.wisdom.crypto.PrivateKey;
-import org.wisdom.crypto.ed25519.Ed25519;
+import org.tdf.crypto.CryptoException;
+import org.tdf.crypto.PrivateKey;
+import org.tdf.crypto.ed25519.Ed25519;
 
 public class VRFPrivateKey {
     private PrivateKey signer;

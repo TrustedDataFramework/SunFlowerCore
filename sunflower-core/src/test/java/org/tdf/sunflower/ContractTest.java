@@ -10,7 +10,7 @@ import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.util.CommonUtil;
-import org.wisdom.crypto.ed25519.Ed25519PrivateKey;
+import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 
 import java.nio.charset.StandardCharsets;
 

@@ -8,10 +8,10 @@ import org.slf4j.LoggerFactory;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.util.RLPList;
 import org.tdf.sunflower.util.RLPUtils;
-import org.wisdom.crypto.CryptoException;
-import org.wisdom.crypto.PrivateKey;
-import org.wisdom.crypto.PublicKey;
-import org.wisdom.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.CryptoException;
+import org.tdf.crypto.PrivateKey;
+import org.tdf.crypto.PublicKey;
+import org.tdf.crypto.ed25519.Ed25519PublicKey;
 
 import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
 import static org.tdf.sunflower.util.ByteUtil.toHexString;

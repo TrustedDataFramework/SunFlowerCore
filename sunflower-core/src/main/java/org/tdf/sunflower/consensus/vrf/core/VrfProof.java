@@ -9,7 +9,7 @@ import org.tdf.sunflower.consensus.vrf.VRFResult;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.RLPList;
 import org.tdf.sunflower.util.RLPUtils;
-import org.wisdom.crypto.ed25519.Ed25519;
+import org.tdf.crypto.ed25519.Ed25519;
 
 import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
 import static org.tdf.sunflower.util.ByteUtil.toHexString;

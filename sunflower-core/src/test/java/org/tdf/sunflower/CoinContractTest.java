@@ -2,9 +2,6 @@ package org.tdf.sunflower;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Bytes;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 import org.tdf.common.HexBytes;
@@ -14,7 +11,7 @@ import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.util.CommonUtil;
 import org.tdf.util.LittleEndian;
-import org.wisdom.crypto.ed25519.Ed25519PrivateKey;
+import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 
 import java.nio.charset.StandardCharsets;
 

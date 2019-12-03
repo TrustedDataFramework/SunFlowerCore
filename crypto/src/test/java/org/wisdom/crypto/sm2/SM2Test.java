@@ -5,7 +5,10 @@ import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.wisdom.crypto.KeyPair;
+import org.tdf.crypto.KeyPair;
+import org.tdf.crypto.sm2.SM2;
+import org.tdf.crypto.sm2.SM2PrivateKey;
+import org.tdf.crypto.sm2.SM2PublicKey;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;

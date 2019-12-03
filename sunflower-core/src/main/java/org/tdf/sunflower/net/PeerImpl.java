@@ -6,9 +6,9 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.tdf.common.HexBytes;
 import org.tdf.common.Peer;
-import org.wisdom.crypto.KeyPair;
-import org.wisdom.crypto.ed25519.Ed25519;
-import org.wisdom.crypto.ed25519.Ed25519PrivateKey;
+import org.tdf.crypto.KeyPair;
+import org.tdf.crypto.ed25519.Ed25519;
+import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 
 import java.net.URI;
 import java.net.URISyntaxException;

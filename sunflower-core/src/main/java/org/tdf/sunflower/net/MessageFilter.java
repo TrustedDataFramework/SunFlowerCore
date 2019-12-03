@@ -4,7 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
-import org.wisdom.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.ed25519.Ed25519PublicKey;
 
 /**
  * message filter

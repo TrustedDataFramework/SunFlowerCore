@@ -6,10 +6,10 @@ import java.util.Arrays;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.fraction.BigFraction;
-import org.wisdom.crypto.CryptoException;
-import org.wisdom.crypto.PublicKey;
-import org.wisdom.crypto.ed25519.Ed25519;
-import org.wisdom.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.CryptoException;
+import org.tdf.crypto.PublicKey;
+import org.tdf.crypto.ed25519.Ed25519;
+import org.tdf.crypto.ed25519.Ed25519PublicKey;
 
 public class VRFPublicKey {
 
