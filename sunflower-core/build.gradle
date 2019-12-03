@@ -52,7 +52,7 @@ dependencies {
     compile "org.apache.commons:commons-collections4:${commonsCollections4Version}"
     compile "org.apache.commons:commons-lang3:${commonsLang3Version}"
     // build https://github.com/TrustedDataFramework/LotusVM to your maven local
-    compile "org.tdf:lotusvm:0.0.1"
+    compile "org.tdf:lotusvm:0.0.2"
     // for test
     testCompile 'com.h2database:h2'
 }
