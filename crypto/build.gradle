@@ -3,7 +3,7 @@ plugins {
 }
 
 
-group 'org.wisdom'
+group 'org.tdf'
 version '1.0-SNAPSHOT'
 
 sourceCompatibility = 1.8
