@@ -1,4 +1,4 @@
-package org.tdf.consortium.consensus.vrf.crypto.hash;
+package org.tdf.sunflower.consensus.vrf.crypto.hash;
 
 import java.security.MessageDigest;
 

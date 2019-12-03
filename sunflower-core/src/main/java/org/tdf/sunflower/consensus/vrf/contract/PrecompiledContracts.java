@@ -8,7 +8,7 @@ import org.tdf.sunflower.consensus.vrf.vm.DataWord;
 
 import static org.tdf.sunflower.consensus.vrf.util.BIUtil.*;
 import static org.tdf.sunflower.util.ByteUtil.*;
-import static org.wisdom.consortium.consensus.vrf.util.VMUtils.getSizeInWords;
+import static org.tdf.sunflower.consensus.vrf.util.VMUtils.getSizeInWords;
 
 /**
  * @author Roman Mandeleil
