@@ -1,4 +1,4 @@
-package org.wisdom.consortium;
+package org.tdf.sunflower;
 
 import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
@@ -13,7 +13,8 @@ import java.util.Arrays;
 @RunWith(JUnit4.class)
 public class AccountUtilTests {
     private static HexBytes PUBLIC_KEY;
-    {
+
+    static {
         try {
             PUBLIC_KEY = new HexBytes("d0f1966cee219fcfdbcee698517fcf864f46817c30bc8218eb4889d02f312540");
         } catch (DecoderException e) {
