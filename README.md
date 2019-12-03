@@ -144,9 +144,9 @@ our: 2515ms
 
 8. github package
 
-1. set GITHUB_USERNAME environment as your github login name
-2. generate a token for github package: https://github.com/settings/tokens
-3. set GITHUB_TOKEN environment as the token generated above. 
+    1. set GITHUB_USERNAME environment as your github login name
+    2. generate a token for github package: https://github.com/settings/tokens
+    3. set GITHUB_TOKEN environment as the token generated above. 
 
 ## Commands
 
