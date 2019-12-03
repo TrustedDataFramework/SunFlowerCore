@@ -1,4 +1,0 @@
-rootProject.name = 'sunflower-core'
-include 'common'
-include 'sunflower-core'
-include 'crypto'
