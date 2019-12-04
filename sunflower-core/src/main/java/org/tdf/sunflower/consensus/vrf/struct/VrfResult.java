@@ -1,20 +1,20 @@
-package org.tdf.sunflower.consensus.vrf;
+package org.tdf.sunflower.consensus.vrf.struct;
 
 import org.bouncycastle.util.Arrays;
 
-public class VRFResult {
+public class VrfResult {
     // 32 byte pseudo random variable
     private byte[] r;
 
     // 64byte signature data
     private byte[] proof;
 
-    public VRFResult(byte[] encoded) {
+    public VrfResult(byte[] encoded) {
         this.r = Arrays.copyOfRange(encoded, 1, 1 + encoded[0]);
         this.proof = Arrays.copyOfRange(encoded, 1 + encoded[0], encoded.length);
     }
 
-    public VRFResult(byte[] r, byte[] proof) {
+    public VrfResult(byte[] r, byte[] proof) {
         this.r = r;
         this.proof = proof;
     }
