@@ -3,18 +3,18 @@ package org.tdf.sunflower.mq;
 import java.util.function.Consumer;
 
 // message queue service
-public interface MessageQueue<E, M> {
-    void publish(E event, M msg);
+public interface MessageQueue<E, M extends Message> {
+    void publish(E event, Object msg);
     void subscribe(E event, Consumer<M> listener);
 
-    MessageQueue NONE = new MessageQueue() {
+    MessageQueue<String, Message> NONE = new MessageQueue<String, Message>() {
         @Override
-        public void publish(Object event, Object msg) {
+        public void publish(String event, Object msg) {
 
         }
 
         @Override
-        public void subscribe(Object event, Consumer listener) {
+        public void subscribe(String event, Consumer<Message> listener) {
 
         }
     };

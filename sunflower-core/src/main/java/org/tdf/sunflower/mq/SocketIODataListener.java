@@ -9,11 +9,11 @@ import lombok.AllArgsConstructor;
 import java.util.function.Consumer;
 
 @AllArgsConstructor
-public class SocketIODataListener implements DataListener<JsonNode> {
-    private Consumer<SocketIOData> consumer;
+class SocketIODataListener implements DataListener<JsonNode> {
+    private Consumer<Message> consumer;
 
     @Override
     public void onData(SocketIOClient client, JsonNode data, AckRequest ackSender) throws Exception {
-        consumer.accept(new SocketIOData(data));
+        consumer.accept(new SocketIOMessage(data));
     }
 }

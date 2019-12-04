@@ -4,9 +4,10 @@ import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.tdf.sunflower.MessageQueueConfig;
+
 import java.util.function.Consumer;
 
-public class SocketIOMessageQueue implements MessageQueue<String, SocketIOData> {
+public class SocketIOMessageQueue implements MessageQueue<String, Message> {
     private MessageQueueConfig config;
     private SocketIOServer socketIOServer;
 
@@ -19,12 +20,12 @@ public class SocketIOMessageQueue implements MessageQueue<String, SocketIOData> 
     }
 
     @Override
-    public void publish(String event, SocketIOData msg) {
-        socketIOServer.getBroadcastOperations().sendEvent(event, msg.getNode());
+    public void publish(String event, Object msg) {
+        socketIOServer.getBroadcastOperations().sendEvent(event, msg);
     }
 
     @Override
-    public void subscribe(String event, Consumer<SocketIOData> listener) {
+    public void subscribe(String event, Consumer<Message> listener) {
         socketIOServer.addEventListener(event, JsonNode.class, new SocketIODataListener(listener));
     }
 }
