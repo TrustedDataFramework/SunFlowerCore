@@ -16,4 +16,5 @@ ext {
     leveldbJNIVersion = '1.18.3'
     commonsCollections4Version = '4.0'
     commonsLang3Version = '3.4'
+    nettySocketIOVersion = '1.7.12'
 }
