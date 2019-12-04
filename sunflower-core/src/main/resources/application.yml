@@ -35,6 +35,11 @@ sunflower:
     trusted: # trusted nodes
       - 'node://localhost:9999'
 
+  message-queue:
+    name: 'socketIO'
+    port: '8081'
+    enable-message-log: 'true' # set false to disable verbose log
+
   database:
     # Key value data source values: [rocksdb/leveldb]
     name: 'rocksdb'

@@ -58,6 +58,8 @@ dependencies {
     compile "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
     compile "org.apache.commons:commons-collections4:${commonsCollections4Version}"
     compile "org.apache.commons:commons-lang3:${commonsLang3Version}"
+    compile "com.corundumstudio.socketio:netty-socketio:${nettySocketIOVersion}" // for message push
+
     compile "org.tdf:lotusvm:0.0.2"
     // for test
     testCompile 'com.h2database:h2'
