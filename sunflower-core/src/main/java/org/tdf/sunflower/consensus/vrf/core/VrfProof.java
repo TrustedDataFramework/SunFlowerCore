@@ -3,9 +3,9 @@ package org.tdf.sunflower.consensus.vrf.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
-import org.tdf.sunflower.consensus.vrf.VRFPrivateKey;
-import org.tdf.sunflower.consensus.vrf.VRFPublicKey;
-import org.tdf.sunflower.consensus.vrf.VRFResult;
+import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
+import org.tdf.sunflower.consensus.vrf.struct.VrfPublicKey;
+import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.RLPList;
 import org.tdf.sunflower.util.RLPUtils;
@@ -40,14 +40,14 @@ public class VrfProof {
     /* VRF seed */
     private byte[] seed;
     /* VRF result */
-    private VRFResult vrfResult;
+    private VrfResult vrfResult;
 
     private byte[] rlpEncoded;
     private boolean parsed = false;
 
     private byte[] hashCache;
 
-    public VrfProof(int role, int round, byte[] vrfPk, byte[] seed, VRFResult vrfResult) {
+    public VrfProof(int role, int round, byte[] vrfPk, byte[] seed, VrfResult vrfResult) {
 
         this.role = role;
         this.round = round;
@@ -91,7 +91,7 @@ public class VrfProof {
         this.seed = rlpProve.get(3).getRLPBytes();
 
         byte[] vrfResult = rlpProve.get(4).getRLPBytes();
-        this.vrfResult = new VRFResult(vrfResult);
+        this.vrfResult = new VrfResult(vrfResult);
 
         this.parsed = true;
     }
@@ -150,7 +150,7 @@ public class VrfProof {
         return seed;
     }
 
-    public VRFResult getVrfResult() {
+    public VrfResult getVrfResult() {
         parseRLP();
 
         return vrfResult;
@@ -173,7 +173,7 @@ public class VrfProof {
             return 0;
         }
 
-        VRFPublicKey publicKey = new VRFPublicKey(vrfPk, Ed25519.getAlgorithm());
+        VrfPublicKey publicKey = new VrfPublicKey(vrfPk, Ed25519.getAlgorithm());
 
         // Compose new seed with role and round
         byte[] vrfSeed = composeVrfSeed(role, round, seed);
@@ -221,17 +221,17 @@ public class VrfProof {
 
     static public class Util {
         /* Get a new VRF Result */
-        public static VRFResult prove(int role, int round, VRFPrivateKey sk, byte[] seed) {
+        public static VrfResult prove(int role, int round, VrfPrivateKey sk, byte[] seed) {
             // Compose new seed with role and round
             byte[] vrfSeed = composeVrfSeed(role, round, seed);
 
-            VRFResult vrfResult = sk.rand(vrfSeed);
+            VrfResult vrfResult = sk.rand(vrfSeed);
 
             return vrfResult;
         }
 
         /* Get a new VRF Proving data */
-        public static VrfProof vrfProof(int role, int round,  byte[] vrfPk, byte[] seed, VRFResult vrfResult) {
+        public static VrfProof vrfProof(int role, int round,  byte[] vrfPk, byte[] seed, VrfResult vrfResult) {
             VrfProof vrfProof = new VrfProof(role, round, vrfPk, seed, vrfResult);
 
             return vrfProof;
