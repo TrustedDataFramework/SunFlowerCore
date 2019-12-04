@@ -75,31 +75,31 @@ public class Start {
             PersistentDataStoreFactory factory,
             ConsortiumRepository consortiumRepository
     ) {
-        if(!(engine.getRepository() instanceof ConsortiumStateRepository)) return engine.getRepository();
+        if (!(engine.getRepository() instanceof ConsortiumStateRepository)) return engine.getRepository();
         ConsortiumStateRepository repo = (ConsortiumStateRepository) engine.getRepository();
-        if(!repo.getClasses().contains(Account.class)){
+        if (!repo.getClasses().contains(Account.class)) {
             return repo;
         }
         // TODO: replace byte array map store with persistent data storage
         repo.withPersistent(Account.class, new ByteArrayMapStore<>(), new AccountSerializerDeserializer());
         InMemoryStateTree<Account> tree = repo.getStateTree(Account.class);
         long current = consortiumRepository.getBlock(tree.getWhere().getBytes()).map(Block::getHeight).orElseThrow(() ->
-            new RuntimeException("cannot find state at " + tree.getWhere() + " please clear account db manually")
+                new RuntimeException("cannot find state at " + tree.getWhere() + " please clear account db manually")
         );
         Block best = consortiumRepository.getBestBlock();
         int blocksPerUpdate = 4096;
-        if(tree.getWhere().equals(best.getHash())){
+        if (tree.getWhere().equals(best.getHash())) {
             return repo;
         }
-        while (true){
+        while (true) {
             List<Block> blocks = consortiumRepository.getBlocksBetween(current + 1, current + blocksPerUpdate);
-            if(blocks.size() == 0) break;
+            if (blocks.size() == 0) break;
             log.info("update account state from height {} to {}", blocks.get(0).getHeight(), blocks.get(blocks.size() - 1).getHeight());
             blocks.forEach(x -> {
                 tree.update(x);
                 tree.confirm(x.getHash().getBytes());
             });
-            if(blocks.stream().allMatch(x -> x.getHash().equals(best.getHash()))) {
+            if (blocks.stream().allMatch(x -> x.getHash().equals(best.getHash()))) {
                 break;
             }
             current = blocks.get(blocks.size() - 1).getHeight();
@@ -113,7 +113,7 @@ public class Start {
     }
 
     @Bean
-    public TransactionPool transactionPool(ConsensusEngine engine){
+    public TransactionPool transactionPool(ConsensusEngine engine) {
         TransactionPoolImpl pool = new TransactionPoolImpl();
         pool.setEngine(engine);
         engine.setTransactionPool(pool);
@@ -188,12 +188,10 @@ public class Start {
             ConsensusEngine engine,
             PersistentDataStoreFactory factory
     ) throws Exception {
-        if("none".equals(
-                Optional.ofNullable(properties.getProperty("name"))
-                .orElse("")
-                .trim().toLowerCase()
-        )){
-            return new org.tdf.sunflower.net.None();
+        String name = properties.getProperty("name");
+        name = name == null ? "" : name;
+        if (name.trim().toLowerCase().equals("none")) {
+            return PeerServerImpl.NONE;
         }
         PeerServer peerServer = new PeerServerImpl().withStore(
                 factory.create("peers")
@@ -206,9 +204,9 @@ public class Start {
 
     // create message queue service
     @Bean
-    public MessageQueue messageQueue(MessageQueueConfig config){
+    public MessageQueue messageQueue(MessageQueueConfig config) {
         String name = config.getName().toLowerCase().trim();
-        if(name.equals("none")) return MessageQueue.NONE;
+        if (name.equals("none")) return MessageQueue.NONE;
         return new SocketIOMessageQueue(config);
     }
 }

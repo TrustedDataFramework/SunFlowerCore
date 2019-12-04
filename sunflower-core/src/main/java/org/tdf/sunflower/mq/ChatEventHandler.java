@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +27,7 @@ public class ChatEventHandler {
                 .scheduleAtFixedRate(() ->
                                 messageQueue.publish(
                                         "chatevent",
-                                        new ChatMessage("from", Long.toString(System.currentTimeMillis() / 1000))),
+                                        new ChatMessage("Server", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))),
                         0, 10, TimeUnit.SECONDS);
     }
 

@@ -19,6 +19,8 @@ import java.util.stream.Stream;
 
 @Slf4j
 public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
+    public static None NONE = new None();
+
     private PeerServerConfig config;
     private List<Plugin> plugins = new ArrayList<>();
     private Client client;
