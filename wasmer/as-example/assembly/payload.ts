@@ -23,20 +23,19 @@ export class Parameters {
     }
 
     string(): string {
+        const value = this.u8();
+        if (value === <u8>0)
+            return "";
         let buf: u8[] = [];
-        while (true) {
+        for (let i = 0; i < i32(value); i++) {
             const v = this.u8();
-            if (v === <u8>0) break;
             buf.push(v);
         }
-
         let v = new Uint8Array(buf.length);
         for (let i = 0; i < buf.length; i++) {
             v[i] = buf[i];
         }
-
         this.offset += buf.length + 1;
-
         return String.UTF8.decode(v.buffer);
     }
 
@@ -90,7 +89,7 @@ export class Parameters {
         return v;
     }
 
-    u32(): u32{
+    u32(): u32 {
         const v = this.view.getUint32(this.offset, true);
         this.offset += 4;
         return v;
