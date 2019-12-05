@@ -23,9 +23,7 @@ public class ZombieContractTest {
     private static final String TEST_PUBLIC_KEY = "6db6eef88329fdfed125fef83b529e5f4d396b44fb1ed8d096700d72a6424720";
 
     private static final String TEST_PUBLIC_KEY2 = "36ddb2d6686a827e7edc751f7304d59ea749cd045a7945a028cb4d92a71db870";
-
-
-    @Test
+    
     public void testDeployContract() throws Exception {
         byte[] binary = ByteStreams.toByteArray(FileUtils.getResource(System.getenv("FILE_PATH")).getInputStream());
         HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY);
@@ -53,7 +51,6 @@ public class ZombieContractTest {
         System.out.println(resp.getBody());
     }
 
-    @Test
     public void testContractCall() throws Exception {
         HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY);
         PublicKeyHash to = PublicKeyHash.fromPublicKey(from.getBytes());
@@ -86,7 +83,6 @@ public class ZombieContractTest {
         System.out.println(resp.getBody());
     }
 
-    @Test
     public void testContractCall2() throws Exception {
         HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY2);
         PublicKeyHash to = PublicKeyHash.fromPublicKey(HexBytes.parse(TEST_PUBLIC_KEY).getBytes());
@@ -119,7 +115,6 @@ public class ZombieContractTest {
         System.out.println(resp.getBody());
     }
 
-    @Test
     public void testContractCall3() throws Exception {
         HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY);
         PublicKeyHash to = PublicKeyHash.fromPublicKey(from.getBytes());
