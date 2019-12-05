@@ -9,7 +9,7 @@ import org.tdf.common.ForkAbleState;
 import org.tdf.common.Header;
 import org.tdf.common.Transaction;
 import org.tdf.exception.StateUpdateException;
-import org.tdf.lotusvm.runtime.ModuleInstance;
+import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.Hosts;
@@ -129,7 +129,7 @@ public class Account implements ForkAbleState<Account> {
                 .withPayload(context.getPayload());
 
         // every contract must has a init method
-        ModuleInstance.Config.ConfigBuilder builder = ModuleInstance.Config.builder()
+        ModuleInstance.Builder builder = ModuleInstance.builder()
                 .hostFunctions(hosts.getAll());
 
         if (t.getType() != Transaction.Type.CONTRACT_DEPLOY.code) {
@@ -146,17 +146,13 @@ public class Account implements ForkAbleState<Account> {
             builder = builder.binary(t.payload.getBytes());
         }
         try {
-            ModuleInstance instance = new ModuleInstance(
-                    builder.build()
-            );
-            if (!instance.getExports().containsKey(context.getMethod())) {
+            ModuleInstance instance = builder.build();
+            if (!instance.hasExport(context.getMethod())) {
                 throw new RuntimeException("contract not has method " + context.getMethod());
             }
             instance.execute(context.getMethod());
-            memory = instance.getMemory().getData();
-            globals = instance.getGlobals().getData();
-            require(Long.compareUnsigned(balance, instance.getGas() * t.getGasPrice()) >= 0,
-                    "the balance is not enough to pay for fee");
+            memory = instance.getMemory();
+            globals = instance.getGlobals();
         } catch (Exception e) {
             e.printStackTrace();
             throw new StateUpdateException(t.getHash().toString()
@@ -171,15 +167,14 @@ public class Account implements ForkAbleState<Account> {
 
     public byte[] view(String method, byte[] parameters) throws Exception {
         Hosts hosts = new Hosts().withPayload(parameters);
-        ModuleInstance.Config.ConfigBuilder builder = ModuleInstance.Config.builder()
+        ModuleInstance.Builder builder = ModuleInstance.builder()
                 .memory(memory)
                 .globals(globals)
                 .initMemory(false)
                 .initGlobals(false)
                 .hostFunctions(new Hosts().withPayload(parameters).getAll());
-        ModuleInstance instance = new ModuleInstance(
-                builder.hostFunctions(hosts.getAll()).build()
-        );
+        ModuleInstance instance =
+                builder.hostFunctions(hosts.getAll()).build();
         instance.execute(method);
         return hosts.getResult();
     }

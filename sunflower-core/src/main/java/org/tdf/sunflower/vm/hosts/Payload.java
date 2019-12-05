@@ -18,7 +18,7 @@ public class Payload extends HostFunction {
 
     @Override
     public long[] execute(long... parameters) {
-        getInstance().getMemory().put((int)parameters[0], data);
+        putMemory((int)parameters[0], data);
         return new long[0];
     }
 }

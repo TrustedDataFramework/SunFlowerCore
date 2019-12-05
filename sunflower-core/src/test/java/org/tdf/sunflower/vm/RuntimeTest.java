@@ -5,7 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.HexBytes;
-import org.tdf.lotusvm.runtime.ModuleInstance;
+import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.TestUtils;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.Hosts;
@@ -21,15 +21,14 @@ public class RuntimeTest {
     public void testInvokeFile() throws Exception {
 
         byte[] data = Bytes.concat("hello world!!!!".getBytes(StandardCharsets.UTF_8), new byte[]{0});
-        ModuleInstance instance = new ModuleInstance(
-                ModuleInstance.Config.builder()
+        ModuleInstance instance =
+                ModuleInstance.builder()
                         .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
                         .hostFunctions(new Hosts().withContext(Context.builder().build())
                                 .withPayload(data).getAll())
                         .build()
-        );
+        ;
         instance.execute("invoke");
-        System.out.println(instance.getGas());
     }
 
 
@@ -40,15 +39,14 @@ public class RuntimeTest {
         if (filename == null || "".equals(filename.trim())) return;
         byte[] data = Bytes.concat("hello world!!!!".getBytes(StandardCharsets.UTF_8), new byte[]{0});
         Hosts hosts = new Hosts().withPayload(data);
-        ModuleInstance instance = new ModuleInstance(
-                ModuleInstance.Config.builder()
+        ModuleInstance instance =
+                ModuleInstance.builder()
                         .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
                         .hostFunctions(hosts.getAll())
                         .build()
-        );
+        ;
         instance.execute("getString");
         System.out.println(new String(hosts.getResult(), StandardCharsets.UTF_8));
-        System.out.println(instance.getGas());
     }
 
     @Test
@@ -66,33 +64,33 @@ public class RuntimeTest {
                 .transactionTimestamp(5)
                 .blockHeight(6)
                 .build();
-        ModuleInstance instance = new ModuleInstance(
-                ModuleInstance.Config.builder()
+        ModuleInstance instance =
+                ModuleInstance.builder()
                         .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
                         .hostFunctions(new Hosts().withContext(context).getAll())
                         .build()
-        );
+        ;
         instance.execute("printContext");
     }
 
     @Test
     public void testJsonBuilderPutJson() throws Exception {
-        ModuleInstance instance = new ModuleInstance(
-                ModuleInstance.Config.builder()
+        ModuleInstance instance =
+                ModuleInstance.builder()
                         .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
                         .hostFunctions(new Hosts().withContext(Context.builder().build()).getAll())
-                        .build());
+                        .build();
         instance.execute("testJSON");
 
     }
 
     @Test
     public void testDecimalHostFunction() throws Exception {
-        ModuleInstance instance = new ModuleInstance(
-                ModuleInstance.Config.builder()
+        ModuleInstance instance =
+                ModuleInstance.builder()
                         .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
                         .hostFunctions(new Hosts().withContext(Context.builder().build()).getAll())
-                        .build());
+                        .build();
         instance.execute("addtest");
     }
 
@@ -100,11 +98,11 @@ public class RuntimeTest {
     public void testDecimalFailedHostFunction() throws Exception {
         String filename = System.getenv("FILE_PATH");
         if (filename == null || "".equals(filename.trim())) return;
-        ModuleInstance instance = new ModuleInstance(
-                ModuleInstance.Config.builder()
+        ModuleInstance instance =
+                ModuleInstance.builder()
                         .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
                         .hostFunctions(new Hosts().getAll())
-                        .build());
+                        .build();
         Exception e = null;
         try {
             instance.execute("testException");

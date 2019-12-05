@@ -15,6 +15,7 @@ repositories {
     maven {
         url 'http://maven.aliyun.com/nexus/content/repositories/jcenter'
     }
+    mavenLocal()
     maven {
         name = "GitHubPackages"
         url = uri("https://maven.pkg.github.com/TrustedDataFramework/LotusVM")
@@ -60,7 +61,7 @@ dependencies {
     compile "org.apache.commons:commons-lang3:${commonsLang3Version}"
     compile "com.corundumstudio.socketio:netty-socketio:${nettySocketIOVersion}" // for message push
 
-    compile "org.tdf:lotusvm:0.0.2"
+    compile "org.tdf:lotusvm:0.0.7"
     // for test
     testCompile 'com.h2database:h2'
 }

@@ -48,7 +48,7 @@ public class ContextHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            getInstance().getMemory().put((int)parameters[0], context.getTransactionHash().getBytes());
+            putMemory((int)parameters[0], context.getTransactionHash().getBytes());
             return new long[0];
         }
     }
@@ -80,7 +80,7 @@ public class ContextHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            getInstance().getMemory().putString((int)parameters[0], context.getMethod());
+            putStringIntoMemory((int)parameters[0], context.getMethod());
             return new long[0];
         }
     }
@@ -111,7 +111,7 @@ public class ContextHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            getInstance().getMemory().put((int)parameters[0], context.getSender().getBytes());
+            putMemory((int)parameters[0], context.getSender().getBytes());
             return new long[0];
         }
     }
@@ -142,7 +142,7 @@ public class ContextHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            getInstance().getMemory().put((int)parameters[0], context.getRecipient().getBytes());
+            putMemory((int)parameters[0], context.getRecipient().getBytes());
             return new long[0];
         }
     }
@@ -263,7 +263,7 @@ public class ContextHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            getInstance().getMemory().put((int)parameters[0], context.getParentBlockHash().getBytes());
+            putMemory((int)parameters[0], context.getParentBlockHash().getBytes());
             return new long[0];
         }
     }
