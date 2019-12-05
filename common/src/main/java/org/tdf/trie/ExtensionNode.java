@@ -4,10 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
 public class ExtensionNode implements Node{
     private TrieKey key;
     private boolean dirty;
+
+    public ExtensionNode(TrieKey key, Node child) {
+        this.key = key;
+        this.child = child;
+        this.dirty = true;
+    }
 
     @Getter
     private Node child;

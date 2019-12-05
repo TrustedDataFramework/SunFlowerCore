@@ -42,7 +42,7 @@ public class TrieImpl {
 
 
     private Node insert(Node n, TrieKey k, @NonNull byte[] value) {
-        if(n.isNull()) return new LeafNode(k, value);
+        if (n.isNull()) return new LeafNode(k, value);
 
         Node.Type type = n.getType();
         if (type == Node.Type.BRANCH) {
@@ -50,13 +50,51 @@ public class TrieImpl {
         }
         TrieKey current = n.getKey();
         TrieKey commonPrefix = k.getCommonPrefix(current);
-        if(commonPrefix.isEmpty()){
+        if (commonPrefix.isEmpty()) {
+            BranchNode newBranchNode = new BranchNode();
+            if (n.getType() == Node.Type.EXTENSION) {
+                insert(newBranchNode, current, n.getAsExtension().getChild());
+            } else {
+                insert(newBranchNode, current, n.getAsLeaf().getValue());
+            }
+            return newBranchNode;
+        }
+        if (commonPrefix.equals(k)) {
+            n.getAsLeaf().setValue(value);
+            return n;
+        }
+        if (commonPrefix.equals(current)) {
+            insert(n.getAsExtension().getChild(), k.shift(commonPrefix.size()), value);
+            return n;
+        }
+        Node newBranchNode = new BranchNode();
+        Node newKvNode = new ExtensionNode(commonPrefix, newBranchNode);
+        // TODO can be optimized
+        if (n.getType() == Node.Type.EXTENSION) {
+            insert(newKvNode, current, n.getAsExtension().getChild());
+            insert(newKvNode, k, value);
+            return newKvNode;
+        }
+        insert(newKvNode, current, n.getAsLeaf().getValue());
+        insert(newKvNode, k, value);
+        return newKvNode;
+    }
+
+    private Node insert(Node n, TrieKey k, @NonNull Node child) {
+        if (n.isNull()) return child;
+        Node.Type type = n.getType();
+        if (type == Node.Type.BRANCH) {
+            return insertIntoBranchNode(n.getAsBranch(), k, child);
+        }
+        TrieKey current = n.getKey();
+        TrieKey commonPrefix = k.getCommonPrefix(current);
+        if (commonPrefix.isEmpty()) {
             BranchNode branchNode = new BranchNode();
         }
         return null;
     }
 
-    private Node insertIntoBranchNode(BranchNode node, TrieKey key, Node child){
+    private Node insertIntoBranchNode(BranchNode node, TrieKey key, Node child) {
         return null;
     }
 
