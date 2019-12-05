@@ -1,7 +1,7 @@
 package org.tdf.sunflower.vm.hosts;
 
+import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.runtime.HostFunction;
-import org.tdf.lotusvm.runtime.ModuleInstance;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 
@@ -49,7 +49,7 @@ public class Decimal {
         @Override
         public long[] execute(long... parameters) {
             decimal.requireResult();
-            getInstance().getMemory().putString((int) parameters[0], decimal.result);
+            putStringIntoMemory((int) parameters[0], decimal.result);
             return new long[0];
         }
     }
@@ -70,8 +70,8 @@ public class Decimal {
         @Override
         public long[] execute(long... parameters) {
             ModuleInstance instance = getInstance();
-            String x = instance.getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String y = instance.getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             String z = new BigDecimal(x).add(new BigDecimal(y)).toString();
             decimal.result = z;
             return new long[]{z.getBytes(StandardCharsets.UTF_8).length};
@@ -94,8 +94,8 @@ public class Decimal {
         @Override
         public long[] execute(long... parameters) {
             ModuleInstance instance = getInstance();
-            String x = instance.getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String y = instance.getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             String z = new BigDecimal(x).subtract(new BigDecimal(y)).toString();
             decimal.result = z;
             return new long[]{z.getBytes(StandardCharsets.UTF_8).length};
@@ -118,8 +118,8 @@ public class Decimal {
         @Override
         public long[] execute(long... parameters) {
             ModuleInstance instance = getInstance();
-            String x = instance.getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String y = instance.getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             String z = new BigDecimal(x).multiply(new BigDecimal(y)).toString();
             decimal.result = z;
             return new long[]{z.getBytes(StandardCharsets.UTF_8).length};
@@ -142,8 +142,8 @@ public class Decimal {
         @Override
         public long[] execute(long... parameters) {
             ModuleInstance instance = getInstance();
-            String x = instance.getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String y = instance.getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             BigDecimal z = new BigDecimal(x).divide(new BigDecimal(y), 1, RoundingMode.HALF_UP);
             if (new BigDecimal(z.intValue()).compareTo(z) != 0) {
                 throw new RuntimeException(String.format("%s Strict div %s is noninteger", x, y));
@@ -169,8 +169,8 @@ public class Decimal {
         @Override
         public long[] execute(long... parameters) {
             ModuleInstance instance = getInstance();
-            String x = instance.getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String y = instance.getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             int scale = (int) parameters[4];
             String z = new BigDecimal(x).divide(new BigDecimal(y), scale, RoundingMode.HALF_UP).toString();
             decimal.result = z;
@@ -193,8 +193,8 @@ public class Decimal {
         @Override
         public long[] execute(long... parameters) {
             ModuleInstance instance = getInstance();
-            String x = instance.getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String y = instance.getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             return new long[]{new BigDecimal(x).compareTo(new BigDecimal(y))};
         }
     }

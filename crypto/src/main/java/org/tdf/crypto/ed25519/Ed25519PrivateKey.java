@@ -8,6 +8,9 @@ import org.tdf.crypto.PrivateKey;
 
 
 public class Ed25519PrivateKey implements PrivateKey {
+
+    private static final long serialVersionUID = -2900765828422070500L;
+
     private Ed25519PrivateKeyParameters privateKey;
 
     public Ed25519PrivateKey(byte[] encoded){

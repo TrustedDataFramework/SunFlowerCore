@@ -27,7 +27,8 @@ gradle-app.setting
 *.sum
 /wasmer/go
 
-sunflower-core/database/
+# rocksdb and leveldb
+database
 *.log
 
 # rust builds

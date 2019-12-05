@@ -4,7 +4,6 @@ import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -21,7 +20,7 @@ public class Log extends HostFunction {
     @Override
     public long[] execute(long... parameters) {
         System.out.println(
-                new String(getInstance().getMemory().loadN((int)parameters[0], (int)parameters[1]), StandardCharsets.UTF_8)
+                loadStringFromMemory((int)parameters[0], (int)parameters[1])
         );
         return new long[0];
     }

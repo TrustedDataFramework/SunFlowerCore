@@ -87,8 +87,8 @@ public class JSONHelper {
         @Override
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONObject();
-            String key = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String value = getInstance().getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String value = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             jsonHelper.element.getAsJsonObject().add(key, GSON.fromJson(value, JsonElement.class));
 
             return new long[0];
@@ -112,8 +112,8 @@ public class JSONHelper {
         @Override
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONObject();
-            String key = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String value = getInstance().getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String value = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             jsonHelper.element.getAsJsonObject().addProperty(key, value);
             return new long[0];
         }
@@ -137,7 +137,7 @@ public class JSONHelper {
         @Override
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONObject();
-            String key = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             jsonHelper.element.getAsJsonObject().addProperty(key, parameters[2]);
             return new long[0];
         }
@@ -161,7 +161,7 @@ public class JSONHelper {
         @Override
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONObject();
-            String key = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             jsonHelper.element.getAsJsonObject().addProperty(key, UnsignedLong.fromLongBits(parameters[2]));
             return new long[0];
         }
@@ -185,7 +185,7 @@ public class JSONHelper {
         @Override
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONObject();
-            String key = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             jsonHelper.element.getAsJsonObject().addProperty(key, parameters[2] != 0);
             return new long[0];
         }
@@ -209,7 +209,7 @@ public class JSONHelper {
         @Override
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONObject();
-            String key = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             jsonHelper.element.getAsJsonObject().addProperty(key, new BigDecimal(Double.longBitsToDouble(parameters[2])));
             return new long[0];
         }
@@ -233,7 +233,7 @@ public class JSONHelper {
         @Override
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONArray((int) parameters[0]);
-            String value = getInstance().getMemory().loadString((int) parameters[1], (int) parameters[2]);
+            String value = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
             jsonHelper.element.getAsJsonArray().set((int) parameters[0], GSON.fromJson(value, JsonElement.class));
             return new long[0];
         }
@@ -257,7 +257,7 @@ public class JSONHelper {
         @Override
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONArray((int) parameters[0]);
-            String value = getInstance().getMemory().loadString((int) parameters[1], (int) parameters[2]);
+            String value = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
             jsonHelper.element.getAsJsonArray().set((int) parameters[0], new JsonPrimitive(value));
             return new long[0];
         }
@@ -398,7 +398,7 @@ public class JSONHelper {
             if (jsonHelper.built == null)
                 throw new RuntimeException("call _json_builder_build before _json_builder_build_len");
             int ptr = (int) parameters[0];
-            getInstance().getMemory().putString(ptr, jsonHelper.built);
+            putStringIntoMemory(ptr, jsonHelper.built);
             jsonHelper.clearBuilder();
             return new long[0];
         }
@@ -441,11 +441,11 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String key = getInstance().getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
             int ptr = (int) parameters[4];
-            getInstance().getMemory().putString(ptr, GSON.toJson(element));
+            putStringIntoMemory(ptr, GSON.toJson(element));
             return new long[0];
         }
     }
@@ -464,8 +464,8 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String key = getInstance().getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
             return new long[]{GSON.toJson(element).getBytes(StandardCharsets.UTF_8).length};
         }
@@ -485,11 +485,11 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String key = getInstance().getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
             int ptr = (int) parameters[4];
-            getInstance().getMemory().putString(ptr, element.getAsString());
+            putStringIntoMemory(ptr, element.getAsString());
             return new long[0];
         }
     }
@@ -508,8 +508,8 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String key = getInstance().getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
             return new long[]{element.getAsString().getBytes(StandardCharsets.UTF_8).length};
         }
@@ -529,8 +529,8 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String key = getInstance().getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
             return new long[]{element.getAsLong()};
         }
@@ -550,8 +550,8 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String key = getInstance().getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
             return new long[]{element.getAsLong()};
         }
@@ -571,8 +571,8 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String key = getInstance().getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
             return new long[]{element.getAsBoolean() ? 1 : 0};
         }
@@ -592,8 +592,8 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
-            String key = getInstance().getMemory().loadString((int) parameters[2], (int) parameters[3]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
             return new long[]{Double.doubleToLongBits(element.getAsDouble())};
         }
@@ -613,10 +613,10 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
             int ptr = (int) parameters[3];
-            getInstance().getMemory().putString(ptr, element.getAsJsonObject().getAsString());
+            putStringIntoMemory(ptr, element.getAsJsonObject().getAsString());
             return new long[0];
         }
     }
@@ -635,7 +635,7 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
             return new long[element.getAsJsonObject().getAsString().getBytes(StandardCharsets.UTF_8).length];
         }
@@ -655,10 +655,10 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
             int ptr = (int) parameters[3];
-            getInstance().getMemory().putString(ptr, element.getAsString());
+            putStringIntoMemory(ptr, element.getAsString());
             return new long[0];
         }
     }
@@ -677,7 +677,7 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
             return new long[]{element.getAsString().getBytes(StandardCharsets.UTF_8).length};
         }
@@ -697,7 +697,7 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
             return new long[]{element.getAsLong()};
         }
@@ -717,7 +717,7 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
             return new long[]{UnsignedLong.valueOf(element.getAsBigInteger()).longValue()};
         }
@@ -737,7 +737,7 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
             return new long[]{element.getAsBoolean() ? 1 : 0};
         }
@@ -757,7 +757,7 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = getInstance().getMemory().loadString((int) parameters[0], (int) parameters[1]);
+            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
             return new long[]{Double.doubleToLongBits(element.getAsDouble())};
         }

@@ -1,5 +1,9 @@
 package org.tdf.sunflower.consensus.vrf.contract;
 
+import static org.tdf.sunflower.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
+import static org.tdf.sunflower.util.ByteUtil.parseBytes;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,10 +16,9 @@ import org.spongycastle.util.encoders.Hex;
 import org.tdf.common.BlockRepository;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.core.Validator;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.consensus.vrf.vm.DataWord;
 import org.tdf.sunflower.util.ByteUtil;
-
-import static org.tdf.sunflower.util.ByteUtil.*;
 
 
 /**
@@ -881,6 +884,8 @@ public class VrfContracts {
         }
 
         private DepositData storageLoadDepositData(byte[] vdrAddr) {
+            return new DepositData(ByteUtil.hexStringToBytes(VrfUtil.VRF_PK), DEPOSIT_MIN_WEI);
+/*
             // Get deposit from storage
             DataWord dwVrfPk = storageLoad(ownerAddr, HashRoot.of(vdrAddr, KEY_OF_VDR_VRFPK));
             DataWord dwDeposit = storageLoad(ownerAddr, HashRoot.of(vdrAddr, KEY_OF_VDR_DEPOSIT));
@@ -900,6 +905,7 @@ public class VrfContracts {
             DepositData vdrData = new DepositData(vrfPk, deposit);
 
             return vdrData;
+*/
         }
 
         private BigInteger storageLoadValidSize() {

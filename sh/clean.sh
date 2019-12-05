@@ -8,5 +8,5 @@ BASE_DIR=`dirname $FULL_PATH`
 cd $BASE_DIR/..
 pwd
 
-rm -rf consortium/database/
+rm -rf sunflower-core/database/
 

@@ -1,7 +1,6 @@
 package org.tdf.sunflower.vm.hosts;
 
 import org.tdf.lotusvm.runtime.HostFunction;
-import org.tdf.lotusvm.runtime.ModuleInstance;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.crypto.HashFunctions;
@@ -21,9 +20,8 @@ public class Keccak256 extends HostFunction {
 
     @Override
     public long[] execute(long... parameters) {
-        ModuleInstance instance = getInstance();
-        byte[] data = instance.getMemory().loadN((int) parameters[0], (int) parameters[1]);
-        instance.getMemory().put((int) parameters[2], HashFunctions.keccak256(data));
+        byte[] data = loadMemory((int) parameters[0], (int) parameters[1]);
+        putMemory((int) parameters[2], HashFunctions.keccak256(data));
         return new long[0];
     }
 }

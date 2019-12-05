@@ -1,13 +1,14 @@
-package org.tdf.sunflower.consensus.vrf;
+package org.tdf.sunflower.consensus.vrf.struct;
 
 import org.tdf.crypto.CryptoException;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519;
+import org.tdf.sunflower.consensus.vrf.HashUtil;
 
-public class VRFPrivateKey {
+public class VrfPrivateKey {
     private PrivateKey signer;
 
-    public VRFPrivateKey(String algorithm) throws CryptoException{
+    public VrfPrivateKey(String algorithm) throws CryptoException{
         if (algorithm.equals(Ed25519.getAlgorithm())) {
             this.signer = Ed25519.generateKeyPair().getPrivateKey();
             return;
@@ -28,24 +29,24 @@ public class VRFPrivateKey {
      * consists of a random variable, the seed and a proof for verifying
      * @throws CryptoException
      */
-    public VRFResult rand(byte[] seed) throws CryptoException {
+    public VrfResult rand(byte[] seed) throws CryptoException {
         if (seed.length > 255) {
             throw new CryptoException("seed length overflow");
         }
 
         byte[] sign = signer.sign(seed);
         byte[] random = HashUtil.sha256(sign);
-        return new VRFResult(random, sign);
+        return new VrfResult(random, sign);
     }
 
-    public VRFPrivateKey(PrivateKey signer) {
+    public VrfPrivateKey(PrivateKey signer) {
         this.signer = signer;
     }
     public byte[] getEncoded(){
         return this.signer.getEncoded();
     }
-    public VRFPublicKey generatePublicKey(){
-        return new VRFPublicKey(this.signer.generatePublicKey());
+    public VrfPublicKey generatePublicKey(){
+        return new VrfPublicKey(this.signer.generatePublicKey());
     }
 
     public PrivateKey getSigner() {

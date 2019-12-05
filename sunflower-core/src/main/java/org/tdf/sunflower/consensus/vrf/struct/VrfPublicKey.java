@@ -1,4 +1,4 @@
-package org.tdf.sunflower.consensus.vrf;
+package org.tdf.sunflower.consensus.vrf.struct;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -10,15 +10,16 @@ import org.tdf.crypto.CryptoException;
 import org.tdf.crypto.PublicKey;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.sunflower.consensus.vrf.HashUtil;
 
-public class VRFPublicKey {
+public class VrfPublicKey {
 
     private static final BigInteger maxUint256 = BigInteger.valueOf(2).pow(256);
     private static final BigFraction one = new BigFraction(1);
 
     private PublicKey verifier;
 
-    public VRFPublicKey(byte[] encoded, String algorithm){
+    public VrfPublicKey(byte[] encoded, String algorithm){
         if (algorithm.equals(Ed25519.getAlgorithm())){
             this.verifier = new Ed25519PublicKey(encoded);
             return;
@@ -31,7 +32,7 @@ public class VRFPublicKey {
     }
 
 
-    public VRFPublicKey(PublicKey verifier) {
+    public VrfPublicKey(PublicKey verifier) {
         this.verifier = verifier;
     }
 
@@ -40,7 +41,7 @@ public class VRFPublicKey {
      * @param result the validity of the vrf result
      * @return
      */
-    public boolean verify(byte[]seed, VRFResult result){
+    public boolean verify(byte[]seed, VrfResult result){
         if (!Arrays.equals(HashUtil.sha256(result.getProof()), result.getR())){
             return false;
         }
@@ -52,7 +53,7 @@ public class VRFPublicKey {
      * @param result the validity of the vrf result
      * @return
      */
-    public boolean verify(byte[]seed, int role, VRFResult result){
+    public boolean verify(byte[]seed, int role, VrfResult result){
         if (!Arrays.equals(HashUtil.sha256(result.getProof()), result.getR())){
             return false;
         }
@@ -75,7 +76,7 @@ public class VRFPublicKey {
      * @param totalWeight sum of all user's weight
      * @return priority
      */
-    public int calcPriority(byte[]seed, VRFResult result, int expected, int weight, long totalWeight) {
+    public int calcPriority(byte[]seed, VrfResult result, int expected, int weight, long totalWeight) {
         if (weight > totalWeight) {
             throw new CryptoException("unsupported weight policy");
         }
@@ -121,7 +122,7 @@ public class VRFPublicKey {
         return 0;
     }
 
-    public int calcPriorityArxm(byte[]seed, VRFResult result, int expected, int weight, long totalWeight) {
+    public int calcPriorityArxm(byte[]seed, VrfResult result, int expected, int weight, long totalWeight) {
         if (!this.verify(seed, result)) {
             return 0;
         }

@@ -21,6 +21,8 @@ import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.poa.Proposer;
 import org.tdf.sunflower.consensus.vrf.core.*;
+import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
+import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.util.BigEndian;
@@ -46,7 +48,7 @@ public class VrfMiner implements Miner {
     private boolean vrfStarted = false;
     private boolean blockBroadcast;
 
-    private VRFPrivateKey vrfSk;
+    private VrfPrivateKey vrfSk;
     private byte[] minerCoinbase;
     private byte[] vrfSeed;
     // Because we have seed checking logic in VrfStateMachine, so VrfStateMachine is aligned to latest VrfRound only in case that its latest block is the same one as other peers.
@@ -57,6 +59,7 @@ public class VrfMiner implements Miner {
 
     public VrfMiner() {
         listeners = new ArrayList<>();
+        vrfSk = VrfUtil.getVrfPrivateKey();
     }
 
     public void setGenesis(VrfGenesis genesis) {
@@ -67,6 +70,7 @@ public class VrfMiner implements Miner {
         this.vrfConfig = vrfConfig;
         this.minerPublicKeyHash = PublicKeyHash.from(vrfConfig.getMinerCoinBase())
                 .orElseThrow(() -> new ConsensusEngineLoadException("invalid address " + vrfConfig.getMinerCoinBase()));
+        this.minerCoinbase = this.minerPublicKeyHash.getPublicKeyHash();
     }
 
     public void setRepository(BlockRepository blockRepository) {
@@ -93,15 +97,8 @@ public class VrfMiner implements Miner {
 
     @Override
     public void start() {
-        thread = new Thread(() -> {
-            while (true){
-                tryMine();
-//                try {
-//                    TimeUnit.SECONDS.sleep(vrfConfig.getBlockInterval());
-//                }catch (Exception ignored){}
-            }
-        });
-        thread.start();
+        stopped = false;
+        tryMine();
     }
 
     @Override
@@ -216,7 +213,7 @@ public class VrfMiner implements Miner {
         }
 
         if (vrfSk == null || isNullOrZeroArray(minerCoinbase)) {
-            log.error("Empty vrfSk or coinbase, quit startVrfStateMachine");
+            log.error("Empty vrfSk {} or coinbase {}, quit startVrfStateMachine.", ByteUtil.toHexString(vrfSk.getEncoded()), ByteUtil.toHexString(minerCoinbase));
             return;
         }
 
@@ -254,7 +251,7 @@ public class VrfMiner implements Miner {
         }
 
         if (vrfSk == null || isNullOrZeroArray(minerCoinbase)) {
-            log.error("Empty vrfSk or coinbase, quit stopVrfStateMachine");
+            log.error("Empty vrfSk {} or coinbase {}, quit stopVrfStateMachine.", ByteUtil.toHexString(vrfSk.getEncoded()), ByteUtil.toHexString(minerCoinbase));
             return;
         }
 
@@ -406,7 +403,7 @@ public class VrfMiner implements Miner {
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
 
         // Must use VrfProof Util to proof with Role Code
-        VRFResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_PROPOSER, round, vrfSk, vrfSeed);
+        VrfResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_PROPOSER, round, vrfSk, vrfSeed);
         VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_PROPOSER, round, vrfPk, vrfSeed, vrfResult);
 
         // Update block nonce to header, and it will change valuf of block hash
@@ -454,7 +451,7 @@ public class VrfMiner implements Miner {
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
 
         // Must use VrfProof Util to proof with Role Code
-        VRFResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_REDUCTION_COMMIT, round, vrfSk, vrfSeed);
+        VrfResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_REDUCTION_COMMIT, round, vrfSk, vrfSeed);
         VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_REDUCTION_COMMIT, round, vrfPk, vrfSeed, vrfResult);
 
         CommitProof proof = new CommitProof(vrfProof, minerCoinbase, blockIdentifier, vrfSk.getSigner());
@@ -483,7 +480,7 @@ public class VrfMiner implements Miner {
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
 
         // Must use VrfProof Util to proof with Role Code
-        VRFResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_FINAL_COMMIT, round, vrfSk, vrfSeed);
+        VrfResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_FINAL_COMMIT, round, vrfSk, vrfSeed);
         VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_FINAL_COMMIT, round, vrfPk, vrfSeed, vrfResult);
 
         CommitProof proof = new CommitProof(vrfProof, minerCoinbase, blockIdentifier, vrfSk.getSigner());

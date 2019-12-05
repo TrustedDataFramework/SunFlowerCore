@@ -22,7 +22,7 @@ public class Result extends HostFunction {
 
     @Override
     public long[] execute(long... parameters) {
-        this.data = Bytes.concat(data, getInstance().getMemory().loadN((int)parameters[0], (int)parameters[1]));
+        this.data = Bytes.concat(data, loadMemory((int)parameters[0], (int)parameters[1]));
         return new long[0];
     }
 }

@@ -84,6 +84,7 @@ public class ProposalProof {
         logger.debug("new from [" + toHexString(rlpRawData) + "]");
 
         this.rlpEncoded = rlpRawData;
+        parseRLP();
     }
 
     public byte[] getHash() {
