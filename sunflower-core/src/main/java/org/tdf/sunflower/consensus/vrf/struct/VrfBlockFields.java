@@ -17,10 +17,14 @@ public class VrfBlockFields {
 
     @RLP(0)
     private byte[] nonce;
+
     @RLP(1)
     private byte[] difficulty;
-    @RLP(2)
-    private byte[] proposalProof;
 
+    @RLP(2)
+    private byte[] miner;
+
+    @RLP(3)
+    private byte[] proposalProof;
 
 }
