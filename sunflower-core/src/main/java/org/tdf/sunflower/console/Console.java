@@ -81,7 +81,7 @@ public class Console {
                 return;
             }
             String sessionID = client.getSessionId().toString();
-            client.sendEvent(OUTPUT_EVENT, new ConsoleOut(ConsoleOut.OK, "connected:SessionId = " + sessionID, ""));
+            writeOutPut("connected:SessionId = " + sessionID);
         });
         nashorn.getContext().setWriter(outWriter);
         nashorn.getContext().setErrorWriter(errorWriter);
@@ -90,7 +90,7 @@ public class Console {
 
         socketIOServer.addDisconnectListener(socketIOClient -> {
             String sessionID = socketIOClient.getSessionId().toString();
-            socketIOClient.sendEvent(OUTPUT_EVENT, new ConsoleOut(ConsoleOut.ERROR, "", "authorization failed , session id is " + sessionID));
+            writeError("authorization failed , session id is " + sessionID);
         });
 
         socketIOServer.start();
