@@ -1,10 +1,9 @@
 package org.tdf.sunflower.console;
 
 import com.corundumstudio.socketio.Configuration;
+import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import io.netty.util.internal.StringUtil;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.springframework.stereotype.Component;
 import org.tdf.common.HexBytes;
 import org.tdf.crypto.HashFunctions;
@@ -79,25 +78,15 @@ public class Console {
         // handle auth here
         socketIOServer.addConnectListener(client -> {
             // if session id is not valid, disconnect
-            String token = client.getHandshakeData().getSingleUrlParam("token");
-            if (StringUtil.isNullOrEmpty(token)) {
-                client.disconnect();
-                return;
-            }
-            if (!verifyToken(token)) {
-                client.disconnect();
-                return;
-            }
-            String sessionID = client.getSessionId().toString();
-            writeOutPut("connected:SessionId = " + sessionID);
+            closeUnAuthorized(client);
+            writeOutPut("connected:SessionId = " + client.getSessionId());
         });
         nashorn.getContext().setWriter(outWriter);
         nashorn.getContext().setErrorWriter(errorWriter);
-        socketIOServer.addEventListener(INPUT_EVENT, ConsoleIn.class, (client, data, ackSender) -> nashorn.eval(data.getInput()));
 
-        socketIOServer.addDisconnectListener(socketIOClient -> {
-            String sessionID = socketIOClient.getSessionId().toString();
-            writeError("authorization failed , session id is " + sessionID);
+        socketIOServer.addEventListener(INPUT_EVENT, ConsoleIn.class, (client, data, ackSender) -> {
+            closeUnAuthorized(client);
+            nashorn.eval(data.getInput());
         });
 
         socketIOServer.start();
@@ -131,5 +120,18 @@ public class Console {
 
     private void writeError(String error) {
         socketIOServer.getBroadcastOperations().sendEvent(OUTPUT_EVENT, new ConsoleOut(ConsoleOut.ERROR, "", error));
+    }
+
+    private void writeError(SocketIOClient client, String error) {
+        client.sendEvent(OUTPUT_EVENT, new ConsoleOut(ConsoleOut.ERROR, "", error));
+    }
+
+    private void closeUnAuthorized(SocketIOClient client) {
+        String token = client.getHandshakeData().getSingleUrlParam("token");
+        if (!StringUtil.isNullOrEmpty(token) && verifyToken(token)) {
+            return;
+        }
+        writeError(client, "authorization failed , session id is " + client.getSessionId());
+        client.disconnect();
     }
 }
