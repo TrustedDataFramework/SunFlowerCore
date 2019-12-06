@@ -2,7 +2,6 @@ package org.tdf.sunflower.console;
 
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketIOServer;
-import com.google.common.hash.Hashing;
 import io.netty.util.internal.StringUtil;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.KeccakDigest;
@@ -68,6 +67,7 @@ public class Console {
         Configuration configuration = new Configuration();
         configuration.setPort(config.getPort());
         socketIOServer = new SocketIOServer(configuration);
+
         // handle auth here
         socketIOServer.addConnectListener(client -> {
             // if session id is not valid, disconnect
@@ -78,7 +78,10 @@ public class Console {
             }
             if (!verifyToken(token)) {
                 client.disconnect();
+                return;
             }
+            String sessionID = client.getSessionId().toString();
+            client.sendEvent(OUTPUT_EVENT, new ConsoleOut(ConsoleOut.OK, "connected:SessionId = " + sessionID, ""));
         });
         nashorn.getContext().setWriter(outWriter);
         nashorn.getContext().setErrorWriter(errorWriter);
@@ -86,7 +89,8 @@ public class Console {
         socketIOServer.addEventListener(INPUT_EVENT, ConsoleIn.class, (client, data, ackSender) -> nashorn.eval(data.getInput()));
 
         socketIOServer.addDisconnectListener(socketIOClient -> {
-            socketIOClient.sendEvent(OUTPUT_EVENT, new ConsoleOut(ConsoleOut.ERROR, "", "session id authorization failed"));
+            String sessionID = socketIOClient.getSessionId().toString();
+            socketIOClient.sendEvent(OUTPUT_EVENT, new ConsoleOut(ConsoleOut.ERROR, "", "authorization failed , session id is " + sessionID));
         });
 
         socketIOServer.start();
