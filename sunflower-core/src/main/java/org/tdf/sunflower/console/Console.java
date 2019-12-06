@@ -5,11 +5,17 @@ import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.listener.DataListener;
+import com.google.common.hash.Hashing;
+import org.bouncycastle.util.encoders.UTF8;
 import org.springframework.stereotype.Component;
+import org.tdf.util.CommonUtil;
 
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 // Command line interface
@@ -26,6 +32,8 @@ public class Console {
     private SocketIOServer socketIOServer;
     private String uuid = UUID.randomUUID().toString();
 
+    private static List<SocketIOClient> clients = new ArrayList<>();
+
     public Console(ConsoleConfig config) {
         Configuration configuration = new Configuration();
         configuration.setPort(config.getPort());
@@ -33,8 +41,14 @@ public class Console {
         // handle auth here
         socketIOServer.addConnectListener(client -> {
             // if session id is not valid, disconnect
+            System.out.println("connected:SessionId=" + client.getSessionId());
+            UUID sessionID = client.getSessionId();
+            if (UUID.fromString(Hashing.sha256().hashBytes(uuid.getBytes(StandardCharsets.UTF_8)).toString()).equals(sessionID)) {
+                clients.add(client);
+            } else {
+                client.disconnect();
+            }
         });
-
 
         socketIOServer.addEventListener(INPUT_EVENT, ConsoleIn.class, new DataListener<ConsoleIn>() {
             @Override
