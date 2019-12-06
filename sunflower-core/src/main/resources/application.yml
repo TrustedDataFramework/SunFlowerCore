@@ -44,6 +44,7 @@ sunflower:
   console:
     token-file: 'sunflower.ipr' # location to write token file, json format {token: '', port: 8888}
     port: '8082'
+    disabled: 'false'
 
   database:
     # Key value data source values: [rocksdb/leveldb]

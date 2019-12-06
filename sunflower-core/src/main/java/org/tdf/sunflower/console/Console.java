@@ -64,6 +64,7 @@ public class Console {
     private String uuid = UUID.randomUUID().toString();
 
     public Console(ConsoleConfig config) {
+        if(config.isDisabled()) return;
         Configuration configuration = new Configuration();
         configuration.setPort(config.getPort());
         socketIOServer = new SocketIOServer(configuration);

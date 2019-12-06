@@ -12,4 +12,5 @@ import org.springframework.stereotype.Component;
 public class ConsoleConfig {
     private String tokenFile;
     private int port;
+    private boolean disabled;
 }
