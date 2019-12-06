@@ -13,11 +13,11 @@ public class TestCommunicationTool {
     public static void main(String[] args) throws IOException, ParseException {
         CommandLineParser parser = new DefaultParser();
         final Options options = new Options();
-        options.addOption("c", "cmd", true, "cmd");
+        options.addOption("c", "console", true, "console");
         CommandLine line = parser.parse(options, args);
         String cmd = "";
-        if (line.getOptionValue("cmd") != null && !line.getOptionValue("cmd").equals("")) {
-            cmd = line.getOptionValue("cmd");
+        if (line.getOptionValue("console") != null && !line.getOptionValue("console").equals("")) {
+            cmd = line.getOptionValue("console");
         } else {
             System.out.println("Cmd Command is empty");
             return;

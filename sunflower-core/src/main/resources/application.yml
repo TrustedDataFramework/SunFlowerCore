@@ -40,6 +40,11 @@ sunflower:
     port: '8081'
     enable-message-log: 'true' # set false to disable verbose log
 
+  # command line interface
+  console:
+    token-file: 'sunflower.ipr' # location to write token file, json format {token: '', port: 8888}
+    port: '8082'
+
   database:
     # Key value data source values: [rocksdb/leveldb]
     name: 'rocksdb'
