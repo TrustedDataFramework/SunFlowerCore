@@ -4,7 +4,10 @@ import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.google.common.hash.Hashing;
 import io.netty.util.internal.StringUtil;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.springframework.stereotype.Component;
+import org.tdf.crypto.HashFunctions;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -71,6 +74,7 @@ public class Console {
             String token = client.getHandshakeData().getSingleUrlParam("token");
             if (StringUtil.isNullOrEmpty(token)) {
                 client.disconnect();
+                return;
             }
             if (!verifyToken(token)) {
                 client.disconnect();
@@ -89,7 +93,8 @@ public class Console {
     }
 
     private boolean verifyToken(String token) {
-        return Hashing.sha256().hashBytes(uuid.getBytes(StandardCharsets.UTF_8)).toString().equals(token);
+        Digest digest = new KeccakDigest(256);
+        return Arrays.toString(HashFunctions.hash(uuid.getBytes(StandardCharsets.UTF_8), digest)).equals(token);
     }
 
     private void regenerateUUID() {
