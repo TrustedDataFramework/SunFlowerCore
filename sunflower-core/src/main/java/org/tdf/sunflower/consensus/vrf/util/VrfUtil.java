@@ -6,6 +6,7 @@ import org.tdf.common.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.serialize.RLPDeserializer;
 import org.tdf.serialize.RLPSerializer;
+import org.tdf.sunflower.consensus.poa.PoAUtils;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
 import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
@@ -136,7 +137,7 @@ public class VrfUtil {
     }
 
     public static VrfBlockFields getVrfBlockFields(HexBytes payload) {
-        if (payload == null) {
+        if (payload == null || payload.size() == 0) {
             return VrfBlockFields.builder().nonce(null).difficulty(null).miner(null).proposalProof(null).build();
         }
         byte[] encoded = payload.getBytes();
@@ -160,10 +161,10 @@ public class VrfUtil {
         return genPayload(blockNum, round, nonce, minerCoinbase, difficulty, blockHash, vrfSk, vrfPk);
     }
 
-    public static byte[] genPayload(long blockNum, int round, byte[] nonceStr, byte[] minerCoinbaseStr,
-            byte[] difficultyStr, byte[] blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
-        VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, nonceStr, minerCoinbaseStr, difficultyStr,
-                blockHashStr, vrfSk, vrfPk);
+    public static byte[] genPayload(long blockNum, int round, byte[] nonce, byte[] minerCoinbase, byte[] difficulty,
+            byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
+        VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, nonce, minerCoinbase, difficulty, blockHash, vrfSk,
+                vrfPk);
 
         byte[] encoded = RLPSerializer.SERIALIZER.serialize(vbf1);
         return encoded;

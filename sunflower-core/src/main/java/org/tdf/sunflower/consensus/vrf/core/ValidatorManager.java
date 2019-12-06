@@ -48,11 +48,12 @@ public class ValidatorManager {
 	}
 
 	public synchronized long getTotalWeight() {
-		long totalWeight = getStorageValidSize();
-
-		totalWeight = totalWeight / WEIGHT_UNIT_OF_DEPOSIT;
-
-		return totalWeight;
+	    return 100;
+//		long totalWeight = getStorageValidSize();
+//
+//		totalWeight = totalWeight / WEIGHT_UNIT_OF_DEPOSIT;
+//
+//		return totalWeight;
 	}
 
 	public synchronized List<ByteArrayWrapper> getValidDpsOwnerList() {

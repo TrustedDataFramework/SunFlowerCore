@@ -47,6 +47,15 @@ public class VrfGenesis {
          * need to clarify: current block hash is used to generate ProposalProof, but
          * final block hash is generated partly from ProposalProof
          */
+        setPayload(block);
+
+        block.setHash(new HexBytes(PoAUtils.getHash(block)));
+
+        return block;
+    }
+
+    private void setPayload(Block block) {
+        long blockNum = block.getHeight();
         VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKey();
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
         int round = 0;
@@ -54,9 +63,5 @@ public class VrfGenesis {
                 new HexBytes(PoAUtils.getHash(block)), vrfSk, vrfPk);
         HexBytes payload = new HexBytes(payloadBytes);
         block.setPayload(payload);
-
-        block.setHash(new HexBytes(PoAUtils.getHash(block)));
-
-        return block;
     }
 }
