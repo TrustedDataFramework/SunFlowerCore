@@ -78,14 +78,14 @@ public class Console {
         // handle auth here
         socketIOServer.addConnectListener(client -> {
             // if session id is not valid, disconnect
-            closeUnAuthorized(client);
+            if (closeUnauthorized(client)) return;
             writeOutPut("connected:SessionId = " + client.getSessionId());
         });
         nashorn.getContext().setWriter(outWriter);
         nashorn.getContext().setErrorWriter(errorWriter);
 
         socketIOServer.addEventListener(INPUT_EVENT, ConsoleIn.class, (client, data, ackSender) -> {
-            closeUnAuthorized(client);
+            if (closeUnauthorized(client)) return;
             nashorn.eval(data.getInput());
         });
 
@@ -126,12 +126,13 @@ public class Console {
         client.sendEvent(OUTPUT_EVENT, new ConsoleOut(ConsoleOut.ERROR, "", error));
     }
 
-    private void closeUnAuthorized(SocketIOClient client) {
+    private boolean closeUnauthorized(SocketIOClient client) {
         String token = client.getHandshakeData().getSingleUrlParam("token");
         if (!StringUtil.isNullOrEmpty(token) && verifyToken(token)) {
-            return;
+            return false;
         }
         writeError(client, "authorization failed , session id is " + client.getSessionId());
         client.disconnect();
+        return true;
     }
 }
