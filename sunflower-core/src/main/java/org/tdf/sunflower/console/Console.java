@@ -3,6 +3,7 @@ package org.tdf.sunflower.console;
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.google.common.hash.Hashing;
+import io.netty.util.internal.StringUtil;
 import org.springframework.stereotype.Component;
 
 import javax.script.ScriptEngine;
@@ -67,8 +68,11 @@ public class Console {
         // handle auth here
         socketIOServer.addConnectListener(client -> {
             // if session id is not valid, disconnect
-            UUID sessionID = client.getSessionId();
-            if (!UUID.fromString(Hashing.sha256().hashBytes(uuid.getBytes(StandardCharsets.UTF_8)).toString()).equals(sessionID)) {
+            String token = client.getHandshakeData().getSingleUrlParam("token");
+            if (StringUtil.isNullOrEmpty(token)) {
+                client.disconnect();
+            }
+            if (!verifyToken(token)) {
                 client.disconnect();
             }
         });
@@ -78,10 +82,14 @@ public class Console {
         socketIOServer.addEventListener(INPUT_EVENT, ConsoleIn.class, (client, data, ackSender) -> nashorn.eval(data.getInput()));
 
         socketIOServer.addDisconnectListener(socketIOClient -> {
-            socketIOClient.sendEvent(OUTPUT_EVENT, new ConsoleOut(ConsoleOut.ERROR, "", "client is disconnected"));
+            socketIOClient.sendEvent(OUTPUT_EVENT, new ConsoleOut(ConsoleOut.ERROR, "", "session id authorization failed"));
         });
 
         socketIOServer.start();
+    }
+
+    private boolean verifyToken(String token) {
+        return Hashing.sha256().hashBytes(uuid.getBytes(StandardCharsets.UTF_8)).toString().equals(token);
     }
 
     private void regenerateUUID() {
