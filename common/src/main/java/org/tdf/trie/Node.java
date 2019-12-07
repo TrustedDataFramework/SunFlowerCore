@@ -8,6 +8,8 @@ import lombok.NonNull;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class Node {
+    private static final int BRANCH_SIZE = 17;
+
     enum Type {
         BRANCH,
         EXTENSION,
@@ -21,7 +23,7 @@ public class Node {
     private Object[] children;
 
     static Node newBranch() {
-        return Node.builder().children(new Object[17]).build();
+        return Node.builder().children(new Object[BRANCH_SIZE]).build();
     }
 
     static Node newLeaf(TrieKey key, byte[] value) {
@@ -39,14 +41,14 @@ public class Node {
     }
 
     public Type getType() {
-        if (children.length == 17) return Type.BRANCH;
+        if (children.length == BRANCH_SIZE) return Type.BRANCH;
         return children[1] instanceof Node ? Type.EXTENSION : Type.LEAF;
     }
 
     public void setValue(byte[] value) {
         assertBranchOrLeaf();
         if (getType() == Type.BRANCH) {
-            children[16] = value;
+            children[BRANCH_SIZE - 1] = value;
             return;
         }
         children[1] = value;
@@ -54,7 +56,7 @@ public class Node {
 
     public byte[] getValue() {
         assertBranchOrLeaf();
-        if (getType() == Type.BRANCH) return (byte[]) children[16];
+        if (getType() == Type.BRANCH) return (byte[]) children[BRANCH_SIZE - 1];
         return (byte[]) children[1];
     }
 
@@ -96,7 +98,7 @@ public class Node {
         TrieKey tmp = current.matchAndShift(commonPrefix);
         // tmp is empty -> commonPrefix.equals(current) -> type is leaf
         if (tmp.isEmpty()) {
-            newBranch.children[16] = o;
+            newBranch.children[BRANCH_SIZE - 1] = o;
         } else {
             // tmp is not empty -> !commonPrefix.equals(current)
             newBranch.children[tmp.get(0)] = newShort(tmp.shift(), o);
@@ -104,7 +106,7 @@ public class Node {
 
         tmp = key.matchAndShift(commonPrefix);
         if (tmp.isEmpty()) {
-            newBranch.children[16] = value;
+            newBranch.children[BRANCH_SIZE - 1] = value;
         } else {
             newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value);
         }
@@ -132,7 +134,7 @@ public class Node {
     }
 
     public Node getChild(int index) {
-        assertBranchOrLeaf();
+        assertBranch();
         return (Node) children[index];
     }
 
@@ -175,7 +177,7 @@ public class Node {
     private void toBranch() {
         TrieKey key = getKey();
         Object o = children[1];
-        children = new Object[17];
+        children = new Object[BRANCH_SIZE];
         children[key.get(0)] = newShort(key.shift(), o);
     }
 
