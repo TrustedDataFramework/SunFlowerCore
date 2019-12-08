@@ -1,19 +1,69 @@
 package org.tdf.trie;
 
-import org.tdf.common.Store;
-import org.tdf.store.MapStore;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.Set;
 
 // enhanced radix tree
-public class TrieImpl {
-    private Store<byte[], byte[]> cache;
+public class TrieImpl implements Trie {
 
     private Node root;
 
-    public TrieImpl() {
-        this.cache = new MapStore<>();
+    @Override
+    public Optional<byte[]> get(byte[] bytes) {
+        if (root == null) return Optional.empty();
+        return Optional.ofNullable(root.get(TrieKey.fromNormal(bytes)));
     }
 
-    public TrieImpl(Store<byte[], byte[]> store) {
-        this.cache = store;
+    @Override
+    public void put(byte[] bytes, byte[] bytes2) {
+        if (root == null) {
+            root = Node.newLeaf(TrieKey.fromNormal(bytes), bytes2);
+            return;
+        }
+        root.insert(TrieKey.fromNormal(bytes), bytes2);
+    }
+
+    @Override
+    public void putIfAbsent(byte[] bytes, byte[] bytes2) {
+        if (root != null && root.get(TrieKey.fromNormal(bytes)) != null) return;
+        put(bytes, bytes2);
+    }
+
+    @Override
+    public void remove(byte[] bytes) {
+        if (root == null) return;
+        root = root.delete(TrieKey.fromNormal(bytes));
+    }
+
+    @Override
+    public Set<byte[]> keySet() {
+        throw new RuntimeException("low performance operation");
+    }
+
+    @Override
+    public Collection<byte[]> values() {
+        throw new RuntimeException("low performance operation");
+    }
+
+    @Override
+    public boolean containsKey(byte[] bytes) {
+        if (root == null) return false;
+        return root.get(TrieKey.fromNormal(bytes)) != null;
+    }
+
+    @Override
+    public int size() {
+        throw new RuntimeException("low performance operation");
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return root != null;
+    }
+
+    @Override
+    public void clear() {
+        throw new RuntimeException("low performance operation");
     }
 }

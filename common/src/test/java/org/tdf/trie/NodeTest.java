@@ -4,7 +4,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 
 @RunWith(JUnit4.class)
 public class NodeTest {
@@ -19,5 +21,71 @@ public class NodeTest {
         ) {
             assert Arrays.equals(n.get(TrieKey.fromNormal(s.getBytes())), s.getBytes());
         }
+    }
+
+    @Test
+    public void test2() {
+        Node n = Node.newLeaf(TrieKey.fromNormal("do".getBytes()), "verb".getBytes());
+        List<String> li = Arrays.asList("dog", "puppy", "doge", "coin", "horse", "stallion");
+        for (int i = 0; i < li.size(); i += 2) {
+            String key = li.get(i);
+            String val = li.get(i + 1);
+            n.insert(TrieKey.fromNormal(key.getBytes(StandardCharsets.US_ASCII)), val.getBytes(StandardCharsets.US_ASCII));
+        }
+        for (int i = 0; i < li.size(); i += 2) {
+            String key = li.get(i);
+            String val = li.get(i + 1);
+            assert Arrays.equals(n.get(TrieKey.fromNormal(key.getBytes(StandardCharsets.US_ASCII))), val.getBytes(StandardCharsets.US_ASCII));
+        }
+    }
+
+    @Test
+    public void test3() {
+        Node n = Node.newLeaf(TrieKey.fromNormal("do".getBytes()), "verb".getBytes());
+        List<String> li = Arrays.asList("dog", "puppy", "doge", "coin", "horse", "stallion");
+        for (int i = 0; i < li.size(); i += 2) {
+            String key = li.get(i);
+            String val = li.get(i + 1);
+            n.insert(TrieKey.fromNormal(key.getBytes()), val.getBytes());
+        }
+        n = n.delete(TrieKey.fromNormal("doge".getBytes()));
+        assert Arrays.equals(n.get(TrieKey.fromNormal("dog".getBytes())), "puppy".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal("do".getBytes())), "verb".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal("horse".getBytes())), "stallion".getBytes());
+        assert n.get(TrieKey.fromNormal("doge".getBytes())) == null;
+    }
+
+    @Test
+    public void test4() {
+        Node n = Node.newLeaf(TrieKey.fromNormal("do".getBytes()), "verb".getBytes());
+        List<String> li = Arrays.asList("dog", "puppy", "doge", "coin", "horse", "stallion");
+        for (int i = 0; i < li.size(); i += 2) {
+            String key = li.get(i);
+            String val = li.get(i + 1);
+            n.insert(TrieKey.fromNormal(key.getBytes()), val.getBytes());
+        }
+        n = n.delete(TrieKey.fromNormal("do".getBytes()));
+        assert Arrays.equals(n.get(TrieKey.fromNormal("dog".getBytes())), "puppy".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal("doge".getBytes())), "coin".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal("horse".getBytes())), "stallion".getBytes());
+        assert n.get(TrieKey.fromNormal("do".getBytes())) == null;
+    }
+
+    @Test
+    public void test5() {
+        Node n = Node.newLeaf(TrieKey.fromNormal("do".getBytes()), "verb".getBytes());
+        List<String> li = Arrays.asList("dog", "puppy", "doge", "coin", "horse", "stallion");
+        for (int i = 0; i < li.size(); i += 2) {
+            String key = li.get(i);
+            String val = li.get(i + 1);
+            n.insert(TrieKey.fromNormal(key.getBytes(StandardCharsets.US_ASCII)), val.getBytes(StandardCharsets.US_ASCII));
+        }
+        for (int i = 0; i < li.size(); i += 2) {
+            String key = li.get(i);
+            String val = li.get(i + 1);
+            n = n.delete(TrieKey.fromNormal(key.getBytes()));
+        }
+        n = n.delete(TrieKey.fromNormal("do".getBytes()));
+        assert n == null;
     }
 }

@@ -1,4 +1,4 @@
-# Consortium Development Guide
+# Sunflower developer guide
 
 1. git subtree usage
 
@@ -147,6 +147,23 @@ our: 2515ms
     1. set GITHUB_USERNAME environment as your github login name
     2. generate a token for github package: https://github.com/settings/tokens
     3. set GITHUB_TOKEN environment as the token generated above. 
+
+9. vscode debug config example
+
+```json
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "sunflower-core",
+            "request": "launch",
+            "mainClass": "org.tdf.sunflower.Start",
+            "projectName": "sunflower-core-sunflower-core",
+            "vmArgs": "-Dspring.config.location=sunflower-core/local/local.yml"
+        }
+    ]
+}
+```
 
 ## Commands
 
