@@ -128,6 +128,8 @@ class Node {
 
         // current is extension and common prefix equals to current
         if (type == Type.EXTENSION && commonPrefix.size() == current.size()) {
+            // TODO: remove this assertion for the extension must be branch
+            getExtension().assertBranch();
             getExtension().branchInsert(key.shift(commonPrefix.size()), value);
             return;
         }

@@ -3,10 +3,11 @@ package org.tdf.trie;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.util.ByteArraySet;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
+import java.security.SecureRandom;
+import java.util.*;
 
 @RunWith(JUnit4.class)
 public class NodeTest {
@@ -90,7 +91,7 @@ public class NodeTest {
     }
 
     @Test
-    public void test6(){
+    public void test6() {
         Node n = Node.newLeaf(TrieKey.single(3).concat(TrieKey.single(15)).concat(TrieKey.single(0x0e)), "abc".getBytes());
         n.insert(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4a}), "dog".getBytes());
         n.insert(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4b}), "dog1".getBytes());
@@ -99,5 +100,117 @@ public class NodeTest {
 
         n = n.delete(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4b}));
         assert n.get(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4b})) == null;
+        n = n.delete(TrieKey.single(3).concat(TrieKey.single(15)).concat(TrieKey.single(0x0e)));
+    }
+
+    @Test
+    public void testRadix() {
+        RadixNode n = new RadixNode();
+        n.insert(TrieKey.single(3).concat(TrieKey.single(15)).concat(TrieKey.single(0x0e)), "abc".getBytes());
+        n.insert(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4a}), "dog".getBytes());
+        n.insert(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4b}), "dog1".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4a})), "dog".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4b})), "dog1".getBytes());
+
+        n.delete(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4b}));
+        assert n.get(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4b})) == null;
+        n.delete(TrieKey.single(3).concat(TrieKey.single(15)).concat(TrieKey.single(0x0e)));
+    }
+
+    @Test
+//    insert n = 1000000 random 32 bytes to trie consume 557 ms
+//    delete n = 1000000 random 32 bytes to trie consume 635 ms
+    public void test7() {
+        boolean performance = false;
+        if (!performance) return;
+        Node n = Node.newBranch();
+        byte[] empty = new byte[0];
+        SecureRandom sr = new SecureRandom();
+        Set<byte[]> set = new HashSet<>();
+        for (int i = 0; i < 1000000; i++) {
+            byte[] bytes = new byte[32];
+            set.add(bytes);
+            sr.nextBytes(bytes);
+        }
+        long start = System.currentTimeMillis();
+        set.forEach(x -> n.insert(TrieKey.fromNormal(x), empty));
+        long end = System.currentTimeMillis();
+        System.out.println("insert 1000000 random 32 bytes to trie consume " + (end - start) + " ms");
+        start = System.currentTimeMillis();
+        set.forEach(x -> n.delete(TrieKey.fromNormal(x)));
+        end = System.currentTimeMillis();
+        System.out.println("delete 1000000 random 32 bytes to trie consume " + (end - start) + " ms");
+    }
+
+    @Test
+//    insert n = 50000 random 32 bytes to trie consume 157 ms
+//    delete n = 50000 random 32 bytes to trie consume 970 ms
+//    gc overflow when n = 100000
+    public void test8() {
+        boolean performance = false;
+        if (!performance) return;
+        RadixNode n = new RadixNode();
+        byte[] empty = new byte[0];
+        SecureRandom sr = new SecureRandom();
+        Set<byte[]> set = new HashSet<>();
+        for (int i = 0; i < 50000; i++) {
+            byte[] bytes = new byte[32];
+            set.add(bytes);
+            sr.nextBytes(bytes);
+        }
+        long start = System.currentTimeMillis();
+        set.forEach(x -> n.insert(TrieKey.fromNormal(x), empty));
+        long end = System.currentTimeMillis();
+        System.out.println("insert 50000 random 32 bytes to trie consume " + (end - start) + " ms");
+        start = System.currentTimeMillis();
+        set.forEach(x -> n.delete(TrieKey.fromNormal(x)));
+        end = System.currentTimeMillis();
+        System.out.println("delete 50000 random 32 bytes to trie consume " + (end - start) + " ms");
+    }
+
+    // basic radix Trie
+    public static class RadixNode {
+        RadixNode[] children = new RadixNode[16];
+
+        byte[] value;
+
+        void insert(TrieKey key, byte[] value) {
+            if (key.isEmpty()) {
+                this.value = value;
+                return;
+            }
+            RadixNode child = children[key.get(0)];
+            if (child != null) {
+                child.insert(key.shift(), value);
+                return;
+            }
+            child = new RadixNode();
+            children[key.get(0)] = child;
+            child.insert(key.shift(), value);
+        }
+
+        RadixNode delete(TrieKey key) {
+            if (key.isEmpty()) {
+                value = null;
+                if (isNull()) return null;
+                return this;
+            }
+            RadixNode child = children[key.get(0)];
+            if (child == null) return this;
+            children[key.get(0)] = child.delete(key.shift());
+            if (isNull()) return null;
+            return this;
+        }
+
+        boolean isNull() {
+            return Arrays.stream(children).allMatch(Objects::isNull) && value == null;
+        }
+
+        byte[] get(TrieKey key) {
+            if (key.isEmpty()) return value;
+            RadixNode child = children[key.get(0)];
+            if (child == null) return null;
+            return child.get(key.shift());
+        }
     }
 }
