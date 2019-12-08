@@ -3,7 +3,7 @@ package org.tdf.trie;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.util.ByteArraySet;
+import org.tdf.util.BigEndian;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -127,7 +127,7 @@ public class NodeTest {
         byte[] empty = new byte[0];
         SecureRandom sr = new SecureRandom();
         Set<byte[]> set = new HashSet<>();
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 1_000_000; i++) {
             byte[] bytes = new byte[32];
             set.add(bytes);
             sr.nextBytes(bytes);
@@ -135,11 +135,11 @@ public class NodeTest {
         long start = System.currentTimeMillis();
         set.forEach(x -> n.insert(TrieKey.fromNormal(x), empty));
         long end = System.currentTimeMillis();
-        System.out.println("insert 1000000 random 32 bytes to trie consume " + (end - start) + " ms");
+        System.out.println("insert 1000,000 random 32 bytes to trie consume " + (end - start) + " ms");
         start = System.currentTimeMillis();
         set.forEach(x -> n.delete(TrieKey.fromNormal(x)));
         end = System.currentTimeMillis();
-        System.out.println("delete 1000000 random 32 bytes to trie consume " + (end - start) + " ms");
+        System.out.println("delete 1000,000 random 32 bytes to trie consume " + (end - start) + " ms");
     }
 
     @Test
@@ -153,7 +153,7 @@ public class NodeTest {
         byte[] empty = new byte[0];
         SecureRandom sr = new SecureRandom();
         Set<byte[]> set = new HashSet<>();
-        for (int i = 0; i < 50000; i++) {
+        for (int i = 0; i < 50_000; i++) {
             byte[] bytes = new byte[32];
             set.add(bytes);
             sr.nextBytes(bytes);
@@ -161,11 +161,11 @@ public class NodeTest {
         long start = System.currentTimeMillis();
         set.forEach(x -> n.insert(TrieKey.fromNormal(x), empty));
         long end = System.currentTimeMillis();
-        System.out.println("insert 50000 random 32 bytes to trie consume " + (end - start) + " ms");
+        System.out.println("insert 50,000 random 32 bytes to trie consume " + (end - start) + " ms");
         start = System.currentTimeMillis();
         set.forEach(x -> n.delete(TrieKey.fromNormal(x)));
         end = System.currentTimeMillis();
-        System.out.println("delete 50000 random 32 bytes to trie consume " + (end - start) + " ms");
+        System.out.println("delete 50,000 random 32 bytes to trie consume " + (end - start) + " ms");
     }
 
     // basic radix Trie
@@ -212,5 +212,35 @@ public class NodeTest {
             if (child == null) return null;
             return child.get(key.shift());
         }
+    }
+
+    // https://ethereum.stackexchange.com/questions/268/ethereum-block-architecture
+    @Test
+    public void test9() {
+        Node n = Node.newLeaf(TrieKey.fromNormal(
+                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a711355), 4, 8)
+        ).shift(), "45.0ETH".getBytes());
+        n.insert(TrieKey.fromNormal(
+                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d337), 4, 8)
+        ).shift(), "1.00WEI".getBytes());
+        n.insert(TrieKey.fromNormal(
+                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a7f9365), 4, 8)
+        ).shift(), "1.00WEI".getBytes());
+        n.insert(TrieKey.fromNormal(
+                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d397), 4, 8)
+        ).shift(), "1.00WEI".getBytes());
+    }
+
+    @Test
+    public void test10() {
+        Node n = Node.newLeaf(TrieKey.fromNormal("abc".getBytes()), "aaa".getBytes());
+        n.insert(TrieKey.fromNormal("abc".getBytes()), "ccc".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal("abc".getBytes())), "ccc".getBytes());
+        n.insert(TrieKey.fromNormal("a".getBytes()), "ddd".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal("a".getBytes())), "ddd".getBytes());
+        n.insert(TrieKey.fromNormal("a".getBytes()), "eee".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal("a".getBytes())), "eee".getBytes());
+        n.delete(TrieKey.fromNormal("abcd".getBytes()));
+        assert n.get(TrieKey.fromNormal("abc".getBytes())) != null;
     }
 }

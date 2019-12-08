@@ -45,9 +45,12 @@ class Node {
                 .build();
     }
 
+    // wrap o to an extension or leaf node
     private Node newShort(TrieKey key, Object o) {
         // if size of key is zero, we not need to wrap child
-        if (key.size() == 0 && o instanceof Node) return (Node) o;
+        if (key.size() == 0 && o instanceof Node) {
+            return (Node) o;
+        }
         return builder()
                 .children(new Object[]{key, o})
                 .dirty(true)
@@ -113,16 +116,16 @@ class Node {
         TrieKey current = getKey();
         TrieKey commonPrefix = key.getCommonPrefix(current);
 
+        // current is leaf and current equals to key
+        if(type == Type.LEAF && commonPrefix.size() == current.size() && commonPrefix.size() == key.size()){
+            setValue(value);
+            return;
+        }
+
         // space is not enough, convert to branch node
         if (commonPrefix.isEmpty() || (type == Type.LEAF && commonPrefix.size() == current.size())) {
             toBranch();
             branchInsert(key, value);
-            return;
-        }
-
-        // current is leaf and current equals to key
-        if(type == Type.LEAF && commonPrefix.size() == current.size() && commonPrefix.size() == key.size()){
-            setValue(value);
             return;
         }
 
@@ -134,6 +137,8 @@ class Node {
             return;
         }
 
+        // common prefix is a strict subset of current
+        // common prefix < current => tmp couldn't be empty
         TrieKey tmp = current.shift(commonPrefix.size());
 
         Object o = children[1];
@@ -146,6 +151,7 @@ class Node {
 
         tmp = key.shift(commonPrefix.size());
         if (tmp.isEmpty()) {
+            // tmp is empty => common prefix = key => key < current
             newBranch.children[BRANCH_SIZE - 1] = value;
         } else {
             newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value);
@@ -165,6 +171,7 @@ class Node {
                 // delete value success, set this to null
                 return null;
             }
+            // delete failed, no need to compact
             return this;
         }
         Node child = (Node) children[1];
@@ -196,6 +203,7 @@ class Node {
         }
         int idx = key.get(0);
         Node child = (Node) children[idx];
+        // delete failed, no need to compact
         if (child == null) return this;
         children[idx] = child.delete(key.shift());
         tryCompact();
@@ -255,7 +263,7 @@ class Node {
     }
 
     // convert extension or leaf node to branch
-    // if node is extension, key is not empty
+    // if node is extension, the key couldn't be empty
     // if node is leaf and key is empty, just move value to new branch
     private void toBranch() {
         TrieKey key = getKey();
@@ -282,7 +290,7 @@ class Node {
         return idx;
     }
 
-    // join path
+    // join extension node and its non-branch child as a compact extension node
     private void extensionCompact() {
         Node n = getExtension();
         if (n.getType() == Type.BRANCH) return;
@@ -290,7 +298,7 @@ class Node {
         children[1] = n.children[1];
     }
 
-    // compact single child or single value branch node to short node
+    // compact single child or single value branch node to a extension or leaf node
     private void branchCompact(int index) {
         Object o = children[index];
         children = new Object[2];
@@ -301,6 +309,7 @@ class Node {
         }
         Node n = (Node) o;
         if (n.getType() != Type.BRANCH) {
+            // non-branch child could be compressed
             children[0] = TrieKey.single(index).concat((TrieKey) n.children[0]);
             children[1] = n.children[1];
             return;

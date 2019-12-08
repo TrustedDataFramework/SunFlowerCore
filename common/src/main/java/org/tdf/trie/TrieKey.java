@@ -27,7 +27,7 @@ public class TrieKey {
     static TrieKey EMPTY_TERMINAL = empty(true);
 
     @Getter
-    private final boolean terminal;
+    private boolean terminal;
 
     public static TrieKey fromNormal(byte[] key) {
         return new TrieKey(key);
@@ -173,6 +173,16 @@ public class TrieKey {
             }
         }
         return shift(thatSize);
+    }
+
+    public TrieKey asNonTerminal(){
+        terminal = false;
+        return this;
+    }
+
+    public TrieKey asTerminal(){
+        terminal = true;
+        return this;
     }
 
     @Override
