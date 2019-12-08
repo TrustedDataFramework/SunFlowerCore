@@ -5,6 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
 
+/**
+ * patricia tree's node inspired by:
+ * https://ethfans.org/toya/articles/588
+ * https://medium.com/shyft-network-media/understanding-trie-databases-in-ethereum-9f03d2c3325d
+ * https://github.com/ethereum/wiki/wiki/Patricia-Tree#optimization
+ */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 class Node {
@@ -114,6 +120,7 @@ class Node {
         }
 
         TrieKey current = getKey();
+        // by definition, common prefix <= current and common prefix <= key ( <= represents subset of here )
         TrieKey commonPrefix = key.getCommonPrefix(current);
 
         // current is leaf and current equals to key
@@ -137,7 +144,7 @@ class Node {
             return;
         }
 
-        // common prefix is a strict subset of current
+        // common prefix is a strict subset of current here
         // common prefix < current => tmp couldn't be empty
         TrieKey tmp = current.shift(commonPrefix.size());
 
