@@ -124,7 +124,7 @@ class Node {
         TrieKey commonPrefix = key.getCommonPrefix(current);
 
         // current is leaf and current equals to key
-        if(type == Type.LEAF && commonPrefix.size() == current.size() && commonPrefix.size() == key.size()){
+        if (type == Type.LEAF && commonPrefix.size() == current.size() && commonPrefix.size() == key.size()) {
             setValue(value);
             return;
         }
@@ -160,9 +160,9 @@ class Node {
         if (tmp.isEmpty()) {
             // tmp is empty => common prefix = key => key < current
             newBranch.children[BRANCH_SIZE - 1] = value;
-        } else {
-            newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value);
+            return;
         }
+        newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value);
     }
 
     Node delete(TrieKey key) {
@@ -286,13 +286,13 @@ class Node {
     // check the branch node could be compacted
     private int getCompactIndex() {
         int cnt = 0;
+        // last non-null children
         int idx = -1;
         for (int i = 0; i < BRANCH_SIZE; i++) {
-            if (children[i] != null) {
-                cnt++;
-                if (cnt > 1) return -1;
-                idx = i;
-            }
+            if (children[i] == null) continue;
+            cnt++;
+            if (cnt > 1) return -1;
+            idx = i;
         }
         return idx;
     }
