@@ -10,6 +10,12 @@ public class TrieImpl implements Trie {
 
     private Node root;
 
+    HashFunction function;
+
+    public TrieImpl(HashFunction function) {
+        this.function = function;
+    }
+
     @Override
     public Optional<byte[]> get(byte[] bytes) {
         if (root == null) return Optional.empty();

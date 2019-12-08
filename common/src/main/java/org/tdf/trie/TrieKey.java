@@ -23,7 +23,6 @@ public class TrieKey {
     private final byte[] data;
     private final int offset;
 
-
     static TrieKey EMPTY_TERMINAL = empty(true);
 
     @Getter

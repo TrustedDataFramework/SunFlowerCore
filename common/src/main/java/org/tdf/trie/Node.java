@@ -4,6 +4,12 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
+import org.tdf.common.Store;
+import org.tdf.serialize.RLPElement;
+import org.tdf.serialize.RLPItem;
+import org.tdf.serialize.RLPList;
+
+import static org.tdf.trie.TrieKey.EMPTY_TERMINAL;
 
 /**
  * patricia tree's node inspired by:
@@ -15,10 +21,12 @@ import lombok.NonNull;
 @Builder
 class Node {
     private static final int BRANCH_SIZE = 17;
-
+    private static final int MAX_KEY_SIZE = 32;
     private boolean dirty;
 
-    private byte[] hash;
+    private byte[] reference;
+
+    private Store<byte[], byte[]> cache;
 
     enum Type {
         BRANCH,
@@ -31,6 +39,13 @@ class Node {
     // if node is extension node or leaf node, the length of children is 2
     // the first element is trie key and the second element is value(leaf node) or child node(extension node)
     private Object[] children;
+
+    static Node fromReference(byte[] reference, Store<byte[], byte[]> cache) {
+        return Node.builder()
+                .reference(reference)
+                .cache(cache)
+                .build();
+    }
 
     static Node newBranch() {
         return Node.builder()
@@ -49,6 +64,42 @@ class Node {
                 .children(new Object[]{key, child})
                 .dirty(true)
                 .build();
+    }
+
+    public byte[] getReference(HashFunction function) {
+        if (!dirty) return reference;
+        Type type = getType();
+        byte[] rlpEncoded;
+        if (type == Type.LEAF) {
+            RLPList list = RLPList.createEmpty(2);
+            list.add(RLPItem.fromBytes(getKey().toPacked()));
+            list.add(RLPItem.fromBytes(getValue()));
+            rlpEncoded = list.getEncoded();
+        }
+        if (type == Type.EXTENSION) {
+            RLPList list = RLPList.createEmpty(2);
+            list.add(RLPItem.fromBytes(getKey().toPacked()));
+            list.add(RLPItem.fromBytes(getExtension().getReference(function)));
+            rlpEncoded = list.getEncoded();
+        }
+        RLPList list = RLPList.createEmpty(BRANCH_SIZE);
+        for (int i = 0; i < BRANCH_SIZE - 1; i++) {
+            Node child = (Node) children[i];
+            if (child == null) {
+                list.add(RLPItem.NULL);
+                continue;
+            }
+            list.add(RLPItem.fromBytes(child.getReference(function)));
+        }
+        list.add(RLPItem.fromBytes(getValue()));
+        rlpEncoded = list.getEncoded();
+        dirty = false;
+        if (rlpEncoded.length < MAX_KEY_SIZE) {
+            reference = rlpEncoded;
+        } else {
+            reference = function.apply(rlpEncoded);
+        }
+        return reference;
     }
 
     // wrap o to an extension or leaf node
@@ -314,7 +365,7 @@ class Node {
         Object o = children[index];
         children = new Object[2];
         if (o instanceof byte[]) {
-            children[0] = TrieKey.empty(true);
+            children[0] = EMPTY_TERMINAL;
             children[1] = o;
             return;
         }
@@ -327,5 +378,42 @@ class Node {
         }
         children[0] = TrieKey.single(index);
         children[1] = n;
+    }
+
+    private void parse() {
+        // has parsed
+        RLPElement el;
+        if (reference.length < MAX_KEY_SIZE) {
+            el = RLPElement.fromEncoded(reference);
+        } else {
+            el = RLPElement.fromEncoded(cache.get(reference)
+                    .orElseThrow(() -> new RuntimeException("parse node failed: key not found")));
+        }
+        RLPList list = el.getAsList();
+        if (list.size() == 2) {
+            children = new Object[2];
+            TrieKey key = TrieKey.fromPacked(list.get(0).getAsItem().get());
+            children[0] = key;
+            if (key.isTerminal()) {
+                children[1] = getValueFromCache(list.get(1).getAsItem().get());
+                return;
+            }
+            children[1] = fromReference(list.get(1).getEncoded(), cache);
+            return;
+        }
+        children = new Object[BRANCH_SIZE];
+        for (int i = 0; i < BRANCH_SIZE - 1; i++) {
+            if (list.get(i).isNull()) continue;
+            children[i] = fromReference(list.get(i).getAsItem().get(), cache);
+        }
+        RLPItem item = list.get(BRANCH_SIZE - 1).getAsItem();
+        if (item.isNull()) return;
+        children[BRANCH_SIZE - 1] = getValueFromCache(item.get());
+    }
+
+    private byte[] getValueFromCache(byte[] reference) {
+        if (reference.length < MAX_KEY_SIZE) return reference;
+        return cache.get(reference)
+                .orElseThrow(() -> new RuntimeException("parse node failed: key not found"));
     }
 }

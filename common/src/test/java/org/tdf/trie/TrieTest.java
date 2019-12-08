@@ -3,6 +3,7 @@ package org.tdf.trie;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.common.HashUtil;
 import org.tdf.util.ByteArraySet;
 
 import java.security.SecureRandom;
@@ -15,7 +16,7 @@ public class TrieTest {
 
     @Test
     public void test1() {
-        TrieImpl trie = new TrieImpl();
+        TrieImpl trie = new TrieImpl(HashUtil::sha3);
         Arrays.asList("test", "toaster", "toasting", "slow", "slowly")
                 .forEach(x -> trie.put(x.getBytes(), x.getBytes()));
 
@@ -36,7 +37,7 @@ public class TrieTest {
     public void test7() {
         boolean performance = false;
         if (!performance) return;
-        TrieImpl trie = new TrieImpl();
+        TrieImpl trie = new TrieImpl(HashUtil::sha3);
         byte[] empty = new byte[0];
         SecureRandom sr = new SecureRandom();
         Set<byte[]> set = new ByteArraySet();
