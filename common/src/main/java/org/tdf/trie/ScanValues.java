@@ -5,13 +5,13 @@ import lombok.Getter;
 import org.tdf.util.ByteArraySet;
 
 @Getter(AccessLevel.PACKAGE)
-public class ScanKeySet implements ScannerAction {
+public class ScanValues implements ScannerAction{
     private ByteArraySet bytes = new ByteArraySet();
 
     @Override
     public void accept(TrieKey path, Node node) {
         if (node.getType() != Node.Type.EXTENSION && node.getValue() != null) {
-            bytes.add(path.toNormal());
+            bytes.add(node.getValue());
         }
     }
 }

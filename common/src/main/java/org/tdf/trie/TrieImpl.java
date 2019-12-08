@@ -1,6 +1,7 @@
 package org.tdf.trie;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -38,12 +39,18 @@ public class TrieImpl implements Trie {
 
     @Override
     public Set<byte[]> keySet() {
-        throw new RuntimeException("low performance operation");
+        if(root == null) return Collections.emptySet();
+        ScanKeySet action = new ScanKeySet();
+        root.traverse(TrieKey.empty(false), action);
+        return action.getBytes();
     }
 
     @Override
     public Collection<byte[]> values() {
-        throw new RuntimeException("low performance operation");
+        if(root == null) return Collections.emptySet();
+        ScanValues action = new ScanValues();
+        root.traverse(TrieKey.empty(false), action);
+        return action.getBytes();
     }
 
     @Override
@@ -54,7 +61,7 @@ public class TrieImpl implements Trie {
 
     @Override
     public int size() {
-        throw new RuntimeException("low performance operation");
+        return keySet().size();
     }
 
     @Override
@@ -64,6 +71,6 @@ public class TrieImpl implements Trie {
 
     @Override
     public void clear() {
-        throw new RuntimeException("low performance operation");
+        root = null;
     }
 }

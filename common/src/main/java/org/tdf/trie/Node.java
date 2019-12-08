@@ -97,19 +97,23 @@ class Node {
     }
 
     // deep-first scanning
-    void traverse(ScannerAction action) {
+    void traverse(TrieKey init, ScannerAction action) {
         Type type = getType();
-        action.accept(this);
         if (type == Type.BRANCH) {
+            action.accept(init, this);
             for (int i = 0; i < BRANCH_SIZE - 1; i++) {
                 if (children[i] == null) continue;
-                action.accept((Node) children[i]);
+                ((Node) children[i]).traverse(init.concat(TrieKey.single(i)), action);
             }
             return;
         }
         if (type == Type.EXTENSION) {
-            action.accept((Node) children[1]);
+            TrieKey path = init.concat(getKey());
+            action.accept(path, this);
+            getExtension().traverse(path, action);
+            return;
         }
+        action.accept(init.concat(getKey()), this);
     }
 
     void insert(TrieKey key, @NonNull byte[] value) {
