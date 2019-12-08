@@ -88,4 +88,16 @@ public class NodeTest {
         n = n.delete(TrieKey.fromNormal("do".getBytes()));
         assert n == null;
     }
+
+    @Test
+    public void test6(){
+        Node n = Node.newLeaf(TrieKey.single(3).concat(TrieKey.single(15)).concat(TrieKey.single(0x0e)), "abc".getBytes());
+        n.insert(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4a}), "dog".getBytes());
+        n.insert(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4b}), "dog1".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4a})), "dog".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4b})), "dog1".getBytes());
+
+        n = n.delete(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4b}));
+        assert n.get(TrieKey.fromNormal(new byte[]{0x3f, 0x3d, 0x4b})) == null;
+    }
 }

@@ -7,8 +7,12 @@ import lombok.NonNull;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class Node {
+class Node {
     private static final int BRANCH_SIZE = 17;
+
+    private boolean dirty;
+
+    private byte[] hash;
 
     enum Type {
         BRANCH,
@@ -23,21 +27,31 @@ public class Node {
     private Object[] children;
 
     static Node newBranch() {
-        return Node.builder().children(new Object[BRANCH_SIZE]).build();
+        return Node.builder()
+                .children(new Object[BRANCH_SIZE])
+                .dirty(true).build();
     }
 
     static Node newLeaf(TrieKey key, byte[] value) {
-        return builder().children(new Object[]{key, value}).build();
+        return builder()
+                .children(new Object[]{key, value})
+                .dirty(true).build();
     }
 
     static Node newExtension(TrieKey key, Node child) {
-        return builder().children(new Object[]{key, child}).build();
+        return builder()
+                .children(new Object[]{key, child})
+                .dirty(true)
+                .build();
     }
 
     private Node newShort(TrieKey key, Object o) {
         // if size of key is zero, we not need to wrap child
         if (key.size() == 0 && o instanceof Node) return (Node) o;
-        return builder().children(new Object[]{key, o}).build();
+        return builder()
+                .children(new Object[]{key, o})
+                .dirty(true)
+                .build();
     }
 
     public Type getType() {
@@ -97,22 +111,28 @@ public class Node {
         }
 
         TrieKey current = getKey();
-
-        // when match exactly
-        if (current.equals(key) && type == Type.LEAF) {
-            setValue(value);
-            return;
-        }
-
         TrieKey commonPrefix = key.getCommonPrefix(current);
-        TrieKey tmp = current.matchAndShift(commonPrefix);
 
         // space is not enough, convert to branch node
-        if (commonPrefix.isEmpty() || tmp.isEmpty()) {
+        if (commonPrefix.isEmpty() || (type == Type.LEAF && commonPrefix.size() == current.size())) {
             toBranch();
             branchInsert(key, value);
             return;
         }
+
+        // current is leaf and current equals to key
+        if(type == Type.LEAF && commonPrefix.size() == current.size() && commonPrefix.size() == key.size()){
+            setValue(value);
+            return;
+        }
+
+        // current is extension and common prefix equals to current
+        if (type == Type.EXTENSION && commonPrefix.size() == current.size()) {
+            getExtension().branchInsert(key.shift(commonPrefix.size()), value);
+            return;
+        }
+
+        TrieKey tmp = current.shift(commonPrefix.size());
 
         Object o = children[1];
         Node newBranch = newBranch();
@@ -122,7 +142,7 @@ public class Node {
 
         newBranch.children[tmp.get(0)] = newShort(tmp.shift(), o);
 
-        tmp = key.matchAndShift(commonPrefix);
+        tmp = key.shift(commonPrefix.size());
         if (tmp.isEmpty()) {
             newBranch.children[BRANCH_SIZE - 1] = value;
         } else {
@@ -148,6 +168,7 @@ public class Node {
         Node child = (Node) children[1];
         children[1] = child.delete(k1);
         if (children[1] == null) return null;
+        tryCompact();
         return this;
     }
 
@@ -180,9 +201,15 @@ public class Node {
     }
 
     private void tryCompact() {
+        Type type = getType();
+        if (type == Type.LEAF) return;
+        if (type == Type.EXTENSION) {
+            extensionCompact();
+            return;
+        }
         int index = getCompactIndex();
         if (index < 0) return;
-        compact(index);
+        branchCompact(index);
     }
 
     public Node getChild(int index) {
@@ -253,8 +280,16 @@ public class Node {
         return idx;
     }
 
+    // join path
+    private void extensionCompact() {
+        Node n = getExtension();
+        if (n.getType() == Type.BRANCH) return;
+        children[0] = getKey().concat(n.getKey());
+        children[1] = n.children[1];
+    }
+
     // compact single child or single value branch node to short node
-    private void compact(int index) {
+    private void branchCompact(int index) {
         Object o = children[index];
         children = new Object[2];
         if (o instanceof byte[]) {
