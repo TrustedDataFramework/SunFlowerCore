@@ -8,6 +8,7 @@ import org.tdf.common.Store;
 import org.tdf.serialize.RLPElement;
 import org.tdf.serialize.RLPItem;
 import org.tdf.serialize.RLPList;
+import org.tdf.util.FastByteComparisons;
 
 import static org.tdf.trie.TrieKey.EMPTY;
 
@@ -24,14 +25,15 @@ class Node {
     private static final int MAX_KEY_SIZE = 32;
     private boolean dirty;
 
-    private void setDirty(){
+    private void setDirty() {
         dirty = true;
-        rlp = null;
     }
 
     // if rlp is a list, it is actual encoding of this node
     // if rlp is a item, it is a hash, its actual rlp encoding is stored in cache
-    private RLPElement rlp;
+    private RLPList rlp;
+
+    private byte[] hash;
 
     private Store<byte[], byte[]> cache;
 
@@ -47,13 +49,20 @@ class Node {
     // the first element is trie key and the second element is value(leaf node) or child node(extension node)
     private Object[] children;
 
+    // create root node from database and reference
     static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> cache) {
         return fromEncoded(RLPElement.fromEncoded(encoded), cache);
     }
 
+    // create root node from database and reference
     static Node fromEncoded(RLPElement rlp, Store<byte[], byte[]> cache) {
+        if(rlp.isList())
         return Node.builder()
-                .rlp(rlp)
+                .rlp(rlp.getAsList())
+                .cache(cache)
+                .build();
+        return Node.builder()
+                .hash(rlp.getAsItem().get())
                 .cache(cache)
                 .build();
     }
@@ -80,50 +89,50 @@ class Node {
     // encode and commit root node to store
     // return rlp encoded
     public RLPElement encodeAndCommit(HashFunction function, Store<byte[], byte[]> cache) {
-        if (!dirty) return rlp;
-        RLPList encoded;
+        if (!dirty) return hash != null ? RLPItem.fromBytes(hash) : rlp;
         Type type = getType();
         switch (type) {
             case LEAF: {
-                encoded = RLPList.createEmpty(2);
-                encoded.add(RLPItem.fromBytes(getKey().toPacked(true)));
-                encoded.add(RLPItem.fromBytes(getValue()));
+                rlp = RLPList.createEmpty(2);
+                rlp.add(RLPItem.fromBytes(getKey().toPacked(true)));
+                rlp.add(RLPItem.fromBytes(getValue()));
                 break;
             }
             case EXTENSION: {
-                encoded = RLPList.createEmpty(2);
-                encoded.add(RLPItem.fromBytes(getKey().toPacked(false)));
-                encoded.add(getExtension().encodeAndCommit(function, cache));
+                rlp = RLPList.createEmpty(2);
+                rlp.add(RLPItem.fromBytes(getKey().toPacked(false)));
+                rlp.add(getExtension().encodeAndCommit(function, cache));
                 break;
             }
             default: {
-                encoded = RLPList.createEmpty(BRANCH_SIZE);
+                rlp = RLPList.createEmpty(BRANCH_SIZE);
                 for (int i = 0; i < BRANCH_SIZE - 1; i++) {
                     Node child = (Node) children[i];
                     if (child == null) {
-                        encoded.add(RLPItem.NULL);
+                        rlp.add(RLPItem.NULL);
                         continue;
                     }
-                    encoded.add(child.encodeAndCommit(function, cache));
+                    rlp.add(child.encodeAndCommit(function, cache));
                 }
-                encoded.add(RLPItem.fromBytes(getValue()));
+                rlp.add(RLPItem.fromBytes(getValue()));
             }
         }
         dirty = false;
-        byte[] raw = encoded.getEncoded();
-        if (raw.length > MAX_KEY_SIZE) {
-            byte[] hash = function.apply(raw);
+        byte[] raw = rlp.getEncoded();
+        // if encoded size is great than or equals, store node to db and return a hash reference
+        if (raw.length >= MAX_KEY_SIZE) {
+            hash = function.apply(raw);
             cache.put(hash, raw);
             return RLPItem.fromBytes(hash);
         }
-        return encoded;
+        // clean hash
+        return rlp;
     }
 
     // get actual rlp encoding in the cache
-    private void resolve(){
-        if(rlp.isList()) return;
-        byte[] hash = rlp.getAsItem().get();
-        rlp = cache.get(hash).map(RLPElement::fromEncoded)
+    private void resolve() {
+        if (rlp != null) return;
+        rlp = cache.get(hash).map(RLPElement::fromEncoded).map(RLPElement::getAsList)
                 .orElseThrow(() -> new RuntimeException("rlp encoding not found in cache"));
     }
 
@@ -132,7 +141,6 @@ class Node {
         // has parsed
         if (children != null) return;
         resolve();
-        RLPList rlp = this.rlp.getAsList();
         if (rlp.size() == 2) {
             children = new Object[2];
             byte[] packed = rlp.get(0).getAsItem().get();
@@ -156,6 +164,12 @@ class Node {
         children[BRANCH_SIZE - 1] = item.get();
     }
 
+    // clean key-value in database
+    private void dispose() {
+        if (cache == null || hash == null) return;
+        cache.remove(hash);
+    }
+
     // wrap o to an extension or leaf node
     private Node newShort(TrieKey key, Object o) {
         // if size of key is zero, we not need to wrap child
@@ -174,18 +188,26 @@ class Node {
         return children[1] instanceof Node ? Type.EXTENSION : Type.LEAF;
     }
 
-    private void setValue(byte[] value) {
+    // try to set value
+    // if old value is override, set as dirty
+    private boolean setValue(byte[] value) {
         assertBranchOrLeaf();
+        byte[] val = getValue();
+        if (val != null && FastByteComparisons.equal(val, value)) {
+            return false;
+        }
+        setDirty();
         if (getType() == Type.BRANCH) {
             children[BRANCH_SIZE - 1] = value;
-            return;
+            return true;
         }
         children[1] = value;
+        return true;
     }
 
     public byte[] getValue() {
-        assertBranchOrLeaf();
         parse();
+        assertBranchOrLeaf();
         if (getType() == Type.BRANCH) return (byte[]) children[BRANCH_SIZE - 1];
         return (byte[]) children[1];
     }
@@ -224,12 +246,11 @@ class Node {
         action.accept(init.concat(getKey()), this);
     }
 
-    void insert(TrieKey key, @NonNull byte[] value) {
+    boolean insert(TrieKey key, @NonNull byte[] value) {
         parse();
         Type type = getType();
         if (type == Type.BRANCH) {
-            branchInsert(key, value);
-            return;
+            return branchInsert(key, value);
         }
 
         TrieKey current = getKey();
@@ -238,25 +259,25 @@ class Node {
 
         // current is leaf and current equals to key
         if (type == Type.LEAF && commonPrefix.size() == current.size() && commonPrefix.size() == key.size()) {
-            setValue(value);
-            return;
+            return setValue(value);
         }
 
         // space is not enough, convert to branch node
         if (commonPrefix.isEmpty() || (type == Type.LEAF && commonPrefix.size() == current.size())) {
             toBranch();
             branchInsert(key, value);
-            return;
+            setDirty();
+            return true;
         }
 
         // current is extension and common prefix equals to current
         if (type == Type.EXTENSION && commonPrefix.size() == current.size()) {
             // TODO: remove this assertion for the extension must be branch
             getExtension().assertBranch();
-            getExtension().branchInsert(key.shift(commonPrefix.size()), value);
-            return;
+            return getExtension().branchInsert(key.shift(commonPrefix.size()), value);
         }
 
+        setDirty();
         // common prefix is a strict subset of current here
         // common prefix < current => tmp couldn't be empty
         TrieKey tmp = current.shift(commonPrefix.size());
@@ -273,9 +294,10 @@ class Node {
         if (tmp.isEmpty()) {
             // tmp is empty => common prefix = key => key < current
             newBranch.children[BRANCH_SIZE - 1] = value;
-            return;
+            return true;
         }
         newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value);
+        return true;
     }
 
     Node delete(TrieKey key) {
@@ -285,9 +307,11 @@ class Node {
             return branchDelete(key);
         }
         TrieKey k1 = key.matchAndShift(getKey());
+        // delete failed
         if (k1 == null) return this;
         if (type == Type.LEAF) {
             if (k1.isEmpty()) {
+                dispose();
                 children[1] = null;
                 // delete value success, set this to null
                 return null;
@@ -296,37 +320,47 @@ class Node {
             return this;
         }
         Node child = (Node) children[1];
-        children[1] = child.delete(k1);
-        if (children[1] == null) return null;
+        child = child.delete(k1);
+        children[1] = child;
+        if (child == null) {
+            dispose();
+            return null;
+        }
+        if(child.dirty) setDirty();
         tryCompact();
         return this;
     }
 
-    private void branchInsert(TrieKey key, byte[] value) {
+    private boolean branchInsert(TrieKey key, byte[] value) {
         if (key.isEmpty()) {
-            setValue(value);
-            return;
+            return setValue(value);
         }
         Node child = getChild(key.get(0));
         if (child != null) {
-            child.insert(key.shift(), value);
-            return;
+            boolean mut = child.insert(key.shift(), value);
+            if (mut) setDirty();
+            return mut;
         }
         child = newLeaf(key.shift(), value);
         children[key.get(0)] = child;
+        setDirty();
+        return true;
     }
 
     private Node branchDelete(TrieKey key) {
         if (key.isEmpty()) {
             children[BRANCH_SIZE - 1] = null;
             tryCompact();
+            setDirty();
             return this;
         }
         int idx = key.get(0);
         Node child = (Node) children[idx];
         // delete failed, no need to compact
         if (child == null) return this;
-        children[idx] = child.delete(key.shift());
+        child = child.delete(key.shift());
+        children[idx] = child;
+        if(child == null || child.dirty) setDirty();
         tryCompact();
         return this;
     }
@@ -354,6 +388,7 @@ class Node {
     }
 
     public TrieKey getKey() {
+        parse();
         assertNotBranch();
         return (TrieKey) children[0];
     }
@@ -437,12 +472,5 @@ class Node {
         }
         children[0] = TrieKey.single(index);
         children[1] = n;
-    }
-
-
-    private byte[] getValueFromCache(byte[] reference) {
-        if (reference.length < MAX_KEY_SIZE) return reference;
-        return cache.get(reference)
-                .orElseThrow(() -> new RuntimeException("parse node failed: key not found"));
     }
 }
