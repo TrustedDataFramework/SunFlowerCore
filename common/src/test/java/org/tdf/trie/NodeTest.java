@@ -3,6 +3,10 @@ package org.tdf.trie;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.common.HashUtil;
+import org.tdf.common.Store;
+import org.tdf.serialize.RLPElement;
+import org.tdf.store.ByteArrayMapStore;
 import org.tdf.util.BigEndian;
 
 import java.nio.charset.StandardCharsets;
@@ -242,5 +246,19 @@ public class NodeTest {
         assert Arrays.equals(n.get(TrieKey.fromNormal("a".getBytes())), "eee".getBytes());
         n.delete(TrieKey.fromNormal("abcd".getBytes()));
         assert n.get(TrieKey.fromNormal("abc".getBytes())) != null;
+    }
+
+    @Test
+    public void test11(){
+        Node n = Node.newLeaf(TrieKey.fromNormal("test".getBytes()), "test".getBytes());
+        Arrays.asList("toaster", "toasting", "slow", "slowly")
+                .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
+        Store<byte[], byte[]> s = new ByteArrayMapStore<>();
+        RLPElement element = n.encodeAndCommit(HashUtil::sha256, s);
+        Node n2 = Node.fromEncoded(element.getEncoded(), s);
+        for (String s2 : Arrays.asList("toaster", "toasting", "slow", "slowly")
+        ) {
+            assert Arrays.equals(n2.get(TrieKey.fromNormal(s2.getBytes())), s2.getBytes());
+        }
     }
 }

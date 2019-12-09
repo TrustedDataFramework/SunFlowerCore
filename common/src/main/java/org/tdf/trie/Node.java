@@ -48,10 +48,10 @@ class Node {
     private Object[] children;
 
     static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> cache) {
-        return fromEncoded(RLPElement.fromEncoded(encoded).getAsList(), cache);
+        return fromEncoded(RLPElement.fromEncoded(encoded), cache);
     }
 
-    private static Node fromEncoded(RLPElement rlp, Store<byte[], byte[]> cache) {
+    static Node fromEncoded(RLPElement rlp, Store<byte[], byte[]> cache) {
         return Node.builder()
                 .rlp(rlp)
                 .cache(cache)
@@ -94,6 +94,7 @@ class Node {
                 encoded = RLPList.createEmpty(2);
                 encoded.add(RLPItem.fromBytes(getKey().toPacked(false)));
                 encoded.add(getExtension().encodeAndCommit(function, cache));
+                break;
             }
             default: {
                 encoded = RLPList.createEmpty(BRANCH_SIZE);
