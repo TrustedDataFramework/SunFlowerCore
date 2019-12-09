@@ -14,6 +14,7 @@ import org.tdf.util.ByteArraySet;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -62,7 +63,7 @@ public class TrieTest {
     @Test
     public void testDeleteShortString1() {
         String ROOT_HASH_BEFORE = "a9539c810cc2e8fa20785bdd78ec36cc1dab4b41f0d531e80a5e5fd25c3037ee";
-        String ROOT_HASH_AFTER =  "fc5120b4a711bca1f5bb54769525b11b3fb9a8d6ac0b8bf08cbb248770521758";
+        String ROOT_HASH_AFTER = "fc5120b4a711bca1f5bb54769525b11b3fb9a8d6ac0b8bf08cbb248770521758";
 
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new ByteArrayMapStore<>());
         Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
@@ -254,7 +255,7 @@ public class TrieTest {
         assertEquals(ROOT_HASH_AFTER2, Hex.toHexString(impl.getRootHash()));
     }
 
-    public static byte[] intToBytes(int val){
+    public static byte[] intToBytes(int val) {
         return ByteBuffer.allocate(Integer.BYTES).putInt(val).array();
     }
 
@@ -481,6 +482,44 @@ public class TrieTest {
 
     }
 
+
+    @Test
+    public void testGetFromRootNode() {
+        Store<byte[], byte[]> db = new ByteArrayMapStore<>();
+        TrieImpl impl = new TrieImpl(HashUtil::sha3, db);
+        Store<String, String> trie1 = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        trie1.put(cat, LONG_STRING);
+        TrieImpl impl2 = new TrieImpl(HashUtil::sha3, db, impl.getRootHash());
+        assertEquals(LONG_STRING, impl2.get(cat.getBytes()).map(String::new).get());
+    }
+
+
+    @Test
+    public void storageHashCalc_1() {
+
+        byte[] key1 = Hex.decode("0000000000000000000000000000000000000000000000000000000000000010");
+        byte[] key2 = Hex.decode("0000000000000000000000000000000000000000000000000000000000000014");
+        byte[] key3 = Hex.decode("0000000000000000000000000000000000000000000000000000000000000016");
+        byte[] key4 = Hex.decode("0000000000000000000000000000000000000000000000000000000000000017");
+
+        byte[] val1 = Hex.decode("947e70f9460402290a3e487dae01f610a1a8218fda");
+        byte[] val2 = Hex.decode("40");
+        byte[] val3 = Hex.decode("94412e0c4f0102f3f0ac63f0a125bce36ca75d4e0d");
+        byte[] val4 = Hex.decode("01");
+
+        TrieImpl storage = new TrieImpl(HashUtil::sha3, new ByteArrayMapStore<>());
+        storage.put(key1, val1);
+        storage.put(key2, val2);
+        storage.put(key3, val3);
+        storage.put(key4, val4);
+
+        String hash = Hex.toHexString(storage.getRootHash());
+
+        System.out.println(hash);
+        Assert.assertEquals("517eaccda568f3fa24915fed8add49d3b743b3764c0bc495b19a47c54dbc3d62", hash);
+    }
+
+
     @Test
 //    count n = 1000000 size trie 607ms
     public void test7() {
@@ -503,8 +542,86 @@ public class TrieTest {
         System.out.println("count size at " + size + " " + (end - start) + " ms");
     }
 
+
+    @Test // update the trie with blog key/val
+    // each time dump the entire trie
+    public void testSample_1() {
+
+        Store<byte[], byte[]> db = new ByteArrayMapStore<>();
+        TrieImpl impl = new TrieImpl(HashUtil::sha3, db);
+        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+
+        trie.put("dog", "puppy");
+        System.out.println();
+        Assert.assertEquals("ed6e08740e4a267eca9d4740f71f573e9aabbcc739b16a2fa6c1baed5ec21278", Hex.toHexString(impl.getRootHash()));
+
+        trie.put("do", "verb");
+        Assert.assertEquals("779db3986dd4f38416bfde49750ef7b13c6ecb3e2221620bcad9267e94604d36", Hex.toHexString(impl.getRootHash()));
+
+        trie.put("doggiestan", "aeswome_place");
+        Assert.assertEquals("8bd5544747b4c44d1274aa99a6293065fe319b3230e800203317e4c75a770099", Hex.toHexString(impl.getRootHash()));
+    }
+
+    // this case relates to a bug which led us to conflict on Morden network (block #486248)
+    // first part of the new Value was converted to String by #asString() during key deletion
+    // and some lines after String.getBytes() returned byte array which differed to array before converting
     @Test
-    public void testBugFix3() throws Exception{
+    public void testBugFix() throws Exception {
+
+        Map<String, String> dataMap = new HashMap<>();
+        dataMap.put("6e929251b981389774af84a07585724c432e2db487381810719c3dd913192ae2", "00000000000000000000000000000000000000000000000000000000000000be");
+        dataMap.put("6e92718d00dae27b2a96f6853a0bf11ded08bc658b2e75904ca0344df5aff9ae", "00000000000000000000000000000000000000000000002f0000000000000000");
+
+        TrieImpl trie = new TrieImpl(HashUtil::sha3, new ByteArrayMapStore<>());
+
+        for (Map.Entry<String, String> e : dataMap.entrySet()) {
+            trie.put(Hex.decode(e.getKey()), Hex.decode(e.getValue()));
+        }
+
+        assertArrayEquals(trie.get(Hex.decode("6e929251b981389774af84a07585724c432e2db487381810719c3dd913192ae2")).get(),
+                Hex.decode("00000000000000000000000000000000000000000000000000000000000000be"));
+
+        assertArrayEquals(trie.get(Hex.decode("6e92718d00dae27b2a96f6853a0bf11ded08bc658b2e75904ca0344df5aff9ae")).get(),
+                Hex.decode("00000000000000000000000000000000000000000000002f0000000000000000"));
+
+        trie.remove(Hex.decode("6e9286c946c6dd1f5d97f35683732dc8a70dc511133a43d416892f527dfcd243"));
+
+        assertArrayEquals(trie.get(Hex.decode("6e929251b981389774af84a07585724c432e2db487381810719c3dd913192ae2")).get(),
+                Hex.decode("00000000000000000000000000000000000000000000000000000000000000be"));
+
+        assertArrayEquals(trie.get(Hex.decode("6e92718d00dae27b2a96f6853a0bf11ded08bc658b2e75904ca0344df5aff9ae")).get(),
+                Hex.decode("00000000000000000000000000000000000000000000002f0000000000000000"));
+    }
+
+    @Test
+    public void testBugFix2() throws Exception {
+
+        Store<byte[], byte[]> src = new ByteArrayMapStore<>();
+
+        // Create trie: root -> BranchNode (..., NodeValue (less than 32 bytes), ...)
+        TrieImpl trie = new TrieImpl(HashUtil::sha3, src);
+        trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000011"), Hex.decode("11"));
+        trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000022"), Hex.decode("22"));
+
+        // Reset trie to refresh the nodes
+        trie = new TrieImpl(HashUtil::sha3, src, trie.getRootHash());
+
+        // Update trie: root -> dirty BranchNode (..., NodeValue (less than 32 bytes), ..., dirty NodeValue, ...)
+        trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000033"), Hex.decode("33"));
+
+        // BUG:
+        // In that case NodeValue (encoded as plain RLP list) isn't dirty
+        // while both rlp and hash fields are null, Node has been initialized with parsedRLP only
+        // Therefore any subsequent call to BranchNode.encode() fails with NPE
+
+        // FIX:
+        // Supply Node initialization with raw rlp value
+
+        assertEquals("36e350d9a1d9c02d5bc4539a05e51890784ea5d2b675a0b26725dbbdadb4d6e2", Hex.toHexString(trie.getRootHash()));
+    }
+
+    @Test
+    public void testBugFix3() throws Exception {
 
         Store<byte[], byte[]> src = new ByteArrayMapStore<>();
         // Scenario:
