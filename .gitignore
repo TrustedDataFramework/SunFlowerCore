@@ -39,3 +39,5 @@ target
 node_modules
 # idea compile out
 out
+
+*.ipr

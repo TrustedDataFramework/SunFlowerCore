@@ -56,7 +56,7 @@ public class VrfGenesis {
 
     private void setPayload(Block block) {
         long blockNum = block.getHeight();
-        VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKey();
+        VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKeyDummy();
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
         int round = 0;
         byte[] payloadBytes = VrfUtil.genPayload(blockNum, round, nonce, coinbase, difficulty,

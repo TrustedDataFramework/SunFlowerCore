@@ -12,10 +12,8 @@ public class VrfKeyTest {
     }
     
     @Test
-    public void testVrfSk()
+    public void testVrfSkKeyStore()
     {
-        VrfPrivateKey sk = VrfUtil.getVrfPrivateKey();
-        assert(ByteUtil.toHexString(sk.generatePublicKey().getEncoded()).equals(VrfUtil.VRF_PK));
-        assert(ByteUtil.toHexString(sk.getEncoded()).equals(VrfUtil.VRF_SK));
+        VrfUtil.getVrfPrivateKey("vrf-data1");
     }
 }
