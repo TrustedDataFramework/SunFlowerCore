@@ -1,5 +1,7 @@
 package org.tdf.trie;
 
+import org.tdf.common.Store;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
@@ -14,8 +16,11 @@ public class TrieImpl implements Trie {
 
     HashFunction function;
 
-    public TrieImpl(HashFunction function) {
+    Store<byte[], byte[]> cache;
+
+    public TrieImpl(HashFunction function, Store<byte[], byte[]> cache) {
         this.function = function;
+        this.cache = cache;
     }
 
     @Override
@@ -80,5 +85,10 @@ public class TrieImpl implements Trie {
     @Override
     public void clear() {
         root = null;
+    }
+
+    public byte[] getRootHash(){
+        if(root == null) throw new RuntimeException("empty trie");
+        return root.encodeAndCommit(function, cache).getAsItem().get();
     }
 }
