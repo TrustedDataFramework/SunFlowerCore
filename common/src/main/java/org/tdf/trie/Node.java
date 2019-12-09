@@ -364,7 +364,9 @@ class Node {
     }
 
     private Node branchDelete(TrieKey key) {
-        if (key.isEmpty() && getValue() != null) {
+        if (key.isEmpty()) {
+            // delete failed
+            if(getValue() == null) return this;
             children[BRANCH_SIZE - 1] = null;
             tryCompact();
             setDirty();
