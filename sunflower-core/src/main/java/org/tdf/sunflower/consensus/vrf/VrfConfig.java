@@ -19,4 +19,6 @@ public class VrfConfig {
     private boolean enableMining;
     @JsonProperty("miner-coin-base")
     private String minerCoinBase;
+    @JsonProperty("vrf-data-dir")
+    private String vrfDataDir;
 }

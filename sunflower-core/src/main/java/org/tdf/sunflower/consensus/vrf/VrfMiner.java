@@ -75,7 +75,6 @@ public class VrfMiner implements Miner {
 
     public VrfMiner() {
         listeners = new ArrayList<>();
-        vrfSk = VrfUtil.getVrfPrivateKey();
     }
 
     public void setGenesis(VrfGenesis genesis) {
@@ -87,6 +86,8 @@ public class VrfMiner implements Miner {
         this.minerPublicKeyHash = PublicKeyHash.from(vrfConfig.getMinerCoinBase())
                 .orElseThrow(() -> new ConsensusEngineLoadException("invalid address " + vrfConfig.getMinerCoinBase()));
         this.minerCoinbase = this.minerPublicKeyHash.getPublicKeyHash();
+        vrfSk = VrfUtil.getVrfPrivateKey(vrfConfig);
+        VrfUtil.VRF_PK = Hex.toHexString(vrfSk.getSigner().generatePublicKey().getEncoded());
     }
 
     public void setRepository(BlockRepository blockRepository) {

@@ -56,7 +56,7 @@ public class VrfBlockFieldsTest {
         String difficultyStr = "cdef";
         String blockHashStr = "abcdef";
         String minerCoinbaseStr = "0123456789abcdef";
-        VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKey();
+        VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKeyDummy();
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
 
         byte[] encoded = VrfUtil.genPayload(blockNum, round, nonceStr, minerCoinbaseStr, difficultyStr, blockHashStr,
@@ -86,7 +86,7 @@ public class VrfBlockFieldsTest {
         String difficultyStr = "cdef";
         String blockHashStr = "abcdef";
         String minerCoinbaseStr = "0123456789abcdef";
-        VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKey();
+        VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKeyDummy();
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
 
         byte[] encoded = VrfUtil.genPayload(blockNum, round, nonceStr, minerCoinbaseStr, difficultyStr, blockHashStr,
@@ -119,7 +119,7 @@ public class VrfBlockFieldsTest {
         String difficultyStr = "cdef";
         String blockHashStr = "abcdef";
         String minerCoinbaseStr = "0123456789abcdef";
-        VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKey();
+        VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKeyDummy();
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
 
         VrfBlockFields vrfBlockFields = VrfUtil.genVrfBlockFields(blockNum, round, nonceStr, minerCoinbaseStr,
