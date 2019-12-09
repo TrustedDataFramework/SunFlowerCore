@@ -9,7 +9,7 @@ import org.tdf.serialize.RLPElement;
 import org.tdf.serialize.RLPItem;
 import org.tdf.serialize.RLPList;
 
-import static org.tdf.trie.TrieKey.EMPTY_TERMINAL;
+import static org.tdf.trie.TrieKey.EMPTY;
 
 /**
  * patricia tree's node inspired by:
@@ -18,13 +18,20 @@ import static org.tdf.trie.TrieKey.EMPTY_TERMINAL;
  * https://github.com/ethereum/wiki/wiki/Patricia-Tree#optimization
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder
+@Builder(access = AccessLevel.PRIVATE)
 class Node {
     private static final int BRANCH_SIZE = 17;
     private static final int MAX_KEY_SIZE = 32;
     private boolean dirty;
 
-    private byte[] reference;
+    private void setDirty(){
+        dirty = true;
+        rlp = null;
+    }
+
+    // if rlp is a list, it is actual encoding of this node
+    // if rlp is a item, it is a hash, its actual rlp encoding is stored in cache
+    private RLPElement rlp;
 
     private Store<byte[], byte[]> cache;
 
@@ -40,9 +47,13 @@ class Node {
     // the first element is trie key and the second element is value(leaf node) or child node(extension node)
     private Object[] children;
 
-    static Node fromReference(byte[] reference, Store<byte[], byte[]> cache) {
+    static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> cache) {
+        return fromEncoded(RLPElement.fromEncoded(encoded).getAsList(), cache);
+    }
+
+    private static Node fromEncoded(RLPElement rlp, Store<byte[], byte[]> cache) {
         return Node.builder()
-                .reference(reference)
+                .rlp(rlp)
                 .cache(cache)
                 .build();
     }
@@ -66,40 +77,82 @@ class Node {
                 .build();
     }
 
-    public byte[] getReference(HashFunction function) {
-        if (!dirty) return reference;
+    // encode and commit root node to store
+    // return rlp encoded
+    public RLPElement encodeAndCommit(HashFunction function, Store<byte[], byte[]> cache) {
+        if (!dirty) return rlp;
+        RLPList encoded;
         Type type = getType();
-        byte[] rlpEncoded;
-        if (type == Type.LEAF) {
-            RLPList list = RLPList.createEmpty(2);
-            list.add(RLPItem.fromBytes(getKey().toPacked()));
-            list.add(RLPItem.fromBytes(getValue()));
-            rlpEncoded = list.getEncoded();
-        }
-        if (type == Type.EXTENSION) {
-            RLPList list = RLPList.createEmpty(2);
-            list.add(RLPItem.fromBytes(getKey().toPacked()));
-            list.add(RLPItem.fromBytes(getExtension().getReference(function)));
-            rlpEncoded = list.getEncoded();
-        }
-        RLPList list = RLPList.createEmpty(BRANCH_SIZE);
-        for (int i = 0; i < BRANCH_SIZE - 1; i++) {
-            Node child = (Node) children[i];
-            if (child == null) {
-                list.add(RLPItem.NULL);
-                continue;
+        switch (type) {
+            case LEAF: {
+                encoded = RLPList.createEmpty(2);
+                encoded.add(RLPItem.fromBytes(getKey().toPacked(true)));
+                encoded.add(RLPItem.fromBytes(getValue()));
+                break;
             }
-            list.add(RLPItem.fromBytes(child.getReference(function)));
+            case EXTENSION: {
+                encoded = RLPList.createEmpty(2);
+                encoded.add(RLPItem.fromBytes(getKey().toPacked(false)));
+                encoded.add(getExtension().encodeAndCommit(function, cache));
+            }
+            default: {
+                encoded = RLPList.createEmpty(BRANCH_SIZE);
+                for (int i = 0; i < BRANCH_SIZE - 1; i++) {
+                    Node child = (Node) children[i];
+                    if (child == null) {
+                        encoded.add(RLPItem.NULL);
+                        continue;
+                    }
+                    encoded.add(child.encodeAndCommit(function, cache));
+                }
+                encoded.add(RLPItem.fromBytes(getValue()));
+            }
         }
-        list.add(RLPItem.fromBytes(getValue()));
-        rlpEncoded = list.getEncoded();
         dirty = false;
-        if (rlpEncoded.length < MAX_KEY_SIZE) {
-            reference = rlpEncoded;
-        } else {
-            reference = function.apply(rlpEncoded);
+        byte[] raw = encoded.getEncoded();
+        if (raw.length > MAX_KEY_SIZE) {
+            byte[] hash = function.apply(raw);
+            cache.put(hash, raw);
+            return RLPItem.fromBytes(hash);
         }
-        return reference;
+        return encoded;
+    }
+
+    // get actual rlp encoding in the cache
+    private void resolve(){
+        if(rlp.isList()) return;
+        byte[] hash = rlp.getAsItem().get();
+        rlp = cache.get(hash).map(RLPElement::fromEncoded)
+                .orElseThrow(() -> new RuntimeException("rlp encoding not found in cache"));
+    }
+
+    // parse encoded from cache
+    private void parse() {
+        // has parsed
+        if (children != null) return;
+        resolve();
+        RLPList rlp = this.rlp.getAsList();
+        if (rlp.size() == 2) {
+            children = new Object[2];
+            byte[] packed = rlp.get(0).getAsItem().get();
+            TrieKey key = TrieKey.fromPacked(packed);
+            children[0] = key;
+            boolean terminal = TrieKey.isTerminal(packed);
+            if (terminal) {
+                children[1] = rlp.get(1).getAsItem().get();
+                return;
+            }
+            children[1] = fromEncoded(rlp.get(1), cache);
+            return;
+        }
+        children = new Object[BRANCH_SIZE];
+        for (int i = 0; i < BRANCH_SIZE - 1; i++) {
+            if (rlp.get(i).isNull()) continue;
+            children[i] = fromEncoded(rlp.get(i), cache);
+        }
+        RLPItem item = rlp.get(BRANCH_SIZE - 1).getAsItem();
+        if (item.isNull()) return;
+        children[BRANCH_SIZE - 1] = item.get();
     }
 
     // wrap o to an extension or leaf node
@@ -115,11 +168,12 @@ class Node {
     }
 
     public Type getType() {
+        parse();
         if (children.length == BRANCH_SIZE) return Type.BRANCH;
         return children[1] instanceof Node ? Type.EXTENSION : Type.LEAF;
     }
 
-    public void setValue(byte[] value) {
+    private void setValue(byte[] value) {
         assertBranchOrLeaf();
         if (getType() == Type.BRANCH) {
             children[BRANCH_SIZE - 1] = value;
@@ -130,11 +184,13 @@ class Node {
 
     public byte[] getValue() {
         assertBranchOrLeaf();
+        parse();
         if (getType() == Type.BRANCH) return (byte[]) children[BRANCH_SIZE - 1];
         return (byte[]) children[1];
     }
 
     public byte[] get(TrieKey key) {
+        parse();
         Type type = getType();
         if (type == Type.BRANCH) {
             if (key.isEmpty()) return getValue();
@@ -168,6 +224,7 @@ class Node {
     }
 
     void insert(TrieKey key, @NonNull byte[] value) {
+        parse();
         Type type = getType();
         if (type == Type.BRANCH) {
             branchInsert(key, value);
@@ -221,6 +278,7 @@ class Node {
     }
 
     Node delete(TrieKey key) {
+        parse();
         Type type = getType();
         if (type == Type.BRANCH) {
             return branchDelete(key);
@@ -284,12 +342,12 @@ class Node {
         branchCompact(index);
     }
 
-    public Node getChild(int index) {
+    private Node getChild(int index) {
         assertBranch();
         return (Node) children[index];
     }
 
-    public Node getExtension() {
+    private Node getExtension() {
         assertExtension();
         return (Node) children[1];
     }
@@ -365,7 +423,7 @@ class Node {
         Object o = children[index];
         children = new Object[2];
         if (o instanceof byte[]) {
-            children[0] = EMPTY_TERMINAL;
+            children[0] = EMPTY;
             children[1] = o;
             return;
         }
@@ -380,36 +438,6 @@ class Node {
         children[1] = n;
     }
 
-    private void parse() {
-        // has parsed
-        RLPElement el;
-        if (reference.length < MAX_KEY_SIZE) {
-            el = RLPElement.fromEncoded(reference);
-        } else {
-            el = RLPElement.fromEncoded(cache.get(reference)
-                    .orElseThrow(() -> new RuntimeException("parse node failed: key not found")));
-        }
-        RLPList list = el.getAsList();
-        if (list.size() == 2) {
-            children = new Object[2];
-            TrieKey key = TrieKey.fromPacked(list.get(0).getAsItem().get());
-            children[0] = key;
-            if (key.isTerminal()) {
-                children[1] = getValueFromCache(list.get(1).getAsItem().get());
-                return;
-            }
-            children[1] = fromReference(list.get(1).getEncoded(), cache);
-            return;
-        }
-        children = new Object[BRANCH_SIZE];
-        for (int i = 0; i < BRANCH_SIZE - 1; i++) {
-            if (list.get(i).isNull()) continue;
-            children[i] = fromReference(list.get(i).getAsItem().get(), cache);
-        }
-        RLPItem item = list.get(BRANCH_SIZE - 1).getAsItem();
-        if (item.isNull()) return;
-        children[BRANCH_SIZE - 1] = getValueFromCache(item.get());
-    }
 
     private byte[] getValueFromCache(byte[] reference) {
         if (reference.length < MAX_KEY_SIZE) return reference;

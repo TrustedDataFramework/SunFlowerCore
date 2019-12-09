@@ -1,6 +1,5 @@
 package org.tdf.trie;
 
-import lombok.Getter;
 import org.tdf.common.HexBytes;
 
 // HEX encoding contains one byte for each nibble of the key and an optional trailing
@@ -23,10 +22,7 @@ public class TrieKey {
     private final byte[] data;
     private final int offset;
 
-    static TrieKey EMPTY_TERMINAL = empty(true);
-
-    @Getter
-    private boolean terminal;
+    static TrieKey EMPTY = new TrieKey(EMPTY_BYTE_ARRAY, 0);
 
     public static TrieKey fromNormal(byte[] key) {
         return new TrieKey(key);
@@ -36,30 +32,30 @@ public class TrieKey {
         // flag = data[0] >> 4
         // flag & ODD_OFFSET_FLAG != 0 -> the length is odd, we drop the first hex
         // flag & ODD_OFFSET_FLAG == 0 -> the length is event, the first hex is flag and second hex is useless
-        return new TrieKey(data, ((data[0] >> 4) & ODD_OFFSET_FLAG) != 0 ? 1 : 2, ((data[0] >> 4) & TERMINATOR_FLAG) != 0);
+        return new TrieKey(data, ((data[0] >> 4) & ODD_OFFSET_FLAG) != 0 ? 1 : 2);
     }
 
-    public static TrieKey empty(boolean terminal) {
-        return new TrieKey(EMPTY_BYTE_ARRAY, 0, terminal);
+    static boolean isTerminal(byte[] packed){
+        return ((packed[0] >> 4) & TERMINATOR_FLAG) != 0;
     }
+
 
     public static TrieKey single(int hex) {
-        TrieKey ret = new TrieKey(new byte[1], 1, false);
+        TrieKey ret = new TrieKey(new byte[1], 1);
         ret.set(0, hex);
         return ret;
     }
 
     private TrieKey(byte[] data) {
-        this(data, 0, true);
+        this(data, 0);
     }
 
-    private TrieKey(byte[] data, int offset, boolean terminal) {
+    private TrieKey(byte[] data, int offset) {
         this.data = data;
         this.offset = offset;
-        this.terminal = terminal;
     }
 
-    public byte[] toPacked() {
+    public byte[] toPacked(boolean terminal) {
         // offset & 1 == 0 -> length is even
         // offset & 1 != 0 -> length is odd
         int flags = ((offset & 1) != 0 ? ODD_OFFSET_FLAG : 0) | (terminal ? TERMINATOR_FLAG : 0);
@@ -112,12 +108,11 @@ public class TrieKey {
     }
 
     public TrieKey concat(TrieKey that) {
-        if (isTerminal()) throw new RuntimeException("Can' append to terminal key: " + this + " + " + that);
         int size = size();
         int thatSize = that.size();
         int newSize = size + thatSize;
         byte[] newBytes = new byte[(newSize + 1) >> 1];
-        TrieKey ret = new TrieKey(newBytes, newSize & 1, that.isTerminal());
+        TrieKey ret = new TrieKey(newBytes, newSize & 1);
         for (int i = 0; i < size; i++) {
             ret.set(i, get(i));
         }
@@ -132,7 +127,7 @@ public class TrieKey {
     }
 
     public TrieKey shift(int hexCnt) {
-        return new TrieKey(this.data, offset + hexCnt, terminal);
+        return new TrieKey(this.data, offset + hexCnt);
     }
 
     public TrieKey getCommonPrefix(TrieKey k) {
@@ -142,8 +137,7 @@ public class TrieKey {
         while (prefixLen < thisSize && prefixLen < thatSize && get(prefixLen) == k.get(prefixLen))
             prefixLen++;
         byte[] prefixKey = new byte[(prefixLen + 1) >> 1];
-        TrieKey ret = new TrieKey(prefixKey, (prefixLen & 1) == 0 ? 0 : 1,
-                prefixLen == size() && prefixLen == k.size() && terminal && k.isTerminal());
+        TrieKey ret = new TrieKey(prefixKey, (prefixLen & 1) == 0 ? 0 : 1);
         for (int i = 0; i < prefixLen; i++) {
             ret.set(i, k.get(i));
         }
@@ -174,16 +168,6 @@ public class TrieKey {
         return shift(thatSize);
     }
 
-    public TrieKey asNonTerminal(){
-        terminal = false;
-        return this;
-    }
-
-    public TrieKey asTerminal(){
-        terminal = true;
-        return this;
-    }
-
     @Override
     public boolean equals(Object obj) {
         TrieKey k = (TrieKey) obj;
@@ -193,11 +177,11 @@ public class TrieKey {
         for (int i = 0; i < len; i++) {
             if (get(i) != k.get(i)) return false;
         }
-        return isTerminal() == k.isTerminal();
+        return true;
     }
 
     @Override
     public String toString() {
-        return HexBytes.encode(data).substring(offset) + (isTerminal() ? "T" : "");
+        return HexBytes.encode(data).substring(offset);
     }
 }

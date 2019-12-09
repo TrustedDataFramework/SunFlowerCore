@@ -15,6 +15,6 @@ public class TrieKeyTest {
         assert k.get(0) == 1;
         assert k.get(1) == 2;
         assert k.get(2) == 3;
-        assert Arrays.equals(k.toPacked(), new byte[]{0x11, 0x23});
+        assert Arrays.equals(k.toPacked(false), new byte[]{0x11, 0x23});
     }
 }

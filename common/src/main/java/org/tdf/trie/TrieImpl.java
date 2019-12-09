@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.tdf.trie.TrieKey.EMPTY;
+
 // enhanced radix tree
 public class TrieImpl implements Trie {
 
@@ -47,7 +49,7 @@ public class TrieImpl implements Trie {
     public Set<byte[]> keySet() {
         if(root == null) return Collections.emptySet();
         ScanKeySet action = new ScanKeySet();
-        root.traverse(TrieKey.empty(false), action);
+        root.traverse(EMPTY, action);
         return action.getBytes();
     }
 
@@ -55,7 +57,7 @@ public class TrieImpl implements Trie {
     public Collection<byte[]> values() {
         if(root == null) return Collections.emptySet();
         ScanValues action = new ScanValues();
-        root.traverse(TrieKey.empty(false), action);
+        root.traverse(EMPTY, action);
         return action.getBytes();
     }
 
