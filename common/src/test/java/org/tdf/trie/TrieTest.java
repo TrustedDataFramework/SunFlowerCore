@@ -1,6 +1,7 @@
 package org.tdf.trie;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -641,5 +642,73 @@ public class TrieTest {
         trie.remove(Hex.decode("0000000000000000000000000000000000000000000000000000000000011255"));
 
         assertFalse(src.containsKey(Hex.decode("5152f9274abb8e61f3956ccd08d31e38bfa2913afd23bc13b5e7bb709ce7f603")));
+    }
+
+    // TODO: test trie rollback
+    @Ignore
+    @Test
+    public void testRollbackTrie() throws URISyntaxException, IOException {
+
+        Store<byte[], byte[]> src = new ByteArrayMapStore<>();
+        TrieImpl impl = new TrieImpl(HashUtil::sha3, src);
+        Store<String, String> trieSingle = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        URL massiveUpload_1 = ClassLoader
+                .getSystemResource("trie/massive-upload.dmp");
+
+        File file = new File(massiveUpload_1.toURI());
+        List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
+
+        List<byte[]> roots = new ArrayList<>();
+        Map<String, Map<String, String>> trieDumps = new HashMap<>();
+
+        for (int i = 0; i < 100; ++i) {
+
+            String[] keyVal = strData.get(i).split("=");
+
+            if (keyVal[0].equals("*"))
+                trieSingle.remove(keyVal[1].trim());
+            else
+                trieSingle.put(keyVal[0].trim(), keyVal[1].trim());
+
+            byte[] hash = impl.getRootHash();
+            roots.add(hash);
+
+            String key = Hex.toHexString(hash);
+            trieDumps.put(key, dump(trieSingle));
+        }
+
+        // compare all 100 rollback dumps and
+        // the originaly saved dumps
+        for (int i = 1; i < roots.size(); ++i) {
+
+            byte[] root = roots.get(i);
+
+            TrieImpl impl1 = new TrieImpl(HashUtil::sha3, src, root);
+            trieSingle = new StoreWrapper<>(impl1, Serializers.STRING, Serializers.STRING);
+            Map<String, String> dumped = dump(trieSingle);
+            assert equals(trieDumps.get(Hex.toHexString(root)), dumped);
+        }
+
+    }
+
+    private Map<String, String> dump(Store<String, String> store) {
+        Map<String, String> m = new HashMap<>();
+        store.keySet().forEach(x -> m.put(x, store.get(x).get()));
+        return m;
+    }
+
+    private boolean equals(Map<String, String> m1, Map<String, String> m2) {
+        if(m1.size() != m2.size()) return false;
+        for(String k: m1.keySet()){
+            String v1 = m1.get(k);
+            if(!m2.containsKey(k)) return false;
+            if(!v1.equals(m2.get(k))) return false;
+        }
+        for(String k: m2.keySet()){
+            String v2 = m2.get(k);
+            if(!m1.containsKey(k)) return false;
+            if(!v2.equals(m1.get(k))) return false;
+        }
+        return true;
     }
 }
