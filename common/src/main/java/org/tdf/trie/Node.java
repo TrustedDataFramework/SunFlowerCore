@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
+import org.tdf.common.HexBytes;
 import org.tdf.common.Store;
 import org.tdf.serialize.RLPElement;
 import org.tdf.serialize.RLPItem;
@@ -88,7 +89,8 @@ class Node {
 
     // encode and commit root node to store
     // return rlp encoded
-    public RLPElement encodeAndCommit(HashFunction function, Store<byte[], byte[]> cache) {
+    // if encodeAndCommit is call at root node, force hash is set to true
+    public RLPElement encodeAndCommit(HashFunction function, Store<byte[], byte[]> cache, boolean forceHash) {
         if (!dirty) return hash != null ? RLPItem.fromBytes(hash) : rlp;
         Type type = getType();
         switch (type) {
@@ -101,7 +103,7 @@ class Node {
             case EXTENSION: {
                 rlp = RLPList.createEmpty(2);
                 rlp.add(RLPItem.fromBytes(getKey().toPacked(false)));
-                rlp.add(getExtension().encodeAndCommit(function, cache));
+                rlp.add(getExtension().encodeAndCommit(function, cache, false));
                 break;
             }
             default: {
@@ -112,15 +114,16 @@ class Node {
                         rlp.add(RLPItem.NULL);
                         continue;
                     }
-                    rlp.add(child.encodeAndCommit(function, cache));
+                    rlp.add(child.encodeAndCommit(function, cache, false));
                 }
                 rlp.add(RLPItem.fromBytes(getValue()));
             }
         }
+        if(hash != null) cache.remove(hash);
         dirty = false;
         byte[] raw = rlp.getEncoded();
         // if encoded size is great than or equals, store node to db and return a hash reference
-        if (raw.length >= MAX_KEY_SIZE) {
+        if (raw.length >= MAX_KEY_SIZE || forceHash) {
             hash = function.apply(raw);
             cache.put(hash, raw);
             return RLPItem.fromBytes(hash);
@@ -263,9 +266,20 @@ class Node {
         }
 
         // space is not enough, convert to branch node
-        if (commonPrefix.isEmpty() || (type == Type.LEAF && commonPrefix.size() == current.size())) {
+        if (commonPrefix.isEmpty()) {
             toBranch();
             branchInsert(key, value);
+            setDirty();
+            return true;
+        }
+
+        // convert self to extension node
+        if((type == Type.LEAF && commonPrefix.size() == current.size())){
+            byte[] val = getValue();
+            Node newBranch = newBranch();
+            children[1] = newBranch;
+            newBranch.setValue(val);
+            newBranch.branchInsert(key.shift(commonPrefix.size()), value);
             setDirty();
             return true;
         }
@@ -274,7 +288,9 @@ class Node {
         if (type == Type.EXTENSION && commonPrefix.size() == current.size()) {
             // TODO: remove this assertion for the extension must be branch
             getExtension().assertBranch();
-            return getExtension().branchInsert(key.shift(commonPrefix.size()), value);
+            boolean dirty = getExtension().branchInsert(key.shift(commonPrefix.size()), value);
+            this.dirty = dirty;
+            return dirty;
         }
 
         setDirty();
@@ -337,9 +353,9 @@ class Node {
         }
         Node child = getChild(key.get(0));
         if (child != null) {
-            boolean mut = child.insert(key.shift(), value);
-            if (mut) setDirty();
-            return mut;
+            boolean dirty = child.insert(key.shift(), value);
+            this.dirty = dirty;
+            return dirty;
         }
         child = newLeaf(key.shift(), value);
         children[key.get(0)] = child;
@@ -348,7 +364,7 @@ class Node {
     }
 
     private Node branchDelete(TrieKey key) {
-        if (key.isEmpty()) {
+        if (key.isEmpty() && getValue() != null) {
             children[BRANCH_SIZE - 1] = null;
             tryCompact();
             setDirty();
@@ -472,5 +488,10 @@ class Node {
         }
         children[0] = TrieKey.single(index);
         children[1] = n;
+    }
+
+    @Override
+    public String toString(){
+        return getType().toString();
     }
 }

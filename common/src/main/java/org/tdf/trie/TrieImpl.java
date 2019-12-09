@@ -1,6 +1,7 @@
 package org.tdf.trie;
 
 import org.tdf.common.Store;
+import org.tdf.serialize.RLPItem;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -11,6 +12,7 @@ import static org.tdf.trie.TrieKey.EMPTY;
 
 // enhanced radix tree
 public class TrieImpl implements Trie {
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private Node root;
 
@@ -21,6 +23,12 @@ public class TrieImpl implements Trie {
     public TrieImpl(HashFunction function, Store<byte[], byte[]> cache) {
         this.function = function;
         this.cache = cache;
+    }
+
+    public TrieImpl(HashFunction function, Store<byte[], byte[]> cache, byte[] rootHash) {
+        this.function = function;
+        this.cache = cache;
+        this.root = Node.fromEncoded(RLPItem.fromBytes(rootHash), cache);
     }
 
     @Override
@@ -52,7 +60,7 @@ public class TrieImpl implements Trie {
 
     @Override
     public Set<byte[]> keySet() {
-        if(root == null) return Collections.emptySet();
+        if (root == null) return Collections.emptySet();
         ScanKeySet action = new ScanKeySet();
         root.traverse(EMPTY, action);
         return action.getBytes();
@@ -60,7 +68,7 @@ public class TrieImpl implements Trie {
 
     @Override
     public Collection<byte[]> values() {
-        if(root == null) return Collections.emptySet();
+        if (root == null) return Collections.emptySet();
         ScanValues action = new ScanValues();
         root.traverse(EMPTY, action);
         return action.getBytes();
@@ -87,8 +95,8 @@ public class TrieImpl implements Trie {
         root = null;
     }
 
-    public byte[] getRootHash(){
-        if(root == null) throw new RuntimeException("empty trie");
-        return root.encodeAndCommit(function, cache).getAsItem().get();
+    public byte[] getRootHash() {
+        if (root == null) return function.apply(RLPItem.NULL.getEncoded());
+        return root.encodeAndCommit(function, cache, true).getAsItem().get();
     }
 }
