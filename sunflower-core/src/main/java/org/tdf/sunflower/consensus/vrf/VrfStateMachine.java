@@ -17,6 +17,8 @@ import org.tdf.sunflower.consensus.vrf.core.*;
 import org.tdf.sunflower.consensus.vrf.db.ByteArrayWrapper;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 /**
  * @author James Hu
  * @since 2019/6/20
@@ -783,7 +785,7 @@ public class VrfStateMachine {
 		notifyStateQueue.add(stateChanged);
 	}
 
-	private void notifyStateChanged(int oldState, int newState) throws DecoderException {
+	private void notifyStateChanged(int oldState, int newState) throws DecoderException, JsonProcessingException {
 		if (listeners.isEmpty()) {
 			return;
 		}

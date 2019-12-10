@@ -18,8 +18,10 @@ import org.tdf.common.Header;
 import org.tdf.common.HexBytes;
 import org.tdf.common.Miner;
 import org.tdf.common.MinerListener;
+import org.tdf.common.PeerServer;
 import org.tdf.common.Transaction;
 import org.tdf.exception.ConsensusEngineLoadException;
+import org.tdf.serialize.RLPSerializer;
 import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.poa.Proposer;
@@ -34,13 +36,22 @@ import org.tdf.sunflower.consensus.vrf.core.VrfRound;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
+import org.tdf.sunflower.net.MessageBuilder;
+import org.tdf.sunflower.proto.Code;
+import org.tdf.sunflower.proto.Message;
 import org.tdf.sunflower.util.ByteUtil;
-import org.tdf.util.BigEndian;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Getter
+@Setter
 public class VrfMiner implements Miner {
+
     private VrfConfig vrfConfig;
 
     PublicKeyHash minerPublicKeyHash;
@@ -72,6 +83,9 @@ public class VrfMiner implements Miner {
     // So let it setup new VrfRound from latest block number.
     private boolean blockSyncing;
     private static final int VRF_BLOCK_EARLY_BROADCAST_PRIORITY = 10;
+
+    private PeerServer peerServer;
+    private MessageBuilder messageBuilder;
 
     public VrfMiner() {
         listeners = new ArrayList<>();
@@ -279,7 +293,7 @@ public class VrfMiner implements Miner {
     private boolean setupVrfMiner(VrfStateMachine vrfStateMachine) {
         StateMachineListener listener = new StateMachineListener() {
             @Override
-            public void stateChanged(int from, int to) throws DecoderException {
+            public void stateChanged(int from, int to) throws DecoderException, JsonProcessingException {
                 log.info("state changed, State {} -> {}, blockSyncing {}", from, to, blockSyncing);
 
                 if (from == VrfStateMachine.VRF_STATE_INIT && to == VrfStateMachine.VRF_STATE_PROPOSAL) {
@@ -524,7 +538,7 @@ public class VrfMiner implements Miner {
         return null;
     }
 
-    private void proposeNewBlock(VrfStateMachine vrfStateMachine) throws DecoderException {
+    private void proposeNewBlock(VrfStateMachine vrfStateMachine) throws DecoderException, JsonProcessingException {
         VrfRound vrfRound = vrfStateMachine.getVrfRound();
         long blockNum = vrfRound.getBlockNum();
         int round = vrfRound.getRound();
@@ -666,7 +680,7 @@ public class VrfMiner implements Miner {
 
     // Try to check committed proposal and block body.
     // If block body is matched with committed proposal, do the final commit
-    private void proposeFinalCommit(VrfStateMachine vrfStateMachine) {
+    private void proposeFinalCommit(VrfStateMachine vrfStateMachine) throws JsonProcessingException {
         VrfRound vrfRound = vrfStateMachine.getVrfRound();
         long blockNum = vrfRound.getBlockNum();
         int round = vrfRound.getRound();
@@ -712,7 +726,8 @@ public class VrfMiner implements Miner {
         }
     }
 
-    private void checkAndProcessNewProposal(VrfStateMachine vrfStateMachine) throws DecoderException {
+    private void checkAndProcessNewProposal(VrfStateMachine vrfStateMachine)
+            throws DecoderException, JsonProcessingException {
         VrfRound vrfRound = vrfStateMachine.getVrfRound();
         long blockNum = vrfRound.getBlockNum();
         int round = vrfRound.getRound();
@@ -723,9 +738,6 @@ public class VrfMiner implements Miner {
                     blockNum - 1);
 
             VrfBlockWrapper finalBlock = vrfStateMachine.getFinalBlock();
-
-            // Notify listeners.
-            listeners.forEach(l -> l.onBlockMined(finalBlock.getBlock()));
 
             if (finalBlock == null) {
                 // Two cases:
@@ -747,12 +759,22 @@ public class VrfMiner implements Miner {
         return true;
     }
 
-    private void sendProposalProof(ProposalProof prosalProof) {
-
+    private void sendNewBlock(Block block) throws JsonProcessingException {
+        byte[] encoded = RLPSerializer.SERIALIZER.serialize(block);
+        Message message = messageBuilder.buildMessage(Code.VRF_BLOCK, VrfConstants.MESSAGE_TTL, encoded);
+        peerServer.broadcast(message.toByteArray());
     }
 
-    private void sendNewBlock(Block block) {
+    private void sendProposalProof(ProposalProof prosalProof) throws JsonProcessingException {
+        byte[] encoded = RLPSerializer.SERIALIZER.serialize(prosalProof);
+        Message message = messageBuilder.buildMessage(Code.VRF_PROPOSAL_PROOF, VrfConstants.MESSAGE_TTL, encoded);
+        peerServer.broadcast(message.toByteArray());
+    }
 
+    private void sendCommitProof(CommitProof commitProof) throws JsonProcessingException {
+        byte[] encoded = RLPSerializer.SERIALIZER.serialize(commitProof);
+        Message message = messageBuilder.buildMessage(Code.VRF_COMMIT_PROOF, VrfConstants.MESSAGE_TTL, encoded);
+        peerServer.broadcast(message.toByteArray());
     }
 
     private boolean validateAndAddNewBlock(Block block) {
@@ -764,10 +786,9 @@ public class VrfMiner implements Miner {
     }
 
     private ImportResult tryToConnect(Block block) {
+        // Notify listeners.
+        listeners.forEach(l -> l.onBlockMined(block));
         return ImportResult.IMPORTED_BEST;
     }
 
-    private void sendCommitProof(CommitProof commitProof) {
-
-    }
 }
