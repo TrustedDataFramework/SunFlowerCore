@@ -54,6 +54,13 @@ class Node {
     // the first element is trie key and the second element is value(leaf node) or child node(extension node)
     private Object[] children;
 
+    static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache){
+        return builder()
+                .hash(hash)
+                .readOnlyCache(readOnlyCache)
+                .build();
+    }
+
     // create root node from database and reference
     static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> readOnlyCache) {
         return fromEncoded(RLPElement.fromEncoded(encoded), readOnlyCache);

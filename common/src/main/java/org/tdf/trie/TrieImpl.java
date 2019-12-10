@@ -3,6 +3,7 @@ package org.tdf.trie;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import org.tdf.serialize.Codec;
 import org.tdf.serialize.RLPItem;
 import org.tdf.store.CachedStore;
 import org.tdf.store.ReadOnlyStore;
@@ -12,13 +13,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.tdf.trie.TrieKey.EMPTY;
 
 // enhanced radix tree
 @Builder(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
-public class TrieImpl implements Trie {
+public class TrieImpl<V> implements Trie<V> {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private Node root;
@@ -27,21 +29,28 @@ public class TrieImpl implements Trie {
 
     CachedStore<byte[]> cache;
 
-    private TrieImpl(){}
+    Codec<V, byte[]> codec;
 
-    public TrieImpl(HashFunction function, Store<byte[], byte[]> store) {
+    private TrieImpl() {
+    }
+
+    public TrieImpl(HashFunction function, Store<byte[], byte[]> store, Codec<V, byte[]> codec) {
         this.function = function;
         this.cache = new CachedStore<>(store);
+        this.codec = codec;
     }
 
     @Override
-    public Optional<byte[]> get(byte[] bytes) {
+    public Optional<V> get(byte[] bytes) {
         if (root == null) return Optional.empty();
-        return Optional.ofNullable(root.get(TrieKey.fromNormal(bytes)));
+        return Optional.ofNullable(root.get(TrieKey.fromNormal(bytes))).map(codec.getDecoder());
     }
 
-    @Override
-    public void put(byte[] bytes, byte[] bytes2) {
+    public void put(byte[] bytes, V val){
+        putBytes(bytes, codec.getEncoder().apply(val));
+    }
+
+    private void putBytes(byte[] bytes, byte[] bytes2) {
         if (bytes == null || bytes.length == 0) throw new IllegalArgumentException("key cannot be null");
         if (bytes2 == null || bytes2.length == 0) {
             remove(bytes);
@@ -55,9 +64,9 @@ public class TrieImpl implements Trie {
     }
 
     @Override
-    public void putIfAbsent(byte[] bytes, byte[] bytes2) {
+    public void putIfAbsent(byte[] bytes, V val) {
         if (root != null && root.get(TrieKey.fromNormal(bytes)) != null) return;
-        put(bytes, bytes2);
+        put(bytes, val);
     }
 
     @Override
@@ -75,11 +84,13 @@ public class TrieImpl implements Trie {
     }
 
     @Override
-    public Collection<byte[]> values() {
+    public Collection<V> values() {
         if (root == null) return Collections.emptySet();
         ScanValues action = new ScanValues();
         root.traverse(EMPTY, action);
-        return action.getBytes();
+        return action.getBytes().stream()
+                .map(codec.getDecoder())
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -106,28 +117,23 @@ public class TrieImpl implements Trie {
 
     public byte[] getRootHash() {
         commit();
-        if(root == null) return function.apply(RLPItem.NULL.getEncoded());
+        if (root == null) return function.apply(RLPItem.NULL.getEncoded());
         return root.getHash();
     }
 
-    private void commit(){
-        if(root == null || !isDirty()) return;
+    private void commit() {
+        if (root == null || !isDirty()) return;
         this.root.encodeAndCommit(function, cache, true, true);
     }
 
     @Override
-    public TrieImpl createSnapshot() {
+    public TrieImpl<V> createSnapshot() {
         commit();
         CachedStore<byte[]> cloned = cache.clone();
-        return builder()
-                .function(function)
-                .cache(cloned)
-                .root(
-                        Node.fromEncoded(
-                                RLPItem.fromBytes(getRootHash()), new ReadOnlyStore<>(cloned)
-                        )
-                )
-                .build();
+        return new TrieImpl<>(
+                Node.fromRootHash(getRootHash(), new ReadOnlyStore<>(cloned)),
+                function, cloned, codec
+        );
     }
 
     @Override

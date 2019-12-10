@@ -2,9 +2,9 @@ package org.tdf.trie;
 
 import org.tdf.store.Store;
 
-public interface Trie extends Store<byte[], byte[]> {
+public interface Trie<V> extends Store<byte[], V> {
     // create a snap shot
-    Trie createSnapshot();
+    Trie<V> createSnapshot();
     // get root hash of current trie
     byte[] getRootHash();
 }
