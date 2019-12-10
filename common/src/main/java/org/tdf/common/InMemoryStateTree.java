@@ -1,7 +1,6 @@
 package org.tdf.common;
 
 import org.tdf.exception.StateUpdateException;
-import org.tdf.serialize.SerializeDeserializer;
 import org.tdf.util.ExceptionUtil;
 
 import java.util.*;
@@ -10,6 +9,8 @@ import java.util.stream.Collectors;
 /**
  * State tree for account related object storage
  */
+@Deprecated
+// use trie instead
 public class InMemoryStateTree<T extends ForkAbleState<T>> implements StateTree<T>{
     private StateMap<T> root;
     private ChainCache<StateMap<T>> cache;

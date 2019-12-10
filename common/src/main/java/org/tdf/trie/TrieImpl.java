@@ -1,8 +1,8 @@
 package org.tdf.trie;
 
 import lombok.Setter;
-import org.tdf.common.Store;
 import org.tdf.serialize.RLPItem;
+import org.tdf.store.Store;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -117,8 +117,9 @@ public class TrieImpl implements Trie {
     }
 
     @Override
-    public void flush() {
-        if (root == null) return;
+    public boolean flush() {
+        if (root == null) return false;
         this.root.encodeAndCommit(function, cache, true, true);
+        return true;
     }
 }

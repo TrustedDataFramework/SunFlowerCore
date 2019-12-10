@@ -11,6 +11,7 @@ import org.tdf.serialize.HexBytesEncoder;
 import org.tdf.serialize.RLPDecoding;
 import org.tdf.serialize.RLPEncoding;
 import org.tdf.util.FastByteComparisons;
+
 import java.util.Arrays;
 
 /**

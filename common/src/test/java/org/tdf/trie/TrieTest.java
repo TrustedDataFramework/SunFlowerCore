@@ -6,9 +6,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.spongycastle.util.encoders.Hex;
 import org.tdf.common.HashUtil;
-import org.tdf.common.Store;
 import org.tdf.serialize.Codecs;
 import org.tdf.store.ByteArrayMapStore;
+import org.tdf.store.Store;
 import org.tdf.store.StoreWrapper;
 import org.tdf.util.ByteArraySet;
 

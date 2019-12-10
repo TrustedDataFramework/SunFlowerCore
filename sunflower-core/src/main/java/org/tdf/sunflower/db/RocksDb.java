@@ -3,7 +3,8 @@ package org.tdf.sunflower.db;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.rocksdb.*;
-import org.tdf.common.DbSettings;
+import org.tdf.store.DatabaseStore;
+import org.tdf.store.DbSettings;
 import org.tdf.sunflower.util.FileUtils;
 
 import java.io.IOException;
@@ -17,7 +18,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static java.lang.System.arraycopy;
 
 @Slf4j
-public class RocksDb implements PersistentBinaryDataStore {
+public class RocksDb implements DatabaseStore {
     private String directory;
     private String name;
     private RocksDB db;
@@ -160,7 +161,7 @@ public class RocksDb implements PersistentBinaryDataStore {
     }
 
     @Override
-    public void updateBatch(Map<byte[], byte[]> rows) {
+    public void putAll(Map<byte[], byte[]> rows) {
         resetDbLock.readLock().lock();
         try {
             try {
@@ -185,7 +186,7 @@ public class RocksDb implements PersistentBinaryDataStore {
     }
 
     @Override
-    public Optional<byte[]> prefixLookup(byte[] key) {
+    public Optional<byte[]> prefixLookup(byte[] key, int prefixBytes) {
         resetDbLock.readLock().lock();
         try {
 
@@ -358,5 +359,10 @@ public class RocksDb implements PersistentBinaryDataStore {
 
     private Path backupPath() {
         return Paths.get(directory, "backup", name);
+    }
+
+    @Override
+    public boolean flush() {
+        return false;
     }
 }

@@ -3,7 +3,8 @@ package org.tdf.sunflower.db;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.iq80.leveldb.*;
-import org.tdf.common.DbSettings;
+import org.tdf.store.DatabaseStore;
+import org.tdf.store.DbSettings;
 import org.tdf.sunflower.util.FileUtils;
 
 import java.io.File;
@@ -18,7 +19,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static org.fusesource.leveldbjni.JniDBFactory.factory;
 
 @Slf4j
-public class LevelDb implements PersistentBinaryDataStore {
+public class LevelDb implements DatabaseStore {
     // subdirectory
     private String name;
     // parent directory
@@ -174,7 +175,7 @@ public class LevelDb implements PersistentBinaryDataStore {
     }
 
     @Override
-    public void updateBatch(Map<byte[], byte[]> rows) {
+    public void putAll(Map<byte[], byte[]> rows) {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
@@ -199,7 +200,7 @@ public class LevelDb implements PersistentBinaryDataStore {
     }
 
     @Override
-    public Optional<byte[]> prefixLookup(byte[] key) {
+    public Optional<byte[]> prefixLookup(byte[] key, int prefixBytes) {
         throw new RuntimeException("LevelDbDataSource.prefixLookup() is not supported");
     }
 
@@ -340,5 +341,10 @@ public class LevelDb implements PersistentBinaryDataStore {
 
     private Path getPath() {
         return Paths.get(directory, name);
+    }
+
+    @Override
+    public boolean flush() {
+        return false;
     }
 }

@@ -1,9 +1,12 @@
 package org.tdf.common;
 
 import org.tdf.exception.StateUpdateException;
+
 import java.util.List;
 import java.util.Optional;
 
+@Deprecated
+// use trie instead
 public class InMemoryStateFactory<T extends State<T>> implements StateFactory<T> {
     private ChainCache<ChainedWrapper<T>> cache;
     private HexBytes where;

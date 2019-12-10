@@ -7,6 +7,8 @@ import org.apache.commons.codec.binary.Hex;
 import org.tdf.common.*;
 import org.tdf.exception.PeerServerLoadException;
 import org.tdf.serialize.Codecs;
+import org.tdf.store.BatchStore;
+import org.tdf.store.Store;
 import org.tdf.store.StoreWrapper;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.proto.Code;
@@ -32,7 +34,7 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
     public PeerServerImpl() {
     }
 
-    public PeerServerImpl withStore(BatchAbleStore<byte[], byte[]> persistentStore) {
+    public PeerServerImpl withStore(BatchStore<byte[], byte[]> persistentStore) {
         this.peerStore = new StoreWrapper<>(persistentStore,
                 Codecs.STRING,
                 Codecs.STRING);

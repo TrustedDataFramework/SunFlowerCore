@@ -1,7 +1,6 @@
 package org.tdf.store;
 
 import lombok.AllArgsConstructor;
-import org.tdf.common.Store;
 import org.tdf.serialize.Codec;
 
 import java.util.Collection;
@@ -75,5 +74,10 @@ public class StoreWrapper<K, V, U, R>
     @Override
     public void clear() {
         store.clear();
+    }
+
+    @Override
+    public boolean flush() {
+        return false;
     }
 }

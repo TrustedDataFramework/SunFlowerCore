@@ -4,10 +4,10 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import org.tdf.common.HexBytes;
-import org.tdf.common.Store;
 import org.tdf.serialize.RLPElement;
 import org.tdf.serialize.RLPItem;
 import org.tdf.serialize.RLPList;
+import org.tdf.store.Store;
 import org.tdf.util.FastByteComparisons;
 
 import static org.tdf.trie.TrieKey.EMPTY;

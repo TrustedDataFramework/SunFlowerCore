@@ -1,7 +1,6 @@
 package org.tdf.store;
 
 import com.google.common.primitives.Bytes;
-import org.tdf.common.Store;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -79,5 +78,10 @@ public class PrefixedStore<V> implements Store<byte[], V> {
     @Override
     public void clear() {
         keySet().forEach(this::remove);
+    }
+
+    @Override
+    public boolean flush() {
+        return false;
     }
 }

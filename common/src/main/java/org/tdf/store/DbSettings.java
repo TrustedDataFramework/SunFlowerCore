@@ -1,4 +1,4 @@
-package org.tdf.common;
+package org.tdf.store;
 
 public class DbSettings {
 

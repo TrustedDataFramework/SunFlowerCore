@@ -1,7 +1,6 @@
 package org.tdf.store;
 
 import org.tdf.common.HexBytes;
-import org.tdf.common.Store;
 import org.tdf.util.ByteArrayMap;
 import org.tdf.util.ExceptionUtil;
 

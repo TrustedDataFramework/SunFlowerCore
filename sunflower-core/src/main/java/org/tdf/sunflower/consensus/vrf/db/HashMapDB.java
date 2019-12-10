@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.tdf.common.DbSettings;
+import org.tdf.store.DbSettings;
 import org.tdf.sunflower.consensus.vrf.util.ALock;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;

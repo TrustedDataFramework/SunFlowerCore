@@ -6,9 +6,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.exception.StateUpdateException;
-import org.tdf.serialize.*;
-import org.tdf.store.ByteArrayMapStore;
-import org.tdf.util.BufferUtil;
 
 import java.util.HashSet;
 import java.util.List;

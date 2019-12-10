@@ -1,6 +1,6 @@
 package org.tdf.sunflower.consensus.vrf.db;
 
-import org.tdf.common.DbSettings;
+import org.tdf.store.DbSettings;
 
 import java.util.Set;
 

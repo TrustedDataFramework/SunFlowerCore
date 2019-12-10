@@ -1,7 +1,6 @@
 package org.tdf.serialize;
 
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Field;
 
 public class RLPUtils {
     static RLPEncoder getAnnotatedRLPEncoder(AnnotatedElement element){

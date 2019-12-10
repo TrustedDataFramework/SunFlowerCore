@@ -1,6 +1,7 @@
 package org.tdf.common;
 
 import org.tdf.store.MapStore;
+import org.tdf.store.Store;
 import org.tdf.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -102,5 +103,10 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
 
     public void clear() {
         data.clear();
+    }
+
+    @Override
+    public boolean flush() {
+        return false;
     }
 }

@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PersistentDataStoreConfig {
+public class DatabaseStoreConfig {
     private String name;
     @JsonProperty("max-open-files")
     private int dataMaxOpenFiles;

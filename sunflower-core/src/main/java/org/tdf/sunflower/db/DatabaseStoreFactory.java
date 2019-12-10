@@ -3,7 +3,8 @@ package org.tdf.sunflower.db;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.tdf.common.DbSettings;
+import org.tdf.store.DatabaseStore;
+import org.tdf.store.DbSettings;
 import org.tdf.sunflower.SourceDbProperties;
 
 import javax.annotation.PreDestroy;
@@ -12,19 +13,19 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class PersistentDataStoreFactory {
-    private PersistentDataStoreConfig config;
-    private static final List<PersistentBinaryDataStore> STORES_LIST = new ArrayList<>();
+public class DatabaseStoreFactory {
+    private DatabaseStoreConfig config;
+    private static final List<DatabaseStore> STORES_LIST = new ArrayList<>();
 
-    public PersistentDataStoreFactory(SourceDbProperties sourceDbProperties) throws Exception{
+    public DatabaseStoreFactory(SourceDbProperties sourceDbProperties) throws Exception{
         JavaPropsMapper mapper = new JavaPropsMapper();
-        PersistentDataStoreConfig config = mapper.readPropertiesAs(sourceDbProperties, PersistentDataStoreConfig.class);
+        DatabaseStoreConfig config = mapper.readPropertiesAs(sourceDbProperties, DatabaseStoreConfig.class);
         if(config.getName() == null) config.setName("");
         this.config = config;
     }
 
-    public PersistentBinaryDataStore create(String name){
-        PersistentBinaryDataStore store;
+    public DatabaseStore create(String name){
+        DatabaseStore store;
 
         switch (config.getName().trim().toLowerCase()) {
             case "leveldb":
@@ -43,13 +44,13 @@ public class PersistentDataStoreFactory {
                 .withMaxThreads(Math.max(1, Runtime.getRuntime().availableProcessors() / 2)));
         STORES_LIST.add(store);
         if(config.isReset()){
-            store.reset();
+            store.clear();
         }
         return store;
     }
 
     @PreDestroy
     public void destroy(){
-        STORES_LIST.forEach(PersistentBinaryDataStore::close);
+        STORES_LIST.forEach(DatabaseStore::close);
     }
 }

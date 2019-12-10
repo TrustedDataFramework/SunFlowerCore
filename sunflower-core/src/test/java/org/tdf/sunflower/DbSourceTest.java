@@ -3,8 +3,8 @@ package org.tdf.sunflower;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.sunflower.db.PersistentBinaryDataStore;
-import org.tdf.sunflower.db.PersistentDataStoreFactory;
+import org.tdf.store.DatabaseStore;
+import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.db.RocksDb;
 
 import java.util.Arrays;
@@ -14,7 +14,7 @@ import java.util.Map;
 @RunWith(JUnit4.class)
 public class DbSourceTest {
     private static final SourceDbProperties PROPERTIES;
-    private static PersistentDataStoreFactory FACTORY;
+    private static DatabaseStoreFactory FACTORY;
 
     static {
         PROPERTIES = new SourceDbProperties();
@@ -22,7 +22,7 @@ public class DbSourceTest {
         PROPERTIES.setProperty("directory", "local");
         PROPERTIES.setProperty("max-open-files", "512");
         try {
-            FACTORY = new PersistentDataStoreFactory(PROPERTIES);
+            FACTORY = new DatabaseStoreFactory(PROPERTIES);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -32,8 +32,8 @@ public class DbSourceTest {
 
     @Test
     public void StoreTest() {
-        PersistentBinaryDataStore batchAbleStore = FACTORY.create("new");
-        batchAbleStore.reset();
+        DatabaseStore batchAbleStore = FACTORY.create("new");
+        batchAbleStore.clear();
         batchAbleStore.put("lala111".getBytes(), "222".getBytes());
         assert batchAbleStore.get("lala111".getBytes()).isPresent();
         assert Arrays.equals(batchAbleStore.get("lala111".getBytes()).get(), "222".getBytes());
@@ -49,7 +49,7 @@ public class DbSourceTest {
             rows.put((s + x).getBytes(), (s + x).getBytes());
         }
 
-        batchAbleStore.updateBatch(rows);
+        batchAbleStore.putAll(rows);
         for (int x = 0; x < 10; x++) {
             int finalX = x;
             assert batchAbleStore.keySet().stream().anyMatch(y -> Arrays.equals(y, (s + finalX).getBytes()));

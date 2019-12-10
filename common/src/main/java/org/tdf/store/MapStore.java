@@ -1,6 +1,5 @@
 package org.tdf.store;
 
-import org.tdf.common.Store;
 import org.tdf.util.ByteArrayMap;
 
 import java.util.*;
@@ -78,5 +77,10 @@ public class MapStore<K, V> implements Store<K, V> {
     @Override
     public void clear() {
         map.clear();
+    }
+
+    @Override
+    public boolean flush() {
+        return false;
     }
 }

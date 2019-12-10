@@ -12,11 +12,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.tdf.common.*;
-import org.tdf.store.ByteArrayMapStore;
 import org.tdf.sunflower.consensus.None;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
-import org.tdf.sunflower.db.PersistentDataStoreFactory;
+import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.mq.MessageQueue;
 import org.tdf.sunflower.mq.SocketIOMessageQueue;
 import org.tdf.sunflower.net.PeerServerImpl;
@@ -71,7 +70,7 @@ public class Start {
     @Bean
     public StateRepository stateRepository(
             ConsensusEngine engine,
-            PersistentDataStoreFactory factory,
+            DatabaseStoreFactory factory,
             ConsortiumRepository consortiumRepository
     ) {
         if (!(engine.getRepository() instanceof ConsortiumStateRepository)) return engine.getRepository();
@@ -184,7 +183,7 @@ public class Start {
     public PeerServer peerServer(
             PeerServerProperties properties,
             ConsensusEngine engine,
-            PersistentDataStoreFactory factory
+            DatabaseStoreFactory factory
     ) throws Exception {
         String name = properties.getProperty("name");
         name = name == null ? "" : name;
