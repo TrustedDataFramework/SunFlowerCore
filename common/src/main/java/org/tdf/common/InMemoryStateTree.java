@@ -22,13 +22,6 @@ public class InMemoryStateTree<T extends ForkAbleState<T>> implements StateTree<
         cache = new ChainCache<>();
     }
 
-    public InMemoryStateTree<T> withPersistent(
-            Store<byte[], byte[]> persistent,
-            SerializeDeserializer<T> serializeDeserializer){
-        root.withPersistent(persistent, serializeDeserializer);
-        return this;
-    }
-
     public void update(Block b) {
         if (cache.contains(b.getHash().getBytes())) return;
         if (b.getHeight() == 0) {

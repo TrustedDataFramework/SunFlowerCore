@@ -1,9 +1,8 @@
 package org.tdf.store;
 
+import lombok.AllArgsConstructor;
 import org.tdf.common.Store;
-import org.tdf.serialize.Deserializer;
-import org.tdf.serialize.SerializeDeserializer;
-import org.tdf.serialize.Serializer;
+import org.tdf.serialize.Codec;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -15,90 +14,52 @@ import java.util.stream.Collectors;
  * @param <K> type of key
  * @param <V> type of value
  */
-public class StoreWrapper<K, V>
+@AllArgsConstructor
+public class StoreWrapper<K, V, U, R>
         implements Store<K, V> {
-    private Store<byte[], byte[]> store;
+    private Store<U, R> store;
 
-    private Serializer<? super K> keySerializer;
-    private Deserializer<? extends K> keyDeserializer;
-    private Serializer<? super V> valueSerializer;
-    private Deserializer<? extends V> valueDeserializer;
+    private Codec<K, U> keyCodec;
+    private Codec<V, R> valueCodec;
 
-
-    public StoreWrapper(
-            Store<byte[], byte[]> store,
-            SerializeDeserializer<K> keySD,
-            SerializeDeserializer<V> valueSD
-    ) {
-        this.store = store;
-        this.keySerializer = keySD;
-        this.keyDeserializer = keySD;
-        this.valueDeserializer = valueSD;
-        this.valueSerializer = valueSD;
-    }
-
-    public StoreWrapper(Store<byte[], byte[]> store,
-                        Serializer<? super K> keySerializer,
-                        Deserializer<? extends K> keyDeserializer,
-                        Serializer<? super V> valueSerializer,
-                        Deserializer<? extends V> valueDeserializer
-    ) {
-        this.store = store;
-        this.keySerializer = keySerializer;
-        this.keyDeserializer = keyDeserializer;
-        this.valueSerializer = valueSerializer;
-        this.valueDeserializer = valueDeserializer;
-    }
-
-    private V createValueFromBytes(byte[] data) {
-        return valueDeserializer.deserialize(data);
-    }
-
-    private K createKeyFromBytes(byte[] data) {
-        return keyDeserializer.deserialize(data);
-    }
-
-    private byte[] getBytesFromKey(K k) {
-        return keySerializer.serialize(k);
-    }
-
-    private byte[] getBytesFromValue(V v) {
-        return valueSerializer.serialize(v);
-    }
 
     @Override
     public Optional<V> get(K k) {
-        return store.get(getBytesFromKey(k)).map(this::createValueFromBytes);
+        return store.get(keyCodec.getEncoder().apply(k)).map(valueCodec.getDecoder());
     }
 
     @Override
     public void put(K k, V v) {
-        store.put(getBytesFromKey(k), getBytesFromValue(v));
+        store.put(keyCodec.getEncoder().apply(k), valueCodec.getEncoder().apply(v));
     }
 
     @Override
     public void putIfAbsent(K k, V v) {
-        store.putIfAbsent(getBytesFromKey(k), getBytesFromValue(v));
+        store.putIfAbsent(keyCodec.getEncoder().apply(k), valueCodec.getEncoder().apply(v));
     }
 
     @Override
     public void remove(K k) {
-        store.remove(getBytesFromKey(k));
+        store.remove(keyCodec.getEncoder().apply(k));
     }
 
     @Override
     public Set<K> keySet() {
-        return store.keySet().stream().map(this::createKeyFromBytes).collect(Collectors.toSet());
+        return store.keySet().stream()
+                .map(keyCodec.getDecoder())
+                .collect(Collectors.toSet());
     }
 
     @Override
     public Collection<V> values() {
-        return store.values().stream().map(this::createValueFromBytes).collect(Collectors.toList());
+        return store.values().stream()
+                .map(valueCodec.getDecoder())
+                .collect(Collectors.toList());
     }
 
     @Override
     public boolean containsKey(K k) {
-        return store.containsKey(getBytesFromKey(k));
+        return store.containsKey(keyCodec.getEncoder().apply(k));
     }
 
     @Override

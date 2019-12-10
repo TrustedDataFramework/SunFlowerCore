@@ -17,30 +17,6 @@ import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
 public class StateFactoryTests {
-    private static class HeightHelper implements SerializeDeserializer<Height> {
-        private static final SerializeDeserializer<Set<String>> SD = new
-                SerializeDeserializerWrapper<>(
-                new CollectionSerializer<>(Serializers.STRING),
-                new HashSetDeserializer<>(Serializers.STRING)
-        );
-
-        @Override
-        public byte[] serialize(Height height) {
-            BufferUtil util = BufferUtil.newWriteOnly();
-            util.putBytes(SD.serialize(height.hashes));
-            util.putLong(height.evicted);
-            return util.toByteArray();
-        }
-
-        @Override
-        public Height deserialize(byte[] data) {
-            BufferUtil util = BufferUtil.newReadOnly(data);
-            Set<String> hashes = SD.deserialize(util.getBytes());
-            long evicted = util.getLong();
-            return new Height(hashes, evicted);
-        }
-    }
-
     private static class Height implements State<Height> {
         private Set<String> hashes;
         private long evicted;
@@ -96,7 +72,6 @@ public class StateFactoryTests {
     private StateFactory<Height> getStateFactory() throws Exception {
         Block genesis = getBlocks().get(0);
         InMemoryStateFactory<Height> factory = new InMemoryStateFactory<>(genesis, new Height());
-        factory.withPersistent(new ByteArrayMapStore<>(), new HeightHelper());
         List<Block> blocks = getBlocks();
         for (Block b : blocks.subList(1, blocks.size())) {
             factory.update(b);

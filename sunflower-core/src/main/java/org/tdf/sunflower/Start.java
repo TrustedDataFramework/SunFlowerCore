@@ -22,7 +22,6 @@ import org.tdf.sunflower.mq.SocketIOMessageQueue;
 import org.tdf.sunflower.net.PeerServerImpl;
 import org.tdf.sunflower.pool.TransactionPoolImpl;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.AccountSerializerDeserializer;
 
 import java.util.List;
 import java.util.Optional;
@@ -81,7 +80,6 @@ public class Start {
             return repo;
         }
         // TODO: replace byte array map store with persistent data storage
-        repo.withPersistent(Account.class, new ByteArrayMapStore<>(), new AccountSerializerDeserializer());
         InMemoryStateTree<Account> tree = repo.getStateTree(Account.class);
         long current = consortiumRepository.getBlock(tree.getWhere().getBytes()).map(Block::getHeight).orElseThrow(() ->
                 new RuntimeException("cannot find state at " + tree.getWhere() + " please clear account db manually")

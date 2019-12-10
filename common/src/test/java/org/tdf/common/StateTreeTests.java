@@ -19,23 +19,6 @@ public class StateTreeTests {
     private static final HexBytes ADDRESS_B = new HexBytes(new byte[]{0x0b});
     private static final HexBytes ADDRESS_C = new HexBytes(new byte[]{0x0c});
 
-    private static class AccountSerializeDeserializer implements SerializeDeserializer<Account> {
-        @Override
-        public byte[] serialize(Account account) {
-            BufferUtil util = BufferUtil.newWriteOnly();
-            util.putString(account.address);
-            util.putLong(account.balance);
-            return util.toByteArray();
-        }
-
-        @Override
-        public Account deserialize(byte[] data) {
-            BufferUtil util = BufferUtil.newReadOnly(data);
-            String address = util.getString();
-            long balance = util.getLong();
-            return new Account(address, balance);
-        }
-    }
 
     // account to test
     public static class Account implements ForkAbleState<Account> {
@@ -103,7 +86,7 @@ public class StateTreeTests {
                 blocks.get("0000"),
                 Arrays.asList(new Account(ADDRESS_A.toString(), 100),
                         new Account(ADDRESS_B.toString(), 100))
-        ).withPersistent(new ByteArrayMapStore<>(), new AccountSerializeDeserializer());
+        );
 
         blocks.values().stream().filter(x -> x.getHeight() != 0).sorted(Comparator.comparingLong(Block::getHeight)).forEach(tree::update);
         return tree;

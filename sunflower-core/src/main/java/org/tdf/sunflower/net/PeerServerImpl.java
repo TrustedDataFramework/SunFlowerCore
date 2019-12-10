@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.tdf.common.*;
 import org.tdf.exception.PeerServerLoadException;
-import org.tdf.serialize.Serializers;
+import org.tdf.serialize.Codecs;
 import org.tdf.store.StoreWrapper;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.proto.Code;
@@ -34,8 +34,8 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
 
     public PeerServerImpl withStore(BatchAbleStore<byte[], byte[]> persistentStore) {
         this.peerStore = new StoreWrapper<>(persistentStore,
-                Serializers.STRING,
-                Serializers.STRING);
+                Codecs.STRING,
+                Codecs.STRING);
         return this;
     }
 

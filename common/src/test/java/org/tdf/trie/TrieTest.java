@@ -6,9 +6,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.spongycastle.util.encoders.Hex;
 import org.tdf.common.HashUtil;
-import org.tdf.common.HexBytes;
 import org.tdf.common.Store;
-import org.tdf.serialize.Serializers;
+import org.tdf.serialize.Codecs;
 import org.tdf.store.ByteArrayMapStore;
 import org.tdf.store.StoreWrapper;
 import org.tdf.util.ByteArraySet;
@@ -88,7 +87,7 @@ public class TrieTest {
         String ROOT_HASH_AFTER = "fc5120b4a711bca1f5bb54769525b11b3fb9a8d6ac0b8bf08cbb248770521758";
 
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         trie.put(cat, dog);
         assertEquals(dog, trie.get(cat).get());
@@ -107,7 +106,7 @@ public class TrieTest {
         String ROOT_HASH_BEFORE = "a9539c810cc2e8fa20785bdd78ec36cc1dab4b41f0d531e80a5e5fd25c3037ee";
         String ROOT_HASH_AFTER = "b25e1b5be78dbadf6c4e817c6d170bbb47e9916f8f6cc4607c5f3819ce98497b";
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         trie.put(ca, dude);
         assertEquals(dude, trie.get(ca).get());
@@ -126,7 +125,7 @@ public class TrieTest {
         String ROOT_HASH_BEFORE = "778ab82a7e8236ea2ff7bb9cfa46688e7241c1fd445bf2941416881a6ee192eb";
         String ROOT_HASH_AFTER = "05875807b8f3e735188d2479add82f96dee4db5aff00dc63f07a7e27d0deab65";
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         trie.put(cat, dude);
         assertEquals(dude, trie.get(cat).get());
@@ -145,7 +144,7 @@ public class TrieTest {
         String ROOT_HASH_BEFORE = "318961a1c8f3724286e8e80d312352f01450bc4892c165cc7614e1c2e5a0012a";
         String ROOT_HASH_AFTER = "63356ecf33b083e244122fca7a9b128cc7620d438d5d62e4f8b5168f1fb0527b";
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         trie.put(cat, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(cat).get());
@@ -164,7 +163,7 @@ public class TrieTest {
         String ROOT_HASH_BEFORE = "e020de34ca26f8d373ff2c0a8ac3a4cb9032bfa7a194c68330b7ac3584a1d388";
         String ROOT_HASH_AFTER = "334511f0c4897677b782d13a6fa1e58e18de6b24879d57ced430bad5ac831cb2";
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         trie.put(ca, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(ca).get());
@@ -183,7 +182,7 @@ public class TrieTest {
         String ROOT_HASH_BEFORE = "e020de34ca26f8d373ff2c0a8ac3a4cb9032bfa7a194c68330b7ac3584a1d388";
         String ROOT_HASH_AFTER = "63356ecf33b083e244122fca7a9b128cc7620d438d5d62e4f8b5168f1fb0527b";
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         trie.put(cat, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(cat).get());
@@ -223,7 +222,7 @@ public class TrieTest {
         String ROOT_HASH_AFTER1 = "60a2e75cfa153c4af2783bd6cb48fd6bed84c6381bc2c8f02792c046b46c0653";
         String ROOT_HASH_AFTER2 = "a84739b4762ddf15e3acc4e6957e5ab2bbfaaef00fe9d436a7369c6f058ec90d";
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         trie.put(cat, dog);
         assertEquals(dog, trie.get(cat).get());
@@ -256,7 +255,7 @@ public class TrieTest {
         String ROOT_HASH_AFTER1 = "f586af4a476ba853fca8cea1fbde27cd17d537d18f64269fe09b02aa7fe55a9e";
         String ROOT_HASH_AFTER2 = "c59fdc16a80b11cc2f7a8b107bb0c954c0d8059e49c760ec3660eea64053ac91";
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         trie.put(c, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(c).get());
@@ -303,7 +302,7 @@ public class TrieTest {
     public void testDeleteAll() {
         String ROOT_HASH_BEFORE = "a84739b4762ddf15e3acc4e6957e5ab2bbfaaef00fe9d436a7369c6f058ec90d";
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
         assertEquals(ROOT_HASH_EMPTY, Hex.toHexString(impl.getRootHash()));
 
         trie.put(ca, dude);
@@ -320,9 +319,9 @@ public class TrieTest {
     @Test
     public void testTrieEquals() {
         TrieImpl impl1 = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie1 = new StoreWrapper<>(impl1, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie1 = new StoreWrapper<>(impl1, Codecs.STRING, Codecs.STRING);
         TrieImpl impl2 = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie2 = new StoreWrapper<>(impl2, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie2 = new StoreWrapper<>(impl2, Codecs.STRING, Codecs.STRING);
 
         trie1.put(doge, LONG_STRING);
         trie2.put(doge, LONG_STRING);
@@ -336,7 +335,7 @@ public class TrieTest {
     @Test
     public void testSingleItem() {
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
         trie.put("A", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
         assertEquals("d23786fb4a010da3ce639d66d5e904a11dbc02746d1ce25029e53290cabf28ab", Hex.toHexString(impl.getRootHash()));
@@ -345,7 +344,7 @@ public class TrieTest {
     @Test
     public void testDogs() {
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
         trie.put("doe", "reindeer");
         assertEquals("11a0327cfcc5b7689b6b6d727e1f5f8846c1137caaa9fc871ba31b7cce1b703e", Hex.toHexString(impl.getRootHash()));
 
@@ -353,7 +352,7 @@ public class TrieTest {
         assertEquals("05ae693aac2107336a79309e0c60b24a7aac6aa3edecaef593921500d33c63c4", Hex.toHexString(impl.getRootHash()));
 
         TrieImpl impl2 = new TrieImpl(HashUtil::sha3, impl.cache, Hex.decode("05ae693aac2107336a79309e0c60b24a7aac6aa3edecaef593921500d33c63c4"));
-        Store<String, String> trie2 = new StoreWrapper<>(impl2, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie2 = new StoreWrapper<>(impl2, Codecs.STRING, Codecs.STRING);
         assert trie2.get("dog").get().equals("puppy");
         trie.put("dogglesworth", "cat");
         impl.getRootHash();
@@ -362,7 +361,7 @@ public class TrieTest {
     @Test
     public void testPuppy() {
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
         trie.put("do", "verb");
         trie.put("doge", "coin");
         trie.put("horse", "stallion");
@@ -375,7 +374,7 @@ public class TrieTest {
     @Test
     public void testEmptyValues() {
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
         trie.put("do", "verb");
         trie.put("ether", "wookiedoo");
         trie.put("horse", "stallion");
@@ -392,7 +391,7 @@ public class TrieTest {
     @Test
     public void testFoo() {
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
         trie.put("foo", "bar");
         trie.put("food", "bat");
         trie.put("food", "bass");
@@ -403,7 +402,7 @@ public class TrieTest {
     @Test
     public void testSmallValues() {
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         trie.put("be", "e");
         trie.put("dog", "puppy");
@@ -414,7 +413,7 @@ public class TrieTest {
     @Test
     public void testTesty() {
         TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         trie.put("test", "test");
         assertEquals("85d106d4edff3b7a4889e91251d0a87d7c17a1dda648ebdba8c6060825be23b8", Hex.toHexString(impl.getRootHash()));
@@ -434,7 +433,7 @@ public class TrieTest {
             HashMap<String, String> testerMap = new HashMap<>();
 
             TrieImpl impl = new TrieImpl(HashUtil::sha3, new NoDoubleDeleteStore());
-            Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+            Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
             Random generator = new Random();
 
             // Random insertion
@@ -480,7 +479,7 @@ public class TrieTest {
 
         Store<byte[], byte[]> db = new NoDoubleDeleteStore();
         TrieImpl impl = new TrieImpl(HashUtil::sha3, db);
-        Store<String, String> trieSingle = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trieSingle = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         URL massiveUpload_1 = ClassLoader
                 .getSystemResource("trie/massive-upload.dmp");
@@ -511,7 +510,7 @@ public class TrieTest {
     public void testGetFromRootNode() {
         Store<byte[], byte[]> db = new NoDoubleDeleteStore();
         TrieImpl impl = new TrieImpl(HashUtil::sha3, db);
-        Store<String, String> trie1 = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie1 = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
         trie1.put(cat, LONG_STRING);
         TrieImpl impl2 = new TrieImpl(HashUtil::sha3, db, impl.getRootHash());
         assertEquals(LONG_STRING, impl2.get(cat.getBytes()).map(String::new).get());
@@ -573,7 +572,7 @@ public class TrieTest {
 
         Store<byte[], byte[]> db = new NoDoubleDeleteStore();
         TrieImpl impl = new TrieImpl(HashUtil::sha3, db);
-        Store<String, String> trie = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
 
         trie.put("dog", "puppy");
         System.out.println();
@@ -673,7 +672,7 @@ public class TrieTest {
 
         Store<byte[], byte[]> src = new NoDoubleDeleteStore();
         TrieImpl impl = new TrieImpl(HashUtil::sha3, src);
-        Store<String, String> trieSingle = new StoreWrapper<>(impl, Serializers.STRING, Serializers.STRING);
+        Store<String, String> trieSingle = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
         URL massiveUpload_1 = ClassLoader
                 .getSystemResource("trie/massive-upload.dmp");
 
@@ -707,7 +706,7 @@ public class TrieTest {
             byte[] root = roots.get(i);
 
             TrieImpl impl1 = new TrieImpl(HashUtil::sha3, src, root);
-            trieSingle = new StoreWrapper<>(impl1, Serializers.STRING, Serializers.STRING);
+            trieSingle = new StoreWrapper<>(impl1, Codecs.STRING, Codecs.STRING);
 
             Map<String, String> dumped = dump(trieSingle);
             assert equals(trieDumps.get(Hex.toHexString(root)), dumped);

@@ -10,6 +10,7 @@ import org.tdf.store.StoreWrapper;
 import org.tdf.util.*;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -43,28 +44,6 @@ public class ChainCache<T extends Chained> implements Cloneable<ChainCache<T>> {
         this.comparator = comparator;
         return this;
     }
-
-    public ChainCache<T> withPersistent(Store<byte[], byte[]> persistentStore, SerializeDeserializer<T> serializeDeserializer) {
-        List<T> all = new ArrayList<>(nodes.values());
-        this.nodes = new StoreWrapper<>(
-                new PrefixedStore<>(NODE_PREFIX, persistentStore),
-                Serializers.IDENTITY, serializeDeserializer
-        );
-
-        this.childrenHashes = new StoreWrapper<>(
-                new PrefixedStore<>(CHILDREN_HASH_PREFIX, persistentStore),
-                Serializers.IDENTITY, new SerializeDeserializerWrapper<>(
-                        new CollectionSerializer<>(Serializers.IDENTITY),
-                        new ByteArraySetDeserializer()
-                )
-        );
-
-        this.parentHash =
-                new PrefixedStore<>(PARENT_HASH_PREFIX, persistentStore);
-        put(all);
-        return this;
-    }
-
 
     // lru
     public ChainCache(int sizeLimit, Comparator<? super T> comparator) {

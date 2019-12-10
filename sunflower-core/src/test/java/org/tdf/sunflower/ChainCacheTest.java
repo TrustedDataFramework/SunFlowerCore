@@ -5,7 +5,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.*;
-import org.tdf.serialize.ChainCacheSerializerDeserializer;
 import org.tdf.serialize.SerializeDeserializer;
 import org.tdf.store.ByteArrayMapStore;
 import org.tdf.util.BufferUtil;
@@ -28,26 +27,6 @@ public class ChainCacheTest {
 //            PERSISTENT = new PersistentDataStoreFactory(PROPERTIES).create("chain-cache");
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    public static class NodeHelper implements SerializeDeserializer<Node> {
-        @Override
-        public byte[] serialize(Node node) {
-            BufferUtil util = BufferUtil.newWriteOnly();
-            util.putBytes(node.getHash().getBytes());
-            util.putBytes(node.getHashPrev().getBytes());
-            util.putLong(node.getHeight());
-            return util.toByteArray();
-        }
-
-        @Override
-        public Node deserialize(byte[] data) {
-            BufferUtil util = BufferUtil.newReadOnly(data);
-            HexBytes hash = new HexBytes(util.getBytes());
-            HexBytes hashPrev = new HexBytes(util.getBytes());
-            long height = util.getLong();
-            return new Node(hash, hashPrev, height);
         }
     }
 
@@ -134,7 +113,6 @@ public class ChainCacheTest {
         ChainCache<Node> cache
             = new ChainCacheWrapper<>(sizeLimit, Comparator.comparingLong(Node::getHeight)).withLock();
 //        PERSISTENT.clear();
-        cache = cache.withPersistent(new ByteArrayMapStore<>(), new NodeHelper());
         cache.put(genesis);
         cache.put(chain0);
         cache.put(chain1);
@@ -268,86 +246,6 @@ public class ChainCacheTest {
         assert cache.get(Hex.decodeHex("0206".toCharArray())).get().getHeight() == 6;
         cache.put(new Node(HexBytes.parse("0206"), HexBytes.parse("0205"), 100));
         assert cache.get(Hex.decodeHex("0206".toCharArray())).get().getHeight() == 100;
-    }
-
-    public static class PersistentChainedHelper implements SerializeDeserializer<PersistentChained>{
-        @Override
-        public byte[] serialize(PersistentChained persistentChained) {
-            BufferUtil util = BufferUtil.newWriteOnly();
-            util.putBytes(persistentChained.hash.getBytes());
-            util.putBytes(persistentChained.getHashPrev().getBytes());
-            util.putString(persistentChained.getName());
-            return util.toByteArray();
-        }
-
-        @Override
-        public PersistentChained deserialize(byte[] data) {
-            BufferUtil util = BufferUtil.newReadOnly(data);
-            HexBytes hash = new HexBytes(util.getBytes());
-            HexBytes hashPrev = new HexBytes(util.getBytes());
-            String name = util.getString();
-            return new PersistentChained(hash, hashPrev, name);
-        }
-    }
-
-    public static class PersistentChained implements Chained {
-        private HexBytes hash;
-        private HexBytes hashPrev;
-        private String name;
-
-        public PersistentChained() {
-        }
-
-        public PersistentChained(HexBytes hash, HexBytes hashPrev, String name) {
-            this.hash = hash;
-            this.hashPrev = hashPrev;
-            this.name = name;
-        }
-
-        @Override
-        public HexBytes getHash() {
-            return hash;
-        }
-
-        public void setHash(HexBytes hash) {
-            this.hash = hash;
-        }
-
-        @Override
-        public HexBytes getHashPrev() {
-            return hashPrev;
-        }
-
-        public void setHashPrev(HexBytes hashPrev) {
-            this.hashPrev = hashPrev;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
-
-    @Test
-    public void testSerializable() throws Exception{
-        ChainCache<Node> cache = getCache(0);
-        ChainCache<PersistentChained> chainCache = new ChainCache<>();
-        chainCache.put(
-                cache.getAll().stream().map(n -> new PersistentChained(n.getHash(), n.getHashPrev(), n.hash.toString()))
-                        .collect(Collectors.toList())
-        );
-        ChainCacheSerializerDeserializer<PersistentChained> sd
-                = new ChainCacheSerializerDeserializer<>(new PersistentChainedHelper());
-        byte[] serialized = sd.serialize(chainCache);
-
-        ChainCache<PersistentChained> chainCache2 = sd.deserialize(serialized);
-
-        for(PersistentChained c: chainCache.getAll()){
-            assert chainCache2.contains(c.hash.getBytes());
-        }
     }
 
 }

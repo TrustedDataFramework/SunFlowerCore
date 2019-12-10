@@ -1,7 +1,6 @@
 package org.tdf.common;
 
 import org.tdf.exception.StateUpdateException;
-import org.tdf.serialize.SerializeDeserializer;
 
 import java.util.*;
 
@@ -128,17 +127,6 @@ public class ConsortiumStateRepository implements StateRepository {
         confirm(block.getHash().getBytes());
     }
 
-    public <T extends State<T>> void withPersistent(Class<T> clazz, Store<byte[], byte[]> store, SerializeDeserializer<T> serializeDeserializer){
-        if(factories.containsKey(clazz)){
-            ((InMemoryStateFactory<T>) factories.get(clazz)).withPersistent(store, serializeDeserializer);
-            return;
-        }
-        if(trees.containsKey(clazz)){
-            ((InMemoryStateTree) trees.get(clazz)).withPersistent(store, serializeDeserializer);
-            return;
-        }
-        throw new RuntimeException(clazz + " had not been registered");
-    }
 
     public <T extends State<T>> InMemoryStateFactory<T> getStateFactory(Class<T> clazz){
         assertRegistered(clazz);

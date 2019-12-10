@@ -1,9 +1,6 @@
 package org.tdf.common;
 
-import org.tdf.serialize.SerializeDeserializer;
-import org.tdf.serialize.Serializers;
 import org.tdf.store.MapStore;
-import org.tdf.store.StoreWrapper;
 import org.tdf.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -22,18 +19,6 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
         }
         super.setHashPrev(hashPrev);
         super.setHash(hash);
-    }
-
-    public StateMap<T> withPersistent(Store<byte[], byte[]> persistent, SerializeDeserializer<T> serializeDeserializer) {
-        Store<String, T> tmp = new StoreWrapper<>(persistent, Serializers.STRING, serializeDeserializer);
-        this.raw = new StoreWrapper<>(persistent, Serializers.STRING, Serializers.IDENTITY);
-        for (T t : get().values()) {
-            tmp.putIfAbsent(t.getIdentifier(), t);
-        }
-        this.data = tmp;
-        raw.putIfAbsent(WHERE_PREFIX, super.getHash().getBytes());
-        raw.putIfAbsent(HASH_PREV_PREFIX, super.getHashPrev().getBytes());
-        return this;
     }
 
     @Override

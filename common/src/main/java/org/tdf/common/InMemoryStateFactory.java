@@ -1,9 +1,6 @@
 package org.tdf.common;
 
 import org.tdf.exception.StateUpdateException;
-import org.tdf.serialize.ChainedWrapperSerializeDeserializer;
-import org.tdf.serialize.SerializeDeserializer;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -15,14 +12,6 @@ public class InMemoryStateFactory<T extends State<T>> implements StateFactory<T>
         this.cache = new ChainCache<>();
         cache.put(new ChainedWrapper<>(genesis.getHashPrev(), genesis.getHash(), state));
         this.where = genesis.getHash();
-    }
-
-    public InMemoryStateFactory withPersistent(
-            Store<byte[], byte[]> persistent,
-            SerializeDeserializer<T> serializeDeserializer
-    ){
-        cache.withPersistent(persistent, new ChainedWrapperSerializeDeserializer<>(serializeDeserializer));
-        return this;
     }
 
     public Optional<T> get(byte[] hash) {
