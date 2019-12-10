@@ -3,6 +3,7 @@ package org.tdf.trie;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import org.tdf.common.HexBytes;
 import org.tdf.serialize.RLPElement;
 import org.tdf.serialize.RLPItem;
@@ -23,6 +24,8 @@ import static org.tdf.trie.TrieKey.EMPTY;
 class Node {
     private static final int BRANCH_SIZE = 17;
     private static final int MAX_KEY_SIZE = 32;
+
+    @Getter(AccessLevel.PACKAGE)
     private boolean dirty;
 
     private void setDirty() {
@@ -33,6 +36,7 @@ class Node {
     private RLPList rlp;
 
     // if hash is not null, resolve rlp encoded from db
+    @Getter(AccessLevel.PACKAGE)
     private byte[] hash;
 
     // for lazy load, read only
@@ -51,20 +55,20 @@ class Node {
     private Object[] children;
 
     // create root node from database and reference
-    static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> cache) {
-        return fromEncoded(RLPElement.fromEncoded(encoded), cache);
+    static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> readOnlyCache) {
+        return fromEncoded(RLPElement.fromEncoded(encoded), readOnlyCache);
     }
 
     // create root node from database and reference
-    static Node fromEncoded(RLPElement rlp, Store<byte[], byte[]> cache) {
+    static Node fromEncoded(RLPElement rlp, Store<byte[], byte[]> readOnlyCache) {
         if (rlp.isList())
             return Node.builder()
                     .rlp(rlp.getAsList())
-                    .readOnlyCache(cache)
+                    .readOnlyCache(readOnlyCache)
                     .build();
         return Node.builder()
                 .hash(rlp.getAsItem().get())
-                .readOnlyCache(cache)
+                .readOnlyCache(readOnlyCache)
                 .build();
     }
 

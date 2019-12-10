@@ -1,7 +1,11 @@
 package org.tdf.trie;
 
-import lombok.Setter;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import org.tdf.serialize.RLPItem;
+import org.tdf.store.CachedStore;
+import org.tdf.store.ReadOnlyStore;
 import org.tdf.store.Store;
 
 import java.util.Collection;
@@ -12,28 +16,28 @@ import java.util.Set;
 import static org.tdf.trie.TrieKey.EMPTY;
 
 // enhanced radix tree
+@Builder(access = AccessLevel.PRIVATE)
+@AllArgsConstructor
 public class TrieImpl implements Trie {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private Node root;
 
-    // this flag determine whether deprecated value will be deleted
-    @Setter
-    private boolean delete;
-
     HashFunction function;
 
-    Store<byte[], byte[]> cache;
+    CachedStore<byte[]> cache;
 
-    public TrieImpl(HashFunction function, Store<byte[], byte[]> cache) {
+    private TrieImpl(){}
+
+    public TrieImpl(HashFunction function, Store<byte[], byte[]> store) {
         this.function = function;
-        this.cache = cache;
+        this.cache = new CachedStore<>(store);
     }
 
-    public TrieImpl(HashFunction function, Store<byte[], byte[]> cache, byte[] rootHash) {
+    public TrieImpl(HashFunction function, Store<byte[], byte[]> store, byte[] rootHash) {
         this.function = function;
-        this.cache = cache;
-        this.root = Node.fromEncoded(RLPItem.fromBytes(rootHash), cache);
+        this.cache = new CachedStore<>(store);
+        this.root = Node.fromEncoded(RLPItem.fromBytes(rootHash), new ReadOnlyStore<>(store));
     }
 
     @Override
@@ -53,7 +57,7 @@ public class TrieImpl implements Trie {
             root = Node.newLeaf(TrieKey.fromNormal(bytes), bytes2);
             return;
         }
-        root.insert(TrieKey.fromNormal(bytes), bytes2, delete ? cache : null);
+        root.insert(TrieKey.fromNormal(bytes), bytes2, cache);
     }
 
     @Override
@@ -65,7 +69,7 @@ public class TrieImpl implements Trie {
     @Override
     public void remove(byte[] bytes) {
         if (root == null) return;
-        root = root.delete(TrieKey.fromNormal(bytes), delete ? cache : null);
+        root = root.delete(TrieKey.fromNormal(bytes), cache);
     }
 
     @Override
@@ -105,21 +109,33 @@ public class TrieImpl implements Trie {
         root = null;
     }
 
-    // generate a snap short to recover from
+
     public byte[] getRootHash() {
         if (root == null) return function.apply(RLPItem.NULL.getEncoded());
-        return root.encodeAndCommit(function, cache, true, delete).getAsItem().get();
+        if(!isDirty()) return root.getHash();
+        return commit().getRootHash();
     }
 
     @Override
-    public void setRoot(byte[] rootHash) {
-        this.root = Node.fromEncoded(RLPItem.fromBytes(rootHash), cache);
+    public TrieImpl commit() {
+        if(!root.isDirty()) return this;
+        TrieImpl trie = builder()
+                .function(function)
+                .cache(cache.clone())
+                .root(root).build();
+        trie.root.encodeAndCommit(trie.function, trie.cache, true, true);
+        return trie;
     }
 
     @Override
     public boolean flush() {
         if (root == null) return false;
         this.root.encodeAndCommit(function, cache, true, true);
-        return true;
+        return this.cache.flush();
+    }
+
+    @Override
+    public boolean isDirty() {
+        return root != null && root.isDirty();
     }
 }
