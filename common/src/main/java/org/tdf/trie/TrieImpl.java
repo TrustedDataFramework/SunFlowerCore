@@ -115,4 +115,10 @@ public class TrieImpl implements Trie {
     public void setRoot(byte[] rootHash) {
         this.root = Node.fromEncoded(RLPItem.fromBytes(rootHash), cache);
     }
+
+    @Override
+    public void flush() {
+        if (root == null) return;
+        this.root.encodeAndCommit(function, cache, true, true);
+    }
 }
