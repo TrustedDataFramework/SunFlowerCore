@@ -93,11 +93,9 @@ public class ChainCacheTest {
 
             ));
         }
-        ChainCache<Node> cache;
+        ChainCache<Node> cache = new ChainCache<>(sizeLimit, Comparator.comparingLong(Node::getHeight));
         if ("true".equals(System.getenv("WRAPPER"))){
-            cache = new ChainCacheWrapper<>(sizeLimit, Comparator.comparingLong(Node::getHeight)).withLock();
-        }else{
-            cache = new ChainCache<>(sizeLimit, Comparator.comparingLong(Node::getHeight));
+            cache = cache.withLock();
         }
         cache.put(genesis);
         cache.put(chain0);

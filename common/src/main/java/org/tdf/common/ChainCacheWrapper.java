@@ -3,7 +3,6 @@ package org.tdf.common;
 import lombok.NonNull;
 
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -13,35 +12,22 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Thread safe wrapper
  * @param <T>
  */
-public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
+class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
     protected ReadWriteLock lock;
 
-    public ChainCacheWrapper(int sizeLimit, Comparator<? super T> comparator) {
-        super(sizeLimit, comparator);
-    }
+    private ChainCache<T> delegate;
 
-    public ChainCacheWrapper() {
-    }
-
-    public ChainCacheWrapper(T node) {
-        super(node);
-    }
-
-    public ChainCacheWrapper(Collection<? extends T> nodes) {
-        super(nodes);
-    }
-
-    public ChainCache<T> withLock(){
+    ChainCacheWrapper(ChainCache<T> delegate) {
         this.lock = new ReentrantReadWriteLock();
-        return this;
+        this.delegate = delegate;
     }
 
     @Override
     public Optional<T> get(byte[] hash) {
-        if (lock == null) return super.get(hash);
+        if (lock == null) return delegate.get(hash);
         lock.readLock().lock();
         try {
-            return super.get(hash);
+            return delegate.get(hash);
         } finally {
             lock.readLock().unlock();
         }
@@ -49,10 +35,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public ChainCache<T> clone() {
-        if (lock == null) return super.clone();
+        if (lock == null) return delegate.clone();
         lock.readLock().lock();
         try {
-            return super.clone();
+            return delegate.clone();
         } finally {
             lock.readLock().unlock();
         }
@@ -60,10 +46,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public List<T> getDescendants(byte[] hash) {
-        if (lock == null) return super.getDescendants(hash);
+        if (lock == null) return delegate.getDescendants(hash);
         lock.readLock().lock();
         try {
-            return super.getDescendants(hash);
+            return delegate.getDescendants(hash);
         } finally {
             lock.readLock().unlock();
         }
@@ -72,12 +58,12 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
     @Override
     public void removeDescendants(byte[] hash) {
         if (lock == null) {
-            super.removeDescendants(hash);
+            delegate.removeDescendants(hash);
             return;
         }
         lock.writeLock().lock();
         try {
-            super.removeDescendants(hash);
+            delegate.removeDescendants(hash);
         } finally {
             lock.writeLock().unlock();
         }
@@ -85,10 +71,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public List<List<T>> getAllForks() {
-        if(lock == null) return super.getAllForks();
+        if(lock == null) return delegate.getAllForks();
         lock.readLock().lock();
         try {
-            return super.getAllForks();
+            return delegate.getAllForks();
         } finally {
             lock.readLock().unlock();
         }
@@ -97,12 +83,12 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
     @Override
     public void remove(byte[] hash) {
         if(lock == null){
-            super.remove(hash);
+            delegate.remove(hash);
             return;
         }
         lock.writeLock().lock();
         try {
-            super.remove(hash);
+            delegate.remove(hash);
         } finally {
             lock.writeLock().unlock();
         }
@@ -111,12 +97,12 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
     @Override
     public final void remove(Collection<byte[]> nodes) {
         if(lock == null){
-            super.remove(nodes);
+            delegate.remove(nodes);
             return;
         }
         lock.writeLock().lock();
         try {
-            super.remove(nodes);
+            delegate.remove(nodes);
         } finally {
             lock.writeLock().unlock();
         }
@@ -125,10 +111,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public List<T> getLeaves() {
-        if(lock == null) return super.getLeaves();
+        if(lock == null) return delegate.getLeaves();
         lock.readLock().lock();
         try {
-            return super.getLeaves();
+            return delegate.getLeaves();
         } finally {
             lock.readLock().unlock();
         }
@@ -136,10 +122,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public List<T> getInitials() {
-        if(lock == null) return super.getInitials();
+        if(lock == null) return delegate.getInitials();
         lock.readLock().lock();
         try {
-            return super.getInitials();
+            return delegate.getInitials();
         } finally {
             lock.readLock().unlock();
         }
@@ -148,12 +134,12 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
     @Override
     public void put(T node) {
         if(lock == null){
-            super.put(node);
+            delegate.put(node);
             return;
         }
         lock.writeLock().lock();
         try {
-            super.put(node);
+            delegate.put(node);
         } finally {
             lock.writeLock().unlock();
         }
@@ -162,12 +148,12 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
     @Override
     public void put(Collection<? extends T> nodes) {
         if(lock == null){
-            super.put(nodes);
+            delegate.put(nodes);
             return;
         }
         lock.writeLock().lock();
         try {
-            super.put(nodes);
+            delegate.put(nodes);
         } finally {
             lock.writeLock().unlock();
         }
@@ -176,10 +162,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public List<T> getAll() {
-        if(lock == null) return super.getAll();
+        if(lock == null) return delegate.getAll();
         lock.readLock().lock();
         try {
-            return super.getAll();
+            return delegate.getAll();
         } finally {
             lock.readLock().unlock();
         }
@@ -187,10 +173,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public List<T> popLongestChain() {
-        if(lock == null) return super.popLongestChain();
+        if(lock == null) return delegate.popLongestChain();
         lock.writeLock().lock();
         try {
-            return super.popLongestChain();
+            return delegate.popLongestChain();
         } finally {
             lock.writeLock().unlock();
         }
@@ -198,10 +184,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public int size() {
-        if(lock == null) return super.size();
+        if(lock == null) return delegate.size();
         lock.readLock().lock();
         try {
-            return super.size();
+            return delegate.size();
         } finally {
             lock.readLock().unlock();
         }
@@ -209,10 +195,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public boolean isEmpty() {
-        if(lock == null) return super.isEmpty();
+        if(lock == null) return delegate.isEmpty();
         lock.readLock().lock();
         try {
-            return super.isEmpty();
+            return delegate.isEmpty();
         } finally {
             lock.readLock().unlock();
         }
@@ -220,10 +206,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public boolean contains(byte[] hash) {
-        if(lock == null) return super.contains(hash);
+        if(lock == null) return delegate.contains(hash);
         lock.readLock().lock();
         try {
-            return super.contains(hash);
+            return delegate.contains(hash);
         } finally {
             lock.readLock().unlock();
         }
@@ -232,10 +218,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public List<T> getAncestors(byte[] hash) {
-        if(lock == null) return super.getAncestors(hash);
+        if(lock == null) return delegate.getAncestors(hash);
         lock.readLock().lock();
         try {
-            return super.getAncestors(hash);
+            return delegate.getAncestors(hash);
         } finally {
             lock.readLock().unlock();
         }
@@ -243,10 +229,10 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public List<T> getChildren(byte[] hash) {
-        if(lock == null) return super.getChildren(hash);
+        if(lock == null) return delegate.getChildren(hash);
         lock.readLock().lock();
         try {
-            return super.getChildren(hash);
+            return delegate.getChildren(hash);
         } finally {
             lock.readLock().unlock();
         }
@@ -255,12 +241,12 @@ public class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
     @Override
     public void putIfAbsent(@NonNull T node) {
         if(lock == null) {
-            super.putIfAbsent(node);
+            delegate.putIfAbsent(node);
             return;
         }
         lock.writeLock().lock();
         try {
-            super.putIfAbsent(node);
+            delegate.putIfAbsent(node);
         } finally {
             lock.writeLock().unlock();
         }

@@ -66,6 +66,10 @@ public class ChainCache<T extends Chained> implements Cloneable<ChainCache<T>> {
         put(nodes);
     }
 
+    public ChainCache<T> withLock(){
+        return new ChainCacheWrapper<>(this);
+    }
+
     public Optional<T> get(byte[] hash) {
         return nodes.get(hash);
     }
@@ -202,7 +206,8 @@ public class ChainCache<T extends Chained> implements Cloneable<ChainCache<T>> {
         nodes.put(key, node);
         byte[] prevHash = node.getHashPrev().getBytes();
         childrenHashes.putIfAbsent(prevHash, new ByteArraySet());
-        Set<byte[]> s = childrenHashes.get(prevHash).orElseThrow(() -> ExceptionUtil.keyNotFound(HexBytes.encode(prevHash)));
+        Set<byte[]> s = childrenHashes.get(prevHash)
+                .orElseThrow(() -> ExceptionUtil.keyNotFound(HexBytes.encode(prevHash)));
         parentHash.put(key, prevHash);
         s.add(node.getHash().getBytes());
         childrenHashes.put(prevHash, s);

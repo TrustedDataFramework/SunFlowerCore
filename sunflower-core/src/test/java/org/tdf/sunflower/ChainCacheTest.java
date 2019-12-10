@@ -109,7 +109,7 @@ public class ChainCacheTest {
             ));
         }
         ChainCache<Node> cache
-            = new ChainCacheWrapper<>(sizeLimit, Comparator.comparingLong(Node::getHeight)).withLock();
+            = new ChainCache<>(sizeLimit, Comparator.comparingLong(Node::getHeight)).withLock();
 //        PERSISTENT.clear();
         cache.put(genesis);
         cache.put(chain0);
