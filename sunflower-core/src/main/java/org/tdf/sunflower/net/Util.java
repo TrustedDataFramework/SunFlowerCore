@@ -53,8 +53,4 @@ public class Util {
         InetAddress.getByName(externalIp);
         return externalIp;
     }
-
-    public static void main(String[] args) throws Exception{
-        System.out.println(externalIp());
-    }
 }

@@ -1,5 +1,6 @@
 package org.tdf.trie;
 
+import lombok.Setter;
 import org.tdf.common.Store;
 import org.tdf.serialize.RLPItem;
 
@@ -15,6 +16,10 @@ public class TrieImpl implements Trie {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private Node root;
+
+    // this flag determine whether deprecated value will be deleted
+    @Setter
+    private boolean delete;
 
     HashFunction function;
 
@@ -39,11 +44,16 @@ public class TrieImpl implements Trie {
 
     @Override
     public void put(byte[] bytes, byte[] bytes2) {
+        if (bytes == null || bytes.length == 0) throw new IllegalArgumentException("key cannot be null");
+        if (bytes2 == null || bytes2.length == 0) {
+            remove(bytes);
+            return;
+        }
         if (root == null) {
             root = Node.newLeaf(TrieKey.fromNormal(bytes), bytes2);
             return;
         }
-        root.insert(TrieKey.fromNormal(bytes), bytes2);
+        root.insert(TrieKey.fromNormal(bytes), bytes2, delete ? cache : null);
     }
 
     @Override
@@ -55,7 +65,7 @@ public class TrieImpl implements Trie {
     @Override
     public void remove(byte[] bytes) {
         if (root == null) return;
-        root = root.delete(TrieKey.fromNormal(bytes));
+        root = root.delete(TrieKey.fromNormal(bytes), delete ? cache : null);
     }
 
     @Override
@@ -95,8 +105,14 @@ public class TrieImpl implements Trie {
         root = null;
     }
 
+    // generate a snap short to recover from
     public byte[] getRootHash() {
         if (root == null) return function.apply(RLPItem.NULL.getEncoded());
-        return root.encodeAndCommit(function, cache, true).getAsItem().get();
+        return root.encodeAndCommit(function, cache, true, delete).getAsItem().get();
+    }
+
+    @Override
+    public void setRoot(byte[] rootHash) {
+        this.root = Node.fromEncoded(RLPItem.fromBytes(rootHash), cache);
     }
 }

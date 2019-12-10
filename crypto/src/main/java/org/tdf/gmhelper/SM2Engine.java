@@ -127,7 +127,6 @@ public class SM2Engine
         System.arraycopy(C1Buffer, 0, encryptResult, 0, C1Buffer.length);
         System.arraycopy(C2, 0, encryptResult, C1Buffer.length, C2.length);
         System.arraycopy(C3, 0, encryptResult, C1Buffer.length + C2.length, C3.length);
-        System.out.println(ByteUtils.toHexString(C3));
         return encryptResult;
     }
 

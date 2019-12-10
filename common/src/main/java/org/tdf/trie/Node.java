@@ -3,7 +3,6 @@ package org.tdf.trie;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.NonNull;
 import org.tdf.common.HexBytes;
 import org.tdf.common.Store;
 import org.tdf.serialize.RLPElement;
@@ -30,13 +29,14 @@ class Node {
         dirty = true;
     }
 
-    // if rlp is a list, it is actual encoding of this node
-    // if rlp is a item, it is a hash, its actual rlp encoding is stored in cache
+    // rlp encoded of this node, for serialization
     private RLPList rlp;
 
+    // if hash is not null, resolve rlp encoded from db
     private byte[] hash;
 
-    private Store<byte[], byte[]> cache;
+    // for lazy load, read only
+    private Store<byte[], byte[]> readOnlyCache;
 
     enum Type {
         BRANCH,
@@ -57,14 +57,14 @@ class Node {
 
     // create root node from database and reference
     static Node fromEncoded(RLPElement rlp, Store<byte[], byte[]> cache) {
-        if(rlp.isList())
-        return Node.builder()
-                .rlp(rlp.getAsList())
-                .cache(cache)
-                .build();
+        if (rlp.isList())
+            return Node.builder()
+                    .rlp(rlp.getAsList())
+                    .readOnlyCache(cache)
+                    .build();
         return Node.builder()
                 .hash(rlp.getAsItem().get())
-                .cache(cache)
+                .readOnlyCache(cache)
                 .build();
     }
 
@@ -90,7 +90,13 @@ class Node {
     // encode and commit root node to store
     // return rlp encoded
     // if encodeAndCommit is call at root node, force hash is set to true
-    public RLPElement encodeAndCommit(HashFunction function, Store<byte[], byte[]> cache, boolean forceHash) {
+    RLPElement encodeAndCommit(
+            HashFunction function,
+            Store<byte[], byte[]> cache,
+            boolean forceHash,
+            // if this set to true, the previous value will be deleted
+            boolean delete
+    ) {
         if (!dirty) return hash != null ? RLPItem.fromBytes(hash) : rlp;
         Type type = getType();
         switch (type) {
@@ -103,7 +109,7 @@ class Node {
             case EXTENSION: {
                 rlp = RLPList.createEmpty(2);
                 rlp.add(RLPItem.fromBytes(getKey().toPacked(false)));
-                rlp.add(getExtension().encodeAndCommit(function, cache, false));
+                rlp.add(getExtension().encodeAndCommit(function, cache, false, delete));
                 break;
             }
             default: {
@@ -114,14 +120,15 @@ class Node {
                         rlp.add(RLPItem.NULL);
                         continue;
                     }
-                    rlp.add(child.encodeAndCommit(function, cache, false));
+                    rlp.add(child.encodeAndCommit(function, cache, false, delete));
                 }
                 rlp.add(RLPItem.fromBytes(getValue()));
             }
         }
-        if(hash != null) cache.remove(hash);
+        if(delete) dispose(cache);
         dirty = false;
         byte[] raw = rlp.getEncoded();
+
         // if encoded size is great than or equals, store node to db and return a hash reference
         if (raw.length >= MAX_KEY_SIZE || forceHash) {
             hash = function.apply(raw);
@@ -134,8 +141,8 @@ class Node {
 
     // get actual rlp encoding in the cache
     private void resolve() {
-        if (rlp != null) return;
-        rlp = cache.get(hash).map(RLPElement::fromEncoded).map(RLPElement::getAsList)
+        if (rlp != null || hash == null) return;
+        rlp = readOnlyCache.get(hash).map(RLPElement::fromEncoded).map(RLPElement::getAsList)
                 .orElseThrow(() -> new RuntimeException("rlp encoding not found in cache"));
     }
 
@@ -154,13 +161,13 @@ class Node {
                 children[1] = rlp.get(1).getAsItem().get();
                 return;
             }
-            children[1] = fromEncoded(rlp.get(1), cache);
+            children[1] = fromEncoded(rlp.get(1), readOnlyCache);
             return;
         }
         children = new Object[BRANCH_SIZE];
         for (int i = 0; i < BRANCH_SIZE - 1; i++) {
             if (rlp.get(i).isNull()) continue;
-            children[i] = fromEncoded(rlp.get(i), cache);
+            children[i] = fromEncoded(rlp.get(i), readOnlyCache);
         }
         RLPItem item = rlp.get(BRANCH_SIZE - 1).getAsItem();
         if (item.isNull()) return;
@@ -168,9 +175,10 @@ class Node {
     }
 
     // clean key-value in database
-    private void dispose() {
+    private void dispose(Store<byte[], byte[]> cache) {
         if (cache == null || hash == null) return;
         cache.remove(hash);
+        hash = null;
     }
 
     // wrap o to an extension or leaf node
@@ -249,11 +257,21 @@ class Node {
         action.accept(init.concat(getKey()), this);
     }
 
-    boolean insert(TrieKey key, @NonNull byte[] value) {
+    // for test only
+    void insert(TrieKey key, byte[] value) {
+        insert(key, value, null);
+    }
+
+    // insert a new value, deprecated node will be removed from the cache if cache is not null
+    // return true when dirty
+    boolean insert(TrieKey key, byte[] value,
+                   // cache to dispose converted node
+                   Store<byte[], byte[]> cache
+    ) {
         parse();
         Type type = getType();
         if (type == Type.BRANCH) {
-            return branchInsert(key, value);
+            return branchInsert(key, value, cache);
         }
 
         TrieKey current = getKey();
@@ -267,19 +285,21 @@ class Node {
 
         // space is not enough, convert to branch node
         if (commonPrefix.isEmpty()) {
+            dispose(cache);
             toBranch();
-            branchInsert(key, value);
+            branchInsert(key, value, cache);
             setDirty();
             return true;
         }
 
         // convert self to extension node
-        if((type == Type.LEAF && commonPrefix.size() == current.size())){
+        if ((type == Type.LEAF && commonPrefix.size() == current.size())) {
+            dispose(cache);
             byte[] val = getValue();
             Node newBranch = newBranch();
             children[1] = newBranch;
             newBranch.setValue(val);
-            newBranch.branchInsert(key.shift(commonPrefix.size()), value);
+            newBranch.branchInsert(key.shift(commonPrefix.size()), value, cache);
             setDirty();
             return true;
         }
@@ -288,12 +308,12 @@ class Node {
         if (type == Type.EXTENSION && commonPrefix.size() == current.size()) {
             // TODO: remove this assertion for the extension must be branch
             getExtension().assertBranch();
-            boolean dirty = getExtension().branchInsert(key.shift(commonPrefix.size()), value);
-            this.dirty = dirty;
+            this.dirty = getExtension().branchInsert(key.shift(commonPrefix.size()), value, cache);
             return dirty;
         }
 
         setDirty();
+        dispose(cache);
         // common prefix is a strict subset of current here
         // common prefix < current => tmp couldn't be empty
         TrieKey tmp = current.shift(commonPrefix.size());
@@ -317,17 +337,24 @@ class Node {
     }
 
     Node delete(TrieKey key) {
+        return delete(key, null);
+    }
+
+    // delete a key
+    // return true when dirty
+    // if cache is non-null, deprecated node will be removed from cache
+    Node delete(TrieKey key, Store<byte[], byte[]> cache) {
         parse();
         Type type = getType();
         if (type == Type.BRANCH) {
-            return branchDelete(key);
+            return branchDelete(key, cache);
         }
         TrieKey k1 = key.matchAndShift(getKey());
         // delete failed
         if (k1 == null) return this;
         if (type == Type.LEAF) {
             if (k1.isEmpty()) {
-                dispose();
+                dispose(cache);
                 children[1] = null;
                 // delete value success, set this to null
                 return null;
@@ -336,25 +363,26 @@ class Node {
             return this;
         }
         Node child = (Node) children[1];
-        child = child.delete(k1);
+        child = child.delete(k1, cache);
         children[1] = child;
         if (child == null) {
-            dispose();
+            dispose(cache);
             return null;
         }
-        if(child.dirty) setDirty();
+        if (child.dirty) setDirty();
         tryCompact();
         return this;
     }
 
-    private boolean branchInsert(TrieKey key, byte[] value) {
+    // insert a new value, deprecated node will be removed from the cache if cache is not null
+    // return true when dirty
+    private boolean branchInsert(TrieKey key, byte[] value, Store<byte[], byte[]> cache) {
         if (key.isEmpty()) {
             return setValue(value);
         }
         Node child = getChild(key.get(0));
         if (child != null) {
-            boolean dirty = child.insert(key.shift(), value);
-            this.dirty = dirty;
+            this.dirty = child.insert(key.shift(), value, cache);
             return dirty;
         }
         child = newLeaf(key.shift(), value);
@@ -363,10 +391,13 @@ class Node {
         return true;
     }
 
-    private Node branchDelete(TrieKey key) {
+    // delete a key
+    // return true when dirty
+    // if cache is non-null, deprecated node will be removed from cache
+    private Node branchDelete(TrieKey key, Store<byte[], byte[]> cache) {
         if (key.isEmpty()) {
             // delete failed
-            if(getValue() == null) return this;
+            if (getValue() == null) return this;
             children[BRANCH_SIZE - 1] = null;
             tryCompact();
             setDirty();
@@ -376,9 +407,9 @@ class Node {
         Node child = (Node) children[idx];
         // delete failed, no need to compact
         if (child == null) return this;
-        child = child.delete(key.shift());
+        child = child.delete(key.shift(), cache);
         children[idx] = child;
-        if(child == null || child.dirty) setDirty();
+        if (child == null || child.dirty) setDirty();
         tryCompact();
         return this;
     }
@@ -493,7 +524,8 @@ class Node {
     }
 
     @Override
-    public String toString(){
-        return getType().toString();
+    public String toString() {
+        if(hash == null) return getType().toString();
+        return getType().toString() + " " + HexBytes.encode(hash);
     }
 }
