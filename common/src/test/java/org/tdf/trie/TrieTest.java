@@ -116,38 +116,36 @@ public class TrieTest {
     public void testDeleteShortString2() {
         String ROOT_HASH_BEFORE = "a9539c810cc2e8fa20785bdd78ec36cc1dab4b41f0d531e80a5e5fd25c3037ee";
         String ROOT_HASH_AFTER = "b25e1b5be78dbadf6c4e817c6d170bbb47e9916f8f6cc4607c5f3819ce98497b";
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
 
         trie.put(ca, dude);
         assertEquals(dude, trie.get(ca).get());
 
         trie.put(cat, dog);
         assertEquals(dog, trie.get(cat).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
 
         trie.remove(cat);
         assertEquals("", trie.get(cat).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
     }
 
     @Test
     public void testDeleteShortString3() {
         String ROOT_HASH_BEFORE = "778ab82a7e8236ea2ff7bb9cfa46688e7241c1fd445bf2941416881a6ee192eb";
         String ROOT_HASH_AFTER = "05875807b8f3e735188d2479add82f96dee4db5aff00dc63f07a7e27d0deab65";
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
 
         trie.put(cat, dude);
         assertEquals(dude, trie.get(cat).get());
 
         trie.put(dog, test);
         assertEquals(test, trie.get(dog).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
 
         trie.remove(dog);
         assertEquals("", trie.get(dog).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
     }
 
     @Test
