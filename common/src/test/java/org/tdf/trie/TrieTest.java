@@ -352,7 +352,7 @@ public class TrieTest {
         trie.put("dog", "puppy");
         assertEquals("05ae693aac2107336a79309e0c60b24a7aac6aa3edecaef593921500d33c63c4", Hex.toHexString(impl.getRootHash()));
 
-        TrieImpl impl2 = impl.commit();
+        TrieImpl impl2 = impl.createSnapshot();
         Store<String, String> trie2 = new StoreWrapper<>(impl2, Codecs.STRING, Codecs.STRING);
         assert trie2.get("dog").get().equals("puppy");
         trie.put("dogglesworth", "cat");
@@ -513,7 +513,7 @@ public class TrieTest {
         TrieImpl impl = new TrieImpl(HashUtil::sha3, db);
         Store<String, String> trie1 = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
         trie1.put(cat, LONG_STRING);
-        TrieImpl impl2 = impl.commit();
+        TrieImpl impl2 = impl.createSnapshot();
         assertEquals(LONG_STRING, impl2.get(cat.getBytes()).map(String::new).get());
     }
 
@@ -628,7 +628,7 @@ public class TrieTest {
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000022"), Hex.decode("22"));
 
         // Reset trie to refresh the nodes
-        trie = trie.commit();
+        trie = trie.createSnapshot();
 
         // Update trie: root -> dirty BranchNode (..., NodeValue (less than 32 bytes), ..., dirty NodeValue, ...)
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000033"), Hex.decode("33"));
@@ -668,7 +668,6 @@ public class TrieTest {
     }
 
     // TODO: test trie rollback
-    @Ignore
     @Test
     public void testRollbackTrie() throws URISyntaxException, IOException {
 
@@ -693,9 +692,7 @@ public class TrieTest {
             else
                 trieSingle.put(keyVal[0].trim(), keyVal[1].trim());
 
-            impl = impl.commit();
-            tries.put(Hex.toHexString(impl.getRootHash()), impl);
-
+            tries.put(Hex.toHexString(impl.getRootHash()), impl.createSnapshot());
             String key = Hex.toHexString(impl.getRootHash());
             rootHex.add(key);
             trieDumps.put(key, dump(trieSingle));

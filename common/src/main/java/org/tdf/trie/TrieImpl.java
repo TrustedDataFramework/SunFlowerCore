@@ -34,12 +34,6 @@ public class TrieImpl implements Trie {
         this.cache = new CachedStore<>(store);
     }
 
-    public TrieImpl(HashFunction function, Store<byte[], byte[]> store, byte[] rootHash) {
-        this.function = function;
-        this.cache = new CachedStore<>(store);
-        this.root = Node.fromEncoded(RLPItem.fromBytes(rootHash), new ReadOnlyStore<>(store));
-    }
-
     @Override
     public Optional<byte[]> get(byte[] bytes) {
         if (root == null) return Optional.empty();
@@ -111,31 +105,38 @@ public class TrieImpl implements Trie {
 
 
     public byte[] getRootHash() {
-        if (root == null) return function.apply(RLPItem.NULL.getEncoded());
-        if(!isDirty()) return root.getHash();
-        return commit().getRootHash();
+        commit();
+        if(root == null) return function.apply(RLPItem.NULL.getEncoded());
+        return root.getHash();
+    }
+
+    private void commit(){
+        if(root == null || !isDirty()) return;
+        this.root.encodeAndCommit(function, cache, true, true);
     }
 
     @Override
-    public TrieImpl commit() {
-        if(!root.isDirty()) return this;
-        TrieImpl trie = builder()
+    public TrieImpl createSnapshot() {
+        commit();
+        CachedStore<byte[]> cloned = cache.clone();
+        return builder()
                 .function(function)
-                .cache(cache.clone())
-                .root(root).build();
-        trie.root.encodeAndCommit(trie.function, trie.cache, true, true);
-        return trie;
+                .cache(cloned)
+                .root(
+                        Node.fromEncoded(
+                                RLPItem.fromBytes(getRootHash()), new ReadOnlyStore<>(cloned)
+                        )
+                )
+                .build();
     }
 
     @Override
     public boolean flush() {
-        if (root == null) return false;
-        this.root.encodeAndCommit(function, cache, true, true);
+        commit();
         return this.cache.flush();
     }
 
-    @Override
-    public boolean isDirty() {
+    boolean isDirty() {
         return root != null && root.isDirty();
     }
 }

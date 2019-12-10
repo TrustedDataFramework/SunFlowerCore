@@ -3,8 +3,8 @@ package org.tdf.trie;
 import org.tdf.store.Store;
 
 public interface Trie extends Store<byte[], byte[]> {
-    // commit modifications and return a new trie
-    Trie commit();
+    // create a snap shot
+    Trie createSnapshot();
+    // get root hash of current trie
     byte[] getRootHash();
-    boolean isDirty();
 }
