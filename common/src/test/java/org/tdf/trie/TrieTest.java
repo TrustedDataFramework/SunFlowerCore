@@ -77,8 +77,8 @@ public class TrieTest {
         Arrays.asList("test", "toaster", "toasting", "slow", "slowly")
                 .forEach(x -> trie.put(x.getBytes(), x.getBytes()));
 
-        Set<byte[]> keys = new ByteArraySet(trie.keySet());
-        Collection<byte[]> values = new ByteArraySet(trie.values());
+        Set<byte[]> keys = trie.keySet();
+        Collection<byte[]> values = trie.values();
         for (String s : Arrays.asList("test", "toaster", "toasting", "slow", "slowly")
         ) {
             assert keys.contains(s.getBytes());
@@ -89,27 +89,25 @@ public class TrieTest {
         assert trie.size() == 5;
     }
 
-    public interface StringTrie extends Store<String, String> {
-    }
 
     @Test
     public void testDeleteShortString1() {
         String ROOT_HASH_BEFORE = "a9539c810cc2e8fa20785bdd78ec36cc1dab4b41f0d531e80a5e5fd25c3037ee";
         String ROOT_HASH_AFTER = "fc5120b4a711bca1f5bb54769525b11b3fb9a8d6ac0b8bf08cbb248770521758";
 
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+
+        Trie<String, String> trie = newStringTrie();
 
         trie.put(cat, dog);
         assertEquals(dog, trie.get(cat).get());
 
         trie.put(ca, dude);
         assertEquals(dude, trie.get(ca).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
 
         trie.remove(ca);
         assertEquals("", trie.get(ca).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
     }
 
     @Test
@@ -152,57 +150,54 @@ public class TrieTest {
     public void testDeleteLongString1() {
         String ROOT_HASH_BEFORE = "318961a1c8f3724286e8e80d312352f01450bc4892c165cc7614e1c2e5a0012a";
         String ROOT_HASH_AFTER = "63356ecf33b083e244122fca7a9b128cc7620d438d5d62e4f8b5168f1fb0527b";
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
 
         trie.put(cat, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(cat).get());
 
         trie.put(dog, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(dog).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
 
         trie.remove(dog);
         assertEquals("", trie.get(dog).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
     }
 
     @Test
     public void testDeleteLongString2() {
         String ROOT_HASH_BEFORE = "e020de34ca26f8d373ff2c0a8ac3a4cb9032bfa7a194c68330b7ac3584a1d388";
         String ROOT_HASH_AFTER = "334511f0c4897677b782d13a6fa1e58e18de6b24879d57ced430bad5ac831cb2";
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
 
         trie.put(ca, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(ca).get());
 
         trie.put(cat, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(cat).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
 
         trie.remove(cat);
         assertEquals("", trie.get(cat).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
     }
 
     @Test
     public void testDeleteLongString3() {
         String ROOT_HASH_BEFORE = "e020de34ca26f8d373ff2c0a8ac3a4cb9032bfa7a194c68330b7ac3584a1d388";
         String ROOT_HASH_AFTER = "63356ecf33b083e244122fca7a9b128cc7620d438d5d62e4f8b5168f1fb0527b";
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
 
         trie.put(cat, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(cat).get());
 
         trie.put(ca, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(ca).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
 
         trie.remove(ca);
         assertEquals("", trie.get(ca).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
     }
 
     @Test
@@ -230,8 +225,7 @@ public class TrieTest {
         String ROOT_HASH_BEFORE = "3a784eddf1936515f0313b073f99e3bd65c38689021d24855f62a9601ea41717";
         String ROOT_HASH_AFTER1 = "60a2e75cfa153c4af2783bd6cb48fd6bed84c6381bc2c8f02792c046b46c0653";
         String ROOT_HASH_AFTER2 = "a84739b4762ddf15e3acc4e6957e5ab2bbfaaef00fe9d436a7369c6f058ec90d";
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
 
         trie.put(cat, dog);
         assertEquals(dog, trie.get(cat).get());
@@ -247,15 +241,15 @@ public class TrieTest {
 
         trie.put(test, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(test).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
 
         trie.remove(dog);
         assertEquals("", trie.get(dog).orElse(""));
-        assertEquals(ROOT_HASH_AFTER1, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER1, Hex.toHexString(trie.getRootHash()));
 
         trie.remove(test);
         assertEquals("", trie.get(test).orElse(""));
-        assertEquals(ROOT_HASH_AFTER2, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER2, Hex.toHexString(trie.getRootHash()));
     }
 
     @Test
@@ -263,8 +257,7 @@ public class TrieTest {
         String ROOT_HASH_BEFORE = "cf1ed2b6c4b6558f70ef0ecf76bfbee96af785cb5d5e7bfc37f9804ad8d0fb56";
         String ROOT_HASH_AFTER1 = "f586af4a476ba853fca8cea1fbde27cd17d537d18f64269fe09b02aa7fe55a9e";
         String ROOT_HASH_AFTER2 = "c59fdc16a80b11cc2f7a8b107bb0c954c0d8059e49c760ec3660eea64053ac91";
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
 
         trie.put(c, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(c).get());
@@ -274,15 +267,15 @@ public class TrieTest {
 
         trie.put(cat, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(cat).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
 
         trie.remove(ca);
         assertEquals("", trie.get(ca).orElse(""));
-        assertEquals(ROOT_HASH_AFTER1, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER1, Hex.toHexString(trie.getRootHash()));
 
         trie.remove(cat);
         assertEquals("", trie.get(cat).orElse(""));
-        assertEquals(ROOT_HASH_AFTER2, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER2, Hex.toHexString(trie.getRootHash()));
     }
 
     public static byte[] intToBytes(int val) {
@@ -310,58 +303,53 @@ public class TrieTest {
     @Test
     public void testDeleteAll() {
         String ROOT_HASH_BEFORE = "a84739b4762ddf15e3acc4e6957e5ab2bbfaaef00fe9d436a7369c6f058ec90d";
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
-        assertEquals(ROOT_HASH_EMPTY, Hex.toHexString(impl.getRootHash()));
+        Trie<String, String> trie = newStringTrie();
+        assertEquals(ROOT_HASH_EMPTY, Hex.toHexString(trie.getRootHash()));
 
         trie.put(ca, dude);
         trie.put(cat, dog);
         trie.put(doge, LONG_STRING);
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
 
         trie.remove(ca);
         trie.remove(cat);
         trie.remove(doge);
-        assertEquals(ROOT_HASH_EMPTY, Hex.toHexString(impl.getRootHash()));
+        assertEquals(ROOT_HASH_EMPTY, Hex.toHexString(trie.getRootHash()));
     }
 
     @Test
     public void testTrieEquals() {
-        TrieImpl<byte[], byte[]> impl1 = newBytesTrie();
-        Store<String, String> trie1 = new StoreWrapper<>(impl1, Codecs.STRING, Codecs.STRING);
-        TrieImpl<byte[], byte[]> impl2 = newBytesTrie();
-        Store<String, String> trie2 = new StoreWrapper<>(impl2, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie1 = newStringTrie();
+        Trie<String, String> trie2 = newStringTrie();
 
         trie1.put(doge, LONG_STRING);
         trie2.put(doge, LONG_STRING);
-        assertEquals(Hex.toHexString(impl1.getRootHash()), Hex.toHexString(impl2.getRootHash()));
+        assertEquals(Hex.toHexString(trie1.getRootHash()), Hex.toHexString(trie2.getRootHash()));
 
         trie1.put(dog, LONG_STRING);
         trie2.put(cat, LONG_STRING);
-        assertNotEquals(Hex.toHexString(impl1.getRootHash()), Hex.toHexString(impl2.getRootHash()));
+        assertNotEquals(Hex.toHexString(trie1.getRootHash()), Hex.toHexString(trie2.getRootHash()));
     }
 
     @Test
     public void testSingleItem() {
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
         trie.put("A", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
-        assertEquals("d23786fb4a010da3ce639d66d5e904a11dbc02746d1ce25029e53290cabf28ab", Hex.toHexString(impl.getRootHash()));
+        assertEquals("d23786fb4a010da3ce639d66d5e904a11dbc02746d1ce25029e53290cabf28ab", Hex.toHexString(trie.getRootHash()));
     }
 
     @Test
     public void testDogs() {
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
+        Trie<String, String> impl = trie;
         trie.put("doe", "reindeer");
         assertEquals("11a0327cfcc5b7689b6b6d727e1f5f8846c1137caaa9fc871ba31b7cce1b703e", Hex.toHexString(impl.getRootHash()));
 
         trie.put("dog", "puppy");
         assertEquals("05ae693aac2107336a79309e0c60b24a7aac6aa3edecaef593921500d33c63c4", Hex.toHexString(impl.getRootHash()));
 
-        TrieImpl<byte[], byte[]> impl2 = impl.createSnapshot();
-        Store<String, String> trie2 = new StoreWrapper<>(impl2, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie2 = impl.createSnapshot();
         assert trie2.get("dog").get().equals("puppy");
         trie.put("dogglesworth", "cat");
         impl.getRootHash();
@@ -369,21 +357,19 @@ public class TrieTest {
 
     @Test
     public void testPuppy() {
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
         trie.put("do", "verb");
         trie.put("doge", "coin");
         trie.put("horse", "stallion");
         trie.put("dog", "puppy");
 
-        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", Hex.toHexString(impl.getRootHash()));
+        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", Hex.toHexString(trie.getRootHash()));
     }
 
 
     @Test
     public void testEmptyValues() {
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
         trie.put("do", "verb");
         trie.put("ether", "wookiedoo");
         trie.put("horse", "stallion");
@@ -393,42 +379,39 @@ public class TrieTest {
         trie.put("dog", "puppy");
         trie.remove("shaman");
 
-        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", Hex.toHexString(impl.getRootHash()));
+        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", Hex.toHexString(trie.getRootHash()));
     }
 
 
     @Test
     public void testFoo() {
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
         trie.put("foo", "bar");
         trie.put("food", "bat");
         trie.put("food", "bass");
 
-        assertEquals("17beaa1648bafa633cda809c90c04af50fc8aed3cb40d16efbddee6fdf63c4c3", Hex.toHexString(impl.getRootHash()));
+        assertEquals("17beaa1648bafa633cda809c90c04af50fc8aed3cb40d16efbddee6fdf63c4c3", Hex.toHexString(trie.getRootHash()));
     }
 
     @Test
     public void testSmallValues() {
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
 
         trie.put("be", "e");
         trie.put("dog", "puppy");
         trie.put("bed", "d");
-        assertEquals("3f67c7a47520f79faa29255d2d3c084a7a6df0453116ed7232ff10277a8be68b", Hex.toHexString(impl.getRootHash()));
+        assertEquals("3f67c7a47520f79faa29255d2d3c084a7a6df0453116ed7232ff10277a8be68b", Hex.toHexString(trie.getRootHash()));
     }
 
     @Test
     public void testTesty() {
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
 
         trie.put("test", "test");
-        assertEquals("85d106d4edff3b7a4889e91251d0a87d7c17a1dda648ebdba8c6060825be23b8", Hex.toHexString(impl.getRootHash()));
+        assertEquals("85d106d4edff3b7a4889e91251d0a87d7c17a1dda648ebdba8c6060825be23b8", Hex.toHexString(trie.getRootHash()));
 
         trie.put("te", "testy");
-        assertEquals("8452568af70d8d140f58d941338542f645fcca50094b20f3c3d8c3df49337928", Hex.toHexString(impl.getRootHash()));
+        assertEquals("8452568af70d8d140f58d941338542f645fcca50094b20f3c3d8c3df49337928", Hex.toHexString(trie.getRootHash()));
     }
 
     private final String randomDictionary = "spinneries, archipenko, prepotency, herniotomy, preexpress, relaxative, insolvably, debonnaire, apophysate, virtuality, cavalryman, utilizable, diagenesis, vitascopic, governessy, abranchial, cyanogenic, gratulated, signalment, predicable, subquality, crystalize, prosaicism, oenologist, repressive, impanelled, cockneyism, bordelaise, compigne, konstantin, predicated, unsublimed, hydrophane, phycomyces, capitalise, slippingly, untithable, unburnable, deoxidizer, misteacher, precorrect, disclaimer, solidified, neuraxitis, caravaning, betelgeuse, underprice, uninclosed, acrogynous, reirrigate, dazzlingly, chaffiness, corybantes, intumesced, intentness, superexert, abstrusely, astounding, pilgrimage, posttarsal, prayerless, nomologist, semibelted, frithstool, unstinging, ecalcarate, amputating, megascopic, graphalloy, platteland, adjacently, mingrelian, valentinus, appendical, unaccurate, coriaceous, waterworks, sympathize, doorkeeper, overguilty, flaggingly, admonitory, aeriferous, normocytic, parnellism, catafalque, odontiasis, apprentice, adulterous, mechanisma, wilderness, undivorced, reinterred, effleurage, pretrochal, phytogenic, swirlingly, herbarized, unresolved, classifier, diosmosing, microphage, consecrate, astarboard, predefying, predriving, lettergram, ungranular, overdozing, conferring, unfavorite, peacockish, coinciding, erythraeum, freeholder, zygophoric, imbitterer, centroidal, appendixes, grayfishes, enological, indiscreet, broadcloth, divulgated, anglophobe, stoopingly, bibliophil, laryngitis, separatist, estivating, bellarmine, greasiness, typhlology, xanthation, mortifying, endeavorer, aviatrices, unequalise, metastatic, leftwinger, apologizer, quatrefoil, nonfouling, bitartrate, outchiding, undeported, poussetted, haemolysis, asantehene, montgomery, unjoinable, cedarhurst, unfastener, nonvacuums, beauregard, animalized, polyphides, cannizzaro, gelatinoid, apologised, unscripted, tracheidal, subdiscoid, gravelling, variegated, interabang, inoperable, immortelle, laestrygon, duplicatus, proscience, deoxidised, manfulness, channelize, nondefense, ectomorphy, unimpelled, headwaiter, hexaemeric, derivation, prelexical, limitarian, nonionized, prorefugee, invariably, patronizer, paraplegia, redivision, occupative, unfaceable, hypomnesia, psalterium, doctorfish, gentlefolk, overrefine, heptastich, desirously, clarabelle, uneuphonic, autotelism, firewarden, timberjack, fumigation, drainpipes, spathulate, novelvelle, bicorporal, grisliness, unhesitant, supergiant, unpatented, womanpower, toastiness, multichord, paramnesia, undertrick, contrarily, neurogenic, gunmanship, settlement, brookville, gradualism, unossified, villanovan, ecospecies, organising, buckhannon, prefulfill, johnsonese, unforegone, unwrathful, dunderhead, erceldoune, unwadeable, refunction, understuff, swaggering, freckliest, telemachus, groundsill, outslidden, bolsheviks, recognizer, hemangioma, tarantella, muhammedan, talebearer, relocation, preemption, chachalaca, septuagint, ubiquitous, plexiglass, humoresque, biliverdin, tetraploid, capitoline, summerwood, undilating, undetested, meningitic, petrolatum, phytotoxic, adiphenine, flashlight, protectory, inwreathed, rawishness, tendrillar, hastefully, bananaquit, anarthrous, unbedimmed, herborized, decenniums, deprecated, karyotypic, squalidity, pomiferous, petroglyph, actinomere, peninsular, trigonally, androgenic, resistance, unassuming, frithstool, documental, eunuchised, interphone, thymbraeus, confirmand, expurgated, vegetation, myographic, plasmagene, spindrying, unlackeyed, foreknower, mythically, albescence, rebudgeted, implicitly, unmonastic, torricelli, mortarless, labialized, phenacaine, radiometry, sluggishly, understood, wiretapper, jacobitely, unbetrayed, stadholder, directress, emissaries, corelation, sensualize, uncurbable, permillage, tentacular, thriftless, demoralize, preimagine, iconoclast, acrobatism, firewarden, transpired, bluethroat, wanderjahr, groundable, pedestrian, unulcerous, preearthly, freelanced, sculleries, avengingly, visigothic, preharmony, bressummer, acceptable, unfoolable, predivider, overseeing, arcosolium, piriformis, needlecord, homebodies, sulphation, phantasmic, unsensible, unpackaged, isopiestic, cytophagic, butterlike, frizzliest, winklehawk, necrophile, mesothorax, cuchulainn, unrentable, untangible, unshifting, unfeasible, poetastric, extermined, gaillardia, nonpendent, harborside, pigsticker, infanthood, underrower, easterling, jockeyship, housebreak, horologium, undepicted, dysacousma, incurrable, editorship, unrelented, peritricha, interchaff, frothiness, underplant, proafrican, squareness, enigmatise, reconciled, nonnumeral, nonevident, hamantasch, victualing, watercolor, schrdinger, understand, butlerlike, hemiglobin, yankeeland";
@@ -441,8 +424,7 @@ public class TrieTest {
             List<String> randomWords = Arrays.asList(randomDictionary.split(","));
             HashMap<String, String> testerMap = new HashMap<>();
 
-            TrieImpl<byte[], byte[]> impl = newBytesTrie();
-            Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+            Trie<String, String> trie = newStringTrie();
             Random generator = new Random();
 
             // Random insertion
@@ -487,8 +469,7 @@ public class TrieTest {
         // should be root: cfd77c0fcb037adefce1f4e2eb94381456a4746379d2896bb8f309c620436d30
 
         Store<byte[], byte[]> db = new NoDoubleDeleteStore();
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trieSingle = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trieSingle = newStringTrie();
 
         URL massiveUpload_1 = ClassLoader
                 .getSystemResource("trie/massive-upload.dmp");
@@ -510,19 +491,17 @@ public class TrieTest {
         }
 
 
-        assert "cfd77c0fcb037adefce1f4e2eb94381456a4746379d2896bb8f309c620436d30".equals(Hex.toHexString(impl.getRootHash()));
+        assert "cfd77c0fcb037adefce1f4e2eb94381456a4746379d2896bb8f309c620436d30".equals(Hex.toHexString(trieSingle.getRootHash()));
 
     }
 
 
     @Test
     public void testGetFromRootNode() {
-        Store<byte[], byte[]> db = new NoDoubleDeleteStore();
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie1 = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie1 = newStringTrie();
         trie1.put(cat, LONG_STRING);
-        TrieImpl<byte[], byte[]> impl2 = impl.createSnapshot();
-        assertEquals(LONG_STRING, impl2.get(cat.getBytes()).map(String::new).get());
+        Trie<String, String> trie2 = trie1.createSnapshot();
+        assertEquals(LONG_STRING, trie2.get(cat).get());
     }
 
 
@@ -579,19 +558,18 @@ public class TrieTest {
     // each time dump the entire trie
     public void testSample_1() {
 
-        Store<byte[], byte[]> db = new NoDoubleDeleteStore();
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trie = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trie = newStringTrie();
+
 
         trie.put("dog", "puppy");
         System.out.println();
-        Assert.assertEquals("ed6e08740e4a267eca9d4740f71f573e9aabbcc739b16a2fa6c1baed5ec21278", Hex.toHexString(impl.getRootHash()));
+        Assert.assertEquals("ed6e08740e4a267eca9d4740f71f573e9aabbcc739b16a2fa6c1baed5ec21278", Hex.toHexString(trie.getRootHash()));
 
         trie.put("do", "verb");
-        Assert.assertEquals("779db3986dd4f38416bfde49750ef7b13c6ecb3e2221620bcad9267e94604d36", Hex.toHexString(impl.getRootHash()));
+        Assert.assertEquals("779db3986dd4f38416bfde49750ef7b13c6ecb3e2221620bcad9267e94604d36", Hex.toHexString(trie.getRootHash()));
 
         trie.put("doggiestan", "aeswome_place");
-        Assert.assertEquals("8bd5544747b4c44d1274aa99a6293065fe319b3230e800203317e4c75a770099", Hex.toHexString(impl.getRootHash()));
+        Assert.assertEquals("8bd5544747b4c44d1274aa99a6293065fe319b3230e800203317e4c75a770099", Hex.toHexString(trie.getRootHash()));
     }
 
     // this case relates to a bug which led us to conflict on Morden network (block #486248)
@@ -604,7 +582,7 @@ public class TrieTest {
         dataMap.put("6e929251b981389774af84a07585724c432e2db487381810719c3dd913192ae2", "00000000000000000000000000000000000000000000000000000000000000be");
         dataMap.put("6e92718d00dae27b2a96f6853a0bf11ded08bc658b2e75904ca0344df5aff9ae", "00000000000000000000000000000000000000000000002f0000000000000000");
 
-        TrieImpl<byte[], byte[]> trie = new TrieImpl<>(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        TrieImpl<byte[], byte[]> trie = newBytesTrie();
 
         for (Map.Entry<String, String> e : dataMap.entrySet()) {
             trie.put(Hex.decode(e.getKey()), Hex.decode(e.getValue()));
@@ -628,10 +606,8 @@ public class TrieTest {
     @Test
     public void testBugFix2() throws Exception {
 
-        Store<byte[], byte[]> src = new NoDoubleDeleteStore();
-
         // Create trie: root -> BranchNode (..., NodeValue (less than 32 bytes), ...)
-        TrieImpl<byte[], byte[]> trie = new TrieImpl<>(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        TrieImpl<byte[], byte[]> trie = newBytesTrie();
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000011"), Hex.decode("11"));
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000022"), Hex.decode("22"));
 
@@ -679,16 +655,14 @@ public class TrieTest {
     @Test
     public void testRollbackTrie() throws URISyntaxException, IOException {
 
-        Store<byte[], byte[]> src = new NoDoubleDeleteStore();
-        TrieImpl<byte[], byte[]> impl = newBytesTrie();
-        Store<String, String> trieSingle = new StoreWrapper<>(impl, Codecs.STRING, Codecs.STRING);
+        Trie<String, String> trieSingle = newStringTrie();
         URL massiveUpload_1 = ClassLoader
                 .getSystemResource("trie/massive-upload.dmp");
 
         File file = new File(massiveUpload_1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
 
-        Map<String, TrieImpl<byte[], byte[]>> tries = new HashMap<>();
+        Map<String, Trie<String, String>> tries = new HashMap<>();
         Map<String, Map<String, String>> trieDumps = new HashMap<>();
         List<String> rootHex = new ArrayList<>();
         for (int i = 0; i < 100; ++i) {
@@ -700,8 +674,8 @@ public class TrieTest {
             else
                 trieSingle.put(keyVal[0].trim(), keyVal[1].trim());
 
-            tries.put(Hex.toHexString(impl.getRootHash()), impl.createSnapshot());
-            String key = Hex.toHexString(impl.getRootHash());
+            tries.put(Hex.toHexString(trieSingle.getRootHash()), trieSingle.createSnapshot());
+            String key = Hex.toHexString(trieSingle.getRootHash());
             rootHex.add(key);
             trieDumps.put(key, dump(trieSingle));
         }
@@ -712,8 +686,7 @@ public class TrieTest {
 
             String key = rootHex.get(i);
 
-            TrieImpl<byte[], byte[]> impl1 = tries.get(key);
-            trieSingle = new StoreWrapper<>(impl1, Codecs.STRING, Codecs.STRING);
+            trieSingle = tries.get(key);
 
             Map<String, String> dumped = dump(trieSingle);
             assert equals(trieDumps.get(key), dumped);

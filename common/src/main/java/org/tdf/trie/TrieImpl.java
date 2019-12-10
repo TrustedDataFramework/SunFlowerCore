@@ -95,6 +95,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         if (root == null) return Collections.emptySet();
         ScanKeySet action = new ScanKeySet();
         root.traverse(EMPTY, action);
+        if(kCodec == Codec.IDENTIY) return (Set<K>) action.getBytes();
         return action.getBytes().stream()
                 .map(kCodec.getDecoder())
                 .collect(Collectors.toSet());
@@ -105,6 +106,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         if (root == null) return Collections.emptySet();
         ScanValues action = new ScanValues();
         root.traverse(EMPTY, action);
+        if(vCodec == Codec.IDENTIY) return (Set<V>) action.getBytes();
         return action.getBytes().stream()
                 .map(vCodec.getDecoder())
                 .collect(Collectors.toList());

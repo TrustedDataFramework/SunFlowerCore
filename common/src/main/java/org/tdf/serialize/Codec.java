@@ -1,7 +1,5 @@
 package org.tdf.serialize;
 
-import com.google.common.base.Functions;
-
 import java.util.function.Function;
 
 public interface Codec<K, V> {
@@ -10,8 +8,10 @@ public interface Codec<K, V> {
     Function<? super V, ? extends K> getDecoder();
 
     static <K> Codec<K, K> identity() {
-        return newInstance(Functions.identity(), Functions.identity());
+        return (Codec<K, K>) IDENTIY;
     }
+
+    Codec IDENTIY = newInstance(Function.identity(), Function.identity());
 
     static <K, V> Codec<K, V> newInstance(Function<? super K, ? extends V> encoder, Function<? super V, ? extends K> decoder) {
         return new Codec<K, V>() {
