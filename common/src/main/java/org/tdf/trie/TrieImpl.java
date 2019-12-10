@@ -1,8 +1,10 @@
 package org.tdf.trie;
 
+import com.google.common.base.Functions;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NonNull;
 import org.tdf.serialize.Codec;
 import org.tdf.serialize.RLPItem;
 import org.tdf.store.CachedStore;
@@ -19,8 +21,8 @@ import static org.tdf.trie.TrieKey.EMPTY;
 
 // enhanced radix tree
 @Builder(access = AccessLevel.PRIVATE)
-@AllArgsConstructor
-public class TrieImpl<V> implements Trie<V> {
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class TrieImpl<K, V> implements Trie<K, V> {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private Node root;
@@ -29,31 +31,36 @@ public class TrieImpl<V> implements Trie<V> {
 
     CachedStore<byte[]> cache;
 
-    Codec<V, byte[]> codec;
+    Codec<K, byte[]> kCodec;
+
+    Codec<V, byte[]> vCodec;
 
     private TrieImpl() {
     }
 
-    public TrieImpl(HashFunction function, Store<byte[], byte[]> store, Codec<V, byte[]> codec) {
+    public TrieImpl(HashFunction function, Store<byte[], byte[]> store, Codec<K, byte[]> kCodec, Codec<V, byte[]> vCodec) {
         this.function = function;
         this.cache = new CachedStore<>(store);
-        this.codec = codec;
+        this.kCodec = kCodec;
+        this.vCodec = vCodec;
     }
 
     @Override
-    public Optional<V> get(byte[] bytes) {
+    public Optional<V> get(@NonNull K k) {
         if (root == null) return Optional.empty();
-        return Optional.ofNullable(root.get(TrieKey.fromNormal(bytes))).map(codec.getDecoder());
+        byte[] data = kCodec.getEncoder().apply(k);
+        if (data == null || data.length == 0) return Optional.empty();
+        return Optional.ofNullable(root.get(TrieKey.fromNormal(data))).map(vCodec.getDecoder());
     }
 
-    public void put(byte[] bytes, V val){
-        putBytes(bytes, codec.getEncoder().apply(val));
+    public void put(@NonNull K k, @NonNull V val) {
+        putBytes(kCodec.getEncoder().apply(k), vCodec.getEncoder().apply(val));
     }
 
     private void putBytes(byte[] bytes, byte[] bytes2) {
         if (bytes == null || bytes.length == 0) throw new IllegalArgumentException("key cannot be null");
         if (bytes2 == null || bytes2.length == 0) {
-            remove(bytes);
+            removeBytes(bytes);
             return;
         }
         if (root == null) {
@@ -64,23 +71,33 @@ public class TrieImpl<V> implements Trie<V> {
     }
 
     @Override
-    public void putIfAbsent(byte[] bytes, V val) {
-        if (root != null && root.get(TrieKey.fromNormal(bytes)) != null) return;
-        put(bytes, val);
+    public void putIfAbsent(@NonNull K k, @NonNull V val) {
+        if (containsKey(k)) return;
+        put(k, val);
     }
 
     @Override
-    public void remove(byte[] bytes) {
+    public void remove(K k) {
         if (root == null) return;
-        root = root.delete(TrieKey.fromNormal(bytes), cache);
+        byte[] data = kCodec.getEncoder().apply(k);
+        if(data == null || data.length == 0) return;
+        root = root.delete(TrieKey.fromNormal(data), cache);
+    }
+
+    private void removeBytes(byte[] data) {
+        if (root == null) return;
+        if(data == null || data.length == 0) return;
+        root = root.delete(TrieKey.fromNormal(data), cache);
     }
 
     @Override
-    public Set<byte[]> keySet() {
+    public Set<K> keySet() {
         if (root == null) return Collections.emptySet();
         ScanKeySet action = new ScanKeySet();
         root.traverse(EMPTY, action);
-        return action.getBytes();
+        return action.getBytes().stream()
+                .map(kCodec.getDecoder())
+                .collect(Collectors.toSet());
     }
 
     @Override
@@ -89,14 +106,14 @@ public class TrieImpl<V> implements Trie<V> {
         ScanValues action = new ScanValues();
         root.traverse(EMPTY, action);
         return action.getBytes().stream()
-                .map(codec.getDecoder())
+                .map(vCodec.getDecoder())
                 .collect(Collectors.toList());
     }
 
     @Override
-    public boolean containsKey(byte[] bytes) {
+    public boolean containsKey(K k) {
         if (root == null) return false;
-        return root.get(TrieKey.fromNormal(bytes)) != null;
+        return root.get(TrieKey.fromNormal(kCodec.getEncoder().apply(k))) != null;
     }
 
     @Override
@@ -127,12 +144,12 @@ public class TrieImpl<V> implements Trie<V> {
     }
 
     @Override
-    public TrieImpl<V> createSnapshot() {
+    public TrieImpl<K, V> createSnapshot() {
         commit();
         CachedStore<byte[]> cloned = cache.clone();
         return new TrieImpl<>(
                 Node.fromRootHash(getRootHash(), new ReadOnlyStore<>(cloned)),
-                function, cloned, codec
+                function, cloned, kCodec, vCodec
         );
     }
 
