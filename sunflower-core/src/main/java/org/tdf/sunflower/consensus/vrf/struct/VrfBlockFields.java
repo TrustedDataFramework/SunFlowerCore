@@ -1,12 +1,11 @@
 package org.tdf.sunflower.consensus.vrf.struct;
 
-import org.tdf.serialize.RLP;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.tdf.rlp.RLP;
 
 @Getter
 @Setter

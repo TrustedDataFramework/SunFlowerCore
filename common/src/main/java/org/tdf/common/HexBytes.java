@@ -6,10 +6,10 @@ import com.google.common.primitives.Bytes;
 import lombok.NonNull;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.tdf.rlp.RLPDecoding;
+import org.tdf.rlp.RLPEncoding;
 import org.tdf.serialize.HexBytesDecoder;
 import org.tdf.serialize.HexBytesEncoder;
-import org.tdf.serialize.RLPDecoding;
-import org.tdf.serialize.RLPEncoding;
 import org.tdf.util.FastByteComparisons;
 
 import java.util.Arrays;

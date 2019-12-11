@@ -6,7 +6,7 @@ import org.tdf.common.HexBytes;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
-import org.tdf.serialize.RLPDeserializer;
+import org.tdf.rlp.RLPDeserializer;
 import org.tdf.serialize.RLPSerializer;
 import org.tdf.sunflower.consensus.vrf.VrfConfig;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;

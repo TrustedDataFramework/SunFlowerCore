@@ -1,7 +1,7 @@
 package org.tdf.common;
 
-import org.tdf.serialize.RLPItem;
-import org.tdf.serialize.RLPList;
+import org.tdf.rlp.RLPItem;
+import org.tdf.rlp.RLPList;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

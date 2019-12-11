@@ -19,7 +19,7 @@ import org.tdf.common.Peer;
 import org.tdf.common.PeerServer;
 import org.tdf.common.PeerServerListener;
 import org.tdf.exception.ConsensusEngineLoadException;
-import org.tdf.serialize.RLPDeserializer;
+import org.tdf.rlp.RLPDeserializer;
 import org.tdf.serialize.RLPSerializer;
 import org.tdf.sunflower.consensus.vrf.core.CommitProof;
 import org.tdf.sunflower.consensus.vrf.core.PendingVrfState;

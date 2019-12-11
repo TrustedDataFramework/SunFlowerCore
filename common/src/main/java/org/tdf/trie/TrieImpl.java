@@ -1,12 +1,11 @@
 package org.tdf.trie;
 
-import com.google.common.base.Functions;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
+import org.tdf.rlp.RLPItem;
 import org.tdf.serialize.Codec;
-import org.tdf.serialize.RLPItem;
 import org.tdf.store.CachedStore;
 import org.tdf.store.ReadOnlyStore;
 import org.tdf.store.Store;

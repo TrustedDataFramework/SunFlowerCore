@@ -56,10 +56,6 @@ public enum Code
    * <code>ANOTHER = 5;</code>
    */
   ANOTHER(5),
-  NEW_MINED_BLOCK(6),
-  VRF_BLOCK(7),
-  VRF_PROPOSAL_PROOF(8),
-  VRF_COMMIT_PROOF(9),
   UNRECOGNIZED(-1),
   ;
 
@@ -143,10 +139,6 @@ public enum Code
       case 3: return LOOK_UP;
       case 4: return PEERS;
       case 5: return ANOTHER;
-      case 6: return NEW_MINED_BLOCK;
-      case 7: return VRF_BLOCK;
-      case 8: return VRF_PROPOSAL_PROOF;
-      case 9: return VRF_COMMIT_PROOF;
       default: return null;
     }
   }

@@ -1,7 +1,6 @@
 package org.tdf.trie;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -11,7 +10,6 @@ import org.tdf.serialize.Codec;
 import org.tdf.serialize.Codecs;
 import org.tdf.store.ByteArrayMapStore;
 import org.tdf.store.Store;
-import org.tdf.store.StoreWrapper;
 import org.tdf.util.ByteArraySet;
 
 import java.io.File;
@@ -23,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 import static org.tdf.common.HashUtil.EMPTY_TRIE_HASH;

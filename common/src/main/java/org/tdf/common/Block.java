@@ -8,8 +8,8 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.Delegate;
-import org.tdf.serialize.ElementType;
-import org.tdf.serialize.RLP;
+import org.tdf.rlp.ElementType;
+import org.tdf.rlp.RLP;
 import org.tdf.util.EpochSecondDeserializer;
 import org.tdf.util.EpochSecondsSerializer;
 
@@ -34,7 +34,6 @@ public class Block implements Cloneable<Block>, Chained{
     @Getter
     @Setter
     @RLP(1)
-    @ElementType(Transaction.class)
     private List<Transaction> body;
 
     @JsonSerialize(using = EpochSecondsSerializer.class)

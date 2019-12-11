@@ -2,6 +2,9 @@ package org.tdf.serialize;
 
 
 import org.tdf.common.HexBytes;
+import org.tdf.rlp.RLPElement;
+import org.tdf.rlp.RLPEncoder;
+import org.tdf.rlp.RLPItem;
 
 public class HexBytesEncoder implements RLPEncoder<HexBytes> {
     @Override

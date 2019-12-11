@@ -4,7 +4,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.HashUtil;
-import org.tdf.serialize.RLPElement;
+import org.tdf.rlp.RLPElement;
 import org.tdf.store.ByteArrayMapStore;
 import org.tdf.store.Store;
 import org.tdf.util.BigEndian;

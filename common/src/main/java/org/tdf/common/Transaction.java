@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
-import org.tdf.serialize.RLP;
+import org.tdf.rlp.RLP;
 import org.tdf.util.EpochSecondDeserializer;
 import org.tdf.util.EpochSecondsSerializer;
 

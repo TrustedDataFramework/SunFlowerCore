@@ -5,9 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import org.tdf.common.HexBytes;
-import org.tdf.serialize.RLPElement;
-import org.tdf.serialize.RLPItem;
-import org.tdf.serialize.RLPList;
+import org.tdf.rlp.RLPElement;
+import org.tdf.rlp.RLPItem;
+import org.tdf.rlp.RLPList;
 import org.tdf.store.Store;
 import org.tdf.util.FastByteComparisons;
 

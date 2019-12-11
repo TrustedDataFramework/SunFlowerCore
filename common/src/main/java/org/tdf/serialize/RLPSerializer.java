@@ -1,5 +1,7 @@
 package org.tdf.serialize;
 
+import org.tdf.rlp.RLPElement;
+
 /**
  * The RLP Serializer supports byte[], String, HexBytes, byte, int, long and Collection of then
  * use @RLP annotation to serialize your class, the order

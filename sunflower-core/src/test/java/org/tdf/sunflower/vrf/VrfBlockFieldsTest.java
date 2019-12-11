@@ -3,7 +3,7 @@ package org.tdf.sunflower.vrf;
 import org.junit.Test;
 import org.tdf.common.Block;
 import org.tdf.common.HexBytes;
-import org.tdf.serialize.RLPDeserializer;
+import org.tdf.rlp.RLPDeserializer;
 import org.tdf.serialize.RLPSerializer;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;

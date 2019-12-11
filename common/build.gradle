@@ -35,6 +35,7 @@ dependencies {
     testCompile "com.google.guava:guava:${guavaVersion}"
 
     compileOnly "org.tdf:rlp:${rlpVersion}"
+    testCompile "org.tdf:rlp:${rlpVersion}"
 
     testCompile "com.madgag.spongycastle:core:${scastleVersion}" // for rlp encoding
     testCompile "com.madgag.spongycastle:prov:${scastleVersion}" // for rlp encoding
