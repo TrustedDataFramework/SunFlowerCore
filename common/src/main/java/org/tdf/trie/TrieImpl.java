@@ -46,9 +46,9 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     @Override
     public Optional<V> get(@NonNull K k) {
-        if (root == null) return Optional.empty();
         byte[] data = kCodec.getEncoder().apply(k);
-        if (data == null || data.length == 0) return Optional.empty();
+        if (data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
+        if (root == null) return Optional.empty();
         return Optional.ofNullable(root.get(TrieKey.fromNormal(data))).map(vCodec.getDecoder());
     }
 
@@ -76,16 +76,16 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public void remove(K k) {
-        if (root == null) return;
+    public void remove(@NonNull K k) {
         byte[] data = kCodec.getEncoder().apply(k);
         if(data == null || data.length == 0) return;
+        if (root == null) return;
         root = root.delete(TrieKey.fromNormal(data), cache);
     }
 
     private void removeBytes(byte[] data) {
         if (root == null) return;
-        if(data == null || data.length == 0) return;
+        if(data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
         root = root.delete(TrieKey.fromNormal(data), cache);
     }
 
@@ -94,7 +94,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         if (root == null) return Collections.emptySet();
         ScanKeySet action = new ScanKeySet();
         root.traverse(EMPTY, action);
-        if(kCodec == Codec.IDENTIY) return (Set<K>) action.getBytes();
+        if(kCodec.equals(Codec.identity())) return (Set<K>) action.getBytes();
         return action.getBytes().stream()
                 .map(kCodec.getDecoder())
                 .collect(Collectors.toSet());
@@ -105,16 +105,15 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         if (root == null) return Collections.emptySet();
         ScanValues action = new ScanValues();
         root.traverse(EMPTY, action);
-        if(vCodec == Codec.IDENTIY) return (Set<V>) action.getBytes();
+        if(vCodec.equals(Codec.identity())) return (Set<V>) action.getBytes();
         return action.getBytes().stream()
                 .map(vCodec.getDecoder())
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 
     @Override
-    public boolean containsKey(K k) {
-        if (root == null) return false;
-        return root.get(TrieKey.fromNormal(kCodec.getEncoder().apply(k))) != null;
+    public boolean containsKey(@NonNull K k) {
+        return get(k).isPresent();
     }
 
     @Override
@@ -140,8 +139,8 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     private void commit() {
-        if (root == null || !isDirty()) return;
-        this.root.encodeAndCommit(function, cache, true, true);
+        if (root == null) return;
+        this.root.commit(function, cache, true);
     }
 
     @Override

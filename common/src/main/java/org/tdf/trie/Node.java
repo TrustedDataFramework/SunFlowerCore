@@ -101,12 +101,10 @@ class Node {
     // encode and commit root node to store
     // return rlp encoded
     // if encodeAndCommit is call at root node, force hash is set to true
-    RLPElement encodeAndCommit(
+    RLPElement commit(
             HashFunction function,
             Store<byte[], byte[]> cache,
-            boolean forceHash,
-            // if this set to true, the previous value will be deleted
-            boolean delete
+            boolean forceHash
     ) {
         if (!dirty) return hash != null ? RLPItem.fromBytes(hash) : rlp;
         Type type = getType();
@@ -120,7 +118,7 @@ class Node {
             case EXTENSION: {
                 rlp = RLPList.createEmpty(2);
                 rlp.add(RLPItem.fromBytes(getKey().toPacked(false)));
-                rlp.add(getExtension().encodeAndCommit(function, cache, false, delete));
+                rlp.add(getExtension().commit(function, cache, false));
                 break;
             }
             default: {
@@ -131,12 +129,12 @@ class Node {
                         rlp.add(RLPItem.NULL);
                         continue;
                     }
-                    rlp.add(child.encodeAndCommit(function, cache, false, delete));
+                    rlp.add(child.commit(function, cache, false));
                 }
                 rlp.add(RLPItem.fromBytes(getValue()));
             }
         }
-        if(delete) dispose(cache);
+        dispose(cache);
         dirty = false;
         byte[] raw = rlp.getEncoded();
 
