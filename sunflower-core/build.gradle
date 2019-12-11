@@ -24,6 +24,14 @@ repositories {
             password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
         }
     }
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/TrustedDataFramework/java-rlp")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
     mavenCentral()
 }
 
@@ -60,8 +68,8 @@ dependencies {
     compile "org.apache.commons:commons-collections4:${commonsCollections4Version}"
     compile "org.apache.commons:commons-lang3:${commonsLang3Version}"
     compile "com.corundumstudio.socketio:netty-socketio:${nettySocketIOVersion}" // for message push
-
-    compile "org.tdf:lotusvm:0.0.7"
+    compile "org.tdf:rlp:${rlpVersion}"
+    compile "org.tdf:lotusvm:${lotusvmVersion}"
     // for test
     testCompile 'com.h2database:h2'
 }
