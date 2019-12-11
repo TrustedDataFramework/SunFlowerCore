@@ -1,12 +1,15 @@
 package org.tdf.sunflower.consensus.vrf.struct;
 
 import org.bouncycastle.util.Arrays;
+import org.tdf.rlp.RLP;
 
 public class VrfResult {
     // 32 byte pseudo random variable
+    @RLP(0)
     private byte[] r;
 
     // 64byte signature data
+    @RLP(1)
     private byte[] proof;
 
     public VrfResult(byte[] encoded) {
@@ -39,6 +42,6 @@ public class VrfResult {
     }
 
     public byte[] getEncoded() {
-        return Arrays.concatenate(new byte[]{(byte) this.r.length}, this.r, this.proof);
+        return Arrays.concatenate(new byte[] { (byte) this.r.length }, this.r, this.proof);
     }
 }

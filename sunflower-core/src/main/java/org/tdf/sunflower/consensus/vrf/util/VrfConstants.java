@@ -1,4 +1,4 @@
-package org.tdf.sunflower.consensus.vrf;
+package org.tdf.sunflower.consensus.vrf.util;
 
 import org.tdf.common.HexBytes;
 import org.tdf.util.BigEndian;

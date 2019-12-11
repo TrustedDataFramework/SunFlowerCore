@@ -1,20 +1,22 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
+import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
+import static org.tdf.sunflower.util.ByteUtil.toHexString;
 
 import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.tdf.sunflower.consensus.vrf.HashUtil;
-import org.tdf.sunflower.util.RLPList;
-import org.tdf.sunflower.util.RLPUtils;
 import org.tdf.crypto.CryptoException;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.PublicKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
-
-import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
-import static org.tdf.sunflower.util.ByteUtil.toHexString;
+import org.tdf.rlp.RLP;
+import org.tdf.rlp.RLPDecoding;
+import org.tdf.rlp.RLPEncoding;
+import org.tdf.sunflower.consensus.vrf.HashUtil;
+import org.tdf.sunflower.util.RLPList;
+import org.tdf.sunflower.util.RLPUtils;
 
 /**
  * @author James Hu
@@ -26,20 +28,29 @@ public class ProposalProof {
 
     /* Information of proposer owner */
     /* VRF proof */
+    @RLP(0)
     private VrfProof vrfProof;
-    /* The 160-bit address to which all fees collected from the
-     * successful mining of this block be transferred; formally */
+    /*
+     * The 160-bit address to which all fees collected from the successful mining of
+     * this block be transferred; formally
+     */
+    @RLP(1)
     private byte[] coinbase;
 
     /* Identifier of proposal block */
-	private BlockIdentifier blockIdentifier;
+    @RLP(2)
+    private BlockIdentifier blockIdentifier;
 
-	/* Signature of proposer proof body: {vrfProof, coinbase, blockIdentifier} */
+    /* Signature of proposer proof body: {vrfProof, coinbase, blockIdentifier} */
+    @RLP(3)
     private byte[] signature;
-
+    @RLP(4)
     private byte[] rlpEncoded;
+    @RLP(5)
+    @RLPEncoding
+    @RLPDecoding
     private boolean parsed = false;
-
+    @RLP(6)
     private byte[] hashCache;
 
     public ProposalProof(VrfProof vrfProof, byte[] coinbase, BlockIdentifier blockIdentifier, PrivateKey sk) {
@@ -174,7 +185,8 @@ public class ProposalProof {
     }
 
     private synchronized void parseRLP() {
-        if (parsed) return;
+        if (parsed)
+            return;
 
         RLPList params = RLPUtils.decode2(rlpEncoded);
         RLPList rlpProof = (RLPList) params.get(0);
@@ -254,8 +266,8 @@ public class ProposalProof {
 
         return signature;
     }
-    
+
     public int getRound() {
-    	return vrfProof.getRound();
+        return vrfProof.getRound();
     }
 }

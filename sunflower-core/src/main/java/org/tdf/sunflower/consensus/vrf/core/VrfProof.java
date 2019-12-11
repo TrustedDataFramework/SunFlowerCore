@@ -1,7 +1,14 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
+import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
+import static org.tdf.sunflower.util.ByteUtil.toHexString;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tdf.crypto.ed25519.Ed25519;
+import org.tdf.rlp.RLP;
+import org.tdf.rlp.RLPDecoding;
+import org.tdf.rlp.RLPEncoding;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPublicKey;
@@ -9,10 +16,6 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.RLPList;
 import org.tdf.sunflower.util.RLPUtils;
-import org.tdf.crypto.ed25519.Ed25519;
-
-import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
-import static org.tdf.sunflower.util.ByteUtil.toHexString;
 
 /**
  * @author James Hu
@@ -23,28 +26,33 @@ public class VrfProof {
     private static final Logger logger = LoggerFactory.getLogger("VrfProve");
 
     /* Role codes of VRF prove */
-    public static final int ROLE_CODES_PROPOSER         = 0x01;
+    public static final int ROLE_CODES_PROPOSER = 0x01;
     public static final int ROLE_CODES_REDUCTION_COMMIT = 0x11;
-    public static final int ROLE_CODES_FINAL_COMMIT     = 0x12;
+    public static final int ROLE_CODES_FINAL_COMMIT = 0x12;
 
     /* Role of the prove */
+    @RLP(0)
     private int role;
-    /* VRF round for propose a new block:
-       proposal prepare -> reduction commit -> final commit
-                |                                  |
-                ----------------<-------------------
-    */
+    /*
+     * VRF round for propose a new block: proposal prepare -> reduction commit ->
+     * final commit | | ----------------<-------------------
+     */
+    @RLP(1)
     private int round;
     /* VRF public key encoded byte array */
+    @RLP(2)
     private byte[] vrfPk;
     /* VRF seed */
+    @RLP(3)
     private byte[] seed;
     /* VRF result */
+    @RLP(4)
     private VrfResult vrfResult;
-
+    @RLP(5)
     private byte[] rlpEncoded;
+    @RLP(6)
     private boolean parsed = false;
-
+    @RLP(7)
     private byte[] hashCache;
 
     public VrfProof(int role, int round, byte[] vrfPk, byte[] seed, VrfResult vrfResult) {
@@ -70,7 +78,8 @@ public class VrfProof {
     }
 
     private synchronized void parseRLP() {
-        if (parsed) return;
+        if (parsed)
+            return;
 
         RLPList params = RLPUtils.decode2(rlpEncoded);
         RLPList rlpProve = (RLPList) params.get(0);
@@ -79,7 +88,8 @@ public class VrfProof {
     }
 
     private void parseRLP(RLPList rlpProve) {
-        if (rlpProve == null) return;
+        if (rlpProve == null)
+            return;
 
         byte[] roleBytes = rlpProve.get(0).getRLPBytes();
         this.role = ByteUtil.byteArrayToInt(roleBytes);
@@ -158,18 +168,16 @@ public class VrfProof {
 
     public int getPriority(int expected, long weight, long totalWeight) {
         if (expected <= 0 || weight <= 0 || totalWeight <= 0) {
-            logger.error("Big Problem, Invalid VRF priority parameters ["
-                    + " expected: " + expected + ", weight: " + weight + ", totalWeight:" + totalWeight
-                    + " ]");
+            logger.error("Big Problem, Invalid VRF priority parameters [" + " expected: " + expected + ", weight: "
+                    + weight + ", totalWeight:" + totalWeight + " ]");
             return 0;
         }
 
         parseRLP();
 
         if (isNullOrZeroArray(vrfPk) || isNullOrZeroArray(seed) || vrfResult == null) {
-            logger.error("Big Problem, Invalid VRF priority parameters ["
-                    + " vrfPk: " + vrfPk + " seed: " + seed + " vrfResult: " + vrfResult
-                    + " ]");
+            logger.error("Big Problem, Invalid VRF priority parameters [" + " vrfPk: " + vrfPk + " seed: " + seed
+                    + " vrfResult: " + vrfResult + " ]");
             return 0;
         }
 
@@ -178,7 +186,7 @@ public class VrfProof {
         // Compose new seed with role and round
         byte[] vrfSeed = composeVrfSeed(role, round, seed);
 
-        int priority = publicKey.calcPriority(vrfSeed, vrfResult, expected, (int)weight, totalWeight);
+        int priority = publicKey.calcPriority(vrfSeed, vrfResult, expected, (int) weight, totalWeight);
 
         return priority;
     }
@@ -206,12 +214,12 @@ public class VrfProof {
 
         System.arraycopy(seed, 0, vrfSeed, 0, seed.length);
 
-        vrfSeed[seed.length] = (byte)((role >> 24) & 0xFF);
+        vrfSeed[seed.length] = (byte) ((role >> 24) & 0xFF);
         vrfSeed[seed.length + 1] = (byte) ((role >> 16) & 0xFF);
         vrfSeed[seed.length + 2] = (byte) ((role >> 8) & 0xFF);
         vrfSeed[seed.length + 3] = (byte) (role & 0xFF);
 
-        vrfSeed[seed.length + 4] = (byte)((round >> 24) & 0xFF);
+        vrfSeed[seed.length + 4] = (byte) ((round >> 24) & 0xFF);
         vrfSeed[seed.length + 5] = (byte) ((round >> 16) & 0xFF);
         vrfSeed[seed.length + 6] = (byte) ((round >> 8) & 0xFF);
         vrfSeed[seed.length + 7] = (byte) (round & 0xFF);
@@ -231,7 +239,7 @@ public class VrfProof {
         }
 
         /* Get a new VRF Proving data */
-        public static VrfProof vrfProof(int role, int round,  byte[] vrfPk, byte[] seed, VrfResult vrfResult) {
+        public static VrfProof vrfProof(int role, int round, byte[] vrfPk, byte[] seed, VrfResult vrfResult) {
             VrfProof vrfProof = new VrfProof(role, round, vrfPk, seed, vrfResult);
 
             return vrfProof;

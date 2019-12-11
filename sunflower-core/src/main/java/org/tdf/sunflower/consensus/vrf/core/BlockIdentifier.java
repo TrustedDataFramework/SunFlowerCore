@@ -1,19 +1,22 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
-import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
-import org.tdf.sunflower.util.RLPList;
-import org.tdf.sunflower.util.RLPUtils;
+import static org.tdf.sunflower.util.ByteUtil.byteArrayToLong;
+import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
+import static org.tdf.sunflower.util.ByteUtil.toHexString;
 
 import java.math.BigInteger;
 import java.security.InvalidParameterException;
 
-import static org.tdf.sunflower.util.ByteUtil.*;
-
+import org.tdf.rlp.RLP;
+import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
+import org.tdf.sunflower.util.RLPList;
+import org.tdf.sunflower.util.RLPUtils;
 
 /**
  * Block identifier holds block hash and number <br>
- * This tuple is used in some places of the core,
- * like by {@link org.silkroad.net.eth.message.EthMessageCodes#NEW_BLOCK_HASHES} message wrapper
+ * This tuple is used in some places of the core, like by
+ * {@link org.silkroad.net.eth.message.EthMessageCodes#NEW_BLOCK_HASHES} message
+ * wrapper
  *
  * @author Mikhail Kalinin
  * @since 04.09.2015
@@ -23,11 +26,13 @@ public class BlockIdentifier {
     /**
      * Block hash
      */
+    @RLP(0)
     private byte[] blockHash;
 
     /**
      * Block number
      */
+    @RLP(1)
     private long blockNumber;
 
     public BlockIdentifier(RLPList rlp) {
@@ -56,10 +61,9 @@ public class BlockIdentifier {
     }
 
     /**
-     * Compare block hash of BlockIdentifier.
-     * If two block hash is equal, return 0;
-     * If this block hash is smaller than other one, return negative;
-     * If this block hash is bigger than other one, return positive;
+     * Compare block hash of BlockIdentifier. If two block hash is equal, return 0;
+     * If this block hash is smaller than other one, return negative; If this block
+     * hash is bigger than other one, return positive;
      *
      * @author James Hu
      * @since 2019/5/20
@@ -86,18 +90,14 @@ public class BlockIdentifier {
         }
 
         // Compare two block hash as Big Endian order
-        int compare = FastByteComparisons.compareTo(
-                this.blockHash, 0, this.blockHash.length,
-                other.blockHash, 0, other.blockHash.length);
+        int compare = FastByteComparisons.compareTo(this.blockHash, 0, this.blockHash.length, other.blockHash, 0,
+                other.blockHash.length);
 
         return compare;
     }
 
     @Override
     public String toString() {
-        return "BlockIdentifier {" +
-                "hash=" + toHexString(blockHash).substring(0, 6) +
-                ", number=" + blockNumber +
-                '}';
+        return "BlockIdentifier {" + "hash=" + toHexString(blockHash).substring(0, 6) + ", number=" + blockNumber + '}';
     }
 }

@@ -7,6 +7,9 @@ import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.rlp.RLPDeserializer;
+import org.tdf.rlp.RLPElement;
+import org.tdf.rlp.RLPItem;
+import org.tdf.rlp.RLPList;
 import org.tdf.serialize.RLPSerializer;
 import org.tdf.sunflower.consensus.vrf.VrfConfig;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
@@ -19,6 +22,7 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.util.ByteUtil;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -278,5 +282,35 @@ public class VrfUtil {
         Ed25519PrivateKey skEd25519 = new Ed25519PrivateKey(ByteUtil.hexStringToBytes(VRF_SK));
         VrfPrivateKey sk = new VrfPrivateKey(skEd25519);
         return sk;
+    }
+
+    public static byte[] buildMessageBytes(VrfMessageCode code, Object object) {
+        return buildMessageBytes(code.ordinal(), object);
+    }
+
+    private static byte[] buildMessageBytes(int code, Object object) {
+        RLPList list = RLPElement.encode(object).getAsList();
+        list.add(0, RLPItem.fromInt(code));
+        return list.getEncoded();
+    }
+
+    @Getter
+    public static class VrfMessageCodeAndBytes {
+        VrfMessageCode code;
+        byte[] rlpBytes;
+
+        public VrfMessageCodeAndBytes(VrfMessageCode code, byte[] rlpBytes) {
+            this.code = code;
+            this.rlpBytes = rlpBytes;
+        }
+    }
+
+    public static VrfMessageCodeAndBytes parseMessageBytes(byte[] msg) {
+        RLPList list = RLPElement.fromEncoded(msg).getAsList();
+        int codeInt = list.get(0).getAsItem().getInt();
+        list = list.subList(1, list.size());
+        VrfMessageCode[] vrfMsgCodes = VrfMessageCode.values();
+        VrfMessageCode code = vrfMsgCodes[codeInt];
+        return new VrfMessageCodeAndBytes(code, list.getEncoded());
     }
 }

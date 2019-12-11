@@ -21,7 +21,6 @@ import org.tdf.common.MinerListener;
 import org.tdf.common.PeerServer;
 import org.tdf.common.Transaction;
 import org.tdf.exception.ConsensusEngineLoadException;
-import org.tdf.serialize.RLPSerializer;
 import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.poa.Proposer;
@@ -35,10 +34,10 @@ import org.tdf.sunflower.consensus.vrf.core.VrfProof;
 import org.tdf.sunflower.consensus.vrf.core.VrfRound;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
+import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
+import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.net.MessageBuilder;
-import org.tdf.sunflower.proto.Code;
-import org.tdf.sunflower.proto.Message;
 import org.tdf.sunflower.util.ByteUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -760,21 +759,28 @@ public class VrfMiner implements Miner {
     }
 
     private void sendNewBlock(Block block) throws JsonProcessingException {
-        byte[] encoded = RLPSerializer.SERIALIZER.serialize(block);
-        Message message = messageBuilder.buildMessage(Code.VRF_BLOCK, VrfConstants.MESSAGE_TTL, encoded);
-        peerServer.broadcast(message.toByteArray());
+//        byte[] encoded = RLPSerializer.SERIALIZER.serialize(block);
+//        Message message = messageBuilder.buildMessage(Code.VRF_BLOCK, VrfConstants.MESSAGE_TTL, encoded);
+//        peerServer.broadcast(message.toByteArray());
+
+        byte[] encoded = VrfUtil.buildMessageBytes(VrfMessageCode.VRF_BLOCK, block);
+        peerServer.broadcast(encoded);
     }
 
     private void sendProposalProof(ProposalProof prosalProof) throws JsonProcessingException {
-        byte[] encoded = RLPSerializer.SERIALIZER.serialize(prosalProof);
-        Message message = messageBuilder.buildMessage(Code.VRF_PROPOSAL_PROOF, VrfConstants.MESSAGE_TTL, encoded);
-        peerServer.broadcast(message.toByteArray());
+//        byte[] encoded = RLPSerializer.SERIALIZER.serialize(prosalProof);
+//        Message message = messageBuilder.buildMessage(Code.VRF_PROPOSAL_PROOF, VrfConstants.MESSAGE_TTL, encoded);
+//        peerServer.broadcast(message.toByteArray());
+        byte[] encoded = VrfUtil.buildMessageBytes(VrfMessageCode.VRF_PROPOSAL_PROOF, prosalProof);
+        peerServer.broadcast(encoded);
     }
 
     private void sendCommitProof(CommitProof commitProof) throws JsonProcessingException {
-        byte[] encoded = RLPSerializer.SERIALIZER.serialize(commitProof);
-        Message message = messageBuilder.buildMessage(Code.VRF_COMMIT_PROOF, VrfConstants.MESSAGE_TTL, encoded);
-        peerServer.broadcast(message.toByteArray());
+//        byte[] encoded = RLPSerializer.SERIALIZER.serialize(commitProof);
+//        Message message = messageBuilder.buildMessage(Code.VRF_COMMIT_PROOF, VrfConstants.MESSAGE_TTL, encoded);
+//        peerServer.broadcast(message.toByteArray());
+        byte[] encoded = VrfUtil.buildMessageBytes(VrfMessageCode.VRF_COMMIT_PROOF, commitProof);
+        peerServer.broadcast(encoded);
     }
 
     private boolean validateAndAddNewBlock(Block block) {

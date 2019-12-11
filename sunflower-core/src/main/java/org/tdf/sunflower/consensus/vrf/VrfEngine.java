@@ -26,6 +26,10 @@ import org.tdf.sunflower.consensus.vrf.core.PendingVrfState;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
 import org.tdf.sunflower.consensus.vrf.core.ValidatorManager;
 import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
+import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
+import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
 import org.tdf.sunflower.net.MessageBuilder;
 import org.tdf.sunflower.net.PeerImpl;
 import org.tdf.sunflower.proto.Code;
@@ -63,30 +67,24 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
     @Override
     public void onMessage(Context context, PeerServer server) {
         byte[] messageBytes = context.getMessage();
-        try {
-            Message message = Message.parseFrom(messageBytes);
-            Code code = message.getCode();
-            byte[] bodyBytes = message.getBody().toByteArray();
-            switch (code) {
-            case VRF_BLOCK:
-                processVrfBlockMsg(context, bodyBytes);
-                break;
-            case VRF_PROPOSAL_PROOF:
-                processVrfProposalProofMsg(bodyBytes);
-                break;
-            case VRF_COMMIT_PROOF:
-                processCommitProofMsg(bodyBytes);
-                break;
-            case NEW_MINED_BLOCK:
-                processNewMinedBlockMsg(bodyBytes);
-                break;
-            default:
-                ;
-            }
-        } catch (InvalidProtocolBufferException e) {
-            e.printStackTrace();
-        }
+        VrfMessageCodeAndBytes codeAndBytes = VrfUtil.parseMessageBytes(messageBytes);
+        VrfMessageCode code = codeAndBytes.getCode();
+        byte[] vrfBytes = codeAndBytes.getRlpBytes();
 
+        switch (code) {
+        case VRF_BLOCK:
+            processVrfBlockMsg(context, vrfBytes);
+            break;
+        case VRF_PROPOSAL_PROOF:
+            processVrfProposalProofMsg(vrfBytes);
+            break;
+        case VRF_COMMIT_PROOF:
+            processCommitProofMsg(vrfBytes);
+            break;
+        case NEW_MINED_BLOCK:
+            processNewMinedBlockMsg(vrfBytes);
+            break;
+        }
     }
 
     private void processNewMinedBlockMsg(byte[] bodyBytes) {
@@ -129,9 +127,10 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
             public void onBlockMined(Block block) {
                 log.info("!!! Wow, new block mined. #{}, {}", block.getHeight(),
                         ByteUtil.toHexString(block.getHash().getBytes()));
-                byte[] encoded = RLPSerializer.SERIALIZER.serialize(block);
-                Message message = messageBuilder.buildMessage(Code.NEW_MINED_BLOCK, VrfConstants.MESSAGE_TTL, encoded);
-                peerServer.broadcast(message.toByteArray());
+//                byte[] encoded = RLPSerializer.SERIALIZER.serialize(block);
+//                Message message = messageBuilder.buildMessage(Code.NEW_MINED_BLOCK, VrfConstants.MESSAGE_TTL, encoded);
+                byte[] encoded = VrfUtil.buildMessageBytes(VrfMessageCode.NEW_MINED_BLOCK, block);
+                peerServer.broadcast(encoded);
             }
 
             @Override

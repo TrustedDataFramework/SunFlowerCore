@@ -9,6 +9,7 @@ import org.tdf.common.Header;
 import org.tdf.common.HexBytes;
 import org.tdf.sunflower.consensus.poa.PoAUtils;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
+import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.util.ByteUtil;
 
