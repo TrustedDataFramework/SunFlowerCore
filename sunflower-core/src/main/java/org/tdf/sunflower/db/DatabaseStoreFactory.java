@@ -34,6 +34,9 @@ public class DatabaseStoreFactory {
             case "rocksdb":
                 store = new RocksDb(config.getDirectory(), name);
                 break;
+            case "memory":
+                store = new MemoryDatabaseStore();
+                break;
             default:
                 store = new RocksDb(config.getDirectory(), name);
                 log.warn("Data source is not supported, default is rocksdb");

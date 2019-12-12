@@ -47,7 +47,7 @@ sunflower:
     disabled: 'false'
 
   database:
-    # Key value data source values: [rocksdb/leveldb]
+    # Key value data source values: [rocksdb/leveldb/memory]
     name: 'rocksdb'
     directory: 'database/rocksdb'
     max-open-files: '512' # defines a number of opened files by db instance
