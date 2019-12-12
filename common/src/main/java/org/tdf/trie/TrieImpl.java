@@ -2,7 +2,6 @@ package org.tdf.trie;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.NonNull;
 import org.tdf.rlp.RLPItem;
 import org.tdf.serialize.Codec;
@@ -20,10 +19,11 @@ import java.util.stream.Collectors;
 
 
 // enhanced radix tree
-@Builder(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TrieImpl<K, V> implements Trie<K, V> {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
+    private final byte[] nullHash;
 
     private Node root;
 
@@ -35,18 +35,20 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     Codec<V, byte[]> vCodec;
 
-    private TrieImpl() {
-    }
 
-    public TrieImpl(Function<byte[], byte[]> hashFunction,
+    public static <K, V> TrieImpl<K, V> newInstance(Function<byte[], byte[]> hashFunction,
                     Store<byte[], byte[]> store,
                     Codec<K, byte[]> kCodec,
                     Codec<V, byte[]> vCodec
     ) {
-        this.function = hashFunction;
-        this.cache = new MemoryCachedStore<>(store);
-        this.kCodec = kCodec;
-        this.vCodec = vCodec;
+        return new TrieImpl<>(
+                hashFunction.apply(RLPItem.NULL.getEncoded()),
+                null,
+                hashFunction,
+                new MemoryCachedStore<>(store),
+                kCodec,
+                vCodec
+        );
     }
 
     @Override
@@ -137,10 +139,11 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
 
     public byte[] commit() {
-        if (root == null) return function.apply(RLPItem.NULL.getEncoded());
-        if(!root.isDirty()) return root.getHash();
+        if (root == null) return nullHash;
+        if (!root.isDirty()) return root.getHash();
         byte[] hash = this.root.commit(function, cache, true).getAsItem().get();
-        if(root.isDirty() || root.getHash() == null) throw new RuntimeException("unexpected error: dirty after commit");
+        if (root.isDirty() || root.getHash() == null)
+            throw new RuntimeException("unexpected error: still dirty after commit");
         return hash;
     }
 
@@ -153,6 +156,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     @Override
     public TrieImpl<K, V> moveTo(byte[] rootHash, Store<byte[], byte[]> store) {
         return new TrieImpl<>(
+                nullHash,
                 Node.fromRootHash(rootHash, new ReadOnlyStore<>(store)),
                 function, new MemoryCachedStore<>(store), kCodec, vCodec
         );
@@ -163,6 +167,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         commit();
         MemoryCachedStore<byte[]> cloned = cache.clone();
         return new TrieImpl<>(
+                nullHash,
                 Node.fromRootHash(commit(), new ReadOnlyStore<>(cloned)),
                 function, cloned, kCodec, vCodec
         );

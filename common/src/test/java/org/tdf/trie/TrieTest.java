@@ -63,15 +63,15 @@ public class TrieTest {
     }
 
     static TrieImpl<String, String> newStringTrie(Store<byte[], byte[]> store){
-        return new TrieImpl<>(HashUtil::sha3, store, Codecs.STRING, Codecs.STRING);
+        return TrieImpl.newInstance(HashUtil::sha3, store, Codecs.STRING, Codecs.STRING);
     }
 
     static TrieImpl<String, String> newStringTrie(){
-        return new TrieImpl<>(HashUtil::sha3, new NoDoubleDeleteStore(), Codecs.STRING, Codecs.STRING);
+        return TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codecs.STRING, Codecs.STRING);
     }
 
     static TrieImpl<byte[], byte[]> newBytesTrie(){
-        return new TrieImpl<>(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        return TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
     }
 
     @Test
@@ -205,7 +205,7 @@ public class TrieTest {
 
     @Test
     public void testDeleteCompletellyDiferentItems() {
-        TrieImpl<byte[], byte[]> trie = new TrieImpl<>(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
 
         String val_1 = "1000000000000000000000000000000000000000000000000000000000000000";
         String val_2 = "2000000000000000000000000000000000000000000000000000000000000000";
@@ -287,7 +287,7 @@ public class TrieTest {
 
     @Test
     public void testMassiveDelete() {
-        TrieImpl<byte[], byte[]> trie = new TrieImpl<>(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
         byte[] rootHash1 = null;
         for (int i = 0; i < 11000; i++) {
             trie.put(HashUtil.sha3(intToBytes(i)), HashUtil.sha3(intToBytes(i + 1000000)));
@@ -540,7 +540,7 @@ public class TrieTest {
         boolean performance = false;
         int n = 1000000;
         if (!performance) return;
-        TrieImpl<byte[], byte[]> trie = new TrieImpl<>(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
         byte[] dummy = new byte[]{1};
         SecureRandom sr = new SecureRandom();
         Set<byte[]> set = new ByteArraySet();
