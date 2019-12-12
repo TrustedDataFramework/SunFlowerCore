@@ -22,4 +22,12 @@ public interface Trie<K, V> extends Store<K, V> {
 
     // dump key of nodes
     Set<byte[]> dump();
+
+    // get root hash of non-dirty tree
+    // if trie is null, return null hash
+    // throw RuntimeException if this trie is dirty
+    byte[] getRootHash() throws RuntimeException;
+
+    // return true is root node is not null and root node is dirty
+    boolean isDirty();
 }

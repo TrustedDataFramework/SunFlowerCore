@@ -1,6 +1,7 @@
 package org.tdf.trie;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -10,6 +11,7 @@ import org.tdf.serialize.Codecs;
 import org.tdf.store.ByteArrayMapStore;
 import org.tdf.store.NoDeleteStore;
 import org.tdf.store.Store;
+import org.tdf.util.ByteArraySet;
 
 import java.io.File;
 import java.net.URL;
@@ -19,15 +21,25 @@ import java.util.*;
 
 @RunWith(JUnit4.class)
 public class TrieRollbackTest {
+    protected Store<byte[], byte[]> removed;
+    protected Store<byte[], byte[]> delegate;
     protected NoDeleteStore<byte[], byte[]> database;
     protected Trie<String, String> trie;
     protected List<byte[]> roots;
     protected Map<String, Map<String, String>> dumps;
     protected List<Set<byte[]>> nodes;
 
+    private NoDeleteStore<byte[], byte[]> cloneDatabase() {
+        return new NoDeleteStore<>(new ByteArrayMapStore<>(delegate), new ByteArrayMapStore<>(removed));
+    }
+
     @Before
     public void before() throws Exception {
-        database = new NoDeleteStore<>(new ByteArrayMapStore<>(), new ByteArrayMapStore<>());
+        removed = new ByteArrayMapStore<>();
+
+        delegate = new ByteArrayMapStore<>();
+
+        database = new NoDeleteStore<>(delegate, removed);
 
         trie = TrieImpl.newInstance(HashUtil::sha3, database, Codecs.STRING, Codecs.STRING);
 
@@ -44,7 +56,7 @@ public class TrieRollbackTest {
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
 
 
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 100 ; ++i) {
 
             String[] keyVal = strData.get(i).split("=");
 
@@ -54,10 +66,25 @@ public class TrieRollbackTest {
                 trie.put(keyVal[0].trim(), keyVal[1].trim());
 
             byte[] rootHash = trie.commit();
+
+            // skip when trie is not modified
+            if(roots.stream().anyMatch(x -> Arrays.equals(x, rootHash))) continue;
+
             trie.flush();
             roots.add(rootHash);
             nodes.add(trie.dump());
             dumps.put(Hex.toHexString(rootHash), dump(trie));
+        }
+
+        for (int i = 0; i < roots.size() - 1; i++) {
+            assert removed.containsKey(roots.get(i));
+        }
+
+        for (int i = 0; i < roots.size(); i++) {
+            for(int j = 0; j < nodes.size(); j++){
+                if (i == j) continue;
+                if(nodes.get(j).contains(roots.get(i))) throw new RuntimeException("impossible according to crypto");
+            }
         }
     }
 
@@ -73,18 +100,39 @@ public class TrieRollbackTest {
     // rollback failed if later trie had been flushed
     @Test
     public void test2() {
-        database.compact();
-        for (int i = 0; i < roots.size() - 1; i++) {
-            Exception e = null;
-            try{
-                trie.moveTo(roots.get(i), database);
-            }catch (Exception ex){
-                e = ex;
+        for (int i = 1; i < roots.size(); i++) {
+            NoDeleteStore<byte[], byte[]> db = cloneDatabase();
+            Set<byte[]> excludes = new ByteArraySet();
+            for (int j = i; j < roots.size(); j++) {
+                excludes.addAll(nodes.get(j));
             }
-            assert e != null;
-            e = null;
+            db.compact(excludes);
+            for (int j = 0; j < i; j++) {
+                assert !db.containsKey(roots.get(j));
+                // TODO: test clean up unused nodes
+                for(byte[] key: nodes.get(j)){
+//                    if(excludes.contains(key)) continue;
+//                    assert !db.containsKey(key);
+                }
+            }
+            for (int j = i; j < roots.size(); j++) {
+                byte[] rootHash = roots.get(j);
+                trie = trie.moveTo(rootHash, db);
+                assert equals(dump(trie), dumps.get(Hex.toHexString(rootHash)));
+            }
         }
-        trie.moveTo(roots.get(roots.size() - 1), database);
+
+    }
+
+    @Test
+    // get a tree from dumped nodes success
+    public void test3() {
+        for (int i = 0; i < roots.size(); i++) {
+            Store<byte[], byte[]> db = new ByteArrayMapStore<>();
+            nodes.get(i).forEach(x -> db.put(x, database.get(x).get()));
+            Trie<String, String> trie1 = trie.moveTo(roots.get(i), db);
+            assert Arrays.equals(trie1.commit(), roots.get(i));
+        }
     }
 
     private Map<String, String> dump(Store<String, String> store) {

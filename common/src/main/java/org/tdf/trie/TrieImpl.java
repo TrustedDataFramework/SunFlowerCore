@@ -187,4 +187,16 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         traverse(dump);
         return dump.getKeys();
     }
+
+    @Override
+    public byte[] getRootHash() throws RuntimeException {
+        if(root == null) return nullHash;
+        if(root.isDirty() || root.getHash() == null) throw new RuntimeException("the trie is dirty or root hash is null");
+        return root.getHash();
+    }
+
+    @Override
+    public boolean isDirty() {
+        return root != null && root.isDirty();
+    }
 }
