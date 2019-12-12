@@ -8,6 +8,7 @@ import org.tdf.serialize.Codec;
 import org.tdf.store.MemoryCachedStore;
 import org.tdf.store.ReadOnlyStore;
 import org.tdf.store.Store;
+import org.tdf.util.FastByteComparisons;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -154,7 +155,9 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public TrieImpl<K, V> moveTo(byte[] rootHash, Store<byte[], byte[]> store) {
+    public TrieImpl<K, V> moveTo(@NonNull byte[] rootHash, Store<byte[], byte[]> store) {
+        if(FastByteComparisons.equal(rootHash, nullHash))
+            return new TrieImpl<>(nullHash, null, function, new MemoryCachedStore<>(store), kCodec, vCodec);
         if(!store.containsKey(rootHash)) throw new RuntimeException("rollback failed, root hash not exists");
         return new TrieImpl<>(
                 nullHash,
