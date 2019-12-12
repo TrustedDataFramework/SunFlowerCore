@@ -251,6 +251,7 @@ class Node {
 
     // deep-first scanning
     void traverse(TrieKey init, ScannerAction action) {
+        parse();
         Type type = getType();
         if (type == Type.BRANCH) {
             action.accept(init, this);

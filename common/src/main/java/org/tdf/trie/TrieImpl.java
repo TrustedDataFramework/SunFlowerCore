@@ -172,4 +172,11 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         commit();
         root.traverse(TrieKey.EMPTY, action);
     }
+
+    @Override
+    public Set<byte[]> dump() {
+        Dump dump = new Dump();
+        traverse(dump);
+        return dump.getKeys();
+    }
 }
