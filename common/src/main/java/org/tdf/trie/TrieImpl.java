@@ -177,6 +177,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     @Override
     public void traverse(BiConsumer<TrieKey, Node> action) {
         commit();
+        if(root == null) return;
         root.traverse(TrieKey.EMPTY, action);
     }
 

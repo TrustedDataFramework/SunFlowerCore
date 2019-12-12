@@ -15,10 +15,7 @@ import java.io.File;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RunWith(JUnit4.class)
 public class TrieRollbackTest {
@@ -26,6 +23,7 @@ public class TrieRollbackTest {
     protected Trie<String, String> trie;
     protected List<byte[]> roots;
     protected Map<String, Map<String, String>> dumps;
+    protected List<Set<byte[]>> nodes;
 
     @Before
     public void before() throws Exception {
@@ -36,6 +34,8 @@ public class TrieRollbackTest {
         roots = new ArrayList<>();
 
         dumps = new HashMap<>();
+
+        nodes = new ArrayList<>();
 
         URL massiveUpload_1 = ClassLoader
                 .getSystemResource("trie/massive-upload.dmp");
@@ -56,6 +56,7 @@ public class TrieRollbackTest {
             byte[] rootHash = trie.commit();
             trie.flush();
             roots.add(rootHash);
+            nodes.add(trie.dump());
             dumps.put(Hex.toHexString(rootHash), dump(trie));
         }
     }
