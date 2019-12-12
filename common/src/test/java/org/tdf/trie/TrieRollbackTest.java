@@ -86,6 +86,8 @@ public class TrieRollbackTest {
                 if(nodes.get(j).contains(roots.get(i))) throw new RuntimeException("impossible according to crypto");
             }
         }
+
+        System.out.println(removed.size());
     }
 
     // rollback successful
@@ -111,6 +113,7 @@ public class TrieRollbackTest {
                 assert !db.containsKey(roots.get(j));
                 // TODO: test clean up unused nodes
                 for(byte[] key: nodes.get(j)){
+// cannot assert this because some key are modified, new value are stored
 //                    if(excludes.contains(key)) continue;
 //                    assert !db.containsKey(key);
                 }
