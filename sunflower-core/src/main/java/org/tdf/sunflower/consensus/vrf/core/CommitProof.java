@@ -49,6 +49,10 @@ public class CommitProof {
     @RLP(6)
     private byte[] hashCache;
 
+    public CommitProof() {
+
+    }
+
     public CommitProof(VrfProof vrfProof, byte[] coinbase, BlockIdentifier blockIdentifier, PrivateKey sk) {
 
         this.vrfProof = vrfProof;

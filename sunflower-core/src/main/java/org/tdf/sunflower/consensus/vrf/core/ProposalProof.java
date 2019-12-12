@@ -53,6 +53,10 @@ public class ProposalProof {
     @RLP(6)
     private byte[] hashCache;
 
+    public ProposalProof() {
+
+    }
+
     public ProposalProof(VrfProof vrfProof, byte[] coinbase, BlockIdentifier blockIdentifier, PrivateKey sk) {
 
         this.vrfProof = vrfProof;

@@ -12,6 +12,10 @@ public class VrfResult {
     @RLP(1)
     private byte[] proof;
 
+    public VrfResult() {
+
+    }
+
     public VrfResult(byte[] encoded) {
         this.r = Arrays.copyOfRange(encoded, 1, 1 + encoded[0]);
         this.proof = Arrays.copyOfRange(encoded, 1 + encoded[0], encoded.length);

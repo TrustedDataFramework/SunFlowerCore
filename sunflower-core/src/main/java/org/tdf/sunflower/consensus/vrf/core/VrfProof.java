@@ -55,6 +55,10 @@ public class VrfProof {
     @RLP(7)
     private byte[] hashCache;
 
+    public VrfProof() {
+
+    }
+
     public VrfProof(int role, int round, byte[] vrfPk, byte[] seed, VrfResult vrfResult) {
 
         this.role = role;
