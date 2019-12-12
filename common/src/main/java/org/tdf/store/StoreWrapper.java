@@ -77,7 +77,7 @@ public class StoreWrapper<K, V, U, R>
     }
 
     @Override
-    public boolean flush() {
-        return false;
+    public void flush() {
+
     }
 }

@@ -106,7 +106,7 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
     }
 
     @Override
-    public boolean flush() {
-        return false;
+    public void flush() {
+
     }
 }

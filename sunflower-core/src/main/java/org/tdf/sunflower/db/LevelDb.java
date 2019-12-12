@@ -344,7 +344,6 @@ public class LevelDb implements DatabaseStore {
     }
 
     @Override
-    public boolean flush() {
-        return false;
+    public void flush() {
     }
 }

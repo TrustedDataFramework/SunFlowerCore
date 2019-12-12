@@ -29,11 +29,9 @@ public interface Store<K, V> {
      * changes collected in this source are flushed into the
      * underlying source.
      * The implementation may do 'cascading' flush, i.e. call
-     * flush() on the underlying Source
-     * @return true if any changes we flushed, false if the underlying
      * Source didn't change
      */
-    boolean flush();
+    void flush();
 
     Set<K> keySet();
 

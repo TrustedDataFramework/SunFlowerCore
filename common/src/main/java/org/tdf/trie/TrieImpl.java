@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.NonNull;
 import org.tdf.rlp.RLPItem;
 import org.tdf.serialize.Codec;
-import org.tdf.store.CachedStore;
+import org.tdf.store.MemoryCachedStore;
 import org.tdf.store.ReadOnlyStore;
 import org.tdf.store.Store;
 
@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.tdf.trie.TrieKey.EMPTY;
 
 // enhanced radix tree
 @Builder(access = AccessLevel.PRIVATE)
@@ -28,7 +27,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     HashFunction function;
 
-    CachedStore<byte[]> cache;
+    MemoryCachedStore<byte[]> cache;
 
     Codec<K, byte[]> kCodec;
 
@@ -37,9 +36,13 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     private TrieImpl() {
     }
 
-    public TrieImpl(HashFunction function, Store<byte[], byte[]> store, Codec<K, byte[]> kCodec, Codec<V, byte[]> vCodec) {
+    public TrieImpl(HashFunction function,
+                    Store<byte[], byte[]> store,
+                    Codec<K, byte[]> kCodec,
+                    Codec<V, byte[]> vCodec
+    ) {
         this.function = function;
-        this.cache = new CachedStore<>(store);
+        this.cache = new MemoryCachedStore<>(store);
         this.kCodec = kCodec;
         this.vCodec = vCodec;
     }
@@ -52,6 +55,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         return Optional.ofNullable(root.get(TrieKey.fromNormal(data))).map(vCodec.getDecoder());
     }
 
+    @Override
     public void put(@NonNull K k, @NonNull V val) {
         putBytes(kCodec.getEncoder().apply(k), vCodec.getEncoder().apply(val));
     }
@@ -78,14 +82,14 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     @Override
     public void remove(@NonNull K k) {
         byte[] data = kCodec.getEncoder().apply(k);
-        if(data == null || data.length == 0) return;
+        if (data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
         if (root == null) return;
         root = root.delete(TrieKey.fromNormal(data), cache);
     }
 
     private void removeBytes(byte[] data) {
         if (root == null) return;
-        if(data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
+        if (data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
         root = root.delete(TrieKey.fromNormal(data), cache);
     }
 
@@ -93,8 +97,8 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     public Set<K> keySet() {
         if (root == null) return Collections.emptySet();
         ScanKeySet action = new ScanKeySet();
-        root.traverse(EMPTY, action);
-        if(kCodec.equals(Codec.identity())) return (Set<K>) action.getBytes();
+        root.traverse(TrieKey.EMPTY, action);
+        if (kCodec.equals(Codec.identity())) return (Set<K>) action.getBytes();
         return action.getBytes().stream()
                 .map(kCodec.getDecoder())
                 .collect(Collectors.toSet());
@@ -104,8 +108,8 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     public Collection<V> values() {
         if (root == null) return Collections.emptySet();
         ScanValues action = new ScanValues();
-        root.traverse(EMPTY, action);
-        if(vCodec.equals(Codec.identity())) return (Set<V>) action.getBytes();
+        root.traverse(TrieKey.EMPTY, action);
+        if (vCodec.equals(Codec.identity())) return (Set<V>) action.getBytes();
         return action.getBytes().stream()
                 .map(vCodec.getDecoder())
                 .collect(Collectors.toSet());
@@ -132,34 +136,35 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
 
-    public byte[] getRootHash() {
-        commit();
+    public byte[] commit() {
         if (root == null) return function.apply(RLPItem.NULL.getEncoded());
-        return root.getHash();
-    }
-
-    private void commit() {
-        if (root == null) return;
-        this.root.commit(function, cache, true);
+        if(!root.isDirty()) return root.getHash();
+        byte[] hash = this.root.commit(function, cache, true).getAsItem().get();
+        if(root.isDirty() || root.getHash() == null) throw new RuntimeException("unexpected error: dirty after commit");
+        return hash;
     }
 
     @Override
-    public TrieImpl<K, V> createSnapshot() {
+    public void flush() {
         commit();
-        CachedStore<byte[]> cloned = cache.clone();
+        this.cache.flush();
+    }
+
+    @Override
+    public TrieImpl<K, V> moveTo(byte[] rootHash, Store<byte[], byte[]> store) {
         return new TrieImpl<>(
-                Node.fromRootHash(getRootHash(), new ReadOnlyStore<>(cloned)),
-                function, cloned, kCodec, vCodec
+                Node.fromRootHash(rootHash, new ReadOnlyStore<>(store)),
+                function, new MemoryCachedStore<>(store), kCodec, vCodec
         );
     }
 
-    @Override
-    public boolean flush() {
+    // for tests only
+    TrieImpl<K, V> createSnapshot() {
         commit();
-        return this.cache.flush();
-    }
-
-    boolean isDirty() {
-        return root != null && root.isDirty();
+        MemoryCachedStore<byte[]> cloned = cache.clone();
+        return new TrieImpl<>(
+                Node.fromRootHash(commit(), new ReadOnlyStore<>(cloned)),
+                function, cloned, kCodec, vCodec
+        );
     }
 }

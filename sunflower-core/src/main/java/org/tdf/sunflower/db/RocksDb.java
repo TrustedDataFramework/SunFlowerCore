@@ -362,7 +362,7 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public boolean flush() {
-        return false;
+    public void flush() {
+
     }
 }

@@ -81,7 +81,6 @@ public class PrefixedStore<V> implements Store<byte[], V> {
     }
 
     @Override
-    public boolean flush() {
-        return false;
+    public void flush() {
     }
 }

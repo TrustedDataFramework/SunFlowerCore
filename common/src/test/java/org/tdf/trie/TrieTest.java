@@ -100,11 +100,11 @@ public class TrieTest {
 
         trie.put(ca, dude);
         assertEquals(dude, trie.get(ca).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(ca);
         assertEquals("", trie.get(ca).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
     @Test
@@ -118,11 +118,11 @@ public class TrieTest {
 
         trie.put(cat, dog);
         assertEquals(dog, trie.get(cat).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(cat);
         assertEquals("", trie.get(cat).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
     @Test
@@ -136,11 +136,11 @@ public class TrieTest {
 
         trie.put(dog, test);
         assertEquals(test, trie.get(dog).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(dog);
         assertEquals("", trie.get(dog).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
     @Test
@@ -154,11 +154,11 @@ public class TrieTest {
 
         trie.put(dog, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(dog).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(dog);
         assertEquals("", trie.get(dog).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
     @Test
@@ -172,11 +172,11 @@ public class TrieTest {
 
         trie.put(cat, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(cat).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(cat);
         assertEquals("", trie.get(cat).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
     @Test
@@ -190,11 +190,11 @@ public class TrieTest {
 
         trie.put(ca, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(ca).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(ca);
         assertEquals("", trie.get(ca).orElse(""));
-        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
     @Test
@@ -208,11 +208,11 @@ public class TrieTest {
         trie.put(Hex.decode(val_1), Hex.decode(val_1));
         trie.put(Hex.decode(val_2), Hex.decode(val_2));
 
-        String root1 = Hex.toHexString(trie.getRootHash());
+        String root1 = Hex.toHexString(trie.commit());
 
         trie.put(Hex.decode(val_3), Hex.decode(val_3));
         trie.remove(Hex.decode(val_3));
-        String root1_ = Hex.toHexString(trie.getRootHash());
+        String root1_ = Hex.toHexString(trie.commit());
 
         Assert.assertEquals(root1, root1_);
     }
@@ -238,15 +238,15 @@ public class TrieTest {
 
         trie.put(test, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(test).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(dog);
         assertEquals("", trie.get(dog).orElse(""));
-        assertEquals(ROOT_HASH_AFTER1, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER1, Hex.toHexString(trie.commit()));
 
         trie.remove(test);
         assertEquals("", trie.get(test).orElse(""));
-        assertEquals(ROOT_HASH_AFTER2, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER2, Hex.toHexString(trie.commit()));
     }
 
     @Test
@@ -264,15 +264,15 @@ public class TrieTest {
 
         trie.put(cat, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(cat).get());
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(ca);
         assertEquals("", trie.get(ca).orElse(""));
-        assertEquals(ROOT_HASH_AFTER1, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER1, Hex.toHexString(trie.commit()));
 
         trie.remove(cat);
         assertEquals("", trie.get(cat).orElse(""));
-        assertEquals(ROOT_HASH_AFTER2, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_AFTER2, Hex.toHexString(trie.commit()));
     }
 
     public static byte[] intToBytes(int val) {
@@ -286,14 +286,14 @@ public class TrieTest {
         for (int i = 0; i < 11000; i++) {
             trie.put(HashUtil.sha3(intToBytes(i)), HashUtil.sha3(intToBytes(i + 1000000)));
             if (i == 10000) {
-                rootHash1 = trie.getRootHash();
+                rootHash1 = trie.commit();
             }
         }
         for (int i = 10001; i < 11000; i++) {
             trie.remove(HashUtil.sha3(intToBytes(i)));
         }
 
-        byte[] rootHash2 = trie.getRootHash();
+        byte[] rootHash2 = trie.commit();
         assertArrayEquals(rootHash1, rootHash2);
     }
 
@@ -301,17 +301,17 @@ public class TrieTest {
     public void testDeleteAll() {
         String ROOT_HASH_BEFORE = "a84739b4762ddf15e3acc4e6957e5ab2bbfaaef00fe9d436a7369c6f058ec90d";
         Trie<String, String> trie = newStringTrie();
-        assertEquals(ROOT_HASH_EMPTY, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_EMPTY, Hex.toHexString(trie.commit()));
 
         trie.put(ca, dude);
         trie.put(cat, dog);
         trie.put(doge, LONG_STRING);
-        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(ca);
         trie.remove(cat);
         trie.remove(doge);
-        assertEquals(ROOT_HASH_EMPTY, Hex.toHexString(trie.getRootHash()));
+        assertEquals(ROOT_HASH_EMPTY, Hex.toHexString(trie.commit()));
     }
 
     @Test
@@ -321,11 +321,11 @@ public class TrieTest {
 
         trie1.put(doge, LONG_STRING);
         trie2.put(doge, LONG_STRING);
-        assertEquals(Hex.toHexString(trie1.getRootHash()), Hex.toHexString(trie2.getRootHash()));
+        assertEquals(Hex.toHexString(trie1.commit()), Hex.toHexString(trie2.commit()));
 
         trie1.put(dog, LONG_STRING);
         trie2.put(cat, LONG_STRING);
-        assertNotEquals(Hex.toHexString(trie1.getRootHash()), Hex.toHexString(trie2.getRootHash()));
+        assertNotEquals(Hex.toHexString(trie1.commit()), Hex.toHexString(trie2.commit()));
     }
 
     @Test
@@ -333,23 +333,23 @@ public class TrieTest {
         Trie<String, String> trie = newStringTrie();
         trie.put("A", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
-        assertEquals("d23786fb4a010da3ce639d66d5e904a11dbc02746d1ce25029e53290cabf28ab", Hex.toHexString(trie.getRootHash()));
+        assertEquals("d23786fb4a010da3ce639d66d5e904a11dbc02746d1ce25029e53290cabf28ab", Hex.toHexString(trie.commit()));
     }
 
     @Test
     public void testDogs() {
-        Trie<String, String> trie = newStringTrie();
-        Trie<String, String> impl = trie;
+        TrieImpl<String, String> trie = newStringTrie();
+        TrieImpl<String, String> impl = trie;
         trie.put("doe", "reindeer");
-        assertEquals("11a0327cfcc5b7689b6b6d727e1f5f8846c1137caaa9fc871ba31b7cce1b703e", Hex.toHexString(impl.getRootHash()));
+        assertEquals("11a0327cfcc5b7689b6b6d727e1f5f8846c1137caaa9fc871ba31b7cce1b703e", Hex.toHexString(impl.commit()));
 
         trie.put("dog", "puppy");
-        assertEquals("05ae693aac2107336a79309e0c60b24a7aac6aa3edecaef593921500d33c63c4", Hex.toHexString(impl.getRootHash()));
+        assertEquals("05ae693aac2107336a79309e0c60b24a7aac6aa3edecaef593921500d33c63c4", Hex.toHexString(impl.commit()));
 
         Trie<String, String> trie2 = impl.createSnapshot();
         assert trie2.get("dog").get().equals("puppy");
         trie.put("dogglesworth", "cat");
-        impl.getRootHash();
+        impl.commit();
     }
 
     @Test
@@ -360,7 +360,7 @@ public class TrieTest {
         trie.put("horse", "stallion");
         trie.put("dog", "puppy");
 
-        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", Hex.toHexString(trie.getRootHash()));
+        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", Hex.toHexString(trie.commit()));
     }
 
 
@@ -376,7 +376,7 @@ public class TrieTest {
         trie.put("dog", "puppy");
         trie.remove("shaman");
 
-        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", Hex.toHexString(trie.getRootHash()));
+        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", Hex.toHexString(trie.commit()));
     }
 
 
@@ -387,7 +387,7 @@ public class TrieTest {
         trie.put("food", "bat");
         trie.put("food", "bass");
 
-        assertEquals("17beaa1648bafa633cda809c90c04af50fc8aed3cb40d16efbddee6fdf63c4c3", Hex.toHexString(trie.getRootHash()));
+        assertEquals("17beaa1648bafa633cda809c90c04af50fc8aed3cb40d16efbddee6fdf63c4c3", Hex.toHexString(trie.commit()));
     }
 
     @Test
@@ -397,7 +397,7 @@ public class TrieTest {
         trie.put("be", "e");
         trie.put("dog", "puppy");
         trie.put("bed", "d");
-        assertEquals("3f67c7a47520f79faa29255d2d3c084a7a6df0453116ed7232ff10277a8be68b", Hex.toHexString(trie.getRootHash()));
+        assertEquals("3f67c7a47520f79faa29255d2d3c084a7a6df0453116ed7232ff10277a8be68b", Hex.toHexString(trie.commit()));
     }
 
     @Test
@@ -405,10 +405,10 @@ public class TrieTest {
         Trie<String, String> trie = newStringTrie();
 
         trie.put("test", "test");
-        assertEquals("85d106d4edff3b7a4889e91251d0a87d7c17a1dda648ebdba8c6060825be23b8", Hex.toHexString(trie.getRootHash()));
+        assertEquals("85d106d4edff3b7a4889e91251d0a87d7c17a1dda648ebdba8c6060825be23b8", Hex.toHexString(trie.commit()));
 
         trie.put("te", "testy");
-        assertEquals("8452568af70d8d140f58d941338542f645fcca50094b20f3c3d8c3df49337928", Hex.toHexString(trie.getRootHash()));
+        assertEquals("8452568af70d8d140f58d941338542f645fcca50094b20f3c3d8c3df49337928", Hex.toHexString(trie.commit()));
     }
 
     private final String randomDictionary = "spinneries, archipenko, prepotency, herniotomy, preexpress, relaxative, insolvably, debonnaire, apophysate, virtuality, cavalryman, utilizable, diagenesis, vitascopic, governessy, abranchial, cyanogenic, gratulated, signalment, predicable, subquality, crystalize, prosaicism, oenologist, repressive, impanelled, cockneyism, bordelaise, compigne, konstantin, predicated, unsublimed, hydrophane, phycomyces, capitalise, slippingly, untithable, unburnable, deoxidizer, misteacher, precorrect, disclaimer, solidified, neuraxitis, caravaning, betelgeuse, underprice, uninclosed, acrogynous, reirrigate, dazzlingly, chaffiness, corybantes, intumesced, intentness, superexert, abstrusely, astounding, pilgrimage, posttarsal, prayerless, nomologist, semibelted, frithstool, unstinging, ecalcarate, amputating, megascopic, graphalloy, platteland, adjacently, mingrelian, valentinus, appendical, unaccurate, coriaceous, waterworks, sympathize, doorkeeper, overguilty, flaggingly, admonitory, aeriferous, normocytic, parnellism, catafalque, odontiasis, apprentice, adulterous, mechanisma, wilderness, undivorced, reinterred, effleurage, pretrochal, phytogenic, swirlingly, herbarized, unresolved, classifier, diosmosing, microphage, consecrate, astarboard, predefying, predriving, lettergram, ungranular, overdozing, conferring, unfavorite, peacockish, coinciding, erythraeum, freeholder, zygophoric, imbitterer, centroidal, appendixes, grayfishes, enological, indiscreet, broadcloth, divulgated, anglophobe, stoopingly, bibliophil, laryngitis, separatist, estivating, bellarmine, greasiness, typhlology, xanthation, mortifying, endeavorer, aviatrices, unequalise, metastatic, leftwinger, apologizer, quatrefoil, nonfouling, bitartrate, outchiding, undeported, poussetted, haemolysis, asantehene, montgomery, unjoinable, cedarhurst, unfastener, nonvacuums, beauregard, animalized, polyphides, cannizzaro, gelatinoid, apologised, unscripted, tracheidal, subdiscoid, gravelling, variegated, interabang, inoperable, immortelle, laestrygon, duplicatus, proscience, deoxidised, manfulness, channelize, nondefense, ectomorphy, unimpelled, headwaiter, hexaemeric, derivation, prelexical, limitarian, nonionized, prorefugee, invariably, patronizer, paraplegia, redivision, occupative, unfaceable, hypomnesia, psalterium, doctorfish, gentlefolk, overrefine, heptastich, desirously, clarabelle, uneuphonic, autotelism, firewarden, timberjack, fumigation, drainpipes, spathulate, novelvelle, bicorporal, grisliness, unhesitant, supergiant, unpatented, womanpower, toastiness, multichord, paramnesia, undertrick, contrarily, neurogenic, gunmanship, settlement, brookville, gradualism, unossified, villanovan, ecospecies, organising, buckhannon, prefulfill, johnsonese, unforegone, unwrathful, dunderhead, erceldoune, unwadeable, refunction, understuff, swaggering, freckliest, telemachus, groundsill, outslidden, bolsheviks, recognizer, hemangioma, tarantella, muhammedan, talebearer, relocation, preemption, chachalaca, septuagint, ubiquitous, plexiglass, humoresque, biliverdin, tetraploid, capitoline, summerwood, undilating, undetested, meningitic, petrolatum, phytotoxic, adiphenine, flashlight, protectory, inwreathed, rawishness, tendrillar, hastefully, bananaquit, anarthrous, unbedimmed, herborized, decenniums, deprecated, karyotypic, squalidity, pomiferous, petroglyph, actinomere, peninsular, trigonally, androgenic, resistance, unassuming, frithstool, documental, eunuchised, interphone, thymbraeus, confirmand, expurgated, vegetation, myographic, plasmagene, spindrying, unlackeyed, foreknower, mythically, albescence, rebudgeted, implicitly, unmonastic, torricelli, mortarless, labialized, phenacaine, radiometry, sluggishly, understood, wiretapper, jacobitely, unbetrayed, stadholder, directress, emissaries, corelation, sensualize, uncurbable, permillage, tentacular, thriftless, demoralize, preimagine, iconoclast, acrobatism, firewarden, transpired, bluethroat, wanderjahr, groundable, pedestrian, unulcerous, preearthly, freelanced, sculleries, avengingly, visigothic, preharmony, bressummer, acceptable, unfoolable, predivider, overseeing, arcosolium, piriformis, needlecord, homebodies, sulphation, phantasmic, unsensible, unpackaged, isopiestic, cytophagic, butterlike, frizzliest, winklehawk, necrophile, mesothorax, cuchulainn, unrentable, untangible, unshifting, unfeasible, poetastric, extermined, gaillardia, nonpendent, harborside, pigsticker, infanthood, underrower, easterling, jockeyship, housebreak, horologium, undepicted, dysacousma, incurrable, editorship, unrelented, peritricha, interchaff, frothiness, underplant, proafrican, squareness, enigmatise, reconciled, nonnumeral, nonevident, hamantasch, victualing, watercolor, schrdinger, understand, butlerlike, hemiglobin, yankeeland";
@@ -488,14 +488,14 @@ public class TrieTest {
         }
 
 
-        assert "cfd77c0fcb037adefce1f4e2eb94381456a4746379d2896bb8f309c620436d30".equals(Hex.toHexString(trieSingle.getRootHash()));
+        assert "cfd77c0fcb037adefce1f4e2eb94381456a4746379d2896bb8f309c620436d30".equals(Hex.toHexString(trieSingle.commit()));
 
     }
 
 
     @Test
     public void testGetFromRootNode() {
-        Trie<String, String> trie1 = newStringTrie();
+        TrieImpl<String, String> trie1 = newStringTrie();
         trie1.put(cat, LONG_STRING);
         Trie<String, String> trie2 = trie1.createSnapshot();
         assertEquals(LONG_STRING, trie2.get(cat).get());
@@ -521,7 +521,7 @@ public class TrieTest {
         storage.put(key3, val3);
         storage.put(key4, val4);
 
-        String hash = Hex.toHexString(storage.getRootHash());
+        String hash = Hex.toHexString(storage.commit());
 
         System.out.println(hash);
         Assert.assertEquals("517eaccda568f3fa24915fed8add49d3b743b3764c0bc495b19a47c54dbc3d62", hash);
@@ -529,25 +529,33 @@ public class TrieTest {
 
 
     @Test
-//    count n = 1000000 size trie 607ms
+//    count n = 1000000 size trie 2349 ms
     public void test7() {
         boolean performance = false;
+        int n = 1000000;
         if (!performance) return;
         TrieImpl<byte[], byte[]> trie = new TrieImpl<>(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
-        byte[] empty = new byte[0];
+        byte[] dummy = new byte[]{1};
         SecureRandom sr = new SecureRandom();
         Set<byte[]> set = new ByteArraySet();
-        for (int i = 0; i < 1_000_000; i++) {
+        for (int i = 0; i < n; i++) {
             byte[] bytes = new byte[32];
             sr.nextBytes(bytes);
             set.add(bytes);
-            trie.put(bytes, empty);
+            trie.put(bytes, dummy);
         }
+
         long start = System.currentTimeMillis();
-        int size = trie.size();
+        set.forEach(x -> trie.put(x, dummy));
         long end = System.currentTimeMillis();
-        assert size == set.size();
+        System.out.println("insert " + set.size() + " " + (end - start) + " ms");
+        start = System.currentTimeMillis();
+        trie.flush();
+        trie.commit();
+        int size = trie.size();
+        end = System.currentTimeMillis();
         System.out.println("count size at " + size + " " + (end - start) + " ms");
+        assert size == set.size();
     }
 
 
@@ -560,13 +568,13 @@ public class TrieTest {
 
         trie.put("dog", "puppy");
         System.out.println();
-        Assert.assertEquals("ed6e08740e4a267eca9d4740f71f573e9aabbcc739b16a2fa6c1baed5ec21278", Hex.toHexString(trie.getRootHash()));
+        Assert.assertEquals("ed6e08740e4a267eca9d4740f71f573e9aabbcc739b16a2fa6c1baed5ec21278", Hex.toHexString(trie.commit()));
 
         trie.put("do", "verb");
-        Assert.assertEquals("779db3986dd4f38416bfde49750ef7b13c6ecb3e2221620bcad9267e94604d36", Hex.toHexString(trie.getRootHash()));
+        Assert.assertEquals("779db3986dd4f38416bfde49750ef7b13c6ecb3e2221620bcad9267e94604d36", Hex.toHexString(trie.commit()));
 
         trie.put("doggiestan", "aeswome_place");
-        Assert.assertEquals("8bd5544747b4c44d1274aa99a6293065fe319b3230e800203317e4c75a770099", Hex.toHexString(trie.getRootHash()));
+        Assert.assertEquals("8bd5544747b4c44d1274aa99a6293065fe319b3230e800203317e4c75a770099", Hex.toHexString(trie.commit()));
     }
 
     // this case relates to a bug which led us to conflict on Morden network (block #486248)
@@ -622,7 +630,7 @@ public class TrieTest {
         // FIX:
         // Supply Node initialization with raw rlp value
 
-        assertEquals("36e350d9a1d9c02d5bc4539a05e51890784ea5d2b675a0b26725dbbdadb4d6e2", Hex.toHexString(trie.getRootHash()));
+        assertEquals("36e350d9a1d9c02d5bc4539a05e51890784ea5d2b675a0b26725dbbdadb4d6e2", Hex.toHexString(trie.commit()));
     }
 
     @Test
@@ -652,14 +660,14 @@ public class TrieTest {
     @Test
     public void testRollbackTrie() throws URISyntaxException, IOException {
 
-        Trie<String, String> trieSingle = newStringTrie();
+        TrieImpl<String, String> trieSingle = newStringTrie();
         URL massiveUpload_1 = ClassLoader
                 .getSystemResource("trie/massive-upload.dmp");
 
         File file = new File(massiveUpload_1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
 
-        Map<String, Trie<String, String>> tries = new HashMap<>();
+        Map<String, TrieImpl<String, String>> tries = new HashMap<>();
         Map<String, Map<String, String>> trieDumps = new HashMap<>();
         List<String> rootHex = new ArrayList<>();
         for (int i = 0; i < 100; ++i) {
@@ -671,8 +679,8 @@ public class TrieTest {
             else
                 trieSingle.put(keyVal[0].trim(), keyVal[1].trim());
 
-            tries.put(Hex.toHexString(trieSingle.getRootHash()), trieSingle.createSnapshot());
-            String key = Hex.toHexString(trieSingle.getRootHash());
+            tries.put(Hex.toHexString(trieSingle.commit()), trieSingle.createSnapshot());
+            String key = Hex.toHexString(trieSingle.commit());
             rootHex.add(key);
             trieDumps.put(key, dump(trieSingle));
         }
