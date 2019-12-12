@@ -9,6 +9,7 @@ import org.tdf.common.HashUtil;
 import org.tdf.serialize.Codecs;
 import org.tdf.store.ByteArrayMapStore;
 import org.tdf.store.NoDeleteStore;
+import org.tdf.store.NoDoubleDeleteStore;
 import org.tdf.store.Store;
 import org.tdf.util.ByteArraySet;
 
@@ -22,7 +23,8 @@ import java.util.*;
 public class TrieRollbackTest {
     protected Store<byte[], byte[]> removed;
     protected Store<byte[], byte[]> delegate;
-    protected NoDeleteStore<byte[], byte[]> database;
+    protected Store<byte[], byte[]> database;
+    private NoDeleteStore<byte[], byte[]> noDelete;
     protected Trie<String, String> trie;
     protected List<byte[]> roots;
     protected Map<String, Map<String, String>> dumps;
@@ -38,7 +40,8 @@ public class TrieRollbackTest {
 
         delegate = new ByteArrayMapStore<>();
 
-        database = new NoDeleteStore<>(delegate, removed);
+        noDelete = new NoDeleteStore<>(delegate, removed);
+        database = new NoDoubleDeleteStore<>(noDelete);
 
         trie = TrieImpl.newInstance(HashUtil::sha3, database, Codecs.STRING, Codecs.STRING);
 
@@ -74,18 +77,10 @@ public class TrieRollbackTest {
             nodes.add(trie.dump());
             dumps.put(Hex.toHexString(rootHash), dump(trie));
         }
-
-        for (int i = 0; i < roots.size() - 1; i++) {
-            assert removed.containsKey(roots.get(i));
-        }
-
-        for (int i = 0; i < roots.size(); i++) {
-            for(int j = 0; j < nodes.size(); j++){
-                if (i == j) continue;
-                if(nodes.get(j).contains(roots.get(i))) throw new RuntimeException("impossible according to crypto");
-            }
-        }
     }
+
+    @Test
+    public void empty(){}
 
     // rollback successful
     @Test
@@ -93,6 +88,14 @@ public class TrieRollbackTest {
         for (byte[] rootHash : roots) {
             trie = trie.revert(rootHash, database);
             assert equals(dump(trie), dumps.get(Hex.toHexString(rootHash)));
+        }
+        noDelete.compact();
+        for (int i = 0; i < roots.size() - 1; i++) {
+            Exception e = null;
+            try{
+                trie = trie.revert(roots.get(i), database);
+            }catch (Exception ex){e = ex;}
+            assert e != null;
         }
     }
 
