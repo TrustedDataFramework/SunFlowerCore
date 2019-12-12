@@ -35,6 +35,10 @@ public class BlockIdentifier {
     @RLP(1)
     private long blockNumber;
 
+    public BlockIdentifier() {
+
+    }
+
     public BlockIdentifier(RLPList rlp) {
         this.blockHash = rlp.get(0).getRLPBytes();
         this.blockNumber = byteArrayToLong(rlp.get(1).getRLPBytes());
