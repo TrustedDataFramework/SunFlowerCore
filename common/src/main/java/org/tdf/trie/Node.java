@@ -11,6 +11,7 @@ import org.tdf.rlp.RLPList;
 import org.tdf.store.Store;
 import org.tdf.util.FastByteComparisons;
 
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import static org.tdf.trie.TrieKey.EMPTY;
@@ -250,7 +251,7 @@ class Node {
     }
 
     // deep-first scanning
-    void traverse(TrieKey init, ScannerAction action) {
+    void traverse(TrieKey init, BiConsumer<TrieKey, Node> action) {
         parse();
         Type type = getType();
         if (type == Type.BRANCH) {

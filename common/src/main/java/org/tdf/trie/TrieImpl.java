@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -168,7 +169,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public void traverse(ScannerAction action) {
+    public void traverse(BiConsumer<TrieKey, Node> action) {
         commit();
         root.traverse(TrieKey.EMPTY, action);
     }

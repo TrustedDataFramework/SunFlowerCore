@@ -3,6 +3,7 @@ package org.tdf.trie;
 import org.tdf.store.Store;
 
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * Trie's implementation will cache modifications in memory, before you call Trie.flush() method,
@@ -17,7 +18,7 @@ public interface Trie<K, V> extends Store<K, V> {
     // you could rollback to this Trie later by move to the root hash generated
     byte[] commit();
 
-    void traverse(ScannerAction action);
+    void traverse(BiConsumer<TrieKey, Node> action);
 
     // dump key of nodes
     Set<byte[]> dump();
