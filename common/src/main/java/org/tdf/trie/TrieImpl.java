@@ -155,6 +155,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     @Override
     public TrieImpl<K, V> moveTo(byte[] rootHash, Store<byte[], byte[]> store) {
+        if(!store.containsKey(rootHash)) throw new RuntimeException("rollback failed, root hash not exists");
         return new TrieImpl<>(
                 nullHash,
                 Node.fromRootHash(rootHash, new ReadOnlyStore<>(store)),

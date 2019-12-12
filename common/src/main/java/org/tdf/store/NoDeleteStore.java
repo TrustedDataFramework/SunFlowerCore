@@ -7,6 +7,10 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * no delete store will store deleted key-value pair to @see deleted
+ * when compact method called, clean the key-pari in @see deleted
+ */
 @AllArgsConstructor
 public class NoDeleteStore<K, V> implements Store<K, V>{
     private Store<K, V> delegate;
@@ -78,11 +82,15 @@ public class NoDeleteStore<K, V> implements Store<K, V>{
 
     public void compact(){
         deleted.keySet().forEach(delegate::remove);
+        deleted.clear();
     }
 
     public void compact(Set<K> excludes){
         deleted.keySet().stream()
                 .filter(x -> !excludes.contains(x))
-                .forEach(delegate::remove);
+                .forEach(x -> {
+                    deleted.remove(x);
+                    delegate.remove(x);
+                });
     }
 }
