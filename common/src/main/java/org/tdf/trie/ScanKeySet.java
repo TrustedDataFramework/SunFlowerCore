@@ -5,7 +5,7 @@ import lombok.Getter;
 import org.tdf.util.ByteArraySet;
 
 @Getter(AccessLevel.PACKAGE)
-public class ScanKeySet implements ScannerAction {
+class ScanKeySet implements ScannerAction {
     private ByteArraySet bytes = new ByteArraySet();
 
     @Override

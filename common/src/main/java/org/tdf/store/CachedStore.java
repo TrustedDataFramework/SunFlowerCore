@@ -53,10 +53,7 @@ public abstract class CachedStore<K, V> implements Store<K, V>{
 
     @Override
     public void remove(@NonNull K k) {
-        if(cache.containsKey(k)){
-            cache.remove(k);
-            return;
-        }
+        cache.remove(k);
         Optional<V> v = delegated.get(k);
         if(!v.isPresent()) return;
         deleted.put(k, v.get());

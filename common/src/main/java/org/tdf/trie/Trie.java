@@ -8,5 +8,8 @@ public interface Trie<K, V> extends Store<K, V> {
     Trie<K, V> moveTo(byte[] rootHash, Store<byte[], byte[]> store) throws RuntimeException;
 
     // commit to cache and get root hash of current trie
+    // this will not flush cache to underlying storage
     byte[] commit();
+
+    void traverse(ScannerAction action);
 }

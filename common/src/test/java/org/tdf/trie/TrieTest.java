@@ -6,9 +6,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.spongycastle.util.encoders.Hex;
 import org.tdf.common.HashUtil;
+import org.tdf.common.HexBytes;
 import org.tdf.serialize.Codec;
 import org.tdf.serialize.Codecs;
 import org.tdf.store.ByteArrayMapStore;
+import org.tdf.store.NoDeleteStore;
 import org.tdf.store.Store;
 import org.tdf.util.ByteArraySet;
 
@@ -58,6 +60,10 @@ public class TrieTest {
             }
             return buffer.toString();
         }
+    }
+
+    static TrieImpl<String, String> newStringTrie(Store<byte[], byte[]> store){
+        return new TrieImpl<>(HashUtil::sha3, store, Codecs.STRING, Codecs.STRING);
     }
 
     static TrieImpl<String, String> newStringTrie(){
@@ -659,15 +665,15 @@ public class TrieTest {
     // TODO: test trie rollback
     @Test
     public void testRollbackTrie() throws URISyntaxException, IOException {
+        Store<byte[], byte[]> noDelete = new NoDeleteStore<>(new ByteArrayMapStore<>(), new ByteArrayMapStore<>());
 
-        TrieImpl<String, String> trieSingle = newStringTrie();
+        TrieImpl<String, String> trieSingle = newStringTrie(noDelete);
         URL massiveUpload_1 = ClassLoader
                 .getSystemResource("trie/massive-upload.dmp");
 
         File file = new File(massiveUpload_1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
 
-        Map<String, TrieImpl<String, String>> tries = new HashMap<>();
         Map<String, Map<String, String>> trieDumps = new HashMap<>();
         List<String> rootHex = new ArrayList<>();
         for (int i = 0; i < 100; ++i) {
@@ -679,21 +685,18 @@ public class TrieTest {
             else
                 trieSingle.put(keyVal[0].trim(), keyVal[1].trim());
 
-            tries.put(Hex.toHexString(trieSingle.commit()), trieSingle.createSnapshot());
+            trieSingle.flush();
             String key = Hex.toHexString(trieSingle.commit());
             rootHex.add(key);
             trieDumps.put(key, dump(trieSingle));
         }
-
         // compare all 100 rollback dumps and
         // the originaly saved dumps
         for (int i = 1; i < rootHex.size(); ++i) {
 
             String key = rootHex.get(i);
 
-            trieSingle = tries.get(key);
-
-            Map<String, String> dumped = dump(trieSingle);
+            Map<String, String> dumped = dump(trieSingle.moveTo(Hex.decode(key), noDelete));
             assert equals(trieDumps.get(key), dumped);
         }
 

@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -25,7 +26,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     private Node root;
 
-    HashFunction function;
+    Function<byte[], byte[]> function;
 
     MemoryCachedStore<byte[]> cache;
 
@@ -36,12 +37,12 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     private TrieImpl() {
     }
 
-    public TrieImpl(HashFunction function,
+    public TrieImpl(Function<byte[], byte[]> hashFunction,
                     Store<byte[], byte[]> store,
                     Codec<K, byte[]> kCodec,
                     Codec<V, byte[]> vCodec
     ) {
-        this.function = function;
+        this.function = hashFunction;
         this.cache = new MemoryCachedStore<>(store);
         this.kCodec = kCodec;
         this.vCodec = vCodec;
@@ -60,17 +61,17 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         putBytes(kCodec.getEncoder().apply(k), vCodec.getEncoder().apply(val));
     }
 
-    private void putBytes(byte[] bytes, byte[] bytes2) {
-        if (bytes == null || bytes.length == 0) throw new IllegalArgumentException("key cannot be null");
-        if (bytes2 == null || bytes2.length == 0) {
-            removeBytes(bytes);
+    private void putBytes(byte[] key, byte[] value) {
+        if (key == null || key.length == 0) throw new IllegalArgumentException("key cannot be null");
+        if (value == null || value.length == 0) {
+            removeBytes(key);
             return;
         }
         if (root == null) {
-            root = Node.newLeaf(TrieKey.fromNormal(bytes), bytes2);
+            root = Node.newLeaf(TrieKey.fromNormal(key), value);
             return;
         }
-        root.insert(TrieKey.fromNormal(bytes), bytes2, cache);
+        root.insert(TrieKey.fromNormal(key), value, cache);
     }
 
     @Override
@@ -82,14 +83,12 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     @Override
     public void remove(@NonNull K k) {
         byte[] data = kCodec.getEncoder().apply(k);
-        if (data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
-        if (root == null) return;
-        root = root.delete(TrieKey.fromNormal(data), cache);
+        removeBytes(data);
     }
 
     private void removeBytes(byte[] data) {
-        if (root == null) return;
         if (data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
+        if (root == null) return;
         root = root.delete(TrieKey.fromNormal(data), cache);
     }
 
@@ -147,7 +146,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     @Override
     public void flush() {
         commit();
-        this.cache.flush();
+        cache.flush();
     }
 
     @Override
@@ -166,5 +165,11 @@ public class TrieImpl<K, V> implements Trie<K, V> {
                 Node.fromRootHash(commit(), new ReadOnlyStore<>(cloned)),
                 function, cloned, kCodec, vCodec
         );
+    }
+
+    @Override
+    public void traverse(ScannerAction action) {
+        commit();
+        root.traverse(TrieKey.EMPTY, action);
     }
 }

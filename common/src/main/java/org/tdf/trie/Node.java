@@ -11,6 +11,8 @@ import org.tdf.rlp.RLPList;
 import org.tdf.store.Store;
 import org.tdf.util.FastByteComparisons;
 
+import java.util.function.Function;
+
 import static org.tdf.trie.TrieKey.EMPTY;
 
 /**
@@ -102,10 +104,11 @@ class Node {
     // return rlp encoded
     // if encodeAndCommit is call at root node, force hash is set to true
     RLPElement commit(
-            HashFunction function,
+            Function<byte[], byte[]> function,
             Store<byte[], byte[]> cache,
             boolean forceHash
     ) {
+        // if child node is dirty, the parent node must be dirty also
         if (!dirty) return hash != null ? RLPItem.fromBytes(hash) : rlp;
         Type type = getType();
         switch (type) {
