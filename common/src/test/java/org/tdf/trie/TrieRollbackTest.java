@@ -1,7 +1,6 @@
 package org.tdf.trie;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -86,8 +85,6 @@ public class TrieRollbackTest {
                 if(nodes.get(j).contains(roots.get(i))) throw new RuntimeException("impossible according to crypto");
             }
         }
-
-        System.out.println(removed.size());
     }
 
     // rollback successful
@@ -111,12 +108,6 @@ public class TrieRollbackTest {
             db.compact(excludes);
             for (int j = 0; j < i; j++) {
                 assert !db.containsKey(roots.get(j));
-                // TODO: test clean up unused nodes
-                for(byte[] key: nodes.get(j)){
-// cannot assert this because some key are modified, new value are stored
-//                    if(excludes.contains(key)) continue;
-//                    assert !db.containsKey(key);
-                }
             }
             for (int j = i; j < roots.size(); j++) {
                 byte[] rootHash = roots.get(j);
@@ -134,7 +125,7 @@ public class TrieRollbackTest {
             Store<byte[], byte[]> db = new ByteArrayMapStore<>();
             nodes.get(i).forEach(x -> db.put(x, database.get(x).get()));
             Trie<String, String> trie1 = trie.moveTo(roots.get(i), db);
-            assert Arrays.equals(trie1.commit(), roots.get(i));
+            assert equals(dumps.get(Hex.toHexString(roots.get(i))), dump(trie1));
         }
     }
 
