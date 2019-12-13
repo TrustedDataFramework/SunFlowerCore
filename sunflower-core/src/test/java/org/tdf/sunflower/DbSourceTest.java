@@ -13,11 +13,11 @@ import java.util.Map;
 
 @RunWith(JUnit4.class)
 public class DbSourceTest {
-    private static final SourceDbProperties PROPERTIES;
+    private static final DatabaseConfig PROPERTIES;
     private static DatabaseStoreFactory FACTORY;
 
     static {
-        PROPERTIES = new SourceDbProperties();
+        PROPERTIES = new DatabaseConfig();
         PROPERTIES.setProperty("name", "rocksdb");
         PROPERTIES.setProperty("directory", "local");
         PROPERTIES.setProperty("max-open-files", "512");
