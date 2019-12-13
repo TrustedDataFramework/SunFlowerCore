@@ -18,9 +18,9 @@ public class ChainCacheTest {
 
     static {
         PROPERTIES = new DatabaseConfig();
-        PROPERTIES.setProperty("name", "rocksdb");
-        PROPERTIES.setProperty("directory", "local");
-        PROPERTIES.setProperty("max-open-files", "512");
+        PROPERTIES.setName("rocksdb");
+        PROPERTIES.setDirectory("local");
+        PROPERTIES.setMaxOpenFiles(512);
         try {
 //            PERSISTENT = new PersistentDataStoreFactory(PROPERTIES).create("chain-cache");
         } catch (Exception e) {

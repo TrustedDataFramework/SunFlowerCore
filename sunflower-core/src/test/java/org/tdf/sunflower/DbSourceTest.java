@@ -18,9 +18,9 @@ public class DbSourceTest {
 
     static {
         PROPERTIES = new DatabaseConfig();
-        PROPERTIES.setProperty("name", "rocksdb");
-        PROPERTIES.setProperty("directory", "local");
-        PROPERTIES.setProperty("max-open-files", "512");
+        PROPERTIES.setName("rocksdb");
+        PROPERTIES.setDirectory("local");
+        PROPERTIES.setMaxOpenFiles(512);
         try {
             FACTORY = new DatabaseStoreFactory(PROPERTIES);
         } catch (Exception e) {
