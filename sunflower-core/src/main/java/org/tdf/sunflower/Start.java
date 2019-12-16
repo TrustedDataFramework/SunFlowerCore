@@ -63,7 +63,8 @@ public class Start {
 
     @Bean
     public Miner miner(ConsensusEngine engine, NewMinedBlockWriter writer,
-                       // this dependency ensure pool and repository had been injected before miner start
+                       // those dependencies ensure transaction pool, consortium repository and peer server
+                       // had been initialized and injected before miner start
                        TransactionPool transactionPool, ConsortiumRepository repository, PeerServer peerServer) {
         Miner miner = engine.getMiner();
         miner.addListeners(writer);
