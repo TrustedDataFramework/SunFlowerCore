@@ -13,14 +13,14 @@ import java.util.stream.Collectors;
 @RunWith(JUnit4.class)
 // set env WRAPPER=true to test wrapper method
 public class ChainCacheTest {
-    private static final SourceDbProperties PROPERTIES;
+    private static final DatabaseConfig PROPERTIES;
     private static Store<byte[], byte[]> PERSISTENT;
 
     static {
-        PROPERTIES = new SourceDbProperties();
-        PROPERTIES.setProperty("name", "rocksdb");
-        PROPERTIES.setProperty("directory", "local");
-        PROPERTIES.setProperty("max-open-files", "512");
+        PROPERTIES = new DatabaseConfig();
+        PROPERTIES.setName("rocksdb");
+        PROPERTIES.setDirectory("local");
+        PROPERTIES.setMaxOpenFiles(512);
         try {
 //            PERSISTENT = new PersistentDataStoreFactory(PROPERTIES).create("chain-cache");
         } catch (Exception e) {

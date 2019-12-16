@@ -25,3 +25,7 @@ dependencies {
     compile "commons-codec:commons-codec:${commonsCodecVersion}"
     compile "com.kosprov.jargon2:jargon2-api:${jargon2Version}"
 }
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}

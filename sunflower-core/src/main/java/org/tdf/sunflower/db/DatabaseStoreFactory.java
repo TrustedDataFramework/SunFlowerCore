@@ -1,11 +1,10 @@
 package org.tdf.sunflower.db;
 
-import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.tdf.store.DatabaseStore;
 import org.tdf.store.DbSettings;
-import org.tdf.sunflower.SourceDbProperties;
+import org.tdf.sunflower.DatabaseConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +12,11 @@ import java.util.List;
 @Slf4j
 @Component
 public class DatabaseStoreFactory {
-    private DatabaseStoreConfig config;
+    private DatabaseConfig config;
     private static final List<DatabaseStore> STORES_LIST = new ArrayList<>();
 
-    public DatabaseStoreFactory(SourceDbProperties sourceDbProperties) throws Exception{
-        JavaPropsMapper mapper = new JavaPropsMapper();
-        DatabaseStoreConfig config = mapper.readPropertiesAs(sourceDbProperties, DatabaseStoreConfig.class);
+    public DatabaseStoreFactory(DatabaseConfig config) throws Exception{
+
         if(config.getName() == null) config.setName("");
         this.config = config;
     }
@@ -42,7 +40,7 @@ public class DatabaseStoreFactory {
         }
 
         store.init(DbSettings.newInstance()
-                .withMaxOpenFiles(config.getDataMaxOpenFiles())
+                .withMaxOpenFiles(config.getMaxOpenFiles())
                 .withMaxThreads(Math.max(1, Runtime.getRuntime().availableProcessors() / 2)));
         STORES_LIST.add(store);
         if(config.isReset()){
