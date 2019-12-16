@@ -2,6 +2,7 @@ package org.tdf.common;
 
 import org.tdf.exception.PeerServerLoadException;
 
+import java.io.Closeable;
 import java.util.List;
 import java.util.Properties;
 
@@ -21,6 +22,8 @@ public interface PeerServer {
     void use(PeerServerListener... peerServerListeners);
 
     void start();
+
+    void stop();
 
     void load(Properties properties) throws PeerServerLoadException;
 

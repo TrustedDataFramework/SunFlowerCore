@@ -7,7 +7,6 @@ import org.tdf.store.DatabaseStore;
 import org.tdf.store.DbSettings;
 import org.tdf.sunflower.SourceDbProperties;
 
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,8 +51,8 @@ public class DatabaseStoreFactory {
         return store;
     }
 
-    @PreDestroy
-    public void destroy(){
+    public void cleanup(){
+        log.info("closing database stores...");
         STORES_LIST.forEach(DatabaseStore::close);
     }
 }

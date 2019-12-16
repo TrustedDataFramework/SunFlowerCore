@@ -14,6 +14,7 @@ import org.tdf.sunflower.Start;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,7 +23,6 @@ import java.util.stream.Stream;
 @Slf4j
 public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
     public static None NONE = new None();
-
     private PeerServerConfig config;
     private List<Plugin> plugins = new ArrayList<>();
     private Client client;
@@ -250,5 +250,19 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
         if (bindIP != null) {
             self.setHost(bindIP);
         }
+    }
+
+    @Override
+    public void stop() {
+        plugins.forEach(x -> x.onStop(this));
+        client.peersCache
+                .getChannels()
+                .forEach(Channel::close);
+        try {
+            netLayer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        log.info("peer server closed");
     }
 }

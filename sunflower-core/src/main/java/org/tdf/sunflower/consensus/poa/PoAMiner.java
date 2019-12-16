@@ -15,9 +15,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
 import static org.tdf.sunflower.consensus.poa.PoAHashPolicy.HASH_POLICY;
 
 
@@ -36,7 +40,7 @@ public class PoAMiner implements Miner {
 
     private boolean stopped;
 
-    private Thread thread;
+    private ScheduledExecutorService minerExecutor;
 
     @Setter
     private TransactionPool transactionPool;
@@ -86,21 +90,19 @@ public class PoAMiner implements Miner {
 
     @Override
     public void start() {
-        thread = new Thread(() -> {
-            while (true){
-                tryMine();
-                try {
-                    TimeUnit.SECONDS.sleep(poAConfig.getBlockInterval());
-                }catch (Exception ignored){}
-            }
-        });
-        thread.start();
+        minerExecutor = Executors.newSingleThreadScheduledExecutor();
+        minerExecutor.scheduleAtFixedRate(this::tryMine, 0, poAConfig.getBlockInterval(), TimeUnit.SECONDS);
     }
 
     @Override
     public void stop() {
-        if (thread != null){
-            thread.interrupt();
+        if (stopped) return;
+        minerExecutor.shutdown();
+        try {
+            minerExecutor.awaitTermination(MAX_SHUTDOWN_WAITING, TimeUnit.SECONDS);
+            log.info("miner stopped normally");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         stopped = true;
     }
@@ -153,9 +155,9 @@ public class PoAMiner implements Miner {
                 .payload(PoAConstants.ZERO_BYTES)
                 .hash(new HexBytes(BigEndian.encodeInt64(parent.getHeight() + 1))).build();
         Block b = new Block(header);
-        while (true){
+        while (true) {
             Optional<Transaction> tx = transactionPool.pop();
-            if(!tx.isPresent()) break;
+            if (!tx.isPresent()) break;
             b.getBody().add(tx.get());
         }
         b.getBody().add(0, createCoinBase(parent.getHeight() + 1));

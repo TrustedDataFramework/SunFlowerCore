@@ -9,4 +9,6 @@ interface Plugin {
     void onNewPeer(PeerImpl peer, PeerServerImpl server);
 
     void onDisconnect(PeerImpl peer, PeerServerImpl server);
+
+    void onStop(PeerServerImpl server);
 }

@@ -6,6 +6,7 @@ import org.tdf.common.PeerServer;
 import org.tdf.common.PeerServerListener;
 import org.tdf.exception.PeerServerLoadException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -70,5 +71,10 @@ public class None implements PeerServer {
                 return "";
             }
         };
+    }
+
+    @Override
+    public void stop() {
+
     }
 }

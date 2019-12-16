@@ -24,8 +24,12 @@ import org.tdf.sunflower.state.Account;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import static org.tdf.sunflower.ApplicationConstants.SHUTDOWN_SIGNAL;
 
 @EnableAsync
 @EnableScheduling
@@ -36,6 +40,8 @@ import java.util.concurrent.Executors;
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 public class Start {
     private static final boolean ENABLE_ASSERTION = "true".equals(System.getenv("ENABLE_ASSERTION"));
+
+    public static final BlockingQueue<Integer> SIGNALS = new ArrayBlockingQueue<>(1);
 
     public static final Executor APPLICATION_THREAD_POOL = Executors.newCachedThreadPool();
 
@@ -49,6 +55,24 @@ public class Start {
             .enable(JsonParser.Feature.ALLOW_COMMENTS);
 
     public static void main(String[] args) {
+        // waiting for shutdown signals
+        log.info("listening for signals...");
+        Executors.newSingleThreadExecutor()
+                .execute(() -> {
+                    while (true) {
+                        int signal;
+                        try {
+                            signal = SIGNALS.take();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        switch (signal) {
+                            case SHUTDOWN_SIGNAL:
+                                log.info("shutdown signal received, closing application...");
+                                System.exit(0);
+                        }
+                    }
+                });
         SpringApplication.run(Start.class, args);
     }
 

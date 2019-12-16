@@ -1,0 +1,18 @@
+package org.tdf.sunflower.console;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.shell.standard.ShellComponent;
+import org.springframework.shell.standard.ShellMethod;
+import org.tdf.sunflower.Start;
+
+import static org.tdf.sunflower.ApplicationConstants.SHUTDOWN_SIGNAL;
+
+@ShellComponent
+@Slf4j
+public class CommandLineInterface {
+    @ShellMethod(value = "shutdown")
+    public void shutdown() {
+        log.info("application will shutdown soon");
+        Start.SIGNALS.add(SHUTDOWN_SIGNAL);
+    }
+}
