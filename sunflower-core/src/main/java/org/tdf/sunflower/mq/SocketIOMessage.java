@@ -12,7 +12,7 @@ public class SocketIOMessage implements Message{
         this.node = node;
     }
 
-    public <T> T getAs(Class<T> clazz) {
+    public <T> T as(Class<T> clazz) {
         try {
             return Start.MAPPER.treeToValue(node, clazz);
         } catch (JsonProcessingException e) {

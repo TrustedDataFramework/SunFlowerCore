@@ -2,7 +2,7 @@ package org.tdf.common;
 
 import java.util.Collection;
 
-// context for communicating with peer server and plugin
+// context for communicating with peer server and listener
 public interface Context {
     // exit listeners chain
     void exit();

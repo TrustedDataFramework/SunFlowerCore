@@ -1,6 +1,7 @@
 package org.tdf.store;
 
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Interface represents DB source which is normally the final Source in the chain
@@ -32,4 +33,17 @@ public interface DatabaseStore extends BatchStore<byte[], byte[]> {
      * @throws RuntimeException if operation is not supported
      */
     Optional<byte[]> prefixLookup(byte[] key, int prefixBytes);
+
+    /**
+     * @return DB keys if this option is available
+     * @throws RuntimeException if the method is not supported
+     */
+    @Override
+    Set<byte[]> keySet();
+
+    /**
+     * Closes database, destroys its data and finally runs init()
+     */
+    @Override
+    void clear();
 }

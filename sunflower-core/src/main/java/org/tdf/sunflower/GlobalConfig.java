@@ -7,5 +7,5 @@ import java.util.HashMap;
 
 @ConfigurationProperties(prefix = "sunflower")
 @Component
-public class GlobalConfig extends HashMap {
+public class GlobalConfig extends HashMap<String, Object> {
 }

@@ -20,7 +20,7 @@ public class ChatEventHandler {
     @PostConstruct
     public void init() {
         messageQueue.subscribe("chatevent", (msg) -> {
-            System.out.println(msg.getAs(ChatMessage.class));
+            System.out.println(msg.as(ChatMessage.class));
         });
 
         Executors.newSingleThreadScheduledExecutor()

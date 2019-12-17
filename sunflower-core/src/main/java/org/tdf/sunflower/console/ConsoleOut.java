@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConsoleOut {
+public class  ConsoleOut {
     static final int OK = 200;
     static final int ERROR = 500;
     private int code;

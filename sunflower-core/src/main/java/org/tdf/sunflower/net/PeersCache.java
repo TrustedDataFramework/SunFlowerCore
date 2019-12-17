@@ -51,7 +51,7 @@ class PeersCache {
         if (peer.equals(self)) {
             return;
         }
-        if(blocked.containsKey(peer)) return;
+        if (blocked.containsKey(peer)) return;
         int idx = self.subTree(peer);
         if (peers[idx] == null) {
             peers[idx] = new Bucket();
@@ -132,14 +132,19 @@ class PeersCache {
     }
 
     void block(PeerImpl peer) {
-        if(trusted.containsKey(peer)) return;
-        if(!config.isEnableDiscovery() && bootstraps.containsKey(peer)) return;
-        if(blocked.containsKey(peer)){
+        // trusted peer will not be blocked
+        if (trusted.containsKey(peer)) return;
+        // if peer discovery is disabled, bootstrap peer are treat as trusted peer
+        if (!config.isEnableDiscovery() && bootstraps.containsKey(peer)) return;
+        // if the peer had been blocked before,
+        // reset the score of this peer as EVIL_SCORE
+        if (blocked.containsKey(peer)) {
             blocked.keySet().stream()
                     .filter(p -> p.equals(peer))
                     .forEach(x -> x.setScore(EVIL_SCORE));
             return;
         }
+        // remove the peer and disconnect to it
         remove(peer);
         peer.score = EVIL_SCORE;
         blocked.put(peer, true);
@@ -154,6 +159,7 @@ class PeersCache {
                 .filter(p -> p.equals(peer))
                 .findAny()
                 .filter(p -> {
+                    p.score -= p.score < 8 ? p.score : 8;
                     p.score /= 2;
                     return p.score == 0;
                 })
@@ -165,6 +171,7 @@ class PeersCache {
         List<PeerImpl> toRemoves = Stream.of(peers).filter(Objects::nonNull)
                 .flatMap(x -> x.channels.keySet().stream())
                 .filter(p -> {
+                    p.score -= p.score < 8 ? p.score : 8;
                     p.score /= 2;
                     return p.score == 0;
                 }).collect(Collectors.toList());
@@ -182,18 +189,21 @@ class PeersCache {
         return size() >= config.getMaxPeers();
     }
 
-    Stream<Channel> getChannels(){
+    // get all connected channels
+    Stream<Channel> getChannels() {
         return Arrays.stream(peers).filter(Objects::nonNull)
                 .flatMap(x -> x.channels.values().stream());
     }
 
-    Optional<Channel> getChannel(PeerImpl peer){
+    // get channel of the peer
+    Optional<Channel> getChannel(PeerImpl peer) {
         int idx = self.subTree(peer);
         if (peers[idx] == null) return Optional.empty();
         return Optional.ofNullable(peers[idx].channels.get(peer));
     }
 
-    Optional<Channel> getChannel(HexBytes id){
+    // get channel by peer id
+    Optional<Channel> getChannel(HexBytes id) {
         int idx = self.subTree(id.getBytes());
         if (peers[idx] == null) return Optional.empty();
         return peers[idx].channels.keySet().stream()
@@ -203,7 +213,7 @@ class PeersCache {
                 ;
     }
 
-    boolean hasBlocked(PeerImpl peer){
+    boolean hasBlocked(PeerImpl peer) {
         return blocked.containsKey(peer);
     }
 }
