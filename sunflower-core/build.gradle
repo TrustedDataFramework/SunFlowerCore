@@ -90,6 +90,10 @@ task copyDependencies(type: Copy) {
     destinationDir = file('build/libs/lib')
 }
 
+bootRun {
+    standardInput = System.in
+}
+
 test {
     useJUnitPlatform()
 }
