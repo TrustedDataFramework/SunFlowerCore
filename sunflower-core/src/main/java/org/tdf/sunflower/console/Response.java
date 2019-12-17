@@ -9,12 +9,13 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class  ConsoleOut {
+public class Response {
     static final int OK = 200;
     static final int ERROR = 500;
+
     private int code;
     // normal output
-    private String output;
+    private String info;
     // error output
     private String error;
 }

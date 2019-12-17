@@ -7,6 +7,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ConsoleIn {
-    private String input;
+public class Payload {
+    // token = keccak256 uuid(ascii) + createdAt(ascii)
+    private String token;
+    private String createdAt;
 }
