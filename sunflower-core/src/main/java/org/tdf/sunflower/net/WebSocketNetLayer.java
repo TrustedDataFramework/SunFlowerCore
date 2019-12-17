@@ -34,7 +34,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        Channel ch = new ProtoChannel();
+        ProtoChannel ch = new ProtoChannel();
         ch.setOut(new WebSocketChannelOut(conn));
         channelHandler.accept(ch);
         channels.put(conn, ch);
@@ -98,7 +98,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
     }
 
     @AllArgsConstructor
-    private static class WebSocketClientChannelOut implements Channel.ChannelOut {
+    private static class WebSocketClientChannelOut implements ProtoChannel.ChannelOut {
         private Client client;
 
         @Override
@@ -114,7 +114,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
 
     @Getter
     private static class Client extends WebSocketClient {
-        private Channel channel;
+        private ProtoChannel channel;
 
         Client(String host, int port) throws Exception {
             super(new URI("ws", "", host, port, "", "", ""));
@@ -151,7 +151,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
     }
 
     @AllArgsConstructor
-    private static class WebSocketChannelOut implements Channel.ChannelOut {
+    private static class WebSocketChannelOut implements ProtoChannel.ChannelOut {
         private WebSocket conn;
 
         @Override

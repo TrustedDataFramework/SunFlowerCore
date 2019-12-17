@@ -48,7 +48,7 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
             ManagedChannel ch = ManagedChannelBuilder
                     .forAddress(host, port).usePlaintext().build();
             EntryGrpc.EntryStub stub = EntryGrpc.newStub(ch);
-            Channel channel = new ProtoChannel();
+            ProtoChannel channel = new ProtoChannel();
             channel.addListener(listeners);
             channel.setOut(new GRpcChannelOut(stub.entry(
                     new ChannelWrapper(channel)
@@ -61,7 +61,7 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
 
     @Override
     public StreamObserver<Message> entry(StreamObserver<Message> responseObserver) {
-        Channel ch = new ProtoChannel();
+        ProtoChannel ch = new ProtoChannel();
         ch.setOut(new GRpcChannelOut(responseObserver));
         handler.accept(ch);
         return new ChannelWrapper(ch);
@@ -88,7 +88,7 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
     }
 
     @AllArgsConstructor
-    private static class GRpcChannelOut implements Channel.ChannelOut {
+    private static class GRpcChannelOut implements ProtoChannel.ChannelOut {
         private StreamObserver<Message> out;
 
         @Override

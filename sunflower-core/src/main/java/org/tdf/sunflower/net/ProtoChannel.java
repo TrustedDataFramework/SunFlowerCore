@@ -12,6 +12,11 @@ import java.util.Optional;
 // communicating channel with peer
 @Slf4j
 public class ProtoChannel implements Channel {
+    public interface ChannelOut {
+        void write(Message message);
+        void close();
+    }
+
     private boolean closed;
     private PeerImpl remote;
     private ChannelOut out;

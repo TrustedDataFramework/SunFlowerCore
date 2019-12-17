@@ -22,8 +22,6 @@ interface Channel extends Closeable {
     // notify listeners error
     void error(Throwable throwable);
 
-    void setOut(ChannelOut out);
-
     interface ChannelListener {
         // triggered when channel is open, only once in the life cycle of the channel
         void onConnect(PeerImpl remote, Channel channel);
@@ -36,11 +34,6 @@ interface Channel extends Closeable {
 
         // when the channel been closed
         void onClose(Channel channel);
-    }
-
-    interface ChannelOut {
-        void write(Message message);
-        void close();
     }
 
     Optional<PeerImpl> getRemote();
