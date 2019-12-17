@@ -149,10 +149,8 @@ public class Client implements Channel.ChannelListener {
             channel.close();
             return;
         }
-        if (peersCache.getChannel(remote).map(c -> !c.isClosed()).orElse(false)) {
-            // the channel had already exists
-            channel.close();
-            return;
+        if(peersCache.getChannel(remote).isPresent()){
+            log.warn("new channel incoming while the channel had been created");
         }
         peersCache.keep(remote, channel);
     }
@@ -166,7 +164,7 @@ public class Client implements Channel.ChannelListener {
         channel.getRemote()
                     .filter(x -> !peersCache.hasBlocked(x))
                     .ifPresent(x -> peersCache.half(x));
-//        log.error("error found " + throwable.getMessage());
+        log.error("error found decrease the score of peer " + channel.getRemote() + " " + throwable.getMessage());
     }
 
     @Override
