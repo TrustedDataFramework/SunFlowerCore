@@ -24,12 +24,9 @@ import org.tdf.sunflower.state.Account;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-
-import static org.tdf.sunflower.ApplicationConstants.SHUTDOWN_SIGNAL;
 
 @EnableAsync
 @EnableScheduling
