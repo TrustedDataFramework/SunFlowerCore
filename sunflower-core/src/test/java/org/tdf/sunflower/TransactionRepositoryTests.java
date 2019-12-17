@@ -21,7 +21,7 @@ import static org.tdf.sunflower.TestUtils.getBlock;
 
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Start.class)
+@SpringBootTest(classes = TestContext.class)
 // use SPRING_CONFIG_LOCATION environment to locate spring config
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 // set consensus.name = 'none' to run this test class
