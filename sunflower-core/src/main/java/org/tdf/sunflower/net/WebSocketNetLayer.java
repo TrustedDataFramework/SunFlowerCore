@@ -3,13 +3,16 @@ package org.tdf.sunflower.net;
 import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.java_websocket.WebSocket;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.handshake.ServerHandshake;
 import org.java_websocket.server.WebSocketServer;
+import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.proto.Message;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -20,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 // net layer implemented by websocket
+@Slf4j
 public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
     private final Map<WebSocket, Channel> channels = new ConcurrentHashMap<>();
     private Consumer<Channel> channelHandler;
@@ -166,6 +170,16 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            stop((int) ApplicationConstants.MAX_SHUTDOWN_WAITING * 1000);
+            log.info("websocket server closed normally");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 }

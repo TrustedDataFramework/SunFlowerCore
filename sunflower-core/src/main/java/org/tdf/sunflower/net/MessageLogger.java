@@ -26,4 +26,9 @@ class MessageLogger implements Plugin {
     public void onDisconnect(PeerImpl peer, PeerServerImpl server) {
         log.info("peer disconnected {}", peer);
     }
+
+    @Override
+    public void onStop(PeerServerImpl server) {
+
+    }
 }

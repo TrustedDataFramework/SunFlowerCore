@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.tdf.common.*;
 import org.tdf.exception.ConsensusEngineLoadException;
@@ -18,6 +19,7 @@ import java.util.Properties;
 import static org.tdf.sunflower.consensus.poa.PoAHashPolicy.HASH_POLICY;
 
 // poa is a minimal non-trivial consensus engine
+@Slf4j
 public class PoA extends ConsensusEngine implements PeerServerListener {
     private PoAConfig poAConfig;
     private Genesis genesis;
@@ -30,6 +32,8 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
     public PoA() {
         setValidator(new PoAValidator());
     }
+
+    private PeerServer peerServer;
 
     @Override
     public Block getGenesisBlock() {
@@ -74,6 +78,26 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
         ConsortiumStateRepository repo = new ConsortiumStateRepository();
         setRepository(repo);
         repo.register(getGenesisBlock(), Collections.singleton(Account.getRandomAccount()));
+
+        getMiner().addListeners(new MinerListener() {
+            @Override
+            public void onBlockMined(Block block) {
+                try {
+                    if(peerServer == null) {
+                        log.error("mining blocks before server start");
+                        return;
+                    }
+                    peerServer.broadcast(Start.MAPPER.writeValueAsBytes(block));
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onMiningFailed(Block block) {
+
+            }
+        });
     }
 
     @Override
@@ -93,21 +117,7 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
 
     @Override
     public void onStart(PeerServer server) {
-        getMiner().addListeners(new MinerListener() {
-            @Override
-            public void onBlockMined(Block block) {
-                try {
-                    server.broadcast(Start.MAPPER.writeValueAsBytes(block));
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onMiningFailed(Block block) {
-
-            }
-        });
+        this.peerServer = server;
     }
 
     @Override

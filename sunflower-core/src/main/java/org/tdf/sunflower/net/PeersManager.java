@@ -4,13 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Functions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.proto.Peers;
 
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,6 +20,8 @@ public class PeersManager implements Plugin {
     private PeerServerConfig config;
     private ConcurrentHashMap<PeerImpl, Boolean> pending = new ConcurrentHashMap<>();
     private static final int DISCOVERY_RATE = 15;
+
+    private ScheduledExecutorService executorService;
 
     PeersManager(PeerServerConfig config) {
         this.config = config;
@@ -64,11 +65,12 @@ public class PeersManager implements Plugin {
         MessageBuilder builder = client.messageBuilder;
 
         // keep self alive
-        Executors.newSingleThreadScheduledExecutor()
-                .scheduleAtFixedRate(() -> client.broadcast(
-                        builder.buildPing()
-                ), 0, DISCOVERY_RATE, TimeUnit.SECONDS);
-        Executors.newSingleThreadScheduledExecutor()
+        executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleAtFixedRate(() -> client.broadcast(
+                builder.buildPing()
+        ), 0, DISCOVERY_RATE, TimeUnit.SECONDS);
+
+        executorService
                 .scheduleAtFixedRate(() -> {
                     try {
                         server.peerStore.put("peers",
@@ -123,5 +125,15 @@ public class PeersManager implements Plugin {
     @Override
     public void onDisconnect(PeerImpl peer, PeerServerImpl server) {
 
+    }
+
+    @Override
+    public void onStop(PeerServerImpl server) {
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(ApplicationConstants.MAX_SHUTDOWN_WAITING, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

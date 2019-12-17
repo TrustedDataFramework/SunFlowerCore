@@ -10,4 +10,8 @@ public class ApplicationConstants {
     public static final int PUBLIC_KEY_SIZE = 32;
     
     public static final String CONSENSUS_VRF = "vrf";
+
+    public static final int SHUTDOWN_SIGNAL = 0;
+
+    public static final long MAX_SHUTDOWN_WAITING = 5;
 }

@@ -24,8 +24,12 @@ import org.tdf.sunflower.state.Account;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import static org.tdf.sunflower.ApplicationConstants.SHUTDOWN_SIGNAL;
 
 @EnableAsync
 @EnableScheduling
@@ -59,8 +63,9 @@ public class Start {
 
     @Bean
     public Miner miner(ConsensusEngine engine, NewMinedBlockWriter writer,
-                       // this dependency ensure pool and repository had been injected before miner start
-                       TransactionPool transactionPool, ConsortiumRepository repository) {
+                       // those dependencies ensure transaction pool, consortium repository and peer server
+                       // had been initialized and injected before miner start
+                       TransactionPool transactionPool, ConsortiumRepository repository, PeerServer peerServer) {
         Miner miner = engine.getMiner();
         miner.addListeners(writer);
         miner.start();

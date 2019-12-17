@@ -2,10 +2,11 @@ package org.tdf.sunflower.net;
 
 import org.tdf.sunflower.proto.Message;
 
+import java.io.Closeable;
 import java.util.Optional;
 
 // channel for message transports
-interface Channel {
+interface Channel extends Closeable {
     // write message to channel
     void write(Message message);
 

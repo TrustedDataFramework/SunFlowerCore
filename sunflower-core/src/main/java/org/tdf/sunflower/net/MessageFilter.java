@@ -72,4 +72,9 @@ public class MessageFilter implements Plugin {
     public void onDisconnect(PeerImpl peer, PeerServerImpl server) {
 
     }
+
+    @Override
+    public void onStop(PeerServerImpl server) {
+
+    }
 }

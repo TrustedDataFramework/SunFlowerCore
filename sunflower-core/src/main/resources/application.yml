@@ -23,7 +23,6 @@ sunflower:
     miner-coin-base: '1JWhUiZCWps56uZckAvzxy2ex6VGhrMXdD'
 
   p2p:
-
     name: 'websocket' # choose p2p protocol, gRPC is default optional: websocket
     # name: 'websocket'
     max-peers: '16' # maximum peers

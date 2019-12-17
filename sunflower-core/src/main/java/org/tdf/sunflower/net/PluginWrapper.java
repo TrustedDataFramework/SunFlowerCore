@@ -32,4 +32,9 @@ public class PluginWrapper implements Plugin{
     public void onDisconnect(PeerImpl peer, PeerServerImpl server) {
         listener.onDisconnect(peer, server);
     }
+
+    @Override
+    public void onStop(PeerServerImpl server) {
+
+    }
 }
