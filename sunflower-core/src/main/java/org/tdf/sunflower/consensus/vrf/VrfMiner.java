@@ -224,6 +224,7 @@ public class VrfMiner implements Miner {
 
     public void setVrfStateMachine(VrfStateMachine vrfStateMachine) {
         this.vrfStateMachine = vrfStateMachine;
+        this.vrfStateMachine.setBlockRepository(blockRepository);
     }
 
     private synchronized void startVrfStateMachine() {
