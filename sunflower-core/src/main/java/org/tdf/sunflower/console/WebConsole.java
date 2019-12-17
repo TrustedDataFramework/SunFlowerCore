@@ -23,9 +23,6 @@ public class WebConsole {
     static final int SALT_LENGTH = 8;
 
     // event for
-    private static final String SHUTDOWN_EVENT = "shutdown";
-
-    private static final String LOG_EVENT = "log";
 
     private ConsoleConfig consoleConfig;
 
@@ -51,7 +48,7 @@ public class WebConsole {
         });
 
 
-        socketIOServer.addEventListener(SHUTDOWN_EVENT, Payload.class, (client, data, ackSender) -> {
+        socketIOServer.addEventListener(Commands.SHUTDOWN_COMMAND, Payload.class, (client, data, ackSender) -> {
             if (closeUnauthorized(client)) return;
             sendInfo(client, "application will shutdown soon...");
             System.exit(0);
