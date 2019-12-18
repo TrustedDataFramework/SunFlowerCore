@@ -11,7 +11,7 @@ public interface DatabaseStore extends BatchStore<byte[], byte[]> {
      * Initializes DB (open table, connection, etc)
      * @param settings  DB settings
      */
-    void init(DbSettings settings);
+    void init(DBSettings settings);
 
     /**
      * @return true if DB connection is alive

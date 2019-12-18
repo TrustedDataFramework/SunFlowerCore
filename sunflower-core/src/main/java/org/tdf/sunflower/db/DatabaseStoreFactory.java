@@ -2,8 +2,9 @@ package org.tdf.sunflower.db;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.tdf.common.store.DBSettings;
 import org.tdf.common.store.DatabaseStore;
-import org.tdf.common.store.DbSettings;
+import org.tdf.common.store.MemoryDatabaseStore;
 import org.tdf.sunflower.DatabaseConfig;
 
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ public class DatabaseStoreFactory {
                 log.warn("Data source is not supported, default is rocksdb");
         }
 
-        store.init(DbSettings.newInstance()
+        store.init(DBSettings.newInstance()
                 .withMaxOpenFiles(config.getMaxOpenFiles())
                 .withMaxThreads(Math.max(1, Runtime.getRuntime().availableProcessors() / 2)));
         STORES_LIST.add(store);

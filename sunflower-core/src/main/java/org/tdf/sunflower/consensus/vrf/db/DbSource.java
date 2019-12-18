@@ -1,6 +1,6 @@
 package org.tdf.sunflower.consensus.vrf.db;
 
-import org.tdf.common.store.DbSettings;
+import org.tdf.common.store.DBSettings;
 
 import java.util.Set;
 
@@ -22,7 +22,7 @@ public interface DbSource<V> extends BatchSource<byte[], V> {
 
     /**
      * Initializes DB (open table, connection, etc)
-     * with default {@link DbSettings#DEFAULT}
+     * with default {@link DBSettings#DEFAULT}
      */
     void init();
 
@@ -30,7 +30,7 @@ public interface DbSource<V> extends BatchSource<byte[], V> {
      * Initializes DB (open table, connection, etc)
      * @param settings  DB settings
      */
-    void init(DbSettings settings);
+    void init(DBSettings settings);
 
     /**
      * @return true if DB connection is alive

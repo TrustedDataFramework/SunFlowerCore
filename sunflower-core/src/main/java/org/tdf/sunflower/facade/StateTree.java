@@ -1,9 +1,9 @@
 package org.tdf.sunflower.facade;
 
 import org.tdf.common.types.Chained;
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ForkAbleState;
-import org.tdf.common.util.HexBytes;
 
 import java.util.Collection;
 import java.util.Optional;

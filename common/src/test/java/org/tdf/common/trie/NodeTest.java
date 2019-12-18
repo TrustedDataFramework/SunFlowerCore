@@ -4,10 +4,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.HashUtil;
-import org.tdf.rlp.RLPElement;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.BigEndian;
+import org.tdf.rlp.RLPElement;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;

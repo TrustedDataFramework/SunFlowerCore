@@ -1,7 +1,6 @@
 package org.tdf.common;
 
 import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 
 import java.security.MessageDigest;

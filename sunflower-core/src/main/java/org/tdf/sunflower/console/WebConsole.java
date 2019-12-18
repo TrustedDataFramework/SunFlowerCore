@@ -10,9 +10,8 @@ import org.tdf.crypto.HashFunctions;
 import org.tdf.sunflower.Start;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
-
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.UUID;
 

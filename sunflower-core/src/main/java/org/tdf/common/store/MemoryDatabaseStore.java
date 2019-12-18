@@ -1,15 +1,11 @@
-package org.tdf.sunflower.db;
-
-import org.tdf.common.store.ByteArrayMapStore;
-import org.tdf.common.store.DatabaseStore;
-import org.tdf.common.store.DbSettings;
+package org.tdf.common.store;
 
 import java.util.Map;
 import java.util.Optional;
 
 public class MemoryDatabaseStore extends ByteArrayMapStore<byte[]> implements DatabaseStore {
     @Override
-    public void init(DbSettings settings) {
+    public void init(DBSettings settings) {
 
     }
 

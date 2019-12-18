@@ -1,6 +1,8 @@
 package org.tdf.common.store;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NonNull;
 
 import java.util.Collection;
@@ -13,6 +15,7 @@ import java.util.stream.Collectors;
  * when compact method called, clean the key-pari in @see deleted
  */
 @AllArgsConstructor
+@Getter(AccessLevel.PROTECTED)
 public class NoDeleteStore<K, V> implements Store<K, V>{
     private Store<K, V> delegate;
 

@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.tdf.common.store.DbSettings;
+import org.tdf.common.store.DBSettings;
 import org.tdf.sunflower.consensus.vrf.util.ALock;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
@@ -71,7 +71,7 @@ public class HashMapDB<V> implements DbSource<V> {
     public void init() {}
 
     @Override
-    public void init(DbSettings settings) {}
+    public void init(DBSettings settings) {}
 
     @Override
     public boolean isAlive() {

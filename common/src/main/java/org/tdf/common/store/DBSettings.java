@@ -1,19 +1,19 @@
 package org.tdf.common.store;
 
-public class DbSettings {
+public class DBSettings {
 
-    public static final DbSettings DEFAULT = new DbSettings()
+    public static final DBSettings DEFAULT = new DBSettings()
             .withMaxThreads(1)
             .withMaxOpenFiles(32);
 
     int maxOpenFiles;
     int maxThreads;
 
-    private DbSettings() {
+    private DBSettings() {
     }
 
-    public static DbSettings newInstance() {
-        DbSettings settings = new DbSettings();
+    public static DBSettings newInstance() {
+        DBSettings settings = new DBSettings();
         settings.maxOpenFiles = DEFAULT.maxOpenFiles;
         settings.maxThreads = DEFAULT.maxThreads;
         return settings;
@@ -23,7 +23,7 @@ public class DbSettings {
         return maxOpenFiles;
     }
 
-    public DbSettings withMaxOpenFiles(int maxOpenFiles) {
+    public DBSettings withMaxOpenFiles(int maxOpenFiles) {
         this.maxOpenFiles = maxOpenFiles;
         return this;
     }
@@ -32,7 +32,7 @@ public class DbSettings {
         return maxThreads;
     }
 
-    public DbSettings withMaxThreads(int maxThreads) {
+    public DBSettings withMaxThreads(int maxThreads) {
         this.maxThreads = maxThreads;
         return this;
     }

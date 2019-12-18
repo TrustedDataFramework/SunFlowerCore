@@ -6,10 +6,10 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import org.tdf.common.types.Cloneable;
 import org.tdf.common.util.Constants;
-import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLP;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
+import org.tdf.common.util.HexBytes;
+import org.tdf.rlp.RLP;
 
 import java.util.stream.Stream;
 

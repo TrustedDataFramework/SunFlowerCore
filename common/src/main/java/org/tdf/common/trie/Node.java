@@ -4,12 +4,12 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import org.tdf.common.util.HexBytes;
 import org.tdf.common.store.Store;
+import org.tdf.common.util.FastByteComparisons;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
-import org.tdf.common.util.FastByteComparisons;
 
 import java.util.function.BiConsumer;
 import java.util.function.Function;

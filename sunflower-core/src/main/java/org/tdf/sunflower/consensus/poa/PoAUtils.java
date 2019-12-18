@@ -2,10 +2,10 @@ package org.tdf.sunflower.consensus.poa;
 
 import com.google.common.hash.Hashing;
 import com.google.common.primitives.Bytes;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
-import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.List;

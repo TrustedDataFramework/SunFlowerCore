@@ -3,12 +3,12 @@ package org.tdf.common.trie;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.MemoryCachedStore;
 import org.tdf.common.store.ReadOnlyStore;
 import org.tdf.common.store.Store;
-import org.tdf.rlp.RLPItem;
-import org.tdf.common.serialize.Codec;
 import org.tdf.common.util.FastByteComparisons;
+import org.tdf.rlp.RLPItem;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -145,7 +145,6 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         byte[] hash = this.root.commit(function, cache, true).asBytes();
         if (root.isDirty() || root.getHash() == null)
             throw new RuntimeException("unexpected error: still dirty after commit");
-        flush();
         return hash;
     }
 

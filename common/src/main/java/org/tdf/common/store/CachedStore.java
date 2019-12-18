@@ -2,7 +2,9 @@ package org.tdf.common.store;
 
 import lombok.NonNull;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -59,6 +61,9 @@ public abstract class CachedStore<K, V> implements Store<K, V>{
         deleted.put(k, v.get());
     }
 
+    /**
+     * flush cache to underlying database
+     */
     @Override
     public void flush() {
         if(cache.isEmpty() && deleted.isEmpty()) return ;

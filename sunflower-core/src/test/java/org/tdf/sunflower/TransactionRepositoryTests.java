@@ -6,11 +6,11 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.common.util.BigEndian;
 import org.tdf.sunflower.service.BlockRepositoryService;
 import org.tdf.sunflower.service.TransactionRepositoryService;
-import org.tdf.common.util.BigEndian;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Transaction;
 
 import java.util.Arrays;
 import java.util.List;

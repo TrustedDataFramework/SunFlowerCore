@@ -1,9 +1,9 @@
 package org.tdf.sunflower.vm.hosts;
 
+import org.tdf.crypto.HashFunctions;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
-import org.tdf.crypto.HashFunctions;
 
 import java.util.ArrayList;
 import java.util.Arrays;

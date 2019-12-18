@@ -1,7 +1,7 @@
 package org.tdf.sunflower.state;
 
-import org.tdf.common.util.ChainCache;
 import org.tdf.common.types.Chained;
+import org.tdf.common.util.ChainCache;
 import org.tdf.common.util.ChainedWrapper;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.StateUpdateException;

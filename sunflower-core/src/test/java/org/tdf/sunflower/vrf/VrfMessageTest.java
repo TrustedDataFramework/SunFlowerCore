@@ -1,11 +1,11 @@
 package org.tdf.sunflower.vrf;
 
-import java.io.IOException;
-
 import org.junit.Test;
-import org.tdf.sunflower.types.Block;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.util.ByteUtil;
+
+import java.io.IOException;
 
 public class VrfMessageTest {
 

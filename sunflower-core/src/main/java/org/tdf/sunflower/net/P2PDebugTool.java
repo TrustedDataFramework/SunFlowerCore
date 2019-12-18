@@ -4,8 +4,8 @@ import io.netty.util.internal.logging.InternalLogLevel;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.PeerServerProperties;
+import org.tdf.sunflower.facade.PeerServerListener;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;

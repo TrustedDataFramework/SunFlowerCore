@@ -11,7 +11,6 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;

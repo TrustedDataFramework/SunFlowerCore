@@ -1,13 +1,13 @@
 package org.tdf.sunflower.vrf;
 
 import org.junit.Test;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.sunflower.types.Block;
 import org.tdf.common.util.HexBytes;
+import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
 import org.tdf.sunflower.consensus.vrf.struct.VrfBlockFields;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
+import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.util.ByteUtil;
 
 public class VrfBlockFieldsTest {

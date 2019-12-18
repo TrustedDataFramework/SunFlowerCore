@@ -27,7 +27,6 @@ import org.tdf.sunflower.types.Block;
 
 import java.util.List;
 import java.util.Optional;
-
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 

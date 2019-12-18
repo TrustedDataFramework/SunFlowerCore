@@ -3,8 +3,8 @@ package org.tdf.sunflower.db;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.rocksdb.*;
+import org.tdf.common.store.DBSettings;
 import org.tdf.common.store.DatabaseStore;
-import org.tdf.common.store.DbSettings;
 import org.tdf.sunflower.util.FileUtils;
 
 import java.io.IOException;
@@ -23,7 +23,7 @@ public class RocksDb implements DatabaseStore {
     private String name;
     private RocksDB db;
     private ReadOptions readOpts;
-    private DbSettings dbSettings;
+    private DBSettings dbSettings;
     private boolean alive;
 
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
@@ -46,7 +46,7 @@ public class RocksDb implements DatabaseStore {
         return this.name;
     }
 
-    public void init(DbSettings dbSettings) {
+    public void init(DBSettings dbSettings) {
         this.dbSettings = dbSettings;
         resetDbLock.writeLock().lock();
         try {

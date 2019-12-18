@@ -3,8 +3,8 @@ package org.tdf.sunflower.db;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.iq80.leveldb.*;
+import org.tdf.common.store.DBSettings;
 import org.tdf.common.store.DatabaseStore;
-import org.tdf.common.store.DbSettings;
 import org.tdf.sunflower.util.FileUtils;
 
 import java.io.File;
@@ -26,7 +26,7 @@ public class LevelDb implements DatabaseStore {
     private String directory;
 
     private DB db;
-    private DbSettings dbSettings;
+    private DBSettings dbSettings;
     private boolean alive;
 
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
@@ -44,7 +44,7 @@ public class LevelDb implements DatabaseStore {
         return name;
     }
 
-    public void init(DbSettings dbsettings) {
+    public void init(DBSettings dbsettings) {
         this.dbSettings = dbsettings;
         resetDbLock.writeLock().lock();
         try {
