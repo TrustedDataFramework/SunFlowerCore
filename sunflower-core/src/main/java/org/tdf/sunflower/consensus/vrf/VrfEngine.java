@@ -7,33 +7,27 @@ import java.util.Optional;
 import java.util.Properties;
 
 import org.springframework.core.io.Resource;
-import org.tdf.common.Block;
-import org.tdf.common.ConfirmedBlocksProvider;
-import org.tdf.common.ConsensusEngine;
-import org.tdf.common.ConsortiumRepository;
-import org.tdf.common.ConsortiumStateRepository;
-import org.tdf.common.Context;
-import org.tdf.common.HashPolicy;
-import org.tdf.common.MinerListener;
-import org.tdf.common.Peer;
-import org.tdf.common.PeerServer;
-import org.tdf.common.PeerServerListener;
-import org.tdf.exception.ConsensusEngineLoadException;
-import org.tdf.rlp.RLPDeserializer;
-import org.tdf.serialize.RLPSerializer;
+import org.tdf.rlp.RLPCodec;
+import org.tdf.sunflower.exception.ConsensusEngineInitException;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.facade.ConsensusEngine;
+import org.tdf.sunflower.facade.ConsortiumRepository;
+import org.tdf.sunflower.state.ConsortiumStateRepository;
+import org.tdf.sunflower.net.Context;
+import org.tdf.sunflower.facade.MinerListener;
+import org.tdf.sunflower.net.Peer;
+import org.tdf.sunflower.net.PeerServer;
+import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.consensus.vrf.core.CommitProof;
 import org.tdf.sunflower.consensus.vrf.core.PendingVrfState;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
 import org.tdf.sunflower.consensus.vrf.core.ValidatorManager;
 import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
-import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
 import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
 import org.tdf.sunflower.net.MessageBuilder;
 import org.tdf.sunflower.net.PeerImpl;
-import org.tdf.sunflower.proto.Code;
-import org.tdf.sunflower.proto.Message;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.FileUtils;
@@ -41,7 +35,6 @@ import org.tdf.sunflower.util.FileUtils;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
-import com.google.protobuf.InvalidProtocolBufferException;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -61,7 +54,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
     private ConsortiumRepository blockRepository;
 
     public VrfEngine() {
-        setValidator(new VrfValidator());
+
     }
 
     @Override
@@ -88,28 +81,28 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
     }
 
     private void processNewMinedBlockMsg(byte[] bodyBytes) {
-        Block blockNew = RLPDeserializer.deserialize(bodyBytes, Block.class);
+        Block blockNew = RLPCodec.decode(bodyBytes, Block.class);
         log.info("New mined block received from peer. Num #{}, Hash {}", blockNew.getHeight(),
                 blockNew.getHash().toString());
         saveBlock(blockNew, blockRepository, this);
     }
 
     private void processCommitProofMsg(byte[] bodyBytes) {
-        CommitProof commitProof = RLPDeserializer.deserialize(bodyBytes, CommitProof.class);
+        CommitProof commitProof = RLPCodec.decode(bodyBytes, CommitProof.class);
         log.info("VRF CommitProof received. Round #{}, miner {}, block hash {}", commitProof.getRound(),
                 commitProof.getCoinbase(), ByteUtil.toHexString(commitProof.getBlockIdentifier().getHash()));
         vrfStateMachine.addProof(commitProof, true);
     }
 
     private void processVrfProposalProofMsg(byte[] bodyBytes) {
-        ProposalProof proposalProof = RLPDeserializer.deserialize(bodyBytes, ProposalProof.class);
+        ProposalProof proposalProof = RLPCodec.decode(bodyBytes, ProposalProof.class);
         log.info("VRF ProposalProof received. Round #{}, miner {}, block hash {}", proposalProof.getRound(),
                 proposalProof.getCoinbase(), ByteUtil.toHexString(proposalProof.getBlockIdentifier().getHash()));
         vrfStateMachine.addProof(proposalProof, true);
     }
 
     private void processVrfBlockMsg(Context context, byte[] bodyBytes) {
-        Block block = RLPDeserializer.deserialize(bodyBytes, Block.class);
+        Block block = RLPCodec.decode(bodyBytes, Block.class);
         log.info("VRF block received. Num #{}, Hash {}", block.getHeight(), block.getHash().toString());
         vrfStateMachine.addNewBlock(new VrfBlockWrapper(block, context.getRemote().getID().getBytes()));
     }
@@ -153,7 +146,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
     }
 
     @Override
-    public void load(Properties properties, ConsortiumRepository repository) throws ConsensusEngineLoadException {
+    public void init(Properties properties) throws ConsensusEngineInitException {
         JavaPropsMapper mapper = new JavaPropsMapper();
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
         try {
@@ -164,8 +157,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
                 schema = mapper.writeValueAsProperties(new VrfConfig()).toString();
             } catch (Exception ignored) {
             }
-            ;
-            throw new ConsensusEngineLoadException(
+            throw new ConsensusEngineInitException(
                     "load properties failed :" + properties.toString() + " expecting " + schema);
         }
         vrfMiner = new VrfMiner();
@@ -173,32 +165,33 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         try {
             resource = FileUtils.getResource(vrfConfig.getGenesis());
         } catch (Exception e) {
-            throw new ConsensusEngineLoadException(e.getMessage());
+            throw new ConsensusEngineInitException(e.getMessage());
         }
         try {
             genesis = objectMapper.readValue(resource.getInputStream(), VrfGenesis.class);
         } catch (Exception e) {
-            throw new ConsensusEngineLoadException("failed to parse genesis: " + e.getMessage());
+            throw new ConsensusEngineInitException("failed to parse genesis: " + e.getMessage());
         }
 
-        setBlockRepository(repository);
-
+        setValidator(new VrfValidator());
+        setHashPolicy(HASH_POLICY);
+        setPeerServerListener(this);
         vrfMiner.setConfig(vrfConfig);
         vrfMiner.setGenesis(genesis);
-        vrfMiner.setRepository(repository);
-
+        vrfMiner.setRepository(getConsortiumRepository());
+        setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
         // ------- Need well implementation.
-        ValidatorManager validatorManager = new ValidatorManager(repository);
+        ValidatorManager validatorManager = new ValidatorManager(getConsortiumRepository());
         vrfStateMachine = new VrfStateMachine(validatorManager, new PendingVrfState(validatorManager),
                 new VrfValidator());
         vrfMiner.setVrfStateMachine(vrfStateMachine);
 
         setMiner(vrfMiner);
 
-        setRepository(new ConsortiumStateRepository());
+        setStateRepository(new ConsortiumStateRepository());
 
         // register miner accounts
-        getRepository().register(getGenesisBlock(), Collections.singleton(new Account(vrfMiner.minerPublicKeyHash, 0)));
+        getStateRepository().register(getGenesisBlock(), Collections.singleton(new Account(vrfMiner.minerPublicKeyHash, 0)));
 
     }
 
@@ -212,20 +205,6 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         return genesisBlock;
     }
 
-    @Override
-    public ConfirmedBlocksProvider getProvider() {
-        return unconfirmed -> unconfirmed;
-    }
-
-    @Override
-    public HashPolicy getPolicy() {
-        return HASH_POLICY;
-    }
-
-    @Override
-    public PeerServerListener getHandler() {
-        return this;
-    }
 
     private boolean saveBlock(Block block, ConsortiumRepository repository, ConsensusEngine engine) {
         Optional<Block> o = repository.getBlock(block.getHashPrev().getBytes());

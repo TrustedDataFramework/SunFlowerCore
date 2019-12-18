@@ -1,9 +1,13 @@
 package org.tdf.sunflower.consensus.vrf;
 
 import org.slf4j.Logger;
-import org.tdf.common.*;
+import org.tdf.sunflower.facade.Validator;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.ValidateResult;
 
-public class VrfValidator implements ConsensusEngine.Validator {
+public class VrfValidator implements Validator {
     @Override
     public ValidateResult validate(Block block, Block dependency) {
         if (dependency.getHeight() + 1 != block.getHeight()){

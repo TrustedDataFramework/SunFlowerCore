@@ -1,6 +1,6 @@
 package org.tdf.sunflower.net;
 
-import org.tdf.common.PeerServerListener;
+import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.proto.Code;
 
 // wrap listener as plugin

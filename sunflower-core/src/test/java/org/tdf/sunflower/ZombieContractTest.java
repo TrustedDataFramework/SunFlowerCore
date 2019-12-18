@@ -2,17 +2,16 @@ package org.tdf.sunflower;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Bytes;
-import org.junit.Test;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
-import org.tdf.common.HexBytes;
-import org.tdf.common.Transaction;
+import org.tdf.common.util.HexBytes;
+import org.tdf.rlp.RLPCodec;
+import org.tdf.sunflower.types.Transaction;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.util.FileUtils;
-import org.tdf.util.CommonUtil;
-import org.tdf.util.LittleEndian;
+import org.tdf.common.util.LittleEndian;
 
 import java.nio.charset.StandardCharsets;
 
@@ -36,7 +35,7 @@ public class ZombieContractTest {
                 .to(new HexBytes(to.getPublicKeyHash()))
                 .payload(new HexBytes(binary))
                 .build();
-        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(CommonUtil.getRaw(t));
+        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
         t.setSignature(new HexBytes(sig));
         RestTemplate client = new RestTemplate();
 
@@ -68,7 +67,7 @@ public class ZombieContractTest {
                 )))
                 .build();
 
-        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(CommonUtil.getRaw(t));
+        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
         t.setSignature(new HexBytes(sig));
         RestTemplate client = new RestTemplate();
 
@@ -100,7 +99,7 @@ public class ZombieContractTest {
                 )))
                 .build();
 
-        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(CommonUtil.getRaw(t));
+        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
         t.setSignature(new HexBytes(sig));
         RestTemplate client = new RestTemplate();
 
@@ -134,7 +133,7 @@ public class ZombieContractTest {
                 )))
                 .build();
 
-        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(CommonUtil.getRaw(t));
+        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
         t.setSignature(new HexBytes(sig));
         RestTemplate client = new RestTemplate();
 

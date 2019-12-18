@@ -3,7 +3,7 @@ package org.tdf.common;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.util.LittleEndian;
+import org.tdf.common.util.LittleEndian;
 
 import java.util.Arrays;
 

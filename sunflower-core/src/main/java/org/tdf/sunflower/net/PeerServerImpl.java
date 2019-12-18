@@ -4,13 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
-import org.tdf.common.*;
-import org.tdf.exception.PeerServerLoadException;
-import org.tdf.serialize.Codecs;
-import org.tdf.store.BatchStore;
-import org.tdf.store.Store;
-import org.tdf.store.StoreWrapper;
+import org.tdf.common.util.HexBytes;
+import org.tdf.common.serialize.Codecs;
+import org.tdf.common.store.BatchStore;
+import org.tdf.common.store.Store;
+import org.tdf.common.store.StoreWrapper;
 import org.tdf.sunflower.Start;
+import org.tdf.sunflower.exception.PeerServerInitException;
+import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 
@@ -22,7 +23,6 @@ import java.util.stream.Stream;
 
 @Slf4j
 public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
-    public static None NONE = new None();
     private PeerServerConfig config;
     private List<Plugin> plugins = new ArrayList<>();
     private Client client;
@@ -111,7 +111,7 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
     }
 
     @Override
-    public void load(Properties properties) throws PeerServerLoadException {
+    public void init(Properties properties) throws PeerServerInitException {
         JavaPropsMapper mapper = new JavaPropsMapper();
         try {
             config = mapper.readPropertiesAs(properties, PeerServerConfig.class);
@@ -128,7 +128,7 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
                 ).toString();
             } catch (Exception ignored) {
             }
-            throw new PeerServerLoadException(
+            throw new PeerServerInitException(
                     "load properties failed :" + properties.toString() + " expecting " + schema
             );
         }
@@ -137,14 +137,14 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
                         .filter(Objects::nonNull)
                         .map(List::size).reduce(0, Integer::sum) == 0
         ) {
-            throw new PeerServerLoadException("cannot connect to any peer fot the discovery " +
+            throw new PeerServerInitException("cannot connect to any peer fot the discovery " +
                     "is disabled and none bootstraps and trusted provided");
         }
         try {
             parseSelf();
         } catch (Exception e) {
             e.printStackTrace();
-            throw new PeerServerLoadException("failed to load peer server invalid address " + config.getAddress());
+            throw new PeerServerInitException("failed to load peer server invalid address " + config.getAddress());
         }
         if ("websocket".equals(config.getName().trim().toLowerCase())) {
             netLayer = new WebSocketNetLayer(self.getPort());

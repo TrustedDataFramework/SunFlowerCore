@@ -9,19 +9,21 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.shell.SpringShellAutoConfiguration;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
-import org.tdf.common.*;
-import org.tdf.sunflower.consensus.None;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
+import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.mq.MessageQueue;
 import org.tdf.sunflower.mq.SocketIOMessageQueue;
+import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.net.PeerServerImpl;
 import org.tdf.sunflower.pool.TransactionPoolImpl;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.ConsortiumStateRepository;
+import org.tdf.sunflower.state.InMemoryStateTree;
+import org.tdf.sunflower.types.Block;
 
 import java.util.List;
 import java.util.Optional;
@@ -76,8 +78,8 @@ public class Start {
             DatabaseStoreFactory factory,
             ConsortiumRepository consortiumRepository
     ) {
-        if (!(engine.getRepository() instanceof ConsortiumStateRepository)) return engine.getRepository();
-        ConsortiumStateRepository repo = (ConsortiumStateRepository) engine.getRepository();
+        if (!(engine.getStateRepository() instanceof ConsortiumStateRepository)) return engine.getStateRepository();
+        ConsortiumStateRepository repo = (ConsortiumStateRepository) engine.getStateRepository();
         if (!repo.getClasses().contains(Account.class)) {
             return repo;
         }
@@ -113,17 +115,10 @@ public class Start {
     }
 
     @Bean
-    public TransactionPool transactionPool(ConsensusEngine engine) {
-        TransactionPoolImpl pool = new TransactionPoolImpl();
-        pool.setEngine(engine);
-        engine.setTransactionPool(pool);
-        return pool;
-    }
-
-    @Bean
     public ConsensusEngine consensusEngine(
             ConsensusProperties consensusProperties,
-            ConsortiumRepository consortiumRepository
+            ConsortiumRepository consortiumRepository,
+            TransactionPoolImpl transactionPool
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
         name = name == null ? "" : name;
@@ -132,7 +127,8 @@ public class Start {
             // none consensus selected, used for unit test
             case ApplicationConstants.CONSENSUS_NONE:
                 log.warn("none consensus engine selected, please ensure you are in test mode");
-                return new None();
+                engine = ConsensusEngine.NONE;
+                break;
             case ApplicationConstants.CONSENSUS_POA:
                 // use poa as default consensus
                 // another engine: pow, pos, pow+pos, vrf
@@ -150,10 +146,14 @@ public class Start {
                 log.error("roll back to poa consensus");
                 engine = new PoA();
         }
-        engine.load(consensusProperties, consortiumRepository);
-        consortiumRepository.setProvider(engine.getProvider());
+        engine.setConsortiumRepository(consortiumRepository);
+        engine.setTransactionPool(transactionPool);
+        engine.init(consensusProperties);
+        consortiumRepository.setProvider(engine.getConfirmedBlocksProvider());
         // register event listeners
-        consortiumRepository.addListeners(engine.getRepository());
+        consortiumRepository.addListeners(engine.getStateRepository());
+        // None consensus actually has no genesis block
+        if(engine == ConsensusEngine.NONE) return engine;
         consortiumRepository.saveGenesisBlock(engine.getGenesisBlock());
         return engine;
     }
@@ -196,8 +196,8 @@ public class Start {
         PeerServer peerServer = new PeerServerImpl().withStore(
                 factory.create("peers")
         );
-        peerServer.load(properties);
-        peerServer.use(engine.getHandler());
+        peerServer.init(properties);
+        peerServer.use(engine.getPeerServerListener());
         peerServer.start();
         return peerServer;
     }

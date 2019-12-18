@@ -12,15 +12,15 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
-import org.tdf.common.Block;
-import org.tdf.common.BlockRepository;
-import org.tdf.common.Header;
-import org.tdf.common.HexBytes;
-import org.tdf.common.Miner;
-import org.tdf.common.MinerListener;
-import org.tdf.common.PeerServer;
-import org.tdf.common.Transaction;
-import org.tdf.exception.ConsensusEngineLoadException;
+import org.tdf.sunflower.exception.ConsensusEngineInitException;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.facade.BlockRepository;
+import org.tdf.sunflower.types.Header;
+import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.facade.Miner;
+import org.tdf.sunflower.facade.MinerListener;
+import org.tdf.sunflower.net.PeerServer;
+import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.poa.Proposer;
@@ -94,10 +94,10 @@ public class VrfMiner implements Miner {
         this.genesis = genesis;
     }
 
-    public void setConfig(VrfConfig vrfConfig) throws ConsensusEngineLoadException {
+    public void setConfig(VrfConfig vrfConfig) throws ConsensusEngineInitException {
         this.vrfConfig = vrfConfig;
         this.minerPublicKeyHash = PublicKeyHash.from(vrfConfig.getMinerCoinBase())
-                .orElseThrow(() -> new ConsensusEngineLoadException("invalid address " + vrfConfig.getMinerCoinBase()));
+                .orElseThrow(() -> new ConsensusEngineInitException("invalid address " + vrfConfig.getMinerCoinBase()));
         this.minerCoinbase = this.minerPublicKeyHash.getPublicKeyHash();
         vrfSk = VrfUtil.getVrfPrivateKey(vrfConfig);
         VrfUtil.VRF_PK = Hex.toHexString(vrfSk.getSigner().generatePublicKey().getEncoded());

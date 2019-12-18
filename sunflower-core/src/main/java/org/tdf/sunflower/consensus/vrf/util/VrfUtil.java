@@ -1,16 +1,15 @@
 package org.tdf.sunflower.consensus.vrf.util;
 
-import org.tdf.common.Block;
-import org.tdf.common.Header;
-import org.tdf.common.HexBytes;
+import org.tdf.rlp.RLPCodec;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
+import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
-import org.tdf.rlp.RLPDeserializer;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
-import org.tdf.serialize.RLPSerializer;
 import org.tdf.sunflower.consensus.vrf.VrfConfig;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
@@ -46,7 +45,7 @@ public class VrfUtil {
 
     public static byte[] getMiner(HexBytes payload) {
         byte[] encoded = payload.getBytes();
-        VrfBlockFields vrfBlockFields = RLPDeserializer.deserialize(encoded, VrfBlockFields.class);
+        VrfBlockFields vrfBlockFields = RLPCodec.decode(encoded, VrfBlockFields.class);
         return vrfBlockFields.getMiner();
     }
 
@@ -60,7 +59,7 @@ public class VrfUtil {
 
     public static ProposalProof getProposalProof(HexBytes payload) {
         byte[] encoded = payload.getBytes();
-        VrfBlockFields vrfBlockFields = RLPDeserializer.deserialize(encoded, VrfBlockFields.class);
+        VrfBlockFields vrfBlockFields = RLPCodec.decode(encoded, VrfBlockFields.class);
         return new ProposalProof(vrfBlockFields.getProposalProof());
     }
 
@@ -74,7 +73,7 @@ public class VrfUtil {
 
     public static byte[] getNonce(HexBytes payload) {
         byte[] encoded = payload.getBytes();
-        VrfBlockFields vrfBlockFields = RLPDeserializer.deserialize(encoded, VrfBlockFields.class);
+        VrfBlockFields vrfBlockFields = RLPCodec.decode(encoded, VrfBlockFields.class);
         return vrfBlockFields.getNonce();
     }
 
@@ -92,7 +91,7 @@ public class VrfUtil {
 
     public static byte[] getDifficulty(HexBytes payload) {
         byte[] encoded = payload.getBytes();
-        VrfBlockFields vrfBlockFields = RLPDeserializer.deserialize(encoded, VrfBlockFields.class);
+        VrfBlockFields vrfBlockFields = RLPCodec.decode(encoded, VrfBlockFields.class);
         return vrfBlockFields.getDifficulty();
     }
 
@@ -109,7 +108,7 @@ public class VrfUtil {
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
         vrfBlockFields.setNonce(nonce);
 
-        byte[] encoded = RLPSerializer.SERIALIZER.serialize(vrfBlockFields);
+        byte[] encoded = RLPCodec.encode(vrfBlockFields);
         block.setPayload(new HexBytes(encoded));
     }
 
@@ -126,7 +125,7 @@ public class VrfUtil {
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
         vrfBlockFields.setMiner(miner);
 
-        byte[] encoded = RLPSerializer.SERIALIZER.serialize(vrfBlockFields);
+        byte[] encoded = RLPCodec.encode(vrfBlockFields);
         block.setPayload(new HexBytes(encoded));
     }
 
@@ -139,7 +138,7 @@ public class VrfUtil {
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
         vrfBlockFields.setDifficulty(difficulty);
 
-        byte[] encoded = RLPSerializer.SERIALIZER.serialize(vrfBlockFields);
+        byte[] encoded = RLPCodec.encode(vrfBlockFields);
         block.setPayload(new HexBytes(encoded));
     }
 
@@ -156,7 +155,7 @@ public class VrfUtil {
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
         vrfBlockFields.setProposalProof(proposalProof.getEncoded());
 
-        byte[] encoded = RLPSerializer.SERIALIZER.serialize(vrfBlockFields);
+        byte[] encoded = RLPCodec.encode(vrfBlockFields);
         block.setPayload(new HexBytes(encoded));
     }
 
@@ -165,7 +164,7 @@ public class VrfUtil {
             return VrfBlockFields.builder().nonce(null).difficulty(null).miner(null).proposalProof(null).build();
         }
         byte[] encoded = payload.getBytes();
-        VrfBlockFields vrfBlockFields = RLPDeserializer.deserialize(encoded, VrfBlockFields.class);
+        VrfBlockFields vrfBlockFields = RLPCodec.decode(encoded, VrfBlockFields.class);
         return vrfBlockFields;
     }
 
@@ -226,7 +225,7 @@ public class VrfUtil {
         VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, nonce, minerCoinbase, difficulty, blockHash, vrfSk,
                 vrfPk);
 
-        byte[] encoded = RLPSerializer.SERIALIZER.serialize(vbf1);
+        byte[] encoded = RLPCodec.encode(vbf1);
         return encoded;
     }
 
@@ -235,7 +234,7 @@ public class VrfUtil {
         VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, nonce.getBytes(), minerCoinbase.getBytes(),
                 difficulty.getBytes(), blockHash.getBytes(), vrfSk, vrfPk);
 
-        byte[] encoded = RLPSerializer.SERIALIZER.serialize(vbf1);
+        byte[] encoded = RLPCodec.encode(vbf1);
         return encoded;
     }
 
@@ -289,7 +288,7 @@ public class VrfUtil {
     }
 
     private static byte[] buildMessageBytes(int code, Object object) {
-        RLPList list = RLPElement.encode(object).getAsList();
+        RLPList list = RLPElement.readRLPTree(object).asRLPList();
         list.add(0, RLPItem.fromInt(code));
         return list.getEncoded();
     }
@@ -306,8 +305,8 @@ public class VrfUtil {
     }
 
     public static VrfMessageCodeAndBytes parseMessageBytes(byte[] msg) {
-        RLPList list = RLPElement.fromEncoded(msg).getAsList();
-        int codeInt = list.get(0).getAsItem().getInt();
+        RLPList list = RLPElement.fromEncoded(msg).asRLPList();
+        int codeInt = list.get(0).asInt();
         list = list.subList(1, list.size());
         VrfMessageCode[] vrfMsgCodes = VrfMessageCode.values();
         VrfMessageCode code = vrfMsgCodes[codeInt];

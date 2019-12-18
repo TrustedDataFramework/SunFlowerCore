@@ -13,7 +13,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.tdf.common.BlockRepository;
+import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.core.Validator;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;

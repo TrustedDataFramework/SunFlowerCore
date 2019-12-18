@@ -1,8 +1,6 @@
 package org.tdf.sunflower.net;
 
 import lombok.Builder;
-import org.tdf.common.Context;
-import org.tdf.common.Peer;
 import org.tdf.sunflower.proto.Message;
 
 import java.util.Collection;

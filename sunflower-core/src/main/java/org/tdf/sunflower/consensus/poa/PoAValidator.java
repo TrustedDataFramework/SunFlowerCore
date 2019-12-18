@@ -1,11 +1,11 @@
 package org.tdf.sunflower.consensus.poa;
 
-import org.tdf.common.Block;
-import org.tdf.common.ConsensusEngine;
-import org.tdf.common.Transaction;
-import org.tdf.common.ValidateResult;
+import org.tdf.sunflower.facade.Validator;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.ValidateResult;
 
-public class PoAValidator implements ConsensusEngine.Validator {
+public class PoAValidator implements Validator {
     @Override
     public ValidateResult validate(Block block, Block dependency) {
         if (dependency.getHeight() + 1 != block.getHeight()){

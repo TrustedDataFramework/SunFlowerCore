@@ -1,16 +1,12 @@
 package org.tdf.sunflower.vrf;
 
 import org.junit.Test;
-import org.tdf.common.Block;
-import org.tdf.common.HexBytes;
-import org.tdf.rlp.RLPDeserializer;
-import org.tdf.serialize.RLPSerializer;
-import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
+import org.tdf.rlp.RLPCodec;
+import org.tdf.sunflower.types.Block;
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
-import org.tdf.sunflower.consensus.vrf.core.VrfProof;
 import org.tdf.sunflower.consensus.vrf.struct.VrfBlockFields;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
-import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.util.ByteUtil;
 
@@ -23,8 +19,8 @@ public class VrfBlockFieldsTest {
     @Test
     public void testRlpNull() {
         VrfBlockFields vbf1 = VrfBlockFields.builder().nonce(null).difficulty(null).proposalProof(null).build();
-        byte[] encoded = RLPSerializer.SERIALIZER.serialize(vbf1);
-        VrfBlockFields vbf2 = RLPDeserializer.deserialize(encoded, VrfBlockFields.class);
+        byte[] encoded = RLPCodec.encode(vbf1);
+        VrfBlockFields vbf2 = RLPCodec.decode(encoded, VrfBlockFields.class);
         assert (ByteUtil.isNullOrZeroArray(vbf2.getNonce()));
         assert (ByteUtil.isNullOrZeroArray(vbf2.getDifficulty()));
         assert (ByteUtil.isNullOrZeroArray(vbf2.getProposalProof()));
@@ -38,8 +34,8 @@ public class VrfBlockFieldsTest {
         VrfBlockFields vbf1 = VrfBlockFields.builder().nonce(ByteUtil.hexStringToBytes(nonceStr))
                 .difficulty(ByteUtil.hexStringToBytes(diffcultyStr)).miner(ByteUtil.hexStringToBytes(minerStr))
                 .proposalProof(null).build();
-        byte[] encoded = RLPSerializer.SERIALIZER.serialize(vbf1);
-        VrfBlockFields vbf2 = RLPDeserializer.deserialize(encoded, VrfBlockFields.class);
+        byte[] encoded = RLPCodec.encode(vbf1);
+        VrfBlockFields vbf2 = RLPCodec.decode(encoded, VrfBlockFields.class);
         assert (ByteUtil.toHexString(vbf2.getNonce()).equals(nonceStr));
         assert (ByteUtil.toHexString(vbf2.getDifficulty()).equals(diffcultyStr));
         assert (ByteUtil.toHexString(vbf2.getMiner()).equals(minerStr));
@@ -62,7 +58,7 @@ public class VrfBlockFieldsTest {
         byte[] encoded = VrfUtil.genPayload(blockNum, round, nonceStr, minerCoinbaseStr, difficultyStr, blockHashStr,
                 vrfSk, vrfPk);
 
-        VrfBlockFields vbf2 = RLPDeserializer.deserialize(encoded, VrfBlockFields.class);
+        VrfBlockFields vbf2 = RLPCodec.decode(encoded, VrfBlockFields.class);
         assert (ByteUtil.toHexString(vbf2.getNonce()).equals(nonceStr));
         assert (ByteUtil.toHexString(vbf2.getDifficulty()).equals(difficultyStr));
 

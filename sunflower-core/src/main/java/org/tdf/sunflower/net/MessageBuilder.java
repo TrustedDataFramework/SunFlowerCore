@@ -2,7 +2,6 @@ package org.tdf.sunflower.net;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
-import org.tdf.common.Peer;
 import org.tdf.sunflower.proto.*;
 
 import java.util.Collection;

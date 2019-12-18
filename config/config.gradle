@@ -17,6 +17,6 @@ ext {
     commonsCollections4Version = '4.0'
     commonsLang3Version = '3.4'
     nettySocketIOVersion = '1.7.12'
-    rlpVersion = '1.0.7'
+    rlpVersion = '1.1.14'
     lotusvmVersion = '0.0.7'
 }

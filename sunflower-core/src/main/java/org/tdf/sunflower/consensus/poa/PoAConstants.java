@@ -1,8 +1,7 @@
 package org.tdf.sunflower.consensus.poa;
 
-import org.tdf.common.HexBytes;
-import org.tdf.util.BigEndian;
-import org.tdf.util.LittleEndian;
+import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.LittleEndian;
 
 public class PoAConstants {
     public static final HexBytes ZERO_BYTES = new HexBytes(new byte[32]);

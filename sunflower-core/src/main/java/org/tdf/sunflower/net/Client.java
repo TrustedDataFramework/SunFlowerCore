@@ -2,7 +2,6 @@ package org.tdf.sunflower.net;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.common.Peer;
 import org.tdf.sunflower.proto.Message;
 
 import java.net.URI;

@@ -4,7 +4,12 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.Weigher;
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.common.*;
+import org.springframework.stereotype.Component;
+import org.tdf.common.util.Constants;
+import org.tdf.sunflower.facade.*;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.ValidateResult;
 
 
 import java.time.Duration;
@@ -15,6 +20,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Component
 public class TransactionPoolImpl implements TransactionPool {
     enum PendingTransactionState {
         /**
@@ -72,7 +78,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private List<TransactionPoolListener> listeners = new ArrayList<>();
 
     public void setEngine(ConsensusEngine engine){
-        this.hashPolicy = engine.getPolicy();
+        this.hashPolicy = engine.getHashPolicy();
         this.validator = engine.getValidator();
     }
 

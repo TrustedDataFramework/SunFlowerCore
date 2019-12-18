@@ -4,7 +4,7 @@ import com.google.common.primitives.Bytes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.HexBytes;
+import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.TestUtils;
 import org.tdf.sunflower.vm.abi.Context;

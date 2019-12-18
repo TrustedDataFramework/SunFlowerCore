@@ -3,6 +3,9 @@ package org.tdf.common;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.common.util.ChainCache;
+import org.tdf.common.types.Chained;
+import org.tdf.common.util.HexBytes;
 
 import java.util.ArrayList;
 import java.util.Arrays;

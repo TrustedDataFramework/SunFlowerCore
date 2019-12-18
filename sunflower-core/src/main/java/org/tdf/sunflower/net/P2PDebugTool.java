@@ -4,10 +4,7 @@ import io.netty.util.internal.logging.InternalLogLevel;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.common.Context;
-import org.tdf.common.Peer;
-import org.tdf.common.PeerServer;
-import org.tdf.common.PeerServerListener;
+import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.PeerServerProperties;
 
 import java.nio.charset.StandardCharsets;
@@ -53,7 +50,7 @@ public class P2PDebugTool {
                 Optional.ofNullable(System.getenv("X_ENABLE_DISCOVERY")).orElse("false")
         );
         properties.setProperty("name", Optional.ofNullable(System.getenv("X_NAME")).orElse("gRPC"));
-        server.load(properties);
+        server.init(properties);
         server.use(new PeerServerListener() {
             @Override
             public void onMessage(Context context, PeerServer server) {

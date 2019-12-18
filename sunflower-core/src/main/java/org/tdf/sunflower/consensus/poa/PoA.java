@@ -6,11 +6,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
-import org.tdf.common.*;
-import org.tdf.exception.ConsensusEngineLoadException;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
+import org.tdf.sunflower.exception.ConsensusEngineInitException;
+import org.tdf.sunflower.facade.*;
+import org.tdf.sunflower.net.Context;
+import org.tdf.sunflower.net.Peer;
+import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.ConsortiumStateRepository;
+import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.util.FileUtils;
 
 import java.util.Collections;
@@ -24,10 +29,6 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
     private PoAConfig poAConfig;
     private Genesis genesis;
     private PoAMiner poaMiner;
-
-    public HashPolicy getPolicy() {
-        return HASH_POLICY;
-    }
 
     public PoA() {
         setValidator(new PoAValidator());
@@ -45,7 +46,7 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
     }
 
     @Override
-    public void load(Properties properties, ConsortiumRepository repository) throws ConsensusEngineLoadException {
+    public void init(Properties properties) throws ConsensusEngineInitException {
         JavaPropsMapper mapper = new JavaPropsMapper();
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
         try{
@@ -55,7 +56,7 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
             try{
                 schema = mapper.writeValueAsProperties(new PoAConfig()).toString();
             }catch (Exception ignored){};
-            throw new ConsensusEngineLoadException(
+            throw new ConsensusEngineInitException(
                     "load properties failed :" + properties.toString() + " expecting " + schema
             );
         }
@@ -64,19 +65,26 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
         try{
             resource = FileUtils.getResource(poAConfig.getGenesis());
         }catch (Exception e){
-            throw new ConsensusEngineLoadException(e.getMessage());
+            throw new ConsensusEngineInitException(e.getMessage());
         }
         try{
             genesis = objectMapper.readValue(resource.getInputStream(), Genesis.class);
         }catch (Exception e){
-            throw new ConsensusEngineLoadException("failed to parse genesis");
+            throw new ConsensusEngineInitException("failed to parse genesis");
         }
         poaMiner.setPoAConfig(poAConfig);
         poaMiner.setGenesis(genesis);
-        poaMiner.setBlockRepository(repository);
+        poaMiner.setTransactionPool(getTransactionPool());
         setMiner(poaMiner);
+        setGenesisBlock(genesis.getBlock());
+
+        setHashPolicy(HASH_POLICY);
+        setPeerServerListener(this);
+        // create state repository
         ConsortiumStateRepository repo = new ConsortiumStateRepository();
-        setRepository(repo);
+        setStateRepository(repo);
+
+        // register dummy account
         repo.register(getGenesisBlock(), Collections.singleton(Account.getRandomAccount()));
 
         getMiner().addListeners(new MinerListener() {
@@ -100,15 +108,6 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
         });
     }
 
-    @Override
-    public ConfirmedBlocksProvider getProvider() {
-        return unconfirmed -> unconfirmed;
-    }
-
-    @Override
-    public PeerServerListener getHandler() {
-        return this;
-    }
 
     @Override
     public void onMessage(Context context, PeerServer server) {
@@ -128,11 +127,5 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
     @Override
     public void onDisconnect(Peer peer, PeerServer server) {
 
-    }
-
-    @Override
-    public void setTransactionPool(TransactionPool transactionPool) {
-        super.setTransactionPool(transactionPool);
-        poaMiner.setTransactionPool(transactionPool);
     }
 }

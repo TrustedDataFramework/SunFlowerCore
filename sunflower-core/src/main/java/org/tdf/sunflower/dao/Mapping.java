@@ -1,9 +1,9 @@
 package org.tdf.sunflower.dao;
 
-import org.tdf.common.Block;
-import org.tdf.common.Header;
-import org.tdf.common.HexBytes;
-import org.tdf.common.Transaction;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
+import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.entity.BlockEntity;
 import org.tdf.sunflower.entity.HeaderAdapter;
 import org.tdf.sunflower.entity.TransactionEntity;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Mapping {
-    public static org.tdf.common.Block getFromBlockEntity(BlockEntity block){
+    public static Block getFromBlockEntity(BlockEntity block){
         Header header = getFromHeaderEntity(block);
         Block res = new Block(header);
         res.setBody(getFromTransactionEntities(block.getBody()));

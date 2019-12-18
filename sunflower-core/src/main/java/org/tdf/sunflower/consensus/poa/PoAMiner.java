@@ -4,11 +4,18 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.springframework.util.Assert;
-import org.tdf.common.*;
-import org.tdf.exception.ConsensusEngineLoadException;
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
-import org.tdf.util.BigEndian;
+import org.tdf.sunflower.exception.ConsensusEngineInitException;
+import org.tdf.sunflower.facade.BlockRepository;
+import org.tdf.sunflower.facade.Miner;
+import org.tdf.sunflower.facade.MinerListener;
+import org.tdf.sunflower.facade.TransactionPool;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
+import org.tdf.common.util.BigEndian;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -48,10 +55,10 @@ public class PoAMiner implements Miner {
         this.genesis = genesis;
     }
 
-    public void setPoAConfig(PoAConfig poAConfig) throws ConsensusEngineLoadException {
+    public void setPoAConfig(PoAConfig poAConfig) throws ConsensusEngineInitException {
         this.poAConfig = poAConfig;
         this.minerPublicKeyHash = PublicKeyHash.from(poAConfig.getMinerCoinBase()).orElseThrow(
-                () -> new ConsensusEngineLoadException("invalid address " + poAConfig.getMinerCoinBase())
+                () -> new ConsensusEngineInitException("invalid address " + poAConfig.getMinerCoinBase())
         );
     }
 

@@ -1,6 +1,6 @@
 package org.tdf.sunflower.net;
 
-import org.tdf.common.HexBytes;
+import org.tdf.common.util.HexBytes;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

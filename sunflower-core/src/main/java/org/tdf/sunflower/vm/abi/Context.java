@@ -2,9 +2,9 @@ package org.tdf.sunflower.vm.abi;
 
 import lombok.Builder;
 import lombok.Getter;
-import org.tdf.common.Block;
-import org.tdf.common.HexBytes;
-import org.tdf.common.Transaction;
+import org.tdf.sunflower.types.Block;
+import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.BytesReader;
 
 import java.nio.charset.StandardCharsets;

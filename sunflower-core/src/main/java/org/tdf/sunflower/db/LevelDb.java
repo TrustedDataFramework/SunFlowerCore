@@ -3,8 +3,8 @@ package org.tdf.sunflower.db;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.iq80.leveldb.*;
-import org.tdf.store.DatabaseStore;
-import org.tdf.store.DbSettings;
+import org.tdf.common.store.DatabaseStore;
+import org.tdf.common.store.DbSettings;
 import org.tdf.sunflower.util.FileUtils;
 
 import java.io.File;

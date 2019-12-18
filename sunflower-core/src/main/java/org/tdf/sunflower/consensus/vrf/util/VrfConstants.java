@@ -1,7 +1,7 @@
 package org.tdf.sunflower.consensus.vrf.util;
 
-import org.tdf.common.HexBytes;
-import org.tdf.util.BigEndian;
+import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.BigEndian;
 
 public class VrfConstants {
     public static final HexBytes ZERO_BYTES = new HexBytes(new byte[32]);

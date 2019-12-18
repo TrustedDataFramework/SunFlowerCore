@@ -3,7 +3,7 @@ package org.tdf.sunflower;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.store.DatabaseStore;
+import org.tdf.common.store.DatabaseStore;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.db.RocksDb;
 

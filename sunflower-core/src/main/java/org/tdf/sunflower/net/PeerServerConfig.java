@@ -2,7 +2,7 @@ package org.tdf.sunflower.net;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
-import org.tdf.util.BigEndian;
+import org.tdf.common.util.BigEndian;
 
 import java.net.URI;
 import java.util.List;

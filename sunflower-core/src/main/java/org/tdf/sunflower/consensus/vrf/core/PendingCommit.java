@@ -8,7 +8,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.tdf.common.Header;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.util.RLPList;

@@ -1,8 +1,8 @@
 package org.tdf.sunflower.db;
 
-import org.tdf.store.ByteArrayMapStore;
-import org.tdf.store.DatabaseStore;
-import org.tdf.store.DbSettings;
+import org.tdf.common.store.ByteArrayMapStore;
+import org.tdf.common.store.DatabaseStore;
+import org.tdf.common.store.DbSettings;
 
 import java.util.Map;
 import java.util.Optional;

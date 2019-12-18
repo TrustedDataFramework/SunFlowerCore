@@ -4,8 +4,10 @@ import org.apache.commons.codec.binary.Hex;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.*;
-import org.tdf.store.Store;
+import org.tdf.common.store.Store;
+import org.tdf.common.util.ChainCache;
+import org.tdf.common.types.Chained;
+import org.tdf.common.util.HexBytes;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -57,7 +59,7 @@ public class ChainCacheTest {
         }
     }
 
-    public ChainCache<Node> getCache(int sizeLimit) throws Exception {
+    public static ChainCache<Node> getCache(int sizeLimit) throws Exception {
 
         Node genesis = new Node(new HexBytes("0000"), new HexBytes("ffff"), 0);
         List<String> hashes = Arrays.asList("0001", "0002", "0003", "0004", "0005");

@@ -1,8 +1,8 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
 import org.spongycastle.util.encoders.Hex;
-import org.tdf.common.Block;
-import org.tdf.common.Header;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 
 /**

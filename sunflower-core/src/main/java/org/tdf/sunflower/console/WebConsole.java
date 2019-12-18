@@ -5,7 +5,7 @@ import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import io.netty.util.internal.StringUtil;
 import org.springframework.stereotype.Component;
-import org.tdf.common.HexBytes;
+import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.HashFunctions;
 import org.tdf.sunflower.Start;
 

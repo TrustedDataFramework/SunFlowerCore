@@ -2,7 +2,7 @@ package org.tdf.sunflower.net;
 
 import com.google.common.primitives.Bytes;
 import org.tdf.sunflower.proto.Message;
-import org.tdf.util.BigEndian;
+import org.tdf.common.util.BigEndian;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,7 +1,11 @@
 package org.tdf.sunflower.consensus.poa;
 
 
-import org.tdf.common.*;
+import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.facade.HashPolicy;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
 
 public class PoAHashPolicy implements HashPolicy {
     static final HashPolicy HASH_POLICY = new PoAHashPolicy();

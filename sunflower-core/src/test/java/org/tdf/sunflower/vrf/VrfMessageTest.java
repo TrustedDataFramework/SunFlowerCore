@@ -3,12 +3,9 @@ package org.tdf.sunflower.vrf;
 import java.io.IOException;
 
 import org.junit.Test;
-import org.tdf.common.Block;
-import org.tdf.common.HexBytes;
-import org.tdf.sunflower.Start;
+import org.tdf.sunflower.types.Block;
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.util.ByteUtil;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class VrfMessageTest {
 
