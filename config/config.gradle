@@ -19,4 +19,5 @@ ext {
     nettySocketIOVersion = '1.7.12'
     rlpVersion = '1.1.14'
     lotusvmVersion = '0.0.7'
+    springShellVersion = '2.0.0.RELEASE'
 }

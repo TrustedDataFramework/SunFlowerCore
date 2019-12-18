@@ -70,7 +70,7 @@ dependencies {
     compile "com.corundumstudio.socketio:netty-socketio:${nettySocketIOVersion}" // for message push
     compile "org.tdf:rlp:${rlpVersion}"
     compile "org.tdf:lotusvm:${lotusvmVersion}"
-    compile "org.springframework.shell:spring-shell-starter:2.0.0.RELEASE"
+    compile "org.springframework.shell:spring-shell-starter:${springShellVersion}"
 
     // for test
     testCompile 'com.h2database:h2'
