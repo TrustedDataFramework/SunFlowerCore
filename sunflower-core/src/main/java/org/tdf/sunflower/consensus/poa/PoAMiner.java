@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +40,7 @@ public class PoAMiner implements Miner {
 
     private Genesis genesis;
 
-    private List<MinerListener> listeners = new ArrayList<>();
+    private List<MinerListener> listeners = new CopyOnWriteArrayList<>();
 
     @Setter
     private BlockRepository blockRepository;

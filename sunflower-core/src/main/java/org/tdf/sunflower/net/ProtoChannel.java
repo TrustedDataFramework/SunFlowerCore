@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 // communicating channel with peer
@@ -21,7 +22,7 @@ public class ProtoChannel implements Channel {
     private PeerImpl remote;
     private ChannelOut out;
     private boolean pinged;
-    private List<ChannelListener> listeners = new ArrayList<>();
+    private List<ChannelListener> listeners = new CopyOnWriteArrayList<>();
 
     ProtoChannel() {
     }

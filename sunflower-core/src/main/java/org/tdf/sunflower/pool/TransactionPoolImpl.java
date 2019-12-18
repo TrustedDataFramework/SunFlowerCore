@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -74,7 +75,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private PendingTransactionValidator validator;
 
-    private List<TransactionPoolListener> listeners = new ArrayList<>();
+    private List<TransactionPoolListener> listeners = new CopyOnWriteArrayList<>();
 
     public void setEngine(ConsensusEngine engine){
         this.hashPolicy = engine.getHashPolicy();

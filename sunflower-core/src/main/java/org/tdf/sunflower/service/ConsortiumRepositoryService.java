@@ -11,6 +11,7 @@ import org.tdf.sunflower.types.Block;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class ConsortiumRepositoryService implements ConsortiumRepository {
@@ -30,7 +31,7 @@ public class ConsortiumRepositoryService implements ConsortiumRepository {
     @Delegate
     private TransactionRepository transactionRepository;
 
-    private List<ConsortiumRepositoryListener> listeners = new ArrayList<>();
+    private List<ConsortiumRepositoryListener> listeners = new CopyOnWriteArrayList<>();
 
     @Override
     public Block getLastConfirmed() {
