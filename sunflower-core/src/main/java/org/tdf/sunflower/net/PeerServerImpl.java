@@ -2,6 +2,7 @@ package org.tdf.sunflower.net;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.tdf.common.serialize.Codecs;
@@ -30,12 +31,15 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
     private PeerImpl self;
     private MessageBuilder builder;
     private NetLayer netLayer;
+
+    // if non-database provided, use memory database
     Store<String, String> peerStore = new MapStore<>();
 
     public PeerServerImpl() {
     }
 
-    public PeerServerImpl withStore(Store<byte[], byte[]> persistentStore) {
+    // persistent storage to store peers
+    public PeerServerImpl withStore(@NonNull Store<byte[], byte[]> persistentStore) {
         this.peerStore = new StoreWrapper<>(persistentStore,
                 Codecs.STRING,
                 Codecs.STRING);
@@ -90,9 +94,9 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
                         HexBytes.fromBytes(
                                 self.getPrivateKey().getEncoded()
                         )
-                        .concat(
-                                HexBytes.fromBytes(self.getPrivateKey().generatePublicKey().getEncoded())
-                        ),
+                                .concat(
+                                        HexBytes.fromBytes(self.getPrivateKey().generatePublicKey().getEncoded())
+                                ),
                         self.getHost(),
                         self.getPort()));
         if (config.getBootstraps() != null) {
@@ -101,6 +105,7 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
         if (config.getTrusted() != null) {
             client.trust(config.getTrusted());
         }
+        // connect to stored peers when server restarts
         Optional<String> o = Optional.ofNullable(peerStore).flatMap(x -> x.get("peers"));
         if (!o.isPresent()) return;
         String peers = o.get();
@@ -124,6 +129,7 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
         } catch (Exception e) {
             String schema = "";
             try {
+                // create a example properties for error log
                 schema = mapper.writeValueAsProperties(
                         PeerServerConfig.builder()
                                 .bootstraps(Collections.singletonList(new URI("node://localhost:9955")))
@@ -144,7 +150,7 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
                     "is disabled and none bootstraps and trusted provided");
         }
         try {
-            parseSelf();
+            resolveSelf();
         } catch (Exception e) {
             e.printStackTrace();
             throw new PeerServerInitException("failed to load peer server invalid address " + config.getAddress());
@@ -166,23 +172,26 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
         plugins.add(new PeersManager(config));
     }
 
-    private void parseSelf() throws Exception {
-        if (self == null && config.getAddress().getRawUserInfo() != null && !config.getAddress().getRawUserInfo().equals("")) {
-            self = PeerImpl.create(config.getAddress(), HexBytes.fromHex(config.getAddress().getRawUserInfo()).getBytes());
+    private void resolveSelf() throws Exception{
+        // find valid private key from properties
+        if (config.getAddress().getRawUserInfo() != null
+                && !config.getAddress().getRawUserInfo().equals("")) {
+            self = PeerImpl.create(config.getAddress(), HexBytes.decode(config.getAddress().getRawUserInfo()));
+            return;
         }
-        Optional<String> selfPrivateKey = peerStore == null ? Optional.empty() : peerStore.get("self");
-        if (self == null && selfPrivateKey.isPresent()) {
-            self = PeerImpl.create(config.getAddress(), HexBytes.fromHex(selfPrivateKey.get()).getBytes());
+        // try to load stored private key from db
+        Optional<HexBytes> selfPrivateKey = peerStore.get("self")
+                .map(HexBytes::fromHex);
+        if(selfPrivateKey.isPresent()){
+            self = PeerImpl.create(config.getAddress(), selfPrivateKey.get().getBytes());
+            return;
         }
-        if (self == null){
-            self = PeerImpl.create(config.getAddress());
-        }
-        if(peerStore != null){
-            peerStore.put("self",
-                    Hex.encodeHexString(self.getPrivateKey().getEncoded())
-                    + Hex.encodeHexString(self.getPrivateKey().generatePublicKey().getEncoded())
-            );
-        }
+        // generate a new private key when not found
+        self = PeerImpl.create(config.getAddress());
+        peerStore.put("self",
+                Hex.encodeHexString(self.getPrivateKey().getEncoded())
+                        + Hex.encodeHexString(self.getPrivateKey().generatePublicKey().getEncoded())
+        );
     }
 
     @Override
