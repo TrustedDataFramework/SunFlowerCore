@@ -86,12 +86,16 @@ public class PeersManager implements Plugin {
                     lookup();
                     cache.half();
                     if(!config.isEnableDiscovery()) return;
+
                     pending.keySet()
                             .stream()
                             .filter(x -> !cache.has(x))
                             .limit(config.getMaxPeers())
                             .forEach(
-                                    p -> client.dial(p, builder.buildPing())
+                                    p -> {
+                                        log.info("try to connect to peer " + p);
+                                        client.dial(p, builder.buildPing());
+                                    }
                             );
                     pending.clear();
                 }, 0, DISCOVERY_RATE, TimeUnit.SECONDS);
@@ -110,11 +114,13 @@ public class PeersManager implements Plugin {
                     .forEach(x -> server.getClient().dial(x, builder.buildPing()));
             return;
         }
+        // query for neighbours when neighbours is not empty
         if(cache.size() > 0){
             client.broadcast(builder.buildLookup());
             cache.trusted.keySet().forEach(p -> client.dial(p, builder.buildPing()));
             return;
         }
+        // query for peers from bootstraps and trusted when neighbours is empty
         Stream.of(cache.bootstraps, cache.trusted)
                 .flatMap(x -> x.keySet().stream())
                 .forEach(p -> client.dial(p, builder.buildLookup()));

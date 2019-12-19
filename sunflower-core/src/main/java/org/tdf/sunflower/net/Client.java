@@ -17,28 +17,28 @@ public class Client implements Channel.ChannelListener {
     private NetLayer netLayer;
 
     @AllArgsConstructor
-    private abstract static class AbstractChannelListener implements Channel.ChannelListener{
+    private abstract static class AbstractChannelListener implements Channel.ChannelListener {
         protected Client client;
         protected Channel.ChannelListener listener;
 
         @Override
         public void onMessage(Message message, Channel channel) {
             client.onMessage(message, channel);
-            if(listener == null) return;
+            if (listener == null) return;
             listener.onMessage(message, channel);
         }
 
         @Override
         public void onError(Throwable throwable, Channel channel) {
             client.onError(throwable, channel);
-            if(listener == null) return;
+            if (listener == null) return;
             listener.onError(throwable, channel);
         }
 
         @Override
         public void onClose(Channel channel) {
             client.onClose(channel);
-            if(listener == null) return;
+            if (listener == null) return;
             listener.onClose(channel);
         }
     }
@@ -51,12 +51,13 @@ public class Client implements Channel.ChannelListener {
         @Override
         public void onConnect(PeerImpl remote, Channel channel) {
             client.peersCache.bootstraps.put(remote, true);
-            if(client.peersCache.has(remote)){
-                channel.close(remote + " had alive connected channel");
+            Optional<Channel> o = client.peersCache.getChannel(remote);
+            if (o.map(Channel::isAlive).orElse(false)) {
+                log.error("the channel to " + remote + " had been created");
                 return;
             }
             client.peersCache.keep(remote, channel);
-            if(listener == null)return;
+            if (listener == null) return;
             listener.onConnect(remote, channel);
         }
     }
@@ -65,15 +66,17 @@ public class Client implements Channel.ChannelListener {
         private TrustedChannelListener(Client client, Channel.ChannelListener listener) {
             super(client, listener);
         }
+
         @Override
         public void onConnect(PeerImpl remote, Channel channel) {
             client.peersCache.trusted.put(remote, true);
-            if(client.peersCache.has(remote)){
-                channel.close(remote + " had alive connected channel");
+            Optional<Channel> o = client.peersCache.getChannel(remote);
+            if (o.map(Channel::isAlive).orElse(false)) {
+                log.error("the channel to " + remote + " had been created");
                 return;
             }
             client.peersCache.keep(remote, channel);
-            if(listener == null)return;
+            if (listener == null) return;
             listener.onConnect(remote, channel);
         }
     }
@@ -119,7 +122,7 @@ public class Client implements Channel.ChannelListener {
         }
     }
 
-    void trust(Collection<URI> trusted){
+    void trust(Collection<URI> trusted) {
         for (URI uri : trusted) {
             createChannel(uri.getHost(), uri.getPort(), new TrustedChannelListener(this, listener));
         }
@@ -133,7 +136,7 @@ public class Client implements Channel.ChannelListener {
                         ).orElse(false)
                 )
                 .findAny();
-        if(ch.isPresent()) return ch;
+        if (ch.isPresent()) return ch;
         ch = netLayer.createChannel(host, port, listeners);
         ch.ifPresent(c -> c.write(messageBuilder.buildPing()));
         return ch;
@@ -148,8 +151,10 @@ public class Client implements Channel.ChannelListener {
             channel.close("discovery is not enabled accept bootstraps and trusted only");
             return;
         }
-        if(peersCache.getChannel(remote).isPresent()){
-            channel.close("new channel incoming while the channel had been created");
+        Optional<Channel> o = peersCache.getChannel(remote);
+        if (o.map(Channel::isAlive).orElse(false)) {
+            log.error("the channel to " + remote + " had been created");
+            return;
         }
         peersCache.keep(remote, channel);
     }
@@ -161,8 +166,8 @@ public class Client implements Channel.ChannelListener {
     @Override
     public void onError(Throwable throwable, Channel channel) {
         channel.getRemote()
-                    .filter(x -> !peersCache.hasBlocked(x))
-                    .ifPresent(x -> peersCache.half(x));
+                .filter(x -> !peersCache.hasBlocked(x))
+                .ifPresent(x -> peersCache.half(x));
         log.error("error found decrease the score of peer " + channel.getRemote() + " " + throwable.getMessage());
     }
 

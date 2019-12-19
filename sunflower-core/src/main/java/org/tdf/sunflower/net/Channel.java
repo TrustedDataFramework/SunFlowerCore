@@ -13,6 +13,10 @@ interface Channel{
     // close the channel
     void close(String reason);
 
+    default boolean isAlive(){
+        return !isClosed();
+    }
+
     // check whether the channel is closed
     boolean isClosed();
 

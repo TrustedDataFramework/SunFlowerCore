@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.BatchStore;
+import org.tdf.common.store.MapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.util.HexBytes;
@@ -29,12 +30,12 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
     private PeerImpl self;
     private MessageBuilder builder;
     private NetLayer netLayer;
-    Store<String, String> peerStore;
+    Store<String, String> peerStore = new MapStore<>();
 
     public PeerServerImpl() {
     }
 
-    public PeerServerImpl withStore(BatchStore<byte[], byte[]> persistentStore) {
+    public PeerServerImpl withStore(Store<byte[], byte[]> persistentStore) {
         this.peerStore = new StoreWrapper<>(persistentStore,
                 Codecs.STRING,
                 Codecs.STRING);

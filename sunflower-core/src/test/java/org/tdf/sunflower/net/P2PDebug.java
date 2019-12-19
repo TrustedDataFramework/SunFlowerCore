@@ -31,7 +31,8 @@ public class P2PDebug {
         // port listening on
         PeerServerImpl server = new PeerServerImpl();
         Properties properties = new Properties();
-        properties.load(FileUtils.getResource("p2p/node2.properties").getInputStream());
+        properties.load(FileUtils.getResource("p2p/node3.properties").getInputStream());
+        System.out.println(properties);
         server.init(properties);
         server.use(new PeerServerListener() {
             @Override
@@ -87,6 +88,13 @@ public class P2PDebug {
             }
             if (line.equals("trusted")) {
                 server.getClient().peersCache.trusted.keySet().forEach(System.out::println);
+                continue;
+            }
+            if(line.equals("lookup")){
+                server.getClient().broadcast(
+                        server.getClient().messageBuilder
+                        .buildLookup()
+                );
                 continue;
             }
             if (line.startsWith("connect")) {
