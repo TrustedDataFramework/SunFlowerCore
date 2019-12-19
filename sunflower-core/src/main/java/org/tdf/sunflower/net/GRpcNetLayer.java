@@ -38,7 +38,7 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
     }
 
     @Override
-    public void onChannelIncoming(Consumer<Channel> channelHandler) {
+    public void setHandler(Consumer<Channel> channelHandler) {
         this.handler = channelHandler;
     }
 
@@ -83,7 +83,7 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
 
         @Override
         public void onCompleted() {
-            channel.close();
+            channel.close("closed by remote");
         }
     }
 

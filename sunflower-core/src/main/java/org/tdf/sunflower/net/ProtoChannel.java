@@ -46,7 +46,7 @@ public class ProtoChannel implements Channel {
         if (pinged) return;
         Optional<PeerImpl> o = PeerImpl.parse(message.getRemotePeer());
         if (!o.isPresent()) {
-            close();
+            close("invalid peer " + message.getRemotePeer());
             return;
         }
         pinged = true;
@@ -68,9 +68,10 @@ public class ProtoChannel implements Channel {
     }
 
 
-    public void close() {
+    public void close(String reason) {
         if(closed) return;
         closed = true;
+        log.error("close channel to " + remote + " reason is " + reason);
         if(listeners == null) return;
         listeners.forEach(l -> l.onClose(this));
         listeners = null;

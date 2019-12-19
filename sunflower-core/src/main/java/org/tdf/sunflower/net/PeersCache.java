@@ -79,7 +79,7 @@ class PeersCache {
         // when neighbours is full, check whether some neighbours could be removed
         // 1. the bucket of the new neighbour is empty
         if (peers[idx].channels.size() > 0) {
-            channel.close();
+            channel.close("neighbours is full");
             return;
         }
 
@@ -90,20 +90,20 @@ class PeersCache {
                 .max(Comparator.comparingInt(Map::size));
 
         if (!bucket.isPresent() || bucket.get().size() <= 1) {
-            channel.close();
+            channel.close("neighbours is full");
             return;
         }
 
         // the conditions above are both filled
         bucket.get().keySet()
                 .stream().findAny()
-                .ifPresent(this::remove);
+                .ifPresent(x -> remove(x, "the new node " + peer + " has more priority than " + x));
 
         peers[idx].channels.put(peer, channel);
     }
 
     // remove the peer and close the channel
-    void remove(PeerImpl peer) {
+    void remove(PeerImpl peer, String reason) {
         int idx = self.subTree(peer);
         if (peers[idx] == null) {
             return;
@@ -111,7 +111,7 @@ class PeersCache {
         Channel ch = peers[idx].channels.get(peer);
         peers[idx].channels.remove(peer);
         if (ch == null) return;
-        ch.close();
+        ch.close(reason);
     }
 
     // get limit peers randomly
@@ -145,7 +145,7 @@ class PeersCache {
             return;
         }
         // remove the peer and disconnect to it
-        remove(peer);
+        remove(peer, "block the peer " + peer);
         peer.score = EVIL_SCORE;
         blocked.put(peer, true);
     }
@@ -163,7 +163,7 @@ class PeersCache {
                     p.score /= 2;
                     return p.score == 0;
                 })
-                .ifPresent(this::remove);
+                .ifPresent(x -> remove(x, " the score of " + x + " is 0"));
     }
 
     // decrease score of all peer
@@ -175,7 +175,7 @@ class PeersCache {
                     p.score /= 2;
                     return p.score == 0;
                 }).collect(Collectors.toList());
-        toRemoves.forEach(this::remove);
+        toRemoves.forEach(x -> remove(x, " the score of " + x + " is 0"));
         List<PeerImpl> toRestores
                 = blocked.keySet().stream()
                 .filter(p -> {

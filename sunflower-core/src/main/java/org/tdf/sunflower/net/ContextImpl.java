@@ -27,7 +27,7 @@ public class ContextImpl implements Context {
     public void disconnect() {
         if (exited || blocked || disconnected) return;
         disconnected = true;
-        client.peersCache.remove(remote);
+        client.peersCache.remove(remote, " disconnect to " + remote + " by listener");
     }
 
     @Override

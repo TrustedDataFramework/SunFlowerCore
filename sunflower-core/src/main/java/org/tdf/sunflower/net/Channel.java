@@ -6,12 +6,12 @@ import java.io.Closeable;
 import java.util.Optional;
 
 // channel for message transports
-interface Channel extends Closeable {
+interface Channel{
     // write message to channel
     void write(Message message);
 
     // close the channel
-    void close();
+    void close(String reason);
 
     // check whether the channel is closed
     boolean isClosed();

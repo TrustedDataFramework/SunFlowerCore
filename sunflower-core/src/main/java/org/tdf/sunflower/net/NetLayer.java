@@ -11,7 +11,7 @@ public interface NetLayer extends Closeable {
     void start();
 
     // register channel incoming handler
-    void onChannelIncoming(Consumer<Channel> channelHandler);
+    void setHandler(Consumer<Channel> channelHandler);
 
     // create a channel as a client
     Optional<Channel> createChannel(String host, int port, Channel.ChannelListener... listeners);

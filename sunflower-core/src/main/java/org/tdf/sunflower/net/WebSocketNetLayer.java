@@ -44,7 +44,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         Channel ch = channels.get(conn);
         if (ch == null) return;
-        ch.close();
+        ch.close("websocket connection closed by remote");
         channels.remove(conn);
     }
 
@@ -78,7 +78,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
     }
 
     @Override
-    public void onChannelIncoming(Consumer<Channel> channelHandler) {
+    public void setHandler(Consumer<Channel> channelHandler) {
         this.channelHandler = channelHandler;
     }
 
@@ -141,7 +141,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
 
         @Override
         public void onClose(int code, String reason, boolean remote) {
-            channel.close();
+            channel.close("websocket connection closed by remote");
         }
 
         @Override

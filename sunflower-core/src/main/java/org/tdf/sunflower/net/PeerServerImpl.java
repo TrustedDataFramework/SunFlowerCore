@@ -153,7 +153,7 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
         } else {
             netLayer = new GRpcNetLayer(self.getPort());
         }
-        netLayer.onChannelIncoming((c) -> c.addListener(client, this));
+        netLayer.setHandler((c) -> c.addListener(client, this));
         builder = new MessageBuilder(self);
         client = new Client(self, config, builder, netLayer).withListener(this);
 
@@ -195,7 +195,7 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
     public void onMessage(Message message, Channel channel) {
         Optional<PeerImpl> peer = channel.getRemote();
         if (!peer.isPresent()) {
-            channel.close();
+            channel.close("failed to parse peer " + message.getRemotePeer());
             throw new RuntimeException("failed to parse peer");
         }
         ContextImpl context = ContextImpl.builder()
@@ -259,7 +259,7 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
         plugins.forEach(x -> x.onStop(this));
         client.peersCache
                 .getChannels()
-                .forEach(Channel::close);
+                .forEach(x -> x.close("application will shutdown"));
         try {
             netLayer.close();
         } catch (IOException e) {

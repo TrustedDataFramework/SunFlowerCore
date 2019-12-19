@@ -48,10 +48,12 @@ dependencies {
 
 
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
     compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
     compile project(':common')
     compile project(':crypto')
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     compile "com.google.guava:guava:${guavaVersion}"
     compile "commons-cli:commons-cli:${commonsCliVersion}"

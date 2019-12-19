@@ -52,7 +52,7 @@ public class Client implements Channel.ChannelListener {
         public void onConnect(PeerImpl remote, Channel channel) {
             client.peersCache.bootstraps.put(remote, true);
             if(client.peersCache.has(remote)){
-                channel.close();
+                channel.close(remote + " had alive connected channel");
                 return;
             }
             client.peersCache.keep(remote, channel);
@@ -69,7 +69,7 @@ public class Client implements Channel.ChannelListener {
         public void onConnect(PeerImpl remote, Channel channel) {
             client.peersCache.trusted.put(remote, true);
             if(client.peersCache.has(remote)){
-                channel.close();
+                channel.close(remote + " had alive connected channel");
                 return;
             }
             client.peersCache.keep(remote, channel);
@@ -145,11 +145,11 @@ public class Client implements Channel.ChannelListener {
                 !peersCache.bootstraps.containsKey(remote) &&
                 !peersCache.trusted.containsKey(remote)
         ) {
-            channel.close();
+            channel.close("discovery is not enabled accept bootstraps and trusted only");
             return;
         }
         if(peersCache.getChannel(remote).isPresent()){
-            log.warn("new channel incoming while the channel had been created");
+            channel.close("new channel incoming while the channel had been created");
         }
         peersCache.keep(remote, channel);
     }
@@ -171,7 +171,7 @@ public class Client implements Channel.ChannelListener {
         Optional<PeerImpl> remote = channel.getRemote();
         if (!remote.isPresent()) return;
 //        log.error("close channel to " + remote.get());
-        peersCache.remove(remote.get());
+        peersCache.remove(remote.get(), " channel closed");
     }
 
     void relay(Message message, PeerImpl receivedFrom) {
