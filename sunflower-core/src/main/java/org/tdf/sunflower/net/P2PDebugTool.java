@@ -18,6 +18,8 @@ import java.util.*;
  * node3: X_ADDRESS=node://0b21136053e38a0d4affa5c5fac7e82ac1d8efeb2b5d535a18fb609015b6b38eeebdc2d355ef478875f8d6344131f83cf23756ad59caa60c30afb46e3bed7143@192.168.1.3:9093;X_BOOTSTRAPS=node://localhost:9090;X_ENABLE_DISCOVERY=false;X_TRUSTED=node://localhost:9091;X_NAME=websocket
  */
 
+@Deprecated
+// use P2PDebug in test folder instead
 @Slf4j
 public class P2PDebugTool {
 
