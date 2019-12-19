@@ -20,7 +20,7 @@ public interface PeerServer {
     // get all bootstraps
     List<Peer> getBootStraps();
 
-    void use(PeerServerListener... peerServerListeners);
+    void addListeners(PeerServerListener... peerServerListeners);
 
     void start();
 
@@ -52,7 +52,7 @@ public interface PeerServer {
         }
 
         @Override
-        public void use(PeerServerListener... peerServerListeners) {
+        public void addListeners(PeerServerListener... peerServerListeners) {
 
         }
 

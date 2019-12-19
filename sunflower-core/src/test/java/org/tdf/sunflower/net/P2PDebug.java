@@ -8,7 +8,6 @@ import org.tdf.sunflower.util.FileUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * debug configs
@@ -34,7 +33,7 @@ public class P2PDebug {
         properties.load(FileUtils.getResource("p2p/node3.properties").getInputStream());
         System.out.println(properties);
         server.init(properties);
-        server.use(new PeerServerListener() {
+        server.addListeners(new PeerServerListener() {
             @Override
             public void onMessage(Context context, PeerServer server) {
                 String m = new String(context.getMessage(), StandardCharsets.UTF_8).trim();

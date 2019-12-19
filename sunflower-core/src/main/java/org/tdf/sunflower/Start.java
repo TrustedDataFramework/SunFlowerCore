@@ -196,7 +196,7 @@ public class Start {
                 factory.create("peers")
         );
         peerServer.init(properties);
-        peerServer.use(engine.getPeerServerListener());
+        peerServer.addListeners(engine.getPeerServerListener());
         peerServer.start();
         return peerServer;
     }

@@ -74,7 +74,7 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
     }
 
     @Override
-    public void use(PeerServerListener... peerServerListeners) {
+    public void addListeners(PeerServerListener... peerServerListeners) {
         for (PeerServerListener listener : peerServerListeners) {
             plugins.add(new PluginWrapper(listener));
         }

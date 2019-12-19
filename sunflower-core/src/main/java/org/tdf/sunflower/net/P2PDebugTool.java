@@ -51,7 +51,7 @@ public class P2PDebugTool {
         );
         properties.setProperty("name", Optional.ofNullable(System.getenv("X_NAME")).orElse("gRPC"));
         server.init(properties);
-        server.use(new PeerServerListener() {
+        server.addListeners(new PeerServerListener() {
             @Override
             public void onMessage(Context context, PeerServer server) {
                 String m = new String(context.getMessage(), StandardCharsets.UTF_8).trim();
