@@ -51,7 +51,7 @@ public class EntryController {
 
     @GetMapping(value = "/man", produces = MediaType.APPLICATION_JSON_VALUE)
     public Object man() throws Exception {
-        return new HexBytes(Hex.decodeHex("ffffffff".toCharArray()));
+        return HexBytes.fromHex("ffffffff");
     }
 
     @GetMapping(value = "/exception", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -93,7 +93,7 @@ public class EntryController {
             @RequestParam(value = "parameters", required = false) String parameters
     ) throws Exception{
         PublicKeyHash publicKeyHash = PublicKeyHash.from(address).orElseThrow(() -> new RuntimeException("invalid format " + address));
-        byte[] params = parameters == null ? new byte[0] : HexBytes.parse(parameters).getBytes();
+        byte[] params = parameters == null ? new byte[0] : HexBytes.fromHex(parameters).getBytes();
         byte[] hash = consortiumRepository.getBestBlock().getHash().getBytes();
         Account a = repository.get(publicKeyHash.getAddress(), hash, Account.class)
                 .filter(x -> x.getBinaryContract() != null)
@@ -103,7 +103,7 @@ public class EntryController {
         try{
             view.json = objectMapper.readValue(result, JsonNode.class);
         }catch (Exception ignored){}
-        view.raw = new HexBytes(result);
+        view.raw = HexBytes.fromBytes(result);
         return view;
     }
 

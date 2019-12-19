@@ -87,7 +87,7 @@ public class VrfBlockFieldsTest {
 
         byte[] encoded = VrfUtil.genPayload(blockNum, round, nonceStr, minerCoinbaseStr, difficultyStr, blockHashStr,
                 vrfSk, vrfPk);
-        HexBytes payload = new HexBytes(encoded);
+        HexBytes payload = HexBytes.fromBytes(encoded);
         Block block = new Block();
         block.setPayload(payload);
 

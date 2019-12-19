@@ -109,7 +109,7 @@ public class VrfUtil {
         vrfBlockFields.setNonce(nonce);
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        block.setPayload(new HexBytes(encoded));
+        block.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setNonce(Block block, HexBytes nonce) {
@@ -126,7 +126,7 @@ public class VrfUtil {
         vrfBlockFields.setMiner(miner);
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        block.setPayload(new HexBytes(encoded));
+        block.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setMiner(Block block, String miner) {
@@ -139,7 +139,7 @@ public class VrfUtil {
         vrfBlockFields.setDifficulty(difficulty);
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        block.setPayload(new HexBytes(encoded));
+        block.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setDifficulty(Block block, HexBytes difficulty) {
@@ -156,7 +156,7 @@ public class VrfUtil {
         vrfBlockFields.setProposalProof(proposalProof.getEncoded());
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        block.setPayload(new HexBytes(encoded));
+        block.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static VrfBlockFields getVrfBlockFields(HexBytes payload) {

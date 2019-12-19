@@ -136,20 +136,12 @@ public class StateFactoryTests {
         factory.put(new Chained() {
             @Override
             public HexBytes getHashPrev() {
-                try {
-                    return new HexBytes("0206");
-                } catch (DecoderException e) {
-                    return new HexBytes();
-                }
+                return HexBytes.fromHex("0206");
             }
 
             @Override
             public HexBytes getHash() {
-                try {
-                    return new HexBytes("0207");
-                } catch (DecoderException e) {
-                    return new HexBytes();
-                }
+                return HexBytes.fromHex("0207");
             }
         }, new Height(new HashSet<>(), 7));
         assert factory.get(Hex.decodeHex("0207".toCharArray())).get().getHeight() == 7;
@@ -173,20 +165,12 @@ public class StateFactoryTests {
         repository.put(new Chained() {
             @Override
             public HexBytes getHashPrev() {
-                try {
-                    return new HexBytes("0206");
-                } catch (DecoderException e) {
-                    return new HexBytes();
-                }
+                return HexBytes.fromHex("0206");
             }
 
             @Override
             public HexBytes getHash() {
-                try {
-                    return new HexBytes("0207");
-                } catch (DecoderException e) {
-                    return new HexBytes();
-                }
+                return HexBytes.fromHex("0207");
             }
         }, new Height(new HashSet<>(), 7));
         assert repository.get(Hex.decodeHex("0207".toCharArray()), Height.class).get().getHeight() == 7;

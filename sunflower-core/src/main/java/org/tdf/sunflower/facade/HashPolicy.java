@@ -13,17 +13,17 @@ public interface HashPolicy {
     HashPolicy NONE = new HashPolicy() {
         @Override
         public HexBytes getHash(Block block) {
-            return new HexBytes(new byte[32]);
+            return HexBytes.fromBytes(new byte[32]);
         }
 
         @Override
         public HexBytes getHash(Transaction transaction) {
-            return new HexBytes(new byte[32]);
+            return HexBytes.fromBytes(new byte[32]);
         }
 
         @Override
         public HexBytes getHash(Header header) {
-            return new HexBytes(new byte[32]);
+            return HexBytes.fromBytes(new byte[32]);
         }
     };
 }

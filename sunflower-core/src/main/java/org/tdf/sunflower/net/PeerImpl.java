@@ -59,11 +59,7 @@ public class PeerImpl implements Peer {
         }
         p.host = u.getHost();
         if (u.getRawUserInfo() == null || u.getRawUserInfo().equals("")) return Optional.empty();
-        try {
-            p.ID = new HexBytes(u.getRawUserInfo());
-        } catch (DecoderException e) {
-            return Optional.empty();
-        }
+        p.ID = HexBytes.fromHex(u.getRawUserInfo());
         if (p.ID.size() != PRIVATE_KEY_LENGTH && p.ID.size() != PUBLIC_KEY_LENGTH) {
             return Optional.empty();
         }
@@ -85,7 +81,7 @@ public class PeerImpl implements Peer {
                             kp.getPublicKey().getEncoded()
             ));
         }
-        HexBytes hexBytes = new HexBytes(u.getRawUserInfo());
+        HexBytes hexBytes = HexBytes.fromHex(u.getRawUserInfo());
         if (hexBytes.size() != PRIVATE_KEY_LENGTH) {
             throw new Exception("length of private key is 64");
         }

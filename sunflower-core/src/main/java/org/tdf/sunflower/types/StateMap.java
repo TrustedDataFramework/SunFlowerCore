@@ -27,7 +27,7 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
     @Override
     public HexBytes getHashPrev() {
         if (raw == null) return super.getHashPrev();
-        return new HexBytes(
+        return HexBytes.fromBytes(
                 raw.get(HASH_PREV_PREFIX).orElseThrow(() -> ExceptionUtil.keyNotFound(WHERE_PREFIX))
         );
     }
@@ -35,7 +35,7 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
     @Override
     public HexBytes getHash() {
         if (raw == null) return super.getHash();
-        return new HexBytes(
+        return HexBytes.fromBytes(
                 raw.get(WHERE_PREFIX).orElseThrow(() -> ExceptionUtil.keyNotFound(WHERE_PREFIX))
         );
     }

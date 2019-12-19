@@ -181,7 +181,7 @@ public class VrfMiner implements Miner {
         Transaction tx = Transaction.builder().height(height).version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(PoAConstants.ZERO_BYTES)
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(PoAConstants.ZERO_BYTES)
-                .to(new HexBytes(minerPublicKeyHash.getPublicKeyHash())).signature(PoAConstants.ZERO_BYTES).build();
+                .to(HexBytes.fromBytes(minerPublicKeyHash.getPublicKeyHash())).signature(PoAConstants.ZERO_BYTES).build();
         tx.setHash(HASH_POLICY.getHash(tx));
         return tx;
     }
@@ -197,7 +197,7 @@ public class VrfMiner implements Miner {
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
         byte[] payLoadBytes = VrfUtil.genPayload(b.getHeight(), this.vrfStateMachine.getVrfRound().getRound(), vrfSeed,
                 this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk, vrfPk);
-        HexBytes payload = new HexBytes(payLoadBytes);
+        HexBytes payload = HexBytes.fromBytes(payLoadBytes);
         b.setPayload(payload);
         b.getBody().add(createCoinBase(parent.getHeight() + 1));
 

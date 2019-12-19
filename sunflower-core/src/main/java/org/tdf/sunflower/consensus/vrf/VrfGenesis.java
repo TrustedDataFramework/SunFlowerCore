@@ -50,7 +50,7 @@ public class VrfGenesis {
          */
         setPayload(block);
 
-        block.setHash(new HexBytes(PoAUtils.getHash(block)));
+        block.setHash(HexBytes.fromBytes(PoAUtils.getHash(block)));
 
         return block;
     }
@@ -61,8 +61,8 @@ public class VrfGenesis {
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
         int round = 0;
         byte[] payloadBytes = VrfUtil.genPayload(blockNum, round, nonce, coinbase, difficulty,
-                new HexBytes(PoAUtils.getHash(block)), vrfSk, vrfPk);
-        HexBytes payload = new HexBytes(payloadBytes);
+                HexBytes.fromBytes(PoAUtils.getHash(block)), vrfSk, vrfPk);
+        HexBytes payload = HexBytes.fromBytes(payloadBytes);
         block.setPayload(payload);
     }
 }

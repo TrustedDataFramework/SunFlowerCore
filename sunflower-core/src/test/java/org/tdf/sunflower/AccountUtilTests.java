@@ -12,15 +12,8 @@ import java.util.Arrays;
 
 @RunWith(JUnit4.class)
 public class AccountUtilTests {
-    private static HexBytes PUBLIC_KEY;
+    private static HexBytes PUBLIC_KEY = HexBytes.fromHex("d0f1966cee219fcfdbcee698517fcf864f46817c30bc8218eb4889d02f312540");
 
-    static {
-        try {
-            PUBLIC_KEY = new HexBytes("d0f1966cee219fcfdbcee698517fcf864f46817c30bc8218eb4889d02f312540");
-        } catch (DecoderException e) {
-            e.printStackTrace();
-        }
-    }
 
     @Test
     public void test() {

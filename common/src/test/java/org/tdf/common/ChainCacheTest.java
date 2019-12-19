@@ -47,18 +47,18 @@ public class ChainCacheTest {
 
     public static ChainCache<Node> getCache(int sizeLimit) throws Exception {
 
-        Node genesis = new Node(new HexBytes("0000"), new HexBytes("ffff"), 0);
+        Node genesis = new Node(HexBytes.fromHex("0000"), HexBytes.fromHex("ffff"), 0);
         List<String> hashes = Arrays.asList("0001", "0002", "0003", "0004", "0005");
         List<Node> chain0 = new ArrayList<>();
         for (int i = 0; i < hashes.size(); i++) {
             if (i == 0) {
                 chain0.add(new Node(
-                        new HexBytes(hashes.get(i)), new HexBytes("0000"), Long.parseLong(hashes.get(i)))
+                        HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex("0000"), Long.parseLong(hashes.get(i)))
                 );
                 continue;
             }
             chain0.add(new Node(
-                            new HexBytes(hashes.get(i)), new HexBytes(hashes.get(i - 1)),
+                            HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex(hashes.get(i - 1)),
                             Long.parseLong(hashes.get(i).substring(2))
                     )
             );
@@ -68,14 +68,14 @@ public class ChainCacheTest {
         for (int i = 0; i < hashes.size(); i++) {
             if (i == 0) {
                 chain1.add(new Node(
-                                new HexBytes(hashes.get(i)), new HexBytes("0001"),
+                                HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex("0001"),
                                 Long.parseLong(hashes.get(i).substring(2))
                         )
                 );
                 continue;
             }
             chain1.add(new Node(
-                            new HexBytes(hashes.get(i)), new HexBytes(hashes.get(i - 1)),
+                            HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex(hashes.get(i - 1)),
                             Long.parseLong(hashes.get(i).substring(2))
                     )
             );
@@ -85,13 +85,13 @@ public class ChainCacheTest {
         for (int i = 0; i < hashes.size(); i++) {
             if (i == 0) {
                 chain2.add(new Node(
-                        new HexBytes(hashes.get(i)), new HexBytes("0103"),
+                        HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex("0103"),
                         Long.parseLong(hashes.get(i).substring(2))
                 ));
                 continue;
             }
             chain2.add(new Node(
-                    new HexBytes(hashes.get(i)), new HexBytes(hashes.get(i - 1)),
+                    HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex(hashes.get(i - 1)),
                     Long.parseLong(hashes.get(i).substring(2))
 
             ));

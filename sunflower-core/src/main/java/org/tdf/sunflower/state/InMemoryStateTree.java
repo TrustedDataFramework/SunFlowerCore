@@ -74,7 +74,7 @@ public class InMemoryStateTree<T extends ForkAbleState<T>> implements StateTree<
     }
 
     public Optional<T> get(String id, byte[] where) {
-        if (this.root.getHash().equals(new HexBytes(where))) {
+        if (this.root.getHash().equals(HexBytes.fromBytes(where))) {
             // WARNING: do not use method reference here State::clone
             return root.get(id).map(s -> s.clone());
         }
@@ -91,7 +91,7 @@ public class InMemoryStateTree<T extends ForkAbleState<T>> implements StateTree<
     }
 
     public void confirm(byte[] hash) {
-        HexBytes h = new HexBytes(hash);
+        HexBytes h = HexBytes.fromBytes(hash);
         if (root.getHash().equals(h)) return;
         List<StateMap<T>> children = cache.getChildren(root.getHash().getBytes());
         Optional<StateMap<T>> o = children.stream().filter(x -> x.getHash().equals(h)).findFirst();

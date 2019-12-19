@@ -12,16 +12,16 @@ public class PoAHashPolicy implements HashPolicy {
 
     @Override
     public HexBytes getHash(Block block) {
-        return new HexBytes(PoAUtils.getHash(block));
+        return HexBytes.fromBytes(PoAUtils.getHash(block));
     }
 
     @Override
     public HexBytes getHash(Transaction transaction) {
-        return new HexBytes(PoAUtils.getHash(transaction));
+        return HexBytes.fromBytes(PoAUtils.getHash(transaction));
     }
 
     @Override
     public HexBytes getHash(Header header) {
-        return new HexBytes(PoAUtils.getHash(header));
+        return HexBytes.fromBytes(PoAUtils.getHash(header));
     }
 }

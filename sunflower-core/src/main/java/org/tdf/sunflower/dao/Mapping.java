@@ -27,13 +27,13 @@ public class Mapping {
 
     public static Header getFromHeaderEntity(HeaderAdapter header){
         return Header.builder()
-                .hash(new HexBytes(header.getHash()))
+                .hash(HexBytes.fromBytes(header.getHash()))
                 .version(header.getVersion())
-                .hashPrev(new HexBytes(header.getHashPrev()))
-                .merkleRoot(new HexBytes(header.getMerkleRoot()))
+                .hashPrev(HexBytes.fromBytes(header.getHashPrev()))
+                .merkleRoot(HexBytes.fromBytes(header.getMerkleRoot()))
                 .height(header.getHeight())
                 .createdAt(header.getCreatedAt())
-                .payload(new HexBytes(header.getPayload()))
+                .payload(HexBytes.fromBytes(header.getPayload()))
                 .build();
     }
 
@@ -43,14 +43,14 @@ public class Mapping {
 
     public static Transaction getFromTransactionEntity(TransactionEntity transaction){
         return Transaction.builder()
-                .blockHash(new HexBytes(transaction.getBlockHash()))
+                .blockHash(HexBytes.fromBytes(transaction.getBlockHash()))
                 .height(transaction.getHeight())
                 .version(transaction.getVersion())
                 .type(transaction.getType()).createdAt(transaction.getCreatedAt())
-                .nonce(transaction.getNonce()).from(new HexBytes(transaction.getFrom()))
+                .nonce(transaction.getNonce()).from(HexBytes.fromBytes(transaction.getFrom()))
                 .gasPrice(transaction.getGasPrice()).amount(transaction.getAmount())
-                .payload(new HexBytes(transaction.getPayload())).to(new HexBytes(transaction.getTo()))
-                .signature(new HexBytes(transaction.getSignature())).hash(new HexBytes(transaction.getHash()))
+                .payload(HexBytes.fromBytes(transaction.getPayload())).to(HexBytes.fromBytes(transaction.getTo()))
+                .signature(HexBytes.fromBytes(transaction.getSignature())).hash(HexBytes.fromBytes(transaction.getHash()))
                 .build();
     }
 

@@ -41,16 +41,12 @@ class HexBytesUtils {
             JsonNode node = p.getCodec().readTree(p);
             String encoded = node.asText();
             if (encoded == null || encoded.equals("")) {
-                return new HexBytes(new byte[]{});
+                return HexBytes.empty();
             }
             if (encoded.startsWith("0x")){
                 encoded = encoded.substring(2);
             }
-            try {
-                return new HexBytes(encoded);
-            } catch (Exception e) {
-                throw new HexBytesDeserializeException(String.format("unable to decode hex string %s", encoded));
-            }
+            return HexBytes.fromHex(encoded);
         }
     }
 }

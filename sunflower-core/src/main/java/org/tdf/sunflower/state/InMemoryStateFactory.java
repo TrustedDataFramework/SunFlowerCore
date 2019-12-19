@@ -58,7 +58,7 @@ public class InMemoryStateFactory<T extends State<T>> implements StateFactory<T>
 
     @Override
     public void confirm(byte[] hash) {
-        HexBytes h = new HexBytes(hash);
+        HexBytes h = HexBytes.fromBytes(hash);
         List<ChainedWrapper<T>> children = cache.getChildren(where.getBytes());
         Optional<ChainedWrapper<T>> o = children.stream().filter(x -> x.getHash().equals(h)).findFirst();
         if (!o.isPresent()) {

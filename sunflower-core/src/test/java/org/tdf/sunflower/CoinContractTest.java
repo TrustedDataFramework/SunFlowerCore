@@ -24,18 +24,18 @@ public class CoinContractTest {
 
     public void testDeployContract() throws Exception {
         byte[] binary = ByteStreams.toByteArray(FileUtils.getResource(System.getenv("FILE_PATH")).getInputStream());
-        HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY);
+        HexBytes from = HexBytes.fromHex(TEST_PUBLIC_KEY);
         PublicKeyHash to = PublicKeyHash.fromPublicKey(from.getBytes());
         Transaction t = Transaction.builder()
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .from(from)
                 .type(Transaction.Type.CONTRACT_DEPLOY.code)
-                .to(new HexBytes(to.getPublicKeyHash()))
-                .payload(new HexBytes(binary))
+                .to(HexBytes.fromBytes(to.getPublicKeyHash()))
+                .payload(HexBytes.fromBytes(binary))
                 .build();
-        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
-        t.setSignature(new HexBytes(sig));
+        byte[] sig = new Ed25519PrivateKey(HexBytes.fromHex(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
+        t.setSignature(HexBytes.fromBytes(sig));
         RestTemplate client = new RestTemplate();
 
 
@@ -50,17 +50,17 @@ public class CoinContractTest {
     }
 
     public void testContractCall() throws Exception {
-        HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY);
+        HexBytes from = HexBytes.fromHex(TEST_PUBLIC_KEY);
         PublicKeyHash to = PublicKeyHash.fromPublicKey(from.getBytes());
-        PublicKeyHash recipient = PublicKeyHash.fromPublicKey(HexBytes.parse(TEST_RECIPIENT_PUBLIC_KEY).getBytes());
+        PublicKeyHash recipient = PublicKeyHash.fromPublicKey(HexBytes.fromHex(TEST_RECIPIENT_PUBLIC_KEY).getBytes());
         byte[] method = "transfer".getBytes(StandardCharsets.US_ASCII);
         Transaction t = Transaction.builder()
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .from(from)
                 .type(Transaction.Type.CONTRACT_CALL.code)
-                .to(new HexBytes(to.getPublicKeyHash()))
-                .payload(new HexBytes(Bytes.concat(new byte[]{(byte) method.length},
+                .to(HexBytes.fromBytes(to.getPublicKeyHash()))
+                .payload(HexBytes.fromBytes(Bytes.concat(new byte[]{(byte) method.length},
                         method,
                         new byte[]{(byte)recipient.getPublicKeyHash().length},
                         recipient.getPublicKeyHash(),
@@ -68,8 +68,8 @@ public class CoinContractTest {
                 )))
                 .build();
 
-        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
-        t.setSignature(new HexBytes(sig));
+        byte[] sig = new Ed25519PrivateKey(HexBytes.fromHex(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
+        t.setSignature(HexBytes.fromBytes(sig));
         RestTemplate client = new RestTemplate();
 
 

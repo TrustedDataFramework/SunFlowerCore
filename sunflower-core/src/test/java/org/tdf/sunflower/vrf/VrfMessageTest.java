@@ -19,8 +19,8 @@ public class VrfMessageTest {
         long blockNum = 1234;
         String payloadStr = "12abcd";
         String blockHashStr = "abcdef";
-        block.setPayload(new HexBytes(ByteUtil.hexStringToBytes(payloadStr)));
-        block.setHashPrev(new HexBytes(ByteUtil.hexStringToBytes(blockHashStr)));
+        block.setPayload(HexBytes.fromBytes(ByteUtil.hexStringToBytes(payloadStr)));
+        block.setHashPrev(HexBytes.fromBytes(ByteUtil.hexStringToBytes(blockHashStr)));
         block.setHeight(blockNum);
 
 //        byte[] encode = Start.MAPPER.writeValueAsBytes(block);

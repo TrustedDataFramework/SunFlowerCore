@@ -19,9 +19,9 @@ import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
 public class StateTreeTests {
-    private static final HexBytes ADDRESS_A = new HexBytes(new byte[]{0x0a});
-    private static final HexBytes ADDRESS_B = new HexBytes(new byte[]{0x0b});
-    private static final HexBytes ADDRESS_C = new HexBytes(new byte[]{0x0c});
+    private static final HexBytes ADDRESS_A = HexBytes.fromBytes(new byte[]{0x0a});
+    private static final HexBytes ADDRESS_B = HexBytes.fromBytes(new byte[]{0x0b});
+    private static final HexBytes ADDRESS_C = HexBytes.fromBytes(new byte[]{0x0c});
 
 
     // account to test
@@ -167,20 +167,12 @@ public class StateTreeTests {
         tree.put(new Chained() {
             @Override
             public HexBytes getHashPrev() {
-                try {
-                    return new HexBytes("0206");
-                } catch (DecoderException e) {
-                    return new HexBytes();
-                }
+                return HexBytes.fromHex("0206");
             }
 
             @Override
             public HexBytes getHash() {
-                try {
-                    return new HexBytes("0207");
-                } catch (DecoderException e) {
-                    return new HexBytes();
-                }
+                return HexBytes.fromHex("0207");
             }
         }, Collections.singletonList(new Account(ADDRESS_C.toString(), 1000)));
         assert tree.get(ADDRESS_C.toString(), Hex.decodeHex("0207".toCharArray())).get().balance == 1000;
@@ -212,20 +204,12 @@ public class StateTreeTests {
         repository.put(new Chained() {
             @Override
             public HexBytes getHashPrev() {
-                try {
-                    return new HexBytes("0206");
-                } catch (DecoderException e) {
-                    return new HexBytes();
-                }
+                return HexBytes.fromHex("0206");
             }
 
             @Override
             public HexBytes getHash() {
-                try {
-                    return new HexBytes("0207");
-                } catch (DecoderException e) {
-                    return new HexBytes();
-                }
+                return HexBytes.fromHex("0207");
             }
         }, Collections.singletonList(new Account(ADDRESS_C.toString(), 1000)), Account.class);
         assert repository.get(ADDRESS_C.toString(), Hex.decodeHex("0207".toCharArray()), Account.class).get().balance == 1000;

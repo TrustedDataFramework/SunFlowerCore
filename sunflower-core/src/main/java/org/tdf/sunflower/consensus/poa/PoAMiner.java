@@ -131,7 +131,7 @@ public class PoAMiner implements Miner {
             Block b = createBlock(blockRepository.getBestBlock());
             log.info("mining success");
             listeners.forEach(l -> l.onBlockMined(b));
-            Assert.isTrue(b.getHash().equals(new HexBytes(PoAUtils.getHash(b))), "block hash is equal");
+            Assert.isTrue(b.getHash().equals(HexBytes.fromBytes(PoAUtils.getHash(b))), "block hash is equal");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -146,7 +146,7 @@ public class PoAMiner implements Miner {
                 .from(PoAConstants.ZERO_BYTES)
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height))
                 .payload(PoAConstants.ZERO_BYTES)
-                .to(new HexBytes(minerPublicKeyHash.getPublicKeyHash()))
+                .to(HexBytes.fromBytes(minerPublicKeyHash.getPublicKeyHash()))
                 .signature(PoAConstants.ZERO_BYTES).build();
         tx.setHash(HASH_POLICY.getHash(tx));
         return tx;
@@ -160,7 +160,7 @@ public class PoAMiner implements Miner {
                 .height(parent.getHeight() + 1)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .payload(PoAConstants.ZERO_BYTES)
-                .hash(new HexBytes(BigEndian.encodeInt64(parent.getHeight() + 1))).build();
+                .hash(HexBytes.fromBytes(BigEndian.encodeInt64(parent.getHeight() + 1))).build();
         Block b = new Block(header);
         while (true) {
             Optional<Transaction> tx = transactionPool.pop();

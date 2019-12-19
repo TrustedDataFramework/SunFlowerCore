@@ -25,18 +25,18 @@ public class ZombieContractTest {
     
     public void testDeployContract() throws Exception {
         byte[] binary = ByteStreams.toByteArray(FileUtils.getResource(System.getenv("FILE_PATH")).getInputStream());
-        HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY);
+        HexBytes from = HexBytes.fromHex(TEST_PUBLIC_KEY);
         PublicKeyHash to = PublicKeyHash.fromPublicKey(from.getBytes());
         Transaction t = Transaction.builder()
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .from(from)
                 .type(Transaction.Type.CONTRACT_DEPLOY.code)
-                .to(new HexBytes(to.getPublicKeyHash()))
-                .payload(new HexBytes(binary))
+                .to(HexBytes.fromBytes(to.getPublicKeyHash()))
+                .payload(HexBytes.fromBytes(binary))
                 .build();
-        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
-        t.setSignature(new HexBytes(sig));
+        byte[] sig = new Ed25519PrivateKey(HexBytes.fromHex(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
+        t.setSignature(HexBytes.fromBytes(sig));
         RestTemplate client = new RestTemplate();
 
 
@@ -51,7 +51,7 @@ public class ZombieContractTest {
     }
 
     public void testContractCall() throws Exception {
-        HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY);
+        HexBytes from = HexBytes.fromHex(TEST_PUBLIC_KEY);
         PublicKeyHash to = PublicKeyHash.fromPublicKey(from.getBytes());
         byte[] method = "createRandomZombie".getBytes(StandardCharsets.US_ASCII);
         Transaction t = Transaction.builder()
@@ -59,16 +59,16 @@ public class ZombieContractTest {
                 .createdAt(System.currentTimeMillis() / 1000)
                 .from(from)
                 .type(Transaction.Type.CONTRACT_CALL.code)
-                .to(new HexBytes(to.getPublicKeyHash()))
-                .payload(new HexBytes(Bytes.concat(new byte[]{(byte) method.length},
+                .to(HexBytes.fromBytes(to.getPublicKeyHash()))
+                .payload(HexBytes.fromBytes(Bytes.concat(new byte[]{(byte) method.length},
                         method,
                         new byte[]{(byte) "拼多多".getBytes(StandardCharsets.US_ASCII).length},
                         "拼多多".getBytes(StandardCharsets.US_ASCII)
                 )))
                 .build();
 
-        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
-        t.setSignature(new HexBytes(sig));
+        byte[] sig = new Ed25519PrivateKey(HexBytes.fromHex(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
+        t.setSignature(HexBytes.fromBytes(sig));
         RestTemplate client = new RestTemplate();
 
 
@@ -83,24 +83,24 @@ public class ZombieContractTest {
     }
 
     public void testContractCall2() throws Exception {
-        HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY2);
-        PublicKeyHash to = PublicKeyHash.fromPublicKey(HexBytes.parse(TEST_PUBLIC_KEY).getBytes());
+        HexBytes from = HexBytes.fromHex(TEST_PUBLIC_KEY2);
+        PublicKeyHash to = PublicKeyHash.fromPublicKey(HexBytes.fromHex(TEST_PUBLIC_KEY).getBytes());
         byte[] method = "createRandomZombie".getBytes(StandardCharsets.US_ASCII);
         Transaction t = Transaction.builder()
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .from(from)
                 .type(Transaction.Type.CONTRACT_CALL.code)
-                .to(new HexBytes(to.getPublicKeyHash()))
-                .payload(new HexBytes(Bytes.concat(new byte[]{(byte) method.length},
+                .to(HexBytes.fromBytes(to.getPublicKeyHash()))
+                .payload(HexBytes.fromBytes(Bytes.concat(new byte[]{(byte) method.length},
                         method,
                         new byte[]{(byte) "淘宝".getBytes(StandardCharsets.US_ASCII).length},
                         "淘宝".getBytes(StandardCharsets.US_ASCII)
                 )))
                 .build();
 
-        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
-        t.setSignature(new HexBytes(sig));
+        byte[] sig = new Ed25519PrivateKey(HexBytes.fromHex(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
+        t.setSignature(HexBytes.fromBytes(sig));
         RestTemplate client = new RestTemplate();
 
 
@@ -115,7 +115,7 @@ public class ZombieContractTest {
     }
 
     public void testContractCall3() throws Exception {
-        HexBytes from = HexBytes.parse(TEST_PUBLIC_KEY);
+        HexBytes from = HexBytes.fromHex(TEST_PUBLIC_KEY);
         PublicKeyHash to = PublicKeyHash.fromPublicKey(from.getBytes());
         byte[] method = "feedOnKitty".getBytes(StandardCharsets.US_ASCII);
         Transaction t = Transaction.builder()
@@ -123,8 +123,8 @@ public class ZombieContractTest {
                 .createdAt(System.currentTimeMillis() / 1000)
                 .from(from)
                 .type(Transaction.Type.CONTRACT_CALL.code)
-                .to(new HexBytes(to.getPublicKeyHash()))
-                .payload(new HexBytes(Bytes.concat(new byte[]{(byte) method.length},
+                .to(HexBytes.fromBytes(to.getPublicKeyHash()))
+                .payload(HexBytes.fromBytes(Bytes.concat(new byte[]{(byte) method.length},
                         method,
                         LittleEndian.encodeInt32(1),
                         LittleEndian.encodeInt32(2),
@@ -133,8 +133,8 @@ public class ZombieContractTest {
                 )))
                 .build();
 
-        byte[] sig = new Ed25519PrivateKey(HexBytes.parse(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
-        t.setSignature(new HexBytes(sig));
+        byte[] sig = new Ed25519PrivateKey(HexBytes.fromHex(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
+        t.setSignature(HexBytes.fromBytes(sig));
         RestTemplate client = new RestTemplate();
 
 

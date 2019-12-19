@@ -22,7 +22,7 @@ public class PoAUtils {
     }
 
     public static byte[] getHash(Block block) {
-        block.setMerkleRoot(new HexBytes(merkleHash(block.getBody())));
+        block.setMerkleRoot(HexBytes.fromBytes(merkleHash(block.getBody())));
         return Hashing.sha256().hashBytes(RLPCodec.encode(block.getHeader())).asBytes();
     }
 

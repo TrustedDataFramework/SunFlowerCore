@@ -61,18 +61,18 @@ public class ChainCacheTest {
 
     public static ChainCache<Node> getCache(int sizeLimit) throws Exception {
 
-        Node genesis = new Node(new HexBytes("0000"), new HexBytes("ffff"), 0);
+        Node genesis = new Node(HexBytes.fromHex("0000"), HexBytes.fromHex("ffff"), 0);
         List<String> hashes = Arrays.asList("0001", "0002", "0003", "0004", "0005");
         List<Node> chain0 = new ArrayList<>();
         for (int i = 0; i < hashes.size(); i++) {
             if (i == 0) {
                 chain0.add(new Node(
-                        new HexBytes(hashes.get(i)), new HexBytes("0000"), Long.parseLong(hashes.get(i)))
+                        HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex("0000"), Long.parseLong(hashes.get(i)))
                 );
                 continue;
             }
             chain0.add(new Node(
-                            new HexBytes(hashes.get(i)), new HexBytes(hashes.get(i - 1)),
+                    HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex(hashes.get(i - 1)),
                             Long.parseLong(hashes.get(i).substring(2))
                     )
             );
@@ -82,14 +82,14 @@ public class ChainCacheTest {
         for (int i = 0; i < hashes.size(); i++) {
             if (i == 0) {
                 chain1.add(new Node(
-                                new HexBytes(hashes.get(i)), new HexBytes("0001"),
+                        HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex("0001"),
                                 Long.parseLong(hashes.get(i).substring(2))
                         )
                 );
                 continue;
             }
             chain1.add(new Node(
-                            new HexBytes(hashes.get(i)), new HexBytes(hashes.get(i - 1)),
+                    HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex(hashes.get(i - 1)),
                             Long.parseLong(hashes.get(i).substring(2))
                     )
             );
@@ -99,13 +99,13 @@ public class ChainCacheTest {
         for (int i = 0; i < hashes.size(); i++) {
             if (i == 0) {
                 chain2.add(new Node(
-                        new HexBytes(hashes.get(i)), new HexBytes("0103"),
+                        HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex("0103"),
                         Long.parseLong(hashes.get(i).substring(2))
                 ));
                 continue;
             }
             chain2.add(new Node(
-                    new HexBytes(hashes.get(i)), new HexBytes(hashes.get(i - 1)),
+                    HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex(hashes.get(i - 1)),
                     Long.parseLong(hashes.get(i).substring(2))
 
             ));
@@ -130,10 +130,10 @@ public class ChainCacheTest {
     @Test
     public void testGetDescendants() throws Exception {
         ChainCache<Node> cache = getCache(0);
-        int size = cache.getDescendants(new HexBytes("0000").getBytes()).size();
+        int size = cache.getDescendants(HexBytes.fromHex("0000").getBytes()).size();
         assert size == 13;
-        assert cache.getDescendants(new HexBytes("0001").getBytes()).size() == 12;
-        Set<String> nodes = cache.getDescendants(new HexBytes("0103").getBytes())
+        assert cache.getDescendants(HexBytes.fromHex("0001").getBytes()).size() == 12;
+        Set<String> nodes = cache.getDescendants(HexBytes.fromHex("0103").getBytes())
                 .stream().map(n -> n.hash.toString()).collect(Collectors.toSet());
         assert nodes.size() == 6;
         assert nodes.containsAll(Arrays.asList("0103", "0104", "0105", "0204", "0205", "0206"));
@@ -157,7 +157,7 @@ public class ChainCacheTest {
         assert cache.isEmpty();
         assert cache.size() == 0;
         cache = getCache(0);
-        cache.remove(new HexBytes("0000").getBytes());
+        cache.remove(HexBytes.fromHex("0000").getBytes());
         assert cache.size() == 12;
         assert !cache.isEmpty();
     }
@@ -166,14 +166,14 @@ public class ChainCacheTest {
     public void testGetAncestors() throws Exception {
         ChainCache<Node> cache = getCache(0);
         Set<String> ancestors = cache.getAncestors(
-                new HexBytes("0206").getBytes()
+                HexBytes.fromHex("0206").getBytes()
         ).stream().map(n -> n.hash.toString()).collect(Collectors.toSet());
 
         assert ancestors.size() == 7;
         assert ancestors.containsAll(Arrays.asList("0204", "0205", "0206", "0102", "0103", "0001", "0000"));
 
 
-        ancestors = cache.getAncestors(new HexBytes("0000").getBytes()).stream()
+        ancestors = cache.getAncestors(HexBytes.fromHex("0000").getBytes()).stream()
                 .map(n -> n.hash.toString()).collect(Collectors.toSet());
 
         assert ancestors.size() == 1;
@@ -242,9 +242,9 @@ public class ChainCacheTest {
     @Test
     public void testPutEvict() throws Exception{
         ChainCache<Node> cache = getCache(0);
-        cache.putIfAbsent(new Node(HexBytes.parse("0206"), HexBytes.parse("0205"), 100));
+        cache.putIfAbsent(new Node(HexBytes.fromHex("0206"), HexBytes.fromHex("0205"), 100));
         assert cache.get(Hex.decodeHex("0206".toCharArray())).get().getHeight() == 6;
-        cache.put(new Node(HexBytes.parse("0206"), HexBytes.parse("0205"), 100));
+        cache.put(new Node(HexBytes.fromHex("0206"), HexBytes.fromHex("0205"), 100));
         assert cache.get(Hex.decodeHex("0206".toCharArray())).get().getHeight() == 100;
     }
 

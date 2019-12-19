@@ -86,10 +86,12 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
         log.info("your p2p secret address is " +
                 String.format("%s://%s@%s:%d",
                         self.getProtocol(),
-                        new HexBytes(
-                                self.getPrivateKey().getEncoded(),
-                                self.getPrivateKey().generatePublicKey().getEncoded())
-                        ,
+                        HexBytes.fromBytes(
+                                self.getPrivateKey().getEncoded()
+                        )
+                        .concat(
+                                HexBytes.fromBytes(self.getPrivateKey().generatePublicKey().getEncoded())
+                        ),
                         self.getHost(),
                         self.getPort()));
         if (config.getBootstraps() != null) {
@@ -165,11 +167,11 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
 
     private void parseSelf() throws Exception {
         if (self == null && config.getAddress().getRawUserInfo() != null && !config.getAddress().getRawUserInfo().equals("")) {
-            self = PeerImpl.create(config.getAddress(), new HexBytes(config.getAddress().getRawUserInfo()).getBytes());
+            self = PeerImpl.create(config.getAddress(), HexBytes.fromHex(config.getAddress().getRawUserInfo()).getBytes());
         }
         Optional<String> selfPrivateKey = peerStore == null ? Optional.empty() : peerStore.get("self");
         if (self == null && selfPrivateKey.isPresent()) {
-            self = PeerImpl.create(config.getAddress(), new HexBytes(selfPrivateKey.get()).getBytes());
+            self = PeerImpl.create(config.getAddress(), HexBytes.fromHex(selfPrivateKey.get()).getBytes());
         }
         if (self == null){
             self = PeerImpl.create(config.getAddress());
