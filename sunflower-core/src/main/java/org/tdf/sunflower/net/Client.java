@@ -6,6 +6,7 @@ import org.tdf.sunflower.proto.Message;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 @Slf4j
 public class Client implements ChannelListener {
@@ -15,37 +16,6 @@ public class Client implements ChannelListener {
     MessageBuilder messageBuilder;
     PeersCache peersCache;
     private NetLayer netLayer;
-
-    // channel listener which handling connect event only
-    private abstract static class AbstractChannelListener implements ChannelListener {
-        @Override
-        public void onMessage(Message message, Channel channel) {
-        }
-
-        @Override
-        public void onError(Throwable throwable, Channel channel) {
-        }
-
-        @Override
-        public void onClose(Channel channel) {
-        }
-    }
-
-    // special channel listener for handling bootstrap peers
-    private class BootstrapChannelListener extends AbstractChannelListener {
-        @Override
-        public void onConnect(PeerImpl remote, Channel channel) {
-            peersCache.bootstraps.put(remote, true);
-        }
-    }
-
-    // special channel listener for handling trusted peers
-    private class TrustedChannelListener extends AbstractChannelListener {
-        @Override
-        public void onConnect(PeerImpl remote, Channel channel) {
-            peersCache.trusted.put(remote, true);
-        }
-    }
 
     public Client(
             PeerImpl self,
@@ -84,15 +54,41 @@ public class Client implements ChannelListener {
 
     void bootstrap(Collection<URI> uris) {
         for (URI uri : uris) {
-            getChannel(uri.getHost(), uri.getPort(), this, listener, new BootstrapChannelListener());
+            getChannel(uri.getHost(), uri.getPort(), (peer) -> peersCache.bootstraps.put(peer, true));
         }
     }
 
     void trust(Collection<URI> trusted) {
         for (URI uri : trusted) {
-            getChannel(uri.getHost(), uri.getPort(), this, listener, new TrustedChannelListener());
+            getChannel(uri.getHost(), uri.getPort(), (peer) -> peersCache.trusted.put(peer, true));
         }
     }
+
+    // functional interface for add bootstrap and trusted peer
+    private Optional<Channel> getChannel(String host, int port, Consumer<PeerImpl> connectionConsumer) {
+        return getChannel(host, port, this, listener, new ChannelListener() {
+            @Override
+            public void onConnect(PeerImpl remote, Channel channel) {
+                connectionConsumer.accept(remote);
+            }
+
+            @Override
+            public void onMessage(Message message, Channel channel) {
+
+            }
+
+            @Override
+            public void onError(Throwable throwable, Channel channel) {
+
+            }
+
+            @Override
+            public void onClose(Channel channel) {
+
+            }
+        });
+    }
+
 
     // try to get channel from cache, if channel not exists in cache,
     // create from net layer
