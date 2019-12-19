@@ -3,7 +3,6 @@ package org.tdf.sunflower.net;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.sunflower.proto.Message;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -104,7 +103,7 @@ public class ProtoChannel implements Channel {
     }
 
     @Override
-    public void addListener(ChannelListener... listeners) {
+    public void addListeners(ChannelListener... listeners) {
         if(listeners == null) return;
         this.listeners.addAll(Arrays.asList(listeners));
     }

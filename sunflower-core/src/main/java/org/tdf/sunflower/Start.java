@@ -190,7 +190,7 @@ public class Start {
         String name = properties.getProperty("name");
         name = name == null ? "" : name;
         if (name.trim().toLowerCase().equals("none")) {
-            return PeerServerImpl.NONE;
+            return PeerServer.NONE;
         }
         PeerServer peerServer = new PeerServerImpl().withStore(
                 factory.create("peers")

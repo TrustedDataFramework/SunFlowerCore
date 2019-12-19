@@ -43,13 +43,13 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
     }
 
     @Override
-    public Optional<Channel> createChannel(String host, int port, Channel.ChannelListener... listeners) {
+    public Optional<Channel> createChannel(String host, int port, ChannelListener... listeners) {
         try {
             ManagedChannel ch = ManagedChannelBuilder
                     .forAddress(host, port).usePlaintext().build();
             EntryGrpc.EntryStub stub = EntryGrpc.newStub(ch);
             ProtoChannel channel = new ProtoChannel();
-            channel.addListener(listeners);
+            channel.addListeners(listeners);
             channel.setOut(new GRpcChannelOut(stub.entry(
                     new ChannelWrapper(channel)
             )));

@@ -83,10 +83,10 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
     }
 
     @Override
-    public Optional<Channel> createChannel(String host, int port, Channel.ChannelListener... listeners) {
+    public Optional<Channel> createChannel(String host, int port, ChannelListener... listeners) {
         try {
             Client client = new Client(host, port);
-            client.getChannel().addListener(listeners);
+            client.getChannel().addListeners(listeners);
             if (client.connectBlocking(1, TimeUnit.SECONDS)){
                 return Optional.of(client.getChannel());
             }

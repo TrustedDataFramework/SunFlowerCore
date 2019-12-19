@@ -6,7 +6,6 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.tdf.common.serialize.Codecs;
-import org.tdf.common.store.BatchStore;
 import org.tdf.common.store.MapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
-public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
+public class PeerServerImpl implements ChannelListener, PeerServer {
     private PeerServerConfig config;
     private List<Plugin> plugins = new ArrayList<>();
     private Client client;
@@ -160,7 +159,7 @@ public class PeerServerImpl implements Channel.ChannelListener, PeerServer {
         } else {
             netLayer = new GRpcNetLayer(self.getPort());
         }
-        netLayer.setHandler((c) -> c.addListener(client, this));
+        netLayer.setHandler((c) -> c.addListeners(client, this));
         builder = new MessageBuilder(self);
         client = new Client(self, config, builder, netLayer).withListener(this);
 

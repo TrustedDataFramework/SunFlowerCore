@@ -1,6 +1,5 @@
 package org.tdf.sunflower.net;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.sunflower.proto.Message;
 
@@ -9,75 +8,42 @@ import java.util.Collection;
 import java.util.Optional;
 
 @Slf4j
-public class Client implements Channel.ChannelListener {
-    private Channel.ChannelListener listener;
+public class Client implements ChannelListener {
+    // listener for channel event
+    private ChannelListener listener = ChannelListener.NONE;
     private PeerServerConfig config;
     MessageBuilder messageBuilder;
     PeersCache peersCache;
     private NetLayer netLayer;
 
-    @AllArgsConstructor
-    private abstract static class AbstractChannelListener implements Channel.ChannelListener {
-        protected Client client;
-        protected Channel.ChannelListener listener;
-
+    // channel listener which handling connect event only
+    private abstract static class AbstractChannelListener implements ChannelListener {
         @Override
         public void onMessage(Message message, Channel channel) {
-            client.onMessage(message, channel);
-            if (listener == null) return;
-            listener.onMessage(message, channel);
         }
 
         @Override
         public void onError(Throwable throwable, Channel channel) {
-            client.onError(throwable, channel);
-            if (listener == null) return;
-            listener.onError(throwable, channel);
         }
 
         @Override
         public void onClose(Channel channel) {
-            client.onClose(channel);
-            if (listener == null) return;
-            listener.onClose(channel);
         }
     }
 
-    private static class BootstrapChannelListener extends AbstractChannelListener {
-        private BootstrapChannelListener(Client client, Channel.ChannelListener listener) {
-            super(client, listener);
-        }
-
+    // special channel listener for handling bootstrap peers
+    private class BootstrapChannelListener extends AbstractChannelListener {
         @Override
         public void onConnect(PeerImpl remote, Channel channel) {
-            client.peersCache.bootstraps.put(remote, true);
-            Optional<Channel> o = client.peersCache.getChannel(remote);
-            if (o.map(Channel::isAlive).orElse(false)) {
-                log.error("the channel to " + remote + " had been created");
-                return;
-            }
-            client.peersCache.keep(remote, channel);
-            if (listener == null) return;
-            listener.onConnect(remote, channel);
+            peersCache.bootstraps.put(remote, true);
         }
     }
 
-    private static class TrustedChannelListener extends AbstractChannelListener {
-        private TrustedChannelListener(Client client, Channel.ChannelListener listener) {
-            super(client, listener);
-        }
-
+    // special channel listener for handling trusted peers
+    private class TrustedChannelListener extends AbstractChannelListener {
         @Override
         public void onConnect(PeerImpl remote, Channel channel) {
-            client.peersCache.trusted.put(remote, true);
-            Optional<Channel> o = client.peersCache.getChannel(remote);
-            if (o.map(Channel::isAlive).orElse(false)) {
-                log.error("the channel to " + remote + " had been created");
-                return;
-            }
-            client.peersCache.keep(remote, channel);
-            if (listener == null) return;
-            listener.onConnect(remote, channel);
+            peersCache.trusted.put(remote, true);
         }
     }
 
@@ -93,7 +59,7 @@ public class Client implements Channel.ChannelListener {
         this.netLayer = netLayer;
     }
 
-    Client withListener(Channel.ChannelListener listener) {
+    Client withListener(ChannelListener listener) {
         this.listener = listener;
         return this;
     }
@@ -108,27 +74,29 @@ public class Client implements Channel.ChannelListener {
             o.get().write(message);
             return;
         }
-        Optional<Channel> ch = createChannel(peer.getHost(), peer.getPort(), this, listener);
+        Optional<Channel> ch = getChannel(peer.getHost(), peer.getPort(), this, listener);
         ch.ifPresent(x -> x.write(message));
     }
 
     public void dial(String host, int port, Message message) {
-        createChannel(host, port, this, listener).ifPresent(ch -> ch.write(message));
+        getChannel(host, port, this, listener).ifPresent(ch -> ch.write(message));
     }
 
     void bootstrap(Collection<URI> uris) {
         for (URI uri : uris) {
-            createChannel(uri.getHost(), uri.getPort(), new BootstrapChannelListener(this, listener));
+            getChannel(uri.getHost(), uri.getPort(), this, listener, new BootstrapChannelListener());
         }
     }
 
     void trust(Collection<URI> trusted) {
         for (URI uri : trusted) {
-            createChannel(uri.getHost(), uri.getPort(), new TrustedChannelListener(this, listener));
+            getChannel(uri.getHost(), uri.getPort(), this, listener, new TrustedChannelListener());
         }
     }
 
-    private Optional<Channel> createChannel(String host, int port, Channel.ChannelListener... listeners) {
+    // try to get channel from cache, if channel not exists in cache,
+    // create from net layer
+    private Optional<Channel> getChannel(String host, int port, ChannelListener... listeners) {
         Optional<Channel> ch = peersCache.getChannels()
                 .filter(
                         x -> x.getRemote().map(
