@@ -152,7 +152,7 @@ public class Start {
         // register event listeners
         consortiumRepository.addListeners(engine.getStateRepository());
         // None consensus actually has no genesis block
-        if(engine == ConsensusEngine.NONE) return engine;
+        if (engine == ConsensusEngine.NONE) return engine;
         consortiumRepository.saveGenesisBlock(engine.getGenesisBlock());
         return engine;
     }
@@ -204,7 +204,8 @@ public class Start {
     // create message queue service
     @Bean
     public MessageQueue messageQueue(MessageQueueConfig config) {
-        String name = config.getName().toLowerCase().trim();
+        String name = config.getName();
+        name = name == null ? "" : name.toLowerCase().trim();
         if (name.equals("none")) return MessageQueue.NONE;
         return new SocketIOMessageQueue(config);
     }
