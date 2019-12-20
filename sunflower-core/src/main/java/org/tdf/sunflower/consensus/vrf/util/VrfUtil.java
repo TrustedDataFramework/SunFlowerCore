@@ -1,12 +1,10 @@
 package org.tdf.sunflower.consensus.vrf.util;
 
-import org.tdf.rlp.RLPCodec;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Header;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
+import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
@@ -19,6 +17,8 @@ import org.tdf.sunflower.consensus.vrf.keystore.FileSystemKeystore;
 import org.tdf.sunflower.consensus.vrf.struct.VrfBlockFields;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.ByteUtil;
 
 import lombok.Getter;
@@ -103,13 +103,17 @@ public class VrfUtil {
         return getDifficulty(block.getPayload());
     }
 
-    public static void setNonce(Block block, byte[] nonce) {
-        HexBytes payload = block.getPayload();
+    public static void setNonce(Header header, byte[] nonce) {
+        HexBytes payload = header.getPayload();
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
         vrfBlockFields.setNonce(nonce);
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        block.setPayload(HexBytes.fromBytes(encoded));
+        header.setPayload(HexBytes.fromBytes(encoded));
+    }
+
+    public static void setNonce(Block block, byte[] nonce) {
+        setNonce(block.getHeader(), nonce);
     }
 
     public static void setNonce(Block block, HexBytes nonce) {
@@ -120,26 +124,34 @@ public class VrfUtil {
         setNonce(block, ByteUtil.hexStringToBytes(nonce));
     }
 
-    public static void setMiner(Block block, byte[] miner) {
-        HexBytes payload = block.getPayload();
+    public static void setMiner(Header header, byte[] miner) {
+        HexBytes payload = header.getPayload();
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
         vrfBlockFields.setMiner(miner);
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        block.setPayload(HexBytes.fromBytes(encoded));
+        header.setPayload(HexBytes.fromBytes(encoded));
+    }
+
+    public static void setMiner(Block block, byte[] miner) {
+        setMiner(block.getHeader(), miner);
     }
 
     public static void setMiner(Block block, String miner) {
         setMiner(block, ByteUtil.hexStringToBytes(miner));
     }
 
-    public static void setDifficulty(Block block, byte[] difficulty) {
-        HexBytes payload = block.getPayload();
+    public static void setDifficulty(Header header, byte[] difficulty) {
+        HexBytes payload = header.getPayload();
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
         vrfBlockFields.setDifficulty(difficulty);
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        block.setPayload(HexBytes.fromBytes(encoded));
+        header.setPayload(HexBytes.fromBytes(encoded));
+    }
+
+    public static void setDifficulty(Block block, byte[] difficulty) {
+        setDifficulty(block.getHeader(), difficulty);
     }
 
     public static void setDifficulty(Block block, HexBytes difficulty) {
@@ -150,13 +162,17 @@ public class VrfUtil {
         setDifficulty(block, ByteUtil.hexStringToBytes(difficulty));
     }
 
-    public static void setProposalProof(Block block, ProposalProof proposalProof) {
-        HexBytes payload = block.getPayload();
+    public static void setProposalProof(Header header, ProposalProof proposalProof) {
+        HexBytes payload = header.getPayload();
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
         vrfBlockFields.setProposalProof(proposalProof.getEncoded());
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        block.setPayload(HexBytes.fromBytes(encoded));
+        header.setPayload(HexBytes.fromBytes(encoded));
+    }
+
+    public static void setProposalProof(Block block, ProposalProof proposalProof) {
+        setProposalProof(block.getHeader(), proposalProof);
     }
 
     public static VrfBlockFields getVrfBlockFields(HexBytes payload) {

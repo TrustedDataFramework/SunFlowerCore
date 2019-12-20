@@ -6,6 +6,7 @@ import org.tdf.sunflower.proto.Message;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 @Slf4j
 public class Client implements ChannelListener {
@@ -15,37 +16,6 @@ public class Client implements ChannelListener {
     MessageBuilder messageBuilder;
     PeersCache peersCache;
     private NetLayer netLayer;
-
-    // channel listener which handling connect event only
-    private abstract static class AbstractChannelListener implements ChannelListener {
-        @Override
-        public void onMessage(Message message, Channel channel) {
-        }
-
-        @Override
-        public void onError(Throwable throwable, Channel channel) {
-        }
-
-        @Override
-        public void onClose(Channel channel) {
-        }
-    }
-
-    // special channel listener for handling bootstrap peers
-    private class BootstrapChannelListener extends AbstractChannelListener {
-        @Override
-        public void onConnect(PeerImpl remote, Channel channel) {
-            peersCache.bootstraps.put(remote, true);
-        }
-    }
-
-    // special channel listener for handling trusted peers
-    private class TrustedChannelListener extends AbstractChannelListener {
-        @Override
-        public void onConnect(PeerImpl remote, Channel channel) {
-            peersCache.trusted.put(remote, true);
-        }
-    }
 
     public Client(
             PeerImpl self,
@@ -69,29 +39,67 @@ public class Client implements ChannelListener {
     }
 
     public void dial(Peer peer, Message message) {
-        Optional<Channel> o = peersCache.getChannel(peer.getID());
-        if (o.isPresent() && !o.get().isClosed()) {
-            o.get().write(message);
-            return;
-        }
-        Optional<Channel> ch = getChannel(peer.getHost(), peer.getPort(), this, listener);
-        ch.ifPresent(x -> x.write(message));
+        getChannel(peer).ifPresent(x -> x.write(message));
     }
 
     public void dial(String host, int port, Message message) {
-        getChannel(host, port, this, listener).ifPresent(ch -> ch.write(message));
+        getChannel(host, port, this, listener)
+                .ifPresent(ch -> ch.write(message));
     }
 
     void bootstrap(Collection<URI> uris) {
         for (URI uri : uris) {
-            getChannel(uri.getHost(), uri.getPort(), this, listener, new BootstrapChannelListener());
+            connect(uri.getHost(), uri.getPort(), (peer) -> peersCache.bootstraps.put(peer, true));
         }
     }
 
     void trust(Collection<URI> trusted) {
         for (URI uri : trusted) {
-            getChannel(uri.getHost(), uri.getPort(), this, listener, new TrustedChannelListener());
+            connect(uri.getHost(), uri.getPort(), (peer) -> peersCache.trusted.put(peer, true));
         }
+    }
+
+    // functional interface for connect to bootstrap and trusted peer
+    // consumer may be called more than once
+    // usually called when server starts
+    private void connect(String host, int port, Consumer<PeerImpl> connectionConsumer) {
+        getChannel(host, port, this, listener, new ChannelListener() {
+            @Override
+            public void onConnect(PeerImpl remote, Channel channel) {
+                connectionConsumer.accept(remote);
+            }
+
+            @Override
+            public void onMessage(Message message, Channel channel) {
+
+            }
+
+            @Override
+            public void onError(Throwable throwable, Channel channel) {
+
+            }
+
+            @Override
+            public void onClose(Channel channel) {
+
+            }
+        })
+        .flatMap(Channel::getRemote)
+        // if the connection had already created, onConnect will not triggered
+        // but the peer will be handled here
+        .ifPresent(connectionConsumer);
+    }
+
+    // try to get channel from cache, if channel not exists in cache,
+    // create from net layer
+    private Optional<Channel> getChannel(Peer peer) {
+        Optional<Channel> ch = peersCache
+                .getChannel(peer.getID())
+                .filter(Channel::isAlive);
+        if(ch.isPresent()) return ch;
+        return netLayer
+                .createChannel(peer.getHost(), peer.getPort(), this, listener)
+                .filter(Channel::isAlive);
     }
 
     // try to get channel from cache, if channel not exists in cache,
@@ -103,9 +111,13 @@ public class Client implements ChannelListener {
                                 p -> p.getHost().equals(host) && p.getPort() == port
                         ).orElse(false)
                 )
-                .findAny();
+                .findAny()
+                .filter(Channel::isAlive);
         if (ch.isPresent()) return ch;
-        ch = netLayer.createChannel(host, port, listeners);
+        ch = netLayer
+                .createChannel(host, port, listeners)
+                .filter(Channel::isAlive)
+        ;
         ch.ifPresent(c -> c.write(messageBuilder.buildPing()));
         return ch;
     }

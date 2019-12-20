@@ -51,7 +51,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
 
     private PeerServer peerServer;
     private VrfMiner vrfMiner;
-    private ConsortiumRepository blockRepository;
+//    private ConsortiumRepository blockRepository;
 
     public VrfEngine() {
 
@@ -84,7 +84,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         Block blockNew = RLPCodec.decode(bodyBytes, Block.class);
         log.info("New mined block received from peer. Num #{}, Hash {}", blockNew.getHeight(),
                 blockNew.getHash().toString());
-        saveBlock(blockNew, blockRepository, this);
+        saveBlock(blockNew, getConsortiumRepository(), this);
     }
 
     private void processCommitProofMsg(byte[] bodyBytes) {
