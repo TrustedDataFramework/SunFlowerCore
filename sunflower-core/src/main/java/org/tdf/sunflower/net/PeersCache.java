@@ -204,13 +204,11 @@ class PeersCache {
 
     // get channel by peer id
     Optional<Channel> getChannel(HexBytes id) {
-        int idx = self.subTree(id.getBytes());
-        if (peers[idx] == null) return Optional.empty();
-        return peers[idx].channels.keySet().stream()
-                .filter(p -> p.getID().equals(id))
-                .findAny()
-                .map(p -> peers[idx].channels.get(p))
-                ;
+        return getChannel(PeerImpl
+                .builder()
+                .ID(id)
+                .build()
+        );
     }
 
     boolean hasBlocked(PeerImpl peer) {
