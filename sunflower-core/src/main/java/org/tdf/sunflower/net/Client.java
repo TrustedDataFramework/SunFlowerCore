@@ -162,7 +162,7 @@ public class Client implements ChannelListener {
         Optional<PeerImpl> remote = channel.getRemote();
         if (!remote.isPresent()) return;
 //        log.error("close channel to " + remote.get());
-        peersCache.remove(remote.get(), " channel closed");
+        peersCache.remove(remote.get().getID(), " channel closed");
     }
 
     void relay(Message message, PeerImpl receivedFrom) {

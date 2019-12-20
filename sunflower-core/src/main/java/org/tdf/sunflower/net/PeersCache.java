@@ -18,7 +18,7 @@ class PeersCache {
 
     // helper to avoid generic array
     // kademlia k-bucket
-    static class Bucket extends ConcurrentHashMap<PeerImpl, PeerChannel>{}
+    static class Bucket extends ConcurrentHashMap<HexBytes, PeerChannel>{}
 
     // helper for store peer and channel in a single value in Bucket
     @AllArgsConstructor
@@ -56,7 +56,7 @@ class PeersCache {
 
     boolean contains(PeerImpl peer) {
         int idx = self.subTree(peer);
-        return peers[idx] != null && peers[idx].containsKey(peer);
+        return peers[idx] != null && peers[idx].containsKey(peer.getID());
     }
 
     void keep(PeerImpl peer, Channel channel) {
@@ -72,7 +72,7 @@ class PeersCache {
         // if the peer already had been put
         Optional<PeerImpl> o =
                 Optional.ofNullable(peers[idx])
-                .map(x -> x.get(peer)).map(x -> x.peer);
+                .map(x -> x.get(peer.getID())).map(x -> x.peer);
 
         // increase its score
         if (o.isPresent()) {
@@ -88,7 +88,7 @@ class PeersCache {
                 .build();
 
         if (size() < config.getMaxPeers()) {
-            peers[idx].put(newPeerChannel.peer, newPeerChannel);
+            peers[idx].put(peer.getID(), newPeerChannel);
             return;
         }
 
@@ -118,17 +118,17 @@ class PeersCache {
                 .stream().findAny()
                 .ifPresent(x -> remove(x, "the new node " + peer + " has more priority than " + x));
 
-        peers[idx].put(newPeerChannel.peer, newPeerChannel);
+        peers[idx].put(peer.getID(), newPeerChannel);
     }
 
     // remove the peer and close the channel
-    void remove(PeerImpl peer, String reason) {
-        int idx = self.subTree(peer);
+    void remove(HexBytes peerID, String reason) {
+        int idx = self.subTree(peerID.getBytes());
         if (peers[idx] == null) {
             return;
         }
-        PeerChannel peerChannel = peers[idx].get(peer);
-        peers[idx].remove(peer);
+        PeerChannel peerChannel = peers[idx].get(peerID);
+        peers[idx].remove(peerID);
         if (peerChannel == null) return;
         peerChannel.channel.close(reason);
     }
@@ -165,7 +165,7 @@ class PeersCache {
             return;
         }
         // remove the peer and disconnect to it
-        remove(peer, "block the peer " + peer);
+        remove(peer.getID(), "block the peer " + peer);
         peer.score = EVIL_SCORE;
         blocked.put(peer, true);
     }
@@ -176,13 +176,13 @@ class PeersCache {
         if (peers[idx] == null) return;
         Optional.ofNullable(
                 peers[idx]
-                .get(peer)
+                .get(peer.getID())
         ).map(b -> b.peer).filter(p -> {
             p.score -= p.score < 8 ? p.score : 8;
             p.score /= 2;
             return p.score == 0;
         })
-        .ifPresent(x -> remove(x, " the score of " + x + " is 0"));
+        .ifPresent(x -> remove(x.getID(), " the score of " + x + " is 0"));
     }
 
     // decrease score of all peer
@@ -196,7 +196,7 @@ class PeersCache {
                     p.score /= 2;
                     return p.score == 0;
                 }).collect(Collectors.toList());
-        toRemoves.forEach(x -> remove(x, " the score of " + x + " is 0"));
+        toRemoves.forEach(x -> remove(x.getID(), " the score of " + x + " is 0"));
         List<PeerImpl> toRestores
                 = blocked.keySet().stream()
                 .filter(p -> {
@@ -224,7 +224,7 @@ class PeersCache {
     Optional<Channel> getChannel(PeerImpl peer) {
         int idx = self.subTree(peer);
         return Optional.ofNullable(peers[idx])
-                .map(x -> x.get(peer))
+                .map(x -> x.get(peer.getID()))
                 .map(x -> x.channel);
     }
 
