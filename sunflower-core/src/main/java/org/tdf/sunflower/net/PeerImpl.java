@@ -19,7 +19,7 @@ import java.util.Optional;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PeerImpl implements Peer {
+public class PeerImpl implements Peer, Comparable<PeerImpl> {
     private static final int PUBLIC_KEY_LENGTH = 32;
     private static final int PRIVATE_KEY_LENGTH = 64;
 
@@ -151,7 +151,12 @@ public class PeerImpl implements Peer {
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(ID.getBytes());
+        return ID.hashCode();
+    }
+
+    @Override
+    public int compareTo(PeerImpl o) {
+        return ID.compareTo(o.ID);
     }
 
     public static void main(String[] args) throws Exception {
