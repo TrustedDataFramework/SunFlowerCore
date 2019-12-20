@@ -16,7 +16,7 @@ public class Client implements ChannelListener {
     MessageBuilder messageBuilder;
     PeersCache peersCache;
     private NetLayer netLayer;
-
+    private PeerImpl self;
     public Client(
             PeerImpl self,
             PeerServerConfig config,
@@ -27,6 +27,7 @@ public class Client implements ChannelListener {
         this.config = config;
         this.messageBuilder = messageBuilder;
         this.netLayer = netLayer;
+        this.self = self;
     }
 
     Client withListener(ChannelListener listener) {
@@ -93,6 +94,8 @@ public class Client implements ChannelListener {
     // try to get channel from cache, if channel not exists in cache,
     // create from net layer
     private Optional<Channel> getChannel(Peer peer) {
+        // cannot create channel connect to your self
+        if(peer.equals(self)) return Optional.empty();
         Optional<Channel> ch = peersCache
                 .getChannel(peer.getID())
                 .filter(Channel::isAlive);
@@ -130,6 +133,9 @@ public class Client implements ChannelListener {
         ) {
             channel.close("discovery is not enabled accept bootstraps and trusted only");
             return;
+        }
+        if(remote.equals(self)){
+            channel.close("close channel connect to self");
         }
         Optional<Channel> o = peersCache.getChannel(remote);
         if (o.map(Channel::isAlive).orElse(false)) {
