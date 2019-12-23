@@ -15,6 +15,7 @@ import java.util.Arrays;
 
 /**
  * hex bytes helper for json marshal/unmarshal
+ * non-null immutable wrapper fo byte[] inspired by ByteArrayWrapper
  * non-null
  * <p>
  * HexBytes bytes = mapper.readValue("ffff", HexBytes.class);
@@ -37,6 +38,7 @@ public class HexBytes implements Comparable<HexBytes>, Serializable {
 
     public static final byte[] EMPTY_BYTES = new byte[0];
 
+    // singleton zero value of HexBytes
     public static final HexBytes EMPTY = new HexBytes(EMPTY_BYTES);
 
     public static String encode(byte[] bytes) {

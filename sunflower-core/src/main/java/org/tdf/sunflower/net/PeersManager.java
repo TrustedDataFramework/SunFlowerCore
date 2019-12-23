@@ -52,7 +52,7 @@ public class PeersManager implements Plugin {
                             .map(PeerImpl::parse)
                             .filter(Optional::isPresent)
                             .map(Optional::get)
-                            .filter(x -> !cache.has(x) && !x.equals(server.getSelf()))
+                            .filter(x -> !cache.contains(x) && !x.equals(server.getSelf()))
                             .forEach(x -> pending.put(x, true));
                 } catch (InvalidProtocolBufferException e) {
                     log.error("parse peers message failed");
@@ -89,7 +89,7 @@ public class PeersManager implements Plugin {
 
                     pending.keySet()
                             .stream()
-                            .filter(x -> !cache.has(x))
+                            .filter(x -> !cache.contains(x))
                             .limit(config.getMaxPeers())
                             .forEach(
                                     p -> {
@@ -110,7 +110,7 @@ public class PeersManager implements Plugin {
             // keep channel to bootstraps and trusted alive
             Stream.of(cache.bootstraps.keySet().stream(), cache.trusted.keySet().stream())
                     .flatMap(Functions.identity())
-                    .filter(x -> !cache.has(x))
+                    .filter(x -> !cache.contains(x))
                     .forEach(x -> server.getClient().dial(x, builder.buildPing()));
             return;
         }

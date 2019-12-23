@@ -114,6 +114,9 @@ public class P2PDebug {
                         .trim().getBytes(StandardCharsets.UTF_8));
                 continue;
             }
+            if(line.startsWith("shutdown")){
+                break;
+            }
             List<String> arguments = Arrays.asList(line.split("\\s"));
             if (arguments.size() == 0) continue;
             for (Peer p : server.getPeers()) {
@@ -125,5 +128,6 @@ public class P2PDebug {
                 }
             }
         }
+        server.stop();
     }
 }

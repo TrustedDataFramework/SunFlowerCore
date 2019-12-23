@@ -39,6 +39,7 @@ class HexBytesUtils {
         @Override
         public HexBytes deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
             JsonNode node = p.getCodec().readTree(p);
+            if(node.isNull()) return HexBytes.empty();
             String encoded = node.asText();
             if (encoded == null || encoded.equals("")) {
                 return HexBytes.empty();
