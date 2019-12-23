@@ -24,12 +24,18 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.spongycastle.util.encoders.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
+import org.tdf.sunflower.TestContext;
+import org.tdf.sunflower.consensus.poa.PoAUtils;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.contract.PrecompiledContracts;
 import org.tdf.sunflower.consensus.vrf.contract.VrfContracts;
@@ -47,10 +53,11 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.consensus.vrf.vm.DataWord;
-import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.service.ConsortiumRepositoryService;
+import org.tdf.sunflower.service.BlockRepositoryService;
 import org.tdf.sunflower.types.Header;
 
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = TestContext.class)
 public class PendingVrfStateTest {
 
     private static final byte[] vrfSk0 = org.spongycastle.util.encoders.Hex
@@ -116,9 +123,10 @@ public class PendingVrfStateTest {
     private static final DataWord contractAddr = DataWord
             .of("0000000000000000000000000000000000000000000000000000000000000011");
 
-    private static BlockRepository repository;
-    private static ValidatorManager validatorManager;
-    private static Header[] blockHeaders;
+    @Autowired
+    private BlockRepositoryService repository;
+    private ValidatorManager validatorManager;
+    private Header[] blockHeaders;
 
     private ProposalProof createProposalProof(int index, long blockNum, int round, byte[] seed) {
         PrivateKey privateKey = new Ed25519PrivateKey(VRF_SK_ARRAY[index]);
@@ -174,12 +182,12 @@ public class PendingVrfStateTest {
         return proof;
     }
 
-    @BeforeClass
-    public static void setup() {
+    @Before
+    public void setup() {
         assertTrue(VRF_SK_ARRAY.length == COINBASE_ARRAY.length);
         assertTrue(COINBASE_ARRAY.length == DEPOSIT_ARRAY.length);
 
-        repository = ConsortiumRepositoryService.NONE;
+//        repository = ConsortiumRepositoryService.NONE;
 //        Repository cacheTrack = repository.startTracking();
 
         blockHeaders = new Header[COINBASE_ARRAY.length];
@@ -220,10 +228,11 @@ public class PendingVrfStateTest {
             nonce[COINBASE_ARRAY[i].length + 3] = (byte) (i & 0xFF);
             long time = System.currentTimeMillis() / 1000;
             blockHeaders[i] = Header.builder().hashPrev(HexBytes.fromBytes(recentHash)).version(1)
-                    .createdAt(System.currentTimeMillis()).height(i).build();
+                    .createdAt(time).height(i).build();
             VrfUtil.setNonce(blockHeaders[i], nonce);
             VrfUtil.setDifficulty(blockHeaders[i], emptyArray);
             VrfUtil.setMiner(blockHeaders[i], COINBASE_ARRAY[i]);
+            blockHeaders[i].setHash(HexBytes.fromBytes(PoAUtils.getHash(blockHeaders[i])));
         }
 
         // Setup validator manager
