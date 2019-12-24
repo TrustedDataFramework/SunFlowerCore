@@ -27,6 +27,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
+import org.tdf.sunflower.consensus.poa.PoAUtils;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.core.VrfProof;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
@@ -68,7 +69,7 @@ public class VrfProofTest {
     private static final byte[][] COINBASE_ARRAY = new byte[][] { coinbase0, coinbase1, coinbase2, coinbase3, coinbase4,
             coinbase5, coinbase6, coinbase7, coinbase8, coinbase9 };
 
-    private static Header createBlockHeaders(int index, byte[] coinbase) {
+    private static Header createBlockHeader(int index, byte[] coinbase) {
         byte[] emptyArray = new byte[0];
         byte[] recentHash = emptyArray;
         // Compose new nonce with coinbase and index and initialize new block header
@@ -85,6 +86,7 @@ public class VrfProofTest {
         VrfUtil.setNonce(header, nonce);
         VrfUtil.setDifficulty(header, emptyArray);
         VrfUtil.setMiner(header, coinbase);
+        header.setHash(HexBytes.fromBytes(PoAUtils.getHash(header)));
 
         return header;
     }
@@ -219,7 +221,7 @@ public class VrfProofTest {
             for (int i = 0; i < nodeCount; ++i) {
                 // Setup block header for every node
                 DataWord pubkey = DataWord.of(skArray[i].generatePublicKey().getEncoded());
-                blockHeaders[i] = createBlockHeaders(loopCount - loop, pubkey.getLast20Bytes());
+                blockHeaders[i] = createBlockHeader(loopCount - loop, pubkey.getLast20Bytes());
 
                 byte[] vrfPk = skArray[i].generatePublicKey().getEncoded();
                 // Must use VrfProve Util to prove with Role Code
@@ -355,7 +357,7 @@ public class VrfProofTest {
             for (int i = 0; i < nodeCount; ++i) {
                 // Setup block header for every node
                 DataWord pubkey = DataWord.of(skArray[i].generatePublicKey().getEncoded());
-                blockHeaders[i] = createBlockHeaders(loopCount - loop, pubkey.getLast20Bytes());
+                blockHeaders[i] = createBlockHeader(loopCount - loop, pubkey.getLast20Bytes());
 
                 byte[] vrfPk = skArray[i].generatePublicKey().getEncoded();
                 // Must use VrfProve Util to prove with Role Code
@@ -491,7 +493,7 @@ public class VrfProofTest {
             for (int i = 0; i < nodeCount; ++i) {
                 // Setup block header for every node
                 DataWord pubkey = DataWord.of(skArray[i].generatePublicKey().getEncoded());
-                blockHeaders[i] = createBlockHeaders(loopCount - loop, pubkey.getLast20Bytes());
+                blockHeaders[i] = createBlockHeader(loopCount - loop, pubkey.getLast20Bytes());
 
                 byte[] vrfPk = skArray[i].generatePublicKey().getEncoded();
                 // Must use VrfProve Util to prove with Role Code
@@ -639,7 +641,7 @@ public class VrfProofTest {
             for (int i = 0; i < nodeCount; ++i) {
                 // Setup block header for every node
                 DataWord pubkey = DataWord.of(skArray[i].generatePublicKey().getEncoded());
-                blockHeaders[i] = createBlockHeaders(loopCount - loop, pubkey.getLast20Bytes());
+                blockHeaders[i] = createBlockHeader(loopCount - loop, pubkey.getLast20Bytes());
 
                 byte[] vrfPk = skArray[i].generatePublicKey().getEncoded();
                 // Must use VrfProve Util to prove with Role Code
