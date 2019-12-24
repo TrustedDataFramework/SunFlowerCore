@@ -30,7 +30,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     Function<byte[], byte[]> function;
 
-    MemoryCachedStore<byte[]> cache;
+    Store<byte[], byte[]> store;
 
     Codec<K, byte[]> kCodec;
 
@@ -75,7 +75,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
             root = Node.newLeaf(TrieKey.fromNormal(key), value);
             return;
         }
-        root.insert(TrieKey.fromNormal(key), value, cache);
+        root.insert(TrieKey.fromNormal(key), value, store);
     }
 
     @Override
@@ -93,7 +93,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     private void removeBytes(byte[] data) {
         if (data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
         if (root == null) return;
-        root = root.delete(TrieKey.fromNormal(data), cache);
+        root = root.delete(TrieKey.fromNormal(data), store);
     }
 
     @Override
@@ -142,7 +142,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     public byte[] commit() {
         if (root == null) return nullHash;
         if (!root.isDirty()) return root.getHash();
-        byte[] hash = this.root.commit(function, cache, true).asBytes();
+        byte[] hash = this.root.commit(function, store, true).asBytes();
         if (root.isDirty() || root.getHash() == null)
             throw new RuntimeException("unexpected error: still dirty after commit");
         return hash;
@@ -150,7 +150,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     @Override
     public void flush() {
-        cache.flush();
+        store.flush();
     }
 
     @Override
@@ -162,17 +162,6 @@ public class TrieImpl<K, V> implements Trie<K, V> {
                 nullHash,
                 Node.fromRootHash(rootHash, new ReadOnlyStore<>(store)),
                 function, new MemoryCachedStore<>(store), kCodec, vCodec
-        );
-    }
-
-    // for tests only
-    TrieImpl<K, V> createSnapshot() {
-        commit();
-        MemoryCachedStore<byte[]> cloned = cache.clone();
-        return new TrieImpl<>(
-                nullHash,
-                Node.fromRootHash(commit(), new ReadOnlyStore<>(cloned)),
-                function, cloned, kCodec, vCodec
         );
     }
 

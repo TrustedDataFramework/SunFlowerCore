@@ -350,7 +350,7 @@ public class TrieTest {
         trie.put("dog", "puppy");
         assertEquals("05ae693aac2107336a79309e0c60b24a7aac6aa3edecaef593921500d33c63c4", Hex.toHexString(impl.commit()));
 
-        Trie<String, String> trie2 = impl.createSnapshot();
+        Trie<String, String> trie2 = impl;
         assert trie2.get("dog").get().equals("puppy");
         trie.put("dogglesworth", "cat");
         impl.commit();
@@ -501,7 +501,7 @@ public class TrieTest {
     public void testGetFromRootNode() {
         TrieImpl<String, String> trie1 = newStringTrie();
         trie1.put(cat, LONG_STRING);
-        Trie<String, String> trie2 = trie1.createSnapshot();
+        Trie<String, String> trie2 = trie1;
         assertEquals(LONG_STRING, trie2.get(cat).get());
     }
 
@@ -621,7 +621,6 @@ public class TrieTest {
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000022"), Hex.decode("22"));
 
         // Reset trie to refresh the nodes
-        trie = trie.createSnapshot();
 
         // Update trie: root -> dirty BranchNode (..., NodeValue (less than 32 bytes), ..., dirty NodeValue, ...)
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000033"), Hex.decode("33"));
