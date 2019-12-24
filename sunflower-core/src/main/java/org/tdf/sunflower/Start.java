@@ -153,6 +153,7 @@ public class Start {
         // register event listeners
         consortiumRepository.addListeners(engine.getStateRepository());
         // None consensus actually has no genesis block
+        transactionPool.setEngine(engine);
         if (engine == ConsensusEngine.NONE) return engine;
         consortiumRepository.saveGenesisBlock(engine.getGenesisBlock());
         return engine;
