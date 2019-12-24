@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class ChatEventHandler {
     @Autowired
-    MessageQueue<String, Message> messageQueue;
+    BasicMessageQueue messageQueue;
 
     @PostConstruct
     public void init() {

@@ -15,6 +15,7 @@ import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.facade.*;
+import org.tdf.sunflower.mq.BasicMessageQueue;
 import org.tdf.sunflower.mq.MessageQueue;
 import org.tdf.sunflower.mq.SocketIOMessageQueue;
 import org.tdf.sunflower.net.PeerServer;
@@ -203,10 +204,10 @@ public class Start {
 
     // create message queue service
     @Bean
-    public MessageQueue messageQueue(MessageQueueConfig config) {
+    public BasicMessageQueue messageQueue(MessageQueueConfig config) {
         String name = config.getName();
         name = name == null ? "" : name.toLowerCase().trim();
-        if (name.equals("none")) return MessageQueue.NONE;
+        if (name.equals("none")) return BasicMessageQueue.NONE;
         return new SocketIOMessageQueue(config);
     }
 }

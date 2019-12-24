@@ -7,7 +7,7 @@ import org.tdf.sunflower.MessageQueueConfig;
 
 import java.util.function.Consumer;
 
-public class SocketIOMessageQueue implements MessageQueue<String, Message> {
+public class SocketIOMessageQueue implements BasicMessageQueue{
     private MessageQueueConfig config;
     private SocketIOServer socketIOServer;
 
