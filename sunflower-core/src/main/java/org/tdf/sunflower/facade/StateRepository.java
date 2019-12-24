@@ -9,6 +9,7 @@ import org.tdf.sunflower.types.State;
 import java.util.Collection;
 import java.util.Optional;
 
+@Deprecated // use state trie instead
 public interface StateRepository extends ConsortiumRepositoryListener {
     <T extends State<T>> void register(Block genesis, T genesisState) throws StateUpdateException;
 

@@ -11,6 +11,7 @@ import org.tdf.sunflower.types.State;
 
 import java.util.*;
 
+@Deprecated // use state trie instead
 public class ConsortiumStateRepository implements StateRepository {
     private Map<Class<? extends State>, StateFactory> factories;
 
