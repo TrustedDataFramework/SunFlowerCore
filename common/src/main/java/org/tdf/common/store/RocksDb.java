@@ -207,7 +207,7 @@ public class RocksDb implements DatabaseStore {
 
             } catch (Exception e) {
                 log.error("Failed to seek by prefix in db '{}'", name, e);
-                return Optional.empty();
+                throw new RuntimeException(e);
             }
 
             if (log.isTraceEnabled())
@@ -232,7 +232,7 @@ public class RocksDb implements DatabaseStore {
             return Optional.ofNullable(ret);
         } catch (RocksDBException e) {
             log.error("Failed to get from db '{}'", name, e);
-            return Optional.empty();
+            throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -266,6 +266,7 @@ public class RocksDb implements DatabaseStore {
                 }
                 return result;
             } catch (Exception e) {
+                log.error("Error iterating db '{}'", name, e);
                 throw new RuntimeException(e);
             }
         } finally {
@@ -279,8 +280,8 @@ public class RocksDb implements DatabaseStore {
         try {
             return db.get(bytes) != null;
         } catch (RocksDBException e) {
-            e.printStackTrace();
-            return false;
+            log.error("Error get key from db '{}'", name, e);
+            throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -298,7 +299,8 @@ public class RocksDb implements DatabaseStore {
             }
         }
         catch(Exception e){
-            e.printStackTrace();
+            log.error("Error put into db '{}'", name, e);
+            throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -315,6 +317,7 @@ public class RocksDb implements DatabaseStore {
                 }
                 return res;
             } catch (Exception e) {
+                log.error("Error iterating db '{}'", name, e);
                 throw new RuntimeException(e);
             }
         } finally {
@@ -332,6 +335,7 @@ public class RocksDb implements DatabaseStore {
                 }
                 return true;
             } catch (Exception e) {
+                log.error("Error iterating db '{}'", name, e);
                 throw new RuntimeException(e);
             }
         } finally {
@@ -381,7 +385,7 @@ public class RocksDb implements DatabaseStore {
             }
             return result;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error iterating db '{}'", name, e);
             throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();

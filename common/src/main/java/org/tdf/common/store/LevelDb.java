@@ -270,8 +270,8 @@ public class LevelDb implements DatabaseStore {
             }
             return result;
         } catch (Exception e) {
-            e.printStackTrace();
-            return new ArrayList<>();
+            log.error("Error iterating db '{}'", name, e);
+            throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -319,8 +319,8 @@ public class LevelDb implements DatabaseStore {
             }
             return res;
         } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
+            log.error("Error iterating db '{}'", name, e);
+            throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -336,8 +336,8 @@ public class LevelDb implements DatabaseStore {
             }
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
-            return true;
+            log.error("Error iterating db '{}'", name, e);
+            throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -368,7 +368,7 @@ public class LevelDb implements DatabaseStore {
             }
             return result;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error iterating db '{}'", name, e);
             throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();

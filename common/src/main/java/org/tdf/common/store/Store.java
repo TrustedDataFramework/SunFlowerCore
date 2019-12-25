@@ -2,10 +2,14 @@ package org.tdf.common.store;
 
 import java.util.*;
 
+/**
+ * abstract storage of key-value pairs
+ * @param <K> key
+ * @param <V> value
+ */
 public interface Store<K, V> {
     /**
      * Gets a value by its key
-     *
      * @return value or empty if no such key in the source
      */
     Optional<V> get(K k);
