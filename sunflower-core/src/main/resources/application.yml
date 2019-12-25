@@ -21,6 +21,16 @@ sunflower:
     block-interval: '30'
     enable-mining: 'true'
     miner-coin-base: '1JWhUiZCWps56uZckAvzxy2ex6VGhrMXdD'
+    
+    # VRF configs
+ # consensus:
+ #   name: 'vrf'
+ #   genesis: 'genesis/vrf.json'
+ #   block-interval: '3'
+ #   enable-mining: 'false'
+ #   miner-coin-base: '1JWhUiZCWps56uZckAvzxy2ex6VGhrMXdD'
+    # relative path to /home/$USER/.sunflower
+#    vrf-data-dir: vrfdata
 
   p2p:
     name: 'websocket' # choose p2p protocol, gRPC is default optional: websocket
