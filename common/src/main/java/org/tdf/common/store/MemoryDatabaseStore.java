@@ -1,5 +1,7 @@
 package org.tdf.common.store;
 
+import org.tdf.common.util.ByteArrayMap;
+
 import java.util.Map;
 import java.util.Optional;
 

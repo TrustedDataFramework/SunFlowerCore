@@ -1,11 +1,11 @@
-package org.tdf.sunflower.db;
+package org.tdf.common.store;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
+import org.iq80.leveldb.util.FileUtils;
 import org.rocksdb.*;
-import org.tdf.common.store.DBSettings;
-import org.tdf.common.store.DatabaseStore;
-import org.tdf.sunflower.util.FileUtils;
+import org.tdf.common.util.ByteArrayMap;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -136,7 +136,7 @@ public class RocksDb implements DatabaseStore {
 
     public void reset() {
         close();
-        FileUtils.recursiveDelete(getPath().toString());
+        FileUtils.deleteRecursively(getPath().toFile());
         init(dbSettings);
     }
 
@@ -168,7 +168,7 @@ public class RocksDb implements DatabaseStore {
                 try (WriteBatch batch = new WriteBatch();
                      WriteOptions writeOptions = new WriteOptions()) {
                     for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
-                        if (entry.getValue() == null) {
+                        if (entry.getValue() == null || entry.getValue() == EMPTY || entry.getValue().length == 0) {
                             batch.remove(entry.getKey());
                         } else {
                             batch.put(entry.getKey(), entry.getValue());
@@ -186,7 +186,7 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public Optional<byte[]> prefixLookup(byte[] key, int prefixBytes) {
+    public Optional<byte[]> prefixLookup(@NonNull byte[] key, int prefixBytes) {
         resetDbLock.readLock().lock();
         try {
 
@@ -221,7 +221,7 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public Optional<byte[]> get(byte[] key) {
+    public Optional<byte[]> get(@NonNull byte[] key) {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled())
@@ -239,10 +239,10 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public void put(byte[] key, byte[] val) {
+    public void put(@NonNull byte[] key, @NonNull byte[] val) {
         resetDbLock.readLock().lock();
         try {
-            if (val != null) {
+            if (val != EMPTY && val.length != 0) {
                 db.put(key, val);
             } else {
                 db.delete(key);
@@ -274,7 +274,7 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public boolean containsKey(byte[] bytes) {
+    public boolean containsKey(@NonNull byte[] bytes) {
         resetDbLock.readLock().lock();
         try {
             return db.get(bytes) != null;
@@ -287,11 +287,15 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public void putIfAbsent(byte[] key, byte[] val) {
+    public void putIfAbsent(@NonNull byte[] key, @NonNull byte[] val) {
         resetDbLock.readLock().lock();
         try {
             if (db.get(key) != null) return;
-            db.put(key, val);
+            if (val != EMPTY && val.length != 0) {
+                db.put(key, val);
+            } else {
+                db.delete(key);
+            }
         }
         catch(Exception e){
             e.printStackTrace();
@@ -336,7 +340,7 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public void remove(byte[] key) {
+    public void remove(@NonNull byte[] key) {
         resetDbLock.readLock().lock();
         try {
             db.delete(key);
@@ -364,5 +368,23 @@ public class RocksDb implements DatabaseStore {
     @Override
     public void flush() {
 
+    }
+
+    @Override
+    public Map<byte[], byte[]> asMap() {
+        resetDbLock.readLock().lock();
+        try {
+            RocksIterator iterator = db.newIterator();
+            Map<byte[], byte[]> result = new ByteArrayMap<>();
+            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                result.put(iterator.key(), iterator.value());
+            }
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        } finally {
+            resetDbLock.readLock().unlock();
+        }
     }
 }

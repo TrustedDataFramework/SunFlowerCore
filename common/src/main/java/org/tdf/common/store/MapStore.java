@@ -1,5 +1,7 @@
 package org.tdf.common.store;
 
+import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.tdf.common.util.ByteArrayMap;
 
 import java.util.*;
@@ -30,25 +32,25 @@ public class MapStore<K, V> implements Store<K, V> {
     }
 
     @Override
-    public Optional<V> get(K k) {
+    public Optional<V> get(@NonNull K k) {
         assertKeyIsNotByteArray(k);
         return Optional.ofNullable(map.get(k));
     }
 
     @Override
-    public void put(K k, V v) {
+    public void put(@NonNull K k, @NonNull V v) {
         assertKeyIsNotByteArray(k);
         map.put(k, v);
     }
 
     @Override
-    public void putIfAbsent(K k, V v) {
+    public void putIfAbsent(@NonNull K k, @NonNull V v) {
         assertKeyIsNotByteArray(k);
         map.putIfAbsent(k, v);
     }
 
     @Override
-    public void remove(K k) {
+    public void remove(@NonNull K k) {
         assertKeyIsNotByteArray(k);
         map.remove(k);
     }
@@ -64,7 +66,7 @@ public class MapStore<K, V> implements Store<K, V> {
     }
 
     @Override
-    public boolean containsKey(K k) {
+    public boolean containsKey(@NonNull K k) {
         assertKeyIsNotByteArray(k);
         return map.containsKey(k);
     }
@@ -86,5 +88,13 @@ public class MapStore<K, V> implements Store<K, V> {
 
     @Override
     public void flush() {
+    }
+
+    @Override
+    @SneakyThrows
+    public Map<K, V> asMap() {
+        Map<K, V> ret = map.getClass().newInstance();
+        ret.putAll(map);
+        return ret;
     }
 }

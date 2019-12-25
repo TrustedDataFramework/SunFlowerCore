@@ -7,6 +7,7 @@ import java.util.Set;
  * Interface represents DB source which is normally the final Source in the chain
  */
 public interface DatabaseStore extends BatchStore<byte[], byte[]> {
+    byte[] EMPTY = new byte[0];
     /**
      * Initializes DB (open table, connection, etc)
      * @param settings  DB settings

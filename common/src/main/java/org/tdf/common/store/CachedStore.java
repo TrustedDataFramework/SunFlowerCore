@@ -1,18 +1,17 @@
 package org.tdf.common.store;
 
 import lombok.NonNull;
+import org.tdf.common.util.ByteArrayMap;
 
-import java.util.Collection;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Source which internally caches underlying Source key-value pairs
- *
+ * <p>
  * Created by Anton Nashatyrev on 21.10.2016.
  */
-public abstract class CachedStore<K, V> implements Store<K, V>{
+public abstract class CachedStore<K, V> implements Store<K, V> {
     protected Store<K, V> delegated;
 
     protected Store<K, V> cache;
@@ -28,16 +27,16 @@ public abstract class CachedStore<K, V> implements Store<K, V>{
 
     abstract Store<K, V> newDeleted();
 
-    void clearCache(){
+    void clearCache() {
         cache = newCache();
         deleted = newDeleted();
     }
 
     @Override
     public Optional<V> get(@NonNull K k) {
-        if(deleted.containsKey(k)) return Optional.empty();
+        if (deleted.containsKey(k)) return Optional.empty();
         Optional<V> o = cache.get(k);
-        if(o.isPresent()) return o;
+        if (o.isPresent()) return o;
         return delegated.get(k);
     }
 
@@ -48,8 +47,8 @@ public abstract class CachedStore<K, V> implements Store<K, V>{
     }
 
     @Override
-    public void putIfAbsent(K k, V v) {
-        if(containsKey(k)) return;
+    public void putIfAbsent(@NonNull K k, @NonNull V v) {
+        if (containsKey(k)) return;
         put(k, v);
     }
 
@@ -57,7 +56,7 @@ public abstract class CachedStore<K, V> implements Store<K, V>{
     public void remove(@NonNull K k) {
         cache.remove(k);
         Optional<V> v = delegated.get(k);
-        if(!v.isPresent()) return;
+        if (!v.isPresent()) return;
         deleted.put(k, v.get());
     }
 
@@ -66,7 +65,14 @@ public abstract class CachedStore<K, V> implements Store<K, V>{
      */
     @Override
     public void flush() {
-        if(cache.isEmpty() && deleted.isEmpty()) return ;
+        if (cache.isEmpty() && deleted.isEmpty()) return;
+        if (delegated instanceof DatabaseStore) {
+            DatabaseStore bat = (DatabaseStore) delegated;
+            Map<byte[], byte[]> modifies = (Map<byte[], byte[]>) cache.asMap();
+            deleted.keySet().forEach(x -> modifies.put((byte[]) x, DatabaseStore.EMPTY));
+            bat.putAll(modifies);
+            return;
+        }
         deleted.keySet().forEach(delegated::remove);
         cache.keySet().forEach(x -> delegated.put(x, cache.get(x).get()));
         clearCache();
@@ -75,7 +81,7 @@ public abstract class CachedStore<K, V> implements Store<K, V>{
 
     @Override
     public Set<K> keySet() {
-        Set<K> set  = delegated.keySet();
+        Set<K> set = delegated.keySet();
         set.removeAll(deleted.keySet());
         set.addAll(cache.keySet());
         return set;
@@ -89,7 +95,7 @@ public abstract class CachedStore<K, V> implements Store<K, V>{
     }
 
     @Override
-    public boolean containsKey(K k) {
+    public boolean containsKey(@NonNull K k) {
         return !deleted.containsKey(k) && (cache.containsKey(k) || delegated.containsKey(k));
     }
 
@@ -109,4 +115,11 @@ public abstract class CachedStore<K, V> implements Store<K, V>{
         deleted = delegated;
     }
 
+    @Override
+    public Map<K, V> asMap() {
+        Map<K, V> ret = delegated.asMap();
+        deleted.keySet().forEach(ret::remove);
+        ret.putAll(cache.asMap());
+        return ret;
+    }
 }

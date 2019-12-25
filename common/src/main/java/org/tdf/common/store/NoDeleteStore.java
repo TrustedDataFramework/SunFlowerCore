@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NonNull;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
  */
 @AllArgsConstructor
 @Getter(AccessLevel.PROTECTED)
-public class NoDeleteStore<K, V> implements Store<K, V>{
+public class NoDeleteStore<K, V> implements Store<K, V> {
     private Store<K, V> delegate;
 
     private Store<K, V> removed;
@@ -34,14 +35,14 @@ public class NoDeleteStore<K, V> implements Store<K, V>{
 
     @Override
     public void putIfAbsent(@NonNull K k, @NonNull V v) {
-        if(delegate.containsKey(k)) return;
+        if (delegate.containsKey(k)) return;
         put(k, v);
     }
 
     @Override
     public void remove(@NonNull K k) {
         Optional<V> o = get(k);
-        if(!o.isPresent()) return;
+        if (!o.isPresent()) return;
         // we not remove k, just add it to a cache
         // when flush() called, we remove k in the cache
         removed.put(k, o.get());
@@ -81,11 +82,11 @@ public class NoDeleteStore<K, V> implements Store<K, V>{
 
     @Override
     public void clear() {
-       removed = delegate;
+        removed = delegate;
     }
 
-    public void compact(){
-        if(removed == delegate){
+    public void compact() {
+        if (removed == delegate) {
             delegate.clear();
             return;
         }
@@ -93,7 +94,7 @@ public class NoDeleteStore<K, V> implements Store<K, V>{
         removed.clear();
     }
 
-    public void compact(Set<K> excludes){
+    public void compact(Set<K> excludes) {
         removed.keySet().stream()
                 .filter(x -> !excludes.contains(x))
                 .collect(Collectors.toList())
@@ -102,5 +103,10 @@ public class NoDeleteStore<K, V> implements Store<K, V>{
                     delegate.remove(x);
                 });
 
+    }
+
+    @Override
+    public Map<K, V> asMap() {
+        return delegate.asMap();
     }
 }

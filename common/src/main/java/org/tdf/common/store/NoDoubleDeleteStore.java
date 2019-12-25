@@ -1,33 +1,35 @@
 package org.tdf.common.store;
 
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 @AllArgsConstructor
-public class NoDoubleDeleteStore<K, V> implements Store<K, V>{
+public class NoDoubleDeleteStore<K, V> implements Store<K, V> {
     private Store<K, V> delegate;
 
     @Override
-    public Optional<V> get(K k) {
+    public Optional<V> get(@NonNull K k) {
         return delegate.get(k);
     }
 
     @Override
-    public void put(K k, V v) {
+    public void put(@NonNull K k, @NonNull V v) {
         delegate.put(k, v);
     }
 
     @Override
-    public void putIfAbsent(K k, V v) {
+    public void putIfAbsent(@NonNull K k, @NonNull V v) {
         delegate.putIfAbsent(k, v);
     }
 
     @Override
-    public void remove(K k) {
-        if(!containsKey(k)) throw new RuntimeException("trying to delete a non-exists key");
+    public void remove(@NonNull K k) {
+        if (!containsKey(k)) throw new RuntimeException("trying to delete a non-exists key");
         delegate.remove(k);
     }
 
@@ -47,7 +49,7 @@ public class NoDoubleDeleteStore<K, V> implements Store<K, V>{
     }
 
     @Override
-    public boolean containsKey(K k) {
+    public boolean containsKey(@NonNull K k) {
         return delegate.containsKey(k);
     }
 
@@ -64,5 +66,10 @@ public class NoDoubleDeleteStore<K, V> implements Store<K, V>{
     @Override
     public void clear() {
         delegate.clear();
+    }
+
+    @Override
+    public Map<K, V> asMap() {
+        return delegate.asMap();
     }
 }

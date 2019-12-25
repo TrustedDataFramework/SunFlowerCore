@@ -7,6 +7,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.ExceptionUtil;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -110,5 +111,10 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
     @Override
     public void flush() {
 
+    }
+
+    @Override
+    public Map<String, T> asMap() {
+        throw new RuntimeException("not implemented");
     }
 }

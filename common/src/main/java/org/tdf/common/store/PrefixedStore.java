@@ -1,6 +1,7 @@
 package org.tdf.common.store;
 
 import com.google.common.primitives.Bytes;
+import lombok.NonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -27,22 +28,22 @@ public class PrefixedStore<V> implements Store<byte[], V> {
     }
 
     @Override
-    public Optional<V> get(byte[] bytes) {
+    public Optional<V> get(@NonNull byte[] bytes) {
         return store.get(Bytes.concat(prefix, bytes));
     }
 
     @Override
-    public void put(byte[] bytes, V v) {
+    public void put(@NonNull byte[] bytes, @NonNull V v) {
         store.put(Bytes.concat(prefix, bytes), v);
     }
 
     @Override
-    public void putIfAbsent(byte[] bytes, V v) {
+    public void putIfAbsent(@NonNull byte[] bytes, @NonNull V v) {
         store.putIfAbsent(Bytes.concat(prefix, bytes), v);
     }
 
     @Override
-    public void remove(byte[] bytes) {
+    public void remove(@NonNull byte[] bytes) {
         store.remove(Bytes.concat(prefix, bytes));
     }
 
@@ -61,7 +62,7 @@ public class PrefixedStore<V> implements Store<byte[], V> {
     }
 
     @Override
-    public boolean containsKey(byte[] bytes) {
+    public boolean containsKey(@NonNull byte[] bytes) {
         return store.containsKey(Bytes.concat(prefix, bytes));
     }
 
@@ -82,5 +83,10 @@ public class PrefixedStore<V> implements Store<byte[], V> {
 
     @Override
     public void flush() {
+    }
+
+    @Override
+    public Map<byte[], V> asMap() {
+        throw new RuntimeException("not implemented");
     }
 }

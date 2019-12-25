@@ -10,10 +10,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.rlp.RLPItem;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -22,8 +19,6 @@ import java.util.stream.Collectors;
 // enhanced radix tree
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TrieImpl<K, V> implements Trie<K, V> {
-    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-
     private final byte[] nullHash;
 
     private Node root;
@@ -189,5 +184,16 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     @Override
     public boolean isDirty() {
         return root != null && root.isDirty();
+    }
+
+    @Override
+    public Map<K, V> asMap() {
+        ScanAsMap scanAsMap = new ScanAsMap();
+        traverse(scanAsMap);
+        Map<K, V> map = new HashMap<>();
+        for(Map.Entry<byte[], byte[]> entry: scanAsMap.getMap().entrySet()){
+            map.put(kCodec.getDecoder().apply(entry.getKey()), vCodec.getDecoder().apply(entry.getValue()));
+        }
+        return map;
     }
 }

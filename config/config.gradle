@@ -20,4 +20,5 @@ ext {
     rlpVersion = '1.1.15'
     lotusvmVersion = '0.0.7'
     springShellVersion = '2.0.0.RELEASE'
+    slf4jVersion = '1.7.28'
 }

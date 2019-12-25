@@ -1,11 +1,10 @@
 package org.tdf.common.store;
 
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 
-import java.util.Collection;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -23,22 +22,22 @@ public class StoreWrapper<K, V, U, R>
 
 
     @Override
-    public Optional<V> get(K k) {
+    public Optional<V> get(@NonNull K k) {
         return store.get(keyCodec.getEncoder().apply(k)).map(valueCodec.getDecoder());
     }
 
     @Override
-    public void put(K k, V v) {
+    public void put(@NonNull K k, @NonNull V v) {
         store.put(keyCodec.getEncoder().apply(k), valueCodec.getEncoder().apply(v));
     }
 
     @Override
-    public void putIfAbsent(K k, V v) {
+    public void putIfAbsent(@NonNull K k, @NonNull V v) {
         store.putIfAbsent(keyCodec.getEncoder().apply(k), valueCodec.getEncoder().apply(v));
     }
 
     @Override
-    public void remove(K k) {
+    public void remove(@NonNull K k) {
         store.remove(keyCodec.getEncoder().apply(k));
     }
 
@@ -57,7 +56,7 @@ public class StoreWrapper<K, V, U, R>
     }
 
     @Override
-    public boolean containsKey(K k) {
+    public boolean containsKey(@NonNull K k) {
         return store.containsKey(keyCodec.getEncoder().apply(k));
     }
 
@@ -79,5 +78,14 @@ public class StoreWrapper<K, V, U, R>
     @Override
     public void flush() {
 
+    }
+
+    @Override
+    public Map<K, V> asMap() {
+        Map<K, V> m = new HashMap<>();
+        for(Map.Entry<U, R> entry: store.asMap().entrySet()){
+            m.put(keyCodec.getDecoder().apply(entry.getKey()), valueCodec.getDecoder().apply(entry.getValue()));
+        }
+        return m;
     }
 }

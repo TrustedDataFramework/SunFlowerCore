@@ -73,6 +73,8 @@ dependencies {
     compile "org.tdf:rlp:${rlpVersion}"
     compile "org.tdf:lotusvm:${lotusvmVersion}"
     compile "org.springframework.shell:spring-shell-starter:${springShellVersion}"
+    compile "org.slf4j:slf4j-api:${slf4jVersion}"
+    compile "org.slf4j:jul-to-slf4j:${slf4jVersion}"
 
     // for test
     testCompile 'com.h2database:h2'

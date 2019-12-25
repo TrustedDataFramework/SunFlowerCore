@@ -2,9 +2,7 @@ package org.tdf.sunflower.db;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.tdf.common.store.DBSettings;
-import org.tdf.common.store.DatabaseStore;
-import org.tdf.common.store.MemoryDatabaseStore;
+import org.tdf.common.store.*;
 import org.tdf.sunflower.DatabaseConfig;
 
 import java.util.ArrayList;

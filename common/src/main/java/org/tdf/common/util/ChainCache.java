@@ -85,7 +85,7 @@ public class ChainCache<T extends Chained> implements Cloneable<ChainCache<T>> {
         ChainCache<T> copied = new ChainCache<>();
         copied.nodes = new ByteArrayMapStore<>(nodes);
         Map<byte[], Set<byte[]>> tmp =
-                StoreUtil.storeToMap(childrenHashes, x -> x, ByteArraySet::new);
+                childrenHashes.asMap();
         copied.childrenHashes = new ByteArrayMapStore<>(tmp);
         copied.parentHash = new ByteArrayMapStore<>(parentHash);
         return copied;

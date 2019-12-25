@@ -1,12 +1,8 @@
 package org.tdf.common.store;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public interface Store<K, V> {
-
     /**
      * Gets a value by its key
      *
@@ -16,9 +12,13 @@ public interface Store<K, V> {
 
     /**
      * Puts key-value pair into store
+     * remove key in the store if puts empty value
      */
     void put(K k, V v);
 
+    /**
+     * Puts key-value pair into store when key not exists
+     */
     void putIfAbsent(K k, V v);
 
     /**
@@ -35,8 +35,16 @@ public interface Store<K, V> {
      */
     void flush();
 
+    /**
+     * traverse the store and get all keys in the store
+     * @return keys in the store
+     */
     Set<K> keySet();
 
+    /**
+     * traverse the store and get all values in the store
+     * @return values in the store
+     */
     Collection<V> values();
 
     boolean containsKey(K k);
@@ -46,6 +54,13 @@ public interface Store<K, V> {
     boolean isEmpty();
 
     void clear();
+
+    /**
+     * copy all key-value pairs into a map
+     * the map behaves identically to the store
+     * @return map copied
+     */
+    Map<K, V> asMap();
 
     Store<?, ?> NONE = new Store() {
         @Override
@@ -101,6 +116,11 @@ public interface Store<K, V> {
         @Override
         public void clear() {
 
+        }
+
+        @Override
+        public Map asMap() {
+            return new HashMap();
         }
     };
 

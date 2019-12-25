@@ -43,4 +43,9 @@ dependencies {
     testCompile "commons-codec:commons-codec:${commonsCodecVersion}"
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    compileOnly "org.rocksdb:rocksdbjni:${rocksdbVersion}"
+    compileOnly "org.iq80.leveldb:leveldb:${leveldbVersion}"
+    compileOnly "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
+    compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"
 }
