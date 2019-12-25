@@ -19,8 +19,6 @@ public class ByteArrayMapStore<V> extends MapStore<byte[], V> implements Store<b
 
     public ByteArrayMapStore(Map<byte[], V> map){
         this();
-        for(byte[] k: map.keySet()){
-            put(k, map.get(k));
-        }
+        getMap().putAll(map);
     }
 }
