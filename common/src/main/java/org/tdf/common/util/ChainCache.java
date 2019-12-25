@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.Store;
-import org.tdf.common.store.StoreUtil;
 import org.tdf.common.types.Chained;
 import org.tdf.common.types.Cloneable;
 
