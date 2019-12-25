@@ -153,8 +153,11 @@ public class Client implements ChannelListener {
     public void onError(Throwable throwable, Channel channel) {
         channel.getRemote()
                 .filter(x -> !peersCache.hasBlocked(x))
-                .ifPresent(x -> peersCache.half(x));
-        log.error("error found decrease the score of peer " + channel.getRemote() + " " + throwable.getMessage());
+                .ifPresent(x -> {
+                    peersCache.half(x);
+                    log.error("error found decrease the score of peer " + x + " " + throwable.getMessage());
+                });
+
     }
 
     @Override

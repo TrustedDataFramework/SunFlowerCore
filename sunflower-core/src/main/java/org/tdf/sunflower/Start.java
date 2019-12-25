@@ -57,7 +57,7 @@ public class Start {
     }
 
     @Bean
-    public ObjectMapper getObjectMapper() {
+    public ObjectMapper objectMapper() {
         return MAPPER;
     }
 
@@ -107,11 +107,6 @@ public class Start {
             current = blocks.get(blocks.size() - 1).getHeight();
         }
         return repo;
-    }
-
-    @Bean
-    public PendingTransactionValidator transactionValidator(ConsensusEngine engine) {
-        return engine.getValidator();
     }
 
     @Bean

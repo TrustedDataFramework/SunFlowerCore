@@ -32,12 +32,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.catalina.startup.ClassLoaderFactory.Repository;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.spongycastle.util.encoders.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
+import org.tdf.sunflower.TestContext;
+import org.tdf.sunflower.consensus.poa.PoAUtils;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.VrfStateMachine;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
@@ -50,19 +55,22 @@ import org.tdf.sunflower.consensus.vrf.core.ValidatorManager;
 import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
 import org.tdf.sunflower.consensus.vrf.core.VrfProof;
 import org.tdf.sunflower.consensus.vrf.core.VrfRound;
-import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.service.ConsortiumRepositoryService;
+import org.tdf.sunflower.service.BlockRepositoryService;
 import org.tdf.sunflower.types.Header;
 
 /**
  * @author James Hu
  * @since 2019/6/20
  */
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = TestContext.class)
 public class VrfStateMachineTest {
+    @Autowired
+    private BlockRepositoryService repository;
 
     private static final byte[] vrfSk0 = Hex.decode("9e72bcb8c7cfff542030f3a56b78581e13f983f994d95d60b7fe4af679bb8cb7");
     private static final byte[] vrfSk1 = Hex.decode("09bb524717b97f0ea5684962ccea964216483157a8170070927bd01c6913d823");
@@ -75,10 +83,8 @@ public class VrfStateMachineTest {
     private static final byte[] vrfSk8 = Hex.decode("afd94ef2cc78d1fafbdc5b05e395349403168492a32e519872483b91f84a4a8a");
     private static final byte[] vrfSk9 = Hex.decode("c9e7bc8db3f5e13fd78e5f570f48cf2f5421a11af7bb3a40e2533f774f9f29c1");
 
-    private static final byte[][] VRF_SK_ARRAY = new byte[][] {
-            vrfSk0, vrfSk1, vrfSk2, vrfSk3, vrfSk4,
-            vrfSk5, vrfSk6, vrfSk7, vrfSk8, vrfSk9
-    };
+    private static final byte[][] VRF_SK_ARRAY = new byte[][] { vrfSk0, vrfSk1, vrfSk2, vrfSk3, vrfSk4, vrfSk5, vrfSk6,
+            vrfSk7, vrfSk8, vrfSk9 };
 
     private static final byte[] coinbase0 = Hex.decode("3a0b32b4e6f404934d098957d200e803239fdf75");
     private static final byte[] coinbase1 = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -91,24 +97,15 @@ public class VrfStateMachineTest {
     private static final byte[] coinbase8 = Hex.decode("003d9f0d826e357fea013b37b0f988a1a87e03f0");
     private static final byte[] coinbase9 = Hex.decode("3551b14081dc0fd629671114f49d332f059e0cba");
 
-    private static final byte[][] COINBASE_ARRAY = new byte[][] {
-            coinbase0, coinbase1, coinbase2, coinbase3, coinbase4,
-            coinbase5, coinbase6, coinbase7, coinbase8, coinbase9
-    };
+    private static final byte[][] COINBASE_ARRAY = new byte[][] { coinbase0, coinbase1, coinbase2, coinbase3, coinbase4,
+            coinbase5, coinbase6, coinbase7, coinbase8, coinbase9 };
 
     /* Now we use Ether units as deposit in the unit test */
-    private static final long[] DEPOSIT_ARRAY = new long[] {
-            Validator.DEPOSIT_MIN_VALUE + 20,
-            Validator.DEPOSIT_MIN_VALUE + 690,
-            Validator.DEPOSIT_MIN_VALUE + 9327,
-            Validator.DEPOSIT_MIN_VALUE + 240,
-            Validator.DEPOSIT_MIN_VALUE + 13980,
-            Validator.DEPOSIT_MIN_VALUE + 294,
-            Validator.DEPOSIT_MIN_VALUE + 598,
-            Validator.DEPOSIT_MIN_VALUE + 3958,
-            Validator.DEPOSIT_MIN_VALUE + 21398,
-            Validator.DEPOSIT_MIN_VALUE + 49899
-    };
+    private static final long[] DEPOSIT_ARRAY = new long[] { Validator.DEPOSIT_MIN_VALUE + 20,
+            Validator.DEPOSIT_MIN_VALUE + 690, Validator.DEPOSIT_MIN_VALUE + 9327, Validator.DEPOSIT_MIN_VALUE + 240,
+            Validator.DEPOSIT_MIN_VALUE + 13980, Validator.DEPOSIT_MIN_VALUE + 294, Validator.DEPOSIT_MIN_VALUE + 598,
+            Validator.DEPOSIT_MIN_VALUE + 3958, Validator.DEPOSIT_MIN_VALUE + 21398,
+            Validator.DEPOSIT_MIN_VALUE + 49899 };
 
     private static final int CONSENSUS_REACH_LOOP = 3;
     private static final int CONSENSUS_TRIED_COUNT = 10;
@@ -120,7 +117,7 @@ public class VrfStateMachineTest {
         assertTrue(COINBASE_ARRAY.length >= nodesCount);
         // Setup all consensus nodes
         for (int i = 0; i < nodesCount; ++i) {
-            consensusNodes[i] = new ConsensusNode(i, nodesCount);
+            consensusNodes[i] = new ConsensusNode(i, nodesCount, repository);
         }
     }
 
@@ -136,13 +133,14 @@ public class VrfStateMachineTest {
         assertTrue(VRF_SK_ARRAY.length == COINBASE_ARRAY.length);
         assertTrue(COINBASE_ARRAY.length == DEPOSIT_ARRAY.length);
 
-	    BlockRepository repository = ConsortiumRepositoryService.NONE;
+//	    BlockRepository repository = ConsortiumRepositoryService.NONE;
 //	    Repository track = repository.startTracking();
 
-	    // Prepare blockchain repository and validators
-	    Validator[] validators = new Validator[COINBASE_ARRAY.length];
-	    for (int i = 0; i < COINBASE_ARRAY.length; ++i) {
-            BigInteger balance = BigInteger.valueOf(DEPOSIT_ARRAY[i]).multiply(BigInteger.valueOf(10).pow(Validator.ETHER_POW_WEI));
+        // Prepare blockchain repository and validators
+        Validator[] validators = new Validator[COINBASE_ARRAY.length];
+        for (int i = 0; i < COINBASE_ARRAY.length; ++i) {
+            BigInteger balance = BigInteger.valueOf(DEPOSIT_ARRAY[i])
+                    .multiply(BigInteger.valueOf(10).pow(Validator.ETHER_POW_WEI));
 //            track.addBalance(COINBASE_ARRAY[i], balance);
 
             PrivateKey privateKey = new Ed25519PrivateKey(VRF_SK_ARRAY[i]);
@@ -160,8 +158,10 @@ public class VrfStateMachineTest {
 
         // Prepare VRF state machine
         VrfStateMachine vrfStateMachine = new VrfStateMachine(manager, pendingVrfState, null);
+        vrfStateMachine.setBlockRepository(repository);
 
-        final long stateCycleSeconds = VrfStateMachine.PROPOSAL_TIMEOUT + VrfStateMachine.REDUCTION_TIMEOUT + VrfStateMachine.FINAL_TIMEOUT;
+        final long stateCycleSeconds = VrfStateMachine.PROPOSAL_TIMEOUT + VrfStateMachine.REDUCTION_TIMEOUT
+                + VrfStateMachine.FINAL_TIMEOUT;
         for (int tried = 0; tried < 10; ++tried) {
             vrfStateMachine.start(tried);
 
@@ -173,8 +173,7 @@ public class VrfStateMachineTest {
             }
 
             long stateDuration = delay % stateCycleSeconds;
-            if (stateDuration > 0
-                    && stateDuration < VrfStateMachine.PROPOSAL_TIMEOUT) {
+            if (stateDuration > 0 && stateDuration < VrfStateMachine.PROPOSAL_TIMEOUT) {
                 assertTrue(vrfStateMachine.getState() == VrfStateMachine.VRF_STATE_PROPOSAL);
             } else if (stateDuration > VrfStateMachine.PROPOSAL_TIMEOUT
                     && stateDuration < (VrfStateMachine.PROPOSAL_TIMEOUT + VrfStateMachine.REDUCTION_TIMEOUT)) {
@@ -184,10 +183,12 @@ public class VrfStateMachineTest {
                 assertTrue(vrfStateMachine.getState() == VrfStateMachine.VRF_STATE_FINAL);
             }
             VrfRound vrfRound = vrfStateMachine.getVrfRound();
-            long round = delay / (VrfStateMachine.PROPOSAL_TIMEOUT + VrfStateMachine.REDUCTION_TIMEOUT + VrfStateMachine.FINAL_TIMEOUT);
+            long round = delay / (VrfStateMachine.PROPOSAL_TIMEOUT + VrfStateMachine.REDUCTION_TIMEOUT
+                    + VrfStateMachine.FINAL_TIMEOUT);
             assertTrue(vrfRound.getRound() == round);
             assertTrue(vrfRound.getBlockNum() == tried);
-            //System.out.println("--- VRF State Machine: " + vrfStateMachine.getVrfRound());
+            // System.out.println("--- VRF State Machine: " +
+            // vrfStateMachine.getVrfRound());
 
             vrfStateMachine.stop();
             assertTrue(vrfStateMachine.getState() == VrfStateMachine.VRF_STATE_INIT);
@@ -318,7 +319,8 @@ public class VrfStateMachineTest {
             try {
                 VrfStateMachine vrfStateMachine = future.get();
                 String timestamp = new SimpleDateFormat("HH:mm:ss.sss").format(new Date());
-                System.out.println(timestamp + " future.get VRF State Machine<" + nodeIndex + ">: state " + vrfStateMachine.getState());
+                System.out.println(timestamp + " future.get VRF State Machine<" + nodeIndex + ">: state "
+                        + vrfStateMachine.getState());
                 assertTrue(vrfStateMachine.getState() == VrfStateMachine.VRF_STATE_INIT);
             } catch (InterruptedException e) {
             } catch (ExecutionException e) {
@@ -385,9 +387,9 @@ public class VrfStateMachineTest {
                     result = stateMachine.addProof(proof, true);
                     if (!result) {
                         String timestamp = new SimpleDateFormat("HH:mm:ss.sss").format(new Date());
-                        System.out.println(timestamp + " node<" + otherNode.getNodeIndex() + ">, Fail to add ProposalProof, state:"
-                                + stateMachine.getState() + ", " + stateMachine.getVrfRound()
-                                + ", from node<" + node.getNodeIndex() + ">");
+                        System.out.println(timestamp + " node<" + otherNode.getNodeIndex()
+                                + ">, Fail to add ProposalProof, state:" + stateMachine.getState() + ", "
+                                + stateMachine.getVrfRound() + ", from node<" + node.getNodeIndex() + ">");
                     }
                 }
             }
@@ -403,10 +405,10 @@ public class VrfStateMachineTest {
                     result = stateMachine.addProof(proof, true);
                     if (!result) {
                         String timestamp = new SimpleDateFormat("HH:mm:ss.sss").format(new Date());
-                        System.out.println(timestamp + " node<" + otherNode.getNodeIndex() + ">, Fail to add CommitProof, role:"
-                                + proof.getVrfProof().getRole() + ", state:"
-                                + stateMachine.getState() + ", " + stateMachine.getVrfRound()
-                                + ", from node<" + node.getNodeIndex() + ">");
+                        System.out.println(
+                                timestamp + " node<" + otherNode.getNodeIndex() + ">, Fail to add CommitProof, role:"
+                                        + proof.getVrfProof().getRole() + ", state:" + stateMachine.getState() + ", "
+                                        + stateMachine.getVrfRound() + ", from node<" + node.getNodeIndex() + ">");
                     }
                 }
             }
@@ -419,7 +421,8 @@ public class VrfStateMachineTest {
                 @Override
                 public void stateChanged(int from, int to) {
                     String timestamp = new SimpleDateFormat("HH:mm:ss.sss").format(new Date());
-                    System.out.println(timestamp + " node<" + node.getNodeIndex() + ">, state changed <" + from + "> - <" + to + ">");
+                    System.out.println(timestamp + " node<" + node.getNodeIndex() + ">, state changed <" + from
+                            + "> - <" + to + ">");
                     if (from == VrfStateMachine.VRF_STATE_INIT && to == VrfStateMachine.VRF_STATE_PROPOSAL) {
                         VrfRound vrfRound = stateMachine.getVrfRound();
                         long blockNum = vrfRound.getBlockNum();
@@ -434,7 +437,8 @@ public class VrfStateMachineTest {
                                 broadcast(consensusNodes[node], proposalProof);
                             }
                         }
-                    } else if (from == VrfStateMachine.VRF_STATE_PROPOSAL && to == VrfStateMachine.VRF_STATE_REDUCTION) {
+                    } else if (from == VrfStateMachine.VRF_STATE_PROPOSAL
+                            && to == VrfStateMachine.VRF_STATE_REDUCTION) {
                         VrfRound vrfRound = stateMachine.getVrfRound();
                         long blockNum = vrfRound.getBlockNum();
                         int round = vrfRound.getRound();
@@ -463,10 +467,13 @@ public class VrfStateMachineTest {
                         ProposalProof bestProproserProof = stateMachine.getBestProposalProof();
                         BlockIdentifier reachCommitIdentifier = stateMachine.reachCommitBlockIdentifier();
                         if (reachCommitIdentifier == null
-                                || !Arrays.equals(bestProproserProof.getBlockIdentifier().getHash(), reachCommitIdentifier.getHash())
-                                || bestProproserProof.getBlockIdentifier().getNumber() != reachCommitIdentifier.getNumber()) {
+                                || !Arrays.equals(bestProproserProof.getBlockIdentifier().getHash(),
+                                        reachCommitIdentifier.getHash())
+                                || bestProproserProof.getBlockIdentifier().getNumber() != reachCommitIdentifier
+                                        .getNumber()) {
                             timestamp = new SimpleDateFormat("HH:mm:ss.sss").format(new Date());
-                            System.out.println(timestamp + " node<" + node.getNodeIndex() + ">, NOT reach reduction commit agreement, give up Final Commit Proof");
+                            System.out.println(timestamp + " node<" + node.getNodeIndex()
+                                    + ">, NOT reach reduction commit agreement, give up Final Commit Proof");
                         } else {
                             // Submit Final Commit
                             CommitProof finalProof = node.createFinalCommitProof(round, seed, reachCommitIdentifier);
@@ -486,13 +493,16 @@ public class VrfStateMachineTest {
                         int round = vrfRound.getRound();
 
                         timestamp = new SimpleDateFormat("HH:mm:ss.sss").format(new Date());
-                        System.out.println(timestamp + " node<" + node.getNodeIndex() + ">, new VrfRound<" + blockNum + ", " + round + ">");
+                        System.out.println(timestamp + " node<" + node.getNodeIndex() + ">, new VrfRound<" + blockNum
+                                + ", " + round + ">");
                         if (round == 0) {
                             consensusReached++;
-                            System.out.println("!!! Reach agreement, <node index>:" + node.getNodeIndex() + ", <time>:" + consensusReached);
+                            System.out.println("!!! Reach agreement, <node index>:" + node.getNodeIndex() + ", <time>:"
+                                    + consensusReached);
                         } else {
                             if (round > CONSENSUS_TRIED_COUNT) {
-                                System.out.println("Already Reach agreement, <node index>:" + node.getNodeIndex() + ", <time>:" + consensusReached);
+                                System.out.println("Already Reach agreement, <node index>:" + node.getNodeIndex()
+                                        + ", <time>:" + consensusReached);
                                 System.out.println("Choose to Quit, VRF Round: " + vrfRound);
                                 synchronized (VrfStateTask.this) {
                                     VrfStateTask.this.notifyAll();
@@ -542,12 +552,12 @@ public class VrfStateMachineTest {
         private final PendingVrfState pendingVrfState;
         private final VrfStateMachine vrfStateMachine;
 
-        public ConsensusNode(int nodeIndex, int nodesCount) {
+        public ConsensusNode(int nodeIndex, int nodesCount, BlockRepository repository) {
             this.nodeIndex = nodeIndex;
 
             this.nodesCount = nodesCount;
 
-            repository = ConsortiumRepositoryService.NONE;
+            this.repository = repository;
             validatorManager = new ValidatorManager(repository);
             blockHeader = createBlockHeader();
 
@@ -557,25 +567,28 @@ public class VrfStateMachineTest {
 
             // Prepare VRF state machine
             vrfStateMachine = new VrfStateMachine(validatorManager, pendingVrfState, null);
+            vrfStateMachine.setBlockRepository(repository);
         }
 
         private Header createBlockHeader() {
-            byte [] emptyArray = new byte[0];
-            byte [] recentHash = emptyArray;
-            // Compose new nonce with coinbase and index, then initialize the new block header
+            byte[] emptyArray = new byte[0];
+            byte[] recentHash = emptyArray;
+            // Compose new nonce with coinbase and index, then initialize the new block
+            // header
             byte[] nonce = new byte[COINBASE_ARRAY[nodeIndex].length + 4];
             System.arraycopy(COINBASE_ARRAY[nodeIndex], 0, nonce, 0, COINBASE_ARRAY[nodeIndex].length);
-            nonce[COINBASE_ARRAY[nodeIndex].length] = (byte)((nodeIndex >> 24) & 0xFF);
+            nonce[COINBASE_ARRAY[nodeIndex].length] = (byte) ((nodeIndex >> 24) & 0xFF);
             nonce[COINBASE_ARRAY[nodeIndex].length + 1] = (byte) ((nodeIndex >> 16) & 0xFF);
             nonce[COINBASE_ARRAY[nodeIndex].length + 2] = (byte) ((nodeIndex >> 8) & 0xFF);
             nonce[COINBASE_ARRAY[nodeIndex].length + 3] = (byte) (nodeIndex & 0xFF);
             long time = System.currentTimeMillis() / 1000;
-            
+
             Header blockHeader = Header.builder().hashPrev(HexBytes.fromBytes(recentHash))
                     .createdAt(System.currentTimeMillis()).version(1).height(nodeIndex).build();
             VrfUtil.setNonce(blockHeader, nonce);
             VrfUtil.setDifficulty(blockHeader, emptyArray);
             VrfUtil.setMiner(blockHeader, COINBASE_ARRAY[nodeIndex]);
+            blockHeader.setHash(HexBytes.fromBytes(PoAUtils.getHash(blockHeader)));
 
             return blockHeader;
         }
@@ -589,7 +602,8 @@ public class VrfStateMachineTest {
             Validator[] validators = new Validator[nodesCount];
             // Add up all weights to validator manager
             for (int i = 0; i < nodesCount; ++i) {
-                BigInteger balance = BigInteger.valueOf(DEPOSIT_ARRAY[i]).multiply(BigInteger.valueOf(10).pow(Validator.ETHER_POW_WEI));
+                BigInteger balance = BigInteger.valueOf(DEPOSIT_ARRAY[i])
+                        .multiply(BigInteger.valueOf(10).pow(Validator.ETHER_POW_WEI));
 //                track.addBalance(COINBASE_ARRAY[i], balance);
 
                 PrivateKey privateKey = new Ed25519PrivateKey(VRF_SK_ARRAY[i]);
@@ -624,7 +638,8 @@ public class VrfStateMachineTest {
             byte[] identifier = blockHeader.getHash().getBytes();
 
             BlockIdentifier blockIdentifier = new BlockIdentifier(identifier, blockNum);
-            ProposalProof proof = new ProposalProof(vrfProof, COINBASE_ARRAY[nodeIndex], blockIdentifier, sk.getSigner());
+            ProposalProof proof = new ProposalProof(vrfProof, COINBASE_ARRAY[nodeIndex], blockIdentifier,
+                    sk.getSigner());
 
             // Check priority of new proof
             int priority = validatorManager.getPriority(proof, ValidatorManager.EXPECTED_PROPOSER_THRESHOLD);
@@ -643,7 +658,8 @@ public class VrfStateMachineTest {
 
             // Must use VrfProof Util to proof with Role Code
             VrfResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_REDUCTION_COMMIT, round, sk, seed);
-            VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_REDUCTION_COMMIT, round, vrfPk, seed, vrfResult);
+            VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_REDUCTION_COMMIT, round, vrfPk, seed,
+                    vrfResult);
 
             CommitProof proof = new CommitProof(vrfProof, COINBASE_ARRAY[nodeIndex], blockIdentifier, sk.getSigner());
 

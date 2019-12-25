@@ -25,11 +25,16 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.spongycastle.util.encoders.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
+import org.tdf.sunflower.TestContext;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.contract.PrecompiledContracts;
 import org.tdf.sunflower.consensus.vrf.contract.VrfContracts;
@@ -43,13 +48,15 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.vm.DataWord;
 import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.service.ConsortiumRepositoryService;
+import org.tdf.sunflower.service.BlockRepositoryService;
 import org.tdf.sunflower.util.ByteUtil;
 
 /**
  * @author James Hu
  * @since 2019/5/15
  */
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = TestContext.class)
 public class ValidatorManagerTest {
 
     private static final byte[] vrfSk0 = Hex.decode("9e72bcb8c7cfff542030f3a56b78581e13f983f994d95d60b7fe4af679bb8cb7");
@@ -105,11 +112,13 @@ public class ValidatorManagerTest {
     private static final DataWord contractAddr = DataWord
             .of("0000000000000000000000000000000000000000000000000000000000000011");
 
-    private static final BlockRepository repository = ConsortiumRepositoryService.NONE;
+    @Autowired
+    private BlockRepositoryService repository;
+    // private BlockRepository repository; // = ConsortiumRepositoryService.NONE;
 //    private static final Repository cacheTrack = repository.startTracking();
 
-    @BeforeClass
-    public static void setup() {
+    @Before
+    public void setup() {
         assertTrue(COINBASE_ARRAY.length == DEPOSIT_ARRAY.length);
 
         // Setup Validator Registration for all coinbases
