@@ -303,7 +303,7 @@ class Node {
             toBranch();
             branchInsert(key, value, cache);
             setDirty();
-            return true;
+            return dirty;
         }
 
         // convert self to extension node
@@ -315,7 +315,7 @@ class Node {
             newBranch.setValue(val);
             newBranch.branchInsert(key.shift(commonPrefix.size()), value, cache);
             setDirty();
-            return true;
+            return dirty;
         }
 
         // current is extension and common prefix equals to current
@@ -347,7 +347,7 @@ class Node {
             return true;
         }
         newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value);
-        return true;
+        return dirty;
     }
 
     Node delete(TrieKey key) {
