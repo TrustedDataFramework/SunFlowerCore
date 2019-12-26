@@ -1,15 +1,15 @@
 package org.tdf.sunflower;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.store.DatabaseStore;
+import org.tdf.common.store.RocksDb;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
-import org.tdf.sunflower.db.RocksDb;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 @RunWith(JUnit4.class)
 public class DbSourceTest {

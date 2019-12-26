@@ -18,7 +18,7 @@ public class VrfBlockFields {
     private byte[] nonce;
 
     @RLP(1)
-    private byte[] difficulty;
+    private byte[] priority;
 
     @RLP(2)
     private byte[] miner;

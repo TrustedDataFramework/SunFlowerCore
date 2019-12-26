@@ -29,7 +29,7 @@ sunflower:
  #   block-interval: '3'
  #   enable-mining: 'false'
  #   miner-coin-base: '1JWhUiZCWps56uZckAvzxy2ex6VGhrMXdD'
-    # relative path to /home/$USER/.sunflower
+    # VRF keystore path of pk & sk. Relative path to /home/$USER/.sunflower
 #    vrf-data-dir: vrfdata
 
   p2p:

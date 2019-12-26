@@ -84,7 +84,7 @@ public class VrfProofTest {
         Header header = Header.builder().hashPrev(HexBytes.fromBytes(recentHash)).createdAt(System.currentTimeMillis())
                 .version(1).height(index).build();
         VrfUtil.setNonce(header, nonce);
-        VrfUtil.setDifficulty(header, emptyArray);
+        VrfUtil.setPriority(header, emptyArray);
         VrfUtil.setMiner(header, coinbase);
         header.setHash(HexBytes.fromBytes(PoAUtils.getHash(header)));
 

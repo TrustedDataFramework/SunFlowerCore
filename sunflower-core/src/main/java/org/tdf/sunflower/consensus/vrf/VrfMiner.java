@@ -457,7 +457,7 @@ public class VrfMiner implements Miner {
         if (priority > 0) {
             // Update priority field.
             log.info("Set priority {} to block #{}", priority, newBlock.getHeader().getHeight());
-            VrfUtil.setDifficulty(newBlock, ByteUtil.longToBytes(priority));
+            VrfUtil.setPriority(newBlock, ByteUtil.longToBytes(priority));
             // Update identifier after header changed, because block hash changed as
             // difficulty changed
             identifier = newBlock.getHash().getBytes();

@@ -586,7 +586,7 @@ public class VrfStateMachineTest {
             Header blockHeader = Header.builder().hashPrev(HexBytes.fromBytes(recentHash))
                     .createdAt(System.currentTimeMillis()).version(1).height(nodeIndex).build();
             VrfUtil.setNonce(blockHeader, nonce);
-            VrfUtil.setDifficulty(blockHeader, emptyArray);
+            VrfUtil.setPriority(blockHeader, emptyArray);
             VrfUtil.setMiner(blockHeader, COINBASE_ARRAY[nodeIndex]);
             blockHeader.setHash(HexBytes.fromBytes(PoAUtils.getHash(blockHeader)));
 

@@ -18,26 +18,26 @@ public class VrfBlockFieldsTest {
 
     @Test
     public void testRlpNull() {
-        VrfBlockFields vbf1 = VrfBlockFields.builder().nonce(null).difficulty(null).proposalProof(null).build();
+        VrfBlockFields vbf1 = VrfBlockFields.builder().nonce(null).priority(null).proposalProof(null).build();
         byte[] encoded = RLPCodec.encode(vbf1);
         VrfBlockFields vbf2 = RLPCodec.decode(encoded, VrfBlockFields.class);
         assert (ByteUtil.isNullOrZeroArray(vbf2.getNonce()));
-        assert (ByteUtil.isNullOrZeroArray(vbf2.getDifficulty()));
+        assert (ByteUtil.isNullOrZeroArray(vbf2.getPriority()));
         assert (ByteUtil.isNullOrZeroArray(vbf2.getProposalProof()));
     }
 
     @Test
-    public void testRlpNonceDifficultyMiner() {
+    public void testRlpNoncePriorityMiner() {
         String nonceStr = "abcd";
         String diffcultyStr = "cdef";
         String minerStr = "abcdef12";
         VrfBlockFields vbf1 = VrfBlockFields.builder().nonce(ByteUtil.hexStringToBytes(nonceStr))
-                .difficulty(ByteUtil.hexStringToBytes(diffcultyStr)).miner(ByteUtil.hexStringToBytes(minerStr))
+                .priority(ByteUtil.hexStringToBytes(diffcultyStr)).miner(ByteUtil.hexStringToBytes(minerStr))
                 .proposalProof(null).build();
         byte[] encoded = RLPCodec.encode(vbf1);
         VrfBlockFields vbf2 = RLPCodec.decode(encoded, VrfBlockFields.class);
         assert (ByteUtil.toHexString(vbf2.getNonce()).equals(nonceStr));
-        assert (ByteUtil.toHexString(vbf2.getDifficulty()).equals(diffcultyStr));
+        assert (ByteUtil.toHexString(vbf2.getPriority()).equals(diffcultyStr));
         assert (ByteUtil.toHexString(vbf2.getMiner()).equals(minerStr));
         assert (ByteUtil.isNullOrZeroArray(vbf2.getProposalProof()));
     }
@@ -49,18 +49,18 @@ public class VrfBlockFieldsTest {
         int round = 1;
         long blockNum = 2;
         String nonceStr = "abcd";
-        String difficultyStr = "cdef";
+        String priorityStr = "cdef";
         String blockHashStr = "abcdef";
         String minerCoinbaseStr = "0123456789abcdef";
         VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKeyDummy();
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
 
-        byte[] encoded = VrfUtil.genPayload(blockNum, round, nonceStr, minerCoinbaseStr, difficultyStr, blockHashStr,
+        byte[] encoded = VrfUtil.genPayload(blockNum, round, nonceStr, minerCoinbaseStr, priorityStr, blockHashStr,
                 vrfSk, vrfPk);
 
         VrfBlockFields vbf2 = RLPCodec.decode(encoded, VrfBlockFields.class);
         assert (ByteUtil.toHexString(vbf2.getNonce()).equals(nonceStr));
-        assert (ByteUtil.toHexString(vbf2.getDifficulty()).equals(difficultyStr));
+        assert (ByteUtil.toHexString(vbf2.getPriority()).equals(priorityStr));
 
         ProposalProof proposalProofDecoded = new ProposalProof(vbf2.getProposalProof());
 
@@ -79,13 +79,13 @@ public class VrfBlockFieldsTest {
         int round = 1;
         long blockNum = 2;
         String nonceStr = "abcd";
-        String difficultyStr = "cdef";
+        String priorityStr = "cdef";
         String blockHashStr = "abcdef";
         String minerCoinbaseStr = "0123456789abcdef";
         VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKeyDummy();
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
 
-        byte[] encoded = VrfUtil.genPayload(blockNum, round, nonceStr, minerCoinbaseStr, difficultyStr, blockHashStr,
+        byte[] encoded = VrfUtil.genPayload(blockNum, round, nonceStr, minerCoinbaseStr, priorityStr, blockHashStr,
                 vrfSk, vrfPk);
         HexBytes payload = HexBytes.fromBytes(encoded);
         Block block = new Block();
@@ -93,7 +93,7 @@ public class VrfBlockFieldsTest {
 
         ProposalProof proposalProof = VrfUtil.getProposalProof(block);
 
-        assert (ByteUtil.toHexString(VrfUtil.getDifficulty(block)).equals(difficultyStr));
+        assert (ByteUtil.toHexString(VrfUtil.getPriority(block)).equals(priorityStr));
         assert (ByteUtil.toHexString(VrfUtil.getNonce(block)).equals(nonceStr));
         assert (ByteUtil.toHexString(VrfUtil.getMiner(block)).equals(minerCoinbaseStr));
 
@@ -112,14 +112,14 @@ public class VrfBlockFieldsTest {
         int round = 1;
         long blockNum = 2;
         String nonceStr = "abcd";
-        String difficultyStr = "cdef";
+        String priorityStr = "cdef";
         String blockHashStr = "abcdef";
         String minerCoinbaseStr = "0123456789abcdef";
         VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKeyDummy();
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
 
         VrfBlockFields vrfBlockFields = VrfUtil.genVrfBlockFields(blockNum, round, nonceStr, minerCoinbaseStr,
-                difficultyStr, blockHashStr, vrfSk, vrfPk);
+                priorityStr, blockHashStr, vrfSk, vrfPk);
 
         ProposalProof proposalProof = new ProposalProof(vrfBlockFields.getProposalProof());
 
@@ -127,13 +127,13 @@ public class VrfBlockFieldsTest {
 
         VrfUtil.setNonce(block, nonceStr);
         assert (ByteUtil.toHexString(VrfUtil.getNonce(block)).equals(nonceStr));
-        VrfUtil.setDifficulty(block, difficultyStr);
-        assert (ByteUtil.toHexString(VrfUtil.getDifficulty(block)).equals(difficultyStr));
+        VrfUtil.setPriority(block, priorityStr);
+        assert (ByteUtil.toHexString(VrfUtil.getPriority(block)).equals(priorityStr));
         VrfUtil.setMiner(block, minerCoinbaseStr);
         assert (ByteUtil.toHexString(VrfUtil.getMiner(block)).equals(minerCoinbaseStr));
         VrfUtil.setProposalProof(block, proposalProof);
 
-        assert (ByteUtil.toHexString(VrfUtil.getDifficulty(block)).equals(difficultyStr));
+        assert (ByteUtil.toHexString(VrfUtil.getPriority(block)).equals(priorityStr));
         assert (ByteUtil.toHexString(VrfUtil.getNonce(block)).equals(nonceStr));
         assert (ByteUtil.toHexString(VrfUtil.getMiner(block)).equals(minerCoinbaseStr));
 

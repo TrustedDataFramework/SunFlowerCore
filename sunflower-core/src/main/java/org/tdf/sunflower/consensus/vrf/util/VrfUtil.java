@@ -89,18 +89,18 @@ public class VrfUtil {
         return getNonce(blockWrapper.getBlock());
     }
 
-    public static byte[] getDifficulty(HexBytes payload) {
+    public static byte[] getPriority(HexBytes payload) {
         byte[] encoded = payload.getBytes();
         VrfBlockFields vrfBlockFields = RLPCodec.decode(encoded, VrfBlockFields.class);
-        return vrfBlockFields.getDifficulty();
+        return vrfBlockFields.getPriority();
     }
 
-    public static byte[] getDifficulty(Header header) {
-        return getDifficulty(header.getPayload());
+    public static byte[] getPriority(Header header) {
+        return getPriority(header.getPayload());
     }
 
-    public static byte[] getDifficulty(Block block) {
-        return getDifficulty(block.getPayload());
+    public static byte[] getPriority(Block block) {
+        return getPriority(block.getPayload());
     }
 
     public static void setNonce(Header header, byte[] nonce) {
@@ -141,25 +141,25 @@ public class VrfUtil {
         setMiner(block, ByteUtil.hexStringToBytes(miner));
     }
 
-    public static void setDifficulty(Header header, byte[] difficulty) {
+    public static void setPriority(Header header, byte[] priority) {
         HexBytes payload = header.getPayload();
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setDifficulty(difficulty);
+        vrfBlockFields.setPriority(priority);
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
         header.setPayload(HexBytes.fromBytes(encoded));
     }
 
-    public static void setDifficulty(Block block, byte[] difficulty) {
-        setDifficulty(block.getHeader(), difficulty);
+    public static void setPriority(Block block, byte[] priority) {
+        setPriority(block.getHeader(), priority);
     }
 
-    public static void setDifficulty(Block block, HexBytes difficulty) {
-        setDifficulty(block, difficulty.getBytes());
+    public static void setPriority(Block block, HexBytes priority) {
+        setPriority(block, priority.getBytes());
     }
 
-    public static void setDifficulty(Block block, String difficulty) {
-        setDifficulty(block, ByteUtil.hexStringToBytes(difficulty));
+    public static void setPriority(Block block, String priority) {
+        setPriority(block, ByteUtil.hexStringToBytes(priority));
     }
 
     public static void setProposalProof(Header header, ProposalProof proposalProof) {
@@ -177,7 +177,7 @@ public class VrfUtil {
 
     public static VrfBlockFields getVrfBlockFields(HexBytes payload) {
         if (payload == null || payload.size() == 0) {
-            return VrfBlockFields.builder().nonce(null).difficulty(null).miner(null).proposalProof(null).build();
+            return VrfBlockFields.builder().nonce(null).priority(null).miner(null).proposalProof(null).build();
         }
         byte[] encoded = payload.getBytes();
         VrfBlockFields vrfBlockFields = RLPCodec.decode(encoded, VrfBlockFields.class);
@@ -228,17 +228,17 @@ public class VrfUtil {
     }
 
     public static byte[] genPayload(long blockNum, int round, String nonceStr, String minerCoinbaseStr,
-            String difficultyStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
-        byte[] difficulty = ByteUtil.hexStringToBytes(difficultyStr);
+            String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
+        byte[] priority = ByteUtil.hexStringToBytes(priorityStr);
         byte[] nonce = ByteUtil.hexStringToBytes(nonceStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
         byte[] minerCoinbase = ByteUtil.hexStringToBytes(minerCoinbaseStr);
-        return genPayload(blockNum, round, nonce, minerCoinbase, difficulty, blockHash, vrfSk, vrfPk);
+        return genPayload(blockNum, round, nonce, minerCoinbase, priority, blockHash, vrfSk, vrfPk);
     }
 
-    public static byte[] genPayload(long blockNum, int round, byte[] nonce, byte[] minerCoinbase, byte[] difficulty,
+    public static byte[] genPayload(long blockNum, int round, byte[] nonce, byte[] minerCoinbase, byte[] priority,
             byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
-        VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, nonce, minerCoinbase, difficulty, blockHash, vrfSk,
+        VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, nonce, minerCoinbase, priority, blockHash, vrfSk,
                 vrfPk);
 
         byte[] encoded = RLPCodec.encode(vbf1);
@@ -246,30 +246,30 @@ public class VrfUtil {
     }
 
     public static byte[] genPayload(long blockNum, int round, HexBytes nonce, HexBytes minerCoinbase,
-            HexBytes difficulty, HexBytes blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
+            HexBytes priority, HexBytes blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
         VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, nonce.getBytes(), minerCoinbase.getBytes(),
-                difficulty.getBytes(), blockHash.getBytes(), vrfSk, vrfPk);
+                priority.getBytes(), blockHash.getBytes(), vrfSk, vrfPk);
 
         byte[] encoded = RLPCodec.encode(vbf1);
         return encoded;
     }
 
     public static VrfBlockFields genVrfBlockFields(long blockNum, int round, String nonceStr, String minerCoinbaseStr,
-            String difficultyStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
-        byte[] difficulty = ByteUtil.hexStringToBytes(difficultyStr);
+            String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
+        byte[] priority = ByteUtil.hexStringToBytes(priorityStr);
         byte[] nonce = ByteUtil.hexStringToBytes(nonceStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
         byte[] minerCoinbase = ByteUtil.hexStringToBytes(minerCoinbaseStr);
 
-        return genVrfBlockFields(blockNum, round, nonce, minerCoinbase, difficulty, blockHash, vrfSk, vrfPk);
+        return genVrfBlockFields(blockNum, round, nonce, minerCoinbase, priority, blockHash, vrfSk, vrfPk);
     }
 
     public static VrfBlockFields genVrfBlockFields(long blockNum, int round, byte[] nonce, byte[] minerCoinbase,
-            byte[] difficulty, byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
+            byte[] priority, byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
 
         ProposalProof proposalProof = genProposalProof(blockNum, round, nonce, minerCoinbase, blockHash, vrfSk, vrfPk);
 
-        VrfBlockFields vbf1 = VrfBlockFields.builder().nonce(nonce).difficulty(difficulty)
+        VrfBlockFields vbf1 = VrfBlockFields.builder().nonce(nonce).priority(priority)
                 .proposalProof(proposalProof.getEncoded()).miner(minerCoinbase).build();
         return vbf1;
     }
