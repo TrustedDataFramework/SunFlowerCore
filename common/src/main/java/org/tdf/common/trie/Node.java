@@ -218,15 +218,15 @@ class Node {
         assertBranchOrLeaf();
         byte[] val = getValue();
         if (val != null && FastByteComparisons.equal(val, value)) {
-            return false;
+            return dirty;
         }
         setDirty();
         if (getType() == Type.BRANCH) {
             children[BRANCH_SIZE - 1] = value;
-            return true;
+            return dirty;
         }
         children[1] = value;
-        return true;
+        return dirty;
     }
 
     public byte[] getValue() {
