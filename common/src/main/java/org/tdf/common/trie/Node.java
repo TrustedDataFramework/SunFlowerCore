@@ -344,7 +344,7 @@ class Node {
         if (tmp.isEmpty()) {
             // tmp is empty => common prefix = key => key < current
             newBranch.children[BRANCH_SIZE - 1] = value;
-            return true;
+            return dirty;
         }
         newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value);
         return dirty;
