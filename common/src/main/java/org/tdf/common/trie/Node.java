@@ -322,7 +322,7 @@ class Node {
         if (type == Type.EXTENSION && commonPrefix.size() == current.size()) {
             // TODO: remove this assertion for the extension must be branch
             getExtension().assertBranch();
-            if (getExtension().branchInsert(key.shift(commonPrefix.size()), value, cache)) setDirty();
+            this.dirty |= getExtension().branchInsert(key.shift(commonPrefix.size()), value, cache);
             return dirty;
         }
 
@@ -383,7 +383,7 @@ class Node {
             dispose(cache);
             return null;
         }
-        if (child.dirty) setDirty();
+        this.dirty |= child.dirty;
         tryCompact();
         return this;
     }
@@ -396,7 +396,7 @@ class Node {
         }
         Node child = getChild(key.get(0));
         if (child != null) {
-            if (child.insert(key.shift(), value, cache)) setDirty();
+            this.dirty |= child.insert(key.shift(), value, cache);
             return dirty;
         }
         child = newLeaf(key.shift(), value);
@@ -423,7 +423,7 @@ class Node {
         if (child == null) return this;
         child = child.delete(key.shift(), cache);
         children[idx] = child;
-        if (child == null || child.dirty) setDirty();
+        this.diry |= child == null || child.dirty;
         tryCompact();
         return this;
     }
