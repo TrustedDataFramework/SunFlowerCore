@@ -423,7 +423,7 @@ class Node {
         if (child == null) return this;
         child = child.delete(key.shift(), cache);
         children[idx] = child;
-        this.diry |= child == null || child.dirty;
+        this.dirty |= child == null || child.dirty;
         tryCompact();
         return this;
     }
