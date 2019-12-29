@@ -103,7 +103,7 @@ class Node {
 
     // encode and commit root node to store
     // return rlp encoded
-    // if encodeAndCommit is call at root node, force hash is set to true
+    // if commit is call at root node, force hash is set to true
     RLPElement commit(
             Function<byte[], byte[]> function,
             Store<byte[], byte[]> cache,
@@ -142,7 +142,7 @@ class Node {
         dirty = false;
         byte[] raw = rlp.getEncoded();
 
-        // if encoded size is great than or equals, store node to db and return a hash reference
+        // if encoded size is great than or equals to 32, store node to db and return a hash reference
         if (raw.length >= MAX_KEY_SIZE || forceHash) {
             hash = function.apply(raw);
             cache.put(hash, raw);
@@ -196,7 +196,7 @@ class Node {
 
     // wrap o to an extension or leaf node
     private Node newShort(TrieKey key, Object o) {
-        // if size of key is zero, we not need to wrap child
+        // if size of key is zero, no need to wrap child
         if (key.size() == 0 && o instanceof Node) {
             return (Node) o;
         }
@@ -370,7 +370,7 @@ class Node {
             if (k1.isEmpty()) {
                 dispose(cache);
                 children[1] = null;
-                // delete value success, set this to null
+                // delete value success, notify parent to remove this child
                 return null;
             }
             // delete failed, no need to compact
@@ -381,6 +381,7 @@ class Node {
         children[1] = child;
         if (child == null) {
             dispose(cache);
+            // delete child success, notify parent to remove this child
             return null;
         }
         this.dirty |= child.dirty;
