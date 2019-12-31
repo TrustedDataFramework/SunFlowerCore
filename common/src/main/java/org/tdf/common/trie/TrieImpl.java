@@ -197,12 +197,12 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public Trie<K, V> empty() {
-        return new TrieImpl<>(nullHash, null, function, store, kCodec, vCodec);
+    public Trie<K, V> revert(byte[] rootHash) throws RuntimeException {
+        return revert(rootHash, store);
     }
 
     @Override
-    public Trie<K, V> revert(byte[] rootHash) throws RuntimeException {
-        return revert(rootHash, store);
+    public Trie<K, V> revert() {
+        return new TrieImpl<>(nullHash, null, function, store, kCodec, vCodec);
     }
 }
