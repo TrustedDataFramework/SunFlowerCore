@@ -10,6 +10,13 @@ public interface Trie<K, V> extends Store<K, V> {
     // throw exception if the rootHash not found in the store
     Trie<K, V> revert(byte[] rootHash, Store<byte[], byte[]> store) throws RuntimeException;
 
+    // revert to another trie with rootHash and store currently used
+    // throw exception if the rootHash not found in the store
+    Trie<K, V> revert(byte[] rootHash) throws RuntimeException;
+
+    // revert to empty
+    Trie<K, V> revert();
+
     // build a new trie and get the root hash of this trie
     // you could rollback to this state later by revert to the root hash generated
     byte[] commit();

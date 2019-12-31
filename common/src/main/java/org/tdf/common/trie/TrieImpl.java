@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.MemoryCachedStore;
 import org.tdf.common.store.ReadOnlyStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
@@ -41,7 +40,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
                 hashFunction.apply(RLPItem.NULL.getEncoded()),
                 null,
                 hashFunction,
-                new MemoryCachedStore<>(store),
+                store,
                 kCodec,
                 vCodec
         );
@@ -151,12 +150,12 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     @Override
     public TrieImpl<K, V> revert(@NonNull byte[] rootHash, Store<byte[], byte[]> store) {
         if(FastByteComparisons.equal(rootHash, nullHash))
-            return new TrieImpl<>(nullHash, null, function, new MemoryCachedStore<>(store), kCodec, vCodec);
+            return new TrieImpl<>(nullHash, null, function, store, kCodec, vCodec);
         if(!store.containsKey(rootHash)) throw new RuntimeException("rollback failed, root hash not exists");
         return new TrieImpl<>(
                 nullHash,
                 Node.fromRootHash(rootHash, new ReadOnlyStore<>(store)),
-                function, new MemoryCachedStore<>(store), kCodec, vCodec
+                function, store, kCodec, vCodec
         );
     }
 
@@ -195,5 +194,15 @@ public class TrieImpl<K, V> implements Trie<K, V> {
             map.put(kCodec.getDecoder().apply(entry.getKey()), vCodec.getDecoder().apply(entry.getValue()));
         }
         return map;
+    }
+
+    @Override
+    public Trie<K, V> empty() {
+        return new TrieImpl<>(nullHash, null, function, store, kCodec, vCodec);
+    }
+
+    @Override
+    public Trie<K, V> revert(byte[] rootHash) throws RuntimeException {
+        return revert(rootHash, store);
     }
 }
