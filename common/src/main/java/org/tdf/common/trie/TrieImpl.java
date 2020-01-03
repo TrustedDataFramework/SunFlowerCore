@@ -2,6 +2,7 @@ package org.tdf.common.trie;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ReadOnlyStore;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 // enhanced radix tree
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TrieImpl<K, V> implements Trie<K, V> {
+    @Getter
     private final byte[] nullHash;
 
     private Node root;

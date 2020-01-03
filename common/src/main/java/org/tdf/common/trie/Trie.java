@@ -32,6 +32,9 @@ public interface Trie<K, V> extends Store<K, V> {
     // throw RuntimeException if this trie is dirty
     byte[] getRootHash() throws RuntimeException;
 
+    // return a null hash, revert to null hash returns an empty trie;
+    byte[] getNullHash();
+
     // return true is root node is not null and root node is dirty
     boolean isDirty();
 }
