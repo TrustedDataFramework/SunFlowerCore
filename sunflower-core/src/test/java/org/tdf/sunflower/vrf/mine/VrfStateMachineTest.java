@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.spongycastle.util.encoders.Hex;
@@ -128,6 +129,7 @@ public class VrfStateMachineTest {
         }
     }
 
+    @Ignore
     @Test
     public void testTimerTask() {
         assertTrue(VRF_SK_ARRAY.length == COINBASE_ARRAY.length);
@@ -197,6 +199,7 @@ public class VrfStateMachineTest {
 //	    repository.close();
     }
 
+    @Ignore
     @Test
     public void testConsensus1() {
         final int NODES_COUNT = 1;
@@ -229,6 +232,7 @@ public class VrfStateMachineTest {
         cleanupNodes(NODES_COUNT);
     }
 
+    @Ignore
     @Test
     public void testConsensus2() {
         final int NODES_COUNT = 2;
@@ -261,6 +265,7 @@ public class VrfStateMachineTest {
         cleanupNodes(NODES_COUNT);
     }
 
+    @Ignore
     @Test
     public void testConsensus3() {
         final int NODES_COUNT = 3;
@@ -293,6 +298,7 @@ public class VrfStateMachineTest {
         cleanupNodes(NODES_COUNT);
     }
 
+    @Ignore
     @Test
     public void testConsensus10() {
         final int NODES_COUNT = COINBASE_ARRAY.length;

@@ -10,6 +10,7 @@ import java.util.Random;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.fraction.BigFraction;
 import org.bouncycastle.util.encoders.Hex;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
@@ -130,6 +131,7 @@ public class VrfTests {
     // this 1000 rounds test shows none fail round exists, where 100 user holds
     // approximate 10% of total weight.
     //
+    @Ignore
     @Test
     public void testBatchPriority() {
         int successRounds = 0;
@@ -153,6 +155,7 @@ public class VrfTests {
         return sumPriorities;
     }
 
+    @Ignore
     @Test
     public void testBatchSumPriority() {
         for (int r = 0; r < rounds; r++) {
@@ -206,6 +209,7 @@ public class VrfTests {
     }
 
     @Test
+    @Ignore
     public void testCalcPriority2() {
         final int expected = 26;
         final int weight = 50;
@@ -240,6 +244,7 @@ public class VrfTests {
         System.out.println(b2.cumulativeProbability(15).doubleValue());
     }
 
+    @Ignore
     @Test
     public void testCalcPriorityRandom1() {
         final int expected = 26;
@@ -319,6 +324,7 @@ public class VrfTests {
                 + minPriorities);
     }
 
+    @Ignore
     @Test
     public void testCalcPriorityRandom2() {
         final int expected = 26;
@@ -398,6 +404,7 @@ public class VrfTests {
                 + minPriorities);
     }
 
+    @Ignore
     @Test
     public void testCalcPriorityArxm() {
         final int expected = 26;

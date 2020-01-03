@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.bouncycastle.util.encoders.Hex;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519;
@@ -79,6 +80,7 @@ public class CommitProofTest {
         assertTrue(prove2.verify());
     }
 
+    @Ignore
     @Test
     public void testPriority() {
         final int expected = 26;

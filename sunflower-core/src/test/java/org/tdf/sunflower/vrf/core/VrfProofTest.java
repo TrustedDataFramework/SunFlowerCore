@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import java.security.SecureRandom;
 
 import org.bouncycastle.util.encoders.Hex;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
@@ -115,6 +116,7 @@ public class VrfProofTest {
                 Hex.toHexString(prove2.getVrfResult().getProof()));
     }
 
+    @Ignore
     @Test
     public void testPriority() {
         final int expected = 26;
@@ -173,6 +175,7 @@ public class VrfProofTest {
         }
     }
 
+    @Ignore
     @Test
     public void testPriorityRandom1() {
         final int expected = 26;
@@ -309,6 +312,7 @@ public class VrfProofTest {
                 + elapseTotal / loopCount / nodeCount + "> ms");
     }
 
+    @Ignore
     @Test
     public void testPriorityRandom2() {
         final int expected = 26;
@@ -445,6 +449,7 @@ public class VrfProofTest {
                 + elapseTotal / loopCount / nodeCount + "> ms");
     }
 
+    @Ignore
     @Test
     public void testPriorityRandom3() {
         final int expected = 26;
@@ -590,6 +595,7 @@ public class VrfProofTest {
                 + elapseTotal / loopCount / nodeCount + "> ms");
     }
 
+    @Ignore
     @Test
     public void testProposalRandom1() {
         final int expected = 26;
