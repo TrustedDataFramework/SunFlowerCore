@@ -10,7 +10,6 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.trie.TrieImpl;
 import org.tdf.crypto.HashFunctions;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
-import org.tdf.sunflower.types.Block;
 
 import java.util.Collection;
 import java.util.Map;
@@ -32,12 +31,14 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     @Getter(AccessLevel.PROTECTED)
     private StateUpdater<ID, S> updater;
 
+    @Getter
+    private byte[] genesisRoot;
+
     public AbstractStateTrie(
             StateUpdater<ID, S> updater,
             Codec<ID, byte[]> idCodec,
             Codec<S, byte[]> stateCodec,
             // TODO: verify genesis state roots
-            Block genesis,
             DatabaseStoreFactory factory,
             boolean logDeletes
     ) {
@@ -67,7 +68,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         // sync to genesis
         Trie<ID, S> tmp = trie.revert();
         updater.getGenesisStates().forEach(tmp::put);
-        tmp.commit();
+        genesisRoot = tmp.commit();
         tmp.flush();
     }
 
