@@ -1,6 +1,5 @@
 package org.tdf.sunflower.state;
 
-import org.tdf.common.serialize.Codec;
 import org.tdf.sunflower.types.Block;
 
 import java.util.List;
@@ -24,6 +23,7 @@ public abstract class AbstractStateUpdater<ID, S> implements StateUpdater<ID, S>
 
     public Map<ID, S> update(Map<ID, S> beforeUpdate, Block block) {
         Map<ID, S> ret = createEmptyMap();
+        ret.putAll(beforeUpdate);
         block.getBody().forEach(
                 tx -> getRelatedKeys(tx)
                         .forEach(k -> ret.put(k, update(k, ret.get(k), tx)))
@@ -33,6 +33,7 @@ public abstract class AbstractStateUpdater<ID, S> implements StateUpdater<ID, S>
 
     public Map<ID, S> update(Map<ID, S> beforeUpdate, List<Block> blocks) {
         Map<ID, S> ret = createEmptyMap();
+        ret.putAll(beforeUpdate);
         blocks.stream().flatMap(b -> b.getBody().stream())
                 .forEach(tx -> getRelatedKeys(tx).forEach(k -> {
                     ret.put(k, update(k, ret.get(k), tx));
