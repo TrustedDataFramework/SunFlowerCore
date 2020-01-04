@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
-public abstract class AbstractStateTrie<ID, T> implements StateTrie<ID, T> {
+public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     private String TRIE;
     private String DELETED;
 
@@ -25,17 +25,17 @@ public abstract class AbstractStateTrie<ID, T> implements StateTrie<ID, T> {
 
 
     @Getter
-    private Trie<ID, T> trie;
+    private Trie<ID, S> trie;
 
     protected abstract String getPrefix();
 
     @Getter(AccessLevel.PROTECTED)
-    private StateUpdater<ID, T> updater;
+    private StateUpdater<ID, S> updater;
 
     public AbstractStateTrie(
-            StateUpdater<ID, T> updater,
+            StateUpdater<ID, S> updater,
             Codec<ID, byte[]> idCodec,
-            Codec<T, byte[]> stateCodec,
+            Codec<S, byte[]> stateCodec,
             // TODO: verify genesis state roots
             Block genesis,
             DatabaseStoreFactory factory,
@@ -65,35 +65,35 @@ public abstract class AbstractStateTrie<ID, T> implements StateTrie<ID, T> {
         );
 
         // sync to genesis
-        Trie<ID, T> tmp = trie.revert();
+        Trie<ID, S> tmp = trie.revert();
         updater.getGenesisStates().forEach(tmp::put);
         tmp.commit();
         tmp.flush();
     }
 
-    public Optional<T> get(byte[] rootHash, ID id) {
+    public Optional<S> get(byte[] rootHash, ID id) {
         return getTrie().revert(rootHash).get(id);
     }
 
-    public Map<ID, T> batchGet(byte[] rootHash, Collection<ID> keys) {
-        Trie<ID, T> trie = getTrie().revert(rootHash);
-        Map<ID, T> map = updater.createEmptyMap();
+    public Map<ID, S> batchGet(byte[] rootHash, Collection<ID> keys) {
+        Trie<ID, S> trie = getTrie().revert(rootHash);
+        Map<ID, S> map = updater.createEmptyMap();
         keys.forEach(
                 k -> map.put(k, trie.get(k).orElse(updater.createEmpty(k)))
         );
         return map;
     }
 
-    protected Trie<ID, T> commitInternal(byte[] parentRoot, Map<ID, T> data) {
+    protected Trie<ID, S> commitInternal(byte[] parentRoot, Map<ID, S> data) {
         Store<byte[], byte[]> cache = new MemoryCachedStore<>(getTrieStore());
-        Trie<ID, T> trie = getTrie().revert(parentRoot, cache);
+        Trie<ID, S> trie = getTrie().revert(parentRoot, cache);
         data.forEach(trie::put);
         byte[] newRoot = trie.commit();
         trie.flush();
         return trie;
     }
 
-    public Trie<ID, T> getTrie(byte[] rootHash){
+    public Trie<ID, S> getTrie(byte[] rootHash){
         return getTrie().revert(rootHash);
     }
 }
