@@ -1,19 +1,16 @@
 package org.tdf.common.util;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 
 /**
  * wrap byte array hash set as set
  */
 public class ByteArraySet implements Set<byte[]> {
-    Set<ByteArrayWrapper> delegate;
+    Set<HexBytes> delegate;
 
     public ByteArraySet() {
-        this(new HashSet<ByteArrayWrapper>());
+        this(new HashSet<HexBytes>());
     }
 
     public ByteArraySet(Collection<? extends byte[]> all){
@@ -21,7 +18,7 @@ public class ByteArraySet implements Set<byte[]> {
         addAll(all);
     }
 
-    ByteArraySet(Set<ByteArrayWrapper> delegate) {
+    ByteArraySet(Set<HexBytes> delegate) {
         this.delegate = delegate;
     }
 
@@ -37,14 +34,14 @@ public class ByteArraySet implements Set<byte[]> {
 
     @Override
     public boolean contains(Object o) {
-        return delegate.contains(new ByteArrayWrapper((byte[]) o));
+        return delegate.contains(HexBytes.fromBytes((byte[]) o));
     }
 
     @Override
     public Iterator<byte[]> iterator() {
         return new Iterator<byte[]>() {
 
-            Iterator<ByteArrayWrapper> it = delegate.iterator();
+            Iterator<HexBytes> it = delegate.iterator();
             @Override
             public boolean hasNext() {
                 return it.hasNext();
@@ -52,7 +49,7 @@ public class ByteArraySet implements Set<byte[]> {
 
             @Override
             public byte[] next() {
-                return it.next().getData();
+                return it.next().getBytes();
             }
 
             @Override
@@ -66,9 +63,9 @@ public class ByteArraySet implements Set<byte[]> {
     public Object[] toArray() {
         byte[][] ret = new byte[size()][];
 
-        ByteArrayWrapper[] arr = delegate.toArray(new ByteArrayWrapper[size()]);
+        HexBytes[] arr = delegate.toArray(new HexBytes[size()]);
         for (int i = 0; i < arr.length; i++) {
-            ret[i] = arr[i].getData();
+            ret[i] = arr[i].getBytes();
         }
         return ret;
     }
@@ -80,17 +77,20 @@ public class ByteArraySet implements Set<byte[]> {
 
     @Override
     public boolean add(byte[] bytes) {
-        return delegate.add(new ByteArrayWrapper(bytes));
+        return delegate.add(HexBytes.fromBytes(bytes));
     }
 
     @Override
     public boolean remove(Object o) {
-        return delegate.remove(new ByteArrayWrapper((byte[]) o));
+        return delegate.remove(HexBytes.fromBytes((byte[]) o));
     }
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        throw new RuntimeException("Not implemented");
+        for (Object e : c)
+            if (!contains(e))
+                return false;
+        return true;
     }
 
     @Override
@@ -104,7 +104,16 @@ public class ByteArraySet implements Set<byte[]> {
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        throw new RuntimeException("Not implemented");
+        Objects.requireNonNull(c);
+        boolean modified = false;
+        Iterator<byte[]> it = iterator();
+        while (it.hasNext()) {
+            if (!c.contains(it.next())) {
+                it.remove();
+                modified = true;
+            }
+        }
+        return modified;
     }
 
     @Override
@@ -119,15 +128,5 @@ public class ByteArraySet implements Set<byte[]> {
     @Override
     public void clear() {
         delegate.clear();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    @Override
-    public int hashCode() {
-        throw new RuntimeException("Not implemented");
     }
 }

@@ -7,6 +7,7 @@ import java.util.Arrays;
 /**
  * wrap byte array as immutable
  */
+@Deprecated // use HexBytes
 public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializable {
 
     private static final long serialVersionUID = 7120319357455987329L;
