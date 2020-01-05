@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
- * util for big-endian encoding & decoding
+ * util for big-endian encoding and decoding
  */
 public class BigEndian {
     private static final BigInteger shadow;

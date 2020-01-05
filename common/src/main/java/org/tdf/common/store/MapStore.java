@@ -8,7 +8,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 /**
- * make Map<K, V> implements Store<K,V> implicitly
+ * delegate Map as Store
  *
  * @param <K> key type
  * @param <V> value type

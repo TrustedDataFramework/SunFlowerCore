@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 
 /**
- * wrap Store<byte[], byte[]> as Store<K, V>
+ * delegate {@code Store<U, R>} as {@code Store<K, V>}
  *
  * @param <K> type of key
  * @param <V> type of value

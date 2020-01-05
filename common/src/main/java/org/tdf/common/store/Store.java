@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 
 /**
  * abstract storage of key-value mappings
- *
+ * @author zhuyingjie
  * @param <K> key
  * @param <V> value
  */
@@ -67,19 +67,23 @@ public interface Store<K, V> {
 
     /**
      * Gets a value by its key
-     *
+     * @param k key to query
      * @return value or empty if no such key in the source
      */
     Optional<V> get(K k);
 
     /**
      * Puts key-value pair into store
+     * @param k key of key-value mapping
+     * @param v value of key-value mapping
      * remove key in the store if puts empty value
      */
     void put(K k, V v);
 
     /**
      * Puts key-value pair into store when key not exists
+     * @param k key of key-value mapping
+     * @param v value of key-value mapping
      */
     default void putIfAbsent(K k, V v) {
         if (containsKey(k)) return;
@@ -88,6 +92,7 @@ public interface Store<K, V> {
 
     /**
      * Deletes the key-value mapping from the source
+     * @param k key of key-value mapping
      */
     void remove(K k);
 
@@ -102,7 +107,7 @@ public interface Store<K, V> {
 
     /**
      * Returns <tt>true</tt> if this store contains a mapping for the specified key.
-     *
+     * @param k key of key-value mapping
      * @return <tt>true</tt> if this store contains a mapping for the specified key.
      */
     default boolean containsKey(K k) {
@@ -128,6 +133,7 @@ public interface Store<K, V> {
     /**
      * Performs the given action for each key value pair in this map store until all pairs
      * have been processed or the action throws an exception.
+     * @param consumer operation of key-value mapping
      */
     void forEach(BiConsumer<K, V> consumer);
 

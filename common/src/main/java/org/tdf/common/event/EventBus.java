@@ -4,32 +4,48 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
+/**
+ * lock-free event bus implementation
+ */
 public class EventBus {
     private Map<Class, List<Consumer<?>>> listeners = new HashMap<>();
-    private ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public <T> void subscribe(Class<T> eventType, Consumer<T> listener) {
-        lock.writeLock().lock();
-        try {
-            listeners.putIfAbsent(eventType, new ArrayList<>());
-            listeners.get(eventType).add(listener);
-        } finally {
-            lock.writeLock().unlock();
+    /**
+     * subscribe a listener to event
+     * @param eventType type of event
+     * @param listener listener which applied when some event published
+     * @param <T> generic
+     */
+    public synchronized <T> void subscribe(Class<T> eventType, Consumer<T> listener) {
+        Map<Class, List<Consumer<?>>> copied = copy(listeners);
+        copied.putIfAbsent(eventType, new ArrayList<>());
+        copied.get(eventType).add(listener);
+        listeners = copied;
+    }
+
+    /**
+     * publish a event to listeners
+     * @param event the event to publish
+     */
+    public void publish(Object event) {
+        List<Consumer<?>> consumers = listeners.get(event.getClass());
+        if (consumers == null) return;
+        for (Consumer consumer : consumers) {
+            try {
+                consumer.accept(event);
+            } catch (Exception ignored) {
+
+            }
         }
     }
 
-    public void publish(Object event) {
-        lock.readLock().lock();
-        try {
-            List<Consumer<?>> consumers = listeners.get(event.getClass());
-            if (consumers == null) return;
-            consumers.forEach(con -> ((Consumer<Object>) con).accept(event));
-        } finally {
-            lock.readLock().unlock();
-        }
+    private Map<Class, List<Consumer<?>>> copy(Map<Class, List<Consumer<?>>> listeners) {
+        Map<Class, List<Consumer<?>>> ret = new HashMap<>();
+        listeners.forEach((k, v) -> {
+            ret.put(k, new ArrayList<>(v));
+        });
+        return ret;
     }
 }
