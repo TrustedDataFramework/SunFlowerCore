@@ -200,4 +200,9 @@ public interface Store<K, V> {
     default Map<K, V> asMap() {
         return new StoreMapView<>(this);
     }
+
+    
+    default V getTrap(){ 
+      throw new RuntimeException();
+    }
 }
