@@ -114,8 +114,8 @@ public class MapStore<K, V> implements BatchStore<K, V> {
     @Override
     public void traverse(BiFunction<K, V, Boolean> traverser) {
         for (Map.Entry<K, V> entry : map.entrySet()) {
-            boolean proceed = traverser.apply(entry.getKey(), entry.getValue());
-            if (!proceed) break;
+            if (!traverser.apply(entry.getKey(), entry.getValue()))
+                break;
         }
     }
 

@@ -41,10 +41,6 @@ public class LevelDb implements DatabaseStore {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public void init(DBSettings dbsettings) {
         this.dbSettings = dbsettings;
         resetDbLock.writeLock().lock();

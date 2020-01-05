@@ -4,7 +4,6 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 public interface Trie<K, V> extends Store<K, V> {
@@ -12,33 +11,59 @@ public interface Trie<K, V> extends Store<K, V> {
         return new Builder<>();
     }
 
-    // revert to another trie with rootHash and store provided
-    // throw exception if the rootHash not found in the store
+    /**
+     * rollback to a previous trie
+     * @param rootHash previous trie's root hash
+     * @param store the underlying storage of trie
+     * @return trie with root hash
+     * @throws RuntimeException if the root hash not found in the store or rollback failed
+     */
     Trie<K, V> revert(byte[] rootHash, Store<byte[], byte[]> store) throws RuntimeException;
 
-    // revert to another trie with rootHash and store currently used
-    // throw exception if the rootHash not found in the store
+    /**
+     * rollback to a previous trie
+     * @param rootHash previous trie's root hash
+     * @return trie with root hash
+     * @throws RuntimeException if the root hash not found in the store or roll back failed
+     */
     Trie<K, V> revert(byte[] rootHash) throws RuntimeException;
 
-    // revert to empty
+    /**
+     * rollback to an empty trie
+     * @return an empty trie
+     */
     Trie<K, V> revert();
 
-    // build a new trie and get the root hash of this trie
-    // you could rollback to this state later by revert to the root hash generated
+    /**
+     * commit modifications and build a new trie
+     * @return root hash of new trie
+     */
     byte[] commit();
 
-    // dump this trie
+    /**
+     * dump this trie
+     * @return minimal key value pairs to store this trie
+     * @throws RuntimeException if the trie is both non-null and dirty
+     */
     Map<byte[], byte[]> dump();
 
-    // get root hash of a non-dirty tree
-    // if trie is null, return null hash
-    // throw RuntimeException if this trie is dirty
+    /**
+     * get root hash of a non-dirty tree, return null hash if the trie is null
+     * @return trie's root hash
+     * @throws RuntimeException if this trie is dirty
+     */
     byte[] getRootHash() throws RuntimeException;
 
-    // return a null hash, revert to null hash returns an empty trie;
+    /**
+     * get root hash of an empty trie
+     * @return root hash of an empty trie
+     */
     byte[] getNullHash();
 
-    // return true is root node is not null and root node is dirty
+    /**
+     * trie is both non-null and has uncommitted modifications
+     * @return true when trie is both non-null and dirty
+     */
     boolean isDirty();
 
     class Builder<K, V> {

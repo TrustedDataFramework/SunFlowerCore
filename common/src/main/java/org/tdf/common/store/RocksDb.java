@@ -42,10 +42,6 @@ public class RocksDb implements DatabaseStore {
         return this.name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public void init(DBSettings dbSettings) {
         this.dbSettings = dbSettings;
         resetDbLock.writeLock().lock();

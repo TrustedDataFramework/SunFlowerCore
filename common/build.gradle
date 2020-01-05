@@ -52,4 +52,6 @@ dependencies {
     testCompile "org.iq80.leveldb:leveldb:${leveldbVersion}"
     testCompile "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
     testCompile "org.slf4j:slf4j-api:${slf4jVersion}"
+    testCompile "org.rocksdb:rocksdbjni:${rocksdbVersion}"
+
 }

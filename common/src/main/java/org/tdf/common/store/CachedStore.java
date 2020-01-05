@@ -100,12 +100,14 @@ public class CachedStore<K, V> implements Store<K, V> {
     @Override
     public void traverse(BiFunction<K, V, Boolean> traverser) {
         for (Map.Entry<K, V> entry : cache.entrySet()) {
-            if (entry.getValue() == getTrap()) continue;
-            boolean proceed = traverser.apply(entry.getKey(), entry.getValue());
-            if (!proceed) break;
+            if (entry.getValue() == getTrap())
+                continue;
+            if (!traverser.apply(entry.getKey(), entry.getValue()))
+                break;
         }
         delegate.traverse((k, v) -> {
-            if (cache.containsKey(k)) return true;
+            if (cache.containsKey(k))
+                return true;
             return traverser.apply(k, v);
         });
     }
