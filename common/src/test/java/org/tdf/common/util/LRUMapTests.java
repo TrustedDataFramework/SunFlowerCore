@@ -15,19 +15,19 @@ public class LRUMapTests {
 
     private List<String> evicted;
 
-
     @Before
     public void before() {
         evicted = new ArrayList<>();
-        lruMap = new LRUMap<>(2, (k, v) -> {
-           evicted.add(k);
-        });
+        LRUMap.Builder<String, String> builder = LRUMap.builder();
+        lruMap = builder.maximumSize(2)
+                .hook((k, v) -> evicted.add(k))
+                .build();
         lruMap.put("1", "2");
         lruMap.put("2", "3");
     }
 
     @Test
-    public void test(){
+    public void test() {
         lruMap.put("3", "4");
         assert evicted.size() == 1;
         assert evicted.get(0).equals("1");

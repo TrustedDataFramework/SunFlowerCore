@@ -1,38 +1,46 @@
 package org.tdf.common.store;
 
 import lombok.NonNull;
-import org.tdf.common.util.ByteArrayMap;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 /**
  * Source which internally caches underlying Source key-value pairs
  * <p>
- * Created by Anton Nashatyrev on 21.10.2016.
+ *
+ * @author zhuyingjie
  */
-public abstract class CachedStore<K, V> implements Store<K, V> {
-    protected Store<K, V> delegated;
+public class CachedStore<K, V> implements Store<K, V> {
+    protected Store<K, V> delegate;
 
     protected Map<K, V> cache;
 
-    protected Map<K, V> deleted;
+    protected V trap;
 
-    public CachedStore(Store<K, V> delegated) {
-        this.delegated = delegated;
+    protected Supplier<? extends Map<K, V>> cacheSupplier;
+
+    @lombok.Builder(builderClassName = "Builder")
+    public CachedStore(
+            @NonNull Store<K, V> delegate,
+            @NonNull Supplier<? extends Map<K, V>> cacheSupplier,
+            @NonNull V trap
+    ) {
+        this.delegate = delegate;
+        this.cacheSupplier = cacheSupplier;
+        this.trap = trap;
         clearCache();
     }
 
-    // create a new cache
-    abstract Map<K, V> newCache();
-
-    // get non-null static trap value
-    // put key with trap value will remove the key
-    abstract V getTrap();
+    @Override
+    public V getTrap() {
+        return trap;
+    }
 
     void clearCache() {
-        cache = newCache();
+        cache = cacheSupplier.get();
     }
 
     @Override
@@ -40,7 +48,7 @@ public abstract class CachedStore<K, V> implements Store<K, V> {
         V v = cache.get(k);
         if (v == null) return delegate.get(k);
         if (v == getTrap()) return Optional.empty();
-        return v;
+        return Optional.of(v);
     }
 
     @Override
@@ -59,28 +67,28 @@ public abstract class CachedStore<K, V> implements Store<K, V> {
     @Override
     public void flush() {
         if (cache.isEmpty()) return;
-        if (delegated instanceof DatabaseStore) {
-            DatabaseStore bat = (DatabaseStore) delegated;
-            bat.putAll(cache);
+        if (delegate instanceof DatabaseStore) {
+            DatabaseStore bat = (DatabaseStore) delegate;
+            bat.putAll((Map<byte[], byte[]>) cache);
             bat.flush();
             return;
         }
         cache.forEach((k, v) -> {
-          if (v == getTrap()) {
-            delegate.remove(k);
-            return;
-          }
-          delegate.put(k, v);
+            if (v == getTrap()) {
+                delegate.remove(k);
+                return;
+            }
+            delegate.put(k, v);
         });
         clearCache();
-        delegated.flush();
+        delegate.flush();
     }
 
     @Override
     public boolean containsKey(@NonNull K k) {
         V v = cache.get(k);
         return (v != null && v != getTrap())
-         || (v != getTrap() && delegate.containsKey(k));
+                || (v != getTrap() && delegate.containsKey(k));
     }
 
 
@@ -92,13 +100,15 @@ public abstract class CachedStore<K, V> implements Store<K, V> {
     @Override
     public void clear() {
         clearCache();
-        delegated.forEach((k, v) -> cache.put(k, getTrap()));
+        delegate.forEach((k, v) -> cache.put(k, getTrap()));
     }
 
     @Override
     public void forEach(BiConsumer<K, V> consumer) {
-        cache.forEach((k, v) -> {if(v != getTrap()) consumer.accept(k, v);});
-        delegated.forEach((k, v) -> {
+        cache.forEach((k, v) -> {
+            if (v != getTrap()) consumer.accept(k, v);
+        });
+        delegate.forEach((k, v) -> {
             if (cache.containsKey(k)) return;
             consumer.accept(k, v);
         });

@@ -80,7 +80,7 @@ public class ReadOnlyStore<K, V> implements Store<K, V> {
 
     @Override
     public Map<K, V> asMap() {
-        return delegate.asMap();
+        throw new UnsupportedOperationException(READ_ONLY_TIP);
     }
 
     @Override

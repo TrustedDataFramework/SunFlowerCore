@@ -189,7 +189,7 @@ public class LevelDb implements DatabaseStore {
     private void updateBatchInternal(Map<byte[], byte[]> rows) throws IOException {
         try (WriteBatch batch = db.createWriteBatch()) {
             for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
-                if (entry.getValue() == null || entry.getValue() == EMPTY || entry.getValue().length == 0) {
+                if (entry.getValue() == null || entry.getValue() == getTrap() || entry.getValue().length == 0) {
                     batch.delete(entry.getKey());
                 } else {
                     batch.put(entry.getKey(), entry.getValue());
@@ -228,7 +228,7 @@ public class LevelDb implements DatabaseStore {
         try {
             if (log.isTraceEnabled())
                 log.trace("~> LevelDbDataSource.put(): " + name + ", key: " + Hex.encodeHexString(key));
-            if (val != EMPTY && val.length != 0) {
+            if (val != getTrap() && val.length != 0) {
                 db.put(key, val);
             } else {
                 db.delete(key);
@@ -247,7 +247,7 @@ public class LevelDb implements DatabaseStore {
             if (db.get(key) != null) {
                 return;
             }
-            if (val != EMPTY && val.length != 0) {
+            if (val != getTrap() && val.length != 0) {
                 db.put(key, val);
             } else {
                 db.delete(key);

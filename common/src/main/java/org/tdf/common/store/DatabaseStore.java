@@ -1,5 +1,7 @@
 package org.tdf.common.store;
 
+import org.tdf.common.util.HexBytes;
+
 import java.util.Map;
 import java.util.Optional;
 
@@ -7,14 +9,17 @@ import java.util.Optional;
  * Interface represents DB source which is normally the final Source in the chain
  */
 public interface DatabaseStore extends BatchStore<byte[], byte[]> {
-    byte[] EMPTY = new byte[0];
-
     /**
      * Initializes DB (open table, connection, etc)
      *
      * @param settings DB settings
      */
     void init(DBSettings settings);
+
+    @Override
+    default byte[] getTrap() {
+        return HexBytes.EMPTY_BYTES;
+    }
 
     // if value is EMPTY, the key-pair will be removed
     @Override

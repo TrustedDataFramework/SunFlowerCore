@@ -22,6 +22,11 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
 
     private Store<K, V> removed;
 
+    public NoDeleteStore(Store<K, V> delegate) {
+        this.delegate = delegate;
+        this.removed = Store.getNop();
+    }
+
     @Override
     public Optional<V> get(@NonNull K k) {
         return delegate.get(k);

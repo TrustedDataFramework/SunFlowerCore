@@ -14,9 +14,10 @@ public class EventBus {
 
     /**
      * subscribe a listener to event
+     *
      * @param eventType type of event
-     * @param listener listener which applied when some event published
-     * @param <T> generic
+     * @param listener  listener which applied when some event published
+     * @param <T>       generic
      */
     public synchronized <T> void subscribe(Class<T> eventType, Consumer<T> listener) {
         Map<Class, List<Consumer<?>>> copied = copy(listeners);
@@ -27,6 +28,7 @@ public class EventBus {
 
     /**
      * publish a event to listeners
+     *
      * @param event the event to publish
      */
     public void publish(Object event) {

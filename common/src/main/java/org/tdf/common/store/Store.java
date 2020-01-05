@@ -6,9 +6,10 @@ import java.util.stream.Stream;
 
 /**
  * abstract storage of key-value mappings
- * @author zhuyingjie
+ *
  * @param <K> key
  * @param <V> value
+ * @author zhuyingjie
  */
 public interface Store<K, V> {
     /**
@@ -72,16 +73,27 @@ public interface Store<K, V> {
      */
     Optional<V> get(K k);
 
+
+    /**
+     * put key with trap value will remove the key
+     * @return non null static trap value
+     */
+    default V getTrap() {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * Puts key-value pair into store
+     *
      * @param k key of key-value mapping
      * @param v value of key-value mapping
-     * remove key in the store if puts empty value
+     * remove key in the store if {@code v == getTrap()}
      */
     void put(K k, V v);
 
     /**
      * Puts key-value pair into store when key not exists
+     *
      * @param k key of key-value mapping
      * @param v value of key-value mapping
      */
@@ -92,6 +104,7 @@ public interface Store<K, V> {
 
     /**
      * Deletes the key-value mapping from the source
+     *
      * @param k key of key-value mapping
      */
     void remove(K k);
@@ -107,6 +120,7 @@ public interface Store<K, V> {
 
     /**
      * Returns <tt>true</tt> if this store contains a mapping for the specified key.
+     *
      * @param k key of key-value mapping
      * @return <tt>true</tt> if this store contains a mapping for the specified key.
      */
@@ -133,6 +147,7 @@ public interface Store<K, V> {
     /**
      * Performs the given action for each key value pair in this map store until all pairs
      * have been processed or the action throws an exception.
+     *
      * @param consumer operation of key-value mapping
      */
     void forEach(BiConsumer<K, V> consumer);
@@ -199,10 +214,5 @@ public interface Store<K, V> {
      */
     default Map<K, V> asMap() {
         return new StoreMapView<>(this);
-    }
-
-    
-    default V getTrap(){ 
-      throw new RuntimeException();
     }
 }

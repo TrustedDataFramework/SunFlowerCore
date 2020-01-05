@@ -27,17 +27,18 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     Codec<V, byte[]> vCodec;
     private Node root;
 
-    public static <K, V> TrieImpl<K, V> newInstance(Function<byte[], byte[]> hashFunction,
-                                                    Store<byte[], byte[]> store,
-                                                    Codec<K, byte[]> kCodec,
-                                                    Codec<V, byte[]> vCodec
+    static <K, V> TrieImpl<K, V> newInstance(
+            @NonNull Function<byte[], byte[]> hashFunction,
+            @NonNull Store<byte[], byte[]> store,
+            @NonNull Codec<K, byte[]> keyCodec,
+            @NonNull Codec<V, byte[]> valueCodec
     ) {
         return new TrieImpl<>(
                 hashFunction.apply(RLPItem.NULL.getEncoded()),
                 hashFunction,
                 store,
-                kCodec,
-                vCodec,
+                keyCodec,
+                valueCodec,
                 null
         );
     }

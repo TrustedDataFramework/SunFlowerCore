@@ -149,7 +149,7 @@ public class RocksDb implements DatabaseStore {
                 try (WriteBatch batch = new WriteBatch();
                      WriteOptions writeOptions = new WriteOptions()) {
                     for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
-                        if (entry.getValue() == null || entry.getValue() == EMPTY || entry.getValue().length == 0) {
+                        if (entry.getValue() == null || entry.getValue() == getTrap() || entry.getValue().length == 0) {
                             batch.remove(entry.getKey());
                         } else {
                             batch.put(entry.getKey(), entry.getValue());
@@ -223,7 +223,7 @@ public class RocksDb implements DatabaseStore {
     public void put(@NonNull byte[] key, @NonNull byte[] val) {
         resetDbLock.readLock().lock();
         try {
-            if (val != EMPTY && val.length != 0) {
+            if (val != getTrap() && val.length != 0) {
                 db.put(key, val);
             } else {
                 db.delete(key);
@@ -269,7 +269,7 @@ public class RocksDb implements DatabaseStore {
         resetDbLock.readLock().lock();
         try {
             if (db.get(key) != null) return;
-            if (val != EMPTY && val.length != 0) {
+            if (val != getTrap() && val.length != 0) {
                 db.put(key, val);
             } else {
                 db.delete(key);

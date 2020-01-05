@@ -4,6 +4,7 @@ import java.util.function.Function;
 
 /**
  * encoder and decoder from a type to another type
+ *
  * @param <K> type before encode
  * @param <V> type encode to
  */

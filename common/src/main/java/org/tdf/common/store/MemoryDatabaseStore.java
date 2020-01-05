@@ -29,7 +29,7 @@ public class MemoryDatabaseStore extends ByteArrayMapStore<byte[]> implements Da
     @Override
     public void putAll(Map<byte[], byte[]> rows) {
         rows.forEach((k, v) -> {
-            if (v == null || v == EMPTY || v.length == 0) {
+            if (v == null || v == getTrap() || v.length == 0) {
                 getMap().remove(k);
                 return;
             }
@@ -39,7 +39,7 @@ public class MemoryDatabaseStore extends ByteArrayMapStore<byte[]> implements Da
 
     @Override
     public void put(byte @NonNull [] k, byte @NonNull [] v) {
-        if (v == EMPTY || v.length == 0) {
+        if (v == getTrap() || v.length == 0) {
             remove(k);
             return;
         }

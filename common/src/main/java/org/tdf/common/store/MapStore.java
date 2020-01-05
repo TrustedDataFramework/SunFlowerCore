@@ -1,6 +1,7 @@
 package org.tdf.common.store;
 
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.tdf.common.util.ByteArrayMap;
 
 import java.util.*;
@@ -34,17 +35,17 @@ public class MapStore<K, V> implements BatchStore<K, V> {
     }
 
     @Override
-    public Optional<V> get(K k) {
+    public Optional<V> get(@NonNull K k) {
         return Optional.ofNullable(map.get(k));
     }
 
     @Override
-    public void put(K k, V v) {
+    public void put(@NonNull K k, @NonNull V v) {
         map.put(k, v);
     }
 
     @Override
-    public void putAll(Map<K, V> rows) {
+    public void putAll(@NonNull Map<K, V> rows) {
         rows.forEach((k, v) -> {
             if (v == null) {
                 map.remove(k);
@@ -55,12 +56,12 @@ public class MapStore<K, V> implements BatchStore<K, V> {
     }
 
     @Override
-    public void putIfAbsent(K k, V v) {
+    public void putIfAbsent(@NonNull K k, @NonNull V v) {
         map.putIfAbsent(k, v);
     }
 
     @Override
-    public void remove(K k) {
+    public void remove(@NonNull K k) {
         map.remove(k);
     }
 

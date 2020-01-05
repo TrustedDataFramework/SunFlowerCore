@@ -3,7 +3,6 @@ package org.tdf.sunflower.state;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.MemoryCachedStore;
 import org.tdf.common.store.NoDeleteStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;

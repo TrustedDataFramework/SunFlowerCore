@@ -1,9 +1,11 @@
 package org.tdf.common.trie;
 
+import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
 
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public interface Trie<K, V> extends Store<K, V> {
     // revert to another trie with rootHash and store provided
@@ -37,4 +39,39 @@ public interface Trie<K, V> extends Store<K, V> {
 
     // return true is root node is not null and root node is dirty
     boolean isDirty();
+
+    static <K, V> Builder<K, V> builder() {
+        return new Builder<>();
+    }
+
+    class Builder<K, V> {
+        private Function<byte[], byte[]> hashFunction;
+        private Store<byte[], byte[]> store;
+        private Codec<K, byte[]> keyCodec;
+        private Codec<V, byte[]> valueCodec;
+
+        public Builder<K, V> hashFunction(Function<byte[], byte[]> hashFunction) {
+            this.hashFunction = hashFunction;
+            return this;
+        }
+
+        public Builder<K, V> store(Store<byte[], byte[]> store) {
+            this.store = store;
+            return this;
+        }
+
+        public Builder<K, V> keyCodec(Codec<K, byte[]> keyCodec) {
+            this.keyCodec = keyCodec;
+            return this;
+        }
+
+        public Builder<K, V> valueCodec(Codec<V, byte[]> valueCodec) {
+            this.valueCodec = valueCodec;
+            return this;
+        }
+
+        public Trie<K, V> build() {
+            return TrieImpl.newInstance(hashFunction, store, keyCodec, valueCodec);
+        }
+    }
 }
