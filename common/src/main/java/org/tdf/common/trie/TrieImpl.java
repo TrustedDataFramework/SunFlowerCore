@@ -10,6 +10,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.rlp.RLPItem;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -140,10 +141,11 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public Set<byte[]> dump() {
+    public Map<byte[], byte[]> dump() {
+        if(isDirty()) throw new UnsupportedOperationException();
         Dump dump = new Dump();
         traverseInternal(dump);
-        return dump.getKeys();
+        return dump.getPairs();
     }
 
     @Override

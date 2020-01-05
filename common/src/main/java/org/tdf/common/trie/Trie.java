@@ -3,6 +3,7 @@ package org.tdf.common.trie;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -26,8 +27,8 @@ public interface Trie<K, V> extends Store<K, V> {
     // you could rollback to this state later by revert to the root hash generated
     byte[] commit();
 
-    // dump key of nodes
-    Set<byte[]> dump();
+    // dump this trie
+    Map<byte[], byte[]> dump();
 
     // get root hash of a non-dirty tree
     // if trie is null, return null hash

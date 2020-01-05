@@ -156,7 +156,7 @@ public interface Store<K, V> {
 
     /**
      * Performs the given action for each key value pair in this map store until all pairs
-     * have been processed or the action throws an exception.
+     * have been processed or the traverser return false
      *
      * @param traverser operation of key-value mapping, if traverser return false, the traverse will stop
      */

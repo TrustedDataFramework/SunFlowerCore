@@ -31,7 +31,7 @@ class Node {
     @Getter(AccessLevel.PACKAGE)
     private boolean dirty;
     // rlp encoded of this node, for serialization
-    private RLPList rlp;
+    RLPList rlp;
     // if hash is not null, resolve rlp encoded from db
     @Getter(AccessLevel.PACKAGE)
     private byte[] hash;

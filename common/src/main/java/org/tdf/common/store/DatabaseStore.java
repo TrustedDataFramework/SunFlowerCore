@@ -2,7 +2,6 @@ package org.tdf.common.store;
 
 import org.tdf.common.util.HexBytes;
 
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -20,10 +19,6 @@ public interface DatabaseStore extends BatchStore<byte[], byte[]> {
     default byte[] getTrap() {
         return HexBytes.EMPTY_BYTES;
     }
-
-    // if value is EMPTY, the key-pair will be removed
-    @Override
-    void putAll(Map<byte[], byte[]> rows);
 
     /**
      * @return true if DB connection is alive

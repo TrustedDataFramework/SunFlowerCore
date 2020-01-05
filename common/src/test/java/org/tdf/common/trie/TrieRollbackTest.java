@@ -28,7 +28,7 @@ public class TrieRollbackTest {
     protected Trie<String, String> trie;
     protected List<byte[]> roots;
     protected Map<String, Map<String, String>> dumps;
-    protected List<Set<byte[]>> nodes;
+    protected List<Map<byte[], byte[]>> nodes;
 
     private NoDeleteStore<byte[], byte[]> cloneDatabase() {
         return new NoDeleteStore<>(new ByteArrayMapStore<>(delegate), new ByteArrayMapStore<>(removed));
@@ -114,7 +114,7 @@ public class TrieRollbackTest {
             NoDeleteStore<byte[], byte[]> db = cloneDatabase();
             Set<byte[]> excludes = new ByteArraySet();
             for (int j = i; j < roots.size(); j++) {
-                excludes.addAll(nodes.get(j));
+                excludes.addAll(nodes.get(j).keySet());
             }
             db.compact(excludes);
             for (int j = 0; j < i; j++) {
@@ -133,8 +133,7 @@ public class TrieRollbackTest {
     // get a tree from dumped nodes success
     public void test3() {
         for (int i = 0; i < roots.size(); i++) {
-            Store<byte[], byte[]> db = new ByteArrayMapStore<>();
-            nodes.get(i).forEach(x -> db.put(x, database.get(x).get()));
+            Store<byte[], byte[]> db = new ByteArrayMapStore<>(nodes.get(i));
             Trie<String, String> trie1 = trie.revert(roots.get(i), db);
             assert equals(dumps.get(Hex.toHexString(roots.get(i))), dump(trie1));
         }

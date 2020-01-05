@@ -26,6 +26,7 @@ public class LevelDBTests {
     @After
     public void after(){
         databaseStore.clear();
+        databaseStore.close();
     }
 
     @Test
@@ -44,8 +45,10 @@ public class LevelDBTests {
         map.put("1", "1");
         assert wrapped.get("1").get().equals("1");
         assert wrapped.keySet().contains("1");
-        assert wrapped.size() == 1;
+        map.put("2,", "2");
+        assert !wrapped.isEmpty();
+        assert wrapped.size() == 2;
         wrapped.keySet().remove("1");
-        assert map.size() == 0;
+        assert map.size() == 1;
     }
 }
