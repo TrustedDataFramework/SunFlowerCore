@@ -4,19 +4,19 @@ import org.tdf.common.util.ByteArrayMap;
 
 import java.util.Map;
 
-public class MemoryCachedStore<V> extends CachedStore<byte[], V> {
-    public MemoryCachedStore(Store<byte[], V> delegated) {
+public class MemoryCachedStore extends CachedStore<byte[], byte[]> {
+    static byte[] trap = new byte[0];
+    public MemoryCachedStore(Store<byte[], byte[]> delegated) {
         super(delegated);
     }
 
     @Override
-    Map<byte[], V> newCache() {
+    Map<byte[], byte[]> newCache() {
         return new ByteArrayMap<>();
     }
 
     @Override
-    Map<byte[], V> newDeleted() {
-        return new ByteArrayMap<>();
+    byte[] getTrap(){
+      return trap;
     }
-
 }
