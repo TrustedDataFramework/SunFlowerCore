@@ -78,19 +78,21 @@ public abstract class CachedStore<K, V> implements Store<K, V> {
 
     @Override
     public boolean containsKey(@NonNull K k) {
-        return !deleted.containsKey(k) && (cache.containsKey(k) || delegated.containsKey(k));
+        V v = cache.get(k);
+        return (v != null && v != getTrap())
+         || (v != getTrap() && delegate.containsKey(k));
     }
 
 
     @Override
     public boolean isEmpty() {
-        return cache.isEmpty() && deleted.size() == delegated.size();
+        return size() == 0;
     }
 
     @Override
     public void clear() {
         clearCache();
-        delegated.forEach(deleted::put);
+        delegated.forEach((k, v) -> cache.put(k, getTrap()));
     }
 
     @Override
