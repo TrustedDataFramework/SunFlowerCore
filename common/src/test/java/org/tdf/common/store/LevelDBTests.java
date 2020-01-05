@@ -7,6 +7,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.serialize.Codecs;
 
+import java.util.Map;
+
 @RunWith(JUnit4.class)
 public class LevelDBTests {
 
@@ -38,6 +40,12 @@ public class LevelDBTests {
 
     @Test
     public void testAsMap(){
-        
+        Map<String, String> map = wrapped.asMap();
+        map.put("1", "1");
+        assert wrapped.get("1").get().equals("1");
+        assert wrapped.keySet().contains("1");
+        assert wrapped.size() == 1;
+        wrapped.keySet().remove("1");
+        assert map.size() == 0;
     }
 }

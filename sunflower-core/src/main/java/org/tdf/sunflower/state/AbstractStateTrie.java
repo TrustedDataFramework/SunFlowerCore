@@ -3,11 +3,13 @@ package org.tdf.sunflower.state;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.NoDeleteStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.trie.TrieImpl;
+import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.HashFunctions;
+import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 
 import java.util.Collection;
@@ -56,13 +58,13 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
                     Store.getNop()
             );
         }
-
-        trie = TrieImpl.newInstance(
-                HashFunctions::keccak256,
-                trieStore,
-                idCodec,
-                stateCodec
-        );
+        Trie.Builder<ID, S> builder = Trie.builder();
+        trie = builder
+                .hashFunction(HashFunctions::keccak256)
+                .store(trieStore)
+                .keyCodec(idCodec)
+                .valueCodec(stateCodec).build()
+        ;
 
         // sync to genesis
         Trie<ID, S> tmp = trie.revert();
@@ -85,7 +87,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     }
 
     protected Trie<ID, S> commitInternal(byte[] parentRoot, Map<ID, S> data) {
-        Store<byte[], byte[]> cache = new MemoryCachedStore<>(getTrieStore());
+        Store<byte[], byte[]> cache = new CachedStore<>(getTrieStore(), ByteArrayMap::new, HexBytes.EMPTY_BYTES);
         Trie<ID, S> trie = getTrie().revert(parentRoot, cache);
         data.forEach(trie::put);
         byte[] newRoot = trie.commit();
@@ -93,7 +95,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         return trie;
     }
 
-    public Trie<ID, S> getTrie(byte[] rootHash){
+    public Trie<ID, S> getTrie(byte[] rootHash) {
         return getTrie().revert(rootHash);
     }
 }

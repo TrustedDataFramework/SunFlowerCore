@@ -8,6 +8,7 @@ import org.tdf.sunflower.exception.ExceptionUtil;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<String, T>> implements Store<String, T> {
     private static final String WHERE_PREFIX = "where";
@@ -96,6 +97,11 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
 
     public void clear() {
         data.clear();
+    }
+
+    @Override
+    public void traverse(BiFunction<String, T, Boolean> traverser) {
+        data.traverse(traverser);
     }
 
     @Override
