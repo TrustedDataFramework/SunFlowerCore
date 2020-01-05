@@ -12,6 +12,6 @@ class Dump implements ScannerAction {
 
     @Override
     public void accept(TrieKey path, Node node) {
-        if(node.getHash() != null) keys.add(node.getHash());
+        if (node.getHash() != null) keys.add(node.getHash());
     }
 }

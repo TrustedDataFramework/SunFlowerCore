@@ -3,8 +3,9 @@ package org.tdf.common.store;
 import lombok.NonNull;
 import org.tdf.common.util.ByteArrayMap;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /**
  * Source which internally caches underlying Source key-value pairs
@@ -14,18 +15,18 @@ import java.util.stream.Collectors;
 public abstract class CachedStore<K, V> implements Store<K, V> {
     protected Store<K, V> delegated;
 
-    protected Store<K, V> cache;
+    protected Map<K, V> cache;
 
-    protected Store<K, V> deleted;
+    protected Map<K, V> deleted;
 
     public CachedStore(Store<K, V> delegated) {
         this.delegated = delegated;
         clearCache();
     }
 
-    abstract Store<K, V> newCache();
+    abstract Map<K, V> newCache();
 
-    abstract Store<K, V> newDeleted();
+    abstract Map<K, V> newDeleted();
 
     void clearCache() {
         cache = newCache();
@@ -35,8 +36,8 @@ public abstract class CachedStore<K, V> implements Store<K, V> {
     @Override
     public Optional<V> get(@NonNull K k) {
         if (deleted.containsKey(k)) return Optional.empty();
-        Optional<V> o = cache.get(k);
-        if (o.isPresent()) return o;
+        V v = cache.get(k);
+        if (v != null) return Optional.of(v);
         return delegated.get(k);
     }
 
@@ -44,12 +45,6 @@ public abstract class CachedStore<K, V> implements Store<K, V> {
     public void put(@NonNull K k, @NonNull V v) {
         deleted.remove(k);
         cache.put(k, v);
-    }
-
-    @Override
-    public void putIfAbsent(@NonNull K k, @NonNull V v) {
-        if (containsKey(k)) return;
-        put(k, v);
     }
 
     @Override
@@ -68,30 +63,16 @@ public abstract class CachedStore<K, V> implements Store<K, V> {
         if (cache.isEmpty() && deleted.isEmpty()) return;
         if (delegated instanceof DatabaseStore) {
             DatabaseStore bat = (DatabaseStore) delegated;
-            Map<byte[], byte[]> modifies = (Map<byte[], byte[]>) cache.asMap();
-            deleted.keySet().forEach(x -> modifies.put((byte[]) x, DatabaseStore.EMPTY));
+            Map<byte[], byte[]> modifies = new ByteArrayMap<>((Map<byte[], byte[]>) cache);
+            deleted.forEach((k, v) -> modifies.put((byte[]) k, DatabaseStore.EMPTY));
             bat.putAll(modifies);
+            bat.flush();
             return;
         }
-        deleted.keySet().forEach(delegated::remove);
-        cache.keySet().forEach(x -> delegated.put(x, cache.get(x).get()));
+        deleted.forEach((k, v) -> delegated.remove(k));
+        cache.forEach((k, v) -> delegated.put(k, v));
         clearCache();
         delegated.flush();
-    }
-
-    @Override
-    public Set<K> keySet() {
-        Set<K> set = delegated.keySet();
-        set.removeAll(deleted.keySet());
-        set.addAll(cache.keySet());
-        return set;
-    }
-
-    @Override
-    public Collection<V> values() {
-        return keySet().stream().map(this::get)
-                .filter(Optional::isPresent)
-                .map(Optional::get).collect(Collectors.toList());
     }
 
     @Override
@@ -99,27 +80,24 @@ public abstract class CachedStore<K, V> implements Store<K, V> {
         return !deleted.containsKey(k) && (cache.containsKey(k) || delegated.containsKey(k));
     }
 
-    @Override
-    public int size() {
-        return keySet().size();
-    }
 
     @Override
     public boolean isEmpty() {
-        return size() == 0;
+        return cache.isEmpty() && deleted.size() == delegated.size();
     }
 
     @Override
     public void clear() {
         clearCache();
-        deleted = delegated;
+        delegated.forEach(deleted::put);
     }
 
     @Override
-    public Map<K, V> asMap() {
-        Map<K, V> ret = delegated.asMap();
-        deleted.keySet().forEach(ret::remove);
-        ret.putAll(cache.asMap());
-        return ret;
+    public void forEach(BiConsumer<K, V> consumer) {
+        cache.forEach(consumer);
+        delegated.forEach((k, v) -> {
+            if (deleted.containsKey(k) || cache.containsKey(k)) return;
+            consumer.accept(k, v);
+        });
     }
 }

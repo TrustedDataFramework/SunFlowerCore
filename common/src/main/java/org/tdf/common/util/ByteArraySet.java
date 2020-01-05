@@ -13,7 +13,7 @@ public class ByteArraySet implements Set<byte[]> {
         this(new HashSet<HexBytes>());
     }
 
-    public ByteArraySet(Collection<? extends byte[]> all){
+    public ByteArraySet(Collection<? extends byte[]> all) {
         this();
         addAll(all);
     }
@@ -42,6 +42,7 @@ public class ByteArraySet implements Set<byte[]> {
         return new Iterator<byte[]>() {
 
             Iterator<HexBytes> it = delegate.iterator();
+
             @Override
             public boolean hasNext() {
                 return it.hasNext();

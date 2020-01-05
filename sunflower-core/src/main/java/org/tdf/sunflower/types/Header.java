@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import org.tdf.common.types.Chained;
-import org.tdf.common.types.Cloneable;
 import org.tdf.common.util.Constants;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
@@ -19,7 +18,7 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Header implements Cloneable<Header>, Chained {
+public class Header implements Chained {
     @RLP(0)
     private int version;
 

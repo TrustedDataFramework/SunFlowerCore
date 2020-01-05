@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 import static org.tdf.common.HashUtil.EMPTY_TRIE_HASH;
@@ -39,36 +40,34 @@ public class TrieTest {
     private static String dude = "dude";
 
 
-    public static class NoDoubleDeleteStore extends ByteArrayMapStore<byte[]>{
+    public static class NoDoubleDeleteStore extends ByteArrayMapStore<byte[]> {
         @Override
         public void remove(byte[] bytes) {
-            if(!super.containsKey(bytes)) throw new RuntimeException("key to delete not found");
+            if (!super.containsKey(bytes)) throw new RuntimeException("key to delete not found");
             super.remove(bytes);
         }
-        
+
         public String toString() {
             StringBuffer buffer = new StringBuffer();
-            for (byte[] k : keySet()) {
-
+            forEach((k, v) -> {
                 buffer.append(Hex.toHexString(k));
                 buffer.append(" = ");
-                k = get(k).get();
-                buffer.append(Hex.toHexString(k));
+                buffer.append(Hex.toHexString(v));
                 buffer.append("\n");
-            }
+            });
             return buffer.toString();
         }
     }
 
-    static TrieImpl<String, String> newStringTrie(Store<byte[], byte[]> store){
+    static TrieImpl<String, String> newStringTrie(Store<byte[], byte[]> store) {
         return TrieImpl.newInstance(HashUtil::sha3, store, Codecs.STRING, Codecs.STRING);
     }
 
-    static TrieImpl<String, String> newStringTrie(){
+    static TrieImpl<String, String> newStringTrie() {
         return TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codecs.STRING, Codecs.STRING);
     }
 
-    static TrieImpl<byte[], byte[]> newBytesTrie(){
+    static TrieImpl<byte[], byte[]> newBytesTrie() {
         return TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
     }
 
@@ -78,8 +77,12 @@ public class TrieTest {
         Arrays.asList("test", "toaster", "toasting", "slow", "slowly")
                 .forEach(x -> trie.put(x.getBytes(), x.getBytes()));
 
-        Set<byte[]> keys = trie.keySet();
-        Collection<byte[]> values = trie.values();
+        Set<byte[]> keys = trie.stream()
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toCollection(ByteArraySet::new));
+        Set<byte[]> values = trie.stream()
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toCollection(ByteArraySet::new));
         for (String s : Arrays.asList("test", "toaster", "toasting", "slow", "slowly")
         ) {
             assert keys.contains(s.getBytes());

@@ -9,7 +9,6 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.Delegate;
 import org.tdf.common.types.Chained;
-import org.tdf.common.types.Cloneable;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.rlp.RLP;
@@ -18,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Block implements Cloneable<Block>, Chained {
+public class Block implements Chained {
     private static abstract class ExcludedMethods{
         public abstract Block clone();
         public abstract int size();

@@ -52,7 +52,7 @@ public class DbSourceTest {
         batchAbleStore.putAll(rows);
         for (int x = 0; x < 10; x++) {
             int finalX = x;
-            assert batchAbleStore.keySet().stream().anyMatch(y -> Arrays.equals(y, (s + finalX).getBytes()));
+            assert batchAbleStore.stream().anyMatch(y -> Arrays.equals(y.getKey(), (s + finalX).getBytes()));
         }
         for(byte[] k: rows.keySet()){
             assert batchAbleStore.get(k).isPresent();

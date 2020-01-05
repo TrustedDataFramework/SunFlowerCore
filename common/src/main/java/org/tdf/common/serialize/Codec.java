@@ -3,10 +3,6 @@ package org.tdf.common.serialize;
 import java.util.function.Function;
 
 public interface Codec<K, V> {
-    Function<? super K, ? extends V> getEncoder();
-
-    Function<? super V, ? extends K> getDecoder();
-
     static <K> Codec<K, K> identity() {
         return (Codec<K, K>) Codecs.IDENTITY;
     }
@@ -24,4 +20,8 @@ public interface Codec<K, V> {
             }
         };
     }
+
+    Function<? super K, ? extends V> getEncoder();
+
+    Function<? super V, ? extends K> getDecoder();
 }

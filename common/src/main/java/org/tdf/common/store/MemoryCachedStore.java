@@ -1,24 +1,22 @@
 package org.tdf.common.store;
 
-public class MemoryCachedStore<V> extends CachedStore<byte[], V> implements Cloneable{
+import org.tdf.common.util.ByteArrayMap;
+
+import java.util.Map;
+
+public class MemoryCachedStore<V> extends CachedStore<byte[], V> {
     public MemoryCachedStore(Store<byte[], V> delegated) {
         super(delegated);
     }
 
     @Override
-    Store<byte[], V> newCache() {
-        return new ByteArrayMapStore<>();
+    Map<byte[], V> newCache() {
+        return new ByteArrayMap<>();
     }
 
     @Override
-    Store<byte[], V> newDeleted() {
-        return new ByteArrayMapStore<>();
+    Map<byte[], V> newDeleted() {
+        return new ByteArrayMap<>();
     }
 
-    public MemoryCachedStore<V> clone(){
-        MemoryCachedStore<V> mem = new MemoryCachedStore<>(delegated);
-        mem.cache = new ByteArrayMapStore<>(cache);
-        mem.delegated = new ByteArrayMapStore<>(delegated);
-        return mem;
-    }
 }

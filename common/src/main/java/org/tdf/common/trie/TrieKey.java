@@ -18,11 +18,18 @@ public class TrieKey {
     public static final int ODD_OFFSET_FLAG = 0x1;
     public static final int TERMINATOR_FLAG = 0x2;
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-
+    static TrieKey EMPTY = new TrieKey(EMPTY_BYTE_ARRAY, 0);
     private final byte[] data;
     private final int offset;
 
-    static TrieKey EMPTY = new TrieKey(EMPTY_BYTE_ARRAY, 0);
+    private TrieKey(byte[] data) {
+        this(data, 0);
+    }
+
+    private TrieKey(byte[] data, int offset) {
+        this.data = data;
+        this.offset = offset;
+    }
 
     public static TrieKey fromNormal(byte[] key) {
         return new TrieKey(key);
@@ -35,24 +42,14 @@ public class TrieKey {
         return new TrieKey(data, ((data[0] >> 4) & ODD_OFFSET_FLAG) != 0 ? 1 : 2);
     }
 
-    static boolean isTerminal(byte[] packed){
+    static boolean isTerminal(byte[] packed) {
         return ((packed[0] >> 4) & TERMINATOR_FLAG) != 0;
     }
-
 
     public static TrieKey single(int hex) {
         TrieKey ret = new TrieKey(new byte[1], 1);
         ret.set(0, hex);
         return ret;
-    }
-
-    private TrieKey(byte[] data) {
-        this(data, 0);
-    }
-
-    private TrieKey(byte[] data, int offset) {
-        this.data = data;
-        this.offset = offset;
     }
 
     public byte[] toPacked(boolean terminal) {
@@ -76,7 +73,8 @@ public class TrieKey {
     }
 
     public byte[] toNormal() {
-        if ((offset & 1) != 0) throw new RuntimeException("Can't convert a key with odd number of hexes to normal: " + this);
+        if ((offset & 1) != 0)
+            throw new RuntimeException("Can't convert a key with odd number of hexes to normal: " + this);
         int arrLen = data.length - offset / 2;
         byte[] ret = new byte[arrLen];
         System.arraycopy(data, data.length - arrLen, ret, 0, arrLen);
@@ -122,7 +120,7 @@ public class TrieKey {
         return ret;
     }
 
-    public TrieKey shift(){
+    public TrieKey shift() {
         return shift(1);
     }
 

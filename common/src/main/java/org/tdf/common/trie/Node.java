@@ -30,34 +30,20 @@ class Node {
 
     @Getter(AccessLevel.PACKAGE)
     private boolean dirty;
-
-    private void setDirty() {
-        dirty = true;
-    }
-
     // rlp encoded of this node, for serialization
     private RLPList rlp;
-
     // if hash is not null, resolve rlp encoded from db
     @Getter(AccessLevel.PACKAGE)
     private byte[] hash;
-
     // for lazy load, read only
     private Store<byte[], byte[]> readOnlyCache;
-
-    enum Type {
-        BRANCH,
-        EXTENSION,
-        LEAF
-    }
-
     // if node is branch node, the length of children is 17
     // the first 16 element is children, and the 17th element is value
     // if node is extension node or leaf node, the length of children is 2
     // the first element is trie key and the second element is value(leaf node) or child node(extension node)
     private Object[] children;
 
-    static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache){
+    static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache) {
         return builder()
                 .hash(hash)
                 .readOnlyCache(readOnlyCache)
@@ -99,6 +85,10 @@ class Node {
                 .children(new Object[]{key, child})
                 .dirty(true)
                 .build();
+    }
+
+    private void setDirty() {
+        dirty = true;
     }
 
     // encode and commit root node to store
@@ -540,7 +530,13 @@ class Node {
 
     @Override
     public String toString() {
-        if(hash == null) return getType().toString();
+        if (hash == null) return getType().toString();
         return getType().toString() + " " + HexBytes.encode(hash);
+    }
+
+    enum Type {
+        BRANCH,
+        EXTENSION,
+        LEAF
     }
 }

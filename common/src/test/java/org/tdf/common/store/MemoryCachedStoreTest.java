@@ -7,6 +7,8 @@ import org.junit.runners.JUnit4;
 import org.tdf.common.util.ByteArraySet;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
 public class MemoryCachedStoreTest {
@@ -105,7 +107,25 @@ public class MemoryCachedStoreTest {
         store.put("a".getBytes(), "c".getBytes());
         store.put("b".getBytes(), "c".getBytes());
         store.remove("a".getBytes());
-        assert store.values().size() == 1;
-        assert new ByteArraySet(store.values()).contains("c".getBytes());
+        assert store.size() == 1;
+        assert store.stream()
+                        .map(Map.Entry::getValue)
+                        .collect(Collectors.toCollection(ByteArraySet::new))
+                        .contains("c".getBytes());
+    }
+
+    @Test
+    public void test11(){
+        delegated.put("a".getBytes(), "f".getBytes());
+        delegated.put("c".getBytes(), "f".getBytes());
+
+        store.put("a".getBytes(), "c".getBytes());
+        store.put("b".getBytes(), "c".getBytes());
+        store.remove("b".getBytes());
+        assert store.size() == 2;
+        assert store.stream()
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toCollection(ByteArraySet::new))
+                .contains("c".getBytes());
     }
 }

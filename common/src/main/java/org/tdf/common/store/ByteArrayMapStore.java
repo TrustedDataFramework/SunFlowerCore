@@ -1,24 +1,21 @@
 package org.tdf.common.store;
 
 import org.tdf.common.util.ByteArrayMap;
-import org.tdf.common.util.HexBytes;
 
 import java.util.Map;
 
-public class ByteArrayMapStore<V> extends MapStore<byte[], V> implements Store<byte[], V> {
+public class ByteArrayMapStore<V> extends MapStore<byte[], V> {
     public ByteArrayMapStore() {
         super(new ByteArrayMap<>());
     }
 
-    public ByteArrayMapStore(Store<byte[], V> store){
+    public ByteArrayMapStore(Store<byte[], V> store) {
         this();
-        for(byte[] k: store.keySet()){
-            put(k, store.get(k).orElseThrow(() -> ExceptionUtil.keyNotFound(HexBytes.encode(k))));
-        }
+        store.forEach(super::put);
     }
 
-    public ByteArrayMapStore(Map<byte[], V> map){
+    public ByteArrayMapStore(Map<byte[], V> map) {
         this();
-        getMap().putAll(map);
+        super.putAll(map);
     }
 }

@@ -3,6 +3,7 @@ package org.tdf.sunflower.types;
 import org.tdf.common.types.Cloneable;
 import org.tdf.sunflower.exception.StateUpdateException;
 
+@Deprecated
 public interface State<T> extends Cloneable<T> {
     void update(Block b, Transaction t) throws StateUpdateException;
 

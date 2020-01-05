@@ -5,10 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
@@ -56,16 +56,6 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
     }
 
     @Override
-    public Set<K> keySet() {
-        return delegate.keySet();
-    }
-
-    @Override
-    public Collection<V> values() {
-        return delegate.values();
-    }
-
-    @Override
     public boolean containsKey(@NonNull K k) {
         return delegate.containsKey(k);
     }
@@ -85,28 +75,34 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
         removed = delegate;
     }
 
+    @Override
+    public void forEach(BiConsumer<K, V> consumer) {
+        delegate.forEach(consumer);
+    }
+
     public void compact() {
         if (removed == delegate) {
             delegate.clear();
             return;
         }
-        removed.keySet().forEach(delegate::remove);
+        removed.forEach((k, v) -> delegate.remove(k));
         removed.clear();
     }
 
     public void compact(Set<K> excludes) {
-        removed.keySet().stream()
-                .filter(x -> !excludes.contains(x))
+        removed.stream()
+                .map(Map.Entry::getKey)
+                .filter(k -> !excludes.contains(k))
                 .collect(Collectors.toList())
-                .forEach(x -> {
-                    removed.remove(x);
-                    delegate.remove(x);
+                .forEach(k -> {
+                    removed.remove(k);
+                    delegate.remove(k);
                 });
-
     }
 
     @Override
     public Map<K, V> asMap() {
         return delegate.asMap();
     }
+
 }

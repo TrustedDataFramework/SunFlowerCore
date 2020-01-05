@@ -6,10 +6,8 @@ import org.tdf.common.util.ChainedWrapper;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.ExceptionUtil;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.function.BiConsumer;
 
 public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<String, T>> implements Store<String, T> {
     private static final String WHERE_PREFIX = "where";
@@ -83,14 +81,6 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
         data.remove(s);
     }
 
-    public Set<String> keySet() {
-        return get().keySet();
-    }
-
-    public Collection<T> values() {
-        return data.values();
-    }
-
     public boolean containsKey(String s) {
         assertNoConflict(s);
         return data.containsKey(s);
@@ -116,5 +106,10 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
     @Override
     public Map<String, T> asMap() {
         throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public void forEach(BiConsumer<String, T> consumer) {
+        data.forEach(consumer);
     }
 }

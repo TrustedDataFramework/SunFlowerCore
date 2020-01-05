@@ -58,7 +58,7 @@ public class TrieRollbackTest {
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
 
 
-        for (int i = 0; i < 100 ; ++i) {
+        for (int i = 0; i < 100; ++i) {
 
             String[] keyVal = strData.get(i).split("=");
 
@@ -70,7 +70,7 @@ public class TrieRollbackTest {
             byte[] rootHash = trie.commit();
 
             // skip when trie is not modified
-            if(roots.stream().anyMatch(x -> Arrays.equals(x, rootHash))) continue;
+            if (roots.stream().anyMatch(x -> Arrays.equals(x, rootHash))) continue;
 
             trie.flush();
             roots.add(rootHash);
@@ -80,7 +80,8 @@ public class TrieRollbackTest {
     }
 
     @Test
-    public void empty(){}
+    public void empty() {
+    }
 
     // rollback successful
     @Test
@@ -92,9 +93,11 @@ public class TrieRollbackTest {
         noDelete.compact();
         for (int i = 0; i < roots.size() - 1; i++) {
             Exception e = null;
-            try{
+            try {
                 trie = trie.revert(roots.get(i), database);
-            }catch (Exception ex){e = ex;}
+            } catch (Exception ex) {
+                e = ex;
+            }
             assert e != null;
         }
     }
@@ -134,7 +137,7 @@ public class TrieRollbackTest {
 
     private Map<String, String> dump(Store<String, String> store) {
         Map<String, String> m = new HashMap<>();
-        store.keySet().forEach(x -> m.put(x, store.get(x).get()));
+        store.forEach((k, v) -> m.put(k, v));
         return m;
     }
 

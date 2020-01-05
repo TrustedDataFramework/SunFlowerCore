@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Thread safe wrapper
+ *
  * @param <T>
  */
 class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {

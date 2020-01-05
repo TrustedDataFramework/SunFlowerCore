@@ -21,7 +21,7 @@ public class LRUMap<K, V> extends LinkedHashMap<K, V> {
     @Override
     protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
         boolean ret = size() > maximumSize;
-        if(ret) hook.accept(eldest.getKey(), eldest.getValue());
+        if (ret) hook.accept(eldest.getKey(), eldest.getValue());
         return ret;
     }
 }

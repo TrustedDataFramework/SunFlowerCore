@@ -4,11 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /**
  * wrap Store<byte[], byte[]> as Store<K, V>
+ *
  * @param <K> type of key
  * @param <V> type of value
  */
@@ -42,20 +43,6 @@ public class StoreWrapper<K, V, U, R>
     }
 
     @Override
-    public Set<K> keySet() {
-        return store.keySet().stream()
-                .map(keyCodec.getDecoder())
-                .collect(Collectors.toSet());
-    }
-
-    @Override
-    public Collection<V> values() {
-        return store.values().stream()
-                .map(valueCodec.getDecoder())
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public boolean containsKey(@NonNull K k) {
         return store.containsKey(keyCodec.getEncoder().apply(k));
     }
@@ -81,11 +68,9 @@ public class StoreWrapper<K, V, U, R>
     }
 
     @Override
-    public Map<K, V> asMap() {
-        Map<K, V> m = new HashMap<>();
-        for(Map.Entry<U, R> entry: store.asMap().entrySet()){
-            m.put(keyCodec.getDecoder().apply(entry.getKey()), valueCodec.getDecoder().apply(entry.getValue()));
-        }
-        return m;
+    public void forEach(BiConsumer<K, V> consumer) {
+        store.forEach((u, r) -> {
+            consumer.accept(keyCodec.getDecoder().apply(u), valueCodec.getDecoder().apply(r));
+        });
     }
 }

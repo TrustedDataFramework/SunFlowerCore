@@ -6,8 +6,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
-public class ThreadSafeStore<K, V> implements Store<K, V>{
+public class ThreadSafeStore<K, V> implements Store<K, V> {
     private Store<K, V> delegate;
 
     private ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -19,9 +21,9 @@ public class ThreadSafeStore<K, V> implements Store<K, V>{
     @Override
     public Optional<V> get(K k) {
         lock.readLock().lock();
-        try{
+        try {
             return delegate.get(k);
-        }finally {
+        } finally {
             lock.readLock().unlock();
         }
     }
@@ -29,9 +31,9 @@ public class ThreadSafeStore<K, V> implements Store<K, V>{
     @Override
     public void put(K k, V v) {
         lock.writeLock().lock();
-        try{
+        try {
             delegate.put(k, v);
-        }finally {
+        } finally {
             lock.writeLock().unlock();
         }
     }
@@ -41,7 +43,7 @@ public class ThreadSafeStore<K, V> implements Store<K, V>{
         lock.writeLock().lock();
         try {
             delegate.putIfAbsent(k, v);
-        }finally {
+        } finally {
             lock.writeLock().unlock();
         }
     }
@@ -49,9 +51,9 @@ public class ThreadSafeStore<K, V> implements Store<K, V>{
     @Override
     public void remove(K k) {
         lock.writeLock().lock();
-        try{
+        try {
             delegate.remove(k);
-        }finally {
+        } finally {
             lock.writeLock().unlock();
         }
     }
@@ -59,39 +61,19 @@ public class ThreadSafeStore<K, V> implements Store<K, V>{
     @Override
     public void flush() {
         lock.writeLock().lock();
-        try{
+        try {
             delegate.flush();
-        }finally {
+        } finally {
             lock.writeLock().unlock();
-        }
-    }
-
-    @Override
-    public Set<K> keySet() {
-        lock.readLock().lock();
-        try{
-            return delegate.keySet();
-        }finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public Collection<V> values() {
-        lock.readLock().lock();
-        try{
-            return delegate.values();
-        }finally {
-            lock.readLock().unlock();
         }
     }
 
     @Override
     public boolean containsKey(K k) {
         lock.readLock().lock();
-        try{
+        try {
             return delegate.containsKey(k);
-        }finally {
+        } finally {
             lock.readLock().unlock();
         }
     }
@@ -99,9 +81,9 @@ public class ThreadSafeStore<K, V> implements Store<K, V>{
     @Override
     public int size() {
         lock.readLock().lock();
-        try{
+        try {
             return delegate.size();
-        }finally {
+        } finally {
             lock.readLock().unlock();
         }
     }
@@ -109,9 +91,9 @@ public class ThreadSafeStore<K, V> implements Store<K, V>{
     @Override
     public boolean isEmpty() {
         lock.readLock().lock();
-        try{
+        try {
             return delegate.isEmpty();
-        }finally {
+        } finally {
             lock.readLock().unlock();
         }
     }
@@ -119,19 +101,49 @@ public class ThreadSafeStore<K, V> implements Store<K, V>{
     @Override
     public void clear() {
         lock.writeLock().lock();
-        try{
+        try {
             delegate.clear();
-        }finally {
+        } finally {
             lock.writeLock().unlock();
         }
     }
 
     @Override
     public Map<K, V> asMap() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void forEach(BiConsumer<K, V> consumer) {
         lock.readLock().lock();
-        try{
-            return delegate.asMap();
-        }finally {
+        try {
+            delegate.forEach(consumer);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public Set<K> keySet() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Collection<V> values() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Set<Map.Entry<K, V>> entrySet() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Stream<Map.Entry<K, V>> stream() {
+        lock.readLock().lock();
+        try {
+            return delegate.stream();
+        } finally {
             lock.readLock().unlock();
         }
     }

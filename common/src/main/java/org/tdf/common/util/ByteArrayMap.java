@@ -145,7 +145,7 @@ public class ByteArrayMap<V> implements Map<byte[], V> {
     public static class MapEntrySet<V> implements Set<Entry<byte[], V>> {
         private final Set<Entry<HexBytes, V>> delegate;
 
-        private Entry<HexBytes, V> mapToEntry(Object o){
+        private Entry<HexBytes, V> mapToEntry(Object o) {
             return new HashMap.SimpleEntry<>(
                     HexBytes.fromBytes(
                             ((Entry<byte[], V>) o).getKey()
@@ -154,7 +154,7 @@ public class ByteArrayMap<V> implements Map<byte[], V> {
             );
         }
 
-        private Stream<Entry<HexBytes, V>> mapToEntries(Collection<?> c){
+        private Stream<Entry<HexBytes, V>> mapToEntries(Collection<?> c) {
             return c.stream().map(this::mapToEntry);
         }
 
@@ -219,7 +219,7 @@ public class ByteArrayMap<V> implements Map<byte[], V> {
         public boolean containsAll(Collection<?> c) {
             for (Object o : c) {
                 Entry<HexBytes, V> entry = mapToEntry(o);
-                if(!delegate.contains(entry)) return false;
+                if (!delegate.contains(entry)) return false;
             }
             return true;
         }
@@ -227,7 +227,7 @@ public class ByteArrayMap<V> implements Map<byte[], V> {
         @Override
         public boolean add(Entry<byte[], V> entry) {
             return
-                    delegate.add(new HashMap.SimpleEntry<>(HexBytes.fromBytes(entry.getKey()), entry.getValue()));
+                    delegate.add(mapToEntry(entry));
         }
 
         @Override

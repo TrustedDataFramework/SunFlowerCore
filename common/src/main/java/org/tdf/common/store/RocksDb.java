@@ -5,32 +5,32 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.iq80.leveldb.util.FileUtils;
 import org.rocksdb.*;
-import org.tdf.common.util.ByteArrayMap;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
 
 import static java.lang.System.arraycopy;
 
 @Slf4j
 public class RocksDb implements DatabaseStore {
+    static {
+        RocksDB.loadLibrary();
+    }
+
     private String directory;
     private String name;
     private RocksDB db;
     private ReadOptions readOpts;
     private DBSettings dbSettings;
     private boolean alive;
-
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
-
-    static {
-        RocksDB.loadLibrary();
-    }
 
     public RocksDb(String directory, String name) {
         this.directory = directory;
@@ -38,12 +38,12 @@ public class RocksDb implements DatabaseStore {
         log.debug("New RocksDbDataSource: " + name);
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getName() {
         return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void init(DBSettings dbSettings) {
@@ -140,25 +140,6 @@ public class RocksDb implements DatabaseStore {
         init(dbSettings);
     }
 
-    public Set<byte[]> keySet() throws RuntimeException {
-        resetDbLock.readLock().lock();
-        try {
-            if (log.isTraceEnabled()) log.trace("~> RocksDbDataSource.keys(): " + name);
-            try (RocksIterator iterator = db.newIterator()) {
-                Set<byte[]> result = new HashSet<>();
-                for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                    result.add(iterator.key());
-                }
-                if (log.isTraceEnabled()) log.trace("<~ RocksDbDataSource.keys(): " + name + ", " + result.size());
-                return result;
-            } catch (Exception e) {
-                log.error("Error iterating db '{}'", name, e);
-                throw new RuntimeException(e);
-            }
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
 
     @Override
     public void putAll(Map<byte[], byte[]> rows) {
@@ -256,31 +237,27 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public Collection<byte[]> values() {
-        resetDbLock.readLock().lock();
-        try {
-            try (RocksIterator iterator = db.newIterator()) {
-                List<byte[]> result = new ArrayList<>();
-                for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                    result.add(iterator.value());
-                }
-                return result;
-            } catch (Exception e) {
-                log.error("Error iterating db '{}'", name, e);
-                throw new RuntimeException(e);
-            }
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
-
-    @Override
     public boolean containsKey(@NonNull byte[] bytes) {
         resetDbLock.readLock().lock();
         try {
             return db.get(bytes) != null;
         } catch (RocksDBException e) {
             log.error("Error get key from db '{}'", name, e);
+            throw new RuntimeException(e);
+        } finally {
+            resetDbLock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public boolean isEmpty() {
+        resetDbLock.readLock().lock();
+        try {
+            RocksIterator iterator = db.newIterator();
+            iterator.seekToFirst();
+            return !iterator.isValid();
+        } catch (Exception e) {
+            log.error("Error iterating db '{}'", name, e);
             throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
@@ -297,47 +274,9 @@ public class RocksDb implements DatabaseStore {
             } else {
                 db.delete(key);
             }
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             log.error("Error put into db '{}'", name, e);
             throw new RuntimeException(e);
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public int size() {
-        resetDbLock.readLock().lock();
-        int res = 0;
-        try {
-            try (RocksIterator iterator = db.newIterator()) {
-                for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                    res ++;
-                }
-                return res;
-            } catch (Exception e) {
-                log.error("Error iterating db '{}'", name, e);
-                throw new RuntimeException(e);
-            }
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public boolean isEmpty() {
-        resetDbLock.readLock().lock();
-        try {
-            try (RocksIterator iterator = db.newIterator()) {
-                for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                    return false;
-                }
-                return true;
-            } catch (Exception e) {
-                log.error("Error iterating db '{}'", name, e);
-                throw new RuntimeException(e);
-            }
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -375,20 +314,23 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public Map<byte[], byte[]> asMap() {
+    public void forEach(BiConsumer<byte[], byte[]> consumer) {
         resetDbLock.readLock().lock();
         try {
             RocksIterator iterator = db.newIterator();
-            Map<byte[], byte[]> result = new ByteArrayMap<>();
             for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                result.put(iterator.key(), iterator.value());
+                consumer.accept(iterator.key(), iterator.value());
             }
-            return result;
         } catch (Exception e) {
             log.error("Error iterating db '{}'", name, e);
             throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
         }
+    }
+
+    @Override
+    public Map<byte[], byte[]> asMap() {
+        throw new RuntimeException("not supported");
     }
 }

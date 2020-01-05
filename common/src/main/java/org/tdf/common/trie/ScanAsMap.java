@@ -7,7 +7,7 @@ import org.tdf.common.util.ByteArrayMap;
 import java.util.Map;
 
 @Getter(AccessLevel.PACKAGE)
-class ScanAsMap implements ScannerAction{
+class ScanAsMap implements ScannerAction {
     private Map<byte[], byte[]> map = new ByteArrayMap<>();
 
     @Override

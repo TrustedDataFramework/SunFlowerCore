@@ -6,19 +6,19 @@ public class Constants {
 
     public static final int MEGA_BYTES = 1 << 20;
 
-    public static int sizeOf(int any){
+    public static int sizeOf(int any) {
         return INTEGER_SIZE;
     }
 
-    public static int sizeOf(long any){
+    public static int sizeOf(long any) {
         return LONG_SIZE;
     }
 
-    public static int sizeOf(HexBytes hexBytes){
+    public static int sizeOf(HexBytes hexBytes) {
         return hexBytes == null ? 0 : sizeOf(hexBytes.getBytes());
     }
 
-    public static int sizeOf(byte[] bytes){
+    public static int sizeOf(byte[] bytes) {
         return bytes == null ? 0 : bytes.length;
     }
 }

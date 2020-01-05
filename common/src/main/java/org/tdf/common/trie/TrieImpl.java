@@ -10,10 +10,10 @@ import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.rlp.RLPItem;
 
-import java.util.*;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 
 // enhanced radix tree
@@ -21,17 +21,11 @@ import java.util.stream.Collectors;
 public class TrieImpl<K, V> implements Trie<K, V> {
     @Getter
     private final byte[] nullHash;
-
-    private Node root;
-
     Function<byte[], byte[]> function;
-
     Store<byte[], byte[]> store;
-
     Codec<K, byte[]> kCodec;
-
     Codec<V, byte[]> vCodec;
-
+    private Node root;
 
     public static <K, V> TrieImpl<K, V> newInstance(Function<byte[], byte[]> hashFunction,
                                                     Store<byte[], byte[]> store,
@@ -40,11 +34,11 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     ) {
         return new TrieImpl<>(
                 hashFunction.apply(RLPItem.NULL.getEncoded()),
-                null,
                 hashFunction,
                 store,
                 kCodec,
-                vCodec
+                vCodec,
+                null
         );
     }
 
@@ -93,35 +87,8 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public Set<K> keySet() {
-        if (root == null) return Collections.emptySet();
-        ScanKeySet action = new ScanKeySet();
-        root.traverse(TrieKey.EMPTY, action);
-        if (kCodec.equals(Codec.identity())) return (Set<K>) action.getBytes();
-        return action.getBytes().stream()
-                .map(kCodec.getDecoder())
-                .collect(Collectors.toSet());
-    }
-
-    @Override
-    public Collection<V> values() {
-        if (root == null) return Collections.emptySet();
-        ScanValues action = new ScanValues();
-        root.traverse(TrieKey.EMPTY, action);
-        if (vCodec.equals(Codec.identity())) return (Set<V>) action.getBytes();
-        return action.getBytes().stream()
-                .map(vCodec.getDecoder())
-                .collect(Collectors.toSet());
-    }
-
-    @Override
     public boolean containsKey(@NonNull K k) {
         return get(k).isPresent();
-    }
-
-    @Override
-    public int size() {
-        return keySet().size();
     }
 
     @Override
@@ -151,20 +118,24 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     @Override
     public TrieImpl<K, V> revert(@NonNull byte[] rootHash, Store<byte[], byte[]> store) {
-        if(FastByteComparisons.equal(rootHash, nullHash))
-            return new TrieImpl<>(nullHash, null, function, store, kCodec, vCodec);
-        if(!store.containsKey(rootHash)) throw new RuntimeException("rollback failed, root hash not exists");
+        if (FastByteComparisons.equal(rootHash, nullHash))
+            return new TrieImpl<>(nullHash, function, store,
+                    kCodec, vCodec,
+                    Node.fromRootHash(rootHash, new ReadOnlyStore<>(store))
+            );
+        if (!store.containsKey(rootHash)) throw new RuntimeException("rollback failed, root hash not exists");
         return new TrieImpl<>(
                 nullHash,
-                Node.fromRootHash(rootHash, new ReadOnlyStore<>(store)),
-                function, store, kCodec, vCodec
+                function,
+                store, kCodec, vCodec,
+                Node.fromRootHash(rootHash, new ReadOnlyStore<>(store))
         );
     }
 
     @Override
     public void traverse(BiConsumer<TrieKey, Node> action) {
         commit();
-        if(root == null) return;
+        if (root == null) return;
         root.traverse(TrieKey.EMPTY, action);
     }
 
@@ -177,8 +148,9 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     @Override
     public byte[] getRootHash() throws RuntimeException {
-        if(root == null) return nullHash;
-        if(root.isDirty() || root.getHash() == null) throw new RuntimeException("the trie is dirty or root hash is null");
+        if (root == null) return nullHash;
+        if (root.isDirty() || root.getHash() == null)
+            throw new RuntimeException("the trie is dirty or root hash is null");
         return root.getHash();
     }
 
@@ -188,23 +160,26 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public Map<K, V> asMap() {
-        ScanAsMap scanAsMap = new ScanAsMap();
-        traverse(scanAsMap);
-        Map<K, V> map = new HashMap<>();
-        for(Map.Entry<byte[], byte[]> entry: scanAsMap.getMap().entrySet()){
-            map.put(kCodec.getDecoder().apply(entry.getKey()), vCodec.getDecoder().apply(entry.getValue()));
-        }
-        return map;
-    }
-
-    @Override
     public Trie<K, V> revert(byte[] rootHash) throws RuntimeException {
         return revert(rootHash, store);
     }
 
     @Override
     public Trie<K, V> revert() {
-        return new TrieImpl<>(nullHash, null, function, store, kCodec, vCodec);
+        return new TrieImpl<>(
+                nullHash,
+                function,
+                store, kCodec, vCodec,
+                null
+        );
+    }
+
+    @Override
+    public void forEach(BiConsumer<K, V> consumer) {
+        traverse((k, n) -> {
+            if (n.getType() != Node.Type.EXTENSION && n.getValue() != null) {
+                consumer.accept(kCodec.getDecoder().apply(k.toNormal()), vCodec.getDecoder().apply(n.getValue()));
+            }
+        });
     }
 }

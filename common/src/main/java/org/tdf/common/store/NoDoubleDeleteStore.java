@@ -3,10 +3,9 @@ package org.tdf.common.store;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.function.BiConsumer;
 
 @AllArgsConstructor
 public class NoDoubleDeleteStore<K, V> implements Store<K, V> {
@@ -38,15 +37,6 @@ public class NoDoubleDeleteStore<K, V> implements Store<K, V> {
         delegate.flush();
     }
 
-    @Override
-    public Set<K> keySet() {
-        return delegate.keySet();
-    }
-
-    @Override
-    public Collection<V> values() {
-        return delegate.values();
-    }
 
     @Override
     public boolean containsKey(@NonNull K k) {
@@ -66,6 +56,11 @@ public class NoDoubleDeleteStore<K, V> implements Store<K, V> {
     @Override
     public void clear() {
         delegate.clear();
+    }
+
+    @Override
+    public void forEach(BiConsumer<K, V> consumer) {
+        delegate.forEach(consumer);
     }
 
     @Override

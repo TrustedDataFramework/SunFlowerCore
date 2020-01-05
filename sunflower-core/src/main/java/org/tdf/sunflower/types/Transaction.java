@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
-import org.tdf.common.types.Cloneable;
 import org.tdf.common.util.Constants;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
@@ -18,7 +17,7 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Transaction implements Cloneable<Transaction> {
+public class Transaction{
     public enum Type{
         // coinbase transaction has code 0
         COIN_BASE(0x00),

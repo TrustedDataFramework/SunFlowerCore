@@ -1,6 +1,6 @@
 package org.tdf.common.store;
 
-import org.tdf.common.util.ByteArrayMap;
+import lombok.NonNull;
 
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +28,21 @@ public class MemoryDatabaseStore extends ByteArrayMapStore<byte[]> implements Da
 
     @Override
     public void putAll(Map<byte[], byte[]> rows) {
-        getMap().putAll(rows);
+        rows.forEach((k, v) -> {
+            if (v == null || v == EMPTY || v.length == 0) {
+                getMap().remove(k);
+                return;
+            }
+            getMap().put(k, v);
+        });
+    }
+
+    @Override
+    public void put(byte @NonNull [] k, byte @NonNull [] v) {
+        if (v == EMPTY || v.length == 0) {
+            remove(k);
+            return;
+        }
+        super.put(k, v);
     }
 }

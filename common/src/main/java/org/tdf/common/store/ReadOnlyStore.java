@@ -6,8 +6,11 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 public class ReadOnlyStore<K, V> implements Store<K, V> {
+    private static final String READ_ONLY_TIP = "the store is read only";
+
     private Store<K, V> delegate;
 
     public ReadOnlyStore(Store<K, V> delegate) {
@@ -21,32 +24,22 @@ public class ReadOnlyStore<K, V> implements Store<K, V> {
 
     @Override
     public void put(@NonNull K k, @NonNull V v) {
-        throw new RuntimeException("the store is read only");
+        throw new UnsupportedOperationException(READ_ONLY_TIP);
     }
 
     @Override
     public void putIfAbsent(@NonNull K k, @NonNull V v) {
-        throw new RuntimeException("the store is read only");
+        throw new UnsupportedOperationException(READ_ONLY_TIP);
     }
 
     @Override
     public void remove(@NonNull K k) {
-        throw new RuntimeException("the store is read only");
+        throw new UnsupportedOperationException(READ_ONLY_TIP);
     }
 
     @Override
     public void flush() {
-        throw new RuntimeException("the store is read only");
-    }
-
-    @Override
-    public Set<K> keySet() {
-        return delegate.keySet();
-    }
-
-    @Override
-    public Collection<V> values() {
-        return delegate.values();
+        throw new UnsupportedOperationException(READ_ONLY_TIP);
     }
 
     @Override
@@ -66,11 +59,32 @@ public class ReadOnlyStore<K, V> implements Store<K, V> {
 
     @Override
     public void clear() {
-        throw new RuntimeException("the store is read only");
+        throw new UnsupportedOperationException(READ_ONLY_TIP);
     }
+
+    @Override
+    public Set<K> keySet() {
+        throw new UnsupportedOperationException(READ_ONLY_TIP);
+    }
+
+    @Override
+    public Collection<V> values() {
+        throw new UnsupportedOperationException(READ_ONLY_TIP);
+    }
+
+    @Override
+    public Set<Map.Entry<K, V>> entrySet() {
+        throw new UnsupportedOperationException(READ_ONLY_TIP);
+    }
+
 
     @Override
     public Map<K, V> asMap() {
         return delegate.asMap();
+    }
+
+    @Override
+    public void forEach(BiConsumer<K, V> consumer) {
+        delegate.forEach(consumer);
     }
 }

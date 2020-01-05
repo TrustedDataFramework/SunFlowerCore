@@ -14,31 +14,32 @@ import java.time.format.DateTimeFormatter;
  * convert "2011-12-03T10:15:30+01:00" as like to unix epoch second
  */
 public class EpochSecondDeserializer extends JsonDeserializer<Long> {
-    public static class EpochSecondDeserializeException extends JsonProcessingException{
-        public EpochSecondDeserializeException(String msg) {
-            super(msg);
-        }
-    }
-
     @Override
-    public Long deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+    public Long deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         JsonNode node = p.getCodec().readTree(p);
         String encoded = node.asText();
         if (encoded == null || encoded.equals("")) {
             return 0L;
         }
-        try{
+        try {
             return Long.parseLong(encoded);
-        }catch (Exception ignored){}
-        try{
+        } catch (Exception ignored) {
+        }
+        try {
             return OffsetDateTime.parse(encoded)
                     .toEpochSecond();
-        }catch (Exception ignored){
+        } catch (Exception ignored) {
 
         }
         throw new EpochSecondDeserializeException("unknown time format "
                 + encoded + " expect format " +
                 DateTimeFormatter.ISO_OFFSET_DATE_TIME.toString()
         );
+    }
+
+    public static class EpochSecondDeserializeException extends JsonProcessingException {
+        public EpochSecondDeserializeException(String msg) {
+            super(msg);
+        }
     }
 }

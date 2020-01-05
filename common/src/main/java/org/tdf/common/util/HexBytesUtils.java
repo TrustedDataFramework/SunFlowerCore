@@ -1,6 +1,5 @@
 package org.tdf.common.util;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -20,34 +19,34 @@ class HexBytesUtils {
         }
 
         @Override
-        public void serialize(HexBytes value, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonGenerationException {
+        public void serialize(HexBytes value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
             jgen.writeString(Hex.encodeHexString(value.getBytes()));
         }
     }
 
     static class HexBytesDeserializer extends StdDeserializer<HexBytes> {
-        private static class HexBytesDeserializeException extends JsonProcessingException {
-            protected HexBytesDeserializeException(String msg) {
-                super(msg);
-            }
-        }
-
         public HexBytesDeserializer() {
             super(HexBytes.class);
         }
 
         @Override
-        public HexBytes deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+        public HexBytes deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             JsonNode node = p.getCodec().readTree(p);
-            if(node.isNull()) return HexBytes.empty();
+            if (node.isNull()) return HexBytes.empty();
             String encoded = node.asText();
             if (encoded == null || encoded.equals("")) {
                 return HexBytes.empty();
             }
-            if (encoded.startsWith("0x")){
+            if (encoded.startsWith("0x")) {
                 encoded = encoded.substring(2);
             }
             return HexBytes.fromHex(encoded);
+        }
+
+        private static class HexBytesDeserializeException extends JsonProcessingException {
+            protected HexBytesDeserializeException(String msg) {
+                super(msg);
+            }
         }
     }
 }

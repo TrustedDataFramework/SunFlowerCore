@@ -102,9 +102,7 @@ public class InMemoryStateTree<T extends ForkAbleState<T>> implements StateTree<
         children.stream().filter(x -> !x.getHash().equals(h))
                 .forEach(n -> cache.removeDescendants(n.getHash().getBytes()));
         cache.remove(map.getHash().getBytes());
-        for(String k: map.keySet()){
-            root.put(k, map.get(k).orElseThrow(() -> ExceptionUtil.keyNotFound(k)));
-        }
+        map.forEach((k, v) -> root.put(k, v));
         root.setHash(map.getHash());
         root.setHashPrev(map.getHashPrev());
     }

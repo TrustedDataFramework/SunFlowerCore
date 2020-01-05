@@ -5,16 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.iq80.leveldb.*;
 import org.iq80.leveldb.util.FileUtils;
-import org.tdf.common.util.ByteArrayMap;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
 
 import static org.iq80.leveldb.impl.Iq80DBFactory.factory;
 
@@ -37,12 +38,12 @@ public class LevelDb implements DatabaseStore {
         this.name = name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void init(DBSettings dbsettings) {
@@ -155,26 +156,6 @@ public class LevelDb implements DatabaseStore {
         }
     }
 
-    public Set<byte[]> keySet() throws RuntimeException {
-        resetDbLock.readLock().lock();
-        try {
-            if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.keys(): " + name);
-            try (DBIterator iterator = db.iterator()) {
-                Set<byte[]> result = new HashSet<>();
-                for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
-                    result.add(iterator.peekNext().getKey());
-                }
-                if (log.isTraceEnabled()) log.trace("<~ LevelDbDataSource.keys(): " + name + ", " + result.size());
-                return result;
-            } catch (IOException e) {
-                log.error("Unexpected", e);
-                throw new RuntimeException(e);
-            }
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
-
     @Override
     public void putAll(Map<byte[], byte[]> rows) {
         resetDbLock.readLock().lock();
@@ -260,24 +241,6 @@ public class LevelDb implements DatabaseStore {
     }
 
     @Override
-    public Collection<byte[]> values() {
-        resetDbLock.readLock().lock();
-        try {
-            DBIterator iterator = db.iterator();
-            List<byte[]> result = new ArrayList<>();
-            for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
-                result.add(iterator.peekNext().getValue());
-            }
-            return result;
-        } catch (Exception e) {
-            log.error("Error iterating db '{}'", name, e);
-            throw new RuntimeException(e);
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
-
-    @Override
     public void putIfAbsent(@NonNull byte[] key, @NonNull byte[] val) {
         resetDbLock.readLock().lock();
         try {
@@ -309,41 +272,6 @@ public class LevelDb implements DatabaseStore {
     }
 
     @Override
-    public int size() {
-        resetDbLock.readLock().lock();
-        int res = 0;
-        try {
-            DBIterator iterator = db.iterator();
-            for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
-                res++;
-            }
-            return res;
-        } catch (Exception e) {
-            log.error("Error iterating db '{}'", name, e);
-            throw new RuntimeException(e);
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public boolean isEmpty() {
-        resetDbLock.readLock().lock();
-        try {
-            DBIterator iterator = db.iterator();
-            for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
-                return false;
-            }
-            return true;
-        } catch (Exception e) {
-            log.error("Error iterating db '{}'", name, e);
-            throw new RuntimeException(e);
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
-
-    @Override
     public void clear() {
         reset();
     }
@@ -357,21 +285,43 @@ public class LevelDb implements DatabaseStore {
     }
 
     @Override
-    public Map<byte[], byte[]> asMap() {
+    public boolean isEmpty() {
         resetDbLock.readLock().lock();
         try {
-            DBIterator iterator = db.iterator();
-            Map<byte[], byte[]> result = new ByteArrayMap<>();
-            for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
-                Map.Entry<byte[], byte[]> entry = iterator.peekNext();
-                result.put(entry.getKey(), entry.getValue());
+            if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.keys(): " + name);
+            try (DBIterator iterator = db.iterator()) {
+                iterator.seekToFirst();
+                return !iterator.hasNext();
+            } catch (IOException e) {
+                log.error("Unexpected", e);
+                throw new RuntimeException(e);
             }
-            return result;
-        } catch (Exception e) {
-            log.error("Error iterating db '{}'", name, e);
-            throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
         }
+    }
+
+    @Override
+    public void forEach(BiConsumer<byte[], byte[]> consumer) {
+        resetDbLock.readLock().lock();
+        try {
+            if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.keys(): " + name);
+            try (DBIterator iterator = db.iterator()) {
+                for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
+                    Map.Entry<byte[], byte[]> entry = iterator.peekNext();
+                    consumer.accept(entry.getKey(), entry.getValue());
+                }
+            } catch (IOException e) {
+                log.error("Unexpected", e);
+                throw new RuntimeException(e);
+            }
+        } finally {
+            resetDbLock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public Map<byte[], byte[]> asMap() {
+        throw new RuntimeException("not supported");
     }
 }
