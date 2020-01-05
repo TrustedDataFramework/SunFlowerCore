@@ -24,35 +24,33 @@ public abstract class CachedStore<K, V> implements Store<K, V> {
         clearCache();
     }
 
+    // create a new cache
     abstract Map<K, V> newCache();
 
-    abstract Map<K, V> newDeleted();
+    // get non-null static trap value
+    // put key with trap value will remove the key
+    abstract V getTrap();
 
     void clearCache() {
         cache = newCache();
-        deleted = newDeleted();
     }
 
     @Override
     public Optional<V> get(@NonNull K k) {
-        if (deleted.containsKey(k)) return Optional.empty();
         V v = cache.get(k);
-        if (v != null) return Optional.of(v);
-        return delegated.get(k);
+        if (v == null) return delegate.get(k);
+        if (v == getTrap()) return Optional.empty();
+        return v;
     }
 
     @Override
     public void put(@NonNull K k, @NonNull V v) {
-        deleted.remove(k);
         cache.put(k, v);
     }
 
     @Override
     public void remove(@NonNull K k) {
-        cache.remove(k);
-        Optional<V> v = delegated.get(k);
-        if (!v.isPresent()) return;
-        deleted.put(k, v.get());
+        cache.put(k, getTrap());
     }
 
     /**
@@ -60,17 +58,20 @@ public abstract class CachedStore<K, V> implements Store<K, V> {
      */
     @Override
     public void flush() {
-        if (cache.isEmpty() && deleted.isEmpty()) return;
+        if (cache.isEmpty()) return;
         if (delegated instanceof DatabaseStore) {
             DatabaseStore bat = (DatabaseStore) delegated;
-            Map<byte[], byte[]> modifies = new ByteArrayMap<>((Map<byte[], byte[]>) cache);
-            deleted.forEach((k, v) -> modifies.put((byte[]) k, DatabaseStore.EMPTY));
-            bat.putAll(modifies);
+            bat.putAll(cache);
             bat.flush();
             return;
         }
-        deleted.forEach((k, v) -> delegated.remove(k));
-        cache.forEach((k, v) -> delegated.put(k, v));
+        cache.forEach((k, v) -> {
+          if (v == getTrap()) {
+            delegate.remove(k);
+            return;
+          }
+          delegate.put(k, v);
+        });
         clearCache();
         delegated.flush();
     }
@@ -94,9 +95,9 @@ public abstract class CachedStore<K, V> implements Store<K, V> {
 
     @Override
     public void forEach(BiConsumer<K, V> consumer) {
-        cache.forEach(consumer);
+        cache.forEach((k, v) -> {if(v != getTrap()) consumer.accept(k, v);});
         delegated.forEach((k, v) -> {
-            if (deleted.containsKey(k) || cache.containsKey(k)) return;
+            if (cache.containsKey(k)) return;
             consumer.accept(k, v);
         });
     }
