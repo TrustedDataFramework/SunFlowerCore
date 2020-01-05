@@ -3,9 +3,13 @@ package org.tdf.common.store;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 @AllArgsConstructor
 public class NoDoubleDeleteStore<K, V> implements Store<K, V> {
@@ -58,13 +62,44 @@ public class NoDoubleDeleteStore<K, V> implements Store<K, V> {
         delegate.clear();
     }
 
+
+    @Override
+    public void traverse(BiFunction<K, V, Boolean> traverser) {
+        delegate.traverse(traverser);
+    }
+
+    @Override
+    public Map<K, V> asMap() {
+        return delegate.asMap();
+    }
+
     @Override
     public void forEach(BiConsumer<K, V> consumer) {
         delegate.forEach(consumer);
     }
 
     @Override
-    public Map<K, V> asMap() {
-        return delegate.asMap();
+    public Set<K> keySet() {
+        return delegate.keySet();
+    }
+
+    @Override
+    public Collection<V> values() {
+        return delegate.values();
+    }
+
+    @Override
+    public Set<Map.Entry<K, V>> entrySet() {
+        return delegate.entrySet();
+    }
+
+    @Override
+    public Stream<Map.Entry<K, V>> stream() {
+        return delegate.stream();
+    }
+
+    @Override
+    public V getTrap() {
+        return delegate.getTrap();
     }
 }

@@ -48,4 +48,8 @@ dependencies {
     compileOnly "org.iq80.leveldb:leveldb:${leveldbVersion}"
     compileOnly "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
     compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"
+
+    testCompile "org.iq80.leveldb:leveldb:${leveldbVersion}"
+    testCompile "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
+    testCompile "org.slf4j:slf4j-api:${slf4jVersion}"
 }

@@ -6,6 +6,7 @@ import org.tdf.common.util.ByteArrayMap;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 /**
@@ -108,6 +109,14 @@ public class MapStore<K, V> implements BatchStore<K, V> {
     @Override
     public void forEach(BiConsumer<K, V> consumer) {
         map.forEach(consumer);
+    }
+
+    @Override
+    public void traverse(BiFunction<K, V, Boolean> traverser) {
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            boolean proceed = traverser.apply(entry.getKey(), entry.getValue());
+            if (!proceed) break;
+        }
     }
 
     @Override

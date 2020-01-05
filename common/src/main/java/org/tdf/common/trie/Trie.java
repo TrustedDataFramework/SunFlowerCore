@@ -4,10 +4,13 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
 
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public interface Trie<K, V> extends Store<K, V> {
+    static <K, V> Builder<K, V> builder() {
+        return new Builder<>();
+    }
+
     // revert to another trie with rootHash and store provided
     // throw exception if the rootHash not found in the store
     Trie<K, V> revert(byte[] rootHash, Store<byte[], byte[]> store) throws RuntimeException;
@@ -23,9 +26,6 @@ public interface Trie<K, V> extends Store<K, V> {
     // you could rollback to this state later by revert to the root hash generated
     byte[] commit();
 
-    // iterate over the trie
-    void traverse(BiConsumer<TrieKey, Node> action);
-
     // dump key of nodes
     Set<byte[]> dump();
 
@@ -39,10 +39,6 @@ public interface Trie<K, V> extends Store<K, V> {
 
     // return true is root node is not null and root node is dirty
     boolean isDirty();
-
-    static <K, V> Builder<K, V> builder() {
-        return new Builder<>();
-    }
 
     class Builder<K, V> {
         private Function<byte[], byte[]> hashFunction;

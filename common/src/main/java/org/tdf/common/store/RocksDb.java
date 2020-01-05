@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 import static java.lang.System.arraycopy;
 
@@ -250,21 +250,6 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public boolean isEmpty() {
-        resetDbLock.readLock().lock();
-        try {
-            RocksIterator iterator = db.newIterator();
-            iterator.seekToFirst();
-            return !iterator.isValid();
-        } catch (Exception e) {
-            log.error("Error iterating db '{}'", name, e);
-            throw new RuntimeException(e);
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
-
-    @Override
     public void putIfAbsent(@NonNull byte[] key, @NonNull byte[] val) {
         resetDbLock.readLock().lock();
         try {
@@ -314,12 +299,14 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public void forEach(BiConsumer<byte[], byte[]> consumer) {
+    public void traverse(BiFunction<byte[], byte[], Boolean> traverser) {
         resetDbLock.readLock().lock();
         try {
             RocksIterator iterator = db.newIterator();
             for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                consumer.accept(iterator.key(), iterator.value());
+                if (!traverser.apply(iterator.key(), iterator.value())) {
+                    return;
+                }
             }
         } catch (Exception e) {
             log.error("Error iterating db '{}'", name, e);
@@ -327,10 +314,5 @@ public class RocksDb implements DatabaseStore {
         } finally {
             resetDbLock.readLock().unlock();
         }
-    }
-
-    @Override
-    public Map<byte[], byte[]> asMap() {
-        throw new RuntimeException("not supported");
     }
 }

@@ -2,6 +2,7 @@ package org.tdf.common.store;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 /**
@@ -53,7 +54,7 @@ public interface Store<K, V> {
         }
 
         @Override
-        public void forEach(BiConsumer consumer) {
+        public void traverse(BiFunction consumer) {
         }
 
         @Override
@@ -68,6 +69,7 @@ public interface Store<K, V> {
 
     /**
      * Gets a value by its key
+     *
      * @param k key to query
      * @return value or empty if no such key in the source
      */
@@ -76,6 +78,7 @@ public interface Store<K, V> {
 
     /**
      * put key with trap value will remove the key
+     *
      * @return non null static trap value
      */
     default V getTrap() {
@@ -87,7 +90,7 @@ public interface Store<K, V> {
      *
      * @param k key of key-value mapping
      * @param v value of key-value mapping
-     * remove key in the store if {@code v == getTrap()}
+     *          remove key in the store if {@code v == getTrap()}
      */
     void put(K k, V v);
 
@@ -133,7 +136,14 @@ public interface Store<K, V> {
      *
      * @return <tt>true</tt> if this store contains no key-value mappings.
      */
-    boolean isEmpty();
+    default boolean isEmpty() {
+        boolean[] hasEntry = new boolean[1];
+        traverse((k, v) -> {
+            hasEntry[0] = true;
+            return false;
+        });
+        return !hasEntry[0];
+    }
 
     /**
      * Removes all of the mappings from this store (optional operation).
@@ -148,9 +158,17 @@ public interface Store<K, V> {
      * Performs the given action for each key value pair in this map store until all pairs
      * have been processed or the action throws an exception.
      *
-     * @param consumer operation of key-value mapping
+     * @param traverser operation of key-value mapping, if traverser return false, the traverse will stop
      */
-    void forEach(BiConsumer<K, V> consumer);
+    void traverse(BiFunction<K, V, Boolean> traverser);
+
+
+    default void forEach(BiConsumer<K, V> consumer) {
+        traverse((k, v) -> {
+            consumer.accept(k, v);
+            return true;
+        });
+    }
 
     /**
      * Returns a {@link Set} view of the keys contained in this store.
@@ -192,7 +210,10 @@ public interface Store<K, V> {
      */
     default int size() {
         int[] count = new int[1];
-        forEach((k, v) -> count[0]++);
+        traverse((k, v) -> {
+            count[0]++;
+            return true;
+        });
         return count[0];
     }
 
@@ -203,7 +224,10 @@ public interface Store<K, V> {
      */
     default Stream<Map.Entry<K, V>> stream() {
         Stream.Builder<Map.Entry<K, V>> builder = Stream.builder();
-        forEach((k, v) -> builder.accept(new AbstractMap.SimpleImmutableEntry<>(k, v)));
+        traverse((k, v) -> {
+            builder.accept(new AbstractMap.SimpleImmutableEntry<>(k, v));
+            return true;
+        });
         return builder.build();
     }
 

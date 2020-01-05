@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 public class ReadOnlyStore<K, V> implements Store<K, V> {
     private static final String READ_ONLY_TIP = "the store is read only";
@@ -83,8 +85,24 @@ public class ReadOnlyStore<K, V> implements Store<K, V> {
         throw new UnsupportedOperationException(READ_ONLY_TIP);
     }
 
+
+    @Override
+    public void traverse(BiFunction<K, V, Boolean> traverser) {
+        delegate.traverse(traverser);
+    }
+
     @Override
     public void forEach(BiConsumer<K, V> consumer) {
         delegate.forEach(consumer);
+    }
+
+    @Override
+    public V getTrap() {
+        return delegate.getTrap();
+    }
+
+    @Override
+    public Stream<Map.Entry<K, V>> stream() {
+        return delegate.stream();
     }
 }

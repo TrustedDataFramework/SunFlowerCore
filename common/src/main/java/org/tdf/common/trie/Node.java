@@ -11,7 +11,7 @@ import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static org.tdf.common.trie.TrieKey.EMPTY;
@@ -241,11 +241,11 @@ class Node {
     }
 
     // deep-first scanning
-    void traverse(TrieKey init, BiConsumer<TrieKey, Node> action) {
+    void traverse(TrieKey init, BiFunction<TrieKey, Node, Boolean> action) {
         parse();
         Type type = getType();
         if (type == Type.BRANCH) {
-            action.accept(init, this);
+            if (!action.apply(init, this)) return;
             for (int i = 0; i < BRANCH_SIZE - 1; i++) {
                 if (children[i] == null) continue;
                 ((Node) children[i]).traverse(init.concat(TrieKey.single(i)), action);
@@ -254,11 +254,12 @@ class Node {
         }
         if (type == Type.EXTENSION) {
             TrieKey path = init.concat(getKey());
-            action.accept(path, this);
+            if (!action.apply(path, this)) return;
             getExtension().traverse(path, action);
             return;
         }
-        action.accept(init.concat(getKey()), this);
+        // leaf node
+        action.apply(init.concat(getKey()), this);
     }
 
     // for test only

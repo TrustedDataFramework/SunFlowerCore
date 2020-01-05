@@ -4,7 +4,7 @@ import lombok.NonNull;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 /**
@@ -91,12 +91,6 @@ public class CachedStore<K, V> implements Store<K, V> {
                 || (v != getTrap() && delegate.containsKey(k));
     }
 
-
-    @Override
-    public boolean isEmpty() {
-        return size() == 0;
-    }
-
     @Override
     public void clear() {
         clearCache();
@@ -104,13 +98,15 @@ public class CachedStore<K, V> implements Store<K, V> {
     }
 
     @Override
-    public void forEach(BiConsumer<K, V> consumer) {
-        cache.forEach((k, v) -> {
-            if (v != getTrap()) consumer.accept(k, v);
-        });
-        delegate.forEach((k, v) -> {
-            if (cache.containsKey(k)) return;
-            consumer.accept(k, v);
+    public void traverse(BiFunction<K, V, Boolean> traverser) {
+        for (Map.Entry<K, V> entry : cache.entrySet()) {
+            if (entry.getValue() == getTrap()) continue;
+            boolean proceed = traverser.apply(entry.getKey(), entry.getValue());
+            if (!proceed) break;
+        }
+        delegate.traverse((k, v) -> {
+            if (cache.containsKey(k)) return true;
+            return traverser.apply(k, v);
         });
     }
 }

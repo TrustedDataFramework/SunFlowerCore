@@ -5,7 +5,7 @@ import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 
 import java.util.Optional;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * delegate {@code Store<U, R>} as {@code Store<K, V>}
@@ -68,9 +68,9 @@ public class StoreWrapper<K, V, U, R>
     }
 
     @Override
-    public void forEach(BiConsumer<K, V> consumer) {
-        store.forEach((u, r) -> {
-            consumer.accept(keyCodec.getDecoder().apply(u), valueCodec.getDecoder().apply(r));
-        });
+    public void traverse(BiFunction<K, V, Boolean> traverser) {
+        store.traverse(
+                (u, r) -> traverser.apply(keyCodec.getDecoder().apply(u), valueCodec.getDecoder().apply(r))
+        );
     }
 }

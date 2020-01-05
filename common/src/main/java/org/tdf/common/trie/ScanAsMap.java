@@ -11,9 +11,10 @@ class ScanAsMap implements ScannerAction {
     private Map<byte[], byte[]> map = new ByteArrayMap<>();
 
     @Override
-    public void accept(TrieKey trieKey, Node node) {
+    public Boolean apply(TrieKey trieKey, Node node) {
         if (node.getType() != Node.Type.EXTENSION && node.getValue() != null) {
             map.put(trieKey.toNormal(), node.getValue());
         }
+        return true;
     }
 }

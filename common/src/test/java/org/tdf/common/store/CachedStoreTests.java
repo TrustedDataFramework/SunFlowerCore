@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
-public class MemoryCachedDBTest {
+public class CachedStoreTests {
     protected CachedStore<byte[], byte[]> store;
 
     protected Store<byte[], byte[]> delegate;

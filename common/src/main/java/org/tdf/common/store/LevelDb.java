@@ -6,7 +6,6 @@ import org.apache.commons.codec.binary.Hex;
 import org.iq80.leveldb.*;
 import org.iq80.leveldb.util.FileUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,7 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 import static org.iq80.leveldb.impl.Iq80DBFactory.factory;
 
@@ -125,13 +124,12 @@ public class LevelDb implements DatabaseStore {
         }
     }
 
-    public void destroyDB(File fileLocation) {
+    public void destroyDB() {
         resetDbLock.writeLock().lock();
         try {
-            log.debug("Destroying existing database: " + fileLocation);
             Options options = new Options();
             try {
-                factory.destroy(fileLocation, options);
+                factory.destroy(getPath().toFile(), options);
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
             }
@@ -285,31 +283,16 @@ public class LevelDb implements DatabaseStore {
     }
 
     @Override
-    public boolean isEmpty() {
-        resetDbLock.readLock().lock();
-        try {
-            if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.keys(): " + name);
-            try (DBIterator iterator = db.iterator()) {
-                iterator.seekToFirst();
-                return !iterator.hasNext();
-            } catch (IOException e) {
-                log.error("Unexpected", e);
-                throw new RuntimeException(e);
-            }
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public void forEach(BiConsumer<byte[], byte[]> consumer) {
+    public void traverse(BiFunction<byte[], byte[], Boolean> traverser) {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.keys(): " + name);
             try (DBIterator iterator = db.iterator()) {
                 for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
                     Map.Entry<byte[], byte[]> entry = iterator.peekNext();
-                    consumer.accept(entry.getKey(), entry.getValue());
+                    if (!traverser.apply(entry.getKey(), entry.getValue())) {
+                        return;
+                    }
                 }
             } catch (IOException e) {
                 log.error("Unexpected", e);
@@ -318,10 +301,5 @@ public class LevelDb implements DatabaseStore {
         } finally {
             resetDbLock.readLock().unlock();
         }
-    }
-
-    @Override
-    public Map<byte[], byte[]> asMap() {
-        throw new RuntimeException("not supported");
     }
 }

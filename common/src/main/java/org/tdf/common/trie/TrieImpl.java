@@ -12,7 +12,7 @@ import org.tdf.rlp.RLPItem;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 
@@ -133,8 +133,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         );
     }
 
-    @Override
-    public void traverse(BiConsumer<TrieKey, Node> action) {
+    public void traverseInternal(BiFunction<TrieKey, Node, Boolean> action) {
         commit();
         if (root == null) return;
         root.traverse(TrieKey.EMPTY, action);
@@ -143,7 +142,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     @Override
     public Set<byte[]> dump() {
         Dump dump = new Dump();
-        traverse(dump);
+        traverseInternal(dump);
         return dump.getKeys();
     }
 
@@ -176,11 +175,15 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public void forEach(BiConsumer<K, V> consumer) {
-        traverse((k, n) -> {
+    public void traverse(BiFunction<K, V, Boolean> traverser) {
+        traverseInternal((k, n) -> {
             if (n.getType() != Node.Type.EXTENSION && n.getValue() != null) {
-                consumer.accept(kCodec.getDecoder().apply(k.toNormal()), vCodec.getDecoder().apply(n.getValue()));
+                return traverser.apply(
+                        kCodec.getDecoder().apply(k.toNormal()),
+                        vCodec.getDecoder().apply(n.getValue())
+                );
             }
+            return true;
         });
     }
 }

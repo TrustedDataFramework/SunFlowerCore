@@ -11,7 +11,8 @@ class Dump implements ScannerAction {
     private Set<byte[]> keys = new ByteArraySet();
 
     @Override
-    public void accept(TrieKey path, Node node) {
+    public Boolean apply(TrieKey path, Node node) {
         if (node.getHash() != null) keys.add(node.getHash());
+        return true;
     }
 }
