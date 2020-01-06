@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class AbstractStateUpdater<ID, S> implements StateUpdater<ID, S>{
+public abstract class AbstractStateUpdater<ID, S> implements StateUpdater<ID, S> {
     @Override
     public Set<ID> getRelatedKeys(Block block) {
         Set<ID> set = createEmptySet();
@@ -26,7 +26,7 @@ public abstract class AbstractStateUpdater<ID, S> implements StateUpdater<ID, S>
         ret.putAll(beforeUpdate);
         block.getBody().forEach(
                 tx -> getRelatedKeys(tx)
-                        .forEach(k -> ret.put(k, update(k, ret.get(k), tx)))
+                        .forEach(k -> ret.put(k, update(k, ret.get(k), block.getHeader(), tx)))
         );
         return ret;
     }
@@ -34,10 +34,13 @@ public abstract class AbstractStateUpdater<ID, S> implements StateUpdater<ID, S>
     public Map<ID, S> update(Map<ID, S> beforeUpdate, List<Block> blocks) {
         Map<ID, S> ret = createEmptyMap();
         ret.putAll(beforeUpdate);
-        blocks.stream().flatMap(b -> b.getBody().stream())
-                .forEach(tx -> getRelatedKeys(tx).forEach(k -> {
-                    ret.put(k, update(k, ret.get(k), tx));
-                }));
+        blocks.forEach(b -> {
+            b.getBody().forEach(tx -> {
+                getRelatedKeys(tx).forEach(k -> {
+                    ret.put(k, update(k, ret.get(k), b.getHeader(), tx));
+                });
+            });
+        });
         return ret;
     }
 }

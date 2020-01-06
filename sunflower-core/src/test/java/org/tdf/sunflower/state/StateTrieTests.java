@@ -17,6 +17,7 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.DatabaseConfig;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.*;
@@ -58,7 +59,7 @@ public class StateTrieTests {
         }
 
         @Override
-        public Account update(String s, Account state, Transaction t) {
+        public Account update(String s, Account state, Header header, Transaction t) {
             state = state.clone();
             if (t.getFrom().toString().equals(state.address)) {
                 state.balance -= t.getAmount();

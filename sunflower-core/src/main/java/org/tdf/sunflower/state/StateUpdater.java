@@ -1,6 +1,7 @@
 package org.tdf.sunflower.state;
 
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.List;
@@ -17,7 +18,7 @@ public interface StateUpdater<ID,S> {
     Set<ID> getRelatedKeys(List<Block> block);
 
     // the update method should always returns a new state
-    S update(ID id, S state, Transaction transaction);
+    S update(ID id, S state, Header header, Transaction transaction);
 
     S createEmpty(ID id);
 
