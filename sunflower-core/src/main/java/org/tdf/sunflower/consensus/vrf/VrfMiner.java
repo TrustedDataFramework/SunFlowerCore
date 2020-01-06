@@ -258,7 +258,7 @@ public class VrfMiner implements Miner {
         final Block bestPendingState = blockRepository.getBestBlock();
         final long nextBlockNum = bestPendingState.getHeight() + 1;
 
-        if (!setupVrfMiner(vrfStateMachine)) {
+        if (!setupVrfStateMachine(vrfStateMachine)) {
             log.error("Fail to setup Vrf Miner, quit startVrfStateMachine");
 
             return;
@@ -290,7 +290,7 @@ public class VrfMiner implements Miner {
         log.info("VrfStateMachine is stopped, minerCoinbase 0x{}", Hex.toHexString(minerCoinbase), 0, 6);
     }
 
-    private boolean setupVrfMiner(VrfStateMachine vrfStateMachine) {
+    private boolean setupVrfStateMachine(VrfStateMachine vrfStateMachine) {
         StateMachineListener listener = new StateMachineListener() {
             @Override
             public void stateChanged(int from, int to) throws DecoderException, JsonProcessingException {
