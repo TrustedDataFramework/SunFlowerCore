@@ -71,10 +71,10 @@ public class ChainCacheTest {
         if ("true".equals(System.getenv("WRAPPER"))) {
             cache = cache.withLock();
         }
-        cache.put(genesis);
-        cache.put(chain0);
-        cache.put(chain1);
-        cache.put(chain2);
+        cache.add(genesis);
+        cache.addAll(chain0);
+        cache.addAll(chain1);
+        cache.addAll(chain2);
         return cache;
     }
 

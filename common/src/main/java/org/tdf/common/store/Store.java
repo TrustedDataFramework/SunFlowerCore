@@ -77,8 +77,7 @@ public interface Store<K, V> {
 
 
     /**
-     * put key with trap value will remove the key
-     *
+     * put key with trap-like value will remove the key
      * @return non null static trap value
      */
     default V getTrap() {

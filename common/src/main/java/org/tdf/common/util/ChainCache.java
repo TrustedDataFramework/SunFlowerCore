@@ -1,6 +1,5 @@
 package org.tdf.common.util;
 
-import lombok.Getter;
 import lombok.NonNull;
 import org.tdf.common.types.Chained;
 
@@ -14,53 +13,44 @@ import java.util.stream.Stream;
  *
  * @author sal 1564319846@qq.com
  */
-public class ChainCache<T extends Chained> {
-    private static final String NODE_PREFIX = "node";
-    private static final String CHILDREN_HASH_PREFIX = "children";
-    private static final String PARENT_HASH_PREFIX = "parent";
+public class ChainCache<T extends Chained> extends AbstractSet<T> implements SortedSet<T> {
+    public static <T extends Chained> ChainCache<T> of(Collection<T> nodes) {
+        Builder<T> builder = builder();
+        ChainCache<T> ret = builder.build();
+        ret.addAll(nodes);
+        return ret;
+    }
+
 
     // hash -> node
-    @Getter
-    protected Map<byte[], T> nodes;
+    private Map<byte[], T> nodes = new ByteArrayMap<>();
     // hash -> children hashes
-    @Getter
-    protected Map<byte[], Set<byte[]>> childrenHashes;
+    private Map<byte[], Set<byte[]>> childrenHashes = new ByteArrayMap<>();
     // hash -> parent hash
-    @Getter
-    protected Map<byte[], byte[]> parentHash;
+    private Map<byte[], byte[]> parentHash = new ByteArrayMap<>();
 
-    protected int sizeLimit;
+    private TreeSet<T> set;
 
-    // not serializable
-    protected Comparator<? super T> comparator;
-
-    // lru
-    public ChainCache(int sizeLimit, Comparator<? super T> comparator) {
-        this();
-        this.sizeLimit = sizeLimit;
-        this.comparator = comparator;
-    }
+    private int sizeLimit;
 
     public ChainCache() {
-        this.nodes = new ByteArrayMap<>();
-        this.childrenHashes = new ByteArrayMap<>();
-        this.parentHash = new ByteArrayMap<>();
+        set = new TreeSet<>(comparator);
     }
 
-    public ChainCache(T node) {
-        this();
-        put(node);
+    // not serializable
+    private Comparator<? super T> comparator = (Comparator<T>) (o1, o2) -> {
+        if (o1.getHash().equals(o2.getHashPrev())) return -1;
+        if (o1.getHashPrev().equals(o2.getHash())) return 1;
+        return o1.getHash().compareTo(o2.getHash());
+    };
+
+    @lombok.Builder(builderClassName = "Builder")
+    public ChainCache(int sizeLimit, Comparator<? super T> comparator) {
+        this.sizeLimit = sizeLimit;
+        if (comparator != null) this.comparator = comparator;
+        set = new TreeSet<>(this.comparator);
     }
 
-    public ChainCache(Collection<? extends T> nodes) {
-        this();
-        put(nodes);
-    }
-
-    public ChainCache<T> withComparator(Comparator<? super T> comparator) {
-        this.comparator = comparator;
-        return this;
-    }
 
     public ChainCache<T> withLock() {
         return new ChainCacheWrapper<>(this);
@@ -78,13 +68,17 @@ public class ChainCache<T extends Chained> {
     }
 
     public ChainCache<T> clone() {
-        ChainCache<T> copied = new ChainCache<>();
-        copied.nodes = new ByteArrayMap<>(nodes);
+        Builder<T> builder = builder();
+        ChainCache<T> ret = builder.sizeLimit(sizeLimit)
+                .comparator(comparator)
+                .build();
+        ret.nodes = new ByteArrayMap<>(nodes);
         Map<byte[], Set<byte[]>> tmp =
                 childrenHashes;
-        copied.childrenHashes = new ByteArrayMap<>(tmp);
-        copied.parentHash = new ByteArrayMap<>(parentHash);
-        return copied;
+        ret.childrenHashes = new ByteArrayMap<>(tmp);
+        ret.parentHash = new ByteArrayMap<>(parentHash);
+        ret.set = new TreeSet<>(set);
+        return ret;
     }
 
     private Set<byte[]> getDescendantsHash(byte[] hash) {
@@ -118,28 +112,7 @@ public class ChainCache<T extends Chained> {
     }
 
     public void removeDescendants(byte[] hash) {
-        getDescendantsHash(hash).forEach(this::remove);
-    }
-
-    public void remove(byte[] key) {
-        byte[] k = parentHash.get(key);
-        if (k == null) return;
-        nodes.remove(key);
-        parentHash.remove(key);
-        Set<byte[]> set = childrenHashes.get(k);
-        if (set == null) return;
-        set.remove(key);
-        if (set.size() > 0) {
-            childrenHashes.put(k, set);
-        } else {
-            childrenHashes.remove(k);
-        }
-    }
-
-    public void remove(Collection<byte[]> nodes) {
-        for (byte[] node : nodes) {
-            remove(node);
-        }
+        getDescendantsHash(hash).forEach(this::removeByHash);
     }
 
     // leaves not has children
@@ -177,26 +150,16 @@ public class ChainCache<T extends Chained> {
 
     // evict
     private void evict() {
-        if (comparator == null || sizeLimit <= 0) {
+        if (sizeLimit <= 0) {
             return;
         }
-        long toRemove = size() - sizeLimit;
-        toRemove = toRemove > 0 ? toRemove : 0;
-
-        List<T> ss = this.nodes.values()
-                .stream().sorted(comparator)
-                .limit(toRemove)
-                .collect(Collectors.toList());
-        ss.stream().map(n -> n.getHash().getBytes())
-                .forEach(this::remove);
+        while (size() > sizeLimit) {
+            remove(set.first());
+        }
     }
 
-    public void putIfAbsent(@NonNull T node) {
-        if (nodes.containsKey(node.getHash().getBytes())) return;
-        put(node);
-    }
-
-    public void put(@NonNull T node) {
+    public boolean add(@NonNull T node) {
+        if (set.contains(node)) return false;
         byte[] key = node.getHash().getBytes();
         nodes.put(key, node);
         byte[] prevHash = node.getHashPrev().getBytes();
@@ -205,17 +168,43 @@ public class ChainCache<T extends Chained> {
         parentHash.put(key, prevHash);
         s.add(node.getHash().getBytes());
         childrenHashes.put(prevHash, s);
+        set.add(node);
         evict();
+        return true;
+    }
+    
+    public boolean removeByHash(byte[] hash){
+        T n = nodes.get(hash);
+        if(n == null) return false;
+        return remove(n);
     }
 
-    public void put(@NonNull Collection<? extends T> nodes) {
-        for (T b : nodes) {
-            put(b);
+    @Override
+    public boolean remove(Object o) {
+        T n = (T) o;
+        if(!set.contains(n)) return false;
+        byte[] key = n.getHash().getBytes();
+        byte[] k = parentHash.get(key);
+        set.remove(n);
+        nodes.remove(key);
+        parentHash.remove(key);
+        Set<byte[]> set = childrenHashes.get(k);
+        if (set == null) return true;
+        set.remove(key);
+        if (set.size() > 0) {
+            childrenHashes.put(k, set);
+        } else {
+            childrenHashes.remove(k);
         }
+        return true;
     }
 
-    public List<T> getAll() {
-        return getNodes(nodes.keySet());
+    @Override
+    public void clear() {
+        nodes = new ByteArrayMap<>();
+        childrenHashes = new ByteArrayMap<>();
+        parentHash = new ByteArrayMap<>();
+        set = new TreeSet<>(comparator);
     }
 
     public List<T> popLongestChain() {
@@ -225,7 +214,7 @@ public class ChainCache<T extends Chained> {
         }
         res.sort(Comparator.comparingInt(List::size));
         List<T> longest = res.get(res.size() - 1);
-        remove(longest.stream().map(n -> n.getHash().getBytes()).collect(Collectors.toList()));
+        removeAll(longest);
         return longest;
     }
 
@@ -237,7 +226,27 @@ public class ChainCache<T extends Chained> {
         return nodes.isEmpty();
     }
 
-    public boolean contains(byte[] hash) {
+    @Override
+    public boolean contains(Object o) {
+        return set.contains(o);
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return set.iterator();
+    }
+
+    @Override
+    public Object[] toArray() {
+        return set.toArray();
+    }
+
+    @Override
+    public <T1> T1[] toArray(T1[] a) {
+        return set.toArray(a);
+    }
+
+    public boolean containsHash(byte[] hash) {
         return nodes.containsKey(hash);
     }
 
@@ -257,5 +266,60 @@ public class ChainCache<T extends Chained> {
         Set<byte[]> s = childrenHashes.get(hash);
         if (s == null || s.isEmpty()) return Collections.emptyList();
         return getNodes(s);
+    }
+
+    @Override
+    public Stream<T> stream() {
+        return set.stream();
+    }
+
+    @Override
+    public Spliterator<T> spliterator() {
+        return set.spliterator();
+    }
+
+
+    @Override
+    public Comparator<? super T> comparator() {
+        return this.comparator;
+    }
+
+    @Override
+    public SortedSet<T> subSet(T fromElement, T toElement) {
+        return set.subSet(fromElement, toElement);
+    }
+
+    @Override
+    public SortedSet<T> headSet(T toElement) {
+        return set.headSet(toElement);
+    }
+
+    @Override
+    public SortedSet<T> tailSet(T fromElement) {
+        return set.tailSet(fromElement);
+    }
+
+    @Override
+    public T first() {
+        return set.first();
+    }
+
+    @Override
+    public T last() {
+        return set.last();
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        boolean[] ret = new boolean[1];
+        c.forEach(o -> {
+            ret[0] |= remove(o);
+        });
+        return ret[0];
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        throw new UnsupportedOperationException();
     }
 }

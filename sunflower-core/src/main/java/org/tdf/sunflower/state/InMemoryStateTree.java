@@ -3,7 +3,6 @@ package org.tdf.sunflower.state;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.ChainCache;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.exception.ExceptionUtil;
 import org.tdf.sunflower.exception.StateUpdateException;
 import org.tdf.sunflower.facade.StateTree;
 import org.tdf.sunflower.types.Block;
@@ -31,11 +30,11 @@ public class InMemoryStateTree<T extends ForkAbleState<T>> implements StateTree<
     }
 
     public void update(Block b) {
-        if (cache.contains(b.getHash().getBytes())) return;
+        if (cache.containsHash(b.getHash().getBytes())) return;
         if (b.getHeight() == 0) {
             throw new RuntimeException("please manually assign genesis states rather than update from empty");
         }
-        if (!cache.contains(
+        if (!cache.containsHash(
                 b.getHashPrev().getBytes()) &&
                 !b.getHashPrev().equals(root.getHash())
         )
@@ -68,9 +67,9 @@ public class InMemoryStateTree<T extends ForkAbleState<T>> implements StateTree<
 
     // provide all already updated state
     public void put(Chained node, Collection<? extends T> allStates) {
-        if (cache.contains(node.getHash().getBytes())) return;
+        if (cache.containsHash(node.getHash().getBytes())) return;
         StateMap<T> forked = new StateMap<>(node.getHashPrev(), node.getHash(), allStates);
-        cache.put(forked);
+        cache.add(forked);
     }
 
     public Optional<T> get(String id, byte[] where) {
@@ -101,7 +100,7 @@ public class InMemoryStateTree<T extends ForkAbleState<T>> implements StateTree<
         StateMap<T> map = o.get();
         children.stream().filter(x -> !x.getHash().equals(h))
                 .forEach(n -> cache.removeDescendants(n.getHash().getBytes()));
-        cache.remove(map.getHash().getBytes());
+        cache.remove(map);
         map.forEach((k, v) -> root.put(k, v));
         root.setHash(map.getHash());
         root.setHashPrev(map.getHashPrev());

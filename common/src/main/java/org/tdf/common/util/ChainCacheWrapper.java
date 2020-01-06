@@ -3,11 +3,10 @@ package org.tdf.common.util;
 import lombok.NonNull;
 import org.tdf.common.types.Chained;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Stream;
 
 /**
  * Thread safe wrapper
@@ -26,194 +25,146 @@ class ChainCacheWrapper<T extends Chained> extends ChainCache<T> {
 
     @Override
     public Optional<T> get(byte[] hash) {
-        lock.readLock().lock();
-        try {
-            return delegate.get(hash);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.get(hash);
     }
 
     @Override
     public ChainCache<T> clone() {
-        lock.readLock().lock();
-        try {
-            return delegate.clone();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.clone();
     }
 
     @Override
     public List<T> getDescendants(byte[] hash) {
-        lock.readLock().lock();
-        try {
-            return delegate.getDescendants(hash);
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public void removeDescendants(byte[] hash) {
-        lock.writeLock().lock();
-        try {
-            delegate.removeDescendants(hash);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        return delegate.getDescendants(hash);
     }
 
     @Override
     public List<List<T>> getAllForks() {
-        lock.readLock().lock();
-        try {
-            return delegate.getAllForks();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.getAllForks();
     }
 
     @Override
-    public void remove(byte[] hash) {
-        lock.writeLock().lock();
-        try {
-            delegate.remove(hash);
-        } finally {
-            lock.writeLock().unlock();
-        }
+    public void removeDescendants(byte[] hash) {
+        delegate.removeDescendants(hash);
     }
-
-    @Override
-    public final void remove(Collection<byte[]> nodes) {
-        lock.writeLock().lock();
-        try {
-            delegate.remove(nodes);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
 
     @Override
     public List<T> getLeaves() {
-        lock.readLock().lock();
-        try {
-            return delegate.getLeaves();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.getLeaves();
     }
 
     @Override
     public List<T> getInitials() {
-        lock.readLock().lock();
-        try {
-            return delegate.getInitials();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.getInitials();
     }
 
     @Override
-    public void put(T node) {
-        lock.writeLock().lock();
-        try {
-            delegate.put(node);
-        } finally {
-            lock.writeLock().unlock();
-        }
+    public boolean add(@NonNull T node) {
+        return delegate.add(node);
     }
 
     @Override
-    public void put(Collection<? extends T> nodes) {
-        lock.writeLock().lock();
-        try {
-            delegate.put(nodes);
-        } finally {
-            lock.writeLock().unlock();
-        }
+    public boolean removeByHash(byte[] hash) {
+        return delegate.removeByHash(hash);
     }
 
+    @Override
+    public boolean remove(Object o) {
+        return delegate.remove(o);
+    }
 
     @Override
-    public List<T> getAll() {
-        lock.readLock().lock();
-        try {
-            return delegate.getAll();
-        } finally {
-            lock.readLock().unlock();
-        }
+    public void clear() {
+        delegate.clear();
     }
 
     @Override
     public List<T> popLongestChain() {
-        lock.writeLock().lock();
-        try {
-            return delegate.popLongestChain();
-        } finally {
-            lock.writeLock().unlock();
-        }
+        return delegate.popLongestChain();
     }
 
     @Override
     public int size() {
-        lock.readLock().lock();
-        try {
-            return delegate.size();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.size();
     }
 
     @Override
     public boolean isEmpty() {
-        lock.readLock().lock();
-        try {
-            return delegate.isEmpty();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.isEmpty();
     }
 
     @Override
-    public boolean contains(byte[] hash) {
-        lock.readLock().lock();
-        try {
-            return delegate.contains(hash);
-        } finally {
-            lock.readLock().unlock();
-        }
+    public boolean contains(Object o) {
+        return delegate.contains(o);
     }
 
+    @Override
+    public Iterator<T> iterator() {
+        return delegate.iterator();
+    }
+
+    @Override
+    public Object[] toArray() {
+        return delegate.toArray();
+    }
+
+    @Override
+    public <T1> T1[] toArray(T1[] a) {
+        return delegate.toArray(a);
+    }
+
+    @Override
+    public boolean containsHash(byte[] hash) {
+        return delegate.containsHash(hash);
+    }
 
     @Override
     public List<T> getAncestors(byte[] hash) {
-        lock.readLock().lock();
-        try {
-            return delegate.getAncestors(hash);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.getAncestors(hash);
     }
 
     @Override
     public List<T> getChildren(byte[] hash) {
-        lock.readLock().lock();
-        try {
-            return delegate.getChildren(hash);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.getChildren(hash);
     }
 
     @Override
-    public void putIfAbsent(@NonNull T node) {
-        lock.writeLock().lock();
-        try {
-            delegate.putIfAbsent(node);
-        } finally {
-            lock.writeLock().unlock();
-        }
+    public Stream<T> stream() {
+        return delegate.stream();
+    }
+
+    @Override
+    public Spliterator<T> spliterator() {
+        return delegate.spliterator();
+    }
+
+    @Override
+    public Comparator<? super T> comparator() {
+        return delegate.comparator();
+    }
+
+    @Override
+    public SortedSet<T> subSet(T fromElement, T toElement) {
+        return delegate.subSet(fromElement, toElement);
+    }
+
+    @Override
+    public SortedSet<T> headSet(T toElement) {
+        return delegate.headSet(toElement);
+    }
+
+    @Override
+    public SortedSet<T> tailSet(T fromElement) {
+        return delegate.tailSet(fromElement);
+    }
+
+    @Override
+    public T first() {
+        return delegate.first();
+    }
+
+    @Override
+    public T last() {
+        return delegate.last();
     }
 }

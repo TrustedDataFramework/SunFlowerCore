@@ -69,7 +69,7 @@ public class StateFactoryTests {
     }
 
     public static List<Block> getBlocks() throws Exception {
-        return ChainCacheTest.getCache(0).getAll().stream().map(n -> new Block(
+        return ChainCacheTest.getCache(0).stream().map(n -> new Block(
                 Header.builder().hash(n.getHash())
                         .hashPrev(n.getHashPrev()).height(n.getHeight()).build()
         )).collect(Collectors.toList());

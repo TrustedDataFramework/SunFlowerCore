@@ -177,7 +177,7 @@ public class BlockRepositoryService implements BlockRepository {
     public Optional<Header> getAncestorHeader(byte[] hash, long ancestorHeight) {
         Optional<Header> header = getHeader(hash);
         return header.map(h -> getHeadersBetween(ancestorHeight, h.getHeight()))
-                .map(ChainCache::new)
+                .map(ChainCache::of)
                 .map(c -> c.getAncestors(hash))
                 .flatMap(li -> li.stream().filter(x -> x.getHeight() == ancestorHeight).findFirst())
                 ;
@@ -199,7 +199,7 @@ public class BlockRepositoryService implements BlockRepository {
                     getHeadersBetween(
                             header.get().getHeight() - finalLimit + 1, h.getHeight(), finalLimit)
                     )
-                .map(ChainCache::new)
+                .map(ChainCache::of)
                 .map(c -> c.getAncestors(hash))
                 .orElse(new ArrayList<>());
     }
@@ -214,7 +214,7 @@ public class BlockRepositoryService implements BlockRepository {
                 getBlocksBetweenDescend(
                         block.get().getHeight() - finalLimit + 1, h.getHeight(), finalLimit)
                 )
-                .map(ChainCache::new)
+                .map(ChainCache::of)
                 .map(c -> c.getAncestors(hash))
                 .orElse(new ArrayList<>());
     }

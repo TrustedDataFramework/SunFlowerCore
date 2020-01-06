@@ -110,13 +110,20 @@ public class ChainCacheTest {
 
             ));
         }
-        ChainCache<Node> cache
-            = new ChainCache<>(sizeLimit, Comparator.comparingLong(Node::getHeight)).withLock();
+        ChainCache.Builder<Node> builder = ChainCache.builder();
+        ChainCache<Node> cache = builder
+                .sizeLimit(sizeLimit)
+                .comparator((x, y) -> {
+                    if(x.getHeight() != y.getHeight())
+                        return Long.compare(x.getHeight(), y.getHeight());
+                    return x.hash.compareTo(y.getHash());
+                })
+                .build();
 //        PERSISTENT.clear();
-        cache.put(genesis);
-        cache.put(chain0);
-        cache.put(chain1);
-        cache.put(chain2);
+        cache.add(genesis);
+        cache.addAll(chain0);
+        cache.addAll(chain1);
+        cache.addAll(chain2);
         return cache;
     }
 
@@ -144,20 +151,20 @@ public class ChainCacheTest {
         ChainCache<Node> cache = getCache(12);
         int size = cache.size();
         assert cache.size() == 12;
-        assert !cache.contains(Hex.decodeHex("0000".toCharArray()));
+        assert !cache.containsHash(Hex.decodeHex("0000".toCharArray()));
         cache = getCache(1);
         assert cache.size() == 1;
-        assert cache.getAll().get(0).hash.toString().equals("0206");
+        assert cache.first().hash.toString().equals("0206");
     }
 
     @Test
     public void testRemove() throws Exception {
         ChainCache<Node> cache = getCache(0);
-        cache.remove(cache.getAll().stream().map(n -> n.hash.getBytes()).collect(Collectors.toList()));
+        cache.removeAll(new ArrayList<>(cache));
         assert cache.isEmpty();
         assert cache.size() == 0;
         cache = getCache(0);
-        cache.remove(HexBytes.fromHex("0000").getBytes());
+        cache.removeByHash(HexBytes.fromHex("0000").getBytes());
         assert cache.size() == 12;
         assert !cache.isEmpty();
     }
@@ -223,7 +230,7 @@ public class ChainCacheTest {
 
     @Test
     public void testGetAllSorted() throws Exception{
-        List<Node> nodes = getCache(0).getAll();
+        List<Node> nodes = new ArrayList<>(getCache(0));
         List<Node> sorted = nodes.stream().sorted(Comparator.comparingLong(Node::getHeight)).collect(Collectors.toList());
         for(int i = 0; i < nodes.size(); i++){
             assert nodes.get(i).getHeight() == sorted.get(i).getHeight();
@@ -242,10 +249,8 @@ public class ChainCacheTest {
     @Test
     public void testPutEvict() throws Exception{
         ChainCache<Node> cache = getCache(0);
-        cache.putIfAbsent(new Node(HexBytes.fromHex("0206"), HexBytes.fromHex("0205"), 100));
-        assert cache.get(Hex.decodeHex("0206".toCharArray())).get().getHeight() == 6;
-        cache.put(new Node(HexBytes.fromHex("0206"), HexBytes.fromHex("0205"), 100));
+        cache.add(new Node(HexBytes.fromHex("0206"), HexBytes.fromHex("0205"), 100));
+        cache.add(new Node(HexBytes.fromHex("0206"), HexBytes.fromHex("0205"), 100));
         assert cache.get(Hex.decodeHex("0206".toCharArray())).get().getHeight() == 100;
     }
-
 }

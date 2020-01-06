@@ -21,7 +21,7 @@ public class InMemoryStateFactory<T extends State<T>> implements StateFactory<T>
 
     public InMemoryStateFactory(Block genesis, T state) {
         this.cache = new ChainCache<>();
-        cache.put(new ChainedWrapper<>(genesis.getHashPrev(), genesis.getHash(), state));
+        cache.add(new ChainedWrapper<>(genesis.getHashPrev(), genesis.getHash(), state));
         this.where = genesis.getHash();
     }
 
@@ -48,12 +48,12 @@ public class InMemoryStateFactory<T extends State<T>> implements StateFactory<T>
                 throw new RuntimeException(e.getMessage());
             }
         }
-        cache.put(new ChainedWrapper<>(b.getHashPrev(), b.getHash(), parent.get()));
+        cache.add(new ChainedWrapper<>(b.getHashPrev(), b.getHash(), parent.get()));
     }
 
     @Override
     public void put(Chained where, T state) {
-        cache.put(new ChainedWrapper<>(where.getHashPrev(), where.getHash(), state));
+        cache.add(new ChainedWrapper<>(where.getHashPrev(), where.getHash(), state));
     }
 
     @Override
@@ -73,7 +73,7 @@ public class InMemoryStateFactory<T extends State<T>> implements StateFactory<T>
         if (!root.isPresent()) {
             throw new RuntimeException("confirmed state missing");
         }
-        cache.remove(root.get().getHash().getBytes());
+        cache.remove(root.get());
         where = h;
     }
 
