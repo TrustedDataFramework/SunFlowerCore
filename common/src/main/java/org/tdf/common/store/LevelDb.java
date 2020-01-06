@@ -279,7 +279,7 @@ public class LevelDb implements DatabaseStore {
     }
 
     @Override
-    public void traverse(BiFunction<byte[], byte[], Boolean> traverser) {
+    public void traverse(BiFunction<? super byte[], ? super byte[], Boolean> traverser) {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.keys(): " + name);

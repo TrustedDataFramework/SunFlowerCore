@@ -4,6 +4,24 @@ import java.security.MessageDigest;
 
 public abstract class DigestEngine extends MessageDigest implements Digest {
 
+    private int digestLen, blockLen, inputLen;
+    private byte[] inputBuf, outputBuf;
+    private long blockCount;
+
+    /**
+     * Instantiate the engine.
+     */
+    public DigestEngine(String alg) {
+        super(alg);
+        doInit();
+        digestLen = engineGetDigestLength();
+        blockLen = getInternalBlockLength();
+        inputBuf = new byte[blockLen];
+        outputBuf = new byte[digestLen];
+        inputLen = 0;
+        blockCount = 0;
+    }
+
     /**
      * Reset the hash algorithm state.
      */
@@ -12,7 +30,7 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
     /**
      * Process one block of data.
      *
-     * @param data   the data block
+     * @param data the data block
      */
     protected abstract void processBlock(byte[] data);
 
@@ -22,8 +40,8 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
      * and then {@link #update} with the appropriate padding
      * data in order to get the full input data.
      *
-     * @param buf   the output buffer
-     * @param off   the output offset
+     * @param buf the output buffer
+     * @param off the output offset
      */
     protected abstract void doPadding(byte[] buf, int off);
 
@@ -36,49 +54,26 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
      */
     protected abstract void doInit();
 
-    private int digestLen, blockLen, inputLen;
-    private byte[] inputBuf, outputBuf;
-    private long blockCount;
-
-    /**
-     * Instantiate the engine.
-     */
-    public DigestEngine(String alg)
-    {
-        super(alg);
-        doInit();
-        digestLen = engineGetDigestLength();
-        blockLen = getInternalBlockLength();
-        inputBuf = new byte[blockLen];
-        outputBuf = new byte[digestLen];
-        inputLen = 0;
-        blockCount = 0;
-    }
-
-    private void adjustDigestLen()
-    {
+    private void adjustDigestLen() {
         if (digestLen == 0) {
             digestLen = engineGetDigestLength();
             outputBuf = new byte[digestLen];
         }
     }
 
-    public byte[] digest()
-    {
+    public byte[] digest() {
         adjustDigestLen();
         byte[] result = new byte[digestLen];
         digest(result, 0, digestLen);
         return result;
     }
 
-    public byte[] digest(byte[] input)
-    {
+    public byte[] digest(byte[] input) {
         update(input, 0, input.length);
         return digest();
     }
 
-    public int digest(byte[] buf, int offset, int len)
-    {
+    public int digest(byte[] buf, int offset, int len) {
         adjustDigestLen();
         if (len >= digestLen) {
             doPadding(buf, offset);
@@ -92,30 +87,26 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
         }
     }
 
-    public void reset()
-    {
+    public void reset() {
         engineReset();
         inputLen = 0;
         blockCount = 0;
     }
 
-    public void update(byte input)
-    {
-        inputBuf[inputLen ++] = (byte)input;
+    public void update(byte input) {
+        inputBuf[inputLen++] = (byte) input;
         if (inputLen == blockLen) {
             processBlock(inputBuf);
-            blockCount ++;
+            blockCount++;
             inputLen = 0;
         }
     }
 
-    public void update(byte[] input)
-    {
+    public void update(byte[] input) {
         update(input, 0, input.length);
     }
 
-    public void update(byte[] input, int offset, int len)
-    {
+    public void update(byte[] input, int offset, int len) {
         while (len > 0) {
             int copyLen = blockLen - inputLen;
             if (copyLen > len)
@@ -127,15 +118,14 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
             len -= copyLen;
             if (inputLen == blockLen) {
                 processBlock(inputBuf);
-                blockCount ++;
+                blockCount++;
                 inputLen = 0;
             }
         }
     }
 
 
-    protected int getInternalBlockLength()
-    {
+    protected int getInternalBlockLength() {
         return getBlockLength();
     }
 
@@ -143,10 +133,9 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
      * Flush internal buffers, so that less than a block of data
      * may at most be upheld.
      *
-     * @return  the number of bytes still unprocessed after the flush
+     * @return the number of bytes still unprocessed after the flush
      */
-    protected final int flush()
-    {
+    protected final int flush() {
         return inputLen;
     }
 
@@ -160,10 +149,9 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
      * unprocessed. The values of the remaining bytes are
      * undefined and may be altered at will.
      *
-     * @return  a block-sized internal buffer
+     * @return a block-sized internal buffer
      */
-    protected final byte[] getBlockBuffer()
-    {
+    protected final byte[] getBlockBuffer() {
         return inputBuf;
     }
 
@@ -173,10 +161,9 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
      * current hash operation. That counter is incremented
      * <em>after</em> the call to {@link #processBlock}.
      *
-     * @return  the block count
+     * @return the block count
      */
-    protected long getBlockCount()
-    {
+    protected long getBlockCount() {
         return blockCount;
     }
 
@@ -187,11 +174,10 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
      * to be called by the implementation of the {@link #copy}
      * method.
      *
-     * @param dest   the copy
-     * @return  the value {@code dest}
+     * @param dest the copy
+     * @return the value {@code dest}
      */
-    protected Digest copyState(DigestEngine dest)
-    {
+    protected Digest copyState(DigestEngine dest) {
         dest.inputLen = inputLen;
         dest.blockCount = blockCount;
         System.arraycopy(inputBuf, 0, dest.inputBuf, 0,

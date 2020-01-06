@@ -16,35 +16,6 @@ import java.util.List;
 // set env WRAPPER=true to test wrapper method
 public class ChainCacheTest {
 
-    @Test
-    public void test(){}
-
-    public static class Node implements Chained {
-        private HexBytes hash;
-        private HexBytes hashPrev;
-        private long height;
-
-        public Node(HexBytes hash, HexBytes hashPrev, long height) {
-            this.hash = hash;
-            this.hashPrev = hashPrev;
-            this.height = height;
-        }
-
-        @Override
-        public HexBytes getHash() {
-            return hash;
-        }
-
-        @Override
-        public HexBytes getHashPrev() {
-            return hashPrev;
-        }
-
-        public long getHeight() {
-            return height;
-        }
-    }
-
     public static ChainCache<Node> getCache(int sizeLimit) throws Exception {
 
         Node genesis = new Node(HexBytes.fromHex("0000"), HexBytes.fromHex("ffff"), 0);
@@ -97,7 +68,7 @@ public class ChainCacheTest {
             ));
         }
         ChainCache<Node> cache = new ChainCache<>(sizeLimit, Comparator.comparingLong(Node::getHeight));
-        if ("true".equals(System.getenv("WRAPPER"))){
+        if ("true".equals(System.getenv("WRAPPER"))) {
             cache = cache.withLock();
         }
         cache.put(genesis);
@@ -105,5 +76,35 @@ public class ChainCacheTest {
         cache.put(chain1);
         cache.put(chain2);
         return cache;
+    }
+
+    @Test
+    public void test() {
+    }
+
+    public static class Node implements Chained {
+        private HexBytes hash;
+        private HexBytes hashPrev;
+        private long height;
+
+        public Node(HexBytes hash, HexBytes hashPrev, long height) {
+            this.hash = hash;
+            this.hashPrev = hashPrev;
+            this.height = height;
+        }
+
+        @Override
+        public HexBytes getHash() {
+            return hash;
+        }
+
+        @Override
+        public HexBytes getHashPrev() {
+            return hashPrev;
+        }
+
+        public long getHeight() {
+            return height;
+        }
     }
 }

@@ -68,7 +68,7 @@ public class StoreWrapper<K, V, U, R>
     }
 
     @Override
-    public void traverse(BiFunction<K, V, Boolean> traverser) {
+    public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
         store.traverse(
                 (u, r) -> traverser.apply(keyCodec.getDecoder().apply(u), valueCodec.getDecoder().apply(r))
         );

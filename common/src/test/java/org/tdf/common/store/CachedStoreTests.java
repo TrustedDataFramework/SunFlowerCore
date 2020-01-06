@@ -19,7 +19,7 @@ public class CachedStoreTests {
     protected Store<byte[], byte[]> delegate;
 
     @Before
-    public void before(){
+    public void before() {
         delegate = new ByteArrayMapStore<>();
         CachedStore.Builder<byte[], byte[]> builder = CachedStore.builder();
         store = builder
@@ -30,7 +30,7 @@ public class CachedStoreTests {
     }
 
     @Test
-    public void test1(){
+    public void test1() {
         store.put("a".getBytes(), "b".getBytes());
         assert store.containsKey("a".getBytes());
         assert Arrays.equals(store.get("a".getBytes()).get(), "b".getBytes());
@@ -38,14 +38,14 @@ public class CachedStoreTests {
     }
 
     @Test
-    public void test2(){
+    public void test2() {
         delegate.put("a".getBytes(), "b".getBytes());
         assert store.containsKey("a".getBytes());
         assert Arrays.equals(store.get("a".getBytes()).get(), "b".getBytes());
     }
 
     @Test
-    public void test3(){
+    public void test3() {
         delegate.put("a".getBytes(), "b".getBytes());
         store.putIfAbsent("a".getBytes(), "c".getBytes());
         assert Arrays.equals(store.get("a".getBytes()).get(), "b".getBytes());
@@ -54,7 +54,7 @@ public class CachedStoreTests {
     }
 
     @Test
-    public void test4(){
+    public void test4() {
         delegate.put("a".getBytes(), "b".getBytes());
         store.remove("a".getBytes());
         assert delegate.containsKey("a".getBytes());
@@ -63,7 +63,7 @@ public class CachedStoreTests {
     }
 
     @Test
-    public void test5(){
+    public void test5() {
         delegate.put("a".getBytes(), "b".getBytes());
         store.put("a".getBytes(), "c".getBytes());
         store.remove("a".getBytes());
@@ -72,14 +72,14 @@ public class CachedStoreTests {
     }
 
     @Test
-    public void test6(){
+    public void test6() {
         store.flush();
         assert store.isEmpty();
         assert delegate.isEmpty();
     }
 
     @Test
-    public void test7(){
+    public void test7() {
         store.put("a".getBytes(), "c".getBytes());
         store.remove("a".getBytes());
         store.flush();
@@ -88,7 +88,7 @@ public class CachedStoreTests {
     }
 
     @Test
-    public void test8(){
+    public void test8() {
         store.put("a".getBytes(), "c".getBytes());
         store.put("b".getBytes(), "c".getBytes());
         store.remove("a".getBytes());
@@ -99,7 +99,7 @@ public class CachedStoreTests {
     }
 
     @Test
-    public void test9(){
+    public void test9() {
         store.put("a".getBytes(), "c".getBytes());
         store.put("b".getBytes(), "c".getBytes());
         store.remove("a".getBytes());
@@ -110,19 +110,19 @@ public class CachedStoreTests {
     }
 
     @Test
-    public void test10(){
+    public void test10() {
         store.put("a".getBytes(), "c".getBytes());
         store.put("b".getBytes(), "c".getBytes());
         store.remove("a".getBytes());
         assert store.size() == 1;
         assert store.stream()
-                        .map(Map.Entry::getValue)
-                        .collect(Collectors.toCollection(ByteArraySet::new))
-                        .contains("c".getBytes());
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toCollection(ByteArraySet::new))
+                .contains("c".getBytes());
     }
 
     @Test
-    public void test11(){
+    public void test11() {
         delegate.put("a".getBytes(), "f".getBytes());
         delegate.put("c".getBytes(), "f".getBytes());
 

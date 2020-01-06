@@ -27,11 +27,10 @@ import static org.tdf.common.trie.TrieKey.EMPTY;
 class Node {
     private static final int BRANCH_SIZE = 17;
     private static final int MAX_KEY_SIZE = 32;
-
-    @Getter(AccessLevel.PACKAGE)
-    private boolean dirty;
     // rlp encoded of this node, for serialization
     RLPList rlp;
+    @Getter(AccessLevel.PACKAGE)
+    private boolean dirty;
     // if hash is not null, resolve rlp encoded from db
     @Getter(AccessLevel.PACKAGE)
     private byte[] hash;

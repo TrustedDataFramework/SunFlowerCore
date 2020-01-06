@@ -40,7 +40,7 @@ public class LittleEndianTest {
     }
 
     @Test
-    public void testIEEE754(){
+    public void testIEEE754() {
         assert LittleEndian.decodeIEEE754Double(LittleEndian.encodeIEEE754Double(0.5)) == 0.5;
         assert LittleEndian.decodeIEEE754Float(LittleEndian.encodeIEEE754Float(0.5f)) == 0.5f;
 

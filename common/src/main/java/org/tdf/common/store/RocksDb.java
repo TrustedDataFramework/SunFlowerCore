@@ -295,7 +295,7 @@ public class RocksDb implements DatabaseStore {
     }
 
     @Override
-    public void traverse(BiFunction<byte[], byte[], Boolean> traverser) {
+    public void traverse(BiFunction<? super byte[], ? super byte[], Boolean> traverser) {
         resetDbLock.readLock().lock();
         try {
             RocksIterator iterator = db.newIterator();

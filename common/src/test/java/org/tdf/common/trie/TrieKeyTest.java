@@ -10,7 +10,7 @@ import java.util.Arrays;
 public class TrieKeyTest {
 
     @Test
-    public void test0(){
+    public void test0() {
         TrieKey k = TrieKey.single(1).concat(TrieKey.single(2)).concat(TrieKey.single(3));
         assert k.get(0) == 1;
         assert k.get(1) == 2;

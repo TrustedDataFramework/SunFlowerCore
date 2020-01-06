@@ -5,20 +5,21 @@ public class Keccak512 extends KeccakCore {
     /**
      * Create the engine.
      */
-    public Keccak512()
-    {
+    public Keccak512() {
         super("eth-keccak-512");
     }
 
-    /** @see Digest */
-    public Digest copy()
-    {
+    /**
+     * @see Digest
+     */
+    public Digest copy() {
         return copyState(new Keccak512());
     }
 
-    /** @see Digest */
-    public int engineGetDigestLength()
-    {
+    /**
+     * @see Digest
+     */
+    public int engineGetDigestLength() {
         return 64;
     }
 

@@ -13,8 +13,9 @@ public interface Trie<K, V> extends Store<K, V> {
 
     /**
      * rollback to a previous trie
+     *
      * @param rootHash previous trie's root hash
-     * @param store the underlying storage of trie
+     * @param store    the underlying storage of trie
      * @return trie with root hash
      * @throws RuntimeException if the root hash not found in the store or rollback failed
      */
@@ -22,6 +23,7 @@ public interface Trie<K, V> extends Store<K, V> {
 
     /**
      * rollback to a previous trie
+     *
      * @param rootHash previous trie's root hash
      * @return trie with root hash
      * @throws RuntimeException if the root hash not found in the store or roll back failed
@@ -30,18 +32,21 @@ public interface Trie<K, V> extends Store<K, V> {
 
     /**
      * rollback to an empty trie
+     *
      * @return an empty trie
      */
     Trie<K, V> revert();
 
     /**
      * commit modifications and build a new trie
+     *
      * @return root hash of new trie
      */
     byte[] commit();
 
     /**
      * dump this trie
+     *
      * @return minimal key value pairs to store this trie
      * @throws RuntimeException if the trie is both non-null and dirty
      */
@@ -49,6 +54,7 @@ public interface Trie<K, V> extends Store<K, V> {
 
     /**
      * get root hash of a non-dirty tree, return null hash if the trie is null
+     *
      * @return trie's root hash
      * @throws RuntimeException if this trie is dirty
      */
@@ -56,12 +62,14 @@ public interface Trie<K, V> extends Store<K, V> {
 
     /**
      * get root hash of an empty trie
+     *
      * @return root hash of an empty trie
      */
     byte[] getNullHash();
 
     /**
      * trie is both non-null and has uncommitted modifications
+     *
      * @return true when trie is both non-null and dirty
      */
     boolean isDirty();

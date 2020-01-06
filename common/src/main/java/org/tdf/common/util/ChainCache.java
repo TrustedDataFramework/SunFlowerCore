@@ -3,7 +3,6 @@ package org.tdf.common.util;
 import lombok.Getter;
 import lombok.NonNull;
 import org.tdf.common.types.Chained;
-import org.tdf.common.types.Cloneable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,7 +14,7 @@ import java.util.stream.Stream;
  *
  * @author sal 1564319846@qq.com
  */
-public class ChainCache<T extends Chained> implements Cloneable<ChainCache<T>> {
+public class ChainCache<T extends Chained> {
     private static final String NODE_PREFIX = "node";
     private static final String CHILDREN_HASH_PREFIX = "children";
     private static final String PARENT_HASH_PREFIX = "parent";

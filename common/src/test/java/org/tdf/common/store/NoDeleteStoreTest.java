@@ -16,7 +16,7 @@ public class NoDeleteStoreTest {
     private Store<byte[], byte[]> deleted;
 
     @Before
-    public void before(){
+    public void before() {
         delegated = new ByteArrayMapStore<>();
         deleted = new ByteArrayMapStore<>();
         store = new NoDeleteStore<>(delegated, deleted);
@@ -27,7 +27,7 @@ public class NoDeleteStoreTest {
 
 
     @Test
-    public void test1(){
+    public void test1() {
         store.remove("a".getBytes());
         assert store.containsKey("a".getBytes());
         assert store.get("a".getBytes()).map(x -> Arrays.equals(x, "1".getBytes())).orElse(false);
@@ -38,7 +38,7 @@ public class NoDeleteStoreTest {
     }
 
     @Test
-    public void test2(){
+    public void test2() {
         store.remove("a".getBytes());
         store.put("a".getBytes(), "11".getBytes());
         assert Arrays.equals(store.get("a".getBytes()).get(), "11".getBytes());

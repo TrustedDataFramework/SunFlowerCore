@@ -5,18 +5,15 @@ public class Keccak256 extends KeccakCore {
     /**
      * Create the engine.
      */
-    public Keccak256()
-    {
+    public Keccak256() {
         super("eth-keccak-256");
     }
 
-    public Digest copy()
-    {
+    public Digest copy() {
         return copyState(new Keccak256());
     }
 
-    public int engineGetDigestLength()
-    {
+    public int engineGetDigestLength() {
         return 32;
     }
 

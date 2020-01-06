@@ -12,7 +12,6 @@ import org.tdf.rlp.RLPItem;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -142,7 +141,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     @Override
     public Map<byte[], byte[]> dump() {
-        if(isDirty()) throw new UnsupportedOperationException();
+        if (isDirty()) throw new UnsupportedOperationException();
         Dump dump = new Dump();
         traverseInternal(dump);
         return dump.getPairs();
@@ -177,7 +176,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public void traverse(BiFunction<K, V, Boolean> traverser) {
+    public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
         traverseInternal((k, n) -> {
             if (n.getType() != Node.Type.EXTENSION && n.getValue() != null) {
                 return traverser.apply(

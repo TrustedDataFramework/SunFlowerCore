@@ -71,6 +71,7 @@ public class CachedStore<K, V> implements Store<K, V> {
             DatabaseStore bat = (DatabaseStore) delegate;
             bat.putAll((Map<byte[], byte[]>) cache);
             bat.flush();
+            clearCache();
             return;
         }
         cache.forEach((k, v) -> {
@@ -98,7 +99,7 @@ public class CachedStore<K, V> implements Store<K, V> {
     }
 
     @Override
-    public void traverse(BiFunction<K, V, Boolean> traverser) {
+    public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
         for (Map.Entry<K, V> entry : cache.entrySet()) {
             if (entry.getValue() == getTrap())
                 continue;

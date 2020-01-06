@@ -32,8 +32,7 @@ public class HashUtil {
     }
 
     /**
-     * @param input
-     *            - data for hashing
+     * @param input - data for hashing
      * @return - sha256 hash of the data
      */
     public static byte[] sha256(byte[] input) {
@@ -72,12 +71,9 @@ public class HashUtil {
     /**
      * hashing chunk of the data
      *
-     * @param input
-     *            - data for hash
-     * @param start
-     *            - start of hashing chunk
-     * @param length
-     *            - length of hashing chunk
+     * @param input  - data for hash
+     * @param start  - start of hashing chunk
+     * @param length - length of hashing chunk
      * @return - keccak hash of the chunk
      */
     public static byte[] sha3(byte[] input, int start, int length) {

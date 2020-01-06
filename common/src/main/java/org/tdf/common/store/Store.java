@@ -160,10 +160,10 @@ public interface Store<K, V> {
      *
      * @param traverser operation of key-value mapping, if traverser return false, the traverse will stop
      */
-    void traverse(BiFunction<K, V, Boolean> traverser);
+    void traverse(BiFunction<? super K, ? super V, Boolean> traverser);
 
 
-    default void forEach(BiConsumer<K, V> consumer) {
+    default void forEach(BiConsumer<? super K, ? super V> consumer) {
         traverse((k, v) -> {
             consumer.accept(k, v);
             return true;

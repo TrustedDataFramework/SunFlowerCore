@@ -1,7 +1,5 @@
 package org.tdf.sunflower.state;
 
-import org.tdf.common.util.ByteArrayMap;
-import org.tdf.common.util.ByteArraySet;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Transaction;
 

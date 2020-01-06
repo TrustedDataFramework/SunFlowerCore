@@ -64,7 +64,7 @@ public class NoDoubleDeleteStore<K, V> implements Store<K, V> {
 
 
     @Override
-    public void traverse(BiFunction<K, V, Boolean> traverser) {
+    public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
         delegate.traverse(traverser);
     }
 
@@ -74,7 +74,7 @@ public class NoDoubleDeleteStore<K, V> implements Store<K, V> {
     }
 
     @Override
-    public void forEach(BiConsumer<K, V> consumer) {
+    public void forEach(BiConsumer<? super K, ? super V> consumer) {
         delegate.forEach(consumer);
     }
 

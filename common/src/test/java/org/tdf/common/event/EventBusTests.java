@@ -16,38 +16,6 @@ public class EventBusTests {
         bus = new EventBus();
     }
 
-    static class SuccessEvent{
-    }
-
-    static class FailedEvent{
-    }
-
-    static class SuccessCounter implements Consumer<SuccessEvent> {
-        private int counter;
-
-        @Override
-        public void accept(SuccessEvent successEvent) {
-            this.counter ++;
-        }
-
-        public int getCounter() {
-            return counter;
-        }
-    }
-
-    static class FailedCounter implements Consumer<FailedEvent> {
-        private int counter;
-
-        @Override
-        public void accept(FailedEvent successEvent) {
-            this.counter ++;
-        }
-
-        public int getCounter() {
-            return counter;
-        }
-    }
-
     @Test
     public void testPublishEvent() {
         SuccessEvent event = new SuccessEvent();
@@ -69,5 +37,37 @@ public class EventBusTests {
         bus.publish(event);
         bus.publish(event);
         assert counter.getCounter() == 0;
+    }
+
+    static class SuccessEvent {
+    }
+
+    static class FailedEvent {
+    }
+
+    static class SuccessCounter implements Consumer<SuccessEvent> {
+        private int counter;
+
+        @Override
+        public void accept(SuccessEvent successEvent) {
+            this.counter++;
+        }
+
+        public int getCounter() {
+            return counter;
+        }
+    }
+
+    static class FailedCounter implements Consumer<FailedEvent> {
+        private int counter;
+
+        @Override
+        public void accept(FailedEvent successEvent) {
+            this.counter++;
+        }
+
+        public int getCounter() {
+            return counter;
+        }
     }
 }

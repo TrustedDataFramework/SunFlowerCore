@@ -19,20 +19,20 @@ public abstract class DBTests {
     abstract DatabaseStore getDB();
 
     @Before
-    public void before(){
+    public void before() {
         databaseStore = getDB();
         databaseStore.init(DBSettings.DEFAULT);
         wrapped = new StoreWrapper<>(databaseStore, Codecs.STRING, Codecs.STRING);
     }
 
     @After
-    public void after(){
+    public void after() {
         databaseStore.clear();
         databaseStore.close();
     }
 
     @Test
-    public void test(){
+    public void test() {
         assert databaseStore.isAlive();
         assert databaseStore.isEmpty();
         wrapped.put("1", "1");
@@ -42,7 +42,7 @@ public abstract class DBTests {
     }
 
     @Test
-    public void testAsMap(){
+    public void testAsMap() {
         Map<String, String> map = wrapped.asMap();
         map.put("1", "1");
         assert wrapped.get("1").get().equals("1");
@@ -55,7 +55,7 @@ public abstract class DBTests {
     }
 
     @Test
-    public void testPutAll(){
+    public void testPutAll() {
         Map<byte[], byte[]> rows = new ByteArrayMap<>();
         rows.put("1".getBytes(), "1".getBytes());
         rows.put("2".getBytes(), "2".getBytes());

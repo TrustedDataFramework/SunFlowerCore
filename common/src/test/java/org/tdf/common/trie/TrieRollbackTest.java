@@ -24,11 +24,11 @@ public class TrieRollbackTest {
     protected Store<byte[], byte[]> removed;
     protected Store<byte[], byte[]> delegate;
     protected Store<byte[], byte[]> database;
-    private NoDeleteStore<byte[], byte[]> noDelete;
     protected Trie<String, String> trie;
     protected List<byte[]> roots;
     protected Map<String, Map<String, String>> dumps;
     protected List<Map<byte[], byte[]>> nodes;
+    private NoDeleteStore<byte[], byte[]> noDelete;
 
     private NoDeleteStore<byte[], byte[]> cloneDatabase() {
         return new NoDeleteStore<>(new ByteArrayMapStore<>(delegate), new ByteArrayMapStore<>(removed));

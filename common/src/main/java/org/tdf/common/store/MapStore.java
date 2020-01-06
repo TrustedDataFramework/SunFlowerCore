@@ -107,12 +107,12 @@ public class MapStore<K, V> implements BatchStore<K, V> {
     }
 
     @Override
-    public void forEach(BiConsumer<K, V> consumer) {
+    public void forEach(BiConsumer<? super K, ? super V> consumer) {
         map.forEach(consumer);
     }
 
     @Override
-    public void traverse(BiFunction<K, V, Boolean> traverser) {
+    public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
         for (Map.Entry<K, V> entry : map.entrySet()) {
             if (!traverser.apply(entry.getKey(), entry.getValue()))
                 break;

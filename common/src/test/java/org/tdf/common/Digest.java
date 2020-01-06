@@ -68,32 +68,32 @@ package org.tdf.common;
  * ===========================(LICENSE END)=============================
  * </pre>
  *
- * @version   $Revision: 232 $
- * @author    Thomas Pornin &lt;thomas.pornin@cryptolog.com&gt;
+ * @author Thomas Pornin &lt;thomas.pornin@cryptolog.com&gt;
+ * @version $Revision: 232 $
  */
 
-public interface Digest{
+public interface Digest {
 
     /**
      * Insert one more input data byte.
      *
-     * @param in   the input byte
+     * @param in the input byte
      */
     void update(byte in);
 
     /**
      * Insert some more bytes.
      *
-     * @param inbuf   the data bytes
+     * @param inbuf the data bytes
      */
     void update(byte[] inbuf);
 
     /**
      * Insert some more bytes.
      *
-     * @param inbuf   the data buffer
-     * @param off     the data offset in {@code inbuf}
-     * @param len     the data length (in bytes)
+     * @param inbuf the data buffer
+     * @param off   the data offset in {@code inbuf}
+     * @param len   the data length (in bytes)
      */
     void update(byte[] inbuf, int off, int len);
 
@@ -101,7 +101,7 @@ public interface Digest{
      * Finalize the current hash computation and return the hash value
      * in a newly-allocated array. The object is resetted.
      *
-     * @return  the hash output
+     * @return the hash output
      */
     byte[] digest();
 
@@ -110,8 +110,8 @@ public interface Digest{
      * and return the hash value in a newly-allocated array. The object
      * is resetted.
      *
-     * @param inbuf   the input data
-     * @return  the hash output
+     * @param inbuf the input data
+     * @return the hash output
      */
     byte[] digest(byte[] inbuf);
 
@@ -124,17 +124,17 @@ public interface Digest{
      * hash output length, the hash output is truncated to its first
      * {@code len} bytes. The object is resetted.
      *
-     * @param outbuf   the output buffer
-     * @param off      the output offset within {@code outbuf}
-     * @param len      the requested hash output length (in bytes)
-     * @return  the number of bytes actually written in {@code outbuf}
+     * @param outbuf the output buffer
+     * @param off    the output offset within {@code outbuf}
+     * @param len    the requested hash output length (in bytes)
+     * @return the number of bytes actually written in {@code outbuf}
      */
     int digest(byte[] outbuf, int off, int len);
 
     /**
      * Get the natural hash function output length (in bytes).
      *
-     * @return  the digest output length (in bytes)
+     * @return the digest output length (in bytes)
      */
     int getDigestLength();
 
@@ -148,7 +148,7 @@ public interface Digest{
      * Clone the current state. The returned object evolves independantly
      * of this object.
      *
-     * @return  the clone
+     * @return the clone
      */
     Digest copy();
 
@@ -168,7 +168,7 @@ public interface Digest{
      * virtual block length B is the HMAC key length, rounded up to
      * the next multiple of 4.</p>
      *
-     * @return  the internal block length (in bytes), or {@code -n}
+     * @return the internal block length (in bytes), or {@code -n}
      */
     int getBlockLength();
 

@@ -172,6 +172,50 @@ public class NodeTest {
         System.out.println("delete 50,000 random 32 bytes to trie consume " + (end - start) + " ms");
     }
 
+    // https://ethereum.stackexchange.com/questions/268/ethereum-block-architecture
+    @Test
+    public void test9() {
+        Node n = Node.newLeaf(TrieKey.fromNormal(
+                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a711355), 4, 8)
+        ).shift(), "45.0ETH".getBytes());
+        n.insert(TrieKey.fromNormal(
+                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d337), 4, 8)
+        ).shift(), "1.00WEI".getBytes());
+        n.insert(TrieKey.fromNormal(
+                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a7f9365), 4, 8)
+        ).shift(), "1.00WEI".getBytes());
+        n.insert(TrieKey.fromNormal(
+                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d397), 4, 8)
+        ).shift(), "1.00WEI".getBytes());
+    }
+
+    @Test
+    public void test10() {
+        Node n = Node.newLeaf(TrieKey.fromNormal("abc".getBytes()), "aaa".getBytes());
+        n.insert(TrieKey.fromNormal("abc".getBytes()), "ccc".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal("abc".getBytes())), "ccc".getBytes());
+        n.insert(TrieKey.fromNormal("a".getBytes()), "ddd".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal("a".getBytes())), "ddd".getBytes());
+        n.insert(TrieKey.fromNormal("a".getBytes()), "eee".getBytes());
+        assert Arrays.equals(n.get(TrieKey.fromNormal("a".getBytes())), "eee".getBytes());
+        n.delete(TrieKey.fromNormal("abcd".getBytes()));
+        assert n.get(TrieKey.fromNormal("abc".getBytes())) != null;
+    }
+
+    @Test
+    public void test11() {
+        Node n = Node.newLeaf(TrieKey.fromNormal("test".getBytes()), "test".getBytes());
+        Arrays.asList("toaster", "toasting", "slow", "slowly")
+                .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
+        Store<byte[], byte[]> s = new ByteArrayMapStore<>();
+        RLPElement element = n.commit(HashUtil::sha256, s, true);
+        Node n2 = Node.fromEncoded(element.getEncoded(), s);
+        for (String s2 : Arrays.asList("toaster", "toasting", "slow", "slowly")
+        ) {
+            assert Arrays.equals(n2.get(TrieKey.fromNormal(s2.getBytes())), s2.getBytes());
+        }
+    }
+
     // basic radix Trie
     public static class RadixNode {
         RadixNode[] children = new RadixNode[16];
@@ -215,50 +259,6 @@ public class NodeTest {
             RadixNode child = children[key.get(0)];
             if (child == null) return null;
             return child.get(key.shift());
-        }
-    }
-
-    // https://ethereum.stackexchange.com/questions/268/ethereum-block-architecture
-    @Test
-    public void test9() {
-        Node n = Node.newLeaf(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a711355), 4, 8)
-        ).shift(), "45.0ETH".getBytes());
-        n.insert(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d337), 4, 8)
-        ).shift(), "1.00WEI".getBytes());
-        n.insert(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a7f9365), 4, 8)
-        ).shift(), "1.00WEI".getBytes());
-        n.insert(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d397), 4, 8)
-        ).shift(), "1.00WEI".getBytes());
-    }
-
-    @Test
-    public void test10() {
-        Node n = Node.newLeaf(TrieKey.fromNormal("abc".getBytes()), "aaa".getBytes());
-        n.insert(TrieKey.fromNormal("abc".getBytes()), "ccc".getBytes());
-        assert Arrays.equals(n.get(TrieKey.fromNormal("abc".getBytes())), "ccc".getBytes());
-        n.insert(TrieKey.fromNormal("a".getBytes()), "ddd".getBytes());
-        assert Arrays.equals(n.get(TrieKey.fromNormal("a".getBytes())), "ddd".getBytes());
-        n.insert(TrieKey.fromNormal("a".getBytes()), "eee".getBytes());
-        assert Arrays.equals(n.get(TrieKey.fromNormal("a".getBytes())), "eee".getBytes());
-        n.delete(TrieKey.fromNormal("abcd".getBytes()));
-        assert n.get(TrieKey.fromNormal("abc".getBytes())) != null;
-    }
-
-    @Test
-    public void test11(){
-        Node n = Node.newLeaf(TrieKey.fromNormal("test".getBytes()), "test".getBytes());
-        Arrays.asList("toaster", "toasting", "slow", "slowly")
-                .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
-        Store<byte[], byte[]> s = new ByteArrayMapStore<>();
-        RLPElement element = n.commit(HashUtil::sha256, s, true);
-        Node n2 = Node.fromEncoded(element.getEncoded(), s);
-        for (String s2 : Arrays.asList("toaster", "toasting", "slow", "slowly")
-        ) {
-            assert Arrays.equals(n2.get(TrieKey.fromNormal(s2.getBytes())), s2.getBytes());
         }
     }
 }

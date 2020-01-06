@@ -27,28 +27,4 @@ public class LRUMap<K, V> extends LinkedHashMap<K, V> {
         if (ret) hook.accept(eldest.getKey(), eldest.getValue());
         return ret;
     }
-
-//    public static <K, V> Builder<K, V> builder(){
-//        return new Builder<>();
-//    }
-//
-//    static class Builder<K, V> {
-//        private int maximumSize = Integer.MAX_VALUE;
-//        private BiConsumer<? super K, ? super V> hook = (k, v) -> {
-//        };
-//
-//        public Builder<K, V> maximumSize(int maximumSize){
-//            this.maximumSize = maximumSize;
-//            return this;
-//        }
-//
-//        public Builder<K, V> hook(BiConsumer<? super K, ? super V> hook){
-//            this.hook = hook;
-//            return this;
-//        }
-//
-//        public <K1 extends K, V1 extends V>  LRUMap<K1, V1> build(){
-//            return new LRUMap<>(maximumSize, hook);
-//        }
-//    }
 }
