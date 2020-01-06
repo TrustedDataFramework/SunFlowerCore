@@ -1,5 +1,6 @@
 package org.tdf.common.util;
 
+import com.google.common.collect.Iterators;
 import lombok.NonNull;
 import org.tdf.common.types.Chained;
 
@@ -233,7 +234,7 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
 
     @Override
     public Iterator<T> iterator() {
-        return set.iterator();
+        return Iterators.unmodifiableIterator(set.iterator());
     }
 
     @Override
