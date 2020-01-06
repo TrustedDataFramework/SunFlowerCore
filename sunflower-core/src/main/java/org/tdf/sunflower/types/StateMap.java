@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
+@Deprecated
 public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<String, T>> implements Store<String, T> {
     private static final String WHERE_PREFIX = "where";
     private static final String HASH_PREV_PREFIX = "prev";
@@ -100,22 +101,12 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
     }
 
     @Override
-    public void traverse(BiFunction<String, T, Boolean> traverser) {
-        data.traverse(traverser);
-    }
-
-    @Override
     public void flush() {
 
     }
 
     @Override
-    public Map<String, T> asMap() {
-        throw new RuntimeException("not implemented");
-    }
-
-    @Override
-    public void forEach(BiConsumer<String, T> consumer) {
-        data.forEach(consumer);
+    public void traverse(BiFunction<? super String, ? super T, Boolean> traverser) {
+        data.traverse(traverser);
     }
 }

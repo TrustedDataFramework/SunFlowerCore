@@ -8,7 +8,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 /**
- * Source which internally caches underlying Source key-value pairs
+ * Source which internally caches modification to underlying store
  * <p>
  *
  * @author zhuyingjie

@@ -40,9 +40,9 @@ public class MemoryDatabaseStore extends ByteArrayMapStore<byte[]> implements Da
     @Override
     public void put(byte @NonNull [] k, byte @NonNull [] v) {
         if (v == getTrap() || v.length == 0) {
-            remove(k);
+            getMap().remove(k);
             return;
         }
-        super.put(k, v);
+        getMap().put(k, v);
     }
 }

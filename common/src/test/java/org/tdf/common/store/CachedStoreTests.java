@@ -1,6 +1,8 @@
 package org.tdf.common.store;
 
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -12,15 +14,17 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@RunWith(JUnit4.class)
-public class CachedStoreTests {
+@Ignore
+public abstract class CachedStoreTests {
     protected CachedStore<byte[], byte[]> store;
 
     protected Store<byte[], byte[]> delegate;
 
+    protected abstract Store<byte[], byte[]> supplyDelegate();
+
     @Before
     public void before() {
-        delegate = new ByteArrayMapStore<>();
+        delegate = supplyDelegate();
         CachedStore.Builder<byte[], byte[]> builder = CachedStore.builder();
         store = builder
                 .delegate(delegate)
@@ -29,12 +33,20 @@ public class CachedStoreTests {
                 .build();
     }
 
+    @After
+    public void after(){
+
+    }
+
     @Test
     public void test1() {
         store.put("a".getBytes(), "b".getBytes());
         assert store.containsKey("a".getBytes());
+        assert store.size() == 1;
+        assert !store.isEmpty();
         assert Arrays.equals(store.get("a".getBytes()).get(), "b".getBytes());
         assert !delegate.containsKey("a".getBytes());
+        assert delegate.isEmpty();
     }
 
     @Test
@@ -83,6 +95,7 @@ public class CachedStoreTests {
         store.put("a".getBytes(), "c".getBytes());
         store.remove("a".getBytes());
         store.flush();
+        assert store.cache.isEmpty();
         assert store.isEmpty();
         assert delegate.isEmpty();
     }
@@ -93,6 +106,7 @@ public class CachedStoreTests {
         store.put("b".getBytes(), "c".getBytes());
         store.remove("a".getBytes());
         store.flush();
+        assert store.cache.isEmpty();
         assert !store.isEmpty();
         assert delegate.size() == 1;
         assert Arrays.equals(delegate.get("b".getBytes()).get(), "c".getBytes());
@@ -105,6 +119,7 @@ public class CachedStoreTests {
         store.remove("a".getBytes());
         store.flush();
         store.clear();
+        assert !delegate.isEmpty();
         store.flush();
         assert delegate.isEmpty();
     }

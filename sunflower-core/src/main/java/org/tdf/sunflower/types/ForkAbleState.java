@@ -7,6 +7,7 @@ import java.util.Set;
  * when implements as user account, the getIdentifier should return the wallet address of the user
  * and getIdentifiersOf returns from & to address of the transaction
  */
+@Deprecated
 public interface ForkAbleState<T> extends State<T>{
     String getIdentifier();
 
