@@ -230,7 +230,7 @@ public class PendingVrfStateTest {
             long time = System.currentTimeMillis() / 1000;
             blockHeaders[i] = Header.builder().hashPrev(HexBytes.fromBytes(recentHash)).version(1)
                     .createdAt(time).height(i).build();
-            VrfUtil.setNonce(blockHeaders[i], nonce);
+            VrfUtil.setSeed(blockHeaders[i], nonce);
             VrfUtil.setPriority(blockHeaders[i], emptyArray);
             VrfUtil.setMiner(blockHeaders[i], COINBASE_ARRAY[i]);
             blockHeaders[i].setHash(HexBytes.fromBytes(PoAUtils.getHash(blockHeaders[i])));

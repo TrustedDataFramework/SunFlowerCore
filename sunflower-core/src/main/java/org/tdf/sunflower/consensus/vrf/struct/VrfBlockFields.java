@@ -15,7 +15,7 @@ import org.tdf.rlp.RLP;
 public class VrfBlockFields {
 
     @RLP(0)
-    private byte[] nonce;
+    private byte[] seed;
 
     @RLP(1)
     private byte[] priority;

@@ -412,7 +412,7 @@ public class VrfMiner implements Miner {
     private VrfMined getNewVrfMined() throws DecoderException {
         Block bestBlock = blockRepository.getBestBlock();
         Block bestPendingState = blockRepository.getBestBlock();
-        vrfSeed = VrfUtil.getNonce(bestPendingState);
+        vrfSeed = VrfUtil.getSeed(bestPendingState);
 
         log.debug("getNewBlockForMining best blocks: PendingState: " + bestPendingState.getHeight() + ", Blockchain: "
                 + bestBlock.getHeight());
@@ -444,7 +444,7 @@ public class VrfMiner implements Miner {
         VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_PROPOSER, round, vrfPk, vrfSeed, vrfResult);
 
         // Update block nonce to header, and it will change valuf of block hash
-        VrfUtil.setNonce(newBlock, vrfResult.getR());
+        VrfUtil.setSeed(newBlock, vrfResult.getR());
 
         // Setup block identifier
         byte[] identifier = newBlock.getHash().getBytes();

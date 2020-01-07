@@ -260,7 +260,7 @@ public class VrfStateMachine {
             // Check seed
             byte[] proofSeed = proposalProof.getVrfProof().getSeed();
             Block bestBlock = blockRepository.getBestBlock();
-            byte[] bestPendingNonce = VrfUtil.getNonce(bestBlock);
+            byte[] bestPendingNonce = VrfUtil.getSeed(bestBlock);
             if (!ByteUtils.equals(proofSeed, bestPendingNonce)) {
                 logger.error("Proposal proof seed {} not match best pending nonce {}", ByteUtils.toHexString(proofSeed),
                         ByteUtils.toHexString(bestPendingNonce));
@@ -333,7 +333,7 @@ public class VrfStateMachine {
             byte[] proofSeed = commitProof.getVrfProof().getSeed();
             Block bestBlock = blockRepository.getBestBlock();
             Header bestHeader = bestBlock.getHeader();
-            byte[] bestPendingNonce = VrfUtil.getNonce(bestHeader);
+            byte[] bestPendingNonce = VrfUtil.getSeed(bestHeader);
             if (!ByteUtils.equals(proofSeed, bestPendingNonce)) {
                 logger.error("Commit proof seed {} not match best pending nonce {}", ByteUtils.toHexString(proofSeed),
                         ByteUtils.toHexString(bestPendingNonce));

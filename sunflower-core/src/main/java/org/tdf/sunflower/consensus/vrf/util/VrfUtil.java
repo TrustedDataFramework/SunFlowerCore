@@ -72,22 +72,22 @@ public class VrfUtil {
         return getProposalProof(block.getPayload());
     }
 
-    public static byte[] getNonce(HexBytes payload) {
+    public static byte[] getSeed(HexBytes payload) {
         byte[] encoded = payload.getBytes();
         VrfBlockFields vrfBlockFields = RLPCodec.decode(encoded, VrfBlockFields.class);
-        return vrfBlockFields.getNonce();
+        return vrfBlockFields.getSeed();
     }
 
-    public static byte[] getNonce(Header header) {
-        return getNonce(header.getPayload());
+    public static byte[] getSeed(Header header) {
+        return getSeed(header.getPayload());
     }
 
-    public static byte[] getNonce(Block block) {
-        return getNonce(block.getPayload());
+    public static byte[] getSeed(Block block) {
+        return getSeed(block.getPayload());
     }
 
-    public static byte[] getNonce(VrfBlockWrapper blockWrapper) {
-        return getNonce(blockWrapper.getBlock());
+    public static byte[] getSeed(VrfBlockWrapper blockWrapper) {
+        return getSeed(blockWrapper.getBlock());
     }
 
     public static byte[] getPriority(HexBytes payload) {
@@ -104,25 +104,25 @@ public class VrfUtil {
         return getPriority(block.getPayload());
     }
 
-    public static void setNonce(Header header, byte[] nonce) {
+    public static void setSeed(Header header, byte[] seed) {
         HexBytes payload = header.getPayload();
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setNonce(nonce);
+        vrfBlockFields.setSeed(seed);
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
         header.setPayload(HexBytes.fromBytes(encoded));
     }
 
-    public static void setNonce(Block block, byte[] nonce) {
-        setNonce(block.getHeader(), nonce);
+    public static void setSeed(Block block, byte[] seed) {
+        setSeed(block.getHeader(), seed);
     }
 
-    public static void setNonce(Block block, HexBytes nonce) {
-        setNonce(block, nonce.getBytes());
+    public static void setSeed(Block block, HexBytes seed) {
+        setSeed(block, seed.getBytes());
     }
 
-    public static void setNonce(Block block, String nonce) {
-        setNonce(block, ByteUtil.hexStringToBytes(nonce));
+    public static void setSeed(Block block, String seed) {
+        setSeed(block, ByteUtil.hexStringToBytes(seed));
     }
 
     public static void setMiner(Header header, byte[] miner) {
@@ -178,7 +178,7 @@ public class VrfUtil {
 
     public static VrfBlockFields getVrfBlockFields(HexBytes payload) {
         if (payload == null || payload.size() == 0) {
-            return VrfBlockFields.builder().nonce(null).priority(null).miner(null).proposalProof(null).build();
+            return VrfBlockFields.builder().seed(null).priority(null).miner(null).proposalProof(null).build();
         }
         byte[] encoded = payload.getBytes();
         VrfBlockFields vrfBlockFields = RLPCodec.decode(encoded, VrfBlockFields.class);
@@ -228,86 +228,86 @@ public class VrfUtil {
         return getVrfPrivateKey(vrfConfig.getVrfDataDir());
     }
 
-    public static byte[] genPayload(long blockNum, int round, String nonceStr, String minerCoinbaseStr,
+    public static byte[] genPayload(long blockNum, int round, String seedStr, String minerCoinbaseStr,
             String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
         byte[] priority = ByteUtil.hexStringToBytes(priorityStr);
-        byte[] nonce = ByteUtil.hexStringToBytes(nonceStr);
+        byte[] seed = ByteUtil.hexStringToBytes(seedStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
         byte[] minerCoinbase = ByteUtil.hexStringToBytes(minerCoinbaseStr);
-        return genPayload(blockNum, round, nonce, minerCoinbase, priority, blockHash, vrfSk, vrfPk);
+        return genPayload(blockNum, round, seed, minerCoinbase, priority, blockHash, vrfSk, vrfPk);
     }
 
-    public static byte[] genPayload(long blockNum, int round, byte[] nonce, byte[] minerCoinbase, byte[] priority,
+    public static byte[] genPayload(long blockNum, int round, byte[] seed, byte[] minerCoinbase, byte[] priority,
             byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
-        VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, nonce, minerCoinbase, priority, blockHash, vrfSk,
+        VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, seed, minerCoinbase, priority, blockHash, vrfSk,
                 vrfPk);
 
         byte[] encoded = RLPCodec.encode(vbf1);
         return encoded;
     }
 
-    public static byte[] genPayload(long blockNum, int round, HexBytes nonce, HexBytes minerCoinbase, HexBytes priority,
+    public static byte[] genPayload(long blockNum, int round, HexBytes seed, HexBytes minerCoinbase, HexBytes priority,
             HexBytes blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
-        VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, nonce.getBytes(), minerCoinbase.getBytes(),
+        VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, seed.getBytes(), minerCoinbase.getBytes(),
                 priority.getBytes(), blockHash.getBytes(), vrfSk, vrfPk);
 
         byte[] encoded = RLPCodec.encode(vbf1);
         return encoded;
     }
 
-    public static VrfBlockFields genVrfBlockFields(long blockNum, int round, String nonceStr, String minerCoinbaseStr,
+    public static VrfBlockFields genVrfBlockFields(long blockNum, int round, String seedStr, String minerCoinbaseStr,
             String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
         byte[] priority = ByteUtil.hexStringToBytes(priorityStr);
-        byte[] nonce = ByteUtil.hexStringToBytes(nonceStr);
+        byte[] seed = ByteUtil.hexStringToBytes(seedStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
         byte[] minerCoinbase = ByteUtil.hexStringToBytes(minerCoinbaseStr);
 
-        return genVrfBlockFields(blockNum, round, nonce, minerCoinbase, priority, blockHash, vrfSk, vrfPk);
+        return genVrfBlockFields(blockNum, round, seed, minerCoinbase, priority, blockHash, vrfSk, vrfPk);
     }
 
-    public static VrfBlockFields genVrfBlockFields(long blockNum, int round, byte[] nonce, byte[] minerCoinbase,
+    public static VrfBlockFields genVrfBlockFields(long blockNum, int round, byte[] seed, byte[] minerCoinbase,
             byte[] priority, byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
 
-        ProposalProof proposalProof = genProposalProof(blockNum, round, nonce, minerCoinbase, blockHash, vrfSk, vrfPk);
+        ProposalProof proposalProof = genProposalProof(blockNum, round, seed, minerCoinbase, blockHash, vrfSk, vrfPk);
 
-        VrfBlockFields vbf1 = VrfBlockFields.builder().nonce(nonce).priority(priority)
+        VrfBlockFields vbf1 = VrfBlockFields.builder().seed(seed).priority(priority)
                 .proposalProof(proposalProof.getEncoded()).miner(minerCoinbase).build();
         return vbf1;
     }
 
-    public static ProposalProof genProposalProof(long blockNum, int round, String nonceStr, String minerCoinbaseStr,
+    public static ProposalProof genProposalProof(long blockNum, int round, String seedStr, String minerCoinbaseStr,
             String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
-        byte[] nonce = ByteUtil.hexStringToBytes(nonceStr);
+        byte[] seed = ByteUtil.hexStringToBytes(seedStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
         byte[] minerCoinbase = ByteUtil.hexStringToBytes(minerCoinbaseStr);
-        return genProposalProof(blockNum, round, nonce, minerCoinbase, blockHash, vrfSk, vrfPk);
+        return genProposalProof(blockNum, round, seed, minerCoinbase, blockHash, vrfSk, vrfPk);
     }
 
-    public static ProposalProof genProposalProof(long blockNum, int round, byte[] nonce, byte[] minerCoinbase,
+    public static ProposalProof genProposalProof(long blockNum, int round, byte[] seed, byte[] minerCoinbase,
             byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
         BlockIdentifier blockIdentifier = new BlockIdentifier(blockHash, blockNum);
 
-        VrfResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_PROPOSER, round, vrfSk, nonce);
-        VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_PROPOSER, round, vrfPk, nonce, vrfResult);
+        VrfResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_PROPOSER, round, vrfSk, seed);
+        VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_PROPOSER, round, vrfPk, seed, vrfResult);
 
         ProposalProof proposalProof = new ProposalProof(vrfProof, minerCoinbase, blockIdentifier, vrfSk.getSigner());
         return proposalProof;
     }
 
-    public static CommitProof genCommitlProof(long blockNum, int round, String nonceStr, String minerCoinbaseStr,
+    public static CommitProof genCommitlProof(long blockNum, int round, String seedStr, String minerCoinbaseStr,
             String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
-        byte[] nonce = ByteUtil.hexStringToBytes(nonceStr);
+        byte[] seed = ByteUtil.hexStringToBytes(seedStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
         byte[] minerCoinbase = ByteUtil.hexStringToBytes(minerCoinbaseStr);
-        return genCommitProof(blockNum, round, nonce, minerCoinbase, blockHash, vrfSk, vrfPk);
+        return genCommitProof(blockNum, round, seed, minerCoinbase, blockHash, vrfSk, vrfPk);
     }
 
-    public static CommitProof genCommitProof(long blockNum, int round, byte[] nonce, byte[] minerCoinbase,
+    public static CommitProof genCommitProof(long blockNum, int round, byte[] seed, byte[] minerCoinbase,
             byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
         BlockIdentifier blockIdentifier = new BlockIdentifier(blockHash, blockNum);
 
-        VrfResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_PROPOSER, round, vrfSk, nonce);
-        VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_PROPOSER, round, vrfPk, nonce, vrfResult);
+        VrfResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_PROPOSER, round, vrfSk, seed);
+        VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_PROPOSER, round, vrfPk, seed, vrfResult);
 
         CommitProof commitProof = new CommitProof(vrfProof, minerCoinbase, blockIdentifier, vrfSk.getSigner());
         return commitProof;

@@ -16,7 +16,7 @@ import org.tdf.sunflower.util.ByteUtil;
 //@Getter
 //@Setter
 public class VrfGenesis {
-    public HexBytes nonce;
+    public HexBytes seed;
     public HexBytes timestamp;
     public HexBytes extraData;
     public HexBytes gasLimit;
@@ -60,7 +60,7 @@ public class VrfGenesis {
         VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKeyDummy();
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
         int round = 0;
-        byte[] payloadBytes = VrfUtil.genPayload(blockNum, round, nonce, coinbase, difficulty,
+        byte[] payloadBytes = VrfUtil.genPayload(blockNum, round, seed, coinbase, difficulty,
                 HexBytes.fromBytes(PoAUtils.getHash(block)), vrfSk, vrfPk);
         HexBytes payload = HexBytes.fromBytes(payloadBytes);
         block.setPayload(payload);

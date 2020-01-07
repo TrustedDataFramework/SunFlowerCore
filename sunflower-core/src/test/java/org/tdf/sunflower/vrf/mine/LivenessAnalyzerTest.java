@@ -192,7 +192,7 @@ public class LivenessAnalyzerTest {
 
             blockHeaders[i] = Header.builder().hashPrev(HexBytes.fromBytes(recentHash))
                     .createdAt(System.currentTimeMillis()).version(1).height(i).build();
-            VrfUtil.setNonce(blockHeaders[i], nonce);
+            VrfUtil.setSeed(blockHeaders[i], nonce);
             VrfUtil.setPriority(blockHeaders[i], emptyArray);
             VrfUtil.setMiner(blockHeaders[i], COINBASE_ARRAY[i]);
         }
