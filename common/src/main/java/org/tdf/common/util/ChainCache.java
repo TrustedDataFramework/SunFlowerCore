@@ -30,12 +30,12 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
     // hash -> parent hash
     private Map<byte[], byte[]> parentHash = new ByteArrayMap<>();
 
-    private TreeSet<T> set;
+    private TreeSet<T> sorted;
 
     private int sizeLimit;
 
     public ChainCache() {
-        set = new TreeSet<>(comparator);
+        sorted = new TreeSet<>(comparator);
     }
 
     // not serializable
@@ -49,7 +49,7 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
     public ChainCache(int sizeLimit, Comparator<? super T> comparator) {
         this.sizeLimit = sizeLimit;
         if (comparator != null) this.comparator = comparator;
-        set = new TreeSet<>(this.comparator);
+        sorted = new TreeSet<>(this.comparator);
     }
 
 
@@ -78,7 +78,7 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
                 childrenHashes;
         ret.childrenHashes = new ByteArrayMap<>(tmp);
         ret.parentHash = new ByteArrayMap<>(parentHash);
-        ret.set = new TreeSet<>(set);
+        ret.sorted = new TreeSet<>(sorted);
         return ret;
     }
 
@@ -155,12 +155,12 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
             return;
         }
         while (size() > sizeLimit) {
-            remove(set.first());
+            remove(sorted.first());
         }
     }
 
     public boolean add(@NonNull T node) {
-        if (set.contains(node)) return false;
+        if (sorted.contains(node)) return false;
         byte[] key = node.getHash().getBytes();
         nodes.put(key, node);
         byte[] prevHash = node.getHashPrev().getBytes();
@@ -169,7 +169,7 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
         parentHash.put(key, prevHash);
         s.add(node.getHash().getBytes());
         childrenHashes.put(prevHash, s);
-        set.add(node);
+        sorted.add(node);
         evict();
         return true;
     }
@@ -183,10 +183,10 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
     @Override
     public boolean remove(Object o) {
         T n = (T) o;
-        if(!set.contains(n)) return false;
+        if(!sorted.contains(n)) return false;
         byte[] key = n.getHash().getBytes();
         byte[] k = parentHash.get(key);
-        set.remove(n);
+        sorted.remove(n);
         nodes.remove(key);
         parentHash.remove(key);
         Set<byte[]> set = childrenHashes.get(k);
@@ -205,7 +205,7 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
         nodes = new ByteArrayMap<>();
         childrenHashes = new ByteArrayMap<>();
         parentHash = new ByteArrayMap<>();
-        set = new TreeSet<>(comparator);
+        sorted = new TreeSet<>(comparator);
     }
 
     public List<T> popLongestChain() {
@@ -229,22 +229,22 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
 
     @Override
     public boolean contains(Object o) {
-        return set.contains(o);
+        return sorted.contains(o);
     }
 
     @Override
     public Iterator<T> iterator() {
-        return Iterators.unmodifiableIterator(set.iterator());
+        return Iterators.unmodifiableIterator(sorted.iterator());
     }
 
     @Override
     public Object[] toArray() {
-        return set.toArray();
+        return sorted.toArray();
     }
 
     @Override
     public <T1> T1[] toArray(T1[] a) {
-        return set.toArray(a);
+        return sorted.toArray(a);
     }
 
     public boolean containsHash(byte[] hash) {
@@ -271,12 +271,12 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
 
     @Override
     public Stream<T> stream() {
-        return set.stream();
+        return sorted.stream();
     }
 
     @Override
     public Spliterator<T> spliterator() {
-        return set.spliterator();
+        return sorted.spliterator();
     }
 
 
@@ -287,27 +287,27 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
 
     @Override
     public SortedSet<T> subSet(T fromElement, T toElement) {
-        return set.subSet(fromElement, toElement);
+        return sorted.subSet(fromElement, toElement);
     }
 
     @Override
     public SortedSet<T> headSet(T toElement) {
-        return set.headSet(toElement);
+        return sorted.headSet(toElement);
     }
 
     @Override
     public SortedSet<T> tailSet(T fromElement) {
-        return set.tailSet(fromElement);
+        return sorted.tailSet(fromElement);
     }
 
     @Override
     public T first() {
-        return set.first();
+        return sorted.first();
     }
 
     @Override
     public T last() {
-        return set.last();
+        return sorted.last();
     }
 
     @Override
