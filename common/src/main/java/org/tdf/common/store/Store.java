@@ -1,5 +1,7 @@
 package org.tdf.common.store;
 
+import lombok.NonNull;
+
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -7,7 +9,7 @@ import java.util.stream.Stream;
 
 /**
  * abstract storage of key-value mappings
- *
+ * the key and value are not allowed to be null
  * @param <K> key
  * @param <V> value
  * @author zhuyingjie
@@ -18,17 +20,17 @@ public interface Store<K, V> {
      */
     Store<?, ?> NONE = new Store() {
         @Override
-        public Optional<?> get(Object o) {
+        public Optional<?> get(@NonNull Object o) {
             return Optional.empty();
         }
 
         @Override
-        public void put(Object o, Object o2) {
+        public void put(@NonNull Object o, @NonNull Object o2) {
 
         }
 
         @Override
-        public void remove(Object o) {
+        public void remove(@NonNull Object o) {
 
         }
 
@@ -37,32 +39,23 @@ public interface Store<K, V> {
 
         }
 
-
         @Override
         public void clear() {
 
         }
 
         @Override
-        public Map<?, ?> asMap() {
-            return Collections.emptyMap();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return true;
-        }
-
-        @Override
         public void traverse(BiFunction consumer) {
-        }
-
-        @Override
-        public int size() {
-            return 0;
         }
     };
 
+    /**
+     * return a trivial key-value store which is always empty
+     *
+     * @param <K> type of key
+     * @param <V> type of value
+     * @return trivial store
+     */
     static <K, V> Store<K, V> getNop() {
         return (Store<K, V>) NONE;
     }
@@ -78,6 +71,7 @@ public interface Store<K, V> {
 
     /**
      * put key with trap-like value will remove the key
+     *
      * @return non null static trap value
      */
     default V getTrap() {
@@ -85,11 +79,10 @@ public interface Store<K, V> {
     }
 
     /**
-     * Puts key-value pair into store
+     * puts key-value pair into store, remove key in the store if v is trap-like {@link Store#getTrap()}
      *
      * @param k key of key-value mapping
      * @param v value of key-value mapping
-     *          remove key in the store if {@code v == getTrap()}
      */
     void put(K k, V v);
 

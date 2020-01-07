@@ -18,25 +18,21 @@ public class CachedStore<K, V> implements Store<K, V> {
 
     protected Map<K, V> cache;
 
-    protected V trap;
-
     protected Supplier<? extends Map<K, V>> cacheSupplier;
 
     @lombok.Builder(builderClassName = "Builder")
     public CachedStore(
             @NonNull Store<K, V> delegate,
-            @NonNull Supplier<? extends Map<K, V>> cacheSupplier,
-            @NonNull V trap
+            @NonNull Supplier<? extends Map<K, V>> cacheSupplier
     ) {
         this.delegate = delegate;
         this.cacheSupplier = cacheSupplier;
-        this.trap = trap;
         clearCache();
     }
 
     @Override
     public V getTrap() {
-        return trap;
+        return delegate.getTrap();
     }
 
     void clearCache() {
@@ -67,9 +63,9 @@ public class CachedStore<K, V> implements Store<K, V> {
     @Override
     public void flush() {
         if (cache.isEmpty()) return;
-        if (delegate instanceof DatabaseStore) {
-            DatabaseStore bat = (DatabaseStore) delegate;
-            bat.putAll((Map<byte[], byte[]>) cache);
+        if (delegate instanceof BatchStore) {
+            BatchStore<K, V> bat = (BatchStore<K, V>) delegate;
+            bat.putAll(cache);
             bat.flush();
             clearCache();
             return;

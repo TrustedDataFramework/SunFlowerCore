@@ -29,7 +29,6 @@ public abstract class CachedStoreTests {
         store = builder
                 .delegate(delegate)
                 .cacheSupplier(ByteArrayMap::new)
-                .trap(HexBytes.EMPTY_BYTES)
                 .build();
     }
 

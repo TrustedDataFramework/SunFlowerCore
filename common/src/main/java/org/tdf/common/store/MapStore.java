@@ -68,7 +68,7 @@ public class MapStore<K, V> implements BatchStore<K, V> {
 
 
     @Override
-    public boolean containsKey(K k) {
+    public boolean containsKey(@NonNull K k) {
         return map.containsKey(k);
     }
 

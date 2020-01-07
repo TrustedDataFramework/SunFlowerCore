@@ -43,8 +43,7 @@ public class TrieRollbackTest {
         noDelete = new NoDeleteStore<>(delegate, removed);
         database = new NoDoubleDeleteStore<>(noDelete);
 
-        TrieImpl.Builder<String, String> builder = Trie.builder();
-        trie = builder.hashFunction(HashUtil::sha3)
+        trie = Trie.<String, String>builder().hashFunction(HashUtil::sha3)
                 .store(database)
                 .keyCodec(Codecs.STRING)
                 .valueCodec(Codecs.STRING)

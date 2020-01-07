@@ -18,8 +18,9 @@ public class LRUMapTests {
     @Before
     public void before() {
         evicted = new ArrayList<>();
-        LRUMap.Builder<String, String> builder = LRUMap.builder();
-        lruMap = builder.maximumSize(2)
+        lruMap = LRUMap
+                .<String, String>builder()
+                .maximumSize(2)
                 .hook((k, v) -> evicted.add(k))
                 .build();
         lruMap.put("1", "2");

@@ -58,8 +58,8 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
                     Store.getNop()
             );
         }
-        Trie.Builder<ID, S> builder = Trie.builder();
-        trie = builder
+
+        trie = Trie.<ID, S>builder()
                 .hashFunction(HashFunctions::keccak256)
                 .store(trieStore)
                 .keyCodec(idCodec)
@@ -87,7 +87,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     }
 
     protected Trie<ID, S> commitInternal(byte[] parentRoot, Map<ID, S> data) {
-        Store<byte[], byte[]> cache = new CachedStore<>(getTrieStore(), ByteArrayMap::new, HexBytes.EMPTY_BYTES);
+        Store<byte[], byte[]> cache = new CachedStore<>(getTrieStore(), ByteArrayMap::new);
         Trie<ID, S> trie = getTrie().revert(parentRoot, cache);
         data.forEach(trie::put);
         byte[] newRoot = trie.commit();
