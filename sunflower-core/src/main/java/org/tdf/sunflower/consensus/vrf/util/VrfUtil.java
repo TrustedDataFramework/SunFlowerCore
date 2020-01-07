@@ -10,6 +10,7 @@ import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.consensus.vrf.VrfConfig;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
+import org.tdf.sunflower.consensus.vrf.core.CommitProof;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
 import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
 import org.tdf.sunflower.consensus.vrf.core.VrfProof;
@@ -245,8 +246,8 @@ public class VrfUtil {
         return encoded;
     }
 
-    public static byte[] genPayload(long blockNum, int round, HexBytes nonce, HexBytes minerCoinbase,
-            HexBytes priority, HexBytes blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
+    public static byte[] genPayload(long blockNum, int round, HexBytes nonce, HexBytes minerCoinbase, HexBytes priority,
+            HexBytes blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
         VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, nonce.getBytes(), minerCoinbase.getBytes(),
                 priority.getBytes(), blockHash.getBytes(), vrfSk, vrfPk);
 
@@ -291,6 +292,25 @@ public class VrfUtil {
 
         ProposalProof proposalProof = new ProposalProof(vrfProof, minerCoinbase, blockIdentifier, vrfSk.getSigner());
         return proposalProof;
+    }
+
+    public static CommitProof genCommitlProof(long blockNum, int round, String nonceStr, String minerCoinbaseStr,
+            String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
+        byte[] nonce = ByteUtil.hexStringToBytes(nonceStr);
+        byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
+        byte[] minerCoinbase = ByteUtil.hexStringToBytes(minerCoinbaseStr);
+        return genCommitProof(blockNum, round, nonce, minerCoinbase, blockHash, vrfSk, vrfPk);
+    }
+
+    public static CommitProof genCommitProof(long blockNum, int round, byte[] nonce, byte[] minerCoinbase,
+            byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
+        BlockIdentifier blockIdentifier = new BlockIdentifier(blockHash, blockNum);
+
+        VrfResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_PROPOSER, round, vrfSk, nonce);
+        VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_PROPOSER, round, vrfPk, nonce, vrfResult);
+
+        CommitProof commitProof = new CommitProof(vrfProof, minerCoinbase, blockIdentifier, vrfSk.getSigner());
+        return commitProof;
     }
 
     public static VrfPrivateKey getVrfPrivateKeyDummy() {
