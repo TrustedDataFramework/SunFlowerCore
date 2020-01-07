@@ -36,19 +36,28 @@ public class MapStore<K, V> implements BatchStore<K, V> {
     }
 
     @Override
+    public boolean isTrap(V v) {
+        return false;
+    }
+
+    @Override
     public Optional<V> get(@NonNull K k) {
         return Optional.ofNullable(map.get(k));
     }
 
     @Override
     public void put(@NonNull K k, @NonNull V v) {
+        if(isTrap(v)){
+            map.remove(k);
+            return;
+        }
         map.put(k, v);
     }
 
     @Override
     public void putAll(@NonNull Map<K, V> rows) {
         rows.forEach((k, v) -> {
-            if (v == null) {
+            if (v == null || isTrap(v)) {
                 map.remove(k);
                 return;
             }
@@ -98,7 +107,7 @@ public class MapStore<K, V> implements BatchStore<K, V> {
 
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
-        return new MapStoreEntrySet<>(map.entrySet());
+        return new MapStoreEntrySet(map.entrySet());
     }
 
     @Override
@@ -130,7 +139,7 @@ public class MapStore<K, V> implements BatchStore<K, V> {
     }
 
     @AllArgsConstructor
-    private class MapStoreEntrySet<K, V> implements Set<Map.Entry<K, V>> {
+    private class MapStoreEntrySet implements Set<Map.Entry<K, V>> {
         private Set<Map.Entry<K, V>> delegate;
 
         @Override
@@ -165,7 +174,7 @@ public class MapStore<K, V> implements BatchStore<K, V> {
 
         @Override
         public boolean add(Map.Entry<K, V> kvEntry) {
-            if (kvEntry.getValue() == null) {
+            if (kvEntry.getValue() == null || isTrap(kvEntry.getValue())) {
                 return delegate.remove(kvEntry);
             }
             return delegate.add(kvEntry);

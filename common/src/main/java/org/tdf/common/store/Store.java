@@ -79,6 +79,15 @@ public interface Store<K, V> {
     }
 
     /**
+     *
+     * @param v value
+     * @return if v is trap like
+     */
+    default boolean isTrap(V v){
+        return v == getTrap();
+    }
+
+    /**
      * puts key-value pair into store, remove key in the store if v is trap-like {@link Store#getTrap()}
      *
      * @param k key of key-value mapping
