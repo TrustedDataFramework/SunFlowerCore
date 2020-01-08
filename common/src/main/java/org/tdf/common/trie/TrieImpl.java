@@ -121,8 +121,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     public TrieImpl<K, V> revert(@NonNull byte[] rootHash, Store<byte[], byte[]> store) {
         if (FastByteComparisons.equal(rootHash, nullHash))
             return new TrieImpl<>(nullHash, function, store,
-                    kCodec, vCodec, null)
-            );
+                    kCodec, vCodec, null);
         if (!store.containsKey(rootHash)) throw new RuntimeException("rollback failed, root hash not exists");
         return new TrieImpl<>(
                 nullHash,
