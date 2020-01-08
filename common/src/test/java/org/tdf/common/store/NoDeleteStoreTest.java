@@ -1,32 +1,31 @@
 package org.tdf.common.store;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import java.util.Arrays;
 
-@RunWith(JUnit4.class)
-public class NoDeleteStoreTest {
-    protected NoDeleteStore<byte[], byte[]> store;
-
-    protected Store<byte[], byte[]> delegated;
+@Ignore
+public abstract class NoDeleteStoreTest {
+    protected Store<byte[], byte[]> store;
 
 
+    abstract protected Store<byte[], byte[]> supplyNoDelete();
     @Before
     public void before() {
-        delegated = new ByteArrayMapStore<>();
-        store = new NoDeleteStore<>(delegated);
+        store = supplyNoDelete();
         store.put("a".getBytes(), "1".getBytes());
         store.put("b".getBytes(), "2".getBytes());
         store.put("c".getBytes(), "3".getBytes());
+        store.flush();
     }
 
 
     @Test
     public void test1() {
         store.remove("a".getBytes());
+        store.flush();
         assert store.containsKey("a".getBytes());
         assert store.get("a".getBytes()).map(x -> Arrays.equals(x, "1".getBytes())).orElse(false);
         store.flush();

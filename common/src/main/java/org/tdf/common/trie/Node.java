@@ -144,7 +144,10 @@ class Node {
     // get actual rlp encoding in the cache
     private void resolve() {
         if (rlp != null || hash == null) return;
-        rlp = readOnlyCache.get(hash).map(RLPElement::fromEncoded).map(RLPElement::asRLPList)
+        rlp = readOnlyCache
+                .get(hash)
+                .map(RLPElement::fromEncoded)
+                .map(RLPElement::asRLPList)
                 .orElseThrow(() -> new RuntimeException("rlp encoding not found in cache"));
     }
 

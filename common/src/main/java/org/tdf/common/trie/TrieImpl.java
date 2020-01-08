@@ -177,6 +177,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     @Override
     public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
+        if (root == null || FastByteComparisons.equal(root.getHash(), nullHash)) return;
         traverseInternal((k, n) -> {
             if (n.getType() != Node.Type.EXTENSION && n.getValue() != null) {
                 return traverser.apply(
