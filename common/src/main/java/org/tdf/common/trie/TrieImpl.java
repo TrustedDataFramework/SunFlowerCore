@@ -132,7 +132,6 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     public void traverseInternal(BiFunction<TrieKey, Node, Boolean> action) {
-        commit();
         if (root == null) return;
         root.traverse(TrieKey.EMPTY, action);
     }
