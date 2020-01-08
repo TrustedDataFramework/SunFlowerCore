@@ -48,7 +48,7 @@ public class CachedStore<K, V> implements Store<K, V> {
     public Optional<V> get(@NonNull K k) {
         V v = cache.get(k);
         if (v == null) return delegate.get(k);
-        if (v == getTrap()) return Optional.empty();
+        if (isTrap(v)) return Optional.empty();
         return Optional.of(v);
     }
 
@@ -76,7 +76,7 @@ public class CachedStore<K, V> implements Store<K, V> {
             return;
         }
         cache.forEach((k, v) -> {
-            if (v == getTrap()) {
+            if (isTrap(v)) {
                 delegate.remove(k);
                 return;
             }
@@ -102,7 +102,7 @@ public class CachedStore<K, V> implements Store<K, V> {
     @Override
     public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
         for (Map.Entry<K, V> entry : cache.entrySet()) {
-            if (entry.getValue() == getTrap())
+            if (isTrap(entry.getValue()))
                 continue;
             if (!traverser.apply(entry.getKey(), entry.getValue()))
                 break;
