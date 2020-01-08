@@ -121,8 +121,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     public TrieImpl<K, V> revert(@NonNull byte[] rootHash, Store<byte[], byte[]> store) {
         if (FastByteComparisons.equal(rootHash, nullHash))
             return new TrieImpl<>(nullHash, function, store,
-                    kCodec, vCodec,
-                    Node.fromRootHash(rootHash, new ReadOnlyStore<>(store))
+                    kCodec, vCodec, null)
             );
         if (!store.containsKey(rootHash)) throw new RuntimeException("rollback failed, root hash not exists");
         return new TrieImpl<>(
@@ -177,7 +176,6 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     @Override
     public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
-        if (root == null || FastByteComparisons.equal(root.getHash(), nullHash)) return;
         traverseInternal((k, n) -> {
             if (n.getType() != Node.Type.EXTENSION && n.getValue() != null) {
                 return traverser.apply(
