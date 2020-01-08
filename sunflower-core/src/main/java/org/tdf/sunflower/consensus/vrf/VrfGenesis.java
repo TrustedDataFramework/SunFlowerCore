@@ -1,5 +1,6 @@
 package org.tdf.sunflower.consensus.vrf;
 
+import java.io.IOException;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -35,7 +36,7 @@ public class VrfGenesis {
     public List<MinerInfo> miners;
 
     @JsonIgnore
-    public Block getBlock() {
+    public Block getBlock(VrfConfig vrfConfig) throws IOException {
         long blockNum = ByteUtil.byteArrayToLong(number.getBytes());
         Header header = Header.builder().version(VrfConstants.BLOCK_VERSION).hashPrev(parentHash)
                 .merkleRoot(VrfConstants.ZERO_BYTES).height(blockNum)
@@ -48,20 +49,20 @@ public class VrfGenesis {
          * need to clarify: current block hash is used to generate ProposalProof, but
          * final block hash is generated partly from ProposalProof
          */
-        setPayload(block);
+        setPayload(block, vrfConfig);
 
         block.setHash(HexBytes.fromBytes(PoAUtils.getHash(block)));
 
         return block;
     }
 
-    private void setPayload(Block block) {
+    private void setPayload(Block block, VrfConfig vrfConfig) throws IOException {
         long blockNum = block.getHeight();
         VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKeyDummy();
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
         int round = 0;
         byte[] payloadBytes = VrfUtil.genPayload(blockNum, round, seed, coinbase, difficulty,
-                HexBytes.fromBytes(PoAUtils.getHash(block)), vrfSk, vrfPk);
+                HexBytes.fromBytes(PoAUtils.getHash(block)), vrfSk, vrfPk, vrfConfig);
         HexBytes payload = HexBytes.fromBytes(payloadBytes);
         block.setPayload(payload);
     }

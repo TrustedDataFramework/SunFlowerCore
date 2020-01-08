@@ -9,5 +9,7 @@ public class VrfConstants {
     public static final int TRANSACTION_VERSION = BigEndian.decodeInt32(new byte[] { 0, 'v', 'r', 'f' });
 
     public final static long MESSAGE_TTL = 1000;
+    public final static String REDUCTION_COMMIT_PROOF_FILE_NAME = "reduction_commit.proof";
+    public final static String FINAL_COMMIT_PROOF_FILE_NAME = "final_commit.proof";
 
 }

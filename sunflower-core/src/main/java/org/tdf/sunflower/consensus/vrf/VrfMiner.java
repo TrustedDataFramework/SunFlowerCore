@@ -4,6 +4,7 @@ import static org.junit.Assert.assertTrue;
 import static org.tdf.sunflower.consensus.vrf.VrfHashPolicy.HASH_POLICY;
 import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -181,12 +182,13 @@ public class VrfMiner implements Miner {
         Transaction tx = Transaction.builder().height(height).version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(PoAConstants.ZERO_BYTES)
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(PoAConstants.ZERO_BYTES)
-                .to(HexBytes.fromBytes(minerPublicKeyHash.getPublicKeyHash())).signature(PoAConstants.ZERO_BYTES).build();
+                .to(HexBytes.fromBytes(minerPublicKeyHash.getPublicKeyHash())).signature(PoAConstants.ZERO_BYTES)
+                .build();
         tx.setHash(HASH_POLICY.getHash(tx));
         return tx;
     }
 
-    private Block createBlock(Block parent) throws DecoderException {
+    private Block createBlock(Block parent) throws DecoderException, IOException {
         Header header = Header.builder().version(parent.getVersion()).hashPrev(parent.getHash())
                 .merkleRoot(PoAConstants.ZERO_BYTES).height(parent.getHeight() + 1)
                 .createdAt(System.currentTimeMillis() / 1000).build();
@@ -196,7 +198,8 @@ public class VrfMiner implements Miner {
 
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
         byte[] payLoadBytes = VrfUtil.genPayload(b.getHeight(), this.vrfStateMachine.getVrfRound().getRound(), vrfSeed,
-                this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk, vrfPk);
+                this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk, vrfPk,
+                vrfConfig);
         HexBytes payload = HexBytes.fromBytes(payLoadBytes);
         b.setPayload(payload);
         b.getBody().add(createCoinBase(parent.getHeight() + 1));
@@ -293,7 +296,7 @@ public class VrfMiner implements Miner {
     private boolean setupVrfStateMachine(VrfStateMachine vrfStateMachine) {
         StateMachineListener listener = new StateMachineListener() {
             @Override
-            public void stateChanged(int from, int to) throws DecoderException, JsonProcessingException {
+            public void stateChanged(int from, int to) throws DecoderException, IOException {
                 log.info("state changed, State {} -> {}, blockSyncing {}", from, to, blockSyncing);
 
                 if (from == VrfStateMachine.VRF_STATE_INIT && to == VrfStateMachine.VRF_STATE_PROPOSAL) {
@@ -343,11 +346,7 @@ public class VrfMiner implements Miner {
 //                            finalBlock.getHeader().clearMagic();
                             clearMagic(finalBlock.getBlock());
 
-                            if (validateAndAddNewBlock(finalBlock
-                                    .getBlock())/*
-                                                 * ethereum.getChannelManager().getSyncManager().validateAndAddNewBlock(
-                                                 * finalBlock.getBlock(), finalBlock.getNodeId())
-                                                 */) {
+                            if (validateAndAddNewBlock(finalBlock.getBlock())) {
                                 return true;
                             } else {
                                 log.error("Fail to do validateAndAddNewBlock for Final Block, hash 0x{}",
@@ -409,7 +408,7 @@ public class VrfMiner implements Miner {
         }
     }
 
-    private VrfMined getNewVrfMined() throws DecoderException {
+    private VrfMined getNewVrfMined() throws DecoderException, IOException {
         Block bestBlock = blockRepository.getBestBlock();
         Block bestPendingState = blockRepository.getBestBlock();
         vrfSeed = VrfUtil.getSeed(bestPendingState);
@@ -538,7 +537,7 @@ public class VrfMiner implements Miner {
         return null;
     }
 
-    private void proposeNewBlock(VrfStateMachine vrfStateMachine) throws DecoderException, JsonProcessingException {
+    private void proposeNewBlock(VrfStateMachine vrfStateMachine) throws DecoderException, IOException {
         VrfRound vrfRound = vrfStateMachine.getVrfRound();
         long blockNum = vrfRound.getBlockNum();
         int round = vrfRound.getRound();
@@ -726,8 +725,7 @@ public class VrfMiner implements Miner {
         }
     }
 
-    private void checkAndProcessNewProposal(VrfStateMachine vrfStateMachine)
-            throws DecoderException, JsonProcessingException {
+    private void checkAndProcessNewProposal(VrfStateMachine vrfStateMachine) throws DecoderException, IOException {
         VrfRound vrfRound = vrfStateMachine.getVrfRound();
         long blockNum = vrfRound.getBlockNum();
         int round = vrfRound.getRound();

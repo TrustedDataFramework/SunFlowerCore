@@ -2,6 +2,7 @@ package org.tdf.sunflower.consensus.vrf;
 
 import static org.tdf.sunflower.consensus.vrf.VrfHashPolicy.HASH_POLICY;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
@@ -191,7 +192,8 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         setStateRepository(new ConsortiumStateRepository());
 
         // register miner accounts
-        getStateRepository().register(getGenesisBlock(), Collections.singleton(new Account(vrfMiner.minerPublicKeyHash, 0)));
+        getStateRepository().register(getGenesisBlock(),
+                Collections.singleton(new Account(vrfMiner.minerPublicKeyHash, 0)));
 
     }
 
@@ -200,11 +202,14 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         Block genesisBlock = super.getGenesisBlock();
         if (genesisBlock != null)
             return genesisBlock;
-        genesisBlock = genesis.getBlock();
+        try {
+            genesisBlock = genesis.getBlock(vrfConfig);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         setGenesisBlock(genesisBlock);
         return genesisBlock;
     }
-
 
     private boolean saveBlock(Block block, ConsortiumRepository repository, ConsensusEngine engine) {
         Optional<Block> o = repository.getBlock(block.getHashPrev().getBytes());

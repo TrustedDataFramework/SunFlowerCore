@@ -1,5 +1,6 @@
 package org.tdf.sunflower.consensus.vrf;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -824,7 +825,7 @@ public class VrfStateMachine {
         notifyStateQueue.add(stateChanged);
     }
 
-    private void notifyStateChanged(int oldState, int newState) throws DecoderException, JsonProcessingException {
+    private void notifyStateChanged(int oldState, int newState) throws DecoderException, IOException {
         if (listeners.isEmpty()) {
             return;
         }

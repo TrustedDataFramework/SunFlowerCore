@@ -26,4 +26,10 @@ public class VrfBlockFields {
     @RLP(3)
     private byte[] proposalProof;
 
+    @RLP(4)
+    private byte[] parentReductionCommitProof;
+
+    @RLP(5)
+    private byte[] parentFinalCommitProof;
+
 }
