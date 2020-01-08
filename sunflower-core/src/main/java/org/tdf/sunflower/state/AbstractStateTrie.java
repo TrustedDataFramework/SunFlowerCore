@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.NoDeleteStore;
+import org.tdf.common.store.NoDeleteBatchStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
