@@ -37,6 +37,10 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
 
     @Override
     public void put(@NonNull K k, @NonNull V v) {
+        if(isTrap(v))
+          remove(k);
+          return;
+        }
         removed.remove(k);
         delegate.put(k, v);
     }
@@ -49,6 +53,7 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
 
     @Override
     public void remove(@NonNull K k) {
+        if(removed == Store.NONE) return;
         Optional<V> o = get(k);
         if (!o.isPresent()) return;
         // we not remove k, just add it to a cache
