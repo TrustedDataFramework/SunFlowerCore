@@ -59,12 +59,12 @@ public abstract class DBTests {
         Map<byte[], byte[]> rows = new ByteArrayMap<>();
         rows.put("1".getBytes(), "1".getBytes());
         rows.put("2".getBytes(), "2".getBytes());
-        databaseStore.putAll(rows);
+        databaseStore.putAll(rows.entrySet());
         assert databaseStore.size() == 2;
         rows = new ByteArrayMap<>();
         rows.put("1".getBytes(), databaseStore.getTrap());
         rows.put("2".getBytes(), databaseStore.getTrap());
-        databaseStore.putAll(rows);
+        databaseStore.putAll(rows.entrySet());
         assert databaseStore.isEmpty();
     }
 }

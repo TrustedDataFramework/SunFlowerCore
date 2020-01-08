@@ -50,15 +50,16 @@ public class MapStore<K, V> implements BatchStore<K, V> {
     }
 
     @Override
-    public void putAll(@NonNull Map<K, V> rows) {
-        rows.forEach((k, v) -> {
-            if (v == null || isTrap(v)) {
-                map.remove(k);
+    public void putAll(Collection<? extends Map.Entry<? extends K, ? extends V>> rows) {
+        rows.forEach(entry -> {
+            if (entry.getValue() == null || isTrap(entry.getValue())) {
+                map.remove(entry.getKey());
                 return;
             }
-            map.put(k, v);
+            map.put(entry.getKey(), entry.getValue());
         });
     }
+
 
     @Override
     public void putIfAbsent(@NonNull K k, @NonNull V v) {

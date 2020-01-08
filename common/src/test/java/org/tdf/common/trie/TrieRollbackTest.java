@@ -31,7 +31,7 @@ public class TrieRollbackTest {
     private NoDeleteStore<byte[], byte[]> noDelete;
 
     private NoDeleteStore<byte[], byte[]> cloneDatabase() {
-        return new NoDeleteStore<>(new ByteArrayMapStore<>(delegate), new ByteArrayMapStore<>(removed));
+        return new NoDeleteStore<>(new ByteArrayMapStore<>(delegate));
     }
 
     @Before
@@ -40,7 +40,7 @@ public class TrieRollbackTest {
 
         delegate = new ByteArrayMapStore<>();
 
-        noDelete = new NoDeleteStore<>(delegate, removed);
+        noDelete = new NoDeleteStore<>(delegate);
         database = new NoDoubleDeleteStore<>(noDelete);
 
         trie = Trie.<String, String>builder().hashFunction(HashUtil::sha3)
@@ -94,38 +94,9 @@ public class TrieRollbackTest {
             trie = trie.revert(rootHash, database);
             assert equals(dump(trie), dumps.get(Hex.toHexString(rootHash)));
         }
-        noDelete.compact();
         for (int i = 0; i < roots.size() - 1; i++) {
-            Exception e = null;
-            try {
-                trie = trie.revert(roots.get(i), database);
-            } catch (Exception ex) {
-                e = ex;
-            }
-            assert e != null;
+            trie = trie.revert(roots.get(i), database);
         }
-    }
-
-    // rollback failed if later trie had been flushed
-    @Test
-    public void test2() {
-        for (int i = 1; i < roots.size(); i++) {
-            NoDeleteStore<byte[], byte[]> db = cloneDatabase();
-            Set<byte[]> excludes = new ByteArraySet();
-            for (int j = i; j < roots.size(); j++) {
-                excludes.addAll(nodes.get(j).keySet());
-            }
-            db.compact(excludes);
-            for (int j = 0; j < i; j++) {
-                assert !db.containsKey(roots.get(j));
-            }
-            for (int j = i; j < roots.size(); j++) {
-                byte[] rootHash = roots.get(j);
-                trie = trie.revert(rootHash, db);
-                assert equals(dump(trie), dumps.get(Hex.toHexString(rootHash)));
-            }
-        }
-
     }
 
     @Test
@@ -140,7 +111,7 @@ public class TrieRollbackTest {
 
     private Map<String, String> dump(Store<String, String> store) {
         Map<String, String> m = new HashMap<>();
-        store.forEach((k, v) -> m.put(k, v));
+        store.forEach(m::put);
         return m;
     }
 

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -151,7 +152,7 @@ public class LevelDb implements DatabaseStore {
     }
 
     @Override
-    public void putAll(Map<byte[], byte[]> rows) {
+    public void putAll(Collection<? extends Map.Entry<? extends byte[], ? extends byte[]>> rows) {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
@@ -175,9 +176,9 @@ public class LevelDb implements DatabaseStore {
         }
     }
 
-    private void updateBatchInternal(Map<byte[], byte[]> rows) throws IOException {
+    private void updateBatchInternal(Collection<? extends Map.Entry<? extends byte[], ? extends byte[]>> rows) throws IOException {
         try (WriteBatch batch = db.createWriteBatch()) {
-            for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
+            for (Map.Entry<? extends byte[], ? extends byte[]> entry : rows) {
                 if (entry.getValue() == null || isTrap(entry.getValue())) {
                     batch.delete(entry.getKey());
                 } else {

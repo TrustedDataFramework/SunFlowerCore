@@ -18,16 +18,12 @@ import java.util.stream.Stream;
  * no delete store will store deleted key-value pair to @see deleted
  * when compact method called, clean the key-pari in @see deleted
  */
-@AllArgsConstructor
 @Getter(AccessLevel.PROTECTED)
 public class NoDeleteStore<K, V> implements Store<K, V> {
     private Store<K, V> delegate;
 
-    private Store<K, V> removed;
-
     public NoDeleteStore(Store<K, V> delegate) {
         this.delegate = delegate;
-        this.removed = Store.getNop();
     }
 
     @Override
@@ -37,11 +33,7 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
 
     @Override
     public void put(@NonNull K k, @NonNull V v) {
-        if(isTrap(v))
-          remove(k);
-          return;
-        }
-        removed.remove(k);
+        if(isTrap(v)) return;
         delegate.put(k, v);
     }
 
@@ -53,18 +45,11 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
 
     @Override
     public void remove(@NonNull K k) {
-        if(removed == Store.NONE) return;
-        Optional<V> o = get(k);
-        if (!o.isPresent()) return;
-        // we not remove k, just add it to a cache
-        // when flush() called, we remove k in the cache
-        removed.put(k, o.get());
     }
 
     // flush all deleted to underlying db
     @Override
     public void flush() {
-        removed.flush();
         delegate.flush();
     }
 
@@ -84,33 +69,12 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
     }
 
     @Override
-    public void clear() {
-        removed = delegate;
+    public void clear(){
     }
 
     @Override
     public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
         delegate.traverse(traverser);
-    }
-
-    public void compact() {
-        if (removed == delegate) {
-            delegate.clear();
-            return;
-        }
-        removed.forEach((k, v) -> delegate.remove(k));
-        removed.clear();
-    }
-
-    public void compact(Set<K> excludes) {
-        removed.stream()
-                .map(Map.Entry::getKey)
-                .filter(k -> !excludes.contains(k))
-                .collect(Collectors.toList())
-                .forEach(k -> {
-                    removed.remove(k);
-                    delegate.remove(k);
-                });
     }
 
     @Override

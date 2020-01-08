@@ -1,5 +1,6 @@
 package org.tdf.common.store;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -15,5 +16,5 @@ public interface BatchStore<K, V> extends Store<K, V> {
      *
      * @param rows row to put into this store
      */
-    void putAll(Map<K, V> rows);
+    void putAll(Collection<? extends Map.Entry<? extends K, ? extends V>> rows);
 }

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -138,13 +139,13 @@ public class RocksDb implements DatabaseStore {
 
 
     @Override
-    public void putAll(Map<byte[], byte[]> rows) {
+    public void putAll(Collection<? extends Map.Entry<? extends byte[], ? extends byte[]>> rows) {
         resetDbLock.readLock().lock();
         try {
             try {
                 try (WriteBatch batch = new WriteBatch();
                      WriteOptions writeOptions = new WriteOptions()) {
-                    for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
+                    for (Map.Entry<? extends byte[], ? extends byte[]> entry : rows) {
                         if (entry.getValue() == null || entry.getValue() == getTrap() || entry.getValue().length == 0) {
                             batch.remove(entry.getKey());
                         } else {

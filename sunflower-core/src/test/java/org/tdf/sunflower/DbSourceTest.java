@@ -49,7 +49,7 @@ public class DbSourceTest {
             rows.put((s + x).getBytes(), (s + x).getBytes());
         }
 
-        batchAbleStore.putAll(rows);
+        batchAbleStore.putAll(rows.entrySet());
         for (int x = 0; x < 10; x++) {
             int finalX = x;
             assert batchAbleStore.stream().anyMatch(y -> Arrays.equals(y.getKey(), (s + finalX).getBytes()));
@@ -58,7 +58,7 @@ public class DbSourceTest {
             assert batchAbleStore.get(k).isPresent();
             assert Arrays.equals(batchAbleStore.get(k).get(), k);
             if(batchAbleStore instanceof RocksDb){
-//                assert batchAbleStore.prefixLookup(Arrays.copyOfRange(k, 0, k.length - 1)).isPresent();
+//                assert batchAbleStore.prefixLookup(Arrays.copyOfRane(k, 0, k.length - 1)).isPresent();
             }
             assert !batchAbleStore.get(Arrays.copyOfRange(k, 0, k.length - 1)).isPresent();
         }

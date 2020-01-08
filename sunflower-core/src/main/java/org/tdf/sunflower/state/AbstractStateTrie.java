@@ -47,17 +47,11 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         DELETED = getPrefix() + "-deleted";
         this.updater = updater;
 
-        if (logDeletes) {
-            trieStore = new NoDeleteStore<>(
-                    factory.create(TRIE),
-                    factory.create(DELETED)
+
+        trieStore = new NoDeleteStore<>(
+                    factory.create(TRIE)
             );
-        } else {
-            trieStore = new NoDeleteStore<>(
-                    factory.create(TRIE),
-                    Store.getNop()
-            );
-        }
+
 
         trie = Trie.<ID, S>builder()
                 .hashFunction(HashFunctions::keccak256)

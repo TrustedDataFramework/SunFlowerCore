@@ -70,18 +70,12 @@ public class CachedStore<K, V> implements Store<K, V> {
         if (cache.isEmpty()) return;
         if (delegate instanceof BatchStore) {
             BatchStore<K, V> bat = (BatchStore<K, V>) delegate;
-            bat.putAll(cache);
+            bat.putAll(cache.entrySet());
             bat.flush();
             clearCache();
             return;
         }
-        cache.forEach((k, v) -> {
-            if (isTrap(v)) {
-                delegate.remove(k);
-                return;
-            }
-            delegate.put(k, v);
-        });
+        cache.forEach(delegate::put);
         clearCache();
         delegate.flush();
     }

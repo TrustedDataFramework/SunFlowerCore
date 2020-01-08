@@ -13,13 +13,11 @@ public class NoDeleteStoreTest {
 
     protected Store<byte[], byte[]> delegated;
 
-    private Store<byte[], byte[]> deleted;
 
     @Before
     public void before() {
         delegated = new ByteArrayMapStore<>();
-        deleted = new ByteArrayMapStore<>();
-        store = new NoDeleteStore<>(delegated, deleted);
+        store = new NoDeleteStore<>(delegated);
         store.put("a".getBytes(), "1".getBytes());
         store.put("b".getBytes(), "2".getBytes());
         store.put("c".getBytes(), "3".getBytes());
@@ -33,8 +31,6 @@ public class NoDeleteStoreTest {
         assert store.get("a".getBytes()).map(x -> Arrays.equals(x, "1".getBytes())).orElse(false);
         store.flush();
         assert store.containsKey("a".getBytes());
-        store.compact();
-        assert !store.containsKey("a".getBytes());
     }
 
     @Test

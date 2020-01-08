@@ -15,7 +15,6 @@ public class ByteArrayMapStore<V> extends MapStore<byte[], V> {
     }
 
     public ByteArrayMapStore(Map<byte[], V> map) {
-        this();
-        super.putAll(map);
+        super(map);
     }
 }
