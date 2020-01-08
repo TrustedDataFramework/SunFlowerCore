@@ -36,11 +36,6 @@ public class MapStore<K, V> implements BatchStore<K, V> {
     }
 
     @Override
-    public boolean isTrap(V v) {
-        return false;
-    }
-
-    @Override
     public Optional<V> get(@NonNull K k) {
         return Optional.ofNullable(map.get(k));
     }
@@ -74,7 +69,6 @@ public class MapStore<K, V> implements BatchStore<K, V> {
     public void remove(@NonNull K k) {
         map.remove(k);
     }
-
 
     @Override
     public boolean containsKey(@NonNull K k) {

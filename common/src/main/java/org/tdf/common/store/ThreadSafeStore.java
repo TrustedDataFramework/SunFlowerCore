@@ -163,4 +163,9 @@ public class ThreadSafeStore<K, V> implements Store<K, V> {
     public V getTrap() {
         return delegate.getTrap();
     }
+
+    @Override
+    public boolean isTrap(V v) {
+        return delegate.isTrap(v);
+    }
 }

@@ -21,25 +21,8 @@ public class NormalCachedStoreTests extends CachedStoreTests{
         }
 
         @Override
-        public void put(byte[] bytes, byte[] bytes2) {
-            Objects.requireNonNull(bytes);
-            Objects.requireNonNull(bytes2);
-            if(bytes2 == getTrap()) {
-                getMap().remove(bytes);
-                return;
-            }
-            getMap().put(bytes, bytes2);
-        }
-
-        @Override
-        public void putAll(Map<byte[], byte[]> rows) {
-            rows.forEach((k, v) -> {
-                if(v == null) {
-                    remove(k);
-                    return;
-                }
-                put(k, v);
-            });
+        public boolean isTrap(byte[] bytes) {
+            return bytes == getTrap() || bytes.length == 0;
         }
     }
 }

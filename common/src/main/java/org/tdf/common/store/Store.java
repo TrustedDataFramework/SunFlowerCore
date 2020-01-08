@@ -84,7 +84,7 @@ public interface Store<K, V> {
      * @return if v is trap like
      */
     default boolean isTrap(V v){
-        return v == getTrap();
+        return false;
     }
 
     /**

@@ -105,4 +105,9 @@ public class ReadOnlyStore<K, V> implements Store<K, V> {
     public Stream<Map.Entry<K, V>> stream() {
         return delegate.stream();
     }
+
+    @Override
+    public boolean isTrap(V v) {
+        return delegate.isTrap(v);
+    }
 }

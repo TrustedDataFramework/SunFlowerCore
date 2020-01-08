@@ -20,6 +20,11 @@ public interface DatabaseStore extends BatchStore<byte[], byte[]> {
         return HexBytes.EMPTY_BYTES;
     }
 
+    @Override
+    default boolean isTrap(byte[] bytes) {
+        return bytes == getTrap() || bytes.length == 0;
+    }
+
     /**
      * @return true if DB connection is alive
      */
@@ -37,9 +42,11 @@ public interface DatabaseStore extends BatchStore<byte[], byte[]> {
      * @param key         a key for the lookup
      * @param prefixBytes prefix length in bytes
      * @return first value picked by prefix lookup over DB or null if there is no match
-     * @throws RuntimeException if operation is not supported
+     * @throws UnsupportedOperationException if operation is not supported
      */
-    Optional<byte[]> prefixLookup(byte[] key, int prefixBytes);
+    default Optional<byte[]> prefixLookup(byte[] key, int prefixBytes){
+        throw new UnsupportedOperationException();
+    }
 
 
     /**

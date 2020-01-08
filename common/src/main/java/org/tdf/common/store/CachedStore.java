@@ -35,6 +35,11 @@ public class CachedStore<K, V> implements Store<K, V> {
         return delegate.getTrap();
     }
 
+    @Override
+    public boolean isTrap(V v) {
+        return delegate.isTrap(v);
+    }
+
     void clearCache() {
         cache = cacheSupplier.get();
     }
@@ -108,4 +113,6 @@ public class CachedStore<K, V> implements Store<K, V> {
             return traverser.apply(k, v);
         });
     }
+
+
 }

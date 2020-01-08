@@ -73,4 +73,13 @@ public class StoreWrapper<K, V, U, R>
                 (u, r) -> traverser.apply(keyCodec.getDecoder().apply(u), valueCodec.getDecoder().apply(r))
         );
     }
+
+    @Override
+    public V getTrap() {
+        return valueCodec.getDecoder().apply(store.getTrap());
+    }
+
+    public boolean isTrap(V v) {
+        return store.isTrap(valueCodec.getEncoder().apply(v));
+    }
 }
