@@ -48,7 +48,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         this.updater = updater;
 
 
-        trieStore = new NoDeleteStore<>(
+        trieStore = new NoDeleteBatchStore<>(
                     factory.create(TRIE)
             );
 
