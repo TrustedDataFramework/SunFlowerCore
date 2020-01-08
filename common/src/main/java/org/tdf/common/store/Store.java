@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 /**
  * abstract storage of key-value mappings
  * the key and value are not allowed to be null
+ *
  * @param <K> key
  * @param <V> value
  * @author zhuyingjie
@@ -79,11 +80,10 @@ public interface Store<K, V> {
     }
 
     /**
-     *
      * @param v value
      * @return if v is trap like
      */
-    default boolean isTrap(V v){
+    default boolean isTrap(V v) {
         return false;
     }
 

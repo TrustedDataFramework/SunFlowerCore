@@ -44,7 +44,7 @@ public interface DatabaseStore extends BatchStore<byte[], byte[]> {
      * @return first value picked by prefix lookup over DB or null if there is no match
      * @throws UnsupportedOperationException if operation is not supported
      */
-    default Optional<byte[]> prefixLookup(byte[] key, int prefixBytes){
+    default Optional<byte[]> prefixLookup(byte[] key, int prefixBytes) {
         throw new UnsupportedOperationException();
     }
 

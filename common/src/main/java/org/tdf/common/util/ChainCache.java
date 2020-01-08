@@ -15,35 +15,24 @@ import java.util.stream.Stream;
  * @author sal 1564319846@qq.com
  */
 public class ChainCache<T extends Chained> extends AbstractSet<T> implements SortedSet<T> {
-    public static <T extends Chained> ChainCache<T> of(Collection<T> nodes) {
-        Builder<T> builder = builder();
-        ChainCache<T> ret = builder.build();
-        ret.addAll(nodes);
-        return ret;
-    }
-
-
     // hash -> node
     private Map<byte[], T> nodes = new ByteArrayMap<>();
     // hash -> children hashes
     private Map<byte[], Set<byte[]>> childrenHashes = new ByteArrayMap<>();
     // hash -> parent hash
     private Map<byte[], byte[]> parentHash = new ByteArrayMap<>();
-
     private TreeSet<T> sorted;
-
     private int sizeLimit;
-
-    public ChainCache() {
-        sorted = new TreeSet<>(comparator);
-    }
-
     // not serializable
     private Comparator<? super T> comparator = (Comparator<T>) (o1, o2) -> {
         if (o1.getHash().equals(o2.getHashPrev())) return -1;
         if (o1.getHashPrev().equals(o2.getHash())) return 1;
         return o1.getHash().compareTo(o2.getHash());
     };
+
+    public ChainCache() {
+        sorted = new TreeSet<>(comparator);
+    }
 
     @lombok.Builder(builderClassName = "Builder")
     public ChainCache(int sizeLimit, Comparator<? super T> comparator) {
@@ -52,6 +41,12 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
         sorted = new TreeSet<>(this.comparator);
     }
 
+    public static <T extends Chained> ChainCache<T> of(Collection<T> nodes) {
+        Builder<T> builder = builder();
+        ChainCache<T> ret = builder.build();
+        ret.addAll(nodes);
+        return ret;
+    }
 
     public ChainCache<T> withLock() {
         return new ChainCacheWrapper<>(this);
@@ -173,17 +168,17 @@ public class ChainCache<T extends Chained> extends AbstractSet<T> implements Sor
         evict();
         return true;
     }
-    
-    public boolean removeByHash(byte[] hash){
+
+    public boolean removeByHash(byte[] hash) {
         T n = nodes.get(hash);
-        if(n == null) return false;
+        if (n == null) return false;
         return remove(n);
     }
 
     @Override
     public boolean remove(Object o) {
         T n = (T) o;
-        if(!sorted.contains(n)) return false;
+        if (!sorted.contains(n)) return false;
         byte[] key = n.getHash().getBytes();
         byte[] k = parentHash.get(key);
         sorted.remove(n);

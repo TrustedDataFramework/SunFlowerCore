@@ -174,7 +174,7 @@ public class LevelDb implements DatabaseStore {
             resetDbLock.readLock().unlock();
         }
     }
-    
+
     private void updateBatchInternal(Map<byte[], byte[]> rows) throws IOException {
         try (WriteBatch batch = db.createWriteBatch()) {
             for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {

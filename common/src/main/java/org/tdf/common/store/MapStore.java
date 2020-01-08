@@ -42,7 +42,7 @@ public class MapStore<K, V> implements BatchStore<K, V> {
 
     @Override
     public void put(@NonNull K k, @NonNull V v) {
-        if(isTrap(v)){
+        if (isTrap(v)) {
             map.remove(k);
             return;
         }
