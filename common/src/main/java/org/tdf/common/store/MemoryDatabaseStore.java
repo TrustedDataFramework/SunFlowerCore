@@ -1,7 +1,5 @@
 package org.tdf.common.store;
 
-import java.util.Optional;
-
 public class MemoryDatabaseStore extends ByteArrayMapStore<byte[]> implements DatabaseStore {
     @Override
     public void init(DBSettings settings) {
