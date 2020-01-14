@@ -7,13 +7,22 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ConcurrentChainCache<T extends Chained> implements ChainCache<T> {
     private ChainCache<T> delegate;
 
     private ReadWriteLock lock = new ReentrantReadWriteLock();
+
+    private ConcurrentChainCache(ChainCache<T> delegate) {
+        this.delegate = delegate;
+    }
+
+    static <T extends Chained> ConcurrentChainCache<T> of(ChainCache<T> delegate) {
+        if (delegate instanceof ConcurrentChainCache)
+            return (ConcurrentChainCache<T>) delegate;
+        return new ConcurrentChainCache<>(delegate);
+    }
 
     @Override
     public Optional<T> get(byte[] hash) {
@@ -127,12 +136,7 @@ public class ConcurrentChainCache<T extends Chained> implements ChainCache<T> {
 
     @Override
     public Comparator<? super T> comparator() {
-        lock.readLock().lock();
-        try {
-            return delegate.comparator();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.comparator();
     }
 
     @Override
@@ -229,7 +233,7 @@ public class ConcurrentChainCache<T extends Chained> implements ChainCache<T> {
     public Iterator<T> iterator() {
         lock.readLock().lock();
         try {
-            return delegate.iterator();
+            return new ArrayList<>(delegate).iterator();
         } finally {
             lock.readLock().unlock();
         }

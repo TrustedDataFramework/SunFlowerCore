@@ -5,8 +5,17 @@ import org.tdf.common.types.Chained;
 import java.util.*;
 
 public interface ChainCache<T extends Chained> extends SortedSet<T> {
+
+    /**
+     * a thread safe chain cache
+     */
+    int CONCURRENT_LEVEL_ONE = 1;
+
     class Builder<T extends Chained> {
         private int maximumSize;
+
+        private int concurrentLevel;
+
         private Comparator<? super T> comparator = (Comparator<T>) (o1, o2) -> {
             if (o1.getHash().equals(o2.getHashPrev())) return -1;
             if (o1.getHashPrev().equals(o2.getHash())) return 1;
@@ -23,8 +32,15 @@ public interface ChainCache<T extends Chained> extends SortedSet<T> {
             return this;
         }
 
+        public Builder<T> concurrentLevel(int concurrentLevel){
+            this.concurrentLevel = concurrentLevel;
+            return this;
+        }
+
         public ChainCache<T> build() {
-            return new ChainCacheImpl<>(maximumSize, comparator);
+            ChainCacheImpl<T> ret = new ChainCacheImpl<>(maximumSize, comparator);
+            if(concurrentLevel == 0) return ret;
+            return ConcurrentChainCache.of(ret);
         }
     }
 
