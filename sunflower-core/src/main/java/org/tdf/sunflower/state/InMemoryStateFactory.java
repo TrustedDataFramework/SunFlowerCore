@@ -1,7 +1,7 @@
 package org.tdf.sunflower.state;
 
 import org.tdf.common.types.Chained;
-import org.tdf.common.util.ChainCache;
+import org.tdf.common.util.ChainCacheImpl;
 import org.tdf.common.util.ChainedWrapper;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.StateUpdateException;
@@ -16,11 +16,11 @@ import java.util.Optional;
 @Deprecated
 // use trie instead
 public class InMemoryStateFactory<T extends State<T>> implements StateFactory<T> {
-    private ChainCache<ChainedWrapper<T>> cache;
+    private ChainCacheImpl<ChainedWrapper<T>> cache;
     private HexBytes where;
 
     public InMemoryStateFactory(Block genesis, T state) {
-        this.cache = new ChainCache<>();
+        this.cache = new ChainCacheImpl<>();
         cache.add(new ChainedWrapper<>(genesis.getHashPrev(), genesis.getHash(), state));
         this.where = genesis.getHash();
     }

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.tdf.common.util.ChainCache;
+import org.tdf.common.util.ChainCacheImpl;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.types.Block;
 
@@ -19,7 +20,7 @@ public class ConsortiumRepositoryService implements ConsortiumRepository {
         public abstract void writeBlock(Block block);
     }
 
-    private ChainCache<Block> cache = new ChainCache<>();
+    private ChainCache<Block> cache = new ChainCacheImpl<>();
 
     @Qualifier("blockRepositoryService")
     @Autowired

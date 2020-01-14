@@ -5,6 +5,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.ChainCache;
+import org.tdf.common.util.ChainCacheImpl;
 import org.tdf.common.util.HexBytes;
 
 import java.util.ArrayList;
@@ -67,10 +68,7 @@ public class ChainCacheTest {
 
             ));
         }
-        ChainCache<Node> cache = new ChainCache<>(sizeLimit, Comparator.comparingLong(Node::getHeight));
-        if ("true".equals(System.getenv("WRAPPER"))) {
-            cache = cache.withLock();
-        }
+        ChainCacheImpl<Node> cache = new ChainCacheImpl<>(sizeLimit, Comparator.comparingLong(Node::getHeight));
         cache.add(genesis);
         cache.addAll(chain0);
         cache.addAll(chain1);

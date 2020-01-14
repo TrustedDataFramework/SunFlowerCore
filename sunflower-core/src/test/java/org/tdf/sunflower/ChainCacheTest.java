@@ -112,7 +112,7 @@ public class ChainCacheTest {
         }
         ChainCache.Builder<Node> builder = ChainCache.builder();
         ChainCache<Node> cache = builder
-                .sizeLimit(sizeLimit)
+                .maximumSize(sizeLimit)
                 .comparator((x, y) -> {
                     if(x.getHeight() != y.getHeight())
                         return Long.compare(x.getHeight(), y.getHeight());

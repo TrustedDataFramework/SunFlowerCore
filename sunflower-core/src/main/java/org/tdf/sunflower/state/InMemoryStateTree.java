@@ -26,7 +26,7 @@ public class InMemoryStateTree<T extends ForkAbleState<T>> implements StateTree<
         if (states.size() == 0) throw new RuntimeException("at lease one states required");
         some = states.stream().findFirst().get();
         root = new StateMap<>(genesis.getHashPrev(), genesis.getHash(), states);
-        cache = new ChainCache<>();
+        cache = ChainCache.<StateMap<T>>builder().build();
     }
 
     public void update(Block b) {
