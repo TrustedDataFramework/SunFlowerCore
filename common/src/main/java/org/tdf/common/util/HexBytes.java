@@ -25,7 +25,7 @@ import java.util.Arrays;
 @JsonSerialize(using = HexBytesUtils.HexBytesSerializer.class)
 @RLPEncoding(HexBytesEncoder.class)
 @RLPDecoding(HexBytesDecoder.class)
-public class HexBytes implements Comparable<HexBytes>, Serializable {
+public final class HexBytes implements Comparable<HexBytes>, Serializable {
 
     public static final byte[] EMPTY_BYTES = new byte[0];
     // singleton zero value of HexBytes
