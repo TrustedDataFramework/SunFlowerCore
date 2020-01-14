@@ -34,16 +34,14 @@ public class ChainCacheImpl<T extends Chained> extends AbstractSet<T> implements
         sorted = new TreeSet<>(comparator);
     }
 
-    @lombok.Builder(builderClassName = "Builder")
     public ChainCacheImpl(int sizeLimit, Comparator<? super T> comparator) {
         this.sizeLimit = sizeLimit;
         if (comparator != null) this.comparator = comparator;
         sorted = new TreeSet<>(this.comparator);
     }
 
-    public static <T extends Chained> ChainCache<T> of(Collection<T> nodes) {
-        Builder<T> builder = builder();
-        ChainCacheImpl<T> ret = builder.build();
+    static <T extends Chained> ChainCache<T> of(Collection<T> nodes) {
+        ChainCacheImpl<T> ret = new ChainCacheImpl<>();
         ret.addAll(nodes);
         return ret;
     }
@@ -60,10 +58,7 @@ public class ChainCacheImpl<T extends Chained> extends AbstractSet<T> implements
     }
 
     public ChainCacheImpl<T> clone() {
-        Builder<T> builder = builder();
-        ChainCacheImpl<T> ret = builder.sizeLimit(sizeLimit)
-                .comparator(comparator)
-                .build();
+        ChainCacheImpl<T> ret = new ChainCacheImpl<>(sizeLimit, comparator);
         ret.nodes = new ByteArrayMap<>(nodes);
         Map<byte[], Set<byte[]>> tmp =
                 childrenHashes;

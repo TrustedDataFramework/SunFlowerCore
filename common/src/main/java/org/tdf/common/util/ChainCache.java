@@ -2,10 +2,7 @@ package org.tdf.common.util;
 
 import org.tdf.common.types.Chained;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.SortedSet;
+import java.util.*;
 
 public interface ChainCache<T extends Chained> extends SortedSet<T> {
     class Builder<T extends Chained> {
@@ -33,6 +30,10 @@ public interface ChainCache<T extends Chained> extends SortedSet<T> {
 
     static <T extends Chained> Builder<T> builder(){
         return new Builder<>();
+    }
+
+    static <T extends Chained> ChainCache<T> of(Collection<T> nodes) {
+        return ChainCacheImpl.of(nodes);
     }
 
     Optional<T> get(byte[] hash);
