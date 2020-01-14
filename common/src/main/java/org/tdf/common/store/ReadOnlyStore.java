@@ -2,10 +2,7 @@ package org.tdf.common.store;
 
 import lombok.NonNull;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -66,23 +63,23 @@ public class ReadOnlyStore<K, V> implements Store<K, V> {
 
     @Override
     public Set<K> keySet() {
-        throw new UnsupportedOperationException(READ_ONLY_TIP);
+        return Collections.unmodifiableSet(delegate.keySet());
     }
 
     @Override
     public Collection<V> values() {
-        throw new UnsupportedOperationException(READ_ONLY_TIP);
+        return Collections.unmodifiableCollection(delegate.values());
     }
 
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
-        throw new UnsupportedOperationException(READ_ONLY_TIP);
+        return Collections.unmodifiableSet(delegate.entrySet());
     }
 
 
     @Override
     public Map<K, V> asMap() {
-        throw new UnsupportedOperationException(READ_ONLY_TIP);
+        return Collections.unmodifiableMap(delegate.asMap());
     }
 
 

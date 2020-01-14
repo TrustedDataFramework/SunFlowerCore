@@ -132,7 +132,7 @@ public class ReadOnlyTrie<K, V> implements Trie<K, V> {
 
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
-        throw new UnsupportedOperationException();
+        return Collections.unmodifiableSet(delegate.entrySet());
     }
 
     @Override
@@ -147,6 +147,6 @@ public class ReadOnlyTrie<K, V> implements Trie<K, V> {
 
     @Override
     public Map<K, V> asMap() {
-        throw new UnsupportedOperationException();
+        return Collections.unmodifiableMap(delegate.asMap());
     }
 }
