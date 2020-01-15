@@ -2,6 +2,8 @@ package org.tdf.sunflower.vrf;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Test;
 import org.tdf.common.util.HexBytes;
@@ -37,14 +39,14 @@ public class VrfBlockFieldsTest {
     @Test
     public void testRlpNull() {
         VrfBlockFields vbf1 = VrfBlockFields.builder().seed(null).priority(null).proposalProof(null)
-                .parentReductionCommitProof(null).parentFinalCommitProof(null).build();
+                .parentReductionCommitProofs(null).parentFinalCommitProofs(null).build();
         byte[] encoded = RLPCodec.encode(vbf1);
         VrfBlockFields vbf2 = RLPCodec.decode(encoded, VrfBlockFields.class);
         assert (ByteUtil.isNullOrZeroArray(vbf2.getSeed()));
         assert (ByteUtil.isNullOrZeroArray(vbf2.getPriority()));
         assert (ByteUtil.isNullOrZeroArray(vbf2.getProposalProof()));
-        assert (ByteUtil.isNullOrZeroArray(vbf2.getParentReductionCommitProof()));
-        assert (ByteUtil.isNullOrZeroArray(vbf2.getParentFinalCommitProof()));
+        assert (vbf2.getParentReductionCommitProofs() == null);
+        assert (vbf2.getParentFinalCommitProofs() == null);
     }
 
     @Test
@@ -73,10 +75,12 @@ public class VrfBlockFieldsTest {
         assert (ByteUtil.toHexString(vbf2.getPriority()).equals(priorityStr));
 
         ProposalProof proposalProofDecoded = RLPCodec.decode(vbf2.getProposalProof(), ProposalProof.class);
-        CommitProof parentReductionCommitProofDecoded = RLPCodec.decode(vbf2.getParentReductionCommitProof(),
-                CommitProof.class);
-        CommitProof parentFinalCommitProofDecoded = RLPCodec.decode(vbf2.getParentFinalCommitProof(),
-                CommitProof.class);
+        List<CommitProof> parentReductionCommitProofs = VrfUtil
+                .parseCommitProofs(vbf2.getParentReductionCommitProofs());
+        CommitProof parentReductionCommitProofDecoded = parentReductionCommitProofs.get(0);
+
+        List<CommitProof> parentFinalCommitProofs = VrfUtil.parseCommitProofs(vbf2.getParentFinalCommitProofs());
+        CommitProof parentFinalCommitProofDecoded = parentFinalCommitProofs.get(0);
 
         assert (proposalProofDecoded.getRound() == round);
         assert (ByteUtil.toHexString(proposalProofDecoded.getBlockIdentifier().getHash()).equals(blockHashStr));
@@ -111,8 +115,10 @@ public class VrfBlockFieldsTest {
 
         // Get proofs from block.
         ProposalProof proposalProof = VrfUtil.getProposalProof(block);
-        CommitProof parentReductionCommitProofDecoded = VrfUtil.getParentReductionCommitProof(block);
-        CommitProof parentFinalCommitProofDecoded = VrfUtil.getParentFinalCommitProof(block);
+        List<CommitProof> parentReductionCommitProofs = VrfUtil.getParentReductionCommitProofList(block);
+        CommitProof parentReductionCommitProofDecoded = parentReductionCommitProofs.get(0);
+        List<CommitProof> parentFinalCommitProofs = VrfUtil.getParentFinalCommitProofList(block);
+        CommitProof parentFinalCommitProofDecoded = parentFinalCommitProofs.get(0);
 
         assert (ByteUtil.toHexString(VrfUtil.getPriority(block)).equals(priorityStr));
         assert (ByteUtil.toHexString(VrfUtil.getSeed(block)).equals(seedStr));
@@ -146,8 +152,10 @@ public class VrfBlockFieldsTest {
 
         // Create proofs
         ProposalProof proposalProof = RLPCodec.decode(vrfBlockFields.getProposalProof(), ProposalProof.class);
-        CommitProof parentReductionCommitProof = VrfUtil.readParentReductionCommitProof(vrfConfig);
-        CommitProof parentFinalCommitProof = VrfUtil.readParentFinalCommitProof(vrfConfig);
+        List<CommitProof> parentReductionCommitProofList = VrfUtil
+                .parseCommitProofs(VrfUtil.readParentReductionCommitProofs(vrfConfig));
+        List<CommitProof> parentFinalCommitProofList = VrfUtil
+                .parseCommitProofs(VrfUtil.readParentFinalCommitProofs(vrfConfig));
 
         Block block = new Block();
 
@@ -160,8 +168,9 @@ public class VrfBlockFieldsTest {
 
         // Set proofs to block
         VrfUtil.setProposalProof(block, proposalProof);
-        VrfUtil.setParentReductionCommitProof(block, parentReductionCommitProof);
-        VrfUtil.setParentFinalCommitProof(block, parentFinalCommitProof);
+        VrfUtil.setParentReductionCommitProofs(block,
+                VrfUtil.commitProofListToCommaSepStr(parentReductionCommitProofList));
+        VrfUtil.setParentFinalCommitProofs(block, VrfUtil.commitProofListToCommaSepStr(parentFinalCommitProofList));
 
         assert (ByteUtil.toHexString(VrfUtil.getPriority(block)).equals(priorityStr));
         assert (ByteUtil.toHexString(VrfUtil.getSeed(block)).equals(seedStr));
@@ -169,8 +178,10 @@ public class VrfBlockFieldsTest {
 
         // Get proofs from block
         ProposalProof proposalProof2 = VrfUtil.getProposalProof(block);
-        CommitProof parentReductionCommitProof2 = VrfUtil.getParentReductionCommitProof(block);
-        CommitProof parentFinalCommitProof2 = VrfUtil.getParentFinalCommitProof(block);
+        List<CommitProof> parentReductionCommitProofs2 = VrfUtil.getParentReductionCommitProofList(block);
+        CommitProof parentReductionCommitProof2 = parentReductionCommitProofs2.get(0);
+        List<CommitProof> parentFinalCommitProofs2 = VrfUtil.getParentFinalCommitProofList(block);
+        CommitProof parentFinalCommitProof2 = parentFinalCommitProofs2.get(0);
 
         assert (proposalProof2.getRound() == round);
         assert (ByteUtil.toHexString(proposalProof2.getBlockIdentifier().getHash()).equals(blockHashStr));
@@ -223,7 +234,8 @@ public class VrfBlockFieldsTest {
         String filePath = tmpDir.getAbsolutePath() + File.separator + "proof.txt";
         VrfUtil.writeCommitProofToFile(commitProof, filePath);
 
-        CommitProof commitProof2 = VrfUtil.readCommitProofFromFile(filePath);
+        List<CommitProof> commitProofs2 = VrfUtil.parseCommitProofs(VrfUtil.readCommitProofsFromFile(filePath));
+        CommitProof commitProof2 = commitProofs2.get(0);
         assert (ByteUtil.toHexString(commitProof2.getVrfProof().getSeed()).equals(seedStr));
         assert (ByteUtil.toHexString(commitProof2.getCoinbase()).equals(minerCoinbaseStr));
         assert (commitProof2.getRound() == round);
@@ -232,7 +244,7 @@ public class VrfBlockFieldsTest {
         assert (ByteUtil.toHexString(commitProof2.getCoinbase()).equals(minerCoinbaseStr));
         assert (ByteUtil.toHexString(commitProof2.getVrfPk()).equals(ByteUtil.toHexString(vrfPk)));
 
-        CommitProof commitProof3 = VrfUtil.readCommitProofFromFile(filePath + "abc");
+        List<CommitProof> commitProof3 = VrfUtil.parseCommitProofs(VrfUtil.readCommitProofsFromFile(filePath + "abc"));
         assert (commitProof3 == null);
     }
 

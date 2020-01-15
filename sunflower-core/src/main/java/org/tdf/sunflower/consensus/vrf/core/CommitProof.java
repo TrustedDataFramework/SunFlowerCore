@@ -158,6 +158,14 @@ public class CommitProof {
         return blockIdentifier;
     }
 
+    public long getBlockNumber() {
+        return getBlockIdentifier().getNumber();
+    }
+
+    public byte[] getBlockHash() {
+        return getBlockIdentifier().getHash();
+    }
+
     public byte[] getSignature() {
         parseRLP();
 

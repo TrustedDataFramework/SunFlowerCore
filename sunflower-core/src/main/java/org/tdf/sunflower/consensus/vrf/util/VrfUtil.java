@@ -2,6 +2,8 @@ package org.tdf.sunflower.consensus.vrf.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
@@ -275,12 +277,11 @@ public class VrfUtil {
             throws IOException {
 
         ProposalProof proposalProof = genProposalProof(blockNum, round, seed, minerCoinbase, blockHash, vrfSk, vrfPk);
-        CommitProof parentReductionCommitProof = VrfUtil.readParentReductionCommitProof(vrfConfig);
-        CommitProof parentFinalCommitProof = VrfUtil.readParentFinalCommitProof(vrfConfig);
+        String parentReductionCommitProofs = VrfUtil.readParentReductionCommitProofs(vrfConfig);
+        String parentFinalCommitProofs = VrfUtil.readParentFinalCommitProofs(vrfConfig);
         VrfBlockFields vbf1 = VrfBlockFields.builder().seed(seed).priority(priority).miner(minerCoinbase)
-                .proposalProof(RLPCodec.encode(proposalProof))
-                .parentReductionCommitProof(RLPCodec.encode(parentReductionCommitProof))
-                .parentFinalCommitProof(RLPCodec.encode(parentFinalCommitProof)).build();
+                .proposalProof(RLPCodec.encode(proposalProof)).parentReductionCommitProofs(parentReductionCommitProofs)
+                .parentFinalCommitProofs(parentFinalCommitProofs).build();
         return vbf1;
     }
 
@@ -375,22 +376,17 @@ public class VrfUtil {
         return getVrfCacheDir(vrfConfig) + File.separator + VrfConstants.FINAL_COMMIT_PROOF_FILE_NAME;
     }
 
-    public static CommitProof readParentReductionCommitProof(VrfConfig vrfConfig) throws IOException {
-        return readCommitProofFromFile(getReductionCommitProofCachePath(vrfConfig));
+    public static String readParentReductionCommitProofs(VrfConfig vrfConfig) throws IOException {
+        return readCommitProofsFromFile(getReductionCommitProofCachePath(vrfConfig));
     }
 
-    public static CommitProof readParentFinalCommitProof(VrfConfig vrfConfig) throws IOException {
-        return readCommitProofFromFile(getFinalCommitProofCachePath(vrfConfig));
+    public static String readParentFinalCommitProofs(VrfConfig vrfConfig) throws IOException {
+        return readCommitProofsFromFile(getFinalCommitProofCachePath(vrfConfig));
     }
 
-    public static CommitProof readCommitProofFromFile(String filePath) throws IOException {
-        String proofString = FileUtil.readTxtFile(filePath);
-        if (proofString != null) {
-            byte[] proofBytes = ByteUtil.hexStringToBytes(proofString);
-            CommitProof commitProof = RLPCodec.decode(proofBytes, CommitProof.class);
-            return commitProof;
-        }
-        return null;
+    public static String readCommitProofsFromFile(String filePath) throws IOException {
+        String proofsString = FileUtil.readTxtFile(filePath);
+        return proofsString;
     }
 
     public static void writeCommitProofToFile(CommitProof commitProof, String filePath) throws IOException {
@@ -411,57 +407,116 @@ public class VrfUtil {
         writeCommitProofToFile(commitProof, filePath);
     }
 
-    public static void setParentReductionCommitProof(Header header, CommitProof parentReductionCommitProof) {
+    public static void setParentReductionCommitProofs(Header header, String parentReductionCommitProofs) {
         HexBytes payload = header.getPayload();
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setParentReductionCommitProof(RLPCodec.encode(parentReductionCommitProof));
+        vrfBlockFields.setParentReductionCommitProofs(parentReductionCommitProofs);
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
         header.setPayload(HexBytes.fromBytes(encoded));
     }
 
-    public static void setParentReductionCommitProof(Block block, CommitProof parentReductionCommitProof) {
-        setParentReductionCommitProof(block.getHeader(), parentReductionCommitProof);
+    public static void setParentReductionCommitProofs(Block block, String parentReductionCommitProofs) {
+        setParentReductionCommitProofs(block.getHeader(), parentReductionCommitProofs);
     }
 
-    public static void setParentFinalCommitProof(Header header, CommitProof parentFinalCommitProof) {
+    public static void setParentFinalCommitProofs(Header header, String parentFinalCommitProofs) {
         HexBytes payload = header.getPayload();
         VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setParentFinalCommitProof(RLPCodec.encode(parentFinalCommitProof));
+        vrfBlockFields.setParentFinalCommitProofs(parentFinalCommitProofs);
 
         byte[] encoded = RLPCodec.encode(vrfBlockFields);
         header.setPayload(HexBytes.fromBytes(encoded));
     }
 
-    public static void setParentFinalCommitProof(Block block, CommitProof parentFinalCommitProof) {
-        setParentFinalCommitProof(block.getHeader(), parentFinalCommitProof);
+    public static void setParentFinalCommitProofs(Block block, String parentFinalCommitProofs) {
+        setParentFinalCommitProofs(block.getHeader(), parentFinalCommitProofs);
     }
 
-    public static CommitProof getParentReductionCommitProof(HexBytes payload) {
+    public static String getParentReductionCommitProofs(HexBytes payload) {
         byte[] encoded = payload.getBytes();
         VrfBlockFields vrfBlockFields = RLPCodec.decode(encoded, VrfBlockFields.class);
-        return RLPCodec.decode(vrfBlockFields.getParentReductionCommitProof(), CommitProof.class);
+        return vrfBlockFields.getParentReductionCommitProofs();
     }
 
-    public static CommitProof getParentReductionCommitProof(Header header) {
-        return getParentReductionCommitProof(header.getPayload());
+    public static String getParentReductionCommitProofs(Header header) {
+        return getParentReductionCommitProofs(header.getPayload());
     }
 
-    public static CommitProof getParentReductionCommitProof(Block block) {
-        return getParentReductionCommitProof(block.getPayload());
+    public static String getParentReductionCommitProofs(Block block) {
+        return getParentReductionCommitProofs(block.getPayload());
     }
 
-    public static CommitProof getParentFinalCommitProof(HexBytes payload) {
+    public static String getParentFinalCommitProofs(HexBytes payload) {
         byte[] encoded = payload.getBytes();
         VrfBlockFields vrfBlockFields = RLPCodec.decode(encoded, VrfBlockFields.class);
-        return RLPCodec.decode(vrfBlockFields.getParentFinalCommitProof(), CommitProof.class);
+        return vrfBlockFields.getParentFinalCommitProofs();
     }
 
-    public static CommitProof getParentFinalCommitProof(Header header) {
-        return getParentFinalCommitProof(header.getPayload());
+    public static String getParentFinalCommitProofs(Header header) {
+        return getParentFinalCommitProofs(header.getPayload());
     }
 
-    public static CommitProof getParentFinalCommitProof(Block block) {
-        return getParentFinalCommitProof(block.getPayload());
+    public static String getParentFinalCommitProofs(Block block) {
+        return getParentFinalCommitProofs(block.getPayload());
+    }
+
+    /**
+     * @param proofsString: comma separated string, each item is a RLP encoded bytes
+     *                      string of CommitProof.
+     * @return
+     */
+    public static List<CommitProof> parseCommitProofs(String proofsString) {
+        if (proofsString == null) {
+            return null;
+        }
+        String[] proofArrayStr = proofsString.split(",");
+        ArrayList<CommitProof> proofList = new ArrayList<>();
+        for (int i = 0; i < proofArrayStr.length; i++) {
+            byte[] data = ByteUtil.hexStringToBytes(proofArrayStr[i]);
+            CommitProof commitProof = RLPCodec.decode(data, CommitProof.class);
+            proofList.add(commitProof);
+        }
+        return proofList;
+    }
+
+    public static List<CommitProof> getParentReductionCommitProofList(HexBytes payload) {
+        return parseCommitProofs(getParentReductionCommitProofs(payload));
+    }
+
+    public static List<CommitProof> getParentReductionCommitProofList(Header header) {
+        return getParentReductionCommitProofList(header.getPayload());
+    }
+
+    public static List<CommitProof> getParentReductionCommitProofList(Block block) {
+        return getParentReductionCommitProofList(block.getPayload());
+    }
+
+    public static List<CommitProof> getParentFinalCommitProofList(HexBytes payload) {
+        return parseCommitProofs(getParentReductionCommitProofs(payload));
+    }
+
+    public static List<CommitProof> getParentFinalCommitProofList(Header header) {
+        return getParentFinalCommitProofList(header.getPayload());
+    }
+
+    public static List<CommitProof> getParentFinalCommitProofList(Block block) {
+        return getParentFinalCommitProofList(block.getPayload());
+    }
+
+    public static String commitProofListToCommaSepStr(List<CommitProof> list) {
+        if (list == null) {
+            return null;
+        }
+
+        StringBuffer tmp = new StringBuffer();
+        int size = list.size();
+        for (int i = 0; i < size; i++) {
+            tmp.append(ByteUtil.toHexString(RLPCodec.encode(list.get(i)))).append(',');
+        }
+        if (tmp.length() > 0) {
+            tmp.deleteCharAt(tmp.length() - 1);
+        }
+        return tmp.toString();
     }
 }

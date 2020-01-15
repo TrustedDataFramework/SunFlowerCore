@@ -27,9 +27,11 @@ public class VrfBlockFields {
     private byte[] proposalProof;
 
     @RLP(4)
-    private byte[] parentReductionCommitProof;
+    // RLP encoding strings, comma separated.
+    private String parentReductionCommitProofs;
 
     @RLP(5)
-    private byte[] parentFinalCommitProof;
+    // RLP encoding strings, comma separated.
+    private String parentFinalCommitProofs;
 
 }

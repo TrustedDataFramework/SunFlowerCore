@@ -8,6 +8,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
+import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
@@ -21,7 +22,8 @@ import org.tdf.sunflower.util.RLPUtils;
 public class PendingCommit {
 
     /* It is set as PendingCommit<R> or PendingCommit<F> according to added proof */
-    //private static final Logger logger = LoggerFactory.getLogger("PendingCommit");
+    // private static final Logger logger =
+    // LoggerFactory.getLogger("PendingCommit");
     private final Logger logger;
 
     /* Commit Weights is to add up all voted priority */
@@ -40,19 +42,17 @@ public class PendingCommit {
     private VrfRound vrfRound;
 
     /**
-     * A Hash Map to store committed Reduction/Final Proof Objects with committer's coinbase.
-     * NOTE:
-     * Coinbase is set as key of HashMap, because new VRF keys is chosen when blockchain restart.
-     * So we should collect all committed proof identified by committer's coinbase.
-     * Map<committer coinbase, commit proof>
+     * A Hash Map to store committed Reduction/Final Proof Objects with committer's
+     * coinbase. NOTE: Coinbase is set as key of HashMap, because new VRF keys is
+     * chosen when blockchain restart. So we should collect all committed proof
+     * identified by committer's coinbase. Map<committer coinbase, commit proof>
      */
     private HashMapDB<CommitProof> commitProofs = new HashMapDB<>();
     /**
-     * Store weights in priority as block identifier be committed.
-     * NOTE:
-     * To let Block Miner get best committed block identifier directly,
-     * we store encoded byte array of block identifier as key.
-     * Map<block identifier encoded, committed weights in priority>E
+     * Store weights in priority as block identifier be committed. NOTE: To let
+     * Block Miner get best committed block identifier directly, we store encoded
+     * byte array of block identifier as key. Map<block identifier encoded,
+     * committed weights in priority>E
      */
     private HashMapDB<CommitWeights> commitWeights = new HashMapDB<>();
 
@@ -83,9 +83,8 @@ public class PendingCommit {
 
         // Require new VRF round should be bigger than old one
         if (compared < 0) {
-            logger.warn("The new VRF Round should not be less than old one ["
-                    + " new VRF Round: " + vrfRound + ", old VRF Round: " + this.vrfRound
-                    + " ]");
+            logger.warn("The new VRF Round should not be less than old one [" + " new VRF Round: " + vrfRound
+                    + ", old VRF Round: " + this.vrfRound + " ]");
         }
 
         vrfRound.setVrfRound(this, newVrfRound);
@@ -120,8 +119,8 @@ public class PendingCommit {
      *
      * @param commitProof New commit proof received from pear node.
      *
-     * @return It return true if new commit proof was added to the queue,
-     *         otherwise it returns false if new proof was not added to the queue.
+     * @return It return true if new commit proof was added to the queue, otherwise
+     *         it returns false if new proof was not added to the queue.
      */
     public synchronized boolean addCommitProof(CommitProof commitProof) {
         if (commitProof == null)
@@ -136,8 +135,8 @@ public class PendingCommit {
         final long blockNum = blockIdentifier.getNumber();
         final long round = commitProof.getRound();
         if (blockNum != vrfRound.getBlockNum() || round != vrfRound.getRound()) {
-            logger.warn("VRF Round is NOT equal, commit proof<{}:{}> - pending<{}:{}>, skip adding",
-                    blockNum, round, vrfRound.getBlockNum(), vrfRound.getRound());
+            logger.warn("VRF Round is NOT equal, commit proof<{}:{}> - pending<{}:{}>, skip adding", blockNum, round,
+                    vrfRound.getBlockNum(), vrfRound.getRound());
             return false;
         }
 
@@ -145,7 +144,8 @@ public class PendingCommit {
         // in case of committing weight duplicated
         CommitProof coinbaseProof = commitProofs.get(commitProof.getCoinbase());
         if (coinbaseProof != null) {
-            logger.warn("The new coming commit proof is already added, new one {}, coinbase one {}", commitProof, coinbaseProof);
+            logger.warn("The new coming commit proof is already added, new one {}, coinbase one {}", commitProof,
+                    coinbaseProof);
             return false;
         }
 
@@ -156,13 +156,16 @@ public class PendingCommit {
             return false;
         }
 
-        logger.info("addCommitProof, Get Priority {}, weight {} / {}", priority, validatorManager.getWeight(commitProof), validatorManager.getTotalWeight());
+        logger.info("addCommitProof, Get Priority {}, weight {} / {}", priority,
+                validatorManager.getWeight(commitProof), validatorManager.getTotalWeight());
 
         // Get the proposal proof by its identifier
         ProposalProof proposalProof = pendingProposal.getPendingProposalByIdentifier(blockIdentifier);
-        // This block identifier is not proposed in Pending Proposal, we can not prove it as a proposed block
+        // This block identifier is not proposed in Pending Proposal, we can not prove
+        // it as a proposed block
         if (proposalProof == null) {
-            logger.error("This Block Identifier is not proposed in Pending Proposal, hash 0x{}, can not prove as a proposed block, ignore it",
+            logger.error(
+                    "This Block Identifier is not proposed in Pending Proposal, hash 0x{}, can not prove as a proposed block, ignore it",
                     Hex.toHexString(blockIdentifier.getHash(), 0, 3));
             return false;
         }
@@ -183,6 +186,10 @@ public class PendingCommit {
         return true;
     }
 
+    public CommitProof getCommitProof(Block block) {
+        return commitProofs.get(VrfUtil.getMiner(block));
+    }
+
     private BlockIdentifier getBestCommittedIdentifier() {
         Set<byte[]> keys = commitWeights.keys();
         if (keys == null || keys.size() <= 0)
@@ -192,7 +199,7 @@ public class PendingCommit {
         byte[] bestIdentifierEncoded = null;
         long bestCommittedWeights = 0;
         /* Get priority weights, the value is weights multiply with priority */
-        //final long totalWeights = validatorManager.getTotalWeight();
+        // final long totalWeights = validatorManager.getTotalWeight();
         Map<byte[], CommitWeights> storage = commitWeights.getStorage();
         Iterator<Map.Entry<byte[], CommitWeights>> iterator = storage.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -200,8 +207,11 @@ public class PendingCommit {
             CommitWeights weights = entry.getValue();
             if (weights.weights > bestCommittedWeights) {
                 if (bestCommittedWeights >= (ValidatorManager.EXPECTED_PROPOSER_THRESHOLD * 2) / 3) {
-                    logger.error("!!! Fatal Error, Sub Optimum ∑{} is reach 2/3 threshold when sorting Best Committed Identifier, PLEASE HELP ME", bestCommittedWeights);
-                };
+                    logger.error(
+                            "!!! Fatal Error, Sub Optimum ∑{} is reach 2/3 threshold when sorting Best Committed Identifier, PLEASE HELP ME",
+                            bestCommittedWeights);
+                }
+                ;
                 bestCommittedWeights = weights.weights;
                 bestIdentifierEncoded = entry.getKey();
             }
@@ -215,7 +225,8 @@ public class PendingCommit {
                 ValidatorManager.EXPECTED_PROPOSER_THRESHOLD, bestCommittedWeights, bestIdentifier);
 
         if (bestCommittedWeights < (ValidatorManager.EXPECTED_PROPOSER_THRESHOLD * 2) / 3) {
-            logger.warn("Commited weights does not reach the threshold, expected threshold: {}, committed weights: {}, identifier: {}",
+            logger.warn(
+                    "Commited weights does not reach the threshold, expected threshold: {}, committed weights: {}, identifier: {}",
                     ValidatorManager.EXPECTED_PROPOSER_THRESHOLD, bestCommittedWeights, bestIdentifier);
 
             return null;
@@ -226,6 +237,7 @@ public class PendingCommit {
 
     /**
      * Check if new block is committed as highest weights
+     *
      * @param header Header of new block to check
      * @return true if it is the best block committed as highest weights
      */
@@ -253,7 +265,8 @@ public class PendingCommit {
 
         int bestProposalPriority = pendingProposal.getBestPendingPriority();
         if (priority < bestProposalPriority) {
-            logger.error("This is NOT the best block arrived. My priority: {}, Best priority: {}", priority, bestProposalPriority);
+            logger.error("This is NOT the best block arrived. My priority: {}, Best priority: {}", priority,
+                    bestProposalPriority);
             return ProofValidationResult.NOT_BEST_BLOCK;
         }
 
@@ -272,8 +285,8 @@ public class PendingCommit {
     }
 
     /**
-     * Reaches agreement on one of these options:
-     *  either agreeing on a proposed block, or agreeing on an empty block.
+     * Reaches agreement on one of these options: either agreeing on a proposed
+     * block, or agreeing on an empty block.
      *
      * @return A proposed block or empty block is reached as final one
      */
