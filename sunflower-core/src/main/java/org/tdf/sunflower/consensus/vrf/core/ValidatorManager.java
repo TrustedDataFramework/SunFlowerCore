@@ -29,6 +29,7 @@ public class ValidatorManager {
     private static final Logger logger = LoggerFactory.getLogger("ValidatorManager");
 
     public static final int EXPECTED_PROPOSER_THRESHOLD = 26;
+    public static final int EXPECTED_BFT_THRESHOLD = EXPECTED_PROPOSER_THRESHOLD * 2 / 3;
 
     /* Make sure DEPOSIT_MIN_VALUE / WEIGHT_UNIT_OF_DEPOSIT > EXPECTED_PROPOSER_THRESHOLD */
 	public static final long WEIGHT_UNIT_OF_DEPOSIT = Validator.DEPOSIT_UNIT_VALUE / 100;

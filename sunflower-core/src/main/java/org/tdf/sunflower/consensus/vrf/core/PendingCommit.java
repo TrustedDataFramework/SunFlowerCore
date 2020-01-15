@@ -206,7 +206,7 @@ public class PendingCommit {
             Map.Entry<byte[], CommitWeights> entry = iterator.next();
             CommitWeights weights = entry.getValue();
             if (weights.weights > bestCommittedWeights) {
-                if (bestCommittedWeights >= (ValidatorManager.EXPECTED_PROPOSER_THRESHOLD * 2) / 3) {
+                if (bestCommittedWeights >= ValidatorManager.EXPECTED_BFT_THRESHOLD) {
                     logger.error(
                             "!!! Fatal Error, Sub Optimum ∑{} is reach 2/3 threshold when sorting Best Committed Identifier, PLEASE HELP ME",
                             bestCommittedWeights);
@@ -224,7 +224,7 @@ public class PendingCommit {
         logger.info("Best committed proposer proof: [expected threshold: {}, committed weights: {}, identifier: {}]",
                 ValidatorManager.EXPECTED_PROPOSER_THRESHOLD, bestCommittedWeights, bestIdentifier);
 
-        if (bestCommittedWeights < (ValidatorManager.EXPECTED_PROPOSER_THRESHOLD * 2) / 3) {
+        if (bestCommittedWeights < ValidatorManager.EXPECTED_BFT_THRESHOLD) {
             logger.warn(
                     "Commited weights does not reach the threshold, expected threshold: {}, committed weights: {}, identifier: {}",
                     ValidatorManager.EXPECTED_PROPOSER_THRESHOLD, bestCommittedWeights, bestIdentifier);
