@@ -16,7 +16,6 @@ import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.mq.BasicMessageQueue;
-import org.tdf.sunflower.mq.MessageQueue;
 import org.tdf.sunflower.mq.SocketIOMessageQueue;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.net.PeerServerImpl;
@@ -150,7 +149,7 @@ public class Start {
         // None consensus actually has no genesis block
         transactionPool.setEngine(engine);
         if (engine == ConsensusEngine.NONE) return engine;
-        consortiumRepository.saveGenesisBlock(engine.getGenesisBlock());
+        consortiumRepository.saveGenesis(engine.getGenesisBlock());
         return engine;
     }
 

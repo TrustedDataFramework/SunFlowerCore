@@ -11,9 +11,9 @@ import java.util.Optional;
 public interface BlockRepository{
     Block getGenesis();
 
-    void saveGenesisBlock(Block block) throws GenesisConflictsException, WriteGenesisFailedException;
+    void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException;
 
-    boolean hasBlock(byte[] hash);
+    boolean containsBlock(byte[] hash);
 
     Header getBestHeader();
 
@@ -42,10 +42,6 @@ public interface BlockRepository{
     Optional<Header> getHeaderByHeight(long height);
 
     Optional<Block> getBlockByHeight(long height);
-
-    Optional<Header> getAncestorHeader(byte[] hash, long ancestorHeight);
-
-    Optional<Block> getAncestorBlock(byte[] hash, long ancestorHeight);
 
     List<Header> getAncestorHeaders(byte[] hash, int limit);
 

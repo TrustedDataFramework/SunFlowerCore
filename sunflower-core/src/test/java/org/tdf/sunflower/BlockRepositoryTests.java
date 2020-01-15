@@ -162,34 +162,11 @@ public class BlockRepositoryTests {
         assert !blockStore.getBlockByHeight(-1).isPresent();
     }
 
-    @Test
-    public void testAncestorHeaderQueries() {
-        Optional<Header> ancestor = blockStore.getAncestorHeader(BigEndian.encodeInt64(9), 0);
-        assert ancestor.isPresent();
-        assert ancestor.get().getHeight() == 0;
-        assertHeader(ancestor.get());
-        assert !blockStore.getAncestorHeader(BigEndian.encodeInt64(9), -1).isPresent();
-        assert blockStore.getAncestorHeaders(BigEndian.encodeInt64(9), 10).size() == 10;
-        assert blockStore.getAncestorHeaders(BigEndian.encodeInt64(9), 0).size() == 0;
-        assert blockStore.getAncestorHeaders(BigEndian.encodeInt64(9), -1).size() == 10;
-    }
-
-    @Test
-    public void testAncestorBlockQueries() {
-        Optional<Block> ancestor = blockStore.getAncestorBlock(BigEndian.encodeInt64(9), 0);
-        assert ancestor.isPresent();
-        assert ancestor.get().getHeight() == 0;
-        assertBlock(ancestor.get());
-        assert !blockStore.getAncestorBlock(BigEndian.encodeInt64(9), -1).isPresent();
-        assert blockStore.getAncestorBlocks(BigEndian.encodeInt64(9), 10).size() == 10;
-        assert blockStore.getAncestorBlocks(BigEndian.encodeInt64(9), 0).size() == 0;
-        assert blockStore.getAncestorBlocks(BigEndian.encodeInt64(9), -1).size() == 10;
-    }
 
     @Test
     public void testGetByID(){
-        assert blockStore.hasBlock(BigEndian.encodeInt64(0));
-        assert blockStore.hasBlock(BigEndian.encodeInt64(9));
-        assert !blockStore.hasBlock(BigEndian.encodeInt64(-1));
+        assert blockStore.containsBlock(BigEndian.encodeInt64(0));
+        assert blockStore.containsBlock(BigEndian.encodeInt64(9));
+        assert !blockStore.containsBlock(BigEndian.encodeInt64(-1));
     }
 }

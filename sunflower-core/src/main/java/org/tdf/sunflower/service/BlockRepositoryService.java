@@ -68,7 +68,7 @@ public class BlockRepositoryService implements BlockRepository {
     }
 
     @Override
-    public void saveGenesisBlock(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
+    public void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
         this.genesis = block;
         Optional<Block> o = getBlockByHeight(0);
         if (!o.isPresent()){
@@ -86,7 +86,7 @@ public class BlockRepositoryService implements BlockRepository {
     }
 
     @Override
-    public boolean hasBlock(byte[] hash) {
+    public boolean containsBlock(byte[] hash) {
         return headerDao.existsById(hash);
     }
 
@@ -172,22 +172,6 @@ public class BlockRepositoryService implements BlockRepository {
     @Override
     public Optional<Block> getBlockByHeight(long height) {
         return blockDao.findByHeight(height).map(Mapping::getFromBlockEntity);
-    }
-
-    @Override
-    public Optional<Header> getAncestorHeader(byte[] hash, long ancestorHeight) {
-        Optional<Header> header = getHeader(hash);
-        return header.map(h -> getHeadersBetween(ancestorHeight, h.getHeight()))
-                .map(ChainCache::of)
-                .map(c -> c.getAncestors(hash))
-                .flatMap(li -> li.stream().filter(x -> x.getHeight() == ancestorHeight).findFirst())
-                ;
-    }
-
-    @Override
-    public Optional<Block> getAncestorBlock(byte[] hash, long ancestorHeight) {
-        Optional<Header> header = getAncestorHeader(hash, ancestorHeight);
-        return header.map(this::getBlockFromHeader);
     }
 
     @Override

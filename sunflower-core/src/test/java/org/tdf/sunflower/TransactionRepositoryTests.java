@@ -50,7 +50,7 @@ public class TransactionRepositoryTests {
         }
         for (int i = 0; i < 10; i++) {
             Block b = getBlock(i);
-            assert !blockStore.hasBlock(b.getHash().getBytes());
+            assert !blockStore.containsBlock(b.getHash().getBytes());
             blockStore.writeBlock(b);
         }
     }
@@ -65,125 +65,10 @@ public class TransactionRepositoryTests {
     public void testHasTransaction() {
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 3; j++) {
-                assert transactionStore.hasTransaction((i + "" + j).getBytes());
+                assert transactionStore.containsTransaction((i + "" + j).getBytes());
             }
         }
-        assert !transactionStore.hasTransaction((1 + "" + 1000).getBytes());
-    }
-
-    @Test
-    public void testHasPayload() {
-        assert transactionStore.hasPayload(BYTES);
-        assert !transactionStore.hasPayload(new byte[]{-1});
-    }
-
-    @Test
-    public void testGetTransactionByHash() {
-        Optional<Transaction> o = transactionStore.getTransactionByHash("00".getBytes());
-        assert o.isPresent();
-        assertTransaction(o.get());
-    }
-
-    @Test
-    public void testGetTransactionByFrom() {
-        assert transactionStore.getTransactionsByFrom(BYTES, 0, Integer.MAX_VALUE).size() == 30;
-        List<Transaction> transactions = transactionStore.getTransactionsByFrom(BYTES, 0, 3);
-        assert transactions.size() == 3;
-        transactions.forEach(t -> {
-            assert t.getHeight() == 0;
-            assertTransaction(t);
-        });
-        assert transactionStore.getTransactionsByFrom("-1".getBytes(), 0, Integer.MAX_VALUE).size() == 0;
-    }
-
-    @Test
-    public void testGetTransactionByFromAndType() {
-        assert transactionStore.getTransactionsByFromAndType(BYTES, 0, 0, Integer.MAX_VALUE).size() == 30;
-        List<Transaction> transactions = transactionStore.getTransactionsByFromAndType(BYTES, 0, 0, 3);
-        assert transactions.size() == 3;
-        transactions.forEach(t -> {
-            assert t.getHeight() == 0;
-            assertTransaction(t);
-        });
-        assert transactionStore.getTransactionsByFromAndType("-1".getBytes(), 0, 0, Integer.MAX_VALUE).size() == 0;
-        assert transactionStore.getTransactionsByFromAndType(BYTES, -1, 0, Integer.MAX_VALUE).size() == 0;
-    }
-
-    @Test
-    public void testGetTransactionByTo() {
-        assert transactionStore.getTransactionsByTo(BYTES, 0, Integer.MAX_VALUE).size() == 30;
-        List<Transaction> transactions = transactionStore.getTransactionsByTo(BYTES, 0, 3);
-        assert transactions.size() == 3;
-        transactions.forEach(t -> {
-            assert t.getHeight() == 0;
-            assertTransaction(t);
-        });
-        assert transactionStore.getTransactionsByTo("-1".getBytes(), 0, Integer.MAX_VALUE).size() == 0;
-    }
-
-    @Test
-    public void testGetTransactionByToAndType() {
-        assert transactionStore.getTransactionsByToAndType(BYTES, 0, 0, Integer.MAX_VALUE).size() == 30;
-        List<Transaction> transactions = transactionStore.getTransactionsByToAndType(BYTES, 0, 0, 3);
-        assert transactions.size() == 3;
-        transactions.forEach(t -> {
-            assert t.getHeight() == 0;
-            assertTransaction(t);
-        });
-        assert transactionStore.getTransactionsByToAndType("-1".getBytes(), 0, 0, Integer.MAX_VALUE).size() == 0;
-        assert transactionStore.getTransactionsByToAndType(BYTES, -1, 0, Integer.MAX_VALUE).size() == 0;
-    }
-
-    @Test
-    public void testGetTransactionByFromAndTo() {
-        assert transactionStore.getTransactionsByFromAndTo(BYTES, BYTES, 0, Integer.MAX_VALUE).size() == 30;
-        List<Transaction> transactions = transactionStore.getTransactionsByFromAndTo(BYTES, BYTES, 0, 3);
-        assert transactions.size() == 3;
-        transactions.forEach(t -> {
-            assert t.getHeight() == 0;
-            assertTransaction(t);
-        });
-        assert transactionStore.getTransactionsByFromAndTo("-1".getBytes(), BYTES, 0, Integer.MAX_VALUE).size() == 0;
-        assert transactionStore.getTransactionsByFromAndTo(BYTES, "-1".getBytes(), 0, Integer.MAX_VALUE).size() == 0;
-    }
-
-    @Test
-    public void testGetTransactionByFromAndToAndType() {
-        assert transactionStore.getTransactionsByFromAndToAndType(BYTES, BYTES, 0, 0, Integer.MAX_VALUE).size() == 30;
-        List<Transaction> transactions = transactionStore.getTransactionsByFromAndToAndType(BYTES, BYTES, 0, 0, 3);
-        assert transactions.size() == 3;
-        transactions.forEach(t -> {
-            assert t.getHeight() == 0;
-            assertTransaction(t);
-        });
-        assert transactionStore.getTransactionsByFromAndToAndType("-1".getBytes(), BYTES, 0, 0, Integer.MAX_VALUE).size() == 0;
-        assert transactionStore.getTransactionsByFromAndToAndType(BYTES, "-1".getBytes(), 0, 0, Integer.MAX_VALUE).size() == 0;
-        assert transactionStore.getTransactionsByFromAndToAndType(BYTES, BYTES, -1, 0, Integer.MAX_VALUE).size() == 0;
-    }
-
-    @Test
-    public void testGetTransactionsByPayload() {
-        assert transactionStore.getTransactionsByPayload(BYTES, 0, Integer.MAX_VALUE).size() == 30;
-        List<Transaction> transactions = transactionStore.getTransactionsByPayload(BYTES, 0, 3);
-        assert transactions.size() == 3;
-        transactions.forEach(t -> {
-            assert t.getHeight() == 0;
-            assertTransaction(t);
-        });
-        assert transactionStore.getTransactionsByPayload("-1".getBytes(), 0, Integer.MAX_VALUE).size() == 0;
-    }
-
-    @Test
-    public void testGetTransactionsByPayloadAndType() {
-        assert transactionStore.getTransactionsByPayloadAndType(BYTES, 0, 0, Integer.MAX_VALUE).size() == 30;
-        List<Transaction> transactions = transactionStore.getTransactionsByPayloadAndType(BYTES, 0, 0, 3);
-        assert transactions.size() == 3;
-        transactions.forEach(t -> {
-            assert t.getHeight() == 0;
-            assertTransaction(t);
-        });
-        assert transactionStore.getTransactionsByPayloadAndType("-1".getBytes(), 0, 0, Integer.MAX_VALUE).size() == 0;
-        assert transactionStore.getTransactionsByPayloadAndType(BYTES, -1, 0, Integer.MAX_VALUE).size() == 0;
+        assert !transactionStore.containsTransaction((1 + "" + 1000).getBytes());
     }
 
     @Test

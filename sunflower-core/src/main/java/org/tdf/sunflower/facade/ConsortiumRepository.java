@@ -46,12 +46,12 @@ public interface ConsortiumRepository extends BlockRepository, TransactionReposi
         }
 
         @Override
-        public void saveGenesisBlock(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
+        public void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
 
         }
 
         @Override
-        public boolean hasBlock(byte[] hash) {
+        public boolean containsBlock(byte[] hash) {
             return false;
         }
 
@@ -126,16 +126,6 @@ public interface ConsortiumRepository extends BlockRepository, TransactionReposi
         }
 
         @Override
-        public Optional<Header> getAncestorHeader(byte[] hash, long ancestorHeight) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Block> getAncestorBlock(byte[] hash, long ancestorHeight) {
-            return Optional.empty();
-        }
-
-        @Override
         public List<Header> getAncestorHeaders(byte[] hash, int limit) {
             return Collections.emptyList();
         }
@@ -151,58 +141,13 @@ public interface ConsortiumRepository extends BlockRepository, TransactionReposi
         }
 
         @Override
-        public boolean hasTransaction(byte[] hash) {
-            return false;
-        }
-
-        @Override
-        public boolean hasPayload(byte[] payload) {
+        public boolean containsTransaction(byte[] hash) {
             return false;
         }
 
         @Override
         public Optional<Transaction> getTransactionByHash(byte[] hash) {
             return Optional.empty();
-        }
-
-        @Override
-        public List<Transaction> getTransactionsByFrom(byte[] from, int page, int size) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Transaction> getTransactionsByFromAndType(byte[] from, int type, int page, int size) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Transaction> getTransactionsByTo(byte[] to, int page, int size) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Transaction> getTransactionsByToAndType(byte[] to, int type, int page, int size) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Transaction> getTransactionsByFromAndTo(byte[] from, byte[] to, int page, int size) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Transaction> getTransactionsByFromAndToAndType(byte[] from, byte[] to, int type, int page, int size) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Transaction> getTransactionsByPayload(byte[] payload, int page, int size) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Transaction> getTransactionsByPayloadAndType(byte[] payload, int type, int page, int size) {
-            return Collections.emptyList();
         }
 
         @Override
