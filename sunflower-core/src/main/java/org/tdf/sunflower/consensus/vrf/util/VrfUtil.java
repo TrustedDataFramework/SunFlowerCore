@@ -3,6 +3,7 @@ package org.tdf.sunflower.consensus.vrf.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.tdf.common.util.HexBytes;
@@ -19,6 +20,7 @@ import org.tdf.sunflower.consensus.vrf.core.CommitProof;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
 import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
 import org.tdf.sunflower.consensus.vrf.core.VrfProof;
+import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
 import org.tdf.sunflower.consensus.vrf.keystore.FileSystemKeystore;
 import org.tdf.sunflower.consensus.vrf.struct.VrfBlockFields;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
@@ -277,8 +279,13 @@ public class VrfUtil {
             throws IOException {
 
         ProposalProof proposalProof = genProposalProof(blockNum, round, seed, minerCoinbase, blockHash, vrfSk, vrfPk);
-        String parentReductionCommitProofs = VrfUtil.readParentReductionCommitProofs(vrfConfig);
-        String parentFinalCommitProofs = VrfUtil.readParentFinalCommitProofs(vrfConfig);
+        String parentReductionCommitProofs = null;
+        String parentFinalCommitProofs = null;
+        if (blockNum > 1) {
+            parentReductionCommitProofs = VrfUtil.readParentReductionCommitProofs(vrfConfig);
+            parentFinalCommitProofs = VrfUtil.readParentFinalCommitProofs(vrfConfig);
+        }
+
         VrfBlockFields vbf1 = VrfBlockFields.builder().seed(seed).priority(priority).miner(minerCoinbase)
                 .proposalProof(RLPCodec.encode(proposalProof)).parentReductionCommitProofs(parentReductionCommitProofs)
                 .parentFinalCommitProofs(parentFinalCommitProofs).build();
@@ -389,22 +396,24 @@ public class VrfUtil {
         return proofsString;
     }
 
-    public static void writeCommitProofToFile(CommitProof commitProof, String filePath) throws IOException {
-        byte[] encoded = RLPCodec.encode(commitProof);
+    public static void writeCommitProofsToFile(HashMapDB<CommitProof> commitProofs, String filePath)
+            throws IOException {
         File file = new File(filePath);
         file.getParentFile().mkdirs();
-        FileUtil.writeTxtFile(ByteUtil.toHexString(encoded), filePath, false, "utf-8");
+        String proofsString = commitProofMapToCommaSepEncodedStr(commitProofs);
+        FileUtil.writeTxtFile(proofsString, filePath, false, "utf-8");
     }
 
-    public static void writeReductionCommitProofToFile(CommitProof commitProof, VrfConfig vrfConfig)
+    public static void writeReductionCommitProofsToFile(HashMapDB<CommitProof> commitProofs, VrfConfig vrfConfig)
             throws IOException {
         String filePath = getReductionCommitProofCachePath(vrfConfig);
-        writeCommitProofToFile(commitProof, filePath);
+        writeCommitProofsToFile(commitProofs, filePath);
     }
 
-    public static void writeFinalCommitProofToFile(CommitProof commitProof, VrfConfig vrfConfig) throws IOException {
+    public static void writeFinalCommitProofsToFile(HashMapDB<CommitProof> commitProofs, VrfConfig vrfConfig)
+            throws IOException {
         String filePath = getFinalCommitProofCachePath(vrfConfig);
-        writeCommitProofToFile(commitProof, filePath);
+        writeCommitProofsToFile(commitProofs, filePath);
     }
 
     public static void setParentReductionCommitProofs(Header header, String parentReductionCommitProofs) {
@@ -517,6 +526,25 @@ public class VrfUtil {
         if (tmp.length() > 0) {
             tmp.deleteCharAt(tmp.length() - 1);
         }
+        return tmp.toString();
+    }
+
+    public static String commitProofMapToCommaSepEncodedStr(HashMapDB<CommitProof> map) {
+        if (map == null) {
+            return null;
+        }
+
+        StringBuffer tmp = new StringBuffer();
+        Iterator<CommitProof> commitProofs = map.getStorage().values().iterator();
+        while (commitProofs.hasNext()) {
+            CommitProof commitProof = commitProofs.next();
+            tmp.append(ByteUtil.toHexString(RLPCodec.encode(commitProof))).append(',');
+        }
+
+        if (tmp.length() > 0) {
+            tmp.deleteCharAt(tmp.length() - 1);
+        }
+
         return tmp.toString();
     }
 }

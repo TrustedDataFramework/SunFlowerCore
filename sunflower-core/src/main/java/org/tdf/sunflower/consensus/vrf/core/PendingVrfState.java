@@ -5,18 +5,16 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
+import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
 import org.tdf.sunflower.types.Header;
 
 /**
- * During consensus protocol, we have two period:
- * # proposal period
- *    block proposer submit its proposal block to network
- * # commit period
- *    there are two stages in commit period:
- *    # committee members sort proposals and submit its committed proof to network.
- *      we called it as reduction commit.
- *    # committee members make final agreement and submit its final agreement to network.
- *      we called it as final commit.
+ * During consensus protocol, we have two period: # proposal period block
+ * proposer submit its proposal block to network # commit period there are two
+ * stages in commit period: # committee members sort proposals and submit its
+ * committed proof to network. we called it as reduction commit. # committee
+ * members make final agreement and submit its final agreement to network. we
+ * called it as final commit.
  *
  * @author James Hu
  * @since 2019/5/16
@@ -30,13 +28,13 @@ public class PendingVrfState {
     /* pending proposal submitted by block proposer */
     private final PendingProposal pendingProposal;
     /**
-     * pending block proposal sorting committing submitted by committee members,
-     * we called it as reduction commit
+     * pending block proposal sorting committing submitted by committee members, we
+     * called it as reduction commit
      */
     private final PendingCommit pendingReductionCommit;
     /**
-     * pending final agreement committing submitted by committee members,
-     * we called it as final commit
+     * pending final agreement committing submitted by committee members, we called
+     * it as final commit
      */
     private final PendingCommit pendingFinalCommit;
 
@@ -141,8 +139,8 @@ public class PendingVrfState {
      *
      * @param commitProof New commit proof received from pear node.
      *
-     * @return It return true if new commit proof was added to the queue,
-     *         otherwise it returns false if new proof was not added to the queue.
+     * @return It return true if new commit proof was added to the queue, otherwise
+     *         it returns false if new proof was not added to the queue.
      */
     public synchronized boolean addCommitProof(CommitProof commitProof) {
         VrfProof vrfProof = commitProof.getVrfProof();
@@ -153,14 +151,14 @@ public class PendingVrfState {
 
         int role = commitProof.getVrfProof().getRole();
         switch (role) {
-            case VrfProof.ROLE_CODES_REDUCTION_COMMIT:
-                return pendingReductionCommit.addCommitProof(commitProof);
-            case VrfProof.ROLE_CODES_FINAL_COMMIT:
-                return pendingFinalCommit.addCommitProof(commitProof);
-            default: {
-                logger.error("Unknown Role of Commit Proof: {}", role);
-                return false;
-            }
+        case VrfProof.ROLE_CODES_REDUCTION_COMMIT:
+            return pendingReductionCommit.addCommitProof(commitProof);
+        case VrfProof.ROLE_CODES_FINAL_COMMIT:
+            return pendingFinalCommit.addCommitProof(commitProof);
+        default: {
+            logger.error("Unknown Role of Commit Proof: {}", role);
+            return false;
+        }
         }
     }
 
@@ -192,7 +190,9 @@ public class PendingVrfState {
     }
 
     /**
-     * Check if new block is committed as best proposal with highest weights in ROLE_CODES_REDUCTION_COMMIT stage
+     * Check if new block is committed as best proposal with highest weights in
+     * ROLE_CODES_REDUCTION_COMMIT stage
+     * 
      * @param header Header of new block to check
      * @return true if it is the best reduction committed as highest weights
      */
@@ -201,7 +201,9 @@ public class PendingVrfState {
     }
 
     /**
-     * Check if new block is committed as final block with highest weights in ROLE_CODES_FINAL_COMMIT stage
+     * Check if new block is committed as final block with highest weights in
+     * ROLE_CODES_FINAL_COMMIT stage
+     * 
      * @param header Header of new block to check
      * @return true if it is the final block committed as highest weights
      */
@@ -214,8 +216,8 @@ public class PendingVrfState {
     }
 
     /**
-     * Reaches agreement on one of these options:
-     *  either agreeing on a proposed block, or agreeing on an empty block.
+     * Reaches agreement on one of these options: either agreeing on a proposed
+     * block, or agreeing on an empty block.
      *
      * @return A proposed block or empty block is reached as final one
      */
@@ -243,5 +245,13 @@ public class PendingVrfState {
 
     public long getFinalCommitSize() {
         return pendingFinalCommit.getCommitSize();
+    }
+
+    public HashMapDB<CommitProof> getReductionCommitProofs() {
+        return pendingReductionCommit.getCommitProofs();
+    }
+
+    public HashMapDB<CommitProof> getFinalCommitProofs() {
+        return pendingFinalCommit.getCommitProofs();
     }
 }

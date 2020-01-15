@@ -309,6 +309,10 @@ public class PendingCommit {
         return keys.size();
     }
 
+    public HashMapDB<CommitProof> getCommitProofs() {
+        return commitProofs;
+    }
+
     public long getCommitWeights(BlockIdentifier blockIdentifier) {
         // Get priority weights of block identifier in committing proof
         byte[] identifierEncoded = blockIdentifier.getHash();

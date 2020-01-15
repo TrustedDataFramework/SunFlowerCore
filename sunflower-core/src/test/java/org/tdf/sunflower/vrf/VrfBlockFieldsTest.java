@@ -2,7 +2,6 @@ package org.tdf.sunflower.vrf;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
@@ -12,6 +11,7 @@ import org.tdf.sunflower.consensus.vrf.VrfConfig;
 import org.tdf.sunflower.consensus.vrf.core.CommitProof;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
 import org.tdf.sunflower.consensus.vrf.core.VrfProof;
+import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
 import org.tdf.sunflower.consensus.vrf.struct.VrfBlockFields;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
@@ -28,6 +28,7 @@ public class VrfBlockFieldsTest {
     String priorityStr = "cdef";
     String blockHashStr = "abcdef";
     String minerCoinbaseStr = "0123456789abcdef";
+    byte[] minerCoinbase = ByteUtil.hexStringToBytes(minerCoinbaseStr);
     VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKeyDummy();
     byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
 
@@ -232,7 +233,9 @@ public class VrfBlockFieldsTest {
         }
 
         String filePath = tmpDir.getAbsolutePath() + File.separator + "proof.txt";
-        VrfUtil.writeCommitProofToFile(commitProof, filePath);
+        HashMapDB<CommitProof> commitProofs = new HashMapDB<CommitProof>();
+        commitProofs.put(minerCoinbase, commitProof);
+        VrfUtil.writeCommitProofsToFile(commitProofs, filePath);
 
         List<CommitProof> commitProofs2 = VrfUtil.parseCommitProofs(VrfUtil.readCommitProofsFromFile(filePath));
         CommitProof commitProof2 = commitProofs2.get(0);
@@ -251,9 +254,18 @@ public class VrfBlockFieldsTest {
     private void genCommitProofsCache() throws IOException {
         CommitProof reductionCommitProof = VrfUtil.genCommitlProof(blockNum, round, seedStr, minerCoinbaseStr,
                 blockHashStr, vrfSk, vrfPk, VrfProof.ROLE_CODES_REDUCTION_COMMIT);
-        VrfUtil.writeReductionCommitProofToFile(reductionCommitProof, vrfConfig);
+
+        HashMapDB<CommitProof> reductionCommitProofs = new HashMapDB<CommitProof>();
+        reductionCommitProofs.put(minerCoinbase, reductionCommitProof);
+
+        VrfUtil.writeReductionCommitProofsToFile(reductionCommitProofs, vrfConfig);
+
         CommitProof finalCommitProof = VrfUtil.genCommitlProof(blockNum, round, seedStr, minerCoinbaseStr, blockHashStr,
                 vrfSk, vrfPk, VrfProof.ROLE_CODES_REDUCTION_COMMIT);
-        VrfUtil.writeFinalCommitProofToFile(finalCommitProof, vrfConfig);
+
+        HashMapDB<CommitProof> finalCommitProofs = new HashMapDB<CommitProof>();
+        finalCommitProofs.put(minerCoinbase, finalCommitProof);
+
+        VrfUtil.writeFinalCommitProofsToFile(finalCommitProofs, vrfConfig);
     }
 }

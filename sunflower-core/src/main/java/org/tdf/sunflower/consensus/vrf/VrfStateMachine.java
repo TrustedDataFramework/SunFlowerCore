@@ -84,6 +84,8 @@ public class VrfStateMachine {
     // Current VRF round of the VRF state machine
     private final VrfRound vrfRound;
 
+    private VrfConfig vrfConfig;
+
     private BlockRepository blockRepository;
     /**
      * To filter out the blocks and proofs we have already received. Block or Proof
@@ -837,7 +839,7 @@ public class VrfStateMachine {
         }
     }
 
-    private boolean finalizeNewBlock(VrfRound vrfRound, VrfBlockWrapper finalBlock) {
+    private boolean finalizeNewBlock(VrfRound vrfRound, VrfBlockWrapper finalBlock) throws IOException {
         if (listeners.isEmpty()) {
             return true;
         }
@@ -849,7 +851,8 @@ public class VrfStateMachine {
                 return false;
             }
         }
-
+        VrfUtil.writeReductionCommitProofsToFile(pendingVrfState.getReductionCommitProofs(), vrfConfig);
+        VrfUtil.writeFinalCommitProofsToFile(pendingVrfState.getFinalCommitProofs(), vrfConfig);
         return true;
     }
 
@@ -910,4 +913,9 @@ public class VrfStateMachine {
     public void setBlockRepository(BlockRepository blockRepository) {
         this.blockRepository = blockRepository;
     }
+
+    public void setVrfConfig(VrfConfig vrfConfig) {
+        this.vrfConfig = vrfConfig;
+    }
+
 }
