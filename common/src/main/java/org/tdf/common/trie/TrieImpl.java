@@ -127,7 +127,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
                 nullHash,
                 function,
                 store, kCodec, vCodec,
-                Node.fromRootHash(rootHash, new ReadOnlyStore<>(store))
+                Node.fromRootHash(rootHash, ReadOnlyStore.of(store))
         );
     }
 

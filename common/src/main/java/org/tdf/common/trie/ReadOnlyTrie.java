@@ -13,8 +13,8 @@ import java.util.stream.Stream;
 public class ReadOnlyTrie<K, V> implements Trie<K, V> {
     private Trie<K, V> delegate;
 
-    public static <K, V> ReadOnlyTrie<K, V> of(Trie<K, V> trie) {
-        if (trie instanceof ReadOnlyTrie) return (ReadOnlyTrie<K, V>) trie;
+    public static <K, V> Trie<K, V> of(Trie<K, V> trie) {
+        if (trie instanceof ReadOnlyTrie) return trie;
         if (trie.isDirty()) throw new UnsupportedOperationException();
         return new ReadOnlyTrie<>(trie);
     }

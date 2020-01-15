@@ -1,6 +1,7 @@
 package org.tdf.common.store;
 
 import lombok.NonNull;
+import org.tdf.common.trie.ReadOnlyTrie;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -12,8 +13,14 @@ public class ReadOnlyStore<K, V> implements Store<K, V> {
 
     private Store<K, V> delegate;
 
-    public ReadOnlyStore(Store<K, V> delegate) {
+    private ReadOnlyStore(Store<K, V> delegate) {
         this.delegate = delegate;
+    }
+
+    public static <K, V> Store<K, V> of(Store<K, V> delegate) {
+        if (delegate instanceof ReadOnlyStore || delegate instanceof ReadOnlyTrie)
+            return delegate;
+        return new ReadOnlyStore<>(delegate);
     }
 
     @Override
