@@ -206,7 +206,7 @@ public class BlockRepositoryService implements BlockRepository {
 
     @Override
     @Transactional
-    public boolean writeBlock(Block block) {
-        return blockDao.save(Mapping.getEntityFromBlock(block)) != null;
+    public void writeBlock(Block block) {
+        blockDao.save(Mapping.getEntityFromBlock(block));
     }
 }

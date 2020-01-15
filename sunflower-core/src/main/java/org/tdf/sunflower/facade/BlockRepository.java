@@ -47,5 +47,5 @@ public interface BlockRepository{
 
     List<Block> getAncestorBlocks(byte[] hash, int limit);
 
-    boolean writeBlock(Block block);
+    void writeBlock(Block block);
 }

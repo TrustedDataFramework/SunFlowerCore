@@ -136,8 +136,8 @@ public interface ConsortiumRepository extends BlockRepository, TransactionReposi
         }
 
         @Override
-        public boolean writeBlock(Block block) {
-            return false;
+        public void writeBlock(Block block) {
+
         }
 
         @Override

@@ -55,13 +55,12 @@ public class ConsortiumRepositoryService implements ConsortiumRepository {
     }
 
     @Override
-    public boolean writeBlock(Block block) {
+    public void writeBlock(Block block) {
         blockRepository.writeBlock(block);
         listeners.forEach(l -> {
             l.onBlockWritten(block);
             l.onNewBestBlock(block);
             l.onBlockConfirmed(block);
         });
-        return true;
     }
 }
