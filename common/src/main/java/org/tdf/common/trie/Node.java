@@ -546,7 +546,8 @@ class Node {
 
     @NoArgsConstructor
     @AllArgsConstructor
-    static class Proof {
+    @Getter
+    public static class Proof {
         List<Proof> children = Collections.emptyList();
 
         // self != null -> children is empty
