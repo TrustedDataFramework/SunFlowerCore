@@ -1,16 +1,15 @@
 package org.tdf.sunflower.pool;
 
-import com.google.common.cache.Weigher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.tdf.common.util.HexBytes;
+import org.tdf.common.event.EventBus;
+import org.tdf.sunflower.events.NewBestBlock;
+import org.tdf.sunflower.events.NewTransactionCollected;
 import org.tdf.sunflower.facade.*;
-import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -56,12 +55,7 @@ public class TransactionPoolImpl implements TransactionPool {
         }
     }
 
-    private static class TransactionWeigher implements Weigher<HexBytes, Transaction> {
-        @Override
-        public int weigh(HexBytes key, Transaction value) {
-            return value.size();
-        }
-    }
+    private EventBus eventBus;
 
     private HashPolicy hashPolicy;
 
@@ -69,14 +63,14 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private PendingTransactionValidator validator;
 
-    private List<TransactionPoolListener> listeners = new CopyOnWriteArrayList<>();
-
     public void setEngine(ConsensusEngine engine) {
         this.hashPolicy = engine.getHashPolicy();
         this.validator = engine.getValidator();
     }
 
-    public TransactionPoolImpl() {
+    public TransactionPoolImpl(EventBus eventBus) {
+        this.eventBus = eventBus;
+        this.eventBus.subscribe(NewBestBlock.class, this::onNewBestBlock);
         cache = new TreeSet<>((a, b) -> {
             if (a.getNonce() != b.getNonce()) return Long.compare(a.getNonce(), b.getNonce());
             return a.getHash().compareTo(b.getHash());
@@ -98,7 +92,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 if (cache.contains(transaction)) continue;
                 if (validator.validate(transaction).isSuccess()) {
                     cache.add(transaction);
-                    listeners.forEach(c -> c.onNewTransactionCollected(transaction));
+                    eventBus.publish(new NewTransactionCollected(transaction));
                 }
             }
         }
@@ -151,36 +145,10 @@ public class TransactionPoolImpl implements TransactionPool {
         this.validator = validator;
     }
 
-    @Override
-    public void addListeners(TransactionPoolListener... listeners) {
-        this.listeners.addAll(Arrays.asList(listeners));
-    }
 
-    @Override
-    public void onBlockWritten(Block block) {
-
-    }
-
-    @Override
-    public void onNewBestBlock(Block block) {
+    public void onNewBestBlock(NewBestBlock event) {
         synchronized (cache) {
-            block.getBody().forEach(cache::remove);
+            event.getBlock().getBody().forEach(cache::remove);
         }
-    }
-
-    @Override
-    public void onBlockConfirmed(Block block) {
-
-    }
-
-
-    @Override
-    public void onBlockMined(Block block) {
-
-    }
-
-    @Override
-    public void onMiningFailed(Block block) {
-        collect(block.getBody());
     }
 }

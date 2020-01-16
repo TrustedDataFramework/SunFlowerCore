@@ -4,21 +4,26 @@ import lombok.experimental.Delegate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.tdf.common.event.EventBus;
 import org.tdf.common.util.ChainCache;
 import org.tdf.common.util.ChainCacheImpl;
+import org.tdf.sunflower.events.NewBestBlock;
+import org.tdf.sunflower.events.NewBlockWritten;
+import org.tdf.sunflower.events.NewBlockConfirmed;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.types.Block;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class ConsortiumRepositoryService implements ConsortiumRepository {
     private abstract static class ExcludedMethods{
         public abstract void writeBlock(Block block);
     }
+
+    @Autowired
+    private EventBus eventBus;
 
     private ChainCache<Block> cache = new ChainCacheImpl<>();
 
@@ -31,8 +36,6 @@ public class ConsortiumRepositoryService implements ConsortiumRepository {
     @Autowired
     @Delegate
     private TransactionRepository transactionRepository;
-
-    private List<ConsortiumRepositoryListener> listeners = new CopyOnWriteArrayList<>();
 
     @Override
     public Block getLastConfirmed() {
@@ -50,17 +53,10 @@ public class ConsortiumRepositoryService implements ConsortiumRepository {
     }
 
     @Override
-    public void addListeners(ConsortiumRepositoryListener... listeners) {
-        this.listeners.addAll(Arrays.asList(listeners));
-    }
-
-    @Override
     public void writeBlock(Block block) {
         blockRepository.writeBlock(block);
-        listeners.forEach(l -> {
-            l.onBlockWritten(block);
-            l.onNewBestBlock(block);
-            l.onBlockConfirmed(block);
-        });
+        eventBus.publish(new NewBlockWritten(block));
+        eventBus.publish(new NewBestBlock(block));
+        eventBus.publish(new NewBlockConfirmed(block));
     }
 }

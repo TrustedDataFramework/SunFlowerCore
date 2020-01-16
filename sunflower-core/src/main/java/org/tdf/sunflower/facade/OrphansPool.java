@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 
 // orphan node manager
-public interface OrphansPool<T extends Chained> extends ConsortiumRepositoryListener {
+public interface OrphansPool<T extends Chained> {
     List<T> filterAndCacheOrphans(Collection<? extends T> nodes);
 
     List<T> get(int page, int size);

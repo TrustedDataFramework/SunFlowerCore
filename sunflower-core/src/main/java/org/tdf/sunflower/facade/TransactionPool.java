@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public interface TransactionPool extends MinerListener, ConsortiumRepositoryListener {
+public interface TransactionPool{
 
     // collect transactions into transaction pool
     void collect(Collection<? extends Transaction> transactions);
@@ -25,6 +25,4 @@ public interface TransactionPool extends MinerListener, ConsortiumRepositoryList
     List<Transaction> get(int page, int size);
 
     void setValidator(PendingTransactionValidator validator);
-
-    void addListeners(TransactionPoolListener... listeners);
 }

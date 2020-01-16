@@ -17,8 +17,6 @@ public interface ConsortiumRepository extends BlockRepository, TransactionReposi
 
     void setProvider(ConfirmedBlocksProvider provider);
 
-    void addListeners(ConsortiumRepositoryListener... listeners);
-
     ConsortiumRepository NONE = new ConsortiumRepository() {
         @Override
         public Block getLastConfirmed() {
@@ -32,11 +30,6 @@ public interface ConsortiumRepository extends BlockRepository, TransactionReposi
 
         @Override
         public void setProvider(ConfirmedBlocksProvider provider) {
-
-        }
-
-        @Override
-        public void addListeners(ConsortiumRepositoryListener... listeners) {
 
         }
 
