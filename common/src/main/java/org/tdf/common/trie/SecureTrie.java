@@ -108,7 +108,7 @@ public class SecureTrie<V> implements Trie<byte[], V>{
 
     @Override
     public boolean containsKey(byte[] bytes) {
-        return delegate.containsKey(bytes);
+        return delegate.containsKey(hashFunction.apply(bytes));
     }
 
     @Override
@@ -123,12 +123,12 @@ public class SecureTrie<V> implements Trie<byte[], V>{
 
     @Override
     public void traverse(BiFunction<? super byte[], ? super V, Boolean> traverser) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("not supported in secure trie");
     }
 
     @Override
     public void forEach(BiConsumer<? super byte[], ? super V> consumer) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("not supported in secure trie");
     }
 
     @Override
@@ -138,7 +138,7 @@ public class SecureTrie<V> implements Trie<byte[], V>{
 
     @Override
     public Set<Map.Entry<byte[], V>> entrySet() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("not supported in secure trie");
     }
 
     @Override
@@ -148,6 +148,6 @@ public class SecureTrie<V> implements Trie<byte[], V>{
 
     @Override
     public Stream<Map.Entry<byte[], V>> stream() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("not supported in secure trie");
     }
 }
