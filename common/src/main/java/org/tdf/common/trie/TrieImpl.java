@@ -94,7 +94,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
 
     @Override
     public boolean isEmpty() {
-        return root != null;
+        return root == null;
     }
 
     @Override

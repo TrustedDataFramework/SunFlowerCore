@@ -137,11 +137,6 @@ public class SecureTrie<V> implements Trie<byte[], V>{
     }
 
     @Override
-    public Set<Map.Entry<byte[], V>> entrySet() {
-        throw new UnsupportedOperationException("not supported in secure trie");
-    }
-
-    @Override
     public int size() {
         return delegate.size();
     }
