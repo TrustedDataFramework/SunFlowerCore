@@ -20,6 +20,7 @@ import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.types.Transaction;
 
+import java.util.Collections;
 import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -82,7 +83,7 @@ public class EntryController {
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
     public Object sendTransaction(@RequestBody Transaction transaction){
-        pool.collect(transaction);
+        pool.collect(Collections.singleton(transaction));
         return Response.newSuccessFul("ok");
     }
 

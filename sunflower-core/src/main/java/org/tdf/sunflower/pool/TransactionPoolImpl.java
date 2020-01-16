@@ -1,21 +1,15 @@
 package org.tdf.sunflower.pool;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.Weigher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.tdf.common.util.Constants;
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -26,9 +20,9 @@ public class TransactionPoolImpl implements TransactionPool {
         /**
          * Transaction may be dropped due to:
          * - Invalid transaction (invalid nonce, low gas price, insufficient account funds,
-         *         invalid signature)
+         * invalid signature)
          * - Timeout (when pending transaction is not included to any block for
-         *         last [transaction.outdated.threshold] blocks
+         * last [transaction.outdated.threshold] blocks
          * This is the final state
          */
         DROPPED,
@@ -52,7 +46,7 @@ public class TransactionPoolImpl implements TransactionPool {
          * This could be the final state, however next state could also be
          * PENDING: when a fork became the main chain but doesn't include this tx
          * INCLUDED: when a fork became the main chain and tx is included into another
-         *           block from the new main chain
+         * block from the new main chain
          * DROPPED: If switched to a new (long enough) main chain without this Tx
          */
         INCLUDED;
@@ -62,87 +56,94 @@ public class TransactionPoolImpl implements TransactionPool {
         }
     }
 
-    private static class TransactionWeigher implements Weigher<String, Transaction> {
+    private static class TransactionWeigher implements Weigher<HexBytes, Transaction> {
         @Override
-        public int weigh(String key, Transaction value) {
+        public int weigh(HexBytes key, Transaction value) {
             return value.size();
         }
     }
 
     private HashPolicy hashPolicy;
 
-    private Cache<String, Transaction> cache;
+    private final TreeSet<Transaction> cache;
 
     private PendingTransactionValidator validator;
 
     private List<TransactionPoolListener> listeners = new CopyOnWriteArrayList<>();
 
-    public void setEngine(ConsensusEngine engine){
+    public void setEngine(ConsensusEngine engine) {
         this.hashPolicy = engine.getHashPolicy();
         this.validator = engine.getValidator();
     }
 
-    public TransactionPoolImpl(){
-        cache = CacheBuilder.newBuilder()
-                .expireAfterWrite(Duration.ofHours(1))
-                .weigher(new TransactionWeigher())
-                .maximumWeight(256 * Constants.MEGA_BYTES).build();
+    public TransactionPoolImpl() {
+        cache = new TreeSet<>((a, b) -> {
+            if (a.getNonce() != b.getNonce()) return Long.compare(a.getNonce(), b.getNonce());
+            return a.getHash().compareTo(b.getHash());
+        });
     }
 
     @Override
-    public void collect(Transaction... transactions) {
-        for(Transaction transaction: transactions){
-            if(transaction.getHash() == null){
+    public void collect(Collection<? extends Transaction> transactions) {
+        for (Transaction transaction : transactions) {
+            if (transaction.getHash() == null) {
                 transaction.setHash(hashPolicy.getHash(transaction));
             }
             ValidateResult res = validator.validate(transaction);
-            if (!res.isSuccess()){
+            if (!res.isSuccess()) {
                 log.error(res.getReason());
                 continue;
             }
-            String k = transaction.getHash().toString();
-            if (cache.asMap().containsKey(k)) continue;
-            if(validator.validate(transaction).isSuccess()){
-                cache.put(transaction.getHash().toString(), transaction);
-                listeners.forEach(c -> c.onNewTransactionCollected(transaction));
+            synchronized (cache) {
+                if (cache.contains(transaction)) continue;
+                if (validator.validate(transaction).isSuccess()) {
+                    cache.add(transaction);
+                    listeners.forEach(c -> c.onNewTransactionCollected(transaction));
+                }
             }
         }
     }
 
     @Override
     public Optional<Transaction> pop() {
-        if (cache.asMap().isEmpty()){
-            return Optional.empty();
+        synchronized (cache) {
+            if (cache.isEmpty()) {
+                return Optional.empty();
+            }
+
+            Transaction tx = cache.first();
+            cache.remove(tx);
+            return Optional.of(tx);
         }
-        Optional<Transaction>
-        o = cache.asMap().values().stream().sorted((a, b) -> (int) (a.getNonce() - b.getNonce())).findFirst();
-        if (!o.isPresent()) return o;
-        cache.asMap().remove(o.get().getHash().toString());
-        return o;
     }
 
     @Override
     public List<Transaction> pop(int limit) {
-        List<Transaction> list = new ArrayList<>();
-        for(int i = 0; i < limit; i++){
-            Optional<Transaction> o = pop();
-            if (!o.isPresent()) return list;
-            list.add(o.get());
+        synchronized (cache) {
+
+            List<Transaction> ret = cache
+                    .stream()
+                    .limit(limit < 0 ? Long.MAX_VALUE : limit)
+                    .collect(Collectors.toList());
+
+            ret.forEach(cache::remove);
+            return ret;
         }
-        return list;
     }
 
     @Override
     public int size() {
-        return (int) cache.size();
+        return cache.size();
     }
 
     @Override
     public List<Transaction> get(int page, int size) {
-        return cache.asMap().values().stream()
-                .skip(page * size)
-                .limit(size)
-                .collect(Collectors.toList());
+        synchronized (cache) {
+            return cache.stream()
+                    .skip(page * size)
+                    .limit(size)
+                    .collect(Collectors.toList());
+        }
     }
 
     @Override
@@ -162,7 +163,9 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public void onNewBestBlock(Block block) {
-        block.getBody().forEach(tx -> cache.asMap().remove(tx.getHash().toString()));
+        synchronized (cache) {
+            block.getBody().forEach(cache::remove);
+        }
     }
 
     @Override
@@ -178,6 +181,6 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public void onMiningFailed(Block block) {
-        block.getBody().forEach(this::collect);
+        collect(block.getBody());
     }
 }

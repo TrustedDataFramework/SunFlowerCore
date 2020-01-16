@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
+import org.tdf.common.event.EventBus;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
@@ -204,5 +205,10 @@ public class Start {
         name = name == null ? "" : name.toLowerCase().trim();
         if (name.equals("none")) return BasicMessageQueue.NONE;
         return new SocketIOMessageQueue(config);
+    }
+
+    @Bean
+    public EventBus eventBus(){
+        return new EventBus();
     }
 }

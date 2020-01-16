@@ -2,13 +2,14 @@ package org.tdf.sunflower.facade;
 
 import org.tdf.sunflower.types.Transaction;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface TransactionPool extends MinerListener, ConsortiumRepositoryListener {
 
     // collect transactions into transaction pool
-    void collect(Transaction... transactions);
+    void collect(Collection<? extends Transaction> transactions);
 
     // pop a transaction from pool
     Optional<Transaction> pop();

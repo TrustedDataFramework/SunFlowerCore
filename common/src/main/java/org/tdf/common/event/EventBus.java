@@ -20,6 +20,7 @@ public class EventBus {
      * @param <T>       generic
      */
     public synchronized <T> void subscribe(Class<T> eventType, Consumer<T> listener) {
+        // copy when write, avoid concurrent modifications
         Map<Class, List<Consumer<?>>> copied = copy(listeners);
         copied.putIfAbsent(eventType, new ArrayList<>());
         copied.get(eventType).add(listener);
@@ -45,9 +46,7 @@ public class EventBus {
 
     private Map<Class, List<Consumer<?>>> copy(Map<Class, List<Consumer<?>>> listeners) {
         Map<Class, List<Consumer<?>>> ret = new HashMap<>();
-        listeners.forEach((k, v) -> {
-            ret.put(k, new ArrayList<>(v));
-        });
+        listeners.forEach((k, v) -> ret.put(k, new ArrayList<>(v)));
         return ret;
     }
 }
