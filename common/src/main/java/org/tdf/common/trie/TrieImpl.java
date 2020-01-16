@@ -46,6 +46,10 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     @Override
     public Optional<V> get(@NonNull K k) {
         byte[] data = kCodec.getEncoder().apply(k);
+        return getFromBytes(data);
+    }
+
+    Optional<V> getFromBytes(byte[] data) {
         if (data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
         if (root == null) return Optional.empty();
         return Optional.ofNullable(root.get(TrieKey.fromNormal(data))).map(vCodec.getDecoder());
@@ -56,7 +60,7 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         putBytes(kCodec.getEncoder().apply(k), vCodec.getEncoder().apply(val));
     }
 
-    private void putBytes(byte[] key, byte[] value) {
+    void putBytes(byte[] key, byte[] value) {
         if (key == null || key.length == 0) throw new IllegalArgumentException("key cannot be null");
         if (value == null || value.length == 0) {
             removeBytes(key);
@@ -70,26 +74,15 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public void putIfAbsent(@NonNull K k, @NonNull V val) {
-        if (containsKey(k)) return;
-        put(k, val);
-    }
-
-    @Override
     public void remove(@NonNull K k) {
         byte[] data = kCodec.getEncoder().apply(k);
         removeBytes(data);
     }
 
-    private void removeBytes(byte[] data) {
+    void removeBytes(byte[] data) {
         if (data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
         if (root == null) return;
         root = root.delete(TrieKey.fromNormal(data), store);
-    }
-
-    @Override
-    public boolean containsKey(@NonNull K k) {
-        return get(k).isPresent();
     }
 
     @Override
@@ -183,5 +176,11 @@ public class TrieImpl<K, V> implements Trie<K, V> {
             }
             return true;
         });
+    }
+
+    @Override
+    public boolean isTrap(V v) {
+        byte[] encoded = vCodec.getEncoder().apply(v);
+        return encoded == null || encoded.length == 0;
     }
 }

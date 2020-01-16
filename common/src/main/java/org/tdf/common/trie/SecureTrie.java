@@ -1,14 +1,12 @@
 package org.tdf.common.trie;
 
-import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -25,24 +23,36 @@ import java.util.stream.Stream;
  *
  * @param <V> value type
  */
-@AllArgsConstructor
-public class SecureTrie<V> implements Trie<byte[], V>{
-    private Trie<byte[], V> delegate;
+public class SecureTrie<K, V> implements Trie<K, V>{
+    private TrieImpl<K, V> delegate;
 
     private Function<byte[], byte[]> hashFunction;
 
+    private Codec<K, byte[]> kCodec;
+    private Codec<V, byte[]> vCodec;
+
+    public SecureTrie(Trie<K, V> delegate, Function<byte[], byte[]> hashFunction) {
+        if(!(delegate instanceof TrieImpl))
+            throw new UnsupportedOperationException("create secure trie failed, delegate is not a trie impl");
+
+        this.delegate = ((TrieImpl<K, V>) delegate);
+        this.hashFunction = hashFunction;
+        this.kCodec = this.delegate.kCodec;
+        this.vCodec = this.delegate.vCodec;
+    }
+
     @Override
-    public Trie<byte[], V> revert(byte[] rootHash, Store<byte[], byte[]> store) throws RuntimeException {
+    public Trie<K, V> revert(byte[] rootHash, Store<byte[], byte[]> store) throws RuntimeException {
         return delegate.revert(rootHash, store);
     }
 
     @Override
-    public Trie<byte[], V> revert(byte[] rootHash) throws RuntimeException {
+    public Trie<K, V> revert(byte[] rootHash) throws RuntimeException {
         return delegate.revert(rootHash);
     }
 
     @Override
-    public Trie<byte[], V> revert() {
+    public Trie<K, V> revert() {
         return delegate.revert();
     }
 
@@ -72,8 +82,10 @@ public class SecureTrie<V> implements Trie<byte[], V>{
     }
 
     @Override
-    public Optional<V> get(@NonNull byte[] bytes) {
-        return delegate.get(hashFunction.apply(bytes));
+    public Optional<V> get(@NonNull K k) {
+        return delegate.getFromBytes(
+                hashFunction.apply(kCodec.getEncoder().apply(k))
+        );
     }
 
     @Override
@@ -87,28 +99,19 @@ public class SecureTrie<V> implements Trie<byte[], V>{
     }
 
     @Override
-    public void put(@NonNull byte[] bytes, V v) {
-        delegate.put(hashFunction.apply(bytes), v);
+    public void put(@NonNull K k, V v) {
+        delegate.putBytes(hashFunction.apply(kCodec.getEncoder().apply(k)), vCodec.getEncoder().apply(v));
     }
 
-    @Override
-    public void putIfAbsent(@NonNull byte[] bytes, V v) {
-        delegate.putIfAbsent(hashFunction.apply(bytes), v);
-    }
 
     @Override
-    public void remove(@NonNull byte[] bytes) {
-        delegate.remove(hashFunction.apply(bytes));
+    public void remove(@NonNull K k) {
+        delegate.removeBytes(hashFunction.apply(kCodec.getEncoder().apply(k)));
     }
 
     @Override
     public void flush() {
         delegate.flush();
-    }
-
-    @Override
-    public boolean containsKey(byte[] bytes) {
-        return delegate.containsKey(hashFunction.apply(bytes));
     }
 
     @Override
@@ -122,12 +125,7 @@ public class SecureTrie<V> implements Trie<byte[], V>{
     }
 
     @Override
-    public void traverse(BiFunction<? super byte[], ? super V, Boolean> traverser) {
-        throw new UnsupportedOperationException("not supported in secure trie");
-    }
-
-    @Override
-    public void forEach(BiConsumer<? super byte[], ? super V> consumer) {
+    public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
         throw new UnsupportedOperationException("not supported in secure trie");
     }
 
@@ -142,7 +140,7 @@ public class SecureTrie<V> implements Trie<byte[], V>{
     }
 
     @Override
-    public Stream<Map.Entry<byte[], V>> stream() {
+    public Stream<Map.Entry<K, V>> stream() {
         throw new UnsupportedOperationException("not supported in secure trie");
     }
 }
