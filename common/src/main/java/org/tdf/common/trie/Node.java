@@ -556,19 +556,19 @@ class Node {
             this.self = self;
         }
 
-        public RLPElement getRoot(Function<byte[], byte[]> hashFunction) {
+        public RLPElement getRoot(Function<byte[], byte[]> hashFunction, boolean forceHash) {
             if (children.isEmpty()) return self;
             if (children.size() == 1) {
                 RLPList rlp = RLPList.createEmpty(2);
                 rlp.add(self);
-                rlp.add(children.get(1).getRoot(hashFunction));
-                return rlp.getEncoded().length >= MAX_KEY_SIZE ?
+                rlp.add(children.get(1).getRoot(hashFunction, false));
+                return (rlp.getEncoded().length >= MAX_KEY_SIZE || forceHash) ?
                         RLPItem.fromBytes(hashFunction.apply(rlp.getEncoded())) :
                         rlp;
             }
-            List<RLPElement> list = children.stream().map(c -> c.getRoot(hashFunction)).collect(Collectors.toList());
+            List<RLPElement> list = children.stream().map(c -> c.getRoot(hashFunction, false)).collect(Collectors.toList());
             RLPList rlp = RLPList.fromElements(list);
-            return rlp.getEncoded().length >= MAX_KEY_SIZE ?
+            return (rlp.getEncoded().length >= MAX_KEY_SIZE || forceHash) ?
                     RLPItem.fromBytes(hashFunction.apply(rlp.getEncoded())) :
                     rlp;
         }
