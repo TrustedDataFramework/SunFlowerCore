@@ -1,9 +1,6 @@
 package org.tdf.common.trie;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
@@ -11,8 +8,12 @@ import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.tdf.common.trie.TrieKey.EMPTY;
 
@@ -541,5 +542,68 @@ class Node {
         BRANCH,
         EXTENSION,
         LEAF
+    }
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class Proof {
+        List<Proof> children = Collections.emptyList();
+
+        // self != null -> children is empty
+        RLPElement self;
+
+        public Proof(RLPElement self) {
+            this.self = self;
+        }
+
+        public RLPElement getRoot(Function<byte[], byte[]> hashFunction) {
+            if (children.isEmpty()) return self;
+            if (children.size() == 1) {
+                RLPList rlp = RLPList.createEmpty(2);
+                rlp.add(self);
+                rlp.add(children.get(1).getRoot(hashFunction));
+                return rlp.getEncoded().length >= MAX_KEY_SIZE ?
+                        RLPItem.fromBytes(hashFunction.apply(rlp.getEncoded())) :
+                        rlp;
+            }
+            List<RLPElement> list = children.stream().map(c -> c.getRoot(hashFunction)).collect(Collectors.toList());
+            RLPList rlp = RLPList.fromElements(list);
+            return rlp.getEncoded().length >= MAX_KEY_SIZE ?
+                    RLPItem.fromBytes(hashFunction.apply(rlp.getEncoded())) :
+                    rlp;
+        }
+    }
+
+    Proof getProof(TrieKey path) {
+        switch (getType()) {
+            case BRANCH: {
+                Proof p = new Proof(new ArrayList<>(BRANCH_SIZE), null);
+                int j = path.get(0);
+                for (int i = 0; i < BRANCH_SIZE - 1; i++) {
+                    Node child = (Node) children[i];
+                    if (child == null) {
+                        p.children.add(new Proof(RLPItem.NULL));
+                        continue;
+                    }
+                    if (i != j) {
+                        p.children.add(new Proof(child.hash == null ? child.rlp : RLPItem.fromBytes(child.hash)));
+                        continue;
+                    }
+                    p.children.add(child.getProof(path.shift()));
+                }
+                p.children.add(new Proof(RLPItem.fromBytes(getValue())));
+            }
+            case LEAF: {
+                return new Proof(hash == null ? rlp : RLPItem.fromBytes(hash));
+            }
+            default: {
+                return new Proof(
+                        Collections.singletonList(
+                                getExtension().getProof(path.matchAndShift(getKey()))
+                        ),
+                        RLPItem.fromBytes(getKey().toPacked(false))
+                );
+            }
+        }
     }
 }
