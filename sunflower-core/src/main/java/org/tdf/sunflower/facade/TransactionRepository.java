@@ -11,9 +11,9 @@ public interface TransactionRepository {
 
     Optional<Transaction> getTransactionByHash(byte[] hash);
 
-    List<Transaction> getTransactionsByBlockHash(byte[] blockHash, int page, int size);
+    List<Transaction> getTransactionsByBlockHash(byte[] blockHash);
 
-    List<Transaction> getTransactionsByBlockHeight(long height, int page, int size);
+    List<Transaction> getTransactionsByBlockHeight(long height);
 
     TransactionRepository NONE = new TransactionRepository() {
         @Override
@@ -29,12 +29,12 @@ public interface TransactionRepository {
 
 
         @Override
-        public List<Transaction> getTransactionsByBlockHash(byte[] blockHash, int page, int size) {
+        public List<Transaction> getTransactionsByBlockHash(byte[] blockHash) {
             return Collections.emptyList();
         }
 
         @Override
-        public List<Transaction> getTransactionsByBlockHeight(long height, int page, int size) {
+        public List<Transaction> getTransactionsByBlockHeight(long height) {
             return Collections.emptyList();
         }
     };

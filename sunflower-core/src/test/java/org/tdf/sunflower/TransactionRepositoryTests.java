@@ -73,25 +73,13 @@ public class TransactionRepositoryTests {
 
     @Test
     public void testGetTransactionsByBlockHash() {
-        assert transactionStore.getTransactionsByBlockHash(BigEndian.encodeInt64(0), 0, Integer.MAX_VALUE).size() == 3;
-        List<Transaction> transactions = transactionStore.getTransactionsByBlockHash(BigEndian.encodeInt64(0), 0, 1);
-        assert transactions.size() == 1;
-        transactions.forEach(t -> {
-            assert t.getHeight() == 0;
-            assertTransaction(t);
-        });
-        assert transactionStore.getTransactionsByBlockHash("-1".getBytes(), 0, Integer.MAX_VALUE).size() == 0;
+        assert transactionStore.getTransactionsByBlockHash(BigEndian.encodeInt64(0)).size() == 3;
+        assert transactionStore.getTransactionsByBlockHash("-1".getBytes()).size() == 0;
     }
 
     @Test
     public void testGetTransactionsByBlockHeight() {
-        assert transactionStore.getTransactionsByBlockHeight(0, 0, Integer.MAX_VALUE).size() == 3;
-        List<Transaction> transactions = transactionStore.getTransactionsByBlockHeight(0, 0, 1);
-        assert transactions.size() == 1;
-        transactions.forEach(t -> {
-            assert t.getHeight() == 0;
-            assertTransaction(t);
-        });
-        assert transactionStore.getTransactionsByBlockHeight(-1, 0, Integer.MAX_VALUE).size() == 0;
+        assert transactionStore.getTransactionsByBlockHeight(0).size() == 3;
+        assert transactionStore.getTransactionsByBlockHeight(-1).size() == 0;
     }
 }

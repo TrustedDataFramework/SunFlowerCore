@@ -1,31 +1,19 @@
 package org.tdf.sunflower.dao;
 
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.entity.BlockEntity;
-import org.tdf.sunflower.entity.HeaderAdapter;
+import org.tdf.sunflower.entity.HeaderEntity;
 import org.tdf.sunflower.entity.TransactionEntity;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Mapping {
-    public static Block getFromBlockEntity(BlockEntity block){
-        Header header = getFromHeaderEntity(block);
-        Block res = new Block(header);
-        res.setBody(getFromTransactionEntities(block.getBody()));
-        return res;
-    }
-
-    public static List<Block> getFromBlocksEntity(Collection<BlockEntity> blocks){
-        return blocks.stream().map(Mapping::getFromBlockEntity).collect(Collectors.toList());
-    }
-
-    public static Header getFromHeaderEntity(HeaderAdapter header){
+    public static Header getFromHeaderEntity(HeaderEntity header) {
         return Header.builder()
                 .hash(HexBytes.fromBytes(header.getHash()))
                 .version(header.getVersion())
@@ -37,11 +25,11 @@ public class Mapping {
                 .build();
     }
 
-    public static List<Header> getFromHeaderEntities(Collection<? extends HeaderAdapter> headers){
+    public static List<Header> getFromHeaderEntities(Collection<? extends HeaderEntity> headers) {
         return headers.stream().map(Mapping::getFromHeaderEntity).collect(Collectors.toList());
     }
 
-    public static Transaction getFromTransactionEntity(TransactionEntity transaction){
+    public static Transaction getFromTransactionEntity(TransactionEntity transaction) {
         return Transaction.builder()
                 .blockHash(HexBytes.fromBytes(transaction.getBlockHash()))
                 .height(transaction.getHeight())
@@ -54,42 +42,47 @@ public class Mapping {
                 .build();
     }
 
-    public static List<Transaction> getFromTransactionEntities(Collection<TransactionEntity> transactions){
+    public static List<Transaction> getFromTransactionEntities(Collection<TransactionEntity> transactions) {
         return transactions.stream()
                 .sorted((x, y) -> x.getPosition() - y.getPosition())
                 .map(Mapping::getFromTransactionEntity)
                 .collect(Collectors.toList());
     }
 
-    public static BlockEntity getEntityFromBlock(Block block){
-        HeaderAdapter adapter = HeaderAdapter.builder().hash(block.getHash().getBytes())
-                .version(block.getVersion())
-                .hashPrev(block.getHashPrev().getBytes())
-                .merkleRoot(block.getMerkleRoot().getBytes())
-                .height(block.getHeight())
-                .createdAt(block.getCreatedAt())
-                .payload(block.getPayload().getBytes()).build();
-        BlockEntity b = new BlockEntity(adapter);
-        b.setBody(new ArrayList<>(block.getBody().size()));
-        for(int i = 0; i < block.getBody().size(); i++){
-            Transaction tx = block.getBody().get(i);
-            TransactionEntity mapped = TransactionEntity.builder()
-                    .blockHash(block.getHash().getBytes())
-                    .height(tx.getHeight())
-                    .hash(tx.getHash().getBytes())
-                    .version(tx.getVersion())
-                    .type(tx.getType())
-                    .createdAt(tx.getCreatedAt())
-                    .nonce(tx.getNonce())
-                    .from(tx.getFrom().getBytes())
-                    .gasPrice(tx.getGasPrice())
-                    .amount(tx.getAmount())
-                    .payload(tx.getPayload().getBytes())
-                    .to(tx.getTo().getBytes())
-                    .signature(tx.getSignature().getBytes())
-                    .position(i).build();
-            b.getBody().add(mapped);
+    public static HeaderEntity getEntityFromHeader(Header header) {
+        return HeaderEntity
+                .builder().hash(header.getHash().getBytes())
+                .version(header.getVersion())
+                .hashPrev(header.getHashPrev().getBytes())
+                .merkleRoot(header.getMerkleRoot().getBytes())
+                .height(header.getHeight())
+                .createdAt(header.getCreatedAt())
+                .payload(header.getPayload().getBytes()).build();
+    }
+
+    public static Stream<TransactionEntity> getTransactionEntitiesFromBlock(Block block) {
+        Stream.Builder<TransactionEntity> builder = Stream.builder();
+        for (int i = 0; i < block.getBody().size(); i++) {
+            builder.accept(getEntityFromTransactionAndHeader(block.getHeader(), i, block.getBody().get(i)));
         }
-        return b;
+        return builder.build();
+    }
+
+    public static TransactionEntity getEntityFromTransactionAndHeader(Header header, int index, Transaction tx) {
+        return TransactionEntity.builder()
+                .blockHash(header.getHash().getBytes())
+                .height(tx.getHeight())
+                .hash(tx.getHash().getBytes())
+                .version(tx.getVersion())
+                .type(tx.getType())
+                .createdAt(tx.getCreatedAt())
+                .nonce(tx.getNonce())
+                .from(tx.getFrom().getBytes())
+                .gasPrice(tx.getGasPrice())
+                .amount(tx.getAmount())
+                .payload(tx.getPayload().getBytes())
+                .to(tx.getTo().getBytes())
+                .signature(tx.getSignature().getBytes())
+                .position(index).build();
     }
 }

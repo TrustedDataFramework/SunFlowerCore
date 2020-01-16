@@ -1,9 +1,6 @@
 package org.tdf.sunflower.entity;
 
 import lombok.*;
-import org.tdf.sunflower.util.ByteUtil;
-import org.tdf.sunflower.util.RLPList;
-import org.tdf.sunflower.util.RLPUtils;
 
 import javax.persistence.*;
 
@@ -83,53 +80,4 @@ public class TransactionEntity {
 
     @Column(name = COLUMN_TX_POSITION, nullable = false)
     private int position;
-
-    private byte[] RLPbytes;
-
-    public byte[] encode() {
-        byte[] blockHash = RLPUtils.encodeElement(this.blockHash);
-        byte[] height = RLPUtils.encodeElement(ByteUtil.longToBytes(this.height));
-        byte[] hash = RLPUtils.encodeElement(this.hash);
-        byte[] version = RLPUtils.encodeInt(this.version);
-        byte[] type = RLPUtils.encodeInt(this.type);
-        byte[] createdAt = RLPUtils.encodeElement(ByteUtil.longToBytes(this.createdAt));
-        byte[] nonce = RLPUtils.encodeElement(ByteUtil.longToBytes(this.nonce));
-        byte[] from = RLPUtils.encodeElement(this.from);
-        byte[] gasPrice = RLPUtils.encodeElement(ByteUtil.longToBytes(this.gasPrice));
-        byte[] amount = RLPUtils.encodeElement(ByteUtil.longToBytes(this.amount));
-        byte[] payload = RLPUtils.encodeElement(this.payload);
-        byte[] to = RLPUtils.encodeElement(this.to);
-        byte[] signature = RLPUtils.encodeElement(this.signature);
-        byte[] position = RLPUtils.encodeInt(this.position);
-
-        this.RLPbytes = RLPUtils.encodeList(blockHash, height, hash, version, type, createdAt
-                , nonce, from, gasPrice, amount, payload, to, signature, position);
-        return this.RLPbytes;
-    }
-
-    public static TransactionEntity decode(byte[] Data) {
-        TransactionEntity transaction = new TransactionEntity();
-        try {
-            RLPList paramsList = (RLPList) RLPUtils.decode2(Data).get(0);
-            transaction.setBlockHash(paramsList.get(0).getRLPBytes());
-            transaction.setHeight(paramsList.get(1).getRLPLong());
-            transaction.setHash(paramsList.get(2).getRLPBytes());
-            transaction.setVersion(paramsList.get(3).getRLPInt());
-            transaction.setType(paramsList.get(4).getRLPInt());
-            transaction.setCreatedAt(paramsList.get(5).getRLPLong());
-            transaction.setNonce(paramsList.get(6).getRLPLong());
-            transaction.setFrom(paramsList.get(7).getRLPBytes());
-            transaction.setGasPrice(paramsList.get(8).getRLPLong());
-            transaction.setAmount(paramsList.get(9).getRLPLong());
-            transaction.setPayload(paramsList.get(10).getRLPBytes());
-            transaction.setTo(paramsList.get(11).getRLPBytes());
-            transaction.setSignature(paramsList.get(12).getRLPBytes());
-            transaction.setPosition(paramsList.get(13).getRLPByte());
-
-            return transaction;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
 }

@@ -48,4 +48,6 @@ public interface BlockRepository{
     List<Block> getAncestorBlocks(byte[] hash, int limit);
 
     void writeBlock(Block block);
+
+    void writeHeader(Header header);
 }

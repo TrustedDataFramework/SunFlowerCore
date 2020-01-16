@@ -3,7 +3,7 @@ package org.tdf.sunflower;
 import com.google.common.io.ByteStreams;
 import org.tdf.common.util.BigEndian;
 import org.tdf.sunflower.dao.Mapping;
-import org.tdf.sunflower.entity.BlockEntity;
+import org.tdf.sunflower.entity.HeaderEntity;
 import org.tdf.sunflower.entity.TransactionEntity;
 import org.tdf.sunflower.types.Block;
 
@@ -11,12 +11,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class TestUtils {
     static final byte[] BYTES = new byte[32];
 
     static Block getBlock(long height) {
-        BlockEntity b = new BlockEntity(
+        HeaderEntity h = new HeaderEntity(
                 BigEndian.encodeInt64(height), 1, height == 0 ? BYTES : BigEndian.encodeInt64(height - 1),
                 BYTES, height, System.currentTimeMillis() / 1000, BYTES
         );
@@ -25,12 +26,13 @@ public class TestUtils {
                         .height(height)
                         .from(BYTES).payload(BYTES).to(BYTES)
                         .signature(BYTES);
+        Block b = new Block(Mapping.getFromHeaderEntity(h));
         b.setBody(Arrays.asList(
                 builder.position(0).hash((height + "" + 0).getBytes()).build(),
                 builder.position(1).hash((height + "" + 1).getBytes()).build(),
                 builder.position(2).hash((height + "" + 2).getBytes()).build()
-        ));
-        return Mapping.getFromBlockEntity(b);
+        ).stream().map(Mapping::getFromTransactionEntity).collect(Collectors.toList()));
+        return b;
     }
 
     public static void main(String[] args) {

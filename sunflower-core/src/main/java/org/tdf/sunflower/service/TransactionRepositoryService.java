@@ -6,11 +6,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.tdf.sunflower.dao.Mapping;
 import org.tdf.sunflower.dao.TransactionDao;
+import org.tdf.sunflower.entity.TransactionEntity;
 import org.tdf.sunflower.facade.TransactionRepository;
 import org.tdf.sunflower.types.Transaction;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -30,16 +33,18 @@ public class TransactionRepositoryService implements TransactionRepository {
     }
 
     @Override
-    public List<Transaction> getTransactionsByBlockHash(byte[] blockHash, int page, int size) {
-        return Mapping.getFromTransactionEntities(
-                transactionDao.findByBlockHashOrderByPosition(blockHash, PageRequest.of(page, size))
-        );
+    public List<Transaction> getTransactionsByBlockHash(byte[] blockHash) {
+        return transactionDao.findByBlockHash(blockHash)
+                .stream().sorted(Comparator.comparingInt(TransactionEntity::getPosition))
+                .map(Mapping::getFromTransactionEntity)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<Transaction> getTransactionsByBlockHeight(long height, int page, int size) {
-        return Mapping.getFromTransactionEntities(
-                transactionDao.findByHeightOrderByPosition(height, PageRequest.of(page, size))
-        );
+    public List<Transaction> getTransactionsByBlockHeight(long height) {
+        return transactionDao.findByHeight(height)
+                .stream().sorted(Comparator.comparingInt(TransactionEntity::getPosition))
+                .map(Mapping::getFromTransactionEntity)
+                .collect(Collectors.toList());
     }
 }

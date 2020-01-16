@@ -141,6 +141,11 @@ public interface ConsortiumRepository extends BlockRepository, TransactionReposi
         }
 
         @Override
+        public void writeHeader(Header header) {
+
+        }
+
+        @Override
         public boolean containsTransaction(byte[] hash) {
             return false;
         }
@@ -151,12 +156,12 @@ public interface ConsortiumRepository extends BlockRepository, TransactionReposi
         }
 
         @Override
-        public List<Transaction> getTransactionsByBlockHash(byte[] blockHash, int page, int size) {
+        public List<Transaction> getTransactionsByBlockHash(byte[] blockHash) {
             return Collections.emptyList();
         }
 
         @Override
-        public List<Transaction> getTransactionsByBlockHeight(long height, int page, int size) {
+        public List<Transaction> getTransactionsByBlockHeight(long height) {
             return Collections.emptyList();
         }
     };

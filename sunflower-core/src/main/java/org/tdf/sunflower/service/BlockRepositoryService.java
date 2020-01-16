@@ -4,9 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.tdf.common.util.ChainCache;
-import org.tdf.common.util.ChainCacheImpl;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.dao.BlockDao;
 import org.tdf.sunflower.dao.HeaderDao;
 import org.tdf.sunflower.dao.Mapping;
 import org.tdf.sunflower.dao.TransactionDao;
@@ -24,10 +22,10 @@ import java.util.stream.Collectors;
 @Service
 public class BlockRepositoryService implements BlockRepository {
     @Autowired
-    private BlockDao blockDao;
+    private HeaderDao headerDao;
 
     @Autowired
-    private HeaderDao headerDao;
+    private TransactionRepositoryService transactionRepositoryService;
 
     @Autowired
     private TransactionDao transactionDao;
@@ -37,8 +35,7 @@ public class BlockRepositoryService implements BlockRepository {
     private Block getBlockFromHeader(Header header) {
         Block b = new Block(header);
         b.setBody(
-                transactionDao.findByBlockHashOrderByPosition(b.getHash().getBytes(), PageRequest.of(0, Integer.MAX_VALUE))
-                        .stream().map(Mapping::getFromTransactionEntity).collect(Collectors.toList())
+                transactionRepositoryService.getTransactionsByBlockHash(b.getHash().getBytes())
         );
         return b;
     }
@@ -71,11 +68,11 @@ public class BlockRepositoryService implements BlockRepository {
     public void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
         this.genesis = block;
         Optional<Block> o = getBlockByHeight(0);
-        if (!o.isPresent()){
+        if (!o.isPresent()) {
             writeBlock(genesis);
             return;
         }
-        if (!o.get().getHash().equals(block.getHash())){
+        if (!o.get().getHash().equals(block.getHash())) {
             throw new GenesisConflictsException("genesis in db not equals to genesis in configuration");
         }
     }
@@ -97,7 +94,7 @@ public class BlockRepositoryService implements BlockRepository {
 
     @Override
     public Block getBestBlock() {
-        return Mapping.getFromBlockEntity(blockDao.findTopByOrderByHeightDesc().get());
+        return getBlockFromHeader(getBestHeader());
     }
 
     @Override
@@ -107,7 +104,7 @@ public class BlockRepositoryService implements BlockRepository {
 
     @Override
     public Optional<Block> getBlock(byte[] hash) {
-        return blockDao.findById(hash).map(Mapping::getFromBlockEntity);
+        return getHeader(hash).map(this::getBlockFromHeader);
     }
 
     @Override
@@ -171,7 +168,7 @@ public class BlockRepositoryService implements BlockRepository {
 
     @Override
     public Optional<Block> getBlockByHeight(long height) {
-        return blockDao.findByHeight(height).map(Mapping::getFromBlockEntity);
+        return getHeaderByHeight(height).map(this::getBlockFromHeader);
     }
 
     @Override
@@ -181,9 +178,9 @@ public class BlockRepositoryService implements BlockRepository {
         Optional<Header> header = getHeader(hash);
         int finalLimit = limit;
         return header.map(h ->
-                    getHeadersBetween(
-                            header.get().getHeight() - finalLimit + 1, h.getHeight(), finalLimit)
-                    )
+                getHeadersBetween(
+                        header.get().getHeight() - finalLimit + 1, h.getHeight(), finalLimit)
+        )
                 .map(ChainCache::of)
                 .map(c -> c.getAncestors(hash))
                 .orElse(new ArrayList<>());
@@ -198,7 +195,7 @@ public class BlockRepositoryService implements BlockRepository {
         return block.map(h ->
                 getBlocksBetweenDescend(
                         block.get().getHeight() - finalLimit + 1, h.getHeight(), finalLimit)
-                )
+        )
                 .map(ChainCache::of)
                 .map(c -> c.getAncestors(hash))
                 .orElse(new ArrayList<>());
@@ -207,6 +204,12 @@ public class BlockRepositoryService implements BlockRepository {
     @Override
     @Transactional
     public void writeBlock(Block block) {
-        blockDao.save(Mapping.getEntityFromBlock(block));
+        headerDao.save(Mapping.getEntityFromHeader(block.getHeader()));
+        transactionDao.saveAll(Mapping.getTransactionEntitiesFromBlock(block).collect(Collectors.toList()));
+    }
+
+    @Override
+    public void writeHeader(Header header) {
+        headerDao.save(Mapping.getEntityFromHeader(header));
     }
 }
