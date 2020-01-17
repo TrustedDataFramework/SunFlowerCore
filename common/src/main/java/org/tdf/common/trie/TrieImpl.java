@@ -11,8 +11,6 @@ import org.tdf.common.util.FastByteComparisons;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -182,10 +180,32 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
 
-
     @Override
     public boolean isTrap(V v) {
         byte[] encoded = vCodec.getEncoder().apply(v);
         return encoded == null || encoded.length == 0;
+    }
+
+    @Override
+    public RLPElement getMerklePath(K k) {
+        return root == null ?
+                RLPItem.fromBytes(nullHash) :
+                root.getMerklePath(TrieKey.fromNormal(kCodec.getEncoder().apply(k)));
+    }
+
+    @Override
+    public Trie<K, V> fromMerklePath(RLPElement merklePath) {
+        if(merklePath.isRLPItem() &&
+                FastByteComparisons.equal(merklePath.asBytes(), nullHash)
+        )
+            return new MerklePathTrie<>(revert());
+
+        Trie<K, V> ret = new TrieImpl<>(
+                nullHash,
+                function,
+                Store.getNop(), kCodec, vCodec,
+                Node.fromMerklePath(merklePath)
+        );
+        return new MerklePathTrie<>(ret);
     }
 }

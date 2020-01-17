@@ -2,6 +2,7 @@ package org.tdf.common.trie;
 
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
+import org.tdf.rlp.RLPElement;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -73,6 +74,21 @@ public interface Trie<K, V> extends Store<K, V> {
      * @return true when trie is both non-null and dirty
      */
     boolean isDirty();
+
+    /**
+     * get a mininal merkle proof of the key for verifying
+     * @param k
+     * @return
+     */
+    RLPElement getMerklePath(K k);
+
+    /**
+     * get a minimal trie revert from merkle path for verifying
+     * the reverted trie should have same root hash
+     * @param merklePath
+     * @return
+     */
+    Trie<K, V> fromMerklePath(RLPElement merklePath);
 
     class Builder<K, V> {
         private Function<byte[], byte[]> hashFunction;

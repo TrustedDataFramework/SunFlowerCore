@@ -1,8 +1,10 @@
 package org.tdf.common.trie;
 
+import lombok.Getter;
 import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
+import org.tdf.rlp.RLPElement;
 
 import java.util.Collection;
 import java.util.Map;
@@ -13,7 +15,7 @@ import java.util.stream.Stream;
 
 /**
  * https://medium.com/codechain/secure-tree-why-state-tries-key-is-256-bits-1276beb68485
- *
+ * <p>
  * That is, if there are new nodes added into, a modification of, or an attempt to read these two tries,
  * there must be a disk IO, and if possible, must pass by the least amount of nodes possible until reaching the leaf node.
  * For this reason, MPT allowed for the compressing of the 1-child branch node with the extension node.
@@ -23,7 +25,7 @@ import java.util.stream.Stream;
  *
  * @param <V> value type
  */
-public class SecureTrie<K, V> implements Trie<K, V>{
+public class SecureTrie<K, V> implements Trie<K, V> {
     private TrieImpl<K, V> delegate;
 
     private Function<byte[], byte[]> hashFunction;
@@ -32,7 +34,7 @@ public class SecureTrie<K, V> implements Trie<K, V>{
     private Codec<V, byte[]> vCodec;
 
     public SecureTrie(Trie<K, V> delegate, Function<byte[], byte[]> hashFunction) {
-        if(!(delegate instanceof TrieImpl))
+        if (!(delegate instanceof TrieImpl))
             throw new UnsupportedOperationException("create secure trie failed, delegate is not a trie impl");
 
         this.delegate = ((TrieImpl<K, V>) delegate);
@@ -142,5 +144,15 @@ public class SecureTrie<K, V> implements Trie<K, V>{
     @Override
     public Stream<Map.Entry<K, V>> stream() {
         throw new UnsupportedOperationException("not supported in secure trie");
+    }
+
+    @Override
+    public RLPElement getMerklePath(K k) {
+        return null;
+    }
+
+    @Override
+    public Trie<K, V> fromMerklePath(RLPElement merklePath) {
+        return null;
     }
 }
