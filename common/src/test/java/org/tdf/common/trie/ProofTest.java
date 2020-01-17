@@ -8,7 +8,6 @@ import org.junit.runners.JUnit4;
 import org.tdf.common.HashUtil;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
-import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPElement;
@@ -17,7 +16,10 @@ import org.tdf.rlp.RLPList;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
@@ -135,10 +137,10 @@ public abstract class ProofTest {
 
         List<byte[]> bigAccounts =
                 accounts
-                .stream().sorted((x, y) -> y.getEncoded().length - x.getEncoded().length )
-                .limit(100)
-                .map(a -> a.get(0).get(1).asBytes())
-                .collect(Collectors.toList());
+                        .stream().sorted((x, y) -> - y.getEncoded().length + x.getEncoded().length)
+                        .limit(100)
+                        .map(a -> a.get(0).get(1).asBytes())
+                        .collect(Collectors.toList());
 
         for (RLPElement account : accounts) {
             byte[] key = account.get(0).get(1).asBytes();
@@ -151,7 +153,12 @@ public abstract class ProofTest {
 
         System.out.println("proof size = " + proof.getEncoded().length);
 
-        System.out.println("accounts size = " + bigAccounts.stream().map(x -> x.length).reduce(0, Integer::sum));
+        System.out.println("accounts size = " +
+                bigAccounts.stream().map(accountTrie::get)
+                        .map(Optional::get).map(e -> e.getEncoded().length)
+                        .reduce(0, Integer::sum)
+        );
+
         System.out.println("proof size = " + bigAccounts.stream()
                 .map(Collections::singleton)
                 .map(accountTrie::getProof)
