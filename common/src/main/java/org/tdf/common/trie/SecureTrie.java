@@ -142,7 +142,7 @@ public class SecureTrie<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public RLPElement getMerklePath(K k) {
+    public RLPElement getProof(K k) {
         return delegate.getMerklePathInternal(
                 hashFunction.apply(
                         kCodec.getEncoder().apply(k)
@@ -151,9 +151,9 @@ public class SecureTrie<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public Trie<K, V> fromMerklePath(RLPElement merklePath) {
+    public Trie<K, V> revertToProof(RLPElement proof) {
         return new SecureTrie<>(
-                delegate.fromMerklePath(merklePath),
+                delegate.revertToProof(proof),
                 hashFunction
         );
     }

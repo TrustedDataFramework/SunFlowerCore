@@ -76,19 +76,22 @@ public interface Trie<K, V> extends Store<K, V> {
     boolean isDirty();
 
     /**
-     * get a mininal merkle proof of the key for verifying
-     * @param k
-     * @return
+     * Get merkle path of key as proof, commonly used for SPV
+     * Merkle proof are used to decide upon the following factors
+     * If the key belongs in the merkle Trie
+     * To concisely prove the validity of data being part of a dataset without storing the whole data set
+     * @param k the key to prove be absent or valid
+     * @return merkle path of key
      */
-    RLPElement getMerklePath(K k);
+    RLPElement getProof(K k);
 
     /**
-     * get a minimal trie revert from merkle path for verifying
-     * the reverted trie should have same root hash
-     * @param merklePath
-     * @return
+     * Get a minimal trie revert from merkle path for verifying;
+     * the trie should have the equality root hash
+     * @param proof
+     * @return Trie represented by merkle path
      */
-    Trie<K, V> fromMerklePath(RLPElement merklePath);
+    Trie<K, V> revertToProof(RLPElement proof);
 
     class Builder<K, V> {
         private Function<byte[], byte[]> hashFunction;

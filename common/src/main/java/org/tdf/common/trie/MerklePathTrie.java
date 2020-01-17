@@ -8,7 +8,7 @@ class MerklePathTrie<K, V> extends ReadOnlyTrie<K, V>{
     }
 
     @Override
-    public RLPElement getMerklePath(K k) {
+    public RLPElement getProof(K k) {
         throw new UnsupportedOperationException();
     }
 }

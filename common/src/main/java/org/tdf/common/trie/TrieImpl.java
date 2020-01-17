@@ -191,9 +191,9 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
     }
 
     @Override
-    public Trie<K, V> fromMerklePath(RLPElement merklePath) {
-        if(merklePath.isRLPItem() &&
-                FastByteComparisons.equal(merklePath.asBytes(), nullHash)
+    public Trie<K, V> revertToProof(RLPElement proof) {
+        if(proof.isRLPItem() &&
+                FastByteComparisons.equal(proof.asBytes(), nullHash)
         )
             return new MerklePathTrie<>(revert());
 
@@ -201,7 +201,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
                 nullHash,
                 function,
                 Store.getNop(), kCodec, vCodec,
-                Node.fromMerklePath(merklePath)
+                Node.fromMerklePath(proof)
         );
         ret.commit();
         return new MerklePathTrie<>(ret);

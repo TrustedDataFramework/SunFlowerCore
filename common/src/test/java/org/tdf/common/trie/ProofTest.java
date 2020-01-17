@@ -4,9 +4,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.HashUtil;
-import org.tdf.common.serialize.Codecs;
-import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPElement;
@@ -49,23 +46,23 @@ public abstract class ProofTest {
     public void test() {
         byte[] root = trie.getRootHash();
 
-        RLPElement merklePath = trie.getMerklePath(paramnesia);
+        RLPElement merklePath = trie.getProof(paramnesia);
         String val = trie.get(paramnesia).get();
 
-        assert HexBytes.fromBytes(trie.fromMerklePath(merklePath).getRootHash())
+        assert HexBytes.fromBytes(trie.revertToProof(merklePath).getRootHash())
                 .equals(HexBytes.fromBytes(root));
 
         assert trie
-                .fromMerklePath(merklePath)
+                .revertToProof(merklePath)
                 .get(paramnesia).get()
                 .equals(val);
 
-        merklePath = trie.getMerklePath(stoopingly);
+        merklePath = trie.getProof(stoopingly);
 
-        assert HexBytes.fromBytes(trie.fromMerklePath(merklePath).getRootHash())
+        assert HexBytes.fromBytes(trie.revertToProof(merklePath).getRootHash())
                 .equals(HexBytes.fromBytes(root));
 
-        assert !trie.fromMerklePath(merklePath).containsKey(stoopingly);
+        assert !trie.revertToProof(merklePath).containsKey(stoopingly);
 
         System.out.println(fileSize);
         System.out.println(merklePath.getEncoded().length);
@@ -74,8 +71,8 @@ public abstract class ProofTest {
     @Test
     public void testEmpty(){
         Trie<String, String> empty = trie.revert();
-        RLPElement merklePath = empty.getMerklePath(stoopingly);
-        byte[] root = trie.fromMerklePath(merklePath).getNullHash();
+        RLPElement merklePath = empty.getProof(stoopingly);
+        byte[] root = trie.revertToProof(merklePath).getNullHash();
         assert FastByteComparisons.equal(
                 empty.getNullHash(),
                 root

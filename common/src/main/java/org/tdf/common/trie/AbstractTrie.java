@@ -34,7 +34,7 @@ abstract class AbstractTrie<K, V> implements Trie<K, V>{
 
 
     @Override
-    public RLPElement getMerklePath(K k) {
+    public RLPElement getProof(K k) {
         return getMerklePathInternal(getKCodec().getEncoder().apply(k));
     }
 }

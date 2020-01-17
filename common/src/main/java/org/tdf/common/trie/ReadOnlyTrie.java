@@ -153,12 +153,12 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
 
 
     @Override
-    public RLPElement getMerklePath(K k) {
-        return delegate.getMerklePath(k);
+    public RLPElement getProof(K k) {
+        return delegate.getProof(k);
     }
 
     @Override
-    public Trie<K, V> fromMerklePath(RLPElement merklePath) {
+    public Trie<K, V> revertToProof(RLPElement proof) {
         throw new UnsupportedOperationException();
     }
 
