@@ -179,12 +179,12 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
 
     @Override
     public void putBytes(byte[] key, byte[] value) {
-        delegate.putBytes(key, value);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void removeBytes(byte[] data) {
-        delegate.removeBytes(data);
+        throw new UnsupportedOperationException();
     }
 
     @Override

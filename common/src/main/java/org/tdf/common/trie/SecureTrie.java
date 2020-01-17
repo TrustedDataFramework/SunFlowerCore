@@ -1,6 +1,5 @@
 package org.tdf.common.trie;
 
-import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
 import org.tdf.rlp.RLPElement;
@@ -24,34 +23,30 @@ import java.util.stream.Stream;
  *
  * @param <V> value type
  */
-public class SecureTrie<K, V> implements Trie<K, V> {
+public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     private AbstractTrie<K, V> delegate;
 
     private Function<byte[], byte[]> hashFunction;
 
-    private Codec<K, byte[]> kCodec;
-    private Codec<V, byte[]> vCodec;
 
     public SecureTrie(Trie<K, V> delegate, Function<byte[], byte[]> hashFunction) {
         this.delegate = (AbstractTrie<K, V>) delegate;
         this.hashFunction = hashFunction;
-        this.kCodec = this.delegate.getKCodec();
-        this.vCodec = this.delegate.getVCodec();
     }
 
     @Override
     public Trie<K, V> revert(byte[] rootHash, Store<byte[], byte[]> store) throws RuntimeException {
-        return delegate.revert(rootHash, store);
+        return new SecureTrie<>(delegate.revert(rootHash, store), hashFunction);
     }
 
     @Override
     public Trie<K, V> revert(byte[] rootHash) throws RuntimeException {
-        return delegate.revert(rootHash);
+        return new SecureTrie<>(delegate.revert(rootHash), hashFunction);
     }
 
     @Override
     public Trie<K, V> revert() {
-        return delegate.revert();
+        return new SecureTrie<>(delegate.revert(), hashFunction);
     }
 
     @Override
@@ -80,13 +75,6 @@ public class SecureTrie<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public Optional<V> get(@NonNull K k) {
-        return delegate.getFromBytes(
-                hashFunction.apply(kCodec.getEncoder().apply(k))
-        );
-    }
-
-    @Override
     public V getTrap() {
         return delegate.getTrap();
     }
@@ -96,15 +84,6 @@ public class SecureTrie<K, V> implements Trie<K, V> {
         return delegate.isTrap(v);
     }
 
-    @Override
-    public void put(@NonNull K k, V v) {
-        delegate.putBytes(hashFunction.apply(kCodec.getEncoder().apply(k)), vCodec.getEncoder().apply(v));
-    }
-
-    @Override
-    public void remove(@NonNull K k) {
-        delegate.removeBytes(hashFunction.apply(kCodec.getEncoder().apply(k)));
-    }
 
     @Override
     public void flush() {
@@ -145,7 +124,7 @@ public class SecureTrie<K, V> implements Trie<K, V> {
     public RLPElement getProof(K k) {
         return delegate.getMerklePathInternal(
                 hashFunction.apply(
-                        kCodec.getEncoder().apply(k)
+                        getKCodec().getEncoder().apply(k)
                 )
         );
     }
@@ -156,5 +135,35 @@ public class SecureTrie<K, V> implements Trie<K, V> {
                 delegate.revertToProof(proof),
                 hashFunction
         );
+    }
+
+    @Override
+    public Codec<K, byte[]> getKCodec() {
+        return delegate.getKCodec();
+    }
+
+    @Override
+    public Codec<V, byte[]> getVCodec() {
+        return delegate.getVCodec();
+    }
+
+    @Override
+    public Optional<V> getFromBytes(byte[] data) {
+        return delegate.getFromBytes(hashFunction.apply(data));
+    }
+
+    @Override
+    public void putBytes(byte[] key, byte[] value) {
+        delegate.putBytes(hashFunction.apply(key), value);
+    }
+
+    @Override
+    public void removeBytes(byte[] data) {
+        delegate.removeBytes(hashFunction.apply(data));
+    }
+
+    @Override
+    public RLPElement getMerklePathInternal(byte[] bytes) {
+        return delegate.getMerklePathInternal(hashFunction.apply(bytes));
     }
 }
