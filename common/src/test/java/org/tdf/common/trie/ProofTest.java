@@ -23,6 +23,8 @@ public class ProofTest {
 
     private String stoopingly = "stoopingly";
 
+    private int fileSize;
+
     @Before
     public void before() throws Exception {
         trie = Trie.<String, String>builder()
@@ -34,9 +36,8 @@ public class ProofTest {
 
         URL url = ClassLoader
                 .getSystemResource("trie/massive-upload.dmp");
-
+        fileSize = url.openStream().available();
         Files.lines(Paths.get(url.toURI()))
-                .limit(5000)
                 .forEach(s -> {
                     String[] kv = s.split("=");
                     if (kv[0].equals("*") || kv[0].equals(stoopingly)) return;
@@ -68,6 +69,9 @@ public class ProofTest {
                 .equals(HexBytes.fromBytes(root));
 
         assert !trie.fromMerklePath(merklePath).containsKey(stoopingly);
+
+        System.out.println(fileSize);
+        System.out.println(merklePath.getEncoded().length);
     }
 
     @Test
