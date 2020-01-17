@@ -2,6 +2,9 @@ package org.tdf.common.trie;
 
 import org.tdf.common.util.HexBytes;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 // HEX encoding contains one byte for each nibble of the key and an optional trailing
 // 'terminator' byte of value 0x10 which indicates whether or not the node at the key
 // contains a value. Hex key encoding is used for nodes loaded in memory because it's
@@ -14,19 +17,23 @@ import org.tdf.common.util.HexBytes;
 // of the first byte is zero in the case of an even number of nibbles and the first nibble
 // in the case of an odd number. All remaining nibbles (now an even number) fit properly
 // into the remaining bytes. Compact encoding is used for nodes stored on disk.
-public class TrieKey {
+public class TrieKey implements Comparable<TrieKey> {
     public static final int ODD_OFFSET_FLAG = 0x1;
     public static final int TERMINATOR_FLAG = 0x2;
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     static TrieKey EMPTY = new TrieKey(EMPTY_BYTE_ARRAY, 0);
     private final byte[] data;
     private final int offset;
+    private final int hashCode;
 
     private TrieKey(byte[] data) {
         this(data, 0);
     }
 
     private TrieKey(byte[] data, int offset) {
+        int result = Objects.hash(offset);
+        result = 31 * result + Arrays.hashCode(data);
+        this.hashCode = result;
         this.data = data;
         this.offset = offset;
     }
@@ -179,7 +186,21 @@ public class TrieKey {
     }
 
     @Override
+    public int hashCode() {
+        return hashCode;
+    }
+
+    @Override
     public String toString() {
         return HexBytes.encode(data).substring(offset);
+    }
+
+    @Override
+    public int compareTo(TrieKey o) {
+        if (size() != o.size()) return Integer.compare(size(), o.size());
+        for (int i = 0; i < size(); i++) {
+            if (get(i) != o.get(i)) return Integer.compare(get(i), o.get(i));
+        }
+        return 0;
     }
 }

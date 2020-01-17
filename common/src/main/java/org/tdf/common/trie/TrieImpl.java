@@ -12,10 +12,13 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 // enhanced radix tree
@@ -184,10 +187,12 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
         return encoded == null || encoded.length == 0;
     }
 
-    public RLPElement getMerklePathInternal(byte[] key) {
+    public RLPElement getMerklePathInternal(Collection<? extends byte[]> key) {
         return root == null ?
                 RLPItem.fromBytes(nullHash) :
-                root.getMerklePath(TrieKey.fromNormal(key));
+                root.getMerklePath(
+                        key.stream().map(TrieKey::fromNormal).collect(Collectors.toSet())
+                );
     }
 
     @Override

@@ -11,6 +11,9 @@ import org.tdf.rlp.RLPElement;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 @RunWith(JUnit4.class)
 public abstract class ProofTest {
@@ -19,6 +22,10 @@ public abstract class ProofTest {
     private String paramnesia = "paramnesia";
 
     private String stoopingly = "stoopingly";
+
+    private List<String> proofKeys = Arrays.asList(
+            "demoralize", "estivating", "impanelled", "acrogynous", "hamantasch", "prepotency"
+    );
 
     private int fileSize;
 
@@ -69,7 +76,7 @@ public abstract class ProofTest {
     }
 
     @Test
-    public void testEmpty(){
+    public void testEmpty() {
         Trie<String, String> empty = trie.revert();
         RLPElement merklePath = empty.getProof(stoopingly);
         byte[] root = trie.revertToProof(merklePath).getNullHash();
@@ -77,5 +84,21 @@ public abstract class ProofTest {
                 empty.getNullHash(),
                 root
         );
+    }
+
+    @Test
+    public void testMultiKeys(){
+        RLPElement rlpElement = trie.getProof(proofKeys);
+        System.out.println(rlpElement.getEncoded().length);
+        
+        Trie<String, String> merkleProof =
+                trie.revertToProof(rlpElement);
+
+        for(String k: proofKeys){
+            Optional<String> actual = merkleProof.get(k);
+            Optional<String> expected = trie.get(k);
+            assert (!actual.isPresent() && !expected.isPresent()) ||
+                    actual.get().equals(expected.get());
+        }
     }
 }

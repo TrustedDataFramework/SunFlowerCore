@@ -4,7 +4,9 @@ import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 import org.tdf.rlp.RLPElement;
 
+import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 abstract class AbstractTrie<K, V> implements Trie<K, V>{
     abstract Codec<K, byte[]> getKCodec();
@@ -13,7 +15,7 @@ abstract class AbstractTrie<K, V> implements Trie<K, V>{
     abstract Optional<V> getFromBytes(byte[] data);
     abstract void putBytes(byte[] key, byte[] value);
     abstract void removeBytes(byte[] data);
-    abstract RLPElement getMerklePathInternal(byte[] bytes);
+    abstract RLPElement getMerklePathInternal(Collection<? extends byte[]> keys);
 
     @Override
     public void put(@NonNull K k, @NonNull V val) {
@@ -34,7 +36,7 @@ abstract class AbstractTrie<K, V> implements Trie<K, V>{
 
 
     @Override
-    public RLPElement getProof(K k) {
-        return getMerklePathInternal(getKCodec().getEncoder().apply(k));
+    public RLPElement getProof(Collection<? extends K> keys) {
+        return getMerklePathInternal(keys.stream().map(getKCodec().getEncoder()).collect(Collectors.toList()));
     }
 }

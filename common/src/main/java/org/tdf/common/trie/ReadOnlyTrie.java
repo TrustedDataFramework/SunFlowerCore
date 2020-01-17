@@ -153,8 +153,8 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
 
 
     @Override
-    public RLPElement getProof(K k) {
-        return delegate.getProof(k);
+    public RLPElement getProof(Collection<? extends K> keys) {
+        return delegate.getProof(keys);
     }
 
     @Override
@@ -188,7 +188,7 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public RLPElement getMerklePathInternal(byte[] bytes) {
+    public RLPElement getMerklePathInternal(Collection<? extends byte[]> bytes) {
         return delegate.getMerklePathInternal(bytes);
     }
 }

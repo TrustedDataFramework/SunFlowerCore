@@ -11,10 +11,13 @@ import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.tdf.common.trie.TrieKey.EMPTY;
 
@@ -564,7 +567,7 @@ class Node {
             return node;
         }
 
-        if(element.size() != 2)
+        if (element.size() != 2)
             throw new IllegalArgumentException();
 
         byte[] packed = element.get(0).asBytes();
@@ -583,10 +586,11 @@ class Node {
      * ret.size() == 17 -> branch node
      * ret.isRLPItem -> hash or value
      *
-     * @param path
+     * @param paths
      * @return
      */
-    RLPElement getMerklePath(TrieKey path) {
+    RLPElement getMerklePath(Set<? extends TrieKey> paths) {
+        Set<TrieKey> copied = new HashSet<>(paths);
         switch (getType()) {
             case BRANCH: {
                 RLPList ret = RLPList.createEmpty(BRANCH_SIZE);
@@ -596,8 +600,15 @@ class Node {
                         ret.add(RLPItem.NULL);
                         continue;
                     }
-                    if (!path.isEmpty() && i == path.get(0)) {
-                        ret.add(child.getMerklePath(path.shift()));
+                    final int finalI = i;
+                    List<TrieKey> matched = paths.stream()
+                            .filter(p -> !p.isEmpty() && finalI == p.get(0))
+                            .collect(Collectors.toList());
+
+                    if (!matched.isEmpty()) {
+                        copied.removeAll(matched);
+                        matched.forEach(k -> copied.add(k.shift()));
+                        ret.add(child.getMerklePath(copied));
                         continue;
                     }
                     ret.add(child.hash == null ? child.rlp : RLPItem.fromBytes(child.hash));
@@ -608,11 +619,15 @@ class Node {
             case LEAF:
                 return rlp;
             default: {
-                TrieKey remain = path.matchAndShift(getKey());
-                if (remain == null || remain.isEmpty()) return rlp;
+                Set<TrieKey> matched = paths.stream()
+                        .map(k -> k.matchAndShift(getKey()))
+                        .filter(k -> k != null && !k.isEmpty())
+                        .collect(Collectors.toSet());
+
+                if (matched.isEmpty()) return rlp;
                 RLPList ret = RLPList.createEmpty(2);
                 ret.add(RLPItem.fromBytes(getKey().toPacked(false)));
-                ret.add(getExtension().getMerklePath(remain));
+                ret.add(getExtension().getMerklePath(matched));
                 return ret;
             }
         }

@@ -4,6 +4,8 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
 import org.tdf.rlp.RLPElement;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -80,10 +82,14 @@ public interface Trie<K, V> extends Store<K, V> {
      * Merkle proof are used to decide upon the following factors
      * If the key belongs in the merkle Trie
      * To concisely prove the validity of data being part of a dataset without storing the whole data set
-     * @param k the key to prove be absent or valid
+     * @param keys keys to prove be absent or valid
      * @return merkle path of key
      */
-    RLPElement getProof(K k);
+    RLPElement getProof(Collection<? extends K> keys);
+
+    default RLPElement getProof(K key){
+        return getProof(Collections.singleton(key));
+    }
 
     /**
      * Get a minimal trie revert from merkle path for verifying;

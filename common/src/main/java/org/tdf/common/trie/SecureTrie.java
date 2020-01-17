@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -121,11 +122,10 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public RLPElement getProof(K k) {
+    public RLPElement getProof(Collection<? extends K> k) {
         return delegate.getMerklePathInternal(
-                hashFunction.apply(
-                        getKCodec().getEncoder().apply(k)
-                )
+                k.stream().map(getKCodec().getEncoder())
+                        .map(hashFunction).collect(Collectors.toList())
         );
     }
 
@@ -163,7 +163,7 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public RLPElement getMerklePathInternal(byte[] bytes) {
-        return delegate.getMerklePathInternal(hashFunction.apply(bytes));
+    public RLPElement getMerklePathInternal(Collection<? extends byte[]> bytes) {
+        return delegate.getMerklePathInternal(bytes.stream().map(hashFunction).collect(Collectors.toList()));
     }
 }
