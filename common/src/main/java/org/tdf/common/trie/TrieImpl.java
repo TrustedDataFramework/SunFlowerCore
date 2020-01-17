@@ -48,7 +48,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
             throw new RuntimeException(
                     String.format("the hash function result should be %d bytes", Node.MAX_KEY_SIZE)
             );
-        
+
         return new TrieImpl<>(
                 hashFunction.apply(RLPItem.NULL.getEncoded()),
                 hashFunction,

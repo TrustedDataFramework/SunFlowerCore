@@ -6,7 +6,7 @@ import org.tdf.rlp.RLPElement;
 
 import java.util.Optional;
 
-public abstract class AbstractTrie<K, V> implements Trie<K, V>{
+abstract class AbstractTrie<K, V> implements Trie<K, V>{
     abstract Codec<K, byte[]> getKCodec();
     abstract Codec<V, byte[]> getVCodec();
 
