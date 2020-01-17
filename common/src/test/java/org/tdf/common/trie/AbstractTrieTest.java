@@ -27,7 +27,7 @@ import static org.junit.Assert.*;
 import static org.tdf.common.HashUtil.EMPTY_TRIE_HASH;
 
 @RunWith(JUnit4.class)
-public class TrieTest {
+public abstract class AbstractTrieTest {
     private static String LONG_STRING = "1234567890abcdefghijklmnopqrstuvwxxzABCEFGHIJKLMNOPQRSTUVWXYZ";
     private static String ROOT_HASH_EMPTY = Hex.toHexString(EMPTY_TRIE_HASH);
 
@@ -40,17 +40,9 @@ public class TrieTest {
     private static String dude = "dude";
     private final String randomDictionary = "spinneries, archipenko, prepotency, herniotomy, preexpress, relaxative, insolvably, debonnaire, apophysate, virtuality, cavalryman, utilizable, diagenesis, vitascopic, governessy, abranchial, cyanogenic, gratulated, signalment, predicable, subquality, crystalize, prosaicism, oenologist, repressive, impanelled, cockneyism, bordelaise, compigne, konstantin, predicated, unsublimed, hydrophane, phycomyces, capitalise, slippingly, untithable, unburnable, deoxidizer, misteacher, precorrect, disclaimer, solidified, neuraxitis, caravaning, betelgeuse, underprice, uninclosed, acrogynous, reirrigate, dazzlingly, chaffiness, corybantes, intumesced, intentness, superexert, abstrusely, astounding, pilgrimage, posttarsal, prayerless, nomologist, semibelted, frithstool, unstinging, ecalcarate, amputating, megascopic, graphalloy, platteland, adjacently, mingrelian, valentinus, appendical, unaccurate, coriaceous, waterworks, sympathize, doorkeeper, overguilty, flaggingly, admonitory, aeriferous, normocytic, parnellism, catafalque, odontiasis, apprentice, adulterous, mechanisma, wilderness, undivorced, reinterred, effleurage, pretrochal, phytogenic, swirlingly, herbarized, unresolved, classifier, diosmosing, microphage, consecrate, astarboard, predefying, predriving, lettergram, ungranular, overdozing, conferring, unfavorite, peacockish, coinciding, erythraeum, freeholder, zygophoric, imbitterer, centroidal, appendixes, grayfishes, enological, indiscreet, broadcloth, divulgated, anglophobe, stoopingly, bibliophil, laryngitis, separatist, estivating, bellarmine, greasiness, typhlology, xanthation, mortifying, endeavorer, aviatrices, unequalise, metastatic, leftwinger, apologizer, quatrefoil, nonfouling, bitartrate, outchiding, undeported, poussetted, haemolysis, asantehene, montgomery, unjoinable, cedarhurst, unfastener, nonvacuums, beauregard, animalized, polyphides, cannizzaro, gelatinoid, apologised, unscripted, tracheidal, subdiscoid, gravelling, variegated, interabang, inoperable, immortelle, laestrygon, duplicatus, proscience, deoxidised, manfulness, channelize, nondefense, ectomorphy, unimpelled, headwaiter, hexaemeric, derivation, prelexical, limitarian, nonionized, prorefugee, invariably, patronizer, paraplegia, redivision, occupative, unfaceable, hypomnesia, psalterium, doctorfish, gentlefolk, overrefine, heptastich, desirously, clarabelle, uneuphonic, autotelism, firewarden, timberjack, fumigation, drainpipes, spathulate, novelvelle, bicorporal, grisliness, unhesitant, supergiant, unpatented, womanpower, toastiness, multichord, paramnesia, undertrick, contrarily, neurogenic, gunmanship, settlement, brookville, gradualism, unossified, villanovan, ecospecies, organising, buckhannon, prefulfill, johnsonese, unforegone, unwrathful, dunderhead, erceldoune, unwadeable, refunction, understuff, swaggering, freckliest, telemachus, groundsill, outslidden, bolsheviks, recognizer, hemangioma, tarantella, muhammedan, talebearer, relocation, preemption, chachalaca, septuagint, ubiquitous, plexiglass, humoresque, biliverdin, tetraploid, capitoline, summerwood, undilating, undetested, meningitic, petrolatum, phytotoxic, adiphenine, flashlight, protectory, inwreathed, rawishness, tendrillar, hastefully, bananaquit, anarthrous, unbedimmed, herborized, decenniums, deprecated, karyotypic, squalidity, pomiferous, petroglyph, actinomere, peninsular, trigonally, androgenic, resistance, unassuming, frithstool, documental, eunuchised, interphone, thymbraeus, confirmand, expurgated, vegetation, myographic, plasmagene, spindrying, unlackeyed, foreknower, mythically, albescence, rebudgeted, implicitly, unmonastic, torricelli, mortarless, labialized, phenacaine, radiometry, sluggishly, understood, wiretapper, jacobitely, unbetrayed, stadholder, directress, emissaries, corelation, sensualize, uncurbable, permillage, tentacular, thriftless, demoralize, preimagine, iconoclast, acrobatism, firewarden, transpired, bluethroat, wanderjahr, groundable, pedestrian, unulcerous, preearthly, freelanced, sculleries, avengingly, visigothic, preharmony, bressummer, acceptable, unfoolable, predivider, overseeing, arcosolium, piriformis, needlecord, homebodies, sulphation, phantasmic, unsensible, unpackaged, isopiestic, cytophagic, butterlike, frizzliest, winklehawk, necrophile, mesothorax, cuchulainn, unrentable, untangible, unshifting, unfeasible, poetastric, extermined, gaillardia, nonpendent, harborside, pigsticker, infanthood, underrower, easterling, jockeyship, housebreak, horologium, undepicted, dysacousma, incurrable, editorship, unrelented, peritricha, interchaff, frothiness, underplant, proafrican, squareness, enigmatise, reconciled, nonnumeral, nonevident, hamantasch, victualing, watercolor, schrdinger, understand, butlerlike, hemiglobin, yankeeland";
 
-    static TrieImpl<String, String> newStringTrie(Store<byte[], byte[]> store) {
-        return TrieImpl.newInstance(HashUtil::sha3, store, Codecs.STRING, Codecs.STRING);
-    }
+    abstract Trie<String, String> newStringTrie();
 
-    static TrieImpl<String, String> newStringTrie() {
-        return TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codecs.STRING, Codecs.STRING);
-    }
-
-    static TrieImpl<byte[], byte[]> newBytesTrie() {
-        return TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
-    }
+    abstract Trie<byte[], byte[]> newBytesTrie();
 
     public static byte[] intToBytes(int val) {
         return ByteBuffer.allocate(Integer.BYTES).putInt(val).array();
@@ -58,7 +50,7 @@ public class TrieTest {
 
     @Test
     public void test1() {
-        TrieImpl<byte[], byte[]> trie = newBytesTrie();
+        Trie<byte[], byte[]> trie = newBytesTrie();
         Arrays.asList("test", "toaster", "toasting", "slow", "slowly")
                 .forEach(x -> trie.put(x.getBytes(), x.getBytes()));
 
@@ -325,8 +317,8 @@ public class TrieTest {
 
     @Test
     public void testDogs() {
-        TrieImpl<String, String> trie = newStringTrie();
-        TrieImpl<String, String> impl = trie;
+        Trie<String, String> trie = newStringTrie();
+        Trie<String, String> impl = trie;
         trie.put("doe", "reindeer");
         assertEquals("11a0327cfcc5b7689b6b6d727e1f5f8846c1137caaa9fc871ba31b7cce1b703e", Hex.toHexString(impl.commit()));
 
@@ -479,7 +471,7 @@ public class TrieTest {
 
     @Test
     public void testGetFromRootNode() {
-        TrieImpl<String, String> trie1 = newStringTrie();
+        Trie<String, String> trie1 = newStringTrie();
         trie1.put(cat, LONG_STRING);
         Trie<String, String> trie2 = trie1;
         assertEquals(LONG_STRING, trie2.get(cat).get());
@@ -498,7 +490,7 @@ public class TrieTest {
         byte[] val3 = Hex.decode("94412e0c4f0102f3f0ac63f0a125bce36ca75d4e0d");
         byte[] val4 = Hex.decode("01");
 
-        TrieImpl<byte[], byte[]> storage = newBytesTrie();
+        Trie<byte[], byte[]> storage = newBytesTrie();
         storage.put(key1, val1);
         storage.put(key2, val2);
         storage.put(key3, val3);
@@ -568,7 +560,7 @@ public class TrieTest {
         dataMap.put("6e929251b981389774af84a07585724c432e2db487381810719c3dd913192ae2", "00000000000000000000000000000000000000000000000000000000000000be");
         dataMap.put("6e92718d00dae27b2a96f6853a0bf11ded08bc658b2e75904ca0344df5aff9ae", "00000000000000000000000000000000000000000000002f0000000000000000");
 
-        TrieImpl<byte[], byte[]> trie = newBytesTrie();
+        Trie<byte[], byte[]> trie = newBytesTrie();
 
         for (Map.Entry<String, String> e : dataMap.entrySet()) {
             trie.put(Hex.decode(e.getKey()), Hex.decode(e.getValue()));
@@ -593,7 +585,7 @@ public class TrieTest {
     public void testBugFix2() throws Exception {
 
         // Create trie: root -> BranchNode (..., NodeValue (less than 32 bytes), ...)
-        TrieImpl<byte[], byte[]> trie = newBytesTrie();
+        Trie<byte[], byte[]> trie = newBytesTrie();
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000011"), Hex.decode("11"));
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000000022"), Hex.decode("22"));
 
@@ -623,7 +615,7 @@ public class TrieTest {
 
         // BUG: kvNodeNode is not deleted from storage after the merge
 
-        TrieImpl<byte[], byte[]> trie = newBytesTrie();
+        Trie<byte[], byte[]> trie = newBytesTrie();
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000011133"),
                 Hex.decode("0000000000000000000000000000000000000000000000000000000000000033"));
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000021244"),
