@@ -8,6 +8,7 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ReadOnlyStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 
@@ -43,6 +44,11 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
             @NonNull Codec<K, byte[]> keyCodec,
             @NonNull Codec<V, byte[]> valueCodec
     ) {
+        if(hashFunction.apply(HexBytes.EMPTY_BYTES).length != Node.MAX_KEY_SIZE)
+            throw new RuntimeException(
+                    String.format("the hash function result should be %d bytes", Node.MAX_KEY_SIZE)
+            );
+        
         return new TrieImpl<>(
                 hashFunction.apply(RLPItem.NULL.getEncoded()),
                 hashFunction,
