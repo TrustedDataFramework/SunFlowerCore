@@ -19,13 +19,22 @@ import java.util.function.Function;
 
 // enhanced radix tree
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class TrieImpl<K, V> implements Trie<K, V> {
+public class TrieImpl<K, V> extends AbstractTrie<K, V>{
     @Getter
     private final byte[] nullHash;
     Function<byte[], byte[]> function;
     Store<byte[], byte[]> store;
     Codec<K, byte[]> kCodec;
     Codec<V, byte[]> vCodec;
+
+    Codec<K, byte[]> getKCodec() {
+        return kCodec;
+    }
+
+    Codec<V, byte[]> getVCodec() {
+        return vCodec;
+    }
+
     private Node root;
 
     static <K, V> TrieImpl<K, V> newInstance(
@@ -44,21 +53,10 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         );
     }
 
-    @Override
-    public Optional<V> get(@NonNull K k) {
-        byte[] data = kCodec.getEncoder().apply(k);
-        return getFromBytes(data);
-    }
-
     Optional<V> getFromBytes(byte[] data) {
         if (data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
         if (root == null) return Optional.empty();
         return Optional.ofNullable(root.get(TrieKey.fromNormal(data))).map(vCodec.getDecoder());
-    }
-
-    @Override
-    public void put(@NonNull K k, @NonNull V val) {
-        putBytes(kCodec.getEncoder().apply(k), vCodec.getEncoder().apply(val));
     }
 
     void putBytes(byte[] key, byte[] value) {
@@ -72,12 +70,6 @@ public class TrieImpl<K, V> implements Trie<K, V> {
             return;
         }
         root.insert(TrieKey.fromNormal(key), value, store);
-    }
-
-    @Override
-    public void remove(@NonNull K k) {
-        byte[] data = kCodec.getEncoder().apply(k);
-        removeBytes(data);
     }
 
     void removeBytes(byte[] data) {
@@ -152,12 +144,12 @@ public class TrieImpl<K, V> implements Trie<K, V> {
     }
 
     @Override
-    public Trie<K, V> revert(byte[] rootHash) throws RuntimeException {
+    public TrieImpl<K, V> revert(byte[] rootHash) throws RuntimeException {
         return revert(rootHash, store);
     }
 
     @Override
-    public Trie<K, V> revert() {
+    public TrieImpl<K, V> revert() {
         return new TrieImpl<>(
                 nullHash,
                 function,
@@ -186,11 +178,10 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         return encoded == null || encoded.length == 0;
     }
 
-    @Override
-    public RLPElement getMerklePath(K k) {
+    public RLPElement getMerklePathInternal(byte[] key) {
         return root == null ?
                 RLPItem.fromBytes(nullHash) :
-                root.getMerklePath(TrieKey.fromNormal(kCodec.getEncoder().apply(k)));
+                root.getMerklePath(TrieKey.fromNormal(key));
     }
 
     @Override
@@ -200,12 +191,13 @@ public class TrieImpl<K, V> implements Trie<K, V> {
         )
             return new MerklePathTrie<>(revert());
 
-        Trie<K, V> ret = new TrieImpl<>(
+        AbstractTrie<K, V> ret = new TrieImpl<>(
                 nullHash,
                 function,
                 Store.getNop(), kCodec, vCodec,
                 Node.fromMerklePath(merklePath)
         );
+        ret.commit();
         return new MerklePathTrie<>(ret);
     }
 }

@@ -1,6 +1,5 @@
 package org.tdf.common.trie;
 
-import lombok.Getter;
 import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
@@ -26,7 +25,7 @@ import java.util.stream.Stream;
  * @param <V> value type
  */
 public class SecureTrie<K, V> implements Trie<K, V> {
-    private TrieImpl<K, V> delegate;
+    private AbstractTrie<K, V> delegate;
 
     private Function<byte[], byte[]> hashFunction;
 
@@ -34,13 +33,10 @@ public class SecureTrie<K, V> implements Trie<K, V> {
     private Codec<V, byte[]> vCodec;
 
     public SecureTrie(Trie<K, V> delegate, Function<byte[], byte[]> hashFunction) {
-        if (!(delegate instanceof TrieImpl))
-            throw new UnsupportedOperationException("create secure trie failed, delegate is not a trie impl");
-
-        this.delegate = ((TrieImpl<K, V>) delegate);
+        this.delegate = (AbstractTrie<K, V>) delegate;
         this.hashFunction = hashFunction;
-        this.kCodec = this.delegate.kCodec;
-        this.vCodec = this.delegate.vCodec;
+        this.kCodec = this.delegate.getKCodec();
+        this.vCodec = this.delegate.getVCodec();
     }
 
     @Override
@@ -105,7 +101,6 @@ public class SecureTrie<K, V> implements Trie<K, V> {
         delegate.putBytes(hashFunction.apply(kCodec.getEncoder().apply(k)), vCodec.getEncoder().apply(v));
     }
 
-
     @Override
     public void remove(@NonNull K k) {
         delegate.removeBytes(hashFunction.apply(kCodec.getEncoder().apply(k)));
@@ -148,11 +143,18 @@ public class SecureTrie<K, V> implements Trie<K, V> {
 
     @Override
     public RLPElement getMerklePath(K k) {
-        return null;
+        return delegate.getMerklePathInternal(
+                hashFunction.apply(
+                        kCodec.getEncoder().apply(k)
+                )
+        );
     }
 
     @Override
     public Trie<K, V> fromMerklePath(RLPElement merklePath) {
-        return null;
+        return new SecureTrie<>(
+                delegate.fromMerklePath(merklePath),
+                hashFunction
+        );
     }
 }

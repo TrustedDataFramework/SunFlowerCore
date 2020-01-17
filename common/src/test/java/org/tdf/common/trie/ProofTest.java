@@ -16,7 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 @RunWith(JUnit4.class)
-public class ProofTest {
+public abstract class ProofTest {
     private Trie<String, String> trie;
 
     private String paramnesia = "paramnesia";
@@ -25,14 +25,11 @@ public class ProofTest {
 
     private int fileSize;
 
+    abstract Trie<String, String> supplyTrie();
+
     @Before
     public void before() throws Exception {
-        trie = Trie.<String, String>builder()
-                .store(new ByteArrayMapStore<>())
-                .valueCodec(Codecs.STRING)
-                .keyCodec(Codecs.STRING)
-                .hashFunction(HashUtil::sha3)
-                .build();
+        trie = supplyTrie();
 
         URL url = ClassLoader
                 .getSystemResource("trie/massive-upload.dmp");
@@ -55,7 +52,7 @@ public class ProofTest {
         RLPElement merklePath = trie.getMerklePath(paramnesia);
         String val = trie.get(paramnesia).get();
 
-        assert HexBytes.fromBytes(trie.fromMerklePath(merklePath).commit())
+        assert HexBytes.fromBytes(trie.fromMerklePath(merklePath).getRootHash())
                 .equals(HexBytes.fromBytes(root));
 
         assert trie
@@ -65,7 +62,7 @@ public class ProofTest {
 
         merklePath = trie.getMerklePath(stoopingly);
 
-        assert HexBytes.fromBytes(trie.fromMerklePath(merklePath).commit())
+        assert HexBytes.fromBytes(trie.fromMerklePath(merklePath).getRootHash())
                 .equals(HexBytes.fromBytes(root));
 
         assert !trie.fromMerklePath(merklePath).containsKey(stoopingly);
@@ -78,7 +75,7 @@ public class ProofTest {
     public void testEmpty(){
         Trie<String, String> empty = trie.revert();
         RLPElement merklePath = empty.getMerklePath(stoopingly);
-        byte[] root = trie.fromMerklePath(merklePath).commit();
+        byte[] root = trie.fromMerklePath(merklePath).getNullHash();
         assert FastByteComparisons.equal(
                 empty.getNullHash(),
                 root

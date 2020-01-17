@@ -2,6 +2,7 @@ package org.tdf.common.trie;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
 import org.tdf.rlp.RLPElement;
 
@@ -11,10 +12,10 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class ReadOnlyTrie<K, V> implements Trie<K, V> {
-    protected Trie<K, V> delegate;
+public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
+    protected AbstractTrie<K, V> delegate;
 
-    public static <K, V> Trie<K, V> of(Trie<K, V> trie) {
+    public static <K, V> Trie<K, V> of(AbstractTrie<K, V> trie) {
         if (trie instanceof ReadOnlyTrie) return trie;
         if (trie.isDirty()) throw new UnsupportedOperationException();
         return new ReadOnlyTrie<>(trie);
@@ -159,5 +160,35 @@ public class ReadOnlyTrie<K, V> implements Trie<K, V> {
     @Override
     public Trie<K, V> fromMerklePath(RLPElement merklePath) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Codec<K, byte[]> getKCodec() {
+        return delegate.getKCodec();
+    }
+
+    @Override
+    public Codec<V, byte[]> getVCodec() {
+        return delegate.getVCodec();
+    }
+
+    @Override
+    public Optional<V> getFromBytes(byte[] data) {
+        return delegate.getFromBytes(data);
+    }
+
+    @Override
+    public void putBytes(byte[] key, byte[] value) {
+        delegate.putBytes(key, value);
+    }
+
+    @Override
+    public void removeBytes(byte[] data) {
+        delegate.removeBytes(data);
+    }
+
+    @Override
+    public RLPElement getMerklePathInternal(byte[] bytes) {
+        return delegate.getMerklePathInternal(bytes);
     }
 }
