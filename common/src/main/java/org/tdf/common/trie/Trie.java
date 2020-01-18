@@ -2,6 +2,7 @@ package org.tdf.common.trie;
 
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
+import org.tdf.common.util.ByteArrayMap;
 import org.tdf.rlp.RLPElement;
 
 import java.util.Collection;
@@ -82,22 +83,23 @@ public interface Trie<K, V> extends Store<K, V> {
      * Merkle proof are used to decide upon the following factors
      * If the key belongs in the merkle Trie
      * To concisely prove the validity of data being part of a dataset without storing the whole data set
-     * @param keys keys to prove be absent or valid
+     * @param k key to prove be absent or valid
      * @return merkle path of key
      */
-    RLPElement getProof(Collection<? extends K> keys);
-
-    default RLPElement getProof(K key){
-        return getProof(Collections.singleton(key));
-    }
+    Map<byte[], byte[]> getProof(K k);
 
     /**
-     * Get a minimal trie revert from merkle path for verifying;
-     * the trie should have the equality root hash
-     * @param proof
-     * @return Trie represented by merkle path
+     * get merkle proof batched
+     * @param keys keys to included in the proof
+     * @return merkle proof
      */
-    Trie<K, V> revertToProof(RLPElement proof);
+    default Map<byte[], byte[]> getProof(Collection<? extends K> keys){
+        Map<byte[], byte[]> ret = new ByteArrayMap<>();
+        for (K key : keys) {
+            ret.putAll(getProof(key));
+        }
+        return ret;
+    }
 
     class Builder<K, V> {
         private Function<byte[], byte[]> hashFunction;

@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -504,11 +505,12 @@ public abstract class AbstractTrieTest {
 
     @Test
 //    count n = 1000000 size trie 2349 ms
-    public void test7() {
+    public void test7() throws Exception{
+        TimeUnit.SECONDS.sleep(10);
         boolean performance = false;
         int n = 1000000;
         if (!performance) return;
-        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(HashUtil::sha256, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
         byte[] dummy = new byte[]{1};
         SecureRandom sr = new SecureRandom();
         Set<byte[]> set = new ByteArraySet();

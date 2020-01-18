@@ -8,18 +8,15 @@ import org.junit.runners.JUnit4;
 import org.tdf.common.HashUtil;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
+import org.tdf.common.store.MapStore;
 import org.tdf.common.util.FastByteComparisons;
-import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPList;
 
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
@@ -60,33 +57,28 @@ public abstract class ProofTest {
     public void test() {
         byte[] root = trie.getRootHash();
 
-        RLPElement merklePath = trie.getProof(paramnesia);
+        Map<byte[], byte[]> merklePath = trie.getProof(paramnesia);
         String val = trie.get(paramnesia).get();
 
-        assert HexBytes.fromBytes(trie.revertToProof(merklePath).getRootHash())
-                .equals(HexBytes.fromBytes(root));
-
         assert trie
-                .revertToProof(merklePath)
+                .revert(root, new MapStore<>(merklePath))
                 .get(paramnesia).get()
                 .equals(val);
 
         merklePath = trie.getProof(stoopingly);
 
-        assert HexBytes.fromBytes(trie.revertToProof(merklePath).getRootHash())
-                .equals(HexBytes.fromBytes(root));
 
-        assert !trie.revertToProof(merklePath).containsKey(stoopingly);
+        assert !trie.revert(root, new MapStore<>(merklePath)).containsKey(stoopingly);
 
-        System.out.println(fileSize);
-        System.out.println(merklePath.getEncoded().length);
+        System.out.println("file size = " + fileSize);
+        System.out.println("proof size = " + getProofSize(merklePath));
     }
 
     @Test
     public void testEmpty() {
         Trie<String, String> empty = trie.revert();
-        RLPElement merklePath = empty.getProof(stoopingly);
-        byte[] root = trie.revertToProof(merklePath).getNullHash();
+        Map<byte[], byte[]> merklePath = empty.getProof(stoopingly);
+        byte[] root = trie.revert(trie.getNullHash(), new MapStore<>(merklePath)).getRootHash();
         assert FastByteComparisons.equal(
                 empty.getNullHash(),
                 root
@@ -95,26 +87,28 @@ public abstract class ProofTest {
 
     @Test
     public void testMultiKeys() {
-        RLPElement rlpElement = trie.getProof(proofKeys);
-        System.out.println(rlpElement.getEncoded().length);
+        Map<byte[], byte[]> rlpElement = trie.getProof(proofKeys);
+
+        System.out.println(
+                "proof size = " + getProofSize(rlpElement)
+        );
 
         Trie<String, String> merkleProof =
-                trie.revertToProof(rlpElement);
+                trie.revert(trie.getRootHash(), new MapStore<>(rlpElement));
 
         for (String k : proofKeys) {
             Optional<String> actual = merkleProof.get(k);
             Optional<String> expected = trie.get(k);
-            assert (!actual.isPresent() && !expected.isPresent()) ||
-                    actual.get().equals(expected.get());
+            assert actual.equals(expected);
         }
     }
 
 
     // TODO: reduce proof size
-    @Ignore
+//    @Ignore
     @Test
     public void testPublicChainData() throws Exception {
-        String path = "C:\\Users\\Sal\\Desktop\\dumps\\genesis\\genesis.800040.rlp";
+        String path = "C:\\Users\\Sal\\Desktop\\dumps\\blocks\\genesis.800040.rlp";
 
         Trie<byte[], RLPElement> accountTrie =
                 Trie.<byte[], RLPElement>builder()
@@ -137,7 +131,7 @@ public abstract class ProofTest {
 
         List<byte[]> bigAccounts =
                 accounts
-                        .stream().sorted((x, y) -> - y.getEncoded().length + x.getEncoded().length)
+                        .stream().sorted((x, y) -> y.getEncoded().length - x.getEncoded().length)
                         .limit(100)
                         .map(a -> a.get(0).get(1).asBytes())
                         .collect(Collectors.toList());
@@ -149,9 +143,16 @@ public abstract class ProofTest {
 
         byte[] root = accountTrie.commit();
 
-        RLPElement proof = accountTrie.getProof(bigAccounts);
+        Map<byte[], byte[]> proof = accountTrie.getProof(bigAccounts);
 
-        System.out.println("proof size = " + proof.getEncoded().length);
+        Trie<byte[], RLPElement> proofTrie = accountTrie.revert(root, new MapStore<>(proof));
+
+        for (byte[] bigAccount : bigAccounts) {
+            assert FastByteComparisons.equal(proofTrie.get(bigAccount).get()
+                    .getEncoded(), accountTrie.get(bigAccount).get().getEncoded());
+        }
+
+        System.out.println("proof size = " + getProofSize(proof));
 
         System.out.println("accounts size = " +
                 bigAccounts.stream().map(accountTrie::get)
@@ -159,12 +160,17 @@ public abstract class ProofTest {
                         .reduce(0, Integer::sum)
         );
 
-        System.out.println("proof size = " + bigAccounts.stream()
+        System.out.println("proofs size = " + bigAccounts.stream()
                 .map(Collections::singleton)
                 .map(accountTrie::getProof)
-                .map(e -> e.getEncoded().length)
+                .map(this::getProofSize)
                 .reduce(0, Integer::sum)
         );
 
+    }
+
+    protected int getProofSize(Map<byte[], byte[]> proof) {
+        return proof.entrySet().stream().map(e -> e.getKey().length + e.getValue().length)
+                .reduce(0, Integer::sum);
     }
 }

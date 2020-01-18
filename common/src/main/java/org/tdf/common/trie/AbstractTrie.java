@@ -5,6 +5,7 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.rlp.RLPElement;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -15,7 +16,7 @@ abstract class AbstractTrie<K, V> implements Trie<K, V>{
     abstract Optional<V> getFromBytes(byte[] data);
     abstract void putBytes(byte[] key, byte[] value);
     abstract void removeBytes(byte[] data);
-    abstract RLPElement getMerklePathInternal(Collection<? extends byte[]> keys);
+    abstract Map<byte[], byte[]> getProofInternal(byte[] key);
 
     @Override
     public void put(@NonNull K k, @NonNull V val) {
@@ -36,7 +37,7 @@ abstract class AbstractTrie<K, V> implements Trie<K, V>{
 
 
     @Override
-    public RLPElement getProof(Collection<? extends K> keys) {
-        return getMerklePathInternal(keys.stream().map(getKCodec().getEncoder()).collect(Collectors.toList()));
+    public Map<byte[], byte[]> getProof(K k) {
+        return getProofInternal(getKCodec().getEncoder().apply(k));
     }
 }

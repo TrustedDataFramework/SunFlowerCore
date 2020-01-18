@@ -11,13 +11,9 @@ import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.tdf.common.trie.TrieKey.EMPTY;
 
@@ -47,46 +43,54 @@ class Node {
     // the first element is trie key and the second element is value(leaf node) or child node(extension node)
     private Object[] children;
 
-    static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache) {
+    private Function<byte[], byte[]> hashFunction;
+
+    static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache, Function<byte[], byte[]> hashFunction) {
         return builder()
                 .hash(hash)
                 .readOnlyCache(readOnlyCache)
+                .hashFunction(hashFunction)
                 .build();
     }
 
     // create root node from database and reference
-    static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> readOnlyCache) {
-        return fromEncoded(RLPElement.fromEncoded(encoded), readOnlyCache);
+    static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> readOnlyCache, Function<byte[], byte[]> hashFunction) {
+        return fromEncoded(RLPElement.fromEncoded(encoded), readOnlyCache, hashFunction);
     }
 
     // create root node from database and reference
-    static Node fromEncoded(RLPElement rlp, Store<byte[], byte[]> readOnlyCache) {
+    static Node fromEncoded(RLPElement rlp, Store<byte[], byte[]> readOnlyCache, Function<byte[], byte[]> hashFunction) {
         if (rlp.isRLPList())
             return Node.builder()
                     .rlp(rlp.asRLPList())
                     .readOnlyCache(readOnlyCache)
+                    .hashFunction(hashFunction)
                     .build();
         return Node.builder()
                 .hash(rlp.asBytes())
                 .readOnlyCache(readOnlyCache)
+                .hashFunction(hashFunction)
                 .build();
     }
 
-    static Node newBranch() {
+    static Node newBranch(Function<byte[], byte[]> hashFunction) {
         return Node.builder()
                 .children(new Object[BRANCH_SIZE])
+                .hashFunction(hashFunction)
                 .dirty(true).build();
     }
 
-    static Node newLeaf(TrieKey key, byte[] value) {
+    static Node newLeaf(TrieKey key, byte[] value, Function<byte[], byte[]> hashFunction) {
         return builder()
                 .children(new Object[]{key, value})
+                .hashFunction(hashFunction)
                 .dirty(true).build();
     }
 
-    static Node newExtension(TrieKey key, Node child) {
+    static Node newExtension(TrieKey key, Node child, Function<byte[], byte[]> hashFunction) {
         return builder()
                 .children(new Object[]{key, child})
+                .hashFunction(hashFunction)
                 .dirty(true)
                 .build();
     }
@@ -151,6 +155,7 @@ class Node {
         if (rlp != null || hash == null) return;
         rlp = readOnlyCache
                 .get(hash)
+                .filter(x -> FastByteComparisons.equal(hash, hashFunction.apply(x)))
                 .map(RLPElement::fromEncoded)
                 .map(RLPElement::asRLPList)
                 .orElseThrow(() -> new RuntimeException("rlp encoding not found in cache"));
@@ -171,13 +176,13 @@ class Node {
                 children[1] = rlp.get(1).asBytes();
                 return;
             }
-            children[1] = fromEncoded(rlp.get(1), readOnlyCache);
+            children[1] = fromEncoded(rlp.get(1), readOnlyCache, hashFunction);
             return;
         }
         children = new Object[BRANCH_SIZE];
         for (int i = 0; i < BRANCH_SIZE - 1; i++) {
             if (rlp.get(i).isNull()) continue;
-            children[i] = fromEncoded(rlp.get(i), readOnlyCache);
+            children[i] = fromEncoded(rlp.get(i), readOnlyCache, hashFunction);
         }
         RLPItem item = rlp.get(BRANCH_SIZE - 1).asRLPItem();
         if (item.isNull()) return;
@@ -308,7 +313,7 @@ class Node {
         if ((type == Type.LEAF && commonPrefix.size() == current.size())) {
             dispose(cache);
             byte[] val = getValue();
-            Node newBranch = newBranch();
+            Node newBranch = newBranch(hashFunction);
             children[1] = newBranch;
             newBranch.setValue(val);
             newBranch.branchInsert(key.shift(commonPrefix.size()), value, cache);
@@ -331,7 +336,7 @@ class Node {
         TrieKey tmp = current.shift(commonPrefix.size());
 
         Object o = children[1];
-        Node newBranch = newBranch();
+        Node newBranch = newBranch(hashFunction);
         children[1] = newBranch;
         // reset to common prefix
         children[0] = commonPrefix;
@@ -344,7 +349,7 @@ class Node {
             newBranch.children[BRANCH_SIZE - 1] = value;
             return dirty;
         }
-        newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value);
+        newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value, hashFunction);
         return dirty;
     }
 
@@ -398,7 +403,7 @@ class Node {
             this.dirty |= child.insert(key.shift(), value, cache);
             return dirty;
         }
-        child = newLeaf(key.shift(), value);
+        child = newLeaf(key.shift(), value, hashFunction);
         children[key.get(0)] = child;
         setDirty();
         return dirty;
@@ -548,7 +553,7 @@ class Node {
         LEAF
     }
 
-    static Node fromMerklePath(RLPElement element) {
+    static Node fromMerklePath(RLPElement element, Function<byte[], byte[]> hashFunction) {
         if (element.isRLPItem()) {
             if (element.isNull()) return null;
             byte[] beforeEncode = element.asBytes();
@@ -558,10 +563,10 @@ class Node {
         }
 
         if (element.size() == BRANCH_SIZE) {
-            Node node = newBranch();
+            Node node = newBranch(hashFunction);
             for (int i = 0; i < element.size() - 1; i++) {
                 RLPElement el = element.get(i);
-                node.children[i] = fromMerklePath(el);
+                node.children[i] = fromMerklePath(el, hashFunction);
             }
             node.children[BRANCH_SIZE - 1] = element.get(BRANCH_SIZE - 1).asBytes();
             return node;
@@ -576,60 +581,41 @@ class Node {
         boolean terminal = TrieKey.isTerminal(packed);
 
         if (terminal) {
-            return newLeaf(key, element.get(1).asBytes());
+            return newLeaf(key, element.get(1).asBytes(), hashFunction);
         }
 
-        return newExtension(key, fromMerklePath(element.get(1)));
+        return newExtension(key, fromMerklePath(element.get(1), hashFunction), hashFunction);
     }
 
-    /**
-     * ret.size() == 17 -> branch node
-     * ret.isRLPItem -> hash or value
-     *
-     * @param paths
-     * @return
-     */
-    RLPElement getMerklePath(Set<? extends TrieKey> paths) {
-        Set<TrieKey> copied = new HashSet<>(paths);
+
+    Map<byte[], byte[]> getProof(TrieKey path, Map<byte[], byte[]> map) {
         switch (getType()) {
             case BRANCH: {
-                RLPList ret = RLPList.createEmpty(BRANCH_SIZE);
+                map.put(hash, rlp.getEncoded());
                 for (int i = 0; i < BRANCH_SIZE - 1; i++) {
-                    Node child = (Node) children[i];
-                    if (child == null) {
-                        ret.add(RLPItem.NULL);
-                        continue;
+                    if (!path.isEmpty() && path.get(0) == i) {
+                        Node child = ((Node) children[i]);
+                        if (child != null) child.getProof(path.shift(), map);
                     }
-                    final int finalI = i;
-                    List<TrieKey> matched = paths.stream()
-                            .filter(p -> !p.isEmpty() && finalI == p.get(0))
-                            .collect(Collectors.toList());
-
-                    if (!matched.isEmpty()) {
-                        copied.removeAll(matched);
-                        matched.forEach(k -> copied.add(k.shift()));
-                        ret.add(child.getMerklePath(copied));
-                        continue;
-                    }
-                    ret.add(child.hash == null ? child.rlp : RLPItem.fromBytes(child.hash));
                 }
-                ret.add(RLPItem.fromBytes(getValue()));
-                return ret;
+                return map;
             }
-            case LEAF:
-                return rlp;
-            default: {
-                Set<TrieKey> matched = paths.stream()
-                        .map(k -> k.matchAndShift(getKey()))
-                        .filter(k -> k != null && !k.isEmpty())
-                        .collect(Collectors.toSet());
+            case LEAF: {
+                if (hash != null) map.put(hash, rlp.getEncoded());
+                return map;
+            }
+            case EXTENSION: {
+                TrieKey matched = path.matchAndShift(getKey());
 
-                if (matched.isEmpty()) return rlp;
-                RLPList ret = RLPList.createEmpty(2);
-                ret.add(RLPItem.fromBytes(getKey().toPacked(false)));
-                ret.add(getExtension().getMerklePath(matched));
-                return ret;
+                if(hash != null) map.put(hash, rlp.getEncoded());
+
+                if (matched == null || matched.isEmpty()) {
+                    return map;
+                }
+                getExtension().getProof(matched, map);
+                return map;
             }
         }
+        throw new RuntimeException();
     }
 }

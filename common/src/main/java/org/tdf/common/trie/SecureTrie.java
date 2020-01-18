@@ -122,22 +122,6 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public RLPElement getProof(Collection<? extends K> k) {
-        return delegate.getMerklePathInternal(
-                k.stream().map(getKCodec().getEncoder())
-                        .map(hashFunction).collect(Collectors.toList())
-        );
-    }
-
-    @Override
-    public Trie<K, V> revertToProof(RLPElement proof) {
-        return new SecureTrie<>(
-                delegate.revertToProof(proof),
-                hashFunction
-        );
-    }
-
-    @Override
     public Codec<K, byte[]> getKCodec() {
         return delegate.getKCodec();
     }
@@ -163,7 +147,7 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public RLPElement getMerklePathInternal(Collection<? extends byte[]> bytes) {
-        return delegate.getMerklePathInternal(bytes.stream().map(hashFunction).collect(Collectors.toList()));
+    public Map<byte[], byte[]> getProofInternal(byte[] key) {
+        return delegate.getProofInternal(hashFunction.apply(key));
     }
 }

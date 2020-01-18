@@ -7,6 +7,7 @@ import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ReadOnlyStore;
 import org.tdf.common.store.Store;
+import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPElement;
@@ -75,7 +76,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
             return;
         }
         if (root == null) {
-            root = Node.newLeaf(TrieKey.fromNormal(key), value);
+            root = Node.newLeaf(TrieKey.fromNormal(key), value, function);
             return;
         }
         root.insert(TrieKey.fromNormal(key), value, store);
@@ -122,7 +123,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
                 nullHash,
                 function,
                 store, kCodec, vCodec,
-                Node.fromRootHash(rootHash, ReadOnlyStore.of(store))
+                Node.fromRootHash(rootHash, ReadOnlyStore.of(store), function)
         );
     }
 
@@ -187,28 +188,12 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
         return encoded == null || encoded.length == 0;
     }
 
-    public RLPElement getMerklePathInternal(Collection<? extends byte[]> key) {
+    public Map<byte[], byte[]> getProofInternal(byte[] key) {
         return root == null ?
-                RLPItem.fromBytes(nullHash) :
-                root.getMerklePath(
-                        key.stream().map(TrieKey::fromNormal).collect(Collectors.toSet())
+                Collections.emptyMap() :
+                root.getProof(
+                        TrieKey.fromNormal(key),
+                        new ByteArrayMap<>()
                 );
-    }
-
-    @Override
-    public Trie<K, V> revertToProof(RLPElement proof) {
-        if(proof.isRLPItem() &&
-                FastByteComparisons.equal(proof.asBytes(), nullHash)
-        )
-            return new MerklePathTrie<>(revert());
-
-        AbstractTrie<K, V> ret = new TrieImpl<>(
-                nullHash,
-                function,
-                Store.getNop(), kCodec, vCodec,
-                Node.fromMerklePath(proof)
-        );
-        ret.commit();
-        return new MerklePathTrie<>(ret);
     }
 }

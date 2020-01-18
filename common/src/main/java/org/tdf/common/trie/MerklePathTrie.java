@@ -1,16 +1,14 @@
 package org.tdf.common.trie;
 
-import org.tdf.rlp.RLPElement;
+import java.util.Map;
 
-import java.util.Collection;
-
-class MerklePathTrie<K, V> extends ReadOnlyTrie<K, V>{
+class MerklePathTrie<K, V> extends ReadOnlyTrie<K, V> {
     MerklePathTrie(AbstractTrie<K, V> delegate) {
         super(delegate);
     }
 
     @Override
-    public RLPElement getProof(Collection<? extends K> keys) {
+    public Map<byte[], byte[]> getProof(K k) {
         throw new UnsupportedOperationException();
     }
 }

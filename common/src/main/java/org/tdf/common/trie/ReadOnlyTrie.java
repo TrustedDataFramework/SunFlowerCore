@@ -151,15 +151,9 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
         return Collections.unmodifiableMap(delegate.asMap());
     }
 
-
     @Override
-    public RLPElement getProof(Collection<? extends K> keys) {
-        return delegate.getProof(keys);
-    }
-
-    @Override
-    public Trie<K, V> revertToProof(RLPElement proof) {
-        throw new UnsupportedOperationException();
+    public Map<byte[], byte[]> getProof(K k) {
+        return delegate.getProof(k);
     }
 
     @Override
@@ -188,7 +182,7 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public RLPElement getMerklePathInternal(Collection<? extends byte[]> bytes) {
-        return delegate.getMerklePathInternal(bytes);
+    public Map<byte[], byte[]> getProofInternal(byte[] key) {
+        return delegate.getProofInternal(key);
     }
 }
