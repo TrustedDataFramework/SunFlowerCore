@@ -59,14 +59,18 @@ class Node {
     }
 
     // create root node from database and reference
-    static Node fromEncoded(RLPElement rlp, Store<byte[], byte[]> readOnlyCache, Function<byte[], byte[]> hashFunction) {
+    static Node fromEncoded(
+            RLPElement rlp,
+            Store<byte[], byte[]> readOnlyCache,
+            Function<byte[], byte[]> hashFunction
+    ) {
         if (rlp.isRLPList())
-            return Node.builder()
+            return builder()
                     .rlp(rlp.asRLPList())
                     .readOnlyCache(readOnlyCache)
                     .hashFunction(hashFunction)
                     .build();
-        return Node.builder()
+        return builder()
                 .hash(rlp.asBytes())
                 .readOnlyCache(readOnlyCache)
                 .hashFunction(hashFunction)
@@ -74,7 +78,7 @@ class Node {
     }
 
     static Node newBranch(Function<byte[], byte[]> hashFunction) {
-        return Node.builder()
+        return builder()
                 .children(new Object[BRANCH_SIZE])
                 .hashFunction(hashFunction)
                 .dirty(true).build();
@@ -103,7 +107,6 @@ class Node {
     // return rlp encoded
     // if commit is call at root node, force hash is set to true
     RLPElement commit(
-            Function<byte[], byte[]> function,
             Store<byte[], byte[]> cache,
             boolean forceHash
     ) {
@@ -120,7 +123,7 @@ class Node {
             case EXTENSION: {
                 rlp = RLPList.createEmpty(2);
                 rlp.add(RLPItem.fromBytes(getKey().toPacked(false)));
-                rlp.add(getExtension().commit(function, cache, false));
+                rlp.add(getExtension().commit(cache, false));
                 break;
             }
             default: {
@@ -131,7 +134,7 @@ class Node {
                         rlp.add(RLPItem.NULL);
                         continue;
                     }
-                    rlp.add(child.commit(function, cache, false));
+                    rlp.add(child.commit(cache, false));
                 }
                 rlp.add(RLPItem.fromBytes(getValue()));
             }
@@ -142,7 +145,7 @@ class Node {
 
         // if encoded size is great than or equals to 32, store node to db and return a hash reference
         if (raw.length >= MAX_KEY_SIZE || forceHash) {
-            hash = function.apply(raw);
+            hash = hashFunction.apply(raw);
             cache.put(hash, raw);
             return RLPItem.fromBytes(hash);
         }
@@ -197,13 +200,14 @@ class Node {
     }
 
     // wrap o to an extension or leaf node
-    private Node newShort(TrieKey key, Object o) {
+    private Node newShort(TrieKey key, Object o, Function<byte[], byte[]> hashFunction) {
         // if size of key is zero, no need to wrap child
         if (key.size() == 0 && o instanceof Node) {
             return (Node) o;
         }
         return builder()
                 .children(new Object[]{key, o})
+                .hashFunction(hashFunction)
                 .dirty(true)
                 .build();
     }
@@ -341,7 +345,7 @@ class Node {
         // reset to common prefix
         children[0] = commonPrefix;
 
-        newBranch.children[tmp.get(0)] = newShort(tmp.shift(), o);
+        newBranch.children[tmp.get(0)] = newShort(tmp.shift(), o, hashFunction);
 
         tmp = key.shift(commonPrefix.size());
         if (tmp.isEmpty()) {
@@ -496,7 +500,7 @@ class Node {
             children[BRANCH_SIZE - 1] = o;
             return;
         }
-        children[key.get(0)] = newShort(key.shift(), o);
+        children[key.get(0)] = newShort(key.shift(), o, hashFunction);
     }
 
     // check the branch node could be compacted
@@ -552,41 +556,6 @@ class Node {
         EXTENSION,
         LEAF
     }
-
-    static Node fromMerklePath(RLPElement element, Function<byte[], byte[]> hashFunction) {
-        if (element.isRLPItem()) {
-            if (element.isNull()) return null;
-            byte[] beforeEncode = element.asBytes();
-            return beforeEncode.length < MAX_KEY_SIZE ?
-                    builder().rlp(element.asRLPList()).build() :
-                    builder().hash(beforeEncode).build();
-        }
-
-        if (element.size() == BRANCH_SIZE) {
-            Node node = newBranch(hashFunction);
-            for (int i = 0; i < element.size() - 1; i++) {
-                RLPElement el = element.get(i);
-                node.children[i] = fromMerklePath(el, hashFunction);
-            }
-            node.children[BRANCH_SIZE - 1] = element.get(BRANCH_SIZE - 1).asBytes();
-            return node;
-        }
-
-        if (element.size() != 2)
-            throw new IllegalArgumentException();
-
-        byte[] packed = element.get(0).asBytes();
-        TrieKey key = TrieKey.fromPacked(packed);
-
-        boolean terminal = TrieKey.isTerminal(packed);
-
-        if (terminal) {
-            return newLeaf(key, element.get(1).asBytes(), hashFunction);
-        }
-
-        return newExtension(key, fromMerklePath(element.get(1), hashFunction), hashFunction);
-    }
-
 
     Map<byte[], byte[]> getProof(TrieKey path, Map<byte[], byte[]> map) {
         switch (getType()) {

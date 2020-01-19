@@ -208,7 +208,7 @@ public class NodeTest {
         Arrays.asList("toaster", "toasting", "slow", "slowly")
                 .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
         Store<byte[], byte[]> s = new ByteArrayMapStore<>();
-        RLPElement element = n.commit(HashUtil::sha256, s, true);
+        RLPElement element = n.commit(s, true);
         Node n2 = Node.fromEncoded(element.getEncoded(), s, HashUtil::sha256);
         for (String s2 : Arrays.asList("toaster", "toasting", "slow", "slowly")
         ) {
