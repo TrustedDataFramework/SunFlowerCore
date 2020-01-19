@@ -558,9 +558,9 @@ class Node {
     }
 
     Map<byte[], byte[]> getProof(TrieKey path, Map<byte[], byte[]> map) {
+        if (hash != null) map.put(hash, rlp.getEncoded());
         switch (getType()) {
             case BRANCH: {
-                map.put(hash, rlp.getEncoded());
                 for (int i = 0; i < BRANCH_SIZE - 1; i++) {
                     if (!path.isEmpty() && path.get(0) == i) {
                         Node child = ((Node) children[i]);
@@ -570,19 +570,15 @@ class Node {
                 return map;
             }
             case LEAF: {
-                if (hash != null) map.put(hash, rlp.getEncoded());
                 return map;
             }
             case EXTENSION: {
                 TrieKey matched = path.matchAndShift(getKey());
 
-                if(hash != null) map.put(hash, rlp.getEncoded());
-
                 if (matched == null || matched.isEmpty()) {
                     return map;
                 }
-                getExtension().getProof(matched, map);
-                return map;
+                return getExtension().getProof(matched, map);
             }
         }
         throw new RuntimeException();
