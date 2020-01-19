@@ -105,7 +105,7 @@ public abstract class ProofTest {
 
 
     // TODO: reduce proof size
-//    @Ignore
+    @Ignore
     @Test
     public void testPublicChainData() throws Exception {
         String path = "C:\\Users\\Sal\\Desktop\\dumps\\blocks\\genesis.800040.rlp";
