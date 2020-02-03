@@ -10,14 +10,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-public interface ConsortiumRepository extends BlockRepository, TransactionRepository {
+public interface SunflowerRepository extends BlockRepository, TransactionRepository {
     Block getLastConfirmed();
 
     List<Block> getUnconfirmed();
 
     void setProvider(ConfirmedBlocksProvider provider);
 
-    ConsortiumRepository NONE = new ConsortiumRepository() {
+    SunflowerRepository NONE = new SunflowerRepository() {
         @Override
         public Block getLastConfirmed() {
             return new Block();

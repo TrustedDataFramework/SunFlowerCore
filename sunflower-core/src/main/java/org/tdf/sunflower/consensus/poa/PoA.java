@@ -15,8 +15,8 @@ import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.net.Context;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.ConsortiumStateRepository;
+import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.util.FileUtils;
 
@@ -31,9 +31,9 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
     private PoAConfig poAConfig;
     private Genesis genesis;
     private PoAMiner poaMiner;
+    private PoAValidator poAValidator;
 
     public PoA() {
-        setValidator(new PoAValidator());
     }
 
     private PeerServer peerServer;
@@ -74,21 +74,27 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
         }catch (Exception e){
             throw new ConsensusEngineInitException("failed to parse genesis");
         }
+        poaMiner.setBlockRepository(this.getSunflowerRepository());
         poaMiner.setPoAConfig(poAConfig);
         poaMiner.setGenesis(genesis);
         poaMiner.setTransactionPool(getTransactionPool());
+
         setMiner(poaMiner);
         setGenesisBlock(genesis.getBlock());
 
         setHashPolicy(HASH_POLICY);
         setPeerServerListener(this);
         // create state repository
-        ConsortiumStateRepository repo = new ConsortiumStateRepository();
-        setStateRepository(repo);
+        AccountUpdater updater = new AccountUpdater(Collections.emptyMap());
+        AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory());
+        setAccountTrie(trie);
+        poaMiner.setAccountTrie(trie);
+
+        poAValidator = new PoAValidator();
+        poAValidator.setAccountTrie(getAccountTrie());
+        setValidator(poAValidator);
 
         // register dummy account
-        repo.register(getGenesisBlock(), Collections.singleton(Account.getRandomAccount()));
-
         getMiner().addListeners(new MinerListener() {
             @Override
             public void onBlockMined(Block block) {

@@ -10,10 +10,11 @@ import java.util.Properties;
 import org.springframework.core.io.Resource;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
+import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.facade.ConsensusEngine;
-import org.tdf.sunflower.facade.ConsortiumRepository;
-import org.tdf.sunflower.state.ConsortiumStateRepository;
+import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.net.Context;
 import org.tdf.sunflower.facade.MinerListener;
 import org.tdf.sunflower.net.Peer;
@@ -29,7 +30,6 @@ import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
 import org.tdf.sunflower.net.MessageBuilder;
 import org.tdf.sunflower.net.PeerImpl;
-import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.FileUtils;
 
@@ -85,7 +85,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         Block blockNew = RLPCodec.decode(bodyBytes, Block.class);
         log.info("New mined block received from peer. Num #{}, Hash {}", blockNew.getHeight(),
                 blockNew.getHash().toString());
-        saveBlock(blockNew, getConsortiumRepository(), this);
+        saveBlock(blockNew, this.getSunflowerRepository(), this);
     }
 
     private void processCommitProofMsg(byte[] bodyBytes) {
@@ -179,21 +179,23 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         setPeerServerListener(this);
         vrfMiner.setConfig(vrfConfig);
         vrfMiner.setGenesis(genesis);
-        vrfMiner.setRepository(getConsortiumRepository());
+        vrfMiner.setRepository(this.getSunflowerRepository());
         setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
         // ------- Need well implementation.
-        ValidatorManager validatorManager = new ValidatorManager(getConsortiumRepository());
+        ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository());
         vrfStateMachine = new VrfStateMachine(validatorManager, new PendingVrfState(validatorManager),
                 new VrfValidator());
         vrfMiner.setVrfStateMachine(vrfStateMachine);
 
         setMiner(vrfMiner);
 
-        setStateRepository(new ConsortiumStateRepository());
+        AccountUpdater updater = new AccountUpdater(Collections.emptyMap());
+        AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory());
+        setAccountTrie(trie);
 
         // register miner accounts
-        getStateRepository().register(getGenesisBlock(),
-                Collections.singleton(new Account(vrfMiner.minerPublicKeyHash, 0)));
+//        getStateRepository().register(getGenesisBlock(),
+//                Collections.singleton(new Account(vrfMiner.minerPublicKeyHash, 0)));
 
     }
 
@@ -211,7 +213,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         return genesisBlock;
     }
 
-    private boolean saveBlock(Block block, ConsortiumRepository repository, ConsensusEngine engine) {
+    private boolean saveBlock(Block block, SunflowerRepository repository, ConsensusEngine engine) {
         Optional<Block> o = repository.getBlock(block.getHashPrev().getBytes());
         if (!o.isPresent())
             return false;

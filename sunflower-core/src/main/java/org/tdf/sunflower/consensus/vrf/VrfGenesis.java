@@ -30,7 +30,7 @@ public class VrfGenesis {
 
     public static class MinerInfo {
         @JsonProperty("addr")
-        public String address;
+        public HexBytes address;
     }
 
     public List<MinerInfo> miners;
@@ -39,7 +39,7 @@ public class VrfGenesis {
     public Block getBlock(VrfConfig vrfConfig) throws IOException {
         long blockNum = ByteUtil.byteArrayToLong(number.getBytes());
         Header header = Header.builder().version(VrfConstants.BLOCK_VERSION).hashPrev(parentHash)
-                .merkleRoot(VrfConstants.ZERO_BYTES).height(blockNum)
+                .transactionsRoot(VrfConstants.ZERO_BYTES).height(blockNum)
                 .createdAt(ByteUtil.byteArrayToLong(timestamp.getBytes())).payload(VrfConstants.ZERO_BYTES).build();
 
         Block block = new Block(header);

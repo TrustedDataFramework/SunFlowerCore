@@ -76,8 +76,8 @@ dependencies {
     compile "org.slf4j:slf4j-api:${slf4jVersion}"
     compile "org.slf4j:jul-to-slf4j:${slf4jVersion}"
 
-    // for test
-    testCompile 'com.h2database:h2'
+    // for test and dev
+    compile 'com.h2database:h2'
 }
 
 task runTestCommunicationTool(type: JavaExec){

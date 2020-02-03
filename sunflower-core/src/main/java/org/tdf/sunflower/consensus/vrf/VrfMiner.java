@@ -190,7 +190,7 @@ public class VrfMiner implements Miner {
 
     private Block createBlock(Block parent) throws DecoderException, IOException {
         Header header = Header.builder().version(parent.getVersion()).hashPrev(parent.getHash())
-                .merkleRoot(PoAConstants.ZERO_BYTES).height(parent.getHeight() + 1)
+                .transactionsRoot(PoAConstants.ZERO_BYTES).height(parent.getHeight() + 1)
                 .createdAt(System.currentTimeMillis() / 1000).build();
 //                .payload(VrfConstants.ZERO_BYTES)
 //                .hash(new HexBytes(BigEndian.encodeInt64(parent.getHeight() + 1))).build();

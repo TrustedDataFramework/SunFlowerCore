@@ -1,22 +1,38 @@
 package org.tdf.sunflower.state;
 
+import org.tdf.common.store.Store;
+import org.tdf.common.trie.Trie;
 import org.tdf.sunflower.types.Block;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
+/**
+ * state storage
+ * @param <ID> identifier of state
+ * @param <S> state
+ */
 public interface StateTrie<ID, S> {
-    // get an optional state at a block
+    // get an optional state at a root hash
     Optional<S> get(byte[] rootHash, ID id);
-    Map<ID, S> batchGet(byte[] rootHash, Collection<ID> keys);
 
-    // commit a new block
-    void commit(Block block);
+    // get values batched
+    Map<ID, S> batchGet(byte[] rootHash, Collection<? extends ID> ids);
 
-    // commit blocks
-    default void commit(List<Block> blocks){
-        blocks.forEach(this::commit);
-    }
+    byte[] getGenesisRoot();
+
+    Map<byte[], byte[]> getProof(byte[] rootHash, Collection<? extends ID> ids);
+
+    Trie<ID, S> getTrie();
+
+    Trie<ID, S> getTrie(byte[] rootHash);
+
+    StateUpdater<ID, S> getUpdater();
+
+    Store<byte[], byte[]> getTrieStore();
+
+    // commit a new block, returns new trie's root
+    byte[] commit(byte[] parentRoot, Block block);
+
+    // get new root without make any modification to underlying database
+    byte[] getNewRoot(byte[] parentRoot, Block block);
 }

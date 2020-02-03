@@ -40,7 +40,7 @@ import org.tdf.sunflower.consensus.vrf.core.ValidatorManager;
 import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
 import org.tdf.sunflower.consensus.vrf.vm.DataWord;
 import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.service.ConsortiumRepositoryService;
+import org.tdf.sunflower.service.SunflowerRepositoryService;
 import org.tdf.sunflower.util.ByteUtil;
 
 @Ignore("set up failed")
@@ -87,7 +87,7 @@ public class VrfContractsTest {
     private static final DataWord contractAddr = DataWord
             .of("0000000000000000000000000000000000000000000000000000000000000011");
 
-    private static final BlockRepository repository = ConsortiumRepositoryService.NONE;;
+    private static final BlockRepository repository = SunflowerRepositoryService.NONE;;
 //	private static final Repository cacheTrack = repository.startTracking();
 
     @BeforeClass

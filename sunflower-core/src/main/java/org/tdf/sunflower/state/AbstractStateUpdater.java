@@ -1,17 +1,24 @@
 package org.tdf.sunflower.state;
 
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Transaction;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public abstract class AbstractStateUpdater<ID, S> implements StateUpdater<ID, S> {
     @Override
-    public Set<ID> getRelatedKeys(Block block) {
+    public Set<ID> getRelatedKeys(Collection<? extends Transaction> transactions) {
         Set<ID> set = createEmptySet();
-        block.getBody().forEach(tx -> set.addAll(this.getRelatedKeys(tx)));
+        transactions.forEach(t -> set.addAll(getRelatedKeys(t)));
         return set;
+    }
+
+    @Override
+    public Set<ID> getRelatedKeys(Block block) {
+        return getRelatedKeys(block.getBody());
     }
 
     @Override

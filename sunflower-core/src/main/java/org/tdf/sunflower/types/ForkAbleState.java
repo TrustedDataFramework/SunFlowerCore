@@ -8,7 +8,7 @@ import java.util.Set;
  * and getIdentifiersOf returns from & to address of the transaction
  */
 @Deprecated
-public interface ForkAbleState<T> extends State<T>{
+public interface ForkAbleState<T> extends State<T> {
     String getIdentifier();
 
     Set<String> getIdentifiersOf(Transaction transaction);

@@ -18,38 +18,31 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Block implements Chained {
-    private static abstract class ExcludedMethods{
-        public abstract Block clone();
-        public abstract int size();
-        public abstract long getCreatedAt();
-    }
-
     // extend from header
     @Getter
     @JsonIgnore
     @Delegate(excludes = ExcludedMethods.class)
     @RLP(0)
     private Header header;
-
     @Getter
     @Setter
     @RLP(1)
     private List<Transaction> body;
 
-    @JsonSerialize(using = EpochSecondsSerializer.class)
-    @JsonDeserialize(using = EpochSecondDeserializer.class)
-    public long getCreatedAt(){
-        return header.getCreatedAt();
-    }
-
-    public Block(){
+    public Block() {
         header = new Header();
         body = new ArrayList<>();
     }
 
-    public Block(@NonNull Header header){
+    public Block(@NonNull Header header) {
         this.header = header;
         body = new ArrayList<>();
+    }
+
+    @JsonSerialize(using = EpochSecondsSerializer.class)
+    @JsonDeserialize(using = EpochSecondDeserializer.class)
+    public long getCreatedAt() {
+        return header.getCreatedAt();
     }
 
     public Block clone() {
@@ -60,13 +53,21 @@ public class Block implements Chained {
 
     // serialization only
     @JsonProperty(access = JsonProperty.Access.READ_ONLY, value = "size")
-    public int size(){
+    public int size() {
         return header.size() + bodySize();
     }
 
-    private int bodySize(){
+    private int bodySize() {
         return body == null ? 0 : body.stream()
                 .map(Transaction::size)
                 .reduce(0, Integer::sum);
+    }
+
+    private static abstract class ExcludedMethods {
+        public abstract Block clone();
+
+        public abstract int size();
+
+        public abstract long getCreatedAt();
     }
 }

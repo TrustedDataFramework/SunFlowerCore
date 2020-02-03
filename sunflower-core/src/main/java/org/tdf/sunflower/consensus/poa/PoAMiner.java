@@ -4,21 +4,20 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.springframework.util.Assert;
-import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.MinerListener;
 import org.tdf.sunflower.facade.TransactionPool;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +35,7 @@ import static org.tdf.sunflower.consensus.poa.PoAHashPolicy.HASH_POLICY;
 public class PoAMiner implements Miner {
     private PoAConfig poAConfig;
 
-    PublicKeyHash minerPublicKeyHash;
+    HexBytes minerAddress;
 
     private Genesis genesis;
 
@@ -45,48 +44,55 @@ public class PoAMiner implements Miner {
     @Setter
     private BlockRepository blockRepository;
 
+    @Setter
+    private StateTrie<HexBytes, Account> accountTrie;
+
     private boolean stopped;
 
     private ScheduledExecutorService minerExecutor;
+
+    private List<HexBytes> minerAddresses;
 
     @Setter
     private TransactionPool transactionPool;
 
     public void setGenesis(Genesis genesis) {
         this.genesis = genesis;
+        this.minerAddresses =
+                genesis.miners.stream()
+                        .map(Genesis.MinerInfo::getAddress)
+                        .collect(Collectors.toList());
     }
 
     public void setPoAConfig(PoAConfig poAConfig) throws ConsensusEngineInitException {
         this.poAConfig = poAConfig;
-        this.minerPublicKeyHash = PublicKeyHash.from(poAConfig.getMinerCoinBase()).orElseThrow(
-                () -> new ConsensusEngineInitException("invalid address " + poAConfig.getMinerCoinBase())
-        );
+        this.minerAddress = poAConfig.getMinerCoinBase();
     }
 
 
-    public Optional<Proposer> getProposer(Block parent, long currentTimeSeconds) {
-        if (genesis.miners.size() == 0) {
+    public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
+        if (genesis.miners.isEmpty()) {
             return Optional.empty();
         }
         if (parent.getHeight() == 0) {
             return Optional.of(new Proposer(genesis.miners.get(0).address, 0, Long.MAX_VALUE));
         }
-        if (parent.getBody() == null ||
-                parent.getBody().size() == 0 ||
-                parent.getBody().get(0).getTo() == null
-        ) return Optional.empty();
-        String prev = new PublicKeyHash(parent.getBody().get(0).getTo().getBytes()).getAddress();
-        int prevIndex = genesis.miners.stream().map(x -> x.address).collect(Collectors.toList()).indexOf(prev);
+
+        HexBytes prev = parent.getBody().get(0).getTo();
+
+        int prevIndex = minerAddresses.indexOf(prev);
+
         if (prevIndex < 0) {
             return Optional.empty();
         }
 
-        long step = (currentTimeSeconds - parent.getCreatedAt())
+        long step = (currentEpochSeconds - parent.getCreatedAt())
                 / poAConfig.getBlockInterval() + 1;
 
-        int currentIndex = (int) (prevIndex + step) % genesis.miners.size();
+        int currentIndex = (int) ((prevIndex + step) % genesis.miners.size());
         long endTime = parent.getCreatedAt() + step * poAConfig.getBlockInterval();
         long startTime = endTime - poAConfig.getBlockInterval();
+
         return Optional.of(new Proposer(
                 genesis.miners.get(currentIndex).address,
                 startTime,
@@ -98,7 +104,13 @@ public class PoAMiner implements Miner {
     @Override
     public void start() {
         minerExecutor = Executors.newSingleThreadScheduledExecutor();
-        minerExecutor.scheduleAtFixedRate(this::tryMine, 0, poAConfig.getBlockInterval(), TimeUnit.SECONDS);
+        minerExecutor.scheduleAtFixedRate(() -> {
+            try {
+                this.tryMine();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, 0, poAConfig.getBlockInterval(), TimeUnit.SECONDS);
     }
 
     @Override
@@ -118,20 +130,20 @@ public class PoAMiner implements Miner {
         if (!poAConfig.isEnableMining() || stopped) {
             return;
         }
-        String coinBase = poAConfig.getMinerCoinBase();
+
         Block best = blockRepository.getBestBlock();
         // 判断是否轮到自己出块
         Optional<Proposer> o = getProposer(
                 best,
                 OffsetDateTime.now().toEpochSecond()
-        ).filter(p -> p.getAddress().equals(coinBase));
+        ).filter(p -> p.getAddress().equals(minerAddress));
         if (!o.isPresent()) return;
         log.info("try to mining at height " + (best.getHeight() + 1));
         try {
             Block b = createBlock(blockRepository.getBestBlock());
             log.info("mining success");
             listeners.forEach(l -> l.onBlockMined(b));
-            Assert.isTrue(b.getHash().equals(HexBytes.fromBytes(PoAUtils.getHash(b))), "block hash is equal");
+            Assert.isTrue(b.getHash().equals(HASH_POLICY.getHash(b)), "block hash is equal");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -143,11 +155,11 @@ public class PoAMiner implements Miner {
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .nonce(height)
-                .from(PoAConstants.ZERO_BYTES)
+                .from(HexBytes.EMPTY)
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height))
-                .payload(PoAConstants.ZERO_BYTES)
-                .to(HexBytes.fromBytes(minerPublicKeyHash.getPublicKeyHash()))
-                .signature(PoAConstants.ZERO_BYTES).build();
+                .payload(HexBytes.EMPTY)
+                .to(minerAddress)
+                .signature(HexBytes.EMPTY).build();
         tx.setHash(HASH_POLICY.getHash(tx));
         return tx;
     }
@@ -155,12 +167,11 @@ public class PoAMiner implements Miner {
     private Block createBlock(Block parent) throws DecoderException {
         Header header = Header.builder()
                 .version(parent.getVersion())
-                .hashPrev(parent.getHash())
-                .merkleRoot(PoAConstants.ZERO_BYTES)
-                .height(parent.getHeight() + 1)
+                .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .payload(PoAConstants.ZERO_BYTES)
-                .hash(HexBytes.fromBytes(BigEndian.encodeInt64(parent.getHeight() + 1))).build();
+                .build();
+
         Block b = new Block(header);
         while (true) {
             Optional<Transaction> tx = transactionPool.pop();
@@ -168,6 +179,14 @@ public class PoAMiner implements Miner {
             b.getBody().add(tx.get());
         }
         b.getBody().add(0, createCoinBase(parent.getHeight() + 1));
+
+        // calculate state root
+        b.setStateRoot(
+                HexBytes.fromBytes(
+                        accountTrie.getNewRoot(parent.getStateRoot().getBytes(), b)
+                )
+        );
+
         b.setHash(HASH_POLICY.getHash(b));
         return b;
     }

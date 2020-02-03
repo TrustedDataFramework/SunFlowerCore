@@ -22,6 +22,7 @@ import org.tdf.sunflower.types.Transaction;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RunWith(JUnit4.class)
 public class StateTrieTests {
@@ -55,7 +56,10 @@ public class StateTrieTests {
 
         @Override
         public Set<String> getRelatedKeys(Transaction transaction) {
-            return new HashSet<>(Arrays.asList(transaction.getFrom().toString(), transaction.getTo().toString()));
+            return Stream.of(
+                    transaction.getFrom(),
+                    transaction.getTo()
+            ).map(HexBytes::toString).collect(Collectors.toSet());
         }
 
         @Override
@@ -94,7 +98,7 @@ public class StateTrieTests {
             super(new AccountUpdater(),
                     Codecs.STRING,
                     Codec.newInstance(RLPCodec::encode, x -> RLPCodec.decode(x, Account.class)),
-                    factory, false);
+                    factory);
             roots.put(genesis.getHash(), getGenesisRoot());
         }
 
@@ -104,16 +108,15 @@ public class StateTrieTests {
         }
 
         @Override
-        public void commit(Block block) {
-            byte[] parentRoot = roots.getOrDefault(block.getHashPrev(), getTrie().getNullHash());
-            Trie<String, Account> trie = getTrie().revert(parentRoot);
-            Map<String, Account> map = getUpdater().createEmptyMap();
-            getUpdater().getRelatedKeys(block)
-                    .forEach(k -> {
-                        map.put(k, trie.get(k).orElse(getUpdater().createEmpty(k)));
-                    });
-            byte[] root = commitInternal(parentRoot, getUpdater().update(map, block)).getRootHash();
+        public byte[] commit(byte[] parentRoot, Block block) {
+            byte[] root = super.commit(parentRoot, block);
             roots.put(block.getHash(), root);
+            return root;
+        }
+
+        public void commit(Block block) {
+            byte[] parentRoot = roots.get(block.getHashPrev());
+            commit(parentRoot, block);
         }
 
         // get an optional state at a block

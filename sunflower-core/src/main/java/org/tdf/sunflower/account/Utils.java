@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public class Utils {
     public static final int PUBLIC_KEY_HASH_LENGTH = 20;
+
     public static byte[] publicKeyToHash(byte[] publicKey) {
         return HashFunctions.ripemd160(HashFunctions.keccak256(publicKey));
     }

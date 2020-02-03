@@ -32,7 +32,7 @@ public class BlockRepositoryTests {
         assert header.getVersion() == 1;
         assert Arrays.equals(header.getHash().getBytes(), BigEndian.encodeInt64(header.getHeight()));
         assert Arrays.equals(header.getHashPrev().getBytes(), header.getHeight() == 0 ? BYTES : BigEndian.encodeInt64(header.getHeight() - 1));
-        assert Arrays.equals(header.getMerkleRoot().getBytes(), BYTES);
+        assert Arrays.equals(header.getTransactionsRoot().getBytes(), BYTES);
         assert Arrays.equals(header.getPayload().getBytes(), BYTES);
     }
 

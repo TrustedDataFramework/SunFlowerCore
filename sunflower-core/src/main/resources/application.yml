@@ -20,7 +20,7 @@ sunflower:
     genesis: 'genesis/wisdom-genesis-generator-test.jsonc'
     block-interval: '30'
     enable-mining: 'true'
-    miner-coin-base: '1JWhUiZCWps56uZckAvzxy2ex6VGhrMXdD'
+    miner-coin-base: '87b8f0b097b48b282a5c661babc8096e141bd9fb'
     
     # VRF configs
  # consensus:

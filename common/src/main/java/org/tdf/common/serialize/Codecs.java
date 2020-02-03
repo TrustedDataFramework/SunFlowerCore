@@ -1,5 +1,7 @@
 package org.tdf.common.serialize;
 
+import org.tdf.rlp.RLPCodec;
+
 import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 
@@ -14,4 +16,7 @@ public class Codecs {
             );
     static Codec IDENTITY = Codec.newInstance(Function.identity(), Function.identity());
 
+    public static <K> Codec<K, byte[]> newRLPCodec(Class<K> clazz){
+        return Codec.newInstance(RLPCodec::encode, x -> RLPCodec.decode(x, clazz));
+    }
 }

@@ -10,6 +10,11 @@ import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLP;
 
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Getter
@@ -17,8 +22,8 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Transaction{
-    public enum Type{
+public class Transaction {
+    public enum Type {
         // coinbase transaction has code 0
         COIN_BASE(0x00),
         // the amount is transferred from sender to recipient
@@ -41,10 +46,14 @@ public class Transaction{
         CONTRACT_CALL(0x03);
         public final int code;
 
-        Type(int code){
+        Type(int code) {
             this.code = code;
         }
+
+        public static final Map<Integer, Type> TYPE_MAP =
+                Arrays.stream(values()).collect(Collectors.toMap(x -> x.code, Function.identity()));
     }
+
     private HexBytes blockHash;
 
     private long height;
@@ -81,7 +90,7 @@ public class Transaction{
     @RLP(9)
     private HexBytes signature;
 
-    @RLP(10)
+    // generated value, no need to encode into rlp
     private HexBytes hash;
 
     @Override

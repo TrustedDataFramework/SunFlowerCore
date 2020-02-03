@@ -52,7 +52,7 @@ import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.consensus.vrf.vm.DataWord;
 import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.service.ConsortiumRepositoryService;
+import org.tdf.sunflower.service.SunflowerRepositoryService;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.ByteUtil;
 
@@ -116,7 +116,7 @@ public class LivenessAnalyzerTest {
     private static final DataWord contractAddr = DataWord
             .of("0000000000000000000000000000000000000000000000000000000000000011");
 
-    private static final BlockRepository repository = ConsortiumRepositoryService.NONE;
+    private static final BlockRepository repository = SunflowerRepositoryService.NONE;
 //    private static final Repository cacheTrack = repository.startTracking();
 
     private static Header[] blockHeaders;

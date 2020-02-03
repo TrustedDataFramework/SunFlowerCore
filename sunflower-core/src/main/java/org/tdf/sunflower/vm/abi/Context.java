@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.BytesReader;
 
@@ -14,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 @Builder
 public class Context {
 
-    public static Context fromTransaction(Block block, Transaction transaction) {
+    public static Context fromTransaction(Header header, Transaction transaction) {
         BytesReader reader = new BytesReader(transaction.payload.getBytes());
         ContextBuilder builder = builder();
         if (transaction.getType() == Transaction.Type.CONTRACT_DEPLOY.code) {
@@ -27,11 +28,11 @@ public class Context {
                 .recipient(transaction.getTo())
                 .transactionHash(transaction.getHash())
                 .gasPrice(transaction.getGasPrice())
-                .parentBlockHash(block.getHashPrev())
-                .blockHeight(block.getHeight())
+                .parentBlockHash(header.getHashPrev())
+                .blockHeight(header.getHeight())
                 .payload(reader.readAll())
                 .transactionTimestamp(transaction.getCreatedAt())
-                .blockTimestamp(block.getCreatedAt())
+                .blockTimestamp(header.getCreatedAt())
                 .gasLimit(3);
         return builder.build();
     }

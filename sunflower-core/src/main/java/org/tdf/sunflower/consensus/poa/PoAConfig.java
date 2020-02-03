@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.tdf.common.util.HexBytes;
 
 @Getter
 @Setter
@@ -18,5 +19,5 @@ public class PoAConfig {
     @JsonProperty("enable-mining")
     private boolean enableMining;
     @JsonProperty("miner-coin-base")
-    private String minerCoinBase;
+    private HexBytes minerCoinBase;
 }

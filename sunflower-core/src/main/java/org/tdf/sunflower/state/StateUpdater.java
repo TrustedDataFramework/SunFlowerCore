@@ -4,14 +4,26 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * represents the state transition in block chain
+ * @param <ID> id of the state
+ * @param <S> type of state
+ */
 public interface StateUpdater<ID,S> {
+    /**
+     * get configured genesis states to initialize
+     * @return genesis states
+     */
     Map<ID, S> getGenesisStates();
 
     Set<ID> getRelatedKeys(Transaction transaction);
+
+    Set<ID> getRelatedKeys(Collection<? extends Transaction> transactions);
 
     Set<ID> getRelatedKeys(Block block);
 

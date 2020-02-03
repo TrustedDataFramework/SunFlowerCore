@@ -63,7 +63,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private PendingTransactionValidator validator;
 
-    public void setEngine(ConsensusEngine engine) {
+    public void setEngine(ConsensusEngineFacade engine) {
         this.hashPolicy = engine.getHashPolicy();
         this.validator = engine.getValidator();
     }
