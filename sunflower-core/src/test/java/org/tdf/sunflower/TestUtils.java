@@ -19,7 +19,7 @@ public class TestUtils {
     static Block getBlock(long height) {
         HeaderEntity h = new HeaderEntity(
                 BigEndian.encodeInt64(height), 1, height == 0 ? BYTES : BigEndian.encodeInt64(height - 1),
-                BYTES, height, System.currentTimeMillis() / 1000, BYTES
+                BYTES, BYTES, height, System.currentTimeMillis() / 1000, BYTES
         );
         TransactionEntity.TransactionEntityBuilder builder =
                 TransactionEntity.builder().blockHash(BigEndian.encodeInt64(height))

@@ -1,9 +1,6 @@
 package org.tdf.sunflower.state;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,8 +29,7 @@ public class StateTrieTests {
 
     // account to test
     @AllArgsConstructor
-    @Getter
-    @Setter
+    @Data
     @NoArgsConstructor
     public static class Account {
         private String address;
@@ -148,7 +144,8 @@ public class StateTrieTests {
 
         blocks.values().stream()
                 .filter(x -> x.getHeight() != 0)
-                .sorted(Comparator.comparingLong(Block::getHeight)).forEach(stateTrie::commit);
+                .sorted(Comparator.comparingLong(Block::getHeight))
+                .forEach(stateTrie::commit);
 
     }
 
