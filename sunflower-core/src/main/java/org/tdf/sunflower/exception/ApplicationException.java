@@ -1,6 +1,6 @@
 package org.tdf.sunflower.exception;
 
-public class ApplicationException extends Exception{
+public class ApplicationException extends RuntimeException{
     public ApplicationException() {
     }
 

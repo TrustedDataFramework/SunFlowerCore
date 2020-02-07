@@ -1,16 +1,15 @@
 package org.tdf.sunflower.state;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
-import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.DatabaseConfig;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.types.Block;
@@ -44,9 +43,12 @@ public class StateTrieTests {
         @Override
         public Map<String, Account> getGenesisStates() {
             Map<String, Account> ret = createEmptyMap();
-            Arrays.asList(new Account(ADDRESS_A.toString(), 100),
-                    new Account(ADDRESS_B.toString(), 100))
-                    .forEach(a -> ret.put(a.address, a));
+
+            Arrays.asList(
+                    new Account(ADDRESS_A.toString(), 100),
+                    new Account(ADDRESS_B.toString(), 100)
+            ).forEach(a -> ret.put(a.address, a));
+
             return ret;
         }
 
@@ -93,14 +95,15 @@ public class StateTrieTests {
                 Block genesis, DatabaseStoreFactory factory) {
             super(new AccountUpdater(),
                     Codecs.STRING,
-                    Codec.newInstance(RLPCodec::encode, x -> RLPCodec.decode(x, Account.class)),
-                    factory);
+                    Codecs.newRLPCodec(Account.class),
+                    factory
+            );
             roots.put(genesis.getHash(), getGenesisRoot());
         }
 
         @Override
         protected String getPrefix() {
-            return "";
+            return "account";
         }
 
         @Override
@@ -116,7 +119,7 @@ public class StateTrieTests {
         }
 
         // get an optional state at a block
-        Optional<Account> getByBlockHash(byte[] blockHash, String id){
+        Optional<Account> getByBlockHash(byte[] blockHash, String id) {
             return get(roots.get(HexBytes.fromBytes(blockHash)), id);
         }
     }
@@ -145,12 +148,22 @@ public class StateTrieTests {
         blocks.values().stream()
                 .filter(x -> x.getHeight() != 0)
                 .sorted(Comparator.comparingLong(Block::getHeight))
-                .forEach(stateTrie::commit);
+                .forEach(b -> {
+                    b.setStateRoot(
+                            HexBytes.fromBytes(
+                                    stateTrie.getNewRoot(
+                                            b.getHeight() == 1 ? stateTrie.getGenesisRoot() :
+                                                    blocks.get(b.getHashPrev().toString()).getStateRoot().getBytes(), b
+                                    )
+                            )
+                    );
+                    stateTrie.commit(b);
+                });
 
     }
 
     @Test
-    public void test0() throws Exception{
+    public void test0() throws Exception {
         Optional<Account> o = stateTrie
                 .getByBlockHash(Hex.decodeHex("0002".toCharArray()), ADDRESS_A.toString());
         assert o.isPresent();

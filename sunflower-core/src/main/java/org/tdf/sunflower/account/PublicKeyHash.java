@@ -8,7 +8,7 @@ import java.util.Optional;
 import static org.tdf.sunflower.ApplicationConstants.PUBLIC_KEY_SIZE;
 import static org.tdf.sunflower.account.Utils.*;
 
-
+@Deprecated
 public class PublicKeyHash {
     private byte[] publicKeyHash;
     private String address;

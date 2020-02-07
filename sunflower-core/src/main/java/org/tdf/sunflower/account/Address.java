@@ -1,5 +1,7 @@
 package org.tdf.sunflower.account;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.HashFunctions;
@@ -9,6 +11,7 @@ import org.tdf.crypto.ed25519.Ed25519;
 import static org.tdf.sunflower.ApplicationConstants.ADDRESS_SIZE;
 import static org.tdf.sunflower.ApplicationConstants.PUBLIC_KEY_SIZE;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Address {
 
     public static HexBytes of(@NonNull String hex) {

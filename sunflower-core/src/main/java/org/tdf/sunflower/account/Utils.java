@@ -7,6 +7,7 @@ import org.tdf.crypto.HashFunctions;
 import java.util.Arrays;
 import java.util.Optional;
 
+@Deprecated
 public class Utils {
     public static final int PUBLIC_KEY_HASH_LENGTH = 20;
 

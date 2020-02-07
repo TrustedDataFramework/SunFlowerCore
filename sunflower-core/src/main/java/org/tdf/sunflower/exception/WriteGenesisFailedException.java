@@ -1,6 +1,6 @@
 package org.tdf.sunflower.exception;
 
-public class WriteGenesisFailedException extends Exception{
+public class WriteGenesisFailedException extends RuntimeException{
     public WriteGenesisFailedException(String message) {
         super(message);
     }

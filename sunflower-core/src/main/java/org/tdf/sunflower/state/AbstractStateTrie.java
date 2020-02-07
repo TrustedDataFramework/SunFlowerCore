@@ -24,7 +24,7 @@ import java.util.Set;
 public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     private static final int CACHE_SIZE = 32;
 
-    private String TRIE;
+    private final String name;
 
     @Getter
     private Store<byte[], byte[]> trieStore;
@@ -53,11 +53,11 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
             // TODO: verify genesis state roots
             DatabaseStoreFactory factory
     ) {
-        TRIE = getPrefix() + "-trie";
+        name = getPrefix() + "-trie";
         this.updater = updater;
 
         trieStore = new NoDeleteBatchStore<>(
-                factory.create(TRIE)
+                factory.create(name)
         );
 
 
