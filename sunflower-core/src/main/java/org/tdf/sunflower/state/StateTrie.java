@@ -4,12 +4,15 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.sunflower.types.Block;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * state storage
+ *
  * @param <ID> identifier of state
- * @param <S> state
+ * @param <S>  state
  */
 public interface StateTrie<ID, S> {
     // get an optional state at a root hash
@@ -35,4 +38,7 @@ public interface StateTrie<ID, S> {
 
     // get new root without make any modification to underlying database
     byte[] getNewRoot(byte[] parentRoot, Block block);
+
+    // collect garbage
+    void gc(Collection<? extends byte[]> excludedRoots);
 }

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.tdf.common.util.HexBytes;
@@ -17,7 +16,6 @@ import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.Collections;
@@ -26,47 +24,38 @@ import java.util.List;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @RestController
+@AllArgsConstructor
 public class EntryController {
-    private StateTrie<HexBytes, Account> accountTrie;
+    private AccountTrie accountTrie;
 
-    @Autowired
-    public void setAccountTrie(AccountTrie accountTrie) {
-        this.accountTrie = accountTrie;
-    }
-
-    @Autowired
     private GlobalConfig config;
 
-    @Autowired
     private PeerServer peerServer;
 
-    @Autowired
     private TransactionPool pool;
 
-    @Autowired
     private SunflowerRepository sunflowerRepository;
 
-    @Autowired
     private ObjectMapper objectMapper;
 
 
     @GetMapping(value = "/hello", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object hello() {
+    public byte[] hello() {
         return "hello".getBytes(UTF_8);
     }
 
     @GetMapping(value = "/man", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object man() throws Exception {
+    public HexBytes man() throws Exception {
         return HexBytes.fromHex("ffffffff");
     }
 
     @GetMapping(value = "/exception", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object exception() throws RuntimeException {
+    public String exception() throws RuntimeException {
         throw new RuntimeException("error");
     }
 
     @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object getAccount(@PathVariable String addressOrPublicKey) throws Exception {
+    public AccountView getAccount(@PathVariable String addressOrPublicKey) throws Exception {
         HexBytes addressHex = Address.of(addressOrPublicKey);
         return accountTrie
                 .get(sunflowerRepository.getLastConfirmed().getStateRoot().getBytes(), addressHex)
@@ -76,12 +65,12 @@ public class EntryController {
     }
 
     @GetMapping(value = "/config", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object config() {
+    public GlobalConfig config() {
         return config;
     }
 
     @GetMapping(value = "/peers", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object peers() {
+    public PeersInfo peers() {
         return new PeersInfo(
                 peerServer.getPeers(),
                 peerServer.getBootStraps()
@@ -89,13 +78,13 @@ public class EntryController {
     }
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object sendTransaction(@RequestBody Transaction transaction) {
+    public Response<String> sendTransaction(@RequestBody Transaction transaction) {
         pool.collect(Collections.singleton(transaction));
         return Response.newSuccessFul("ok");
     }
 
     @GetMapping(value = "/contract/{address}/{method}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object getContract(
+    public ContractView getContract(
             @PathVariable("address") final String address,
             @PathVariable("method") String method,
             @RequestParam(value = "parameters", required = false) String parameters

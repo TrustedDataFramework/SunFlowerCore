@@ -2,16 +2,16 @@ package org.tdf.sunflower.controller;
 
 /**
  * json format:
- *
+ * <p>
  * {
- *   "code": 500,
- *   "data": "data",
- *   "message": "success"
+ * "code": 500,
+ * "data": "data",
+ * "message": "success"
  * }
  */
-public class Response {
+public class Response<T> {
     private int code;
-    private Object data;
+    private T data;
     private String message;
 
     public static enum Code {
@@ -29,7 +29,7 @@ public class Response {
         }
     }
 
-    private Response(int code, Object data, String message) {
+    private Response(int code, T data, String message) {
         this.code = code;
         this.data = data;
         this.message = message;
@@ -47,15 +47,15 @@ public class Response {
         return message;
     }
 
-    public static Response newSuccessFul(Object data) {
-        return new Response(Code.SUCCESS.code, data, Code.SUCCESS.message);
+    public static <T> Response<T> newSuccessFul(T data) {
+        return new Response<>(Code.SUCCESS.code, data, Code.SUCCESS.message);
     }
 
-    public static Response newFailed(Code code) {
-        return new Response(code.code, "", code.message);
+    public static <T> Response<T> newFailed(Code code) {
+        return new Response<>(code.code, null, code.message);
     }
 
-    public static Response newFailed(Code code, String reason) {
-        return new Response(code.code, "", reason);
+    public static <T> Response<T> newFailed(Code code, String reason) {
+        return new Response<>(code.code, null, reason);
     }
 }

@@ -3,6 +3,8 @@ package org.tdf.sunflower.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.tdf.common.util.ChainCache;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.dao.HeaderDao;
@@ -15,7 +17,6 @@ import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 
-import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -202,7 +203,7 @@ public class BlockRepositoryService implements BlockRepository {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public void writeBlock(Block block) {
         headerDao.save(Mapping.getEntityFromHeader(block.getHeader()));
         transactionDao.saveAll(Mapping.getTransactionEntitiesFromBlock(block).collect(Collectors.toList()));

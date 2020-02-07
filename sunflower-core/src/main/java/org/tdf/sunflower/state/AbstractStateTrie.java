@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.BatchStore;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.NoDeleteBatchStore;
 import org.tdf.common.store.Store;
@@ -32,15 +33,10 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
     @Getter
     private Trie<ID, S> trie;
-
-    protected abstract String getPrefix();
-
     @Getter
     private StateUpdater<ID, S> updater;
-
     @Getter
     private byte[] genesisRoot;
-
     private Cache<HexBytes, Trie<ID, S>> cache =
             CacheBuilder.newBuilder()
                     .maximumSize(CACHE_SIZE)
@@ -74,6 +70,8 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         genesisRoot = tmp.commit();
         tmp.flush();
     }
+
+    protected abstract String getPrefix();
 
     public Optional<S> get(byte[] rootHash, ID id) {
         return getTrieForReadOnly(rootHash).get(id);
@@ -141,5 +139,19 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         Map<ID, S> map = batchGet(parentRoot, relatedIds);
         relatedIds.forEach(id -> map.putIfAbsent(id, getUpdater().createEmpty(id)));
         return map;
+    }
+
+    @Override
+    public void gc(Collection<? extends byte[]> excludedRoots) {
+        Map<byte[], byte[]> dumped = new ByteArrayMap<>();
+        for (byte[] h : excludedRoots) {
+            dumped.putAll(getTrieForReadOnly(h).dump());
+        }
+        getTrieStore().clear();
+        if (getTrieStore() instanceof BatchStore) {
+            ((BatchStore<byte[], byte[]>) getTrieStore()).putAll(dumped.entrySet());
+            return;
+        }
+        dumped.forEach(getTrieStore()::put);
     }
 }
