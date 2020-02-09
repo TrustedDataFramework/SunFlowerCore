@@ -9,6 +9,7 @@ import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
+import org.tdf.gmhelper.SM2Util;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -84,8 +85,12 @@ public class SM2Test {
 
     @Test
     public void testDecrypt() throws UnsupportedEncodingException {
-        SM2PrivateKey sm2PrivateKey = new SM2PrivateKey(ByteUtils.fromHexString("e0ef317fc7c71279ec4a9843597c245f6564edeb89e238e35c5b7ec782947435"));
-        byte[] result = sm2PrivateKey.decrypt(ByteUtils.fromHexString("04dff5529c98cad70e22e1ee0de12b1bba38557ca6735a045d7b08aeeb7c9f8006acc083ad9c19e400b1f4149f52e4f90da4fd747067074608f3d357c1770178b3682db6cd74d968122419d751d6edc5daf6dc72d203c8d7eb7c8e2ed4ccf3e921ad2126554851"));
+        SM2PrivateKey sm2PrivateKey = new SM2PrivateKey(ByteUtils.fromHexString("30770201010420287D3FB9F4BBC8BDE15475879F086120E365F8B2CA142681F6"));
+        byte[] ciphertext = SM2Util.decodeDERSM2Cipher(ByteUtils.fromHexString("306C022100F0706E1077AB4C4FD7F72B23896B00EC356C10B16703DFBAEBE9DD566083BEE20220127E37E6E776462FC2221F0DCBB3A0A6FFC3A2A4B37DC985270E5E6BA32429CE0420C9D2DA3E9F2A011AF0C5F906C20F8DFB0E6132B29BAB53279F73BD072825129E04038517A3"));
+
+        byte[] result = sm2PrivateKey.decrypt(ciphertext);
+
+        //byte[] result = sm2PrivateKey.decrypt(ByteUtils.fromHexString("04F0706E1077AB4C4FD7F72B23896B00EC356C10B16703DFBAEBE9DD566083BEE2127E37E6E776462FC2221F0DCBB3A0A6FFC3A2A4B37DC985270E5E6BA32429CEc9d2da3e9f2a011af0c5f906c20f8dfb0e6132b29bab53279f73bd072825129e8517A3"));
         String plaintext = new String(result, StandardCharsets.UTF_8);
         System.out.println(plaintext);
     }

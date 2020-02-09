@@ -195,11 +195,11 @@ public class SM2Util extends GMBaseUtil {
         byte[] cipherText) {
         byte[] c1 = new byte[curveLength * 2 + 1];
         System.arraycopy(cipherText, 0, c1, 0, c1.length);
-        byte[] c2 = new byte[cipherText.length - c1.length - digestLength];
-        System.arraycopy(cipherText, c1.length, c2, 0, c2.length);
         byte[] c3 = new byte[digestLength];
-        System.arraycopy(cipherText, c1.length + c2.length, c3, 0, c3.length);
-        SM2Cipher result = new SM2Cipher();
+        System.arraycopy(cipherText, c1.length, c3, 0, c3.length);
+        byte[] c2 = new byte[cipherText.length - c1.length - digestLength];
+        System.arraycopy(cipherText, c1.length+c3.length, c2, 0, c2.length);
+                SM2Cipher result = new SM2Cipher();
         result.setC1(c1);
         result.setC2(c2);
         result.setC3(c3);
@@ -240,12 +240,11 @@ public class SM2Util extends GMBaseUtil {
         System.arraycopy(cipher, startPos, c1y, 0, c1y.length);
         startPos += c1y.length;
 
-        byte[] c2 = new byte[cipher.length - c1x.length - c1y.length - 1 - digestLength];
-        System.arraycopy(cipher, startPos, c2, 0, c2.length);
-        startPos += c2.length;
-
         byte[] c3 = new byte[digestLength];
         System.arraycopy(cipher, startPos, c3, 0, c3.length);
+        startPos += c3.length;
+        byte[] c2 = new byte[cipher.length - c1x.length - c1y.length - 1 - digestLength];
+        System.arraycopy(cipher, startPos, c2, 0, c2.length);
 
         ASN1Encodable[] arr = new ASN1Encodable[4];
         arr[0] = new ASN1Integer(c1x);
@@ -268,7 +267,8 @@ public class SM2Util extends GMBaseUtil {
         byte[] c1y = ((ASN1Integer) as.getObjectAt(1)).getValue().toByteArray();
         byte[] c3 = ((DEROctetString) as.getObjectAt(2)).getOctets();
         byte[] c2 = ((DEROctetString) as.getObjectAt(3)).getOctets();
-
+        c1x = fixToCurveLengthBytes(c1x);
+        c1y = fixToCurveLengthBytes(c1y);
         int pos = 0;
         byte[] cipherText = new byte[1 + c1x.length + c1y.length + c2.length + c3.length];
 
@@ -282,10 +282,10 @@ public class SM2Util extends GMBaseUtil {
         System.arraycopy(c1y, 0, cipherText, pos, c1y.length);
         pos += c1y.length;
 
-        System.arraycopy(c2, 0, cipherText, pos, c2.length);
-        pos += c2.length;
-
         System.arraycopy(c3, 0, cipherText, pos, c3.length);
+        pos += c3.length;
+
+        System.arraycopy(c2, 0, cipherText, pos, c2.length);
 
         return cipherText;
     }
