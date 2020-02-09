@@ -1,4 +1,4 @@
-package org.wisdom.keystore.wallet;
+package org.tdf.keystore.wallet;
 
 import org.apache.commons.codec.binary.Hex;
 import org.junit.Test;
