@@ -84,8 +84,8 @@ public class SM2Test {
 
     @Test
     public void testDecrypt() throws UnsupportedEncodingException {
-        SM2PrivateKey sm2PrivateKey = new SM2PrivateKey(ByteUtils.fromHexString("b1d105cea02c1210fe1eb69968c301a04328091f38185477f1a3b17c30172e7e"));
-        byte[] result = sm2PrivateKey.decrypt(ByteUtils.fromHexString("0407b9b41857350f7ec584001a35e510bff9237fa7c608b82bfdc25e500c1429028e62c587b0bebb434150c45284df41613a04c2a7fc17e9b6575e23e9c8612d511e1d5c792c0685b6e96176cb19f2843c6ed44eb2e6677047ff65dab142ed7f154ab08c0de79647d5eb8dfa"));
+        SM2PrivateKey sm2PrivateKey = new SM2PrivateKey(ByteUtils.fromHexString("e0ef317fc7c71279ec4a9843597c245f6564edeb89e238e35c5b7ec782947435"));
+        byte[] result = sm2PrivateKey.decrypt(ByteUtils.fromHexString("04dff5529c98cad70e22e1ee0de12b1bba38557ca6735a045d7b08aeeb7c9f8006acc083ad9c19e400b1f4149f52e4f90da4fd747067074608f3d357c1770178b3682db6cd74d968122419d751d6edc5daf6dc72d203c8d7eb7c8e2ed4ccf3e921ad2126554851"));
         String plaintext = new String(result, StandardCharsets.UTF_8);
         System.out.println(plaintext);
     }

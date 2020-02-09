@@ -102,7 +102,8 @@ public class SM2Engine
             kpb = ((ECPublicKeyParameters)ecKey).getQ().multiply(k).normalize();
 
             // A5
-            byte[] kpbBytes = kpb.getEncoded(false);
+
+            byte[] kpbBytes = byteMerger(kpb.getAffineXCoord().getEncoded(), kpb.getAffineYCoord().getEncoded() );
             t = KDF(digest, kpbBytes, in.length);
 
         } while (allZero(t));
@@ -125,8 +126,9 @@ public class SM2Engine
         byte[] encryptResult = new byte[C1Buffer.length + C2.length + C3.length];
 
         System.arraycopy(C1Buffer, 0, encryptResult, 0, C1Buffer.length);
-        System.arraycopy(C2, 0, encryptResult, C1Buffer.length, C2.length);
-        System.arraycopy(C3, 0, encryptResult, C1Buffer.length + C2.length, C3.length);
+        System.arraycopy(C2, 0, encryptResult, C1Buffer.length + C3.length, C2.length);
+        System.arraycopy(C3, 0, encryptResult, C1Buffer.length, C3.length);
+        System.out.println(ByteUtils.toHexString(C3));
         return encryptResult;
     }
 
@@ -148,8 +150,9 @@ public class SM2Engine
         ECPoint dBC1 = C1.multiply(((ECPrivateKeyParameters)ecKey).getD()).normalize();
 
         // B4
-        byte[] dBC1Bytes = dBC1.getEncoded(false);
+        //byte[] dBC1Bytes = dBC1.getEncoded(false);
         int klen = in.length - (curveLength * 2 + 1) - digest.getDigestSize();
+        byte[] dBC1Bytes = byteMerger(dBC1.getAffineXCoord().getEncoded(), dBC1.getAffineYCoord().getEncoded());
         byte[] t = KDF(digest, dBC1Bytes, klen);
 
         if (allZero(t)) {
@@ -160,7 +163,7 @@ public class SM2Engine
         // B5
         byte[] M = new byte[klen];
         for (int i = 0; i < M.length; i++) {
-            M[i] = (byte) (in[C1Byte.length + i] ^ t[i]);
+            M[i] = (byte) (in[C1Byte.length + digest.getDigestSize() + i] ^ t[i]);
         }
 
 
@@ -168,7 +171,7 @@ public class SM2Engine
         byte[] C3 = new byte[digest.getDigestSize()];
 
 
-        System.arraycopy(in, in.length - digest.getDigestSize(), C3, 0, digest.getDigestSize());
+        System.arraycopy(in, C1Byte.length, C3, 0, digest.getDigestSize());
         addFieldElement(digest, dBC1.getAffineXCoord());
         digest.update(M, 0, M.length);
         addFieldElement(digest, dBC1.getAffineYCoord());
@@ -190,6 +193,12 @@ public class SM2Engine
         byteArray[3] = (byte) (i & 0xFF);
         return byteArray;
     }
+    public static byte[] byteMerger(byte[] bt1, byte[] bt2){
+        byte[] bt3 = new byte[bt1.length+bt2.length];
+        System.arraycopy(bt1, 0, bt3, 0, bt1.length);
+        System.arraycopy(bt2, 0, bt3, bt1.length, bt2.length);
+        return bt3;
+    }
     /**
      * 密钥派生函数
      *
@@ -198,7 +207,7 @@ public class SM2Engine
      * @param klen 生成klen字节数长度的密钥
      *
      */
-    private static byte[] KDF(Digest digest, byte[] Z, int klen) {
+    public static byte[] KDF(Digest digest, byte[] Z, int klen) {
         int ct = 1; // a)
         int end = (int) Math.ceil(klen * 1.0 / 32);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -218,7 +227,7 @@ public class SM2Engine
                 baos.write(last);
             } else
                 baos.write(last, 0, klen % 32);
-            return baos.toByteArray();
+            return last;
         } catch (Exception e) {
             e.printStackTrace();
         }
