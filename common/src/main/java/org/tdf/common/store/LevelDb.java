@@ -4,7 +4,6 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.iq80.leveldb.*;
-import org.iq80.leveldb.util.FileUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,8 +16,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
 
-import static org.iq80.leveldb.impl.Iq80DBFactory.factory;
-
 
 @Slf4j
 public class LevelDb implements DatabaseStore {
@@ -30,10 +27,12 @@ public class LevelDb implements DatabaseStore {
     private DB db;
     private DBSettings dbSettings;
     private boolean alive;
+    private final DBFactory factory;
 
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public LevelDb(String directory, String name) {
+    public LevelDb(DBFactory factory, String directory, String name) {
+        this.factory = factory;
         this.directory = directory;
         this.name = name;
     }
@@ -137,7 +136,7 @@ public class LevelDb implements DatabaseStore {
 
     public void reset() {
         close();
-        FileUtils.deleteRecursively(getPath().toFile());
+        FileUtil.recursiveDelete(getPath().toString());
         init(dbSettings);
     }
 

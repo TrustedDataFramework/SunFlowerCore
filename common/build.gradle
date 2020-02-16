@@ -45,10 +45,12 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
     compileOnly "org.rocksdb:rocksdbjni:${rocksdbVersion}"
-    compileOnly "org.iq80.leveldb:leveldb:${leveldbVersion}"
+    compileOnly "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
     compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"
 
-    testCompile "org.iq80.leveldb:leveldb:${leveldbVersion}"
+    testCompile "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
+    testCompile "org.fusesource.leveldbjni:leveldbjni-all:${leveldbJNIVersion}"
+
     testCompile "org.slf4j:slf4j-api:${slf4jVersion}"
     testCompile "org.rocksdb:rocksdbjni:${rocksdbVersion}"
 

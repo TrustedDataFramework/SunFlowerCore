@@ -1,6 +1,7 @@
 package org.tdf.sunflower.db;
 
 import lombok.extern.slf4j.Slf4j;
+import org.fusesource.leveldbjni.JniDBFactory;
 import org.springframework.stereotype.Component;
 import org.tdf.common.store.*;
 import org.tdf.sunflower.DatabaseConfig;
@@ -25,7 +26,7 @@ public class DatabaseStoreFactory {
 
         switch (config.getName().trim().toLowerCase()) {
             case "leveldb":
-                store = new LevelDb(config.getDirectory(), name);
+                store = new LevelDb(JniDBFactory.factory, config.getDirectory(), name);
                 break;
             case "rocksdb":
                 store = new RocksDb(config.getDirectory(), name);

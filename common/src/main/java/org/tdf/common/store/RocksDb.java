@@ -3,7 +3,6 @@ package org.tdf.common.store;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
-import org.iq80.leveldb.util.FileUtils;
 import org.rocksdb.*;
 
 import java.io.IOException;
@@ -133,7 +132,7 @@ public class RocksDb implements DatabaseStore {
 
     public void reset() {
         close();
-        FileUtils.deleteRecursively(getPath().toFile());
+        FileUtil.recursiveDelete(getPath().toString());
         init(dbSettings);
     }
 

@@ -1,5 +1,6 @@
 package org.tdf.common.store;
 
+import org.fusesource.leveldbjni.JniDBFactory;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -9,7 +10,7 @@ public class LevelDBCachedStoreTests extends CachedStoreTests{
 
     @Override
     protected Store<byte[], byte[]> supplyDelegate() {
-        db = new LevelDb("local/leveldb", "tmp");
+        db = new LevelDb(JniDBFactory.factory, "local/leveldb", "tmp");
         db.init(DBSettings.DEFAULT);
         db.clear();
         return db;
