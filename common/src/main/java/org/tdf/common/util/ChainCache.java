@@ -56,8 +56,6 @@ public interface ChainCache<T extends Chained> extends SortedSet<T> {
 
     List<T> getDescendants(byte[] hash);
 
-    List<List<T>> getAllForks();
-
     void removeDescendants(byte[] hash);
 
     List<T> getLeaves();
@@ -65,8 +63,6 @@ public interface ChainCache<T extends Chained> extends SortedSet<T> {
     List<T> getInitials();
 
     boolean removeByHash(byte[] hash);
-
-    List<T> popLongestChain();
 
     boolean containsHash(byte[] hash);
 

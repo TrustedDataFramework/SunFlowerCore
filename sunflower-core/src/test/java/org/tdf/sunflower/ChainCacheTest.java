@@ -187,30 +187,6 @@ public class ChainCacheTest {
         assert ancestors.contains("0000");
     }
 
-    @Test
-    public void testGetAllForks() throws Exception {
-        List<List<Node>> all = getCache(0).getAllForks();
-
-        Map<String, Set<String>> forks = all.stream().collect(Collectors.toMap(
-                l -> l.get(l.size() - 1).hash.toString(),
-                x -> x.stream().map(n -> n.hash.toString()).collect(Collectors.toSet())
-        ));
-        assert forks.keySet().containsAll(Arrays.asList("0206", "0105", "0005"));
-        assert forks.get("0005").size() == 6;
-        assert forks.get("0005").containsAll(Arrays.asList("0000","0001", "0002", "0003", "0004", "0005"));
-        assert forks.get("0105").size() == 6;
-        assert forks.get("0105").containsAll(Arrays.asList("0000","0001", "0102", "0103", "0104", "0105"));
-        assert forks.get("0206").size() == 7;
-        assert forks.get("0206").containsAll(Arrays.asList("0000","0001", "0102", "0103", "0204", "0205", "0206"));
-    }
-
-    @Test
-    public void popLongestChain() throws Exception {
-        ChainCache<Node> cache = getCache(0);
-        List<Node> longest = cache.popLongestChain();
-        assert longest.get(longest.size() - 1).hash.toString().equals("0206");
-        assert longest.size() == 7;
-    }
 
     @Test
     public void testGetInitials() throws Exception{
