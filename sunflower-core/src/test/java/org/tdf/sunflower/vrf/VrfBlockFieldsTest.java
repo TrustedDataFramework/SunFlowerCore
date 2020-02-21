@@ -39,7 +39,6 @@ public class VrfBlockFieldsTest {
     }
 
     // TODO: for string and byte array, both null and empty sequence are encoded as RLP null item [0x80]
-    @Ignore
     @Test
     public void testRlpNull() {
         VrfBlockFields vbf1 = VrfBlockFields.builder().seed(null).priority(null).proposalProof(null)
@@ -49,8 +48,8 @@ public class VrfBlockFieldsTest {
         assert (ByteUtil.isNullOrZeroArray(vbf2.getSeed()));
         assert (ByteUtil.isNullOrZeroArray(vbf2.getPriority()));
         assert (ByteUtil.isNullOrZeroArray(vbf2.getProposalProof()));
-        assert (vbf2.getParentReductionCommitProofs() == null);
-        assert (vbf2.getParentFinalCommitProofs() == null);
+        assert (vbf2.getParentReductionCommitProofs() == null || vbf2.getParentReductionCommitProofs().equals(""));
+        assert (vbf2.getParentFinalCommitProofs() == null || vbf2.getParentFinalCommitProofs().equals(""));
     }
 
     @Test

@@ -20,7 +20,10 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.MinerListener;
+import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.PeerServer;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
@@ -86,6 +89,10 @@ public class VrfMiner implements Miner {
 
     private PeerServer peerServer;
     private MessageBuilder messageBuilder;
+
+    private TransactionPool transactionPool;
+
+    private StateTrie<HexBytes, Account> accountTrie;
 
     public VrfMiner() {
         listeners = new ArrayList<>();
@@ -202,7 +209,18 @@ public class VrfMiner implements Miner {
                 vrfConfig);
         HexBytes payload = HexBytes.fromBytes(payLoadBytes);
         b.setPayload(payload);
+
+        while (true) {
+            Optional<Transaction> tx = transactionPool.pop();
+            if (!tx.isPresent())
+                break;
+            b.getBody().add(tx.get());
+        }
+
         b.getBody().add(createCoinBase(parent.getHeight() + 1));
+
+        // calculate state root
+        b.setStateRoot(HexBytes.fromBytes(accountTrie.getNewRoot(parent.getStateRoot().getBytes(), b)));
 
         b.setHash(HASH_POLICY.getHash(b));
         return b;

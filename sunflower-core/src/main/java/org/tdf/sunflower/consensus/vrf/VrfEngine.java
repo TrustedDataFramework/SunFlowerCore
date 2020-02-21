@@ -180,6 +180,14 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         vrfMiner.setConfig(vrfConfig);
         vrfMiner.setGenesis(genesis);
         vrfMiner.setRepository(this.getSunflowerRepository());
+
+        vrfMiner.setTransactionPool(getTransactionPool());
+
+        AccountUpdater updater = new AccountUpdater(Collections.emptyMap());
+        AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory());
+        setAccountTrie(trie);
+        vrfMiner.setAccountTrie(getAccountTrie());
+
         setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
         // ------- Need well implementation.
         ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository());
@@ -188,10 +196,6 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         vrfMiner.setVrfStateMachine(vrfStateMachine);
 
         setMiner(vrfMiner);
-
-        AccountUpdater updater = new AccountUpdater(Collections.emptyMap());
-        AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory());
-        setAccountTrie(trie);
 
         // register miner accounts
 //        getStateRepository().register(getGenesisBlock(),
