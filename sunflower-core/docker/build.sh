@@ -111,9 +111,13 @@ PROJECT_ROOT=$CUR/../
 PROJECT_ROOT=`cd $PROJECT_ROOT; pwd`
 GRADLE_WRAPPER=$PROJECT_ROOT/../gradlew
 
+if [[ "$(expr substr $(uname -s) 1 5)" == "MINGW" ]]; then
+  GRADLE_WRAPPER=$PROJECT_ROOT/../gradlew.bat
+fi
+
 cd $PROJECT_ROOT/..
 $GRADLE_WRAPPER clean
-$GRADLE_WRAPPER bootJar
+$GRADLE_WRAPPER bootjar
 
 cp $PROJECT_ROOT/build/libs/sunflower*.jar $CUR/build
 
