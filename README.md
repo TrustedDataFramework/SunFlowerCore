@@ -89,7 +89,7 @@ java -jar consortium\build\libs\consortium-0.0.1-SNAPSHOT.jar
 4. build docker
  
 ```shell script
-bash sunflower-core/docker/build.sh -i your_name_space/your_repository_name -t latest
+bash sunflower-core/docker/build.sh -i your_name_space/your_repository_name -t latest --push
 ```
 
 5. rest apis

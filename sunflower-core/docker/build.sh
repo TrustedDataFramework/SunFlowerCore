@@ -7,6 +7,7 @@
 #
 # ARG_OPTIONAL_SINGLE([tag],[t],[tag name],[latest])
 # ARG_OPTIONAL_SINGLE([image],[i],[image name])
+# ARG_OPTIONAL_BOOLEAN([push],[],[push image])
 # ARG_HELP([The general script's help msg])
 # ARGBASH_GO()
 # needed because of Argbash --> m4_ignore([
@@ -36,14 +37,16 @@ begins_with_short_option()
 # THE DEFAULTS INITIALIZATION - OPTIONALS
 _arg_tag="latest"
 _arg_image=
+_arg_push="off"
 
 
 print_help()
 {
 	printf '%s\n' "The general script's help msg"
-	printf 'Usage: %s [-t|--tag <arg>] [-i|--image <arg>] [-h|--help]\n' "$0"
+	printf 'Usage: %s [-t|--tag <arg>] [-i|--image <arg>] [--(no-)push] [-h|--help]\n' "$0"
 	printf '\t%s\n' "-t, --tag: tag name (default: 'latest')"
 	printf '\t%s\n' "-i, --image: image name (no default)"
+	printf '\t%s\n' "--push, --no-push: push image (off by default)"
 	printf '\t%s\n' "-h, --help: Prints help"
 }
 
@@ -76,6 +79,10 @@ parse_commandline()
 			-i*)
 				_arg_image="${_key##-i}"
 				;;
+			--no-push|--push)
+				_arg_push="on"
+				test "${1:0:5}" = "--no-" && _arg_push="off"
+				;;
 			-h|--help)
 				print_help
 				exit 0
@@ -93,7 +100,6 @@ parse_commandline()
 }
 
 parse_commandline "$@"
-
 
 IMAGE=$_arg_image
 
@@ -129,3 +135,7 @@ fi
 docker build -f $CUR/Dockerfile -t $IMAGE$SUFFIX $CUR
 
 rm -rf $CUR/build/*
+
+if [[ $_arg_push == 'off' ]]; then
+  docker push $IMAGE$SUFFIX
+fi
