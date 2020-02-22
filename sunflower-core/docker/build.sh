@@ -100,6 +100,8 @@ PROJECT_ROOT=$CUR/../
 PROJECT_ROOT=`cd $PROJECT_ROOT; pwd`
 GRADLE_WRAPPER=$PROJECT_ROOT/../gradlew
 
+cd $PROJECT_ROOT
+
 if [[ "$(expr substr $(uname -s) 1 5)" == "MINGW" ]]; then
   GRADLE_WRAPPER=$PROJECT_ROOT/../gradlew.bat
 fi
@@ -115,6 +117,6 @@ docker build -f $CUR/Dockerfile -t $_arg_image $CUR
 
 rm -rf $CUR/build/*
 
-if [[ $_arg_push == 'off' ]]; then
+if [[ $_arg_push == 'on' ]]; then
   docker push $_arg_image
 fi
