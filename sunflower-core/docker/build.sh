@@ -87,9 +87,6 @@ parse_commandline()
 
 parse_commandline "$@"
 
-IMAGE=$_arg_image
-
-
 # directory of this file
 CUR=$(dirname $0)
 CUR=`cd $CUR; pwd`
@@ -114,10 +111,10 @@ $GRADLE_WRAPPER bootjar
 cp $PROJECT_ROOT/build/libs/sunflower*.jar $CUR/build
 
 
-docker build -f $CUR/Dockerfile -t $IMAGE $CUR
+docker build -f $CUR/Dockerfile -t $_arg_image $CUR
 
 rm -rf $CUR/build/*
 
 if [[ $_arg_push == 'off' ]]; then
-  docker push $IMAGE
+  docker push $_arg_image
 fi
