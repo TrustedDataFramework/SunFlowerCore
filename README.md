@@ -86,10 +86,10 @@ set SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.ym
 java -jar consortium\build\libs\consortium-0.0.1-SNAPSHOT.jar
 ```  
 
-4. build docker
+4. build docker and push
  
 ```shell script
-bash sunflower-core/docker/build.sh -i your_name_space/your_repository_name -t latest --push
+bash sunflower-core/docker/build.sh -i your_name_space/your_repository_name:tag --push
 ```
 
 5. rest apis

@@ -5,7 +5,6 @@
 # This is a rather minimal example Argbash potential
 # Example taken from http://argbash.readthedocs.io/en/stable/example.html
 #
-# ARG_OPTIONAL_SINGLE([tag],[t],[tag name],[latest])
 # ARG_OPTIONAL_SINGLE([image],[i],[image name])
 # ARG_OPTIONAL_BOOLEAN([push],[],[push image])
 # ARG_HELP([The general script's help msg])
@@ -29,13 +28,12 @@ die()
 
 begins_with_short_option()
 {
-	local first_option all_short_options='tih'
+	local first_option all_short_options='ih'
 	first_option="${1:0:1}"
 	test "$all_short_options" = "${all_short_options/$first_option/}" && return 1 || return 0
 }
 
 # THE DEFAULTS INITIALIZATION - OPTIONALS
-_arg_tag="latest"
 _arg_image=
 _arg_push="off"
 
@@ -43,8 +41,7 @@ _arg_push="off"
 print_help()
 {
 	printf '%s\n' "The general script's help msg"
-	printf 'Usage: %s [-t|--tag <arg>] [-i|--image <arg>] [--(no-)push] [-h|--help]\n' "$0"
-	printf '\t%s\n' "-t, --tag: tag name (default: 'latest')"
+	printf 'Usage: %s [-i|--image <arg>] [--(no-)push] [-h|--help]\n' "$0"
 	printf '\t%s\n' "-i, --image: image name (no default)"
 	printf '\t%s\n' "--push, --no-push: push image (off by default)"
 	printf '\t%s\n' "-h, --help: Prints help"
@@ -57,17 +54,6 @@ parse_commandline()
 	do
 		_key="$1"
 		case "$_key" in
-			-t|--tag)
-				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
-				_arg_tag="$2"
-				shift
-				;;
-			--tag=*)
-				_arg_tag="${_key##--tag=}"
-				;;
-			-t*)
-				_arg_tag="${_key##-t}"
-				;;
 			-i|--image)
 				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
 				_arg_image="$2"
@@ -127,15 +113,11 @@ $GRADLE_WRAPPER bootjar
 
 cp $PROJECT_ROOT/build/libs/sunflower*.jar $CUR/build
 
-SUFFIX=:$_arg_tag
-if [[ $SUFFIX == ':' ]]; then
-  SUFFIX=''
-fi
 
-docker build -f $CUR/Dockerfile -t $IMAGE$SUFFIX $CUR
+docker build -f $CUR/Dockerfile -t $IMAGE $CUR
 
 rm -rf $CUR/build/*
 
 if [[ $_arg_push == 'off' ]]; then
-  docker push $IMAGE$SUFFIX
+  docker push $IMAGE
 fi
