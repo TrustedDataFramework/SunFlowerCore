@@ -86,19 +86,23 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         log.info("New mined block received from peer. Num #{}, Hash {}", blockNew.getHeight(),
                 blockNew.getHash().toString());
         saveBlock(blockNew, this.getSunflowerRepository(), this);
+        vrfMiner.stop();
+        vrfMiner.start();
     }
 
     private void processCommitProofMsg(byte[] bodyBytes) {
         CommitProof commitProof = RLPCodec.decode(bodyBytes, CommitProof.class);
         log.info("VRF CommitProof received. Round #{}, miner {}, block hash {}", commitProof.getRound(),
-                commitProof.getCoinbase(), ByteUtil.toHexString(commitProof.getBlockIdentifier().getHash()));
+                ByteUtil.toHexString(commitProof.getCoinbase()),
+                ByteUtil.toHexString(commitProof.getBlockIdentifier().getHash()));
         vrfStateMachine.addProof(commitProof, true);
     }
 
     private void processVrfProposalProofMsg(byte[] bodyBytes) {
         ProposalProof proposalProof = RLPCodec.decode(bodyBytes, ProposalProof.class);
         log.info("VRF ProposalProof received. Round #{}, miner {}, block hash {}", proposalProof.getRound(),
-                proposalProof.getCoinbase(), ByteUtil.toHexString(proposalProof.getBlockIdentifier().getHash()));
+                ByteUtil.toHexString(proposalProof.getCoinbase()),
+                ByteUtil.toHexString(proposalProof.getBlockIdentifier().getHash()));
         vrfStateMachine.addProof(proposalProof, true);
     }
 

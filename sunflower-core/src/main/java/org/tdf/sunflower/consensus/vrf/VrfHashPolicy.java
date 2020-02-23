@@ -8,7 +8,7 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 public class VrfHashPolicy implements HashPolicy {
-    static final HashPolicy HASH_POLICY = new VrfHashPolicy();
+    public static final HashPolicy HASH_POLICY = new VrfHashPolicy();
 
     @Override
     public HexBytes getHash(Block block) {
