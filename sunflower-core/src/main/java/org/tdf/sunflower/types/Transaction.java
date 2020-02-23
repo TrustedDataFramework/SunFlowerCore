@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Getter
+@ToString
+@EqualsAndHashCode
 @NoArgsConstructor
 public class Transaction {
     public enum Type {
