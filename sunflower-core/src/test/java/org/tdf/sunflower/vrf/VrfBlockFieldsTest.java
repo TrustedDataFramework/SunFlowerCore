@@ -305,6 +305,8 @@ public class VrfBlockFieldsTest {
         Block blockDecoded = RLPCodec.decode(vrfBytes, Block.class);
 
         // Assertions.
+        assert (block.getHashPrev().equals(blockDecoded.getHashPrev()));
+        assert (block.getPayload().equals(blockDecoded.getPayload()));
         assert (blockDecoded.getHash() != null);
         assert (block.getHash().equals(blockDecoded.getHash()));
     }
