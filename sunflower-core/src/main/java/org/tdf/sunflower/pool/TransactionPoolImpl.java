@@ -80,9 +80,6 @@ public class TransactionPoolImpl implements TransactionPool {
     @Override
     public void collect(Collection<? extends Transaction> transactions) {
         for (Transaction transaction : transactions) {
-            if (transaction.getHash() == null) {
-                transaction.setHash(hashPolicy.getHash(transaction));
-            }
             ValidateResult res = validator.validate(transaction);
             if (!res.isSuccess()) {
                 log.error(res.getReason());

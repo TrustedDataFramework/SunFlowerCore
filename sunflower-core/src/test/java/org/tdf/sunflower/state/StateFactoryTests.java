@@ -11,10 +11,7 @@ import org.tdf.sunflower.ChainCacheTest;
 import org.tdf.sunflower.exception.StateUpdateException;
 import org.tdf.sunflower.facade.StateFactory;
 import org.tdf.sunflower.facade.StateRepository;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.State;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.*;
 
 import java.util.HashSet;
 import java.util.List;
@@ -69,10 +66,15 @@ public class StateFactoryTests {
     }
 
     public static List<Block> getBlocks() throws Exception {
-        return ChainCacheTest.getCache(0).stream().map(n -> new Block(
-                Header.builder().hash(n.getHash())
-                        .hashPrev(n.getHashPrev()).height(n.getHeight()).build()
-        )).collect(Collectors.toList());
+        return ChainCacheTest.getCache(0).stream().map(n -> {
+            MockBlock mock = new MockBlock(
+                    Header.builder()
+                            .hashPrev(n.getHashPrev()).height(n.getHeight()).build()
+            );
+            mock.setHash(n.getHash());
+            return mock;
+        })
+                .collect(Collectors.toList());
     }
 
     private StateFactory<Height> getStateFactory() throws Exception {

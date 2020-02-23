@@ -68,7 +68,7 @@ public class RuntimeTest {
                 ModuleInstance.builder()
                         .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
                         .hostFunctions(new Hosts().withContext(context).getAll())
-                        .build()
+                            .build()
         ;
         instance.execute("printContext");
     }

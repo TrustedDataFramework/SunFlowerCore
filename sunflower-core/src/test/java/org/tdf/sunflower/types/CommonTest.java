@@ -1,4 +1,4 @@
-package org.tdf.sunflower.typs;
+package org.tdf.sunflower.types;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -7,8 +7,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Header;
 
 @RunWith(JUnit4.class)
 public class CommonTest {

@@ -594,7 +594,7 @@ public class VrfStateMachineTest {
             VrfUtil.setSeed(blockHeader, nonce);
             VrfUtil.setPriority(blockHeader, emptyArray);
             VrfUtil.setMiner(blockHeader, COINBASE_ARRAY[nodeIndex]);
-            blockHeader.setHash(HexBytes.fromBytes(PoAUtils.getHash(blockHeader)));
+            // blockHeader.setHash(HexBytes.fromBytes(PoAUtils.getHash(blockHeader)));
 
             return blockHeader;
         }

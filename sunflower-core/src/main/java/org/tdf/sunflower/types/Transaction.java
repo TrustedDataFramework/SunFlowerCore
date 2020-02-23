@@ -8,7 +8,9 @@ import org.tdf.common.util.Constants;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
+import org.tdf.crypto.HashFunctions;
 import org.tdf.rlp.RLP;
+import org.tdf.rlp.RLPCodec;
 
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -18,10 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Getter
-@Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Transaction {
     public enum Type {
         // coinbase transaction has code 0
@@ -52,6 +51,22 @@ public class Transaction {
 
         public static final Map<Integer, Type> TYPE_MAP =
                 Arrays.stream(values()).collect(Collectors.toMap(x -> x.code, Function.identity()));
+    }
+
+    @Builder
+    public Transaction(HexBytes blockHash, long height, int version, int type, long createdAt, long nonce, HexBytes from, long gasPrice, long amount, HexBytes payload, HexBytes to, HexBytes signature) {
+        this.blockHash = blockHash;
+        this.height = height;
+        this.version = version;
+        this.type = type;
+        this.createdAt = createdAt;
+        this.nonce = nonce;
+        this.from = from;
+        this.gasPrice = gasPrice;
+        this.amount = amount;
+        this.payload = payload;
+        this.to = to;
+        this.signature = signature;
     }
 
     private HexBytes blockHash;
@@ -91,7 +106,22 @@ public class Transaction {
     private HexBytes signature;
 
     // generated value, no need to encode into rlp
-    private HexBytes hash;
+    @Getter(AccessLevel.NONE)
+    private transient HexBytes hash;
+
+    public HexBytes getHash() {
+        return getHash(false);
+    }
+
+    public HexBytes getHash(boolean forceReHash) {
+        if(forceReHash || this.hash == null) {
+            this.hash = HexBytes.fromBytes(
+                    HashFunctions.keccak256(RLPCodec.encode(this))
+            );
+            return this.hash;
+        }
+        return this.hash;
+    }
 
     @Override
     public Transaction clone() {
@@ -116,4 +146,63 @@ public class Transaction {
                         .reduce(0, Integer::sum);
     }
 
+    public void setBlockHash(HexBytes blockHash) {
+        this.blockHash = blockHash;
+        getHash(true);
+    }
+
+    public void setHeight(long height) {
+        this.height = height;
+        getHash(true);
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+        getHash(true);
+    }
+
+    public void setType(int type) {
+        this.type = type;
+        getHash(true);
+    }
+
+    public void setCreatedAt(long createdAt) {
+        this.createdAt = createdAt;
+        getHash(true);
+    }
+
+    public void setNonce(long nonce) {
+        this.nonce = nonce;
+        getHash(true);
+    }
+
+    public void setFrom(HexBytes from) {
+        this.from = from;
+        getHash(true);
+    }
+
+    public void setGasPrice(long gasPrice) {
+        this.gasPrice = gasPrice;
+        getHash(true);
+    }
+
+    public void setAmount(long amount) {
+        this.amount = amount;
+        getHash(true);
+    }
+
+    public void setPayload(HexBytes payload) {
+        this.payload = payload;
+        getHash(true);
+    }
+
+    public void setTo(HexBytes to) {
+        this.to = to;
+        getHash(true);
+    }
+
+    public void setSignature(HexBytes signature) {
+        this.signature = signature;
+        getHash(true);
+    }
 }

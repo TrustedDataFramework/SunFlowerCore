@@ -1,6 +1,7 @@
 package org.tdf.sunflower;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import static org.tdf.sunflower.TestUtils.BYTES;
 import static org.tdf.sunflower.TestUtils.getBlock;
 
 
+@Ignore
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = TestContext.class)
 // use SPRING_CONFIG_LOCATION environment to locate spring config

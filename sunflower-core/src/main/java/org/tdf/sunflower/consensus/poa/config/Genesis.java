@@ -44,8 +44,6 @@ public class Genesis {
                 .height(0)
                 .createdAt(timestamp)
                 .payload(PoAConstants.ZERO_BYTES).build();
-        Block b = new Block(h);
-        b.setHash(HexBytes.fromBytes(PoAUtils.getHash(b)));
-        return b;
+        return new Block(h);
     }
 }

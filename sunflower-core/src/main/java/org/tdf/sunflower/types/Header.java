@@ -9,17 +9,29 @@ import org.tdf.common.util.Constants;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
+import org.tdf.crypto.HashFunctions;
 import org.tdf.rlp.RLP;
+import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
 
 import java.util.stream.Stream;
 
 @Getter
-@Setter
+@ToString
+@EqualsAndHashCode
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Header implements Chained {
+    @Builder
+    public Header(int version, HexBytes hashPrev, HexBytes transactionsRoot, HexBytes stateRoot, long height, long createdAt, HexBytes payload) {
+        this.version = version;
+        this.hashPrev = hashPrev;
+        this.transactionsRoot = transactionsRoot;
+        this.stateRoot = stateRoot;
+        this.height = height;
+        this.createdAt = createdAt;
+        this.payload = payload;
+    }
+
     /**
      * magic version number
      */
@@ -69,7 +81,58 @@ public class Header implements Chained {
      * hash of the block, usually set only once
      */
     @RLPIgnored
-    private HexBytes hash;
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    transient HexBytes hash;
+
+    public HexBytes getHash() {
+        return getHash(false);
+    }
+
+    public HexBytes getHash(boolean forceReHash) {
+        if(forceReHash || this.hash == null) {
+            this.hash = HexBytes.fromBytes(
+                    HashFunctions.keccak256(RLPCodec.encode(this))
+            );
+            return this.hash;
+        }
+        return this.hash;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+        getHash(true);
+    }
+
+    public void setHashPrev(HexBytes hashPrev) {
+        this.hashPrev = hashPrev;
+        getHash(true);
+    }
+
+    public void setTransactionsRoot(HexBytes transactionsRoot) {
+        this.transactionsRoot = transactionsRoot;
+        getHash(true);
+    }
+
+    public void setStateRoot(HexBytes stateRoot) {
+        this.stateRoot = stateRoot;
+        getHash(true);
+    }
+
+    public void setHeight(long height) {
+        this.height = height;
+        getHash(true);
+    }
+
+    public void setCreatedAt(long createdAt) {
+        this.createdAt = createdAt;
+        getHash(true);
+    }
+
+    public void setPayload(HexBytes payload) {
+        this.payload = payload;
+        getHash(true);
+    }
 
     @Override
     public Header clone() {

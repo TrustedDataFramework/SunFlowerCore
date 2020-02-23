@@ -1,4 +1,4 @@
-package org.tdf.sunflower.typs;
+package org.tdf.sunflower.types;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;

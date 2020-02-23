@@ -87,7 +87,7 @@ public class VrfProofTest {
         VrfUtil.setSeed(header, nonce);
         VrfUtil.setPriority(header, emptyArray);
         VrfUtil.setMiner(header, coinbase);
-        header.setHash(HexBytes.fromBytes(PoAUtils.getHash(header)));
+        // header.setHash(HexBytes.fromBytes(PoAUtils.getHash(header)));
 
         return header;
     }

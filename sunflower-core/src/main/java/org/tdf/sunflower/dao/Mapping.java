@@ -15,7 +15,6 @@ import java.util.stream.Stream;
 public class Mapping {
     public static Header getFromHeaderEntity(HeaderEntity header) {
         return Header.builder()
-                .hash(HexBytes.fromBytes(header.getHash()))
                 .version(header.getVersion())
                 .hashPrev(HexBytes.fromBytes(header.getHashPrev()))
                 .transactionsRoot(HexBytes.fromBytes(header.getTransactionsRoot()))
@@ -39,7 +38,7 @@ public class Mapping {
                 .nonce(transaction.getNonce()).from(HexBytes.fromBytes(transaction.getFrom()))
                 .gasPrice(transaction.getGasPrice()).amount(transaction.getAmount())
                 .payload(HexBytes.fromBytes(transaction.getPayload())).to(HexBytes.fromBytes(transaction.getTo()))
-                .signature(HexBytes.fromBytes(transaction.getSignature())).hash(HexBytes.fromBytes(transaction.getHash()))
+                .signature(HexBytes.fromBytes(transaction.getSignature()))
                 .build();
     }
 

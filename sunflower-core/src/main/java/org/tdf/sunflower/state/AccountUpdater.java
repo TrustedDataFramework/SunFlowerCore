@@ -107,16 +107,14 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
             builder = builder.memory(account.getMemory())
                     .binary(account.getBinaryContract())
-                    .globals(account.getGlobals())
-                    .initMemory(false)
-                    .initGlobals(false);
+                    .globals(account.getGlobals());
         } else {
             account.setBinaryContract(t.payload.getBytes());
             builder = builder.binary(t.payload.getBytes());
         }
         try {
             ModuleInstance instance = builder.build();
-            if (!instance.hasExport(context.getMethod())) {
+            if (!instance.containsExport(context.getMethod())) {
                 throw new RuntimeException("contract not has method " + context.getMethod());
             }
             instance.execute(context.getMethod());

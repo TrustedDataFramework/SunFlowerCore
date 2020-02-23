@@ -191,7 +191,6 @@ public class VrfMiner implements Miner {
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(PoAConstants.ZERO_BYTES)
                 .to(HexBytes.fromBytes(minerPublicKeyHash.getPublicKeyHash())).signature(PoAConstants.ZERO_BYTES)
                 .build();
-        tx.setHash(HASH_POLICY.getHash(tx));
         return tx;
     }
 
@@ -222,7 +221,6 @@ public class VrfMiner implements Miner {
         // calculate state root
         b.setStateRoot(HexBytes.fromBytes(accountTrie.getNewRoot(parent.getStateRoot().getBytes(), b)));
 
-        b.setHash(HASH_POLICY.getHash(b));
         return b;
     }
 

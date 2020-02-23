@@ -44,8 +44,7 @@ public class Account {
         ModuleInstance.Builder builder = ModuleInstance.builder()
                 .memory(memory)
                 .globals(globals)
-                .initMemory(false)
-                .initGlobals(false)
+
                 .hostFunctions(new Hosts().withPayload(parameters).getAll());
         ModuleInstance instance =
                 builder.hostFunctions(hosts.getAll()).build();

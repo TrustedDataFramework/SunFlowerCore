@@ -233,7 +233,7 @@ public class PendingVrfStateTest {
             VrfUtil.setSeed(blockHeaders[i], nonce);
             VrfUtil.setPriority(blockHeaders[i], emptyArray);
             VrfUtil.setMiner(blockHeaders[i], COINBASE_ARRAY[i]);
-            blockHeaders[i].setHash(HexBytes.fromBytes(PoAUtils.getHash(blockHeaders[i])));
+            // blockHeaders[i].setHash(HexBytes.fromBytes(PoAUtils.getHash(blockHeaders[i])));
         }
 
         // Setup validator manager

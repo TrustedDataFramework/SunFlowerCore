@@ -290,7 +290,7 @@ public class VrfBlockFieldsTest {
                 vrfSk, vrfPk, vrfConfig);
         HexBytes payload = HexBytes.fromBytes(encoded);
         block.setPayload(payload);
-        block.setHash(HASH_POLICY.getHash(block));
+        // block.setHash(HASH_POLICY.getHash(block));
 
         // Build block message bytes.
         byte[] blockMsgEncoded = VrfUtil.buildMessageBytes(VrfMessageCode.VRF_BLOCK, block);

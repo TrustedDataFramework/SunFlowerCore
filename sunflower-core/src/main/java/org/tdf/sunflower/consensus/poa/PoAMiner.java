@@ -160,7 +160,6 @@ public class PoAMiner implements Miner {
                 .payload(HexBytes.EMPTY)
                 .to(minerAddress)
                 .signature(HexBytes.EMPTY).build();
-        tx.setHash(HASH_POLICY.getHash(tx));
         return tx;
     }
 
@@ -187,7 +186,6 @@ public class PoAMiner implements Miner {
                 )
         );
 
-        b.setHash(HASH_POLICY.getHash(b));
         return b;
     }
 

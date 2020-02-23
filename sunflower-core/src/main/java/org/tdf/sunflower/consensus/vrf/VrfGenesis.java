@@ -60,7 +60,6 @@ public class VrfGenesis {
          */
         setPayload(block, vrfConfig);
 
-        block.setHash(HexBytes.fromBytes(PoAUtils.getHash(block)));
 
         return block;
     }
