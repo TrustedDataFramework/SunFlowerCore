@@ -11,6 +11,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.HashFunctions;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
+import org.tdf.rlp.RLPIgnored;
 
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -109,6 +110,7 @@ public class Transaction {
 
     // generated value, no need to encode into rlp
     @Getter(AccessLevel.NONE)
+    @RLPIgnored
     private transient HexBytes hash;
 
     public HexBytes getHash() {
