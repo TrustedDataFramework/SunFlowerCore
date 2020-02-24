@@ -74,7 +74,7 @@ public class Transaction {
         return getHash(false);
     }
 
-    public HexBytes getHash(boolean forceReHash) {
+    private HexBytes getHash(boolean forceReHash) {
         if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
                     HashFunctions.keccak256(RLPCodec.encode(this))

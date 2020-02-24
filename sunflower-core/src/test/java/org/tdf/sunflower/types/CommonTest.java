@@ -33,6 +33,6 @@ public class CommonTest {
         assert block.getBody().get(0).getType() == 100;
         System.out.println(mapper.writeValueAsString(header));
 
-        RLPCodec.encode(new UnmodifiableHeader(header));
+        RLPCodec.encode( UnmodifiableHeader.of(header));
     }
 }
