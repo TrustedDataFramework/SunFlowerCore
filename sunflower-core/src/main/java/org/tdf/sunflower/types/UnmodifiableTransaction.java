@@ -9,11 +9,6 @@ import org.tdf.rlp.*;
 public class UnmodifiableTransaction extends Transaction {
     private Transaction modifiable;
 
-    public static UnmodifiableTransaction of(Transaction tx){
-        if(tx instanceof UnmodifiableTransaction) return ((UnmodifiableTransaction) tx);
-        return new UnmodifiableTransaction(tx);
-    }
-
     private UnmodifiableTransaction(
             Transaction tx
     ) {
@@ -31,7 +26,6 @@ public class UnmodifiableTransaction extends Transaction {
                 );
     }
 
-
     public UnmodifiableTransaction(
             int version, int type, long createdAt,
             long nonce, HexBytes from, long gasPrice,
@@ -41,6 +35,11 @@ public class UnmodifiableTransaction extends Transaction {
         super(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
         this.hash = super.getHash();
         this.modifiable = new Transaction(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
+    }
+
+    public static UnmodifiableTransaction of(Transaction tx) {
+        if (tx instanceof UnmodifiableTransaction) return ((UnmodifiableTransaction) tx);
+        return new UnmodifiableTransaction(tx);
     }
 
     @Override

@@ -3,9 +3,7 @@ package org.tdf.sunflower.dao;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.entity.HeaderEntity;
 import org.tdf.sunflower.entity.TransactionEntity;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.*;
 
 import java.util.Collection;
 import java.util.List;
@@ -14,7 +12,7 @@ import java.util.stream.Stream;
 
 public class Mapping {
     public static Header getFromHeaderEntity(HeaderEntity header) {
-        return Header.builder()
+        Header ret = Header.builder()
                 .version(header.getVersion())
                 .hashPrev(HexBytes.fromBytes(header.getHashPrev()))
                 .transactionsRoot(HexBytes.fromBytes(header.getTransactionsRoot()))
@@ -23,6 +21,7 @@ public class Mapping {
                 .createdAt(header.getCreatedAt())
                 .payload(HexBytes.fromBytes(header.getPayload()))
                 .build();
+        return UnmodifiableHeader.of(ret);
     }
 
     public static List<Header> getFromHeaderEntities(Collection<? extends HeaderEntity> headers) {
@@ -30,7 +29,7 @@ public class Mapping {
     }
 
     public static Transaction getFromTransactionEntity(TransactionEntity transaction) {
-        return Transaction.builder()
+        Transaction ret = Transaction.builder()
                 .version(transaction.getVersion())
                 .type(transaction.getType()).createdAt(transaction.getCreatedAt())
                 .nonce(transaction.getNonce()).from(HexBytes.fromBytes(transaction.getFrom()))
@@ -38,6 +37,7 @@ public class Mapping {
                 .payload(HexBytes.fromBytes(transaction.getPayload())).to(HexBytes.fromBytes(transaction.getTo()))
                 .signature(HexBytes.fromBytes(transaction.getSignature()))
                 .build();
+        return UnmodifiableTransaction.of(ret);
     }
 
     public static List<Transaction> getFromTransactionEntities(Collection<TransactionEntity> transactions) {

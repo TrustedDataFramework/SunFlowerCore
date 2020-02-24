@@ -9,11 +9,6 @@ import org.tdf.rlp.*;
 public class UnmodifiableHeader extends Header {
     private Header modifiable;
 
-    public static UnmodifiableHeader of(Header header){
-        if(header instanceof UnmodifiableHeader) return ((UnmodifiableHeader) header);
-        return new UnmodifiableHeader(header);
-    }
-
     private UnmodifiableHeader(Header h) {
         super(h.version, h.hashPrev, h.transactionsRoot, h.stateRoot, h.height, h.createdAt, h.payload);
         modifiable = new Header(version, hashPrev, transactionsRoot, stateRoot, height, createdAt, payload);
@@ -22,6 +17,11 @@ public class UnmodifiableHeader extends Header {
     public UnmodifiableHeader(int version, HexBytes hashPrev, HexBytes transactionsRoot, HexBytes stateRoot, long height, long createdAt, HexBytes payload) {
         super(version, hashPrev, transactionsRoot, stateRoot, height, createdAt, payload);
         modifiable = new Header(version, hashPrev, transactionsRoot, stateRoot, height, createdAt, payload);
+    }
+
+    public static UnmodifiableHeader of(Header header) {
+        if (header instanceof UnmodifiableHeader) return ((UnmodifiableHeader) header);
+        return new UnmodifiableHeader(header);
     }
 
     @Override

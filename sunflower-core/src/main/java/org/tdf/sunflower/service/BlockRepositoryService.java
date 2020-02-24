@@ -16,6 +16,7 @@ import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,7 +39,7 @@ public class BlockRepositoryService implements BlockRepository {
         b.setBody(
                 transactionRepositoryService.getTransactionsByBlockHash(b.getHash().getBytes())
         );
-        return b;
+        return UnmodifiableBlock.of(b);
     }
 
     private List<Block> getBlocksFromHeaders(Collection<Header> headers) {
@@ -62,7 +63,10 @@ public class BlockRepositoryService implements BlockRepository {
             list.sort((x, y) -> x.getPosition() - y.getPosition());
             b.setBody(list.stream().map(Mapping::getFromTransactionEntity).collect(Collectors.toList()));
         }
-        return blocks;
+        return blocks
+                .stream()
+                .map(UnmodifiableBlock::of)
+                .collect(Collectors.toList());
     }
 
     @Override

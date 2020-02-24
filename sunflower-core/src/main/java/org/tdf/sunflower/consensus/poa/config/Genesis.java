@@ -12,6 +12,7 @@ import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,6 +48,6 @@ public class Genesis {
                 .height(0)
                 .createdAt(timestamp)
                 .payload(PoAConstants.ZERO_BYTES).build();
-        return new Block(h);
+        return UnmodifiableBlock.of(new Block(h));
     }
 }

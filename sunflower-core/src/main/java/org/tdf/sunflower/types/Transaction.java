@@ -29,27 +29,6 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 public class Transaction {
 
-    /**
-     * get transactions root of block body, any modification of transaction or their order
-     * will result in a totally different transactions root
-     * light client cloud require a merkle proof to verify the existence of a transaction in the block {@link Trie#getProof(Object)}
-     * @param transactions list of transaction in sequential
-     * @return transactions root
-     */
-    public static byte[] getTransactionsRoot(List<Transaction> transactions) {
-        Trie<Integer, Transaction> tmp = Trie.<Integer, Transaction>builder()
-                .hashFunction(CryptoContext::digest)
-                .keyCodec(Codec.newInstance(RLPCodec::encode, RLPCodec::decodeInt))
-                .valueCodec(Codec.newInstance(RLPCodec::encode, x -> RLPCodec.decode(x, Transaction.class)))
-                .store(new ByteArrayMapStore<>())
-                .build();
-
-        for (int i = 0; i < transactions.size(); i++) {
-            tmp.put(i, transactions.get(i));
-        }
-        return tmp.commit();
-    }
-
     @RLP(0)
     protected int version;
     @RLP(1)
@@ -76,7 +55,6 @@ public class Transaction {
     @Getter(AccessLevel.NONE)
     @RLPIgnored
     protected transient HexBytes hash;
-
     @Builder
     public Transaction(
             int version,
@@ -94,6 +72,28 @@ public class Transaction {
         this.payload = payload;
         this.to = to;
         this.signature = signature;
+    }
+
+    /**
+     * get transactions root of block body, any modification of transaction or their order
+     * will result in a totally different transactions root
+     * light client cloud require a merkle proof to verify the existence of a transaction in the block {@link Trie#getProof(Object)}
+     *
+     * @param transactions list of transaction in sequential
+     * @return transactions root
+     */
+    public static byte[] getTransactionsRoot(List<Transaction> transactions) {
+        Trie<Integer, Transaction> tmp = Trie.<Integer, Transaction>builder()
+                .hashFunction(CryptoContext::digest)
+                .keyCodec(Codec.newInstance(RLPCodec::encode, RLPCodec::decodeInt))
+                .valueCodec(Codec.newInstance(RLPCodec::encode, x -> RLPCodec.decode(x, Transaction.class)))
+                .store(new ByteArrayMapStore<>())
+                .build();
+
+        for (int i = 0; i < transactions.size(); i++) {
+            tmp.put(i, transactions.get(i));
+        }
+        return tmp.commit();
     }
 
     public HexBytes getHash() {

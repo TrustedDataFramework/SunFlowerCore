@@ -14,9 +14,17 @@ import java.util.stream.Collectors;
 
 @RLPEncoding(UnmodifiableBlock.Encoder.class)
 @RLPDecoding(UnmodifiableBlock.Decoder.class)
-public class UnmodifiableBlock extends Block{
-    public static UnmodifiableBlock of(Block b){
-        if(b instanceof UnmodifiableBlock) return ((UnmodifiableBlock) b);
+public class UnmodifiableBlock extends Block {
+    private UnmodifiableBlock(Block b) {
+        this.header = UnmodifiableHeader.of(b.getHeader());
+        this.body = Collections.unmodifiableList(
+                b.body.stream().map(UnmodifiableTransaction::of)
+                        .collect(Collectors.toList())
+        );
+    }
+
+    public static UnmodifiableBlock of(Block b) {
+        if (b instanceof UnmodifiableBlock) return ((UnmodifiableBlock) b);
         return new UnmodifiableBlock(b);
     }
 
@@ -37,12 +45,9 @@ public class UnmodifiableBlock extends Block{
         throw new UnsupportedOperationException();
     }
 
-    private UnmodifiableBlock(Block b){
-        this.header = UnmodifiableHeader.of(b.getHeader());
-        this.body = Collections.unmodifiableList(
-                b.body.stream().map(UnmodifiableTransaction::of)
-                .collect(Collectors.toList())
-        );
+    @Override
+    public void resetTransactionsRoot() {
+        throw new UnsupportedOperationException();
     }
 
     static class Encoder implements RLPEncoder<UnmodifiableBlock> {
@@ -57,10 +62,5 @@ public class UnmodifiableBlock extends Block{
         public UnmodifiableBlock decode(@NonNull RLPElement element) {
             return new UnmodifiableBlock(element.as(Block.class));
         }
-    }
-
-    @Override
-    public void resetTransactionsRoot() {
-        throw new UnsupportedOperationException();
     }
 }

@@ -12,8 +12,6 @@ import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLP;
-import org.tdf.rlp.RLPDecoding;
-import org.tdf.rlp.RLPEncoding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -112,7 +110,7 @@ public class Block implements Chained {
     public void resetTransactionsRoot() {
         header.setTransactionsRoot(
                 HexBytes.fromBytes(Transaction.getTransactionsRoot(getBody())
-        ));
+                ));
     }
 
     public HexBytes getStateRoot() {
