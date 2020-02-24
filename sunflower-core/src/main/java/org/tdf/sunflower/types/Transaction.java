@@ -25,31 +25,31 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 public class Transaction {
     @RLP(0)
-    private int version;
+    protected int version;
     @RLP(1)
-    private int type;
+    protected int type;
     @JsonSerialize(using = EpochSecondsSerializer.class)
     @JsonDeserialize(using = EpochSecondDeserializer.class)
     @RLP(2)
-    private long createdAt;
+    protected long createdAt;
     @RLP(3)
-    private long nonce;
+    protected long nonce;
     @RLP(4)
-    private HexBytes from;
+    protected HexBytes from;
     @RLP(5)
-    private long gasPrice;
+    protected long gasPrice;
     @RLP(6)
-    private long amount;
+    protected long amount;
     @RLP(7)
-    private HexBytes payload;
+    protected HexBytes payload;
     @RLP(8)
-    private HexBytes to;
+    protected HexBytes to;
     @RLP(9)
-    private HexBytes signature;
+    protected HexBytes signature;
     // generated value, no need to encode into rlp
     @Getter(AccessLevel.NONE)
     @RLPIgnored
-    private transient HexBytes hash;
+    protected transient HexBytes hash;
 
     @Builder
     public Transaction(
@@ -206,4 +206,6 @@ public class Transaction {
             this.code = code;
         }
     }
+
+
 }

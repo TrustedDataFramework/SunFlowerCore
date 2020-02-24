@@ -17,7 +17,7 @@ spring:
 sunflower:
   consensus:
     name: 'none'
-    genesis: 'genesis/wisdom-genesis-generator-test.jsonc'
+    genesis: 'genesis/poa.jsonc'
     block-interval: '30'
     enable-mining: 'true'
     miner-coin-base: '87b8f0b097b48b282a5c661babc8096e141bd9fb'
@@ -61,7 +61,11 @@ sunflower:
     directory: 'database/rocksdb'
     max-open-files: '512' # defines a number of opened files by db instance
 
-
+  # 密码算法，包含对称加密，非对称加密和哈希计算
+  crpto:
+    hash: 'sm3' # keccak256, keccak512
+    ec: 'sm2' # ed25519
+    ae: 'sm4' #
 
 server:
   port: '8080'

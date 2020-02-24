@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.rlp.RLPCodec;
 
 @RunWith(JUnit4.class)
 public class CommonTest {
@@ -31,5 +32,7 @@ public class CommonTest {
         assert block.getCreatedAt() == 1572766736;
         assert block.getBody().get(0).getType() == 100;
         System.out.println(mapper.writeValueAsString(header));
+
+        RLPCodec.encode(new UnmodifiableHeader(header));
     }
 }

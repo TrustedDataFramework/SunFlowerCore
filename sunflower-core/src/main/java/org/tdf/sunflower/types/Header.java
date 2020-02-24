@@ -22,55 +22,49 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 public class Header implements Chained {
     /**
-     * hash of the block, usually set only once
-     */
-    @RLPIgnored
-    @Getter(AccessLevel.NONE)
-    @Setter(AccessLevel.NONE)
-    transient HexBytes hash;
-    /**
      * magic version number
      */
     @RLP(0)
-    private int version;
-
+    protected int version;
     /**
      * hash of parent block
      */
     @RLP(1)
-    private HexBytes hashPrev;
-
+    protected HexBytes hashPrev;
     /**
      * root hash of transaction trie
      */
     @RLP(2)
-    private HexBytes transactionsRoot;
-
+    protected HexBytes transactionsRoot;
     /**
      * root hash of state trie
      */
     @RLP(3)
-    private HexBytes stateRoot;
-
+    protected HexBytes stateRoot;
     /**
      * height of current header
      */
     @RLP(4)
-    private long height;
-
+    protected long height;
     /**
      * unix epoch when the block mined
      */
     @JsonSerialize(using = EpochSecondsSerializer.class)
     @JsonDeserialize(using = EpochSecondDeserializer.class)
     @RLP(5)
-    private long createdAt;
-
+    protected long createdAt;
     /**
      * custom data
      */
     @RLP(6)
-    private HexBytes payload;
+    protected HexBytes payload;
+    /**
+     * hash of the block, usually set only once
+     */
+    @RLPIgnored
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    transient HexBytes hash;
 
 
     @Builder

@@ -16,7 +16,7 @@ spring:
 sunflower:
   consensus:
     name: 'none'
-    genesis: 'genesis/wisdom-genesis-generator-test.jsonc'
+    genesis: 'genesis/poa.jsonc'
     block-interval: '30'
     enable-mining: 'true'
     miner-coin-base: '1JWhUiZCWps56uZckAvzxy2ex6VGhrMXdD'

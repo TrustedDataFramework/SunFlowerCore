@@ -7,11 +7,13 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import lombok.experimental.Delegate;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLP;
+import org.tdf.rlp.RLPDecoding;
+import org.tdf.rlp.RLPEncoding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,15 +24,14 @@ public class Block implements Chained {
     // extend from header
     @Getter
     @JsonIgnore
-    @Delegate(excludes = ExcludedMethods.class)
     @RLP(0)
-    private Header header;
+    protected Header header;
 
 
     @Getter
     @Setter
     @RLP(1)
-    private List<Transaction> body;
+    protected List<Transaction> body;
 
     public Block() {
         header = new Header();
@@ -46,6 +47,10 @@ public class Block implements Chained {
     @JsonDeserialize(using = EpochSecondDeserializer.class)
     public long getCreatedAt() {
         return header.getCreatedAt();
+    }
+
+    public void setCreatedAt(long createdAt) {
+        header.setCreatedAt(createdAt);
     }
 
     public Block clone() {
@@ -80,11 +85,55 @@ public class Block implements Chained {
         return Objects.hash(header, body);
     }
 
-    private static abstract class ExcludedMethods {
-        public abstract Block clone();
+    public int getVersion() {
+        return header.getVersion();
+    }
 
-        public abstract int size();
+    public void setVersion(int version) {
+        header.setVersion(version);
+    }
 
-        public abstract long getCreatedAt();
+    public HexBytes getHashPrev() {
+        return header.getHashPrev();
+    }
+
+    public void setHashPrev(HexBytes hashPrev) {
+        header.setHashPrev(hashPrev);
+    }
+
+    public HexBytes getTransactionsRoot() {
+        return header.getTransactionsRoot();
+    }
+
+    public void setTransactionsRoot(HexBytes transactionsRoot) {
+        header.setTransactionsRoot(transactionsRoot);
+    }
+
+    public HexBytes getStateRoot() {
+        return header.getStateRoot();
+    }
+
+    public void setStateRoot(HexBytes stateRoot) {
+        header.setStateRoot(stateRoot);
+    }
+
+    public long getHeight() {
+        return header.getHeight();
+    }
+
+    public void setHeight(long height) {
+        header.setHeight(height);
+    }
+
+    public HexBytes getPayload() {
+        return header.getPayload();
+    }
+
+    public void setPayload(HexBytes payload) {
+        header.setPayload(payload);
+    }
+
+    public HexBytes getHash() {
+        return header.getHash();
     }
 }
