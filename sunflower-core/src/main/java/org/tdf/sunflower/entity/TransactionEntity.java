@@ -69,7 +69,7 @@ public class TransactionEntity {
     @Column(name = COLUMN_TX_AMOUNT, nullable = false)
     private long amount;
 
-    @Column(name = COLUMN_TX_PAYLOAD, nullable = false)
+    @Column(name = COLUMN_TX_PAYLOAD, nullable = false, length = Short.MAX_VALUE)
     public byte[] payload;
 
     @Column(name = COLUMN_TX_TO, nullable = false)

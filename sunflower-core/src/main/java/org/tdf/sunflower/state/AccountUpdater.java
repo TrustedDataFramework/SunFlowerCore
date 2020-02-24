@@ -86,7 +86,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                     + " call a contract " + account.getAddress() + " without deploy");
         }
         if (t.getType() == Transaction.Type.CONTRACT_DEPLOY.code) {
-            require(account.containsContract(), t.getHash().toString()
+            require(!account.containsContract(), t.getHash().toString()
                     + " deploy a contract on " + account.getAddress() + " contains a deployed contract");
         }
         // build Parameters here
