@@ -18,7 +18,7 @@ ext {
     commonsLang3Version = '3.4'
     nettySocketIOVersion = '1.7.12'
     rlpVersion = '1.1.18'
-    lotusvmVersion = '0.0.8'
+    lotusvmVersion = '0.0.9'
     springShellVersion = '2.0.0.RELEASE'
     slf4jVersion = '1.7.28'
 }
