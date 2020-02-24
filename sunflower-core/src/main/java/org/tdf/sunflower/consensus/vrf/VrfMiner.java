@@ -1,7 +1,6 @@
 package org.tdf.sunflower.consensus.vrf;
 
 import static org.junit.Assert.assertTrue;
-import static org.tdf.sunflower.consensus.vrf.VrfHashPolicy.HASH_POLICY;
 import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
 
 import java.io.IOException;
@@ -25,7 +24,6 @@ import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.poa.Proposer;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
@@ -57,7 +55,7 @@ public class VrfMiner implements Miner {
 
     private VrfConfig vrfConfig;
 
-    PublicKeyHash minerPublicKeyHash;
+    HexBytes minerAddress;
 
     private VrfGenesis genesis;
 
@@ -104,9 +102,8 @@ public class VrfMiner implements Miner {
 
     public void setConfig(VrfConfig vrfConfig) throws ConsensusEngineInitException {
         this.vrfConfig = vrfConfig;
-        this.minerPublicKeyHash = PublicKeyHash.from(vrfConfig.getMinerCoinBase())
-                .orElseThrow(() -> new ConsensusEngineInitException("invalid address " + vrfConfig.getMinerCoinBase()));
-        this.minerCoinbase = this.minerPublicKeyHash.getPublicKeyHash();
+        this.minerAddress = HexBytes.fromHex(vrfConfig.getMinerCoinBase());
+        this.minerCoinbase = this.minerAddress.getBytes();
         vrfSk = VrfUtil.getVrfPrivateKey(vrfConfig);
         VrfUtil.VRF_PK = Hex.toHexString(vrfSk.getSigner().generatePublicKey().getEncoded());
     }
@@ -162,7 +159,7 @@ public class VrfMiner implements Miner {
         }
         if (parent.getBody() == null || parent.getBody().size() == 0 || parent.getBody().get(0).getTo() == null)
             return Optional.empty();
-        String prev = new PublicKeyHash(parent.getBody().get(0).getTo().getBytes()).getAddress();
+        HexBytes prev = parent.getBody().get(0).getTo();
         int prevIndex = genesis.miners.stream().map(x -> x.address).collect(Collectors.toList()).indexOf(prev);
         if (prevIndex < 0) {
             return Optional.empty();
@@ -189,7 +186,7 @@ public class VrfMiner implements Miner {
         Transaction tx = Transaction.builder().version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(PoAConstants.ZERO_BYTES)
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(PoAConstants.ZERO_BYTES)
-                .to(HexBytes.fromBytes(minerPublicKeyHash.getPublicKeyHash())).signature(PoAConstants.ZERO_BYTES)
+                .to(minerAddress).signature(PoAConstants.ZERO_BYTES)
                 .build();
         return tx;
     }

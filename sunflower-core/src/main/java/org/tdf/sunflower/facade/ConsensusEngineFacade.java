@@ -16,7 +16,6 @@ public interface ConsensusEngineFacade {
     Validator getValidator();
     StateTrie<HexBytes, Account> getAccountTrie();
     Block getGenesisBlock();
-    HashPolicy getHashPolicy();
     ConfirmedBlocksProvider getConfirmedBlocksProvider();
     PeerServerListener getPeerServerListener();
 

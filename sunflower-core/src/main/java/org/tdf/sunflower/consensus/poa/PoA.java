@@ -23,8 +23,6 @@ import org.tdf.sunflower.util.FileUtils;
 import java.util.Collections;
 import java.util.Properties;
 
-import static org.tdf.sunflower.consensus.poa.PoAHashPolicy.HASH_POLICY;
-
 // poa is a minimal non-trivial consensus engine
 @Slf4j
 public class PoA extends ConsensusEngine implements PeerServerListener {
@@ -82,7 +80,6 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
         setMiner(poaMiner);
         setGenesisBlock(genesis.getBlock());
 
-        setHashPolicy(HASH_POLICY);
         setPeerServerListener(this);
         // create state repository
         AccountUpdater updater = new AccountUpdater(Collections.emptyMap());

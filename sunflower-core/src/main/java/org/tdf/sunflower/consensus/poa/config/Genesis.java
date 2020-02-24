@@ -7,12 +7,13 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.HashFunctions;
+import org.tdf.crypto.CryptoContext;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
-import org.tdf.sunflower.consensus.poa.PoAUtils;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
 
+import java.util.Collections;
 import java.util.List;
 
 public class Genesis {
@@ -34,13 +35,15 @@ public class Genesis {
                             .keyCodec(Codec.identity())
                             .valueCodec(Codec.identity())
                             .store(new ByteArrayMapStore<>())
-                            .hashFunction(HashFunctions::keccak256)
+                            .hashFunction(CryptoContext::digest)
                             .build();
+        byte[] emptyRoot = Transaction.getTransactionsRoot(Collections.emptyList());
 
         Header h = Header.builder()
                 .version(PoAConstants.BLOCK_VERSION)
                 .hashPrev(PoAConstants.ZERO_BYTES)
                 .stateRoot(HexBytes.fromBytes(trie.getNullHash()))
+                .transactionsRoot(HexBytes.fromBytes(emptyRoot))
                 .height(0)
                 .createdAt(timestamp)
                 .payload(PoAConstants.ZERO_BYTES).build();

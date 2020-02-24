@@ -6,7 +6,7 @@ import com.corundumstudio.socketio.SocketIOServer;
 import io.netty.util.internal.StringUtil;
 import org.springframework.stereotype.Component;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.HashFunctions;
+import org.tdf.crypto.CryptoContext;
 import org.tdf.sunflower.Start;
 
 import java.io.File;
@@ -57,11 +57,11 @@ public class WebConsole {
     }
 
     private boolean verifyToken(String token) {
-        return HexBytes.encode(HashFunctions.keccak256(uuid.getBytes(StandardCharsets.US_ASCII))).equals(token);
+        return HexBytes.encode(CryptoContext.digest(uuid.getBytes(StandardCharsets.US_ASCII))).equals(token);
     }
 
     private boolean verifyToken(String token, String createdAt) {
-        return HexBytes.encode(HashFunctions.keccak256(
+        return HexBytes.encode(CryptoContext.digest(
                 (uuid + createdAt).getBytes(StandardCharsets.US_ASCII)
         )).equals(token);
     }

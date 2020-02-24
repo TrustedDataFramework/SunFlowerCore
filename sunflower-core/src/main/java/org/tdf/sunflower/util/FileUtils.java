@@ -3,18 +3,26 @@ package org.tdf.sunflower.util;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.tdf.sunflower.exception.ApplicationException;
 
 import java.io.File;
+import java.net.URL;
 
 public class FileUtils {
-    public static Resource getResource(String path) throws ApplicationException {
-        Resource resource = new FileSystemResource(path);
+    public static Resource getResource(String pathOrUrl) {
+        try{
+            URL url = new URL(pathOrUrl);
+            return new UrlResource(url);
+        }catch (Exception ignored){
+
+        }
+        Resource resource = new FileSystemResource(pathOrUrl);
         if (!resource.exists()) {
-            resource = new ClassPathResource(path);
+            resource = new ClassPathResource(pathOrUrl);
         }
         if (!resource.exists()) {
-            throw new ApplicationException("resource " + path + " not found");
+            throw new ApplicationException("resource " + pathOrUrl + " not found");
         }
         return resource;
     }

@@ -11,8 +11,7 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.HashFunctions;
-import org.tdf.sunflower.consensus.poa.PoAUtils;
+import org.tdf.crypto.CryptoContext;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
@@ -44,7 +43,7 @@ public class VrfGenesis {
         long blockNum = ByteUtil.byteArrayToLong(number.getBytes());
 
         Trie<?, ?> trie = Trie.<byte[], byte[]>builder().keyCodec(Codec.identity()).valueCodec(Codec.identity())
-                .store(new ByteArrayMapStore<>()).hashFunction(HashFunctions::keccak256).build();
+                .store(new ByteArrayMapStore<>()).hashFunction(CryptoContext::digest).build();
 
         Header header = Header.builder().version(VrfConstants.BLOCK_VERSION).hashPrev(parentHash)
                 .transactionsRoot(VrfConstants.ZERO_BYTES).height(blockNum)
@@ -70,7 +69,7 @@ public class VrfGenesis {
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
         int round = 0;
         byte[] payloadBytes = VrfUtil.genPayload(blockNum, round, seed, coinbase, difficulty,
-                HexBytes.fromBytes(PoAUtils.getHash(block)), vrfSk, vrfPk, vrfConfig);
+                block.getHash(), vrfSk, vrfPk, vrfConfig);
         HexBytes payload = HexBytes.fromBytes(payloadBytes);
         block.setPayload(payload);
     }

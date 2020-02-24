@@ -3,7 +3,12 @@ package org.tdf.crypto;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
 
-public class HashFunctions {
+public class CryptoContext {
+    public static byte[] keccak256(byte[] in){
+        Digest digest = new KeccakDigest(256);
+        return CryptoContext.hash(in, digest);
+    }
+
     public static byte[] hash(byte[] input, Digest digest) {
         byte[] retValue = new byte[digest.getDigestSize()];
         digest.update(input, 0, input.length);
@@ -13,17 +18,17 @@ public class HashFunctions {
 
     public static byte[] keccak512(byte[] in){
         Digest digest = new KeccakDigest(512);
-        return HashFunctions.hash(in, digest);
+        return CryptoContext.hash(in, digest);
     }
 
-    public static byte[] keccak256(byte[] in){
-        Digest digest = new KeccakDigest(256);
-        return HashFunctions.hash(in, digest);
+    // TODO: configure digest according to -Dsunflower.crypto.hash
+    public static byte[] digest(byte[] in){
+        return keccak256(in);
     }
 
     public static byte[] sha3256(byte[] in){
         Digest digest = new SHA3Digest(256);
-        return HashFunctions.hash(in, digest);
+        return CryptoContext.hash(in, digest);
     }
 
     public static byte[] ripemd128(byte[] bytes) {
