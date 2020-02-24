@@ -11,20 +11,10 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SecureRandom;
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.Mac;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.*;
 
 public class SM4Util extends GMBaseUtil {
     public static final String ALGORITHM_NAME = "SM4";
@@ -66,10 +56,10 @@ public class SM4Util extends GMBaseUtil {
         return cipher.doFinal(data);
     }
 
-    public static byte[] encrypt_Ctr_NoPadding(byte[] key, byte[] data)
+    public static byte[] encrypt_Ctr_NoPadding(byte[] key, byte[] iv, byte[] data)
             throws InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException,
-            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher = generateEcbCipher(ALGORITHM_NAME_CTR_NOPADDING, Cipher.ENCRYPT_MODE, key);
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
+        Cipher cipher = generateCbcCipher(ALGORITHM_NAME_CTR_NOPADDING, Cipher.ENCRYPT_MODE, key, iv);
         return cipher.doFinal(data);
     }
 
