@@ -114,7 +114,7 @@ public class Block implements Chained {
                 HexBytes.fromBytes(Transaction.getTransactionsRoot(getBody())
         ));
     }
-    
+
     public HexBytes getStateRoot() {
         return header.getStateRoot();
     }

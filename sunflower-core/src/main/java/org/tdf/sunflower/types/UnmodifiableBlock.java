@@ -58,4 +58,9 @@ public class UnmodifiableBlock extends Block{
             return new UnmodifiableBlock(element.as(Block.class));
         }
     }
+
+    @Override
+    public void resetTransactionsRoot() {
+        throw new UnsupportedOperationException();
+    }
 }
