@@ -52,7 +52,7 @@ sunflower:
 
   crypto:
     hash: 'keccak256'
-
+    ec: ''
 
 server:
   port: '8080'
