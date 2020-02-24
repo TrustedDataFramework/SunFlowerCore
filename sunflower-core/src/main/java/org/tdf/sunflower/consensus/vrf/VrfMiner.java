@@ -186,7 +186,7 @@ public class VrfMiner implements Miner {
     }
 
     private Transaction createCoinBase(long height) throws DecoderException {
-        Transaction tx = Transaction.builder().height(height).version(PoAConstants.TRANSACTION_VERSION)
+        Transaction tx = Transaction.builder().version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(PoAConstants.ZERO_BYTES)
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(PoAConstants.ZERO_BYTES)
                 .to(HexBytes.fromBytes(minerPublicKeyHash.getPublicKeyHash())).signature(PoAConstants.ZERO_BYTES)

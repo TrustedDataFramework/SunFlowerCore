@@ -14,24 +14,20 @@ import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 @Getter
 @ToString
-@EqualsAndHashCode
 @NoArgsConstructor
 public class Header implements Chained {
-    @Builder
-    public Header(int version, HexBytes hashPrev, HexBytes transactionsRoot, HexBytes stateRoot, long height, long createdAt, HexBytes payload) {
-        this.version = version;
-        this.hashPrev = hashPrev;
-        this.transactionsRoot = transactionsRoot;
-        this.stateRoot = stateRoot;
-        this.height = height;
-        this.createdAt = createdAt;
-        this.payload = payload;
-    }
-
+    /**
+     * hash of the block, usually set only once
+     */
+    @RLPIgnored
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    transient HexBytes hash;
     /**
      * magic version number
      */
@@ -77,20 +73,27 @@ public class Header implements Chained {
     private HexBytes payload;
 
 
-    /**
-     * hash of the block, usually set only once
-     */
-    @RLPIgnored
-    @Getter(AccessLevel.NONE)
-    @Setter(AccessLevel.NONE)
-    transient HexBytes hash;
+    @Builder
+    public Header(
+            int version, HexBytes hashPrev, HexBytes transactionsRoot,
+            HexBytes stateRoot, long height, long createdAt,
+            HexBytes payload
+    ) {
+        this.version = version;
+        this.hashPrev = hashPrev;
+        this.transactionsRoot = transactionsRoot;
+        this.stateRoot = stateRoot;
+        this.height = height;
+        this.createdAt = createdAt;
+        this.payload = payload;
+    }
 
     public HexBytes getHash() {
         return getHash(false);
     }
 
     public HexBytes getHash(boolean forceReHash) {
-        if(forceReHash || this.hash == null) {
+        if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
                     HashFunctions.keccak256(RLPCodec.encode(this))
             );
@@ -149,5 +152,24 @@ public class Header implements Chained {
                 Stream.of(hashPrev, transactionsRoot, payload, hash)
                         .map(Constants::sizeOf)
                         .reduce(0, Integer::sum);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Header header = (Header) o;
+        return version == header.version &&
+                height == header.height &&
+                createdAt == header.createdAt &&
+                Objects.equals(hashPrev, header.hashPrev) &&
+                Objects.equals(transactionsRoot, header.transactionsRoot) &&
+                Objects.equals(stateRoot, header.stateRoot) &&
+                Objects.equals(payload, header.payload);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(version, hashPrev, transactionsRoot, stateRoot, height, createdAt, payload);
     }
 }

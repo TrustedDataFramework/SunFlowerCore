@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 public class Context {
 
     public static Context fromTransaction(Header header, Transaction transaction) {
-        BytesReader reader = new BytesReader(transaction.payload.getBytes());
+        BytesReader reader = new BytesReader(transaction.getPayload().getBytes());
         ContextBuilder builder = builder();
         if (transaction.getType() == Transaction.Type.CONTRACT_DEPLOY.code) {
             builder.method("init");

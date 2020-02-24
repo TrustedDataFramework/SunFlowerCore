@@ -34,9 +34,6 @@ public class TransactionRepositoryTests {
     private BlockRepositoryService blockStore;
 
     private void assertTransaction(Transaction transaction) {
-        String h = Long.toString(BigEndian.decodeInt64(transaction.getBlockHash().getBytes()));
-        assert Long.toString(transaction.getHeight()).equals(h);
-        assert new String(transaction.getHash().getBytes()).startsWith(h);
         assert transaction.getVersion() == 0;
         assert Arrays.equals(transaction.getFrom().getBytes(), BYTES) &&
                 Arrays.equals(transaction.getPayload().getBytes(), BYTES) &&

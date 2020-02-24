@@ -31,8 +31,6 @@ public class Mapping {
 
     public static Transaction getFromTransactionEntity(TransactionEntity transaction) {
         return Transaction.builder()
-                .blockHash(HexBytes.fromBytes(transaction.getBlockHash()))
-                .height(transaction.getHeight())
                 .version(transaction.getVersion())
                 .type(transaction.getType()).createdAt(transaction.getCreatedAt())
                 .nonce(transaction.getNonce()).from(HexBytes.fromBytes(transaction.getFrom()))
@@ -72,7 +70,6 @@ public class Mapping {
     public static TransactionEntity getEntityFromTransactionAndHeader(Header header, int index, Transaction tx) {
         return TransactionEntity.builder()
                 .blockHash(header.getHash().getBytes())
-                .height(tx.getHeight())
                 .hash(tx.getHash().getBytes())
                 .version(tx.getVersion())
                 .type(tx.getType())

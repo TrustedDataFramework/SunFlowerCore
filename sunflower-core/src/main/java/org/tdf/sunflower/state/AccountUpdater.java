@@ -109,8 +109,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                     .binary(account.getBinaryContract())
                     .globals(account.getGlobals());
         } else {
-            account.setBinaryContract(t.payload.getBytes());
-            builder = builder.binary(t.payload.getBytes());
+            account.setBinaryContract(t.getPayload().getBytes());
+            builder = builder.binary(t.getPayload().getBytes());
         }
         try {
             ModuleInstance instance = builder.build();

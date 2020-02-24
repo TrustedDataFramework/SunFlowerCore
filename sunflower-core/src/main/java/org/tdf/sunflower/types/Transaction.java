@@ -14,52 +14,50 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
 
 import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Getter
 @ToString
-@EqualsAndHashCode
 @NoArgsConstructor
 public class Transaction {
-    public enum Type {
-        // coinbase transaction has code 0
-        COIN_BASE(0x00),
-        // the amount is transferred from sender to recipient
-        // if type is transfer, payload is null
-        // and fee is a constant
-        TRANSFER(0x01),
-        // if type is contract deploy, payload is wasm binary module
-        // fee = gasPrice * gasUsage
-        CONTRACT_DEPLOY(0x02),
-        // if type is contract call, payload = gasLimit(little endian, 8 bytes) +
-        // method name length (an unsigned byte) +
-        // method name(ascii string, [_a-zA-Z][_a-zA-Z0-9]*) +
-        // custom parameters, could be load by Parameters.load() in contract
-        // fee = gasPrice * gasUsage
-        // e.g.
-        /**
-         * const parameter: Parameters = Parameters.load();
-         * const customData: Uint8Array = parameter.raw();
-         */
-        CONTRACT_CALL(0x03);
-        public final int code;
-
-        Type(int code) {
-            this.code = code;
-        }
-
-        public static final Map<Integer, Type> TYPE_MAP =
-                Arrays.stream(values()).collect(Collectors.toMap(x -> x.code, Function.identity()));
-    }
+    @RLP(0)
+    private int version;
+    @RLP(1)
+    private int type;
+    @JsonSerialize(using = EpochSecondsSerializer.class)
+    @JsonDeserialize(using = EpochSecondDeserializer.class)
+    @RLP(2)
+    private long createdAt;
+    @RLP(3)
+    private long nonce;
+    @RLP(4)
+    private HexBytes from;
+    @RLP(5)
+    private long gasPrice;
+    @RLP(6)
+    private long amount;
+    @RLP(7)
+    private HexBytes payload;
+    @RLP(8)
+    private HexBytes to;
+    @RLP(9)
+    private HexBytes signature;
+    // generated value, no need to encode into rlp
+    @Getter(AccessLevel.NONE)
+    @RLPIgnored
+    private transient HexBytes hash;
 
     @Builder
-    public Transaction(HexBytes blockHash, long height, int version, int type, long createdAt, long nonce, HexBytes from, long gasPrice, long amount, HexBytes payload, HexBytes to, HexBytes signature) {
-        this.blockHash = blockHash;
-        this.height = height;
+    public Transaction(
+            int version,
+            int type, long createdAt, long nonce, HexBytes from,
+            long gasPrice, long amount, HexBytes payload,
+            HexBytes to, HexBytes signature
+    ) {
         this.version = version;
         this.type = type;
         this.createdAt = createdAt;
@@ -72,53 +70,12 @@ public class Transaction {
         this.signature = signature;
     }
 
-    private HexBytes blockHash;
-
-    private long height;
-
-    @RLP(0)
-    private int version;
-
-    @RLP(1)
-    private int type;
-
-    @JsonSerialize(using = EpochSecondsSerializer.class)
-    @JsonDeserialize(using = EpochSecondDeserializer.class)
-    @RLP(2)
-    private long createdAt;
-
-    @RLP(3)
-    private long nonce;
-
-    @RLP(4)
-    private HexBytes from;
-
-    @RLP(5)
-    private long gasPrice;
-
-    @RLP(6)
-    private long amount;
-
-    @RLP(7)
-    public HexBytes payload;
-
-    @RLP(8)
-    private HexBytes to;
-
-    @RLP(9)
-    private HexBytes signature;
-
-    // generated value, no need to encode into rlp
-    @Getter(AccessLevel.NONE)
-    @RLPIgnored
-    private transient HexBytes hash;
-
     public HexBytes getHash() {
         return getHash(false);
     }
 
     public HexBytes getHash(boolean forceReHash) {
-        if(forceReHash || this.hash == null) {
+        if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
                     HashFunctions.keccak256(RLPCodec.encode(this))
             );
@@ -130,7 +87,6 @@ public class Transaction {
     @Override
     public Transaction clone() {
         return builder()
-                .blockHash(blockHash).height(height)
                 .version(version)
                 .type(type).nonce(nonce)
                 .createdAt(createdAt).from(from)
@@ -138,7 +94,6 @@ public class Transaction {
                 .payload(payload).to(to)
                 .signature(signature).build();
     }
-
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public int size() {
@@ -148,16 +103,6 @@ public class Transaction {
                 Stream.of(from, payload, to, signature)
                         .map(Constants::sizeOf)
                         .reduce(0, Integer::sum);
-    }
-
-    public void setBlockHash(HexBytes blockHash) {
-        this.blockHash = blockHash;
-        getHash(true);
-    }
-
-    public void setHeight(long height) {
-        this.height = height;
-        getHash(true);
     }
 
     public void setVersion(int version) {
@@ -208,5 +153,57 @@ public class Transaction {
     public void setSignature(HexBytes signature) {
         this.signature = signature;
         getHash(true);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Transaction that = (Transaction) o;
+        return version == that.version &&
+                type == that.type &&
+                createdAt == that.createdAt &&
+                nonce == that.nonce &&
+                gasPrice == that.gasPrice &&
+                amount == that.amount &&
+                Objects.equals(from, that.from) &&
+                Objects.equals(payload, that.payload) &&
+                Objects.equals(to, that.to) &&
+                Objects.equals(signature, that.signature);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
+    }
+
+    public enum Type {
+        // coinbase transaction has code 0
+        COIN_BASE(0x00),
+        // the amount is transferred from sender to recipient
+        // if type is transfer, payload is null
+        // and fee is a constant
+        TRANSFER(0x01),
+        // if type is contract deploy, payload is wasm binary module
+        // fee = gasPrice * gasUsage
+        CONTRACT_DEPLOY(0x02),
+        // if type is contract call, payload = gasLimit(little endian, 8 bytes) +
+        // method name length (an unsigned byte) +
+        // method name(ascii string, [_a-zA-Z][_a-zA-Z0-9]*) +
+        // custom parameters, could be load by Parameters.load() in contract
+        // fee = gasPrice * gasUsage
+        // e.g.
+        /**
+         * const parameter: Parameters = Parameters.load();
+         * const customData: Uint8Array = parameter.raw();
+         */
+        CONTRACT_CALL(0x03);
+        public static final Map<Integer, Type> TYPE_MAP =
+                Arrays.stream(values()).collect(Collectors.toMap(x -> x.code, Function.identity()));
+        public final int code;
+
+        Type(int code) {
+            this.code = code;
+        }
     }
 }

@@ -151,7 +151,6 @@ public class PoAMiner implements Miner {
 
     private Transaction createCoinBase(long height) throws DecoderException {
         Transaction tx = Transaction.builder()
-                .height(height)
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .nonce(height)
