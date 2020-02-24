@@ -17,6 +17,7 @@ import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.UnmodifiableTransaction;
 
 import java.util.Collections;
 import java.util.List;
@@ -79,7 +80,7 @@ public class EntryController {
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
     public Response<String> sendTransaction(@RequestBody Transaction transaction) {
-        pool.collect(Collections.singleton(transaction));
+        pool.collect(Collections.singleton(UnmodifiableTransaction.of(transaction)));
         return Response.newSuccessFul("ok");
     }
 
