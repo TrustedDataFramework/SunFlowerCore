@@ -108,7 +108,7 @@ public class Block implements Chained {
     }
 
     public void resetTransactionsRoot() {
-        header.setTransactionsRoot(
+        setTransactionsRoot(
                 HexBytes.fromBytes(Transaction.getTransactionsRoot(getBody())
                 ));
     }

@@ -3,6 +3,7 @@ package org.tdf.crypto;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
 
+// TODO: init crypto context by application.yml
 public class CryptoContext {
     public static byte[] keccak256(byte[] in){
         Digest digest = new KeccakDigest(256);

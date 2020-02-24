@@ -39,10 +39,10 @@ sunflower:
     address: 'node://localhost:9999'
     enable-discovery: 'true'
     enable-message-log: 'true' # set false to disable verbose log
-    bootstraps: # bootstraps nodes
-      - 'node://localhost:9998'
-    trusted: # trusted nodes
-      - 'node://localhost:9999'
+    # bootstraps:
+      # - 'node://localhost:9998'
+    # trusted: # trusted nodes
+      # - 'node://localhost:9999'
 
   message-queue:
     name: 'socketIO'
@@ -65,7 +65,7 @@ sunflower:
   crpto:
     hash: 'sm3' # keccak256, keccak512
     ec: 'sm2' # ed25519
-    ae: 'sm4' #
+    ae: 'sm4' # 对称加密方法
 
 server:
   port: '8080'

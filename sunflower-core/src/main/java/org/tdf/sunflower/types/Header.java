@@ -59,12 +59,12 @@ public class Header implements Chained {
     @RLP(6)
     protected HexBytes payload;
     /**
-     * hash of the block, usually set only once
+     * hash of the block
      */
     @RLPIgnored
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
-    transient HexBytes hash;
+    protected transient HexBytes hash;
 
 
     @Builder
