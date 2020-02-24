@@ -50,6 +50,8 @@ sunflower:
     directory: 'database/rocksdb'
     max-open-files: '512' # defines a number of opened files by db instance
 
+  crypto:
+    hash: 'keccak256'
 
 
 server:
