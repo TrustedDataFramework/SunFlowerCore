@@ -16,6 +16,7 @@ import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -147,8 +148,8 @@ public class PoAMiner implements Miner {
         }
     }
 
-    private Transaction createCoinBase(long height) throws DecoderException {
-        Transaction tx = Transaction.builder()
+    private Transaction createCoinBase(long height){
+        return Transaction.builder()
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .nonce(height)
@@ -157,10 +158,9 @@ public class PoAMiner implements Miner {
                 .payload(HexBytes.EMPTY)
                 .to(minerAddress)
                 .signature(HexBytes.EMPTY).build();
-        return tx;
     }
 
-    private Block createBlock(Block parent) throws DecoderException {
+    private Block createBlock(Block parent) {
         Header header = Header.builder()
                 .version(parent.getVersion())
                 .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
@@ -182,8 +182,8 @@ public class PoAMiner implements Miner {
                         accountTrie.getNewRoot(parent.getStateRoot().getBytes(), b)
                 )
         );
-
-        return b;
+        b.resetTransactionsRoot();
+        return UnmodifiableBlock.of(b);
     }
 
 

@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @RLPEncoding(UnmodifiableBlock.Encoder.class)
 @RLPDecoding(UnmodifiableBlock.Decoder.class)
 public class UnmodifiableBlock extends Block{
-    public UnmodifiableBlock of(Block b){
+    public static UnmodifiableBlock of(Block b){
         if(b instanceof UnmodifiableBlock) return ((UnmodifiableBlock) b);
         return new UnmodifiableBlock(b);
     }

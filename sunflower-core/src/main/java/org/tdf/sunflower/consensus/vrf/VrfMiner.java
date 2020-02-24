@@ -217,10 +217,7 @@ public class VrfMiner implements Miner {
 
         // calculate state root
         b.setStateRoot(HexBytes.fromBytes(accountTrie.getNewRoot(parent.getStateRoot().getBytes(), b)));
-        b.setTransactionsRoot(HexBytes.fromBytes(
-                Transaction.getTransactionsRoot(b.getBody())
-                )
-        );
+        b.resetTransactionsRoot();
         return b;
     }
 
