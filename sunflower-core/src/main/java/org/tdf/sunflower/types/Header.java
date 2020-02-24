@@ -133,10 +133,10 @@ public class Header implements Chained {
 
     @Override
     public Header clone() {
-        return builder().version(version)
-                .hashPrev(hashPrev).transactionsRoot(transactionsRoot)
-                .height(height).createdAt(createdAt)
-                .payload(payload).build();
+        return new Header(
+                version, hashPrev, transactionsRoot, stateRoot,
+                height, createdAt, payload
+        );
     }
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

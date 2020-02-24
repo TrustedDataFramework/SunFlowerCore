@@ -112,13 +112,7 @@ public class Transaction {
 
     @Override
     public Transaction clone() {
-        return builder()
-                .version(version)
-                .type(type).nonce(nonce)
-                .createdAt(createdAt).from(from)
-                .gasPrice(gasPrice).amount(amount)
-                .payload(payload).to(to)
-                .signature(signature).build();
+        return new Transaction(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
     }
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
