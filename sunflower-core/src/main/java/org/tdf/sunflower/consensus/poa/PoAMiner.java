@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
-import static org.tdf.sunflower.consensus.poa.PoAHashPolicy.HASH_POLICY;
 
 
 @Slf4j
@@ -143,7 +142,6 @@ public class PoAMiner implements Miner {
             Block b = createBlock(blockRepository.getBestBlock());
             log.info("mining success");
             listeners.forEach(l -> l.onBlockMined(b));
-            Assert.isTrue(b.getHash().equals(HASH_POLICY.getHash(b)), "block hash is equal");
         } catch (Exception e) {
             e.printStackTrace();
         }

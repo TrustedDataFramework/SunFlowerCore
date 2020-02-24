@@ -21,7 +21,6 @@ import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.ByteUtil;
-import static org.tdf.sunflower.consensus.vrf.VrfHashPolicy.HASH_POLICY;
 
 public class VrfBlockFieldsTest {
     private VrfConfig vrfConfig = new VrfConfig();

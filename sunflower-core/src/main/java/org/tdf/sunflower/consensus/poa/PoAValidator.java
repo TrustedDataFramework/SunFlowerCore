@@ -26,10 +26,7 @@ public class PoAValidator implements Validator {
         if (block.getVersion() != PoAConstants.BLOCK_VERSION){
             return ValidateResult.fault("version not match");
         }
-        if (!PoAHashPolicy.HASH_POLICY.getHash(block).equals(block.getHash())){
-            return ValidateResult.fault("hash not match");
-        }
-        if(!HexBytes.fromBytes(PoAUtils.getTransactionsRoot(block.getBody()))
+        if(!HexBytes.fromBytes(Transaction.getTransactionsRoot(block.getBody()))
                 .equals(block.getTransactionsRoot())
         ){
             return ValidateResult.fault("transactions root not match");

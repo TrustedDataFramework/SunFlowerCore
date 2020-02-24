@@ -57,14 +57,11 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private EventBus eventBus;
 
-    private HashPolicy hashPolicy;
-
     private final TreeSet<Transaction> cache;
 
     private PendingTransactionValidator validator;
 
     public void setEngine(ConsensusEngineFacade engine) {
-        this.hashPolicy = engine.getHashPolicy();
         this.validator = engine.getValidator();
     }
 

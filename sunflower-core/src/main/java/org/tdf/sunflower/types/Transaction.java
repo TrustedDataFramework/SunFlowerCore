@@ -4,16 +4,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
+import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.ByteArrayMapStore;
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.Constants;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.HashFunctions;
+import org.tdf.crypto.CryptoContext;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -24,6 +28,28 @@ import java.util.stream.Stream;
 @ToString
 @NoArgsConstructor
 public class Transaction {
+
+    /**
+     * get transactions root of block body, any modification of transaction or their order
+     * will result in a totally different transactions root
+     * light client cloud require a merkle proof to verify the existence of a transaction in the block {@link Trie#getProof(Object)}
+     * @param transactions list of transaction in sequential
+     * @return transactions root
+     */
+    public static byte[] getTransactionsRoot(List<Transaction> transactions) {
+        Trie<Integer, Transaction> tmp = Trie.<Integer, Transaction>builder()
+                .hashFunction(CryptoContext::digest)
+                .keyCodec(Codec.newInstance(RLPCodec::encode, RLPCodec::decodeInt))
+                .valueCodec(Codec.newInstance(RLPCodec::encode, x -> RLPCodec.decode(x, Transaction.class)))
+                .store(new ByteArrayMapStore<>())
+                .build();
+
+        for (int i = 0; i < transactions.size(); i++) {
+            tmp.put(i, transactions.get(i));
+        }
+        return tmp.commit();
+    }
+
     @RLP(0)
     protected int version;
     @RLP(1)
@@ -77,7 +103,7 @@ public class Transaction {
     private HexBytes getHash(boolean forceReHash) {
         if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
-                    HashFunctions.keccak256(RLPCodec.encode(this))
+                    CryptoContext.digest(RLPCodec.encode(this))
             );
             return this.hash;
         }

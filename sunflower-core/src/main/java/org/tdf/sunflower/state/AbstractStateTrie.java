@@ -12,7 +12,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.ReadOnlyTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.HashFunctions;
+import org.tdf.crypto.CryptoContext;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.types.Block;
@@ -58,7 +58,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
 
         trie = Trie.<ID, S>builder()
-                .hashFunction(HashFunctions::keccak256)
+                .hashFunction(CryptoContext::digest)
                 .store(trieStore)
                 .keyCodec(idCodec)
                 .valueCodec(stateCodec).build()

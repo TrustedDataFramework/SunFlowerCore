@@ -1,7 +1,5 @@
 package org.tdf.sunflower.consensus.vrf;
 
-import static org.tdf.sunflower.consensus.vrf.VrfHashPolicy.HASH_POLICY;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
@@ -179,7 +177,6 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         }
 
         setValidator(new VrfValidator());
-        setHashPolicy(HASH_POLICY);
         setPeerServerListener(this);
         vrfMiner.setConfig(vrfConfig);
         vrfMiner.setGenesis(genesis);
