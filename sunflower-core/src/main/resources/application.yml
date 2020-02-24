@@ -2,7 +2,7 @@
 # for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 spring:
   datasource:
-    url: 'jdbc:postgresql://localhost:5432/your-data-base' # SPRING_DATASOURCE_URL
+    url: 'jdbc:h2:mem:testdb' # SPRING_DATASOURCE_URL
     username: 'username'
     password: 'password'
 
@@ -16,7 +16,7 @@ spring:
 # sunflower configurations
 sunflower:
   consensus:
-    name: 'none'
+    name: 'poa'
     genesis: 'genesis/poa.jsonc'
     block-interval: '30'
     enable-mining: 'true'

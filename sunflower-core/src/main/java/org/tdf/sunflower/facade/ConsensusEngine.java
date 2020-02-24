@@ -42,9 +42,6 @@ public abstract class ConsensusEngine implements ConsensusEngineFacade{
     // consortiumRepository will be injected before init() called
     private SunflowerRepository sunflowerRepository;
 
-    // sub class should set hash policy explicitly when init() called
-    private HashPolicy hashPolicy;
-
     // sub class should set confirmedBlocksProvider explicitly when init() called
     private ConfirmedBlocksProvider confirmedBlocksProvider;
 
@@ -66,7 +63,6 @@ public abstract class ConsensusEngine implements ConsensusEngineFacade{
             setMiner(Miner.NONE);
             setValidator(Validator.NONE);
             setGenesisBlock(new Block());
-            setHashPolicy(HashPolicy.NONE);
             setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
             setPeerServerListener(PeerServerListener.NONE);
             AccountUpdater updater = new AccountUpdater(Collections.emptyMap());

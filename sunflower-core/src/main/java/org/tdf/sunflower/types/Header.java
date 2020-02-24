@@ -9,7 +9,7 @@ import org.tdf.common.util.Constants;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.HashFunctions;
+import org.tdf.crypto.CryptoContext;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
@@ -89,7 +89,7 @@ public class Header implements Chained {
     private HexBytes getHash(boolean forceReHash) {
         if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
-                    HashFunctions.keccak256(RLPCodec.encode(this))
+                    CryptoContext.digest(RLPCodec.encode(this))
             );
             return this.hash;
         }

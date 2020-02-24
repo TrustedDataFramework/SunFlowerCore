@@ -4,7 +4,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.HashFunctions;
+import org.tdf.crypto.CryptoContext;
 import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.ed25519.Ed25519;
 
@@ -27,7 +27,7 @@ public final class Address {
     public static HexBytes fromPublicKey(byte[] publicKey) {
         if (publicKey.length != PUBLIC_KEY_SIZE)
             throw new RuntimeException("invalid public key, length = " + publicKey.length);
-        HexBytes ret = HexBytes.fromBytes(HashFunctions.keccak256(publicKey));
+        HexBytes ret = HexBytes.fromBytes(CryptoContext.digest(publicKey));
         return ret.slice(ret.size() - ADDRESS_SIZE, ret.size());
     }
 
