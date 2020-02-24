@@ -7,7 +7,7 @@ import org.springframework.web.client.RestTemplate;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.rlp.RLPCodec;
-import org.tdf.sunflower.account.PublicKeyHash;
+import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.FileUtils;
@@ -23,13 +23,13 @@ public class ContractTest {
     public void testDeployContract() throws Exception{
         byte[] binary = ByteStreams.toByteArray(FileUtils.getResource(System.getenv("FILE_PATH")).getInputStream());
         HexBytes from = HexBytes.fromHex(TEST_PUBLIC_KEY);
-        PublicKeyHash to = PublicKeyHash.fromPublicKey(from.getBytes());
+        HexBytes to = Address.fromPublicKey(from.getBytes());
         Transaction t = Transaction.builder()
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .from(from)
                 .type(Transaction.Type.CONTRACT_DEPLOY.code)
-                .to(HexBytes.fromBytes(to.getPublicKeyHash()))
+                .to(to)
                 .payload(HexBytes.fromBytes(binary))
                 .build();
         byte[] sig = new Ed25519PrivateKey(HexBytes.fromHex(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));
@@ -49,14 +49,14 @@ public class ContractTest {
 
     public void testContractCall() throws Exception{
         HexBytes from = HexBytes.fromHex(TEST_PUBLIC_KEY);
-        PublicKeyHash to = PublicKeyHash.fromPublicKey(from.getBytes());
+        HexBytes to = Address.fromPublicKey(from.getBytes());
         byte[] method = "incrementAndGet".getBytes(StandardCharsets.US_ASCII);
         Transaction t = Transaction.builder()
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .from(from)
                 .type(Transaction.Type.CONTRACT_CALL.code)
-                .to(HexBytes.fromBytes(to.getPublicKeyHash()))
+                .to(to)
                 .payload(HexBytes.fromBytes(Bytes.concat(new byte[]{(byte)method.length}, method)))
                 .build();
         byte[] sig = new Ed25519PrivateKey(HexBytes.fromHex(TEST_PRIVATE_KEY).getBytes()).sign(RLPCodec.encode(t));

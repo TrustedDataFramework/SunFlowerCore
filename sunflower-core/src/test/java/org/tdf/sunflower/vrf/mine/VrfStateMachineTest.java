@@ -43,7 +43,6 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.sunflower.TestContext;
-import org.tdf.sunflower.consensus.poa.PoAUtils;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.VrfStateMachine;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
