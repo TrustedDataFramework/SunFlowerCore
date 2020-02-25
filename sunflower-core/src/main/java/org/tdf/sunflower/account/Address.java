@@ -31,6 +31,7 @@ public final class Address {
         return ret.slice(ret.size() - ADDRESS_SIZE, ret.size());
     }
 
+
     public static void main(String[] args) {
         KeyPair keyPair =
                 Ed25519.generateKeyPair();

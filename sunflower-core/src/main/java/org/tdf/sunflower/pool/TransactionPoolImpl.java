@@ -77,7 +77,12 @@ public class TransactionPoolImpl implements TransactionPool {
     @Override
     public void collect(Collection<? extends Transaction> transactions) {
         for (Transaction transaction : transactions) {
-            ValidateResult res = validator.validate(transaction);
+            ValidateResult res = transaction.basicValidate();
+            if(!res.isSuccess()){
+                log.error(res.getReason());
+                continue;
+            }
+            res = validator.validate(transaction);
             if (!res.isSuccess()) {
                 log.error(res.getReason());
                 continue;
