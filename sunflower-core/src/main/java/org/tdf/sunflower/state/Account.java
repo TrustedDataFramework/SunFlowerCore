@@ -5,6 +5,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.account.Address;
+import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
 import java.util.Arrays;
@@ -15,6 +16,7 @@ import java.util.Arrays;
 @Data
 public class Account {
     private HexBytes address;
+    private long nonce;
     private long balance;
     // if the account contains none contract, binary contract will be null
     private byte[] binaryContract;
@@ -22,6 +24,10 @@ public class Account {
     // TODO: reduce zero content of memory
     private byte[] memory;
     private long[] globals;
+
+    // for normal address this field is null
+    // for contract address this field is creator of this contract
+    private HexBytes createdBy;
 
     // create a random account
     public static Account getRandomAccount() {
@@ -39,8 +45,8 @@ public class Account {
         this.address = Address.of(address);
     }
 
-    public byte[] view(String method, byte[] parameters) throws Exception {
-        Hosts hosts = new Hosts().withPayload(parameters);
+    public byte[] view(String method, byte[] parameters){
+        Hosts hosts = new Hosts().withPayload(parameters).withContext(Context.disabled());
         ModuleInstance.Builder builder = ModuleInstance.builder()
                 .memory(memory)
                 .globals(globals)
@@ -50,14 +56,6 @@ public class Account {
                 builder.hostFunctions(hosts.getAll()).build();
         instance.execute(method);
         return hosts.getResult();
-    }
-
-    @Override
-    public Account clone() {
-        return new Account(address, balance, binaryContract,
-                memory == null ? null : Arrays.copyOfRange(memory, 0, memory.length),
-                globals == null ? null : Arrays.copyOfRange(globals, 0, globals.length)
-        );
     }
 
     public boolean containsContract(){
