@@ -24,6 +24,7 @@ dependencies {
     compile "org.bouncycastle:bcpkix-jdk15on:${bouncycastleVersion}"
     compile "commons-codec:commons-codec:${commonsCodecVersion}"
     compile "com.kosprov.jargon2:jargon2-api:${jargon2Version}"
+    compile "com.alibaba:fastjson:${fastjsonVersion}"
 }
 
 tasks.withType(JavaCompile) {
