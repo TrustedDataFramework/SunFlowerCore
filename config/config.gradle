@@ -21,4 +21,5 @@ ext {
     lotusvmVersion = '0.0.9'
     springShellVersion = '2.0.0.RELEASE'
     slf4jVersion = '1.7.28'
+    fastjsonVersion = "1.2.62"
 }
