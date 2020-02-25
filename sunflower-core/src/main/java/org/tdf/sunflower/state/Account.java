@@ -49,7 +49,11 @@ public class Account {
     }
 
     public byte[] view(String method, byte[] parameters) {
-        Hosts hosts = new Hosts().withPayload(parameters).withContext(Context.disabled());
+        Context ctx = Context.disabled();
+        ctx.setContractAddress(address);
+        ctx.setCreatedBy(createdBy);
+
+        Hosts hosts = new Hosts().withPayload(parameters).withContext(ctx);
         ModuleInstance.Builder builder = ModuleInstance.builder()
                 .memory(memory)
                 .globals(globals)

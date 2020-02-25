@@ -55,7 +55,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             case CONTRACT_DEPLOY:
                 return updateDeploy(cloned, header, transaction);
             case CONTRACT_CALL:
-                return updateAnother(cloned, header, transaction);
+                return updateTransactionCall(cloned, header, transaction);
         }
         throw new RuntimeException("unknown type " + transaction.getType());
     }
@@ -108,11 +108,13 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         if (accounts.size() != 1 || !contractAccount.getAddress().equals(t.createContractAddress())
         )
             throw new RuntimeException("unreachable: contract deploy " + t.getHash() + " related to only one address");
-        contractAccount.setCreatedBy(t.getFrom());
+        contractAccount.setCreatedBy(Address.fromPublicKey(t.getFrom()));
         contractAccount.setNonce(t.getNonce());
         contractAccount.setBinaryContract(t.getPayload().getBytes());
         // build Parameters here
         Context context = Context.fromTransaction(header, t);
+        context.setContractAddress(t.createContractAddress());
+        context.setCreatedBy(Address.fromPublicKey(t.getFrom()));
 
         Hosts hosts = new Hosts()
                 .withContext(context)
@@ -132,7 +134,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         return accounts;
     }
 
-    private Map<HexBytes, Account> updateAnother(Map<HexBytes, Account> accounts, Header header, Transaction t) {
+    private Map<HexBytes, Account> updateTransactionCall(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account contractAccount = accounts.get(t.getTo());
         for (Account account : accounts.values()) {
             if(account.getAddress().equals(t.getFrom())){
@@ -151,6 +153,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
         // build Parameters here
         Context context = Context.fromTransaction(header, t);
+        context.setCreatedBy(contractAccount.getCreatedBy());
+        context.setContractAddress(contractAccount.getAddress());
 
         Hosts hosts = new Hosts()
                 .withContext(context)

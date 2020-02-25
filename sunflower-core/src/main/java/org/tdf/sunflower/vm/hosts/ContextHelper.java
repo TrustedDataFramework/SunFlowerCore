@@ -36,7 +36,11 @@ public class ContextHelper {
                 new ContextNonce(context),
                 new ContextSignature(context),
                 new ContextSignatureLen(context),
-                new ContextAvailable(context)
+                new ContextAvailable(context),
+                new ContractAddressLen(context),
+                new ContractAddress(context),
+                new ContractCreatedBy(context),
+                new ContractCreatedByLen(context)
         );
     }
 
@@ -329,6 +333,69 @@ public class ContextHelper {
         @Override
         public long[] execute(long... parameters) {
             return new long[]{context.isAvailable() ? 1 : 0};
+        }
+    }
+
+
+    private static class ContractAddressLen extends HostFunction {
+        private Context context;
+
+        public ContractAddressLen(Context context) {
+            setName("_contract_address_len");
+            setType(new FunctionType(Collections.emptyList(), Collections.singletonList(ValueType.I32)));
+            this.context = context;
+        }
+
+        @Override
+        public long[] execute(long... parameters) {
+            return new long[]{context.getContractAddress().size()};
+        }
+    }
+
+    private static class ContractAddress extends HostFunction {
+        private Context context;
+
+        public ContractAddress(Context context) {
+            setName("_contract_address");
+            setType(new FunctionType(Collections.singletonList(ValueType.I32), Collections.emptyList()));
+            this.context = context;
+        }
+
+        @Override
+        public long[] execute(long... parameters) {
+            putMemory((int) parameters[0], context.getContractAddress().getBytes());
+            return new long[0];
+        }
+    }
+
+    private static class ContractCreatedByLen extends HostFunction {
+        private Context context;
+
+        public ContractCreatedByLen(Context context) {
+            setName("_contract_created_by_len");
+            setType(new FunctionType(Collections.emptyList(), Collections.singletonList(ValueType.I32)));
+            this.context = context;
+        }
+
+        @Override
+        public long[] execute(long... parameters) {
+            return new long[]{context.getCreatedBy().size()};
+        }
+    }
+
+    private static class ContractCreatedBy extends HostFunction {
+        private Context context;
+
+        public ContractCreatedBy(Context context) {
+            setName("_contract_created_by");
+            setType(new FunctionType(Collections.singletonList(ValueType.I32), Collections.emptyList()));
+            this.context = context;
+        }
+
+        @Override
+        public long[] execute(long... parameters) {
+            putMemory((int) parameters[0], context.getCreatedBy().getBytes());
+            return new long[0];
         }
     }
 }

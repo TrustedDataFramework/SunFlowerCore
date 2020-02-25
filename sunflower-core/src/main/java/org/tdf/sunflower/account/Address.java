@@ -24,6 +24,10 @@ public final class Address {
         throw new RuntimeException("invalid hex, not a public key or address");
     }
 
+    public static HexBytes fromPublicKey(HexBytes publicKey) {
+        return fromPublicKey(publicKey.getBytes());
+    }
+
     public static HexBytes fromPublicKey(byte[] publicKey) {
         if (publicKey.length != PUBLIC_KEY_SIZE)
             throw new RuntimeException("invalid public key, length = " + publicKey.length);
