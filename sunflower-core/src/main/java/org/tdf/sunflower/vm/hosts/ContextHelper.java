@@ -28,12 +28,14 @@ public class ContextHelper {
                 new ContextRecipientLen(context),
                 new ContextAmount(context),
                 new ContextGasPrice(context),
-                new ContextGasLimit(context),
                 new ContextBlockTimestamp(context),
                 new ContextTransactionTimestamp(context),
                 new ContextBlockHeight(context),
                 new ContextParentBlockHash(context),
-                new ContextParentBlockHashLen(context)
+                new ContextParentBlockHashLen(context),
+                new ContextNonce(context),
+                new ContextSignature(context),
+                new ContextSignatureLen(context)
         );
     }
 
@@ -192,21 +194,6 @@ public class ContextHelper {
         }
     }
 
-    private static class ContextGasLimit extends HostFunction{
-        private Context context;
-
-        public ContextGasLimit(Context context) {
-            setName("_context_gas_limit");
-            setType(new FunctionType(new ArrayList<>(), Collections.singletonList(ValueType.I32)));
-            this.context = context;
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            return new long[]{context.getGasLimit()};
-        }
-    }
-
     private static class ContextBlockTimestamp extends HostFunction{
         private Context context;
 
@@ -283,4 +270,49 @@ public class ContextHelper {
         }
     }
 
+    private static class ContextNonce extends HostFunction{
+        private Context context;
+
+        public ContextNonce(Context context) {
+            setName("_context_nonce");
+            setType(new FunctionType(Collections.emptyList(), Collections.singletonList(ValueType.I64)));
+            this.context = context;
+        }
+
+        @Override
+        public long[] execute(long... parameters) {
+            return new long[]{context.getNonce()};
+        }
+    }
+
+    private static class ContextSignatureLen extends HostFunction{
+        private Context context;
+
+        public ContextSignatureLen(Context context) {
+            setName("_context_signature_len");
+            setType(new FunctionType(Collections.emptyList(), Collections.singletonList(ValueType.I32)));
+            this.context = context;
+        }
+
+        @Override
+        public long[] execute(long... parameters) {
+            return new long[]{context.getSignature().size()};
+        }
+    }
+
+    private static class ContextSignature extends HostFunction{
+        private Context context;
+
+        public ContextSignature(Context context) {
+            setName("_context_signature");
+            setType(new FunctionType(Collections.singletonList(ValueType.I32), Collections.emptyList()));
+            this.context = context;
+        }
+
+        @Override
+        public long[] execute(long... parameters) {
+            putMemory((int)parameters[0], context.getSignature().getBytes());
+            return new long[0];
+        }
+    }
 }

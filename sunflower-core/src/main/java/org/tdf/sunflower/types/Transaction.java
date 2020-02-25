@@ -24,7 +24,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Getter
 @ToString
 @NoArgsConstructor
 public class Transaction {
@@ -228,4 +227,43 @@ public class Transaction {
     }
 
 
+    public int getVersion() {
+        return version;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public long getNonce() {
+        return nonce;
+    }
+
+    public HexBytes getFrom() {
+        return from == null ? HexBytes.EMPTY : from;
+    }
+
+    public long getGasPrice() {
+        return gasPrice;
+    }
+
+    public long getAmount() {
+        return amount;
+    }
+
+    public HexBytes getPayload() {
+        return payload == null ? HexBytes.EMPTY : payload;
+    }
+
+    public HexBytes getTo() {
+        return to == null ? HexBytes.EMPTY : to;
+    }
+
+    public HexBytes getSignature() {
+        return signature == null ? HexBytes.EMPTY : signature;
+    }
 }

@@ -32,8 +32,9 @@ public class Context {
                 .blockHeight(header.getHeight())
                 .payload(reader.readAll())
                 .transactionTimestamp(transaction.getCreatedAt())
-                .blockTimestamp(header.getCreatedAt())
-                .gasLimit(3);
+                .nonce(transaction.getNonce())
+                .signature(transaction.getSignature())
+                .blockTimestamp(header.getCreatedAt());
         return builder.build();
     }
 
@@ -47,11 +48,7 @@ public class Context {
 
     private long amount;
 
-    private long fee;
-
     private long gasPrice;
-
-    private long gasLimit;
 
     private long blockTimestamp;
 
@@ -63,4 +60,7 @@ public class Context {
 
     private long blockHeight;
 
+    private long nonce;
+
+    private HexBytes signature;
 }
