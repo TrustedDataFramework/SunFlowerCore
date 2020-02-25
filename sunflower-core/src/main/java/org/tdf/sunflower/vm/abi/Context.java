@@ -2,6 +2,7 @@ package org.tdf.sunflower.vm.abi;
 
 import lombok.Builder;
 import lombok.Getter;
+import org.checkerframework.checker.units.qual.C;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
@@ -14,6 +15,9 @@ import java.nio.charset.StandardCharsets;
 @Getter
 @Builder
 public class Context {
+    public static Context disabled(){
+        return Context.builder().build();
+    }
 
     public static Context fromTransaction(Header header, Transaction transaction) {
         BytesReader reader = new BytesReader(transaction.getPayload().getBytes());
@@ -34,6 +38,7 @@ public class Context {
                 .transactionTimestamp(transaction.getCreatedAt())
                 .nonce(transaction.getNonce())
                 .signature(transaction.getSignature())
+                .available(true)
                 .blockTimestamp(header.getCreatedAt());
         return builder.build();
     }
@@ -63,4 +68,6 @@ public class Context {
     private long nonce;
 
     private HexBytes signature;
+
+    private boolean available;
 }

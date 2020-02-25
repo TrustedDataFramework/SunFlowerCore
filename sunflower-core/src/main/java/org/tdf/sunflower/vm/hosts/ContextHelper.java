@@ -16,7 +16,7 @@ import java.util.List;
 public class ContextHelper {
     private Context context;
 
-    public List<HostFunction> getHelpers(){
+    public List<HostFunction> getHelpers() {
         return Arrays.asList(
                 new ContextTransactionHash(context),
                 new ContextTransactionHashLen(context),
@@ -35,11 +35,12 @@ public class ContextHelper {
                 new ContextParentBlockHashLen(context),
                 new ContextNonce(context),
                 new ContextSignature(context),
-                new ContextSignatureLen(context)
+                new ContextSignatureLen(context),
+                new ContextAvailable(context)
         );
     }
 
-    private static class  ContextTransactionHash extends HostFunction{
+    private static class ContextTransactionHash extends HostFunction {
         private Context context;
 
         public ContextTransactionHash(Context context) {
@@ -50,12 +51,12 @@ public class ContextHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            putMemory((int)parameters[0], context.getTransactionHash().getBytes());
+            putMemory((int) parameters[0], context.getTransactionHash().getBytes());
             return new long[0];
         }
     }
 
-    private static class ContextTransactionHashLen extends HostFunction{
+    private static class ContextTransactionHashLen extends HostFunction {
         private Context context;
 
         public ContextTransactionHashLen(Context context) {
@@ -71,7 +72,7 @@ public class ContextHelper {
     }
 
 
-    private static class  ContextMethod extends HostFunction{
+    private static class ContextMethod extends HostFunction {
         private Context context;
 
         public ContextMethod(Context context) {
@@ -82,12 +83,12 @@ public class ContextHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            putStringIntoMemory((int)parameters[0], context.getMethod());
+            putStringIntoMemory((int) parameters[0], context.getMethod());
             return new long[0];
         }
     }
 
-    private static class ContextMethodLen extends HostFunction{
+    private static class ContextMethodLen extends HostFunction {
         private Context context;
 
         public ContextMethodLen(Context context) {
@@ -102,7 +103,7 @@ public class ContextHelper {
         }
     }
 
-    private static class ContextSender extends HostFunction{
+    private static class ContextSender extends HostFunction {
         private Context context;
 
         public ContextSender(Context context) {
@@ -113,12 +114,12 @@ public class ContextHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            putMemory((int)parameters[0], context.getSender().getBytes());
+            putMemory((int) parameters[0], context.getSender().getBytes());
             return new long[0];
         }
     }
 
-    private static class ContextSenderLen extends HostFunction{
+    private static class ContextSenderLen extends HostFunction {
         private Context context;
 
         public ContextSenderLen(Context context) {
@@ -133,7 +134,7 @@ public class ContextHelper {
         }
     }
 
-    private static class ContextRecipient extends HostFunction{
+    private static class ContextRecipient extends HostFunction {
         private Context context;
 
         public ContextRecipient(Context context) {
@@ -144,12 +145,12 @@ public class ContextHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            putMemory((int)parameters[0], context.getRecipient().getBytes());
+            putMemory((int) parameters[0], context.getRecipient().getBytes());
             return new long[0];
         }
     }
 
-    private static class ContextRecipientLen extends HostFunction{
+    private static class ContextRecipientLen extends HostFunction {
         private Context context;
 
         public ContextRecipientLen(Context context) {
@@ -164,7 +165,7 @@ public class ContextHelper {
         }
     }
 
-    private static class ContextAmount extends HostFunction{
+    private static class ContextAmount extends HostFunction {
         private Context context;
 
         public ContextAmount(Context context) {
@@ -179,7 +180,7 @@ public class ContextHelper {
         }
     }
 
-    private static class ContextGasPrice extends HostFunction{
+    private static class ContextGasPrice extends HostFunction {
         private Context context;
 
         public ContextGasPrice(Context context) {
@@ -194,7 +195,7 @@ public class ContextHelper {
         }
     }
 
-    private static class ContextBlockTimestamp extends HostFunction{
+    private static class ContextBlockTimestamp extends HostFunction {
         private Context context;
 
         public ContextBlockTimestamp(Context context) {
@@ -209,7 +210,7 @@ public class ContextHelper {
         }
     }
 
-    private static class ContextTransactionTimestamp extends HostFunction{
+    private static class ContextTransactionTimestamp extends HostFunction {
         private Context context;
 
         public ContextTransactionTimestamp(Context context) {
@@ -224,7 +225,7 @@ public class ContextHelper {
         }
     }
 
-    private static class ContextBlockHeight extends HostFunction{
+    private static class ContextBlockHeight extends HostFunction {
         private Context context;
 
         public ContextBlockHeight(Context context) {
@@ -239,7 +240,7 @@ public class ContextHelper {
         }
     }
 
-    private static class  ContextParentBlockHash extends HostFunction{
+    private static class ContextParentBlockHash extends HostFunction {
         private Context context;
 
         public ContextParentBlockHash(Context context) {
@@ -250,12 +251,12 @@ public class ContextHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            putMemory((int)parameters[0], context.getParentBlockHash().getBytes());
+            putMemory((int) parameters[0], context.getParentBlockHash().getBytes());
             return new long[0];
         }
     }
 
-    private static class ContextParentBlockHashLen extends HostFunction{
+    private static class ContextParentBlockHashLen extends HostFunction {
         private Context context;
 
         public ContextParentBlockHashLen(Context context) {
@@ -270,7 +271,7 @@ public class ContextHelper {
         }
     }
 
-    private static class ContextNonce extends HostFunction{
+    private static class ContextNonce extends HostFunction {
         private Context context;
 
         public ContextNonce(Context context) {
@@ -285,7 +286,7 @@ public class ContextHelper {
         }
     }
 
-    private static class ContextSignatureLen extends HostFunction{
+    private static class ContextSignatureLen extends HostFunction {
         private Context context;
 
         public ContextSignatureLen(Context context) {
@@ -300,7 +301,7 @@ public class ContextHelper {
         }
     }
 
-    private static class ContextSignature extends HostFunction{
+    private static class ContextSignature extends HostFunction {
         private Context context;
 
         public ContextSignature(Context context) {
@@ -311,8 +312,23 @@ public class ContextHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            putMemory((int)parameters[0], context.getSignature().getBytes());
+            putMemory((int) parameters[0], context.getSignature().getBytes());
             return new long[0];
+        }
+    }
+
+    private static class ContextAvailable extends HostFunction {
+        private Context context;
+
+        public ContextAvailable(Context context) {
+            setName("_context_available");
+            setType(new FunctionType(Collections.emptyList(), Collections.singletonList(ValueType.I64)));
+            this.context = context;
+        }
+
+        @Override
+        public long[] execute(long... parameters) {
+            return new long[]{context.isAvailable() ? 1 : 0};
         }
     }
 }

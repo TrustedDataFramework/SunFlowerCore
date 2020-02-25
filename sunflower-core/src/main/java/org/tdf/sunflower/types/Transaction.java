@@ -24,6 +24,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Getter
 @ToString
 @NoArgsConstructor
 public class Transaction {
@@ -38,16 +39,32 @@ public class Transaction {
     protected long createdAt;
     @RLP(3)
     protected long nonce;
+
+    /**
+     * for coinbase, this field is null
+     */
     @RLP(4)
     protected HexBytes from;
     @RLP(5)
     protected long gasPrice;
     @RLP(6)
     protected long amount;
+
+    /**
+     * for coinbase and transfer, this field is null or empty bytes
+     */
     @RLP(7)
     protected HexBytes payload;
+
+    /**
+     * for contract deploy, this field is null or empty bytes
+     */
     @RLP(8)
     protected HexBytes to;
+
+    /**
+     * not null
+     */
     @RLP(9)
     protected HexBytes signature;
     // generated value, no need to encode into rlp
@@ -264,6 +281,6 @@ public class Transaction {
     }
 
     public HexBytes getSignature() {
-        return signature == null ? HexBytes.EMPTY : signature;
+        return signature;
     }
 }

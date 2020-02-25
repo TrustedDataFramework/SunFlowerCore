@@ -24,7 +24,13 @@ dependencies {
     compile "org.bouncycastle:bcpkix-jdk15on:${bouncycastleVersion}"
     compile "commons-codec:commons-codec:${commonsCodecVersion}"
     compile "com.kosprov.jargon2:jargon2-api:${jargon2Version}"
-    compile "com.alibaba:fastjson:${fastjsonVersion}"
+
+    testCompile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    compileOnly "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 }
 
 tasks.withType(JavaCompile) {
