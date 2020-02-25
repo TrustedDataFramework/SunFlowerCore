@@ -20,23 +20,44 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     private Map<HexBytes, Account> genesisStates;
 
     @Override
-    public Set<HexBytes> getRelatedKeys(Transaction transaction) {
-        return Stream
-                .of(transaction.getFrom(), transaction.getTo())
-                .filter(x -> !x.isEmpty())
-                .collect(Collectors.toSet());
+    public Set<HexBytes> getRelatedKeys(Transaction transaction, Map<HexBytes, Account> store) {
+        switch (Transaction.Type.TYPE_MAP.get(transaction.getType())) {
+            case COIN_BASE:
+                return Collections.singleton(transaction.getTo());
+            case TRANSFER:
+                return Stream
+                        .of(transaction.getFrom(), transaction.getTo())
+                        .filter(x -> !x.isEmpty())
+                        .collect(Collectors.toSet());
+            case CONTRACT_DEPLOY: {
+                return Collections.singleton(transaction.createContractAddress());
+            }
+            case CONTRACT_CALL: {
+                Set<HexBytes> ret = new HashSet<>();
+                ret.add(transaction.getFrom());
+                ret.add(transaction.getTo());
+                ret.add(Objects.requireNonNull(store.get(transaction.getTo())).getCreatedBy());
+                return ret;
+            }
+        }
+        throw new RuntimeException("unreachable");
     }
 
     @Override
-    public Account update(HexBytes hexBytes, Account state, Header header, Transaction transaction) {
+    public Map<HexBytes, Account> update(Map<HexBytes, Account> states, Header header, Transaction transaction) {
+        Map<HexBytes, Account> cloned = createEmptyMap();
+        states.forEach((k, v) -> cloned.put(k, v.clone()));
         switch (Transaction.Type.TYPE_MAP.get(transaction.getType())) {
             case TRANSFER:
-                return updateTransfer(state, transaction);
+                return updateTransfer(cloned, transaction);
             case COIN_BASE:
-                return updateCoinBase(state, transaction);
-            default:
-                return updateAnother(state, header, transaction);
+                return updateCoinBase(cloned, transaction);
+            case CONTRACT_DEPLOY:
+                return updateDeploy(cloned, header, transaction);
+            case CONTRACT_CALL:
+                return updateTransactionCall(cloned, header, transaction);
         }
+        throw new RuntimeException("unknown type " + transaction.getType());
     }
 
     @Override
@@ -54,78 +75,102 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         return new HashSet<>();
     }
 
-    private Account updateTransfer(Account state, Transaction t) {
-        if (Address.fromPublicKey(t.getFrom().getBytes()).equals(state.getAddress())) {
-            require(Long.compareUnsigned(state.getBalance(), t.getAmount()) >= 0, "the balance of sender is not enough");
-            state.setBalance(state.getBalance() - t.getAmount());
+    private Map<HexBytes, Account> updateTransfer(Map<HexBytes, Account> states, Transaction t) {
+        for (Map.Entry<HexBytes, Account> entry : states.entrySet()) {
+            Account state = entry.getValue();
+            if (Address.fromPublicKey(t.getFrom().getBytes()).equals(state.getAddress())) {
+                require(Long.compareUnsigned(state.getBalance(), t.getAmount()) >= 0, "the balance of sender is not enough");
+                state.setBalance(state.getBalance() - t.getAmount());
+            }
+            if (t.getTo().equals(state.getAddress())) {
+                state.setBalance(state.getBalance() + t.getAmount());
+            }
+            if (!t.getFrom().equals(state.getAddress()) && !t.getTo().equals(state.getAddress()))
+                throw new RuntimeException(
+                        "unreachable: nor to or from " + t.getHash() + " equals to the account " + state.getAddress()
+                );
         }
-        if (t.getTo().equals(state.getAddress())) {
-            state.setBalance(state.getBalance() + t.getAmount());
-        }
-        return state;
+        return states;
     }
 
-    private Account updateCoinBase(Account account, Transaction t) {
-        if (account.getAddress().equals(t.getTo())) {
+    private Map<HexBytes, Account> updateCoinBase(Map<HexBytes, Account> accounts, Transaction t) {
+        for (Account account : accounts.values()) {
+            if (!account.getAddress().equals(t.getTo()))
+                throw new RuntimeException("unreachable " + account + " is not coinbase of " + t.getHash());
             account.setBalance(account.getBalance() + t.getAmount());
         }
-        return account;
+        return accounts;
     }
 
-    private Account updateAnother(Account account, Header header, Transaction t) {
-        if (account.getAddress().equals(
-                Address.fromPublicKey(t.getFrom().getBytes())
-        )) {
-            account.setBalance(account.getBalance() - t.getAmount());
-        }
-        if (!t.getTo().equals(account.getAddress())) {
-            return account;
-        }
-        if (t.getType() == Transaction.Type.CONTRACT_CALL.code) {
-            require(account.containsContract(), t.getHash().toString()
-                    + " call a contract " + account.getAddress() + " without deploy");
-        }
-        if (t.getType() == Transaction.Type.CONTRACT_DEPLOY.code) {
-            require(!account.containsContract(), t.getHash().toString()
-                    + " deploy a contract on " + account.getAddress() + " contains a deployed contract");
-        }
+
+    private Map<HexBytes, Account> updateDeploy(Map<HexBytes, Account> accounts, Header header, Transaction t) {
+        Account contractAccount = accounts.values().stream().findAny().orElse(null);
+        if (accounts.size() != 1 || !contractAccount.getAddress().equals(t.createContractAddress())
+        )
+            throw new RuntimeException("unreachable: contract deploy " + t.getHash() + " related to only one address");
+        contractAccount.setCreatedBy(Address.fromPublicKey(t.getFrom()));
+        contractAccount.setNonce(t.getNonce());
+        contractAccount.setBinaryContract(t.getPayload().getBytes());
         // build Parameters here
         Context context = Context.fromTransaction(header, t);
+        context.setContractAddress(t.createContractAddress());
+        context.setCreatedBy(Address.fromPublicKey(t.getFrom()));
 
         Hosts hosts = new Hosts()
                 .withContext(context)
                 .withPayload(context.getPayload());
 
         // every contract must has a init method
-        ModuleInstance.Builder builder = ModuleInstance.builder()
-                .hostFunctions(hosts.getAll());
+        ModuleInstance instance = ModuleInstance.builder()
+                .binary(t.getPayload().getBytes())
+                .hostFunctions(hosts.getAll())
+                .build();
 
-        if (t.getType() != Transaction.Type.CONTRACT_DEPLOY.code) {
-            // cannot call init method if the contract had been deployed
-            require(!context.getMethod().equals("init"), t.getHash().toString()
-                    + " call init method of deployed contract on " + account.getAddress());
-
-            builder = builder.memory(account.getMemory())
-                    .binary(account.getBinaryContract())
-                    .globals(account.getGlobals());
-        } else {
-            account.setBinaryContract(t.getPayload().getBytes());
-            builder = builder.binary(t.getPayload().getBytes());
+        if(instance.containsExport("init")){
+           instance.execute("init");
         }
-        try {
-            ModuleInstance instance = builder.build();
-            if (!instance.containsExport(context.getMethod())) {
-                throw new RuntimeException("contract not has method " + context.getMethod());
+        contractAccount.setMemory(instance.getMemory());
+        contractAccount.setGlobals(instance.getGlobals());
+        return accounts;
+    }
+
+    private Map<HexBytes, Account> updateTransactionCall(Map<HexBytes, Account> accounts, Header header, Transaction t) {
+        Account contractAccount = accounts.get(t.getTo());
+        for (Account account : accounts.values()) {
+            if(account.getAddress().equals(t.getFrom())){
+                if(account.getBalance() < t.getAmount())
+                    throw new RuntimeException("the balance of account " + account.getAddress() + " is not enough");
+                account.setBalance(account.getBalance() - t.getAmount());
             }
-            instance.execute(context.getMethod());
-            account.setMemory(instance.getMemory());
-            account.setGlobals(instance.getGlobals());
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(t.getHash().toString()
-                    + " deploy contract " + account.getAddress() + " failed");
+            if(account.getAddress().equals(contractAccount.getCreatedBy())){
+                account.setBalance(account.getBalance() + t.getAmount());
+            }
+            if(!account.getAddress().equals(t.getFrom()) &&
+                    !account.getAddress().equals(t.getTo()) &&
+                    !account.getAddress().equals(contractAccount.getCreatedBy())
+            ) throw new RuntimeException("unexpected address " + account.getAddress() + " not a createdBy or from or to");
         }
-        return account;
+
+        // build Parameters here
+        Context context = Context.fromTransaction(header, t);
+        context.setCreatedBy(contractAccount.getCreatedBy());
+        context.setContractAddress(contractAccount.getAddress());
+
+        Hosts hosts = new Hosts()
+                .withContext(context)
+                .withPayload(context.getPayload());
+
+        // every contract must has a init method
+        ModuleInstance instance = ModuleInstance.builder()
+                .hostFunctions(hosts.getAll())
+                .memory(contractAccount.getMemory())
+                .globals(contractAccount.getGlobals())
+                .build();
+
+        instance.execute(context.getMethod());
+        contractAccount.setMemory(instance.getMemory());
+        contractAccount.setGlobals(instance.getGlobals());
+        return accounts;
     }
 
     private void require(boolean b, String msg) throws RuntimeException {

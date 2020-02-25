@@ -24,6 +24,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.tdf.sunflower.ApplicationConstants.ADDRESS_SIZE;
+
 @Getter
 @ToString
 @NoArgsConstructor
@@ -71,6 +73,7 @@ public class Transaction {
     @Getter(AccessLevel.NONE)
     @RLPIgnored
     protected transient HexBytes hash;
+
     @Builder
     public Transaction(
             int version,
@@ -243,6 +246,17 @@ public class Transaction {
         }
     }
 
+    /**
+     * get contract address, contract address = hash(rlp(from, nonce))
+     *
+     * @return contact address
+     */
+    public HexBytes createContractAddress() {
+        if (type != Type.CONTRACT_DEPLOY.code) throw new RuntimeException("not a contract deploy transaction");
+        byte[] bytes = CryptoContext.digest(RLPCodec.encode(new Object[]{from, nonce}));
+        HexBytes ret = HexBytes.fromBytes(bytes);
+        return ret.slice(ret.size() - ADDRESS_SIZE, ret.size());
+    }
 
     public int getVersion() {
         return version;
@@ -282,5 +296,35 @@ public class Transaction {
 
     public HexBytes getSignature() {
         return signature;
+    }
+
+    public ValidateResult basicValidate() {
+        if (amount < 0 || gasPrice < 0)
+            return ValidateResult.fault("integer overflow: amount of transaction " + getHash());
+        if (!Type.TYPE_MAP.containsKey(type))
+            return ValidateResult.fault("unknown transaction type " + type + " of " + getHash());
+        if (type != Type.COIN_BASE.code && (signature == null || signature.isEmpty()))
+            return ValidateResult.fault("missing signature of transaction " + getHash());
+        if (type == Type.COIN_BASE.code && !getFrom().isEmpty())
+            return ValidateResult.fault("\"from\" of coinbase transaction " + getHash() + " should be empty");
+        if (type == Type.CONTRACT_DEPLOY.code && !getTo().isEmpty()) {
+            return ValidateResult.fault("\"to\" of contract deploy transaction " + getHash() + " should be empty");
+        }
+        if (type == Type.CONTRACT_DEPLOY.code && amount != 0) {
+            return ValidateResult.fault("\"amount\" of contract deploy transaction " + getHash() + " should be zero");
+        }
+        if (type == Type.CONTRACT_CALL.code || type == Type.TRANSFER.code) {
+            if (getFrom().isEmpty() || getTo().isEmpty())
+                return ValidateResult.fault("\"from\" or \"to\" of transaction " + getHash() + " is empty");
+        }
+        if (type == Type.CONTRACT_CALL.code || type == Type.CONTRACT_DEPLOY.code) {
+            if (getPayload().isEmpty())
+                return ValidateResult.fault("missing payload of transaction " + getHash());
+        }
+        if (type == Type.COIN_BASE.code || type == Type.TRANSFER.code) {
+            if (!getPayload().isEmpty())
+                return ValidateResult.fault("payload of transaction " + getHash() + " should be empty");
+        }
+        return ValidateResult.success();
     }
 }

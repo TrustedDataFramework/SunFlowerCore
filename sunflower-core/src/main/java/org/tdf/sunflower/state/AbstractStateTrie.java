@@ -135,7 +135,10 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     }
 
     private Map<ID, S> batchGetWithEmpty(byte[] parentRoot, Block block) {
-        Set<ID> relatedIds = getUpdater().getRelatedKeys(block);
+        Set<ID> relatedIds = getUpdater().getRelatedKeys(
+                block,
+                getTrieForReadOnly(parentRoot).asMap()
+        );
         Map<ID, S> map = batchGet(parentRoot, relatedIds);
         relatedIds.forEach(id -> map.putIfAbsent(id, getUpdater().createEmpty(id)));
         return map;

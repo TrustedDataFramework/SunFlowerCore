@@ -1,6 +1,9 @@
 package org.tdf.sunflower.state;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.lotusvm.ModuleInstance;
@@ -8,14 +11,14 @@ import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
-import java.util.Arrays;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Data
 public class Account {
     private HexBytes address;
+
+    // for normal address this field is
     private long nonce;
     private long balance;
     // if the account contains none contract, binary contract will be null
@@ -45,8 +48,12 @@ public class Account {
         this.address = Address.of(address);
     }
 
-    public byte[] view(String method, byte[] parameters){
-        Hosts hosts = new Hosts().withPayload(parameters).withContext(Context.disabled());
+    public byte[] view(String method, byte[] parameters) {
+        Context ctx = Context.disabled();
+        ctx.setContractAddress(address);
+        ctx.setCreatedBy(createdBy);
+
+        Hosts hosts = new Hosts().withPayload(parameters).withContext(ctx);
         ModuleInstance.Builder builder = ModuleInstance.builder()
                 .memory(memory)
                 .globals(globals)
@@ -58,7 +65,12 @@ public class Account {
         return hosts.getResult();
     }
 
-    public boolean containsContract(){
+    public boolean containsContract() {
         return binaryContract != null && binaryContract.length != 0;
+    }
+
+    @Override
+    public Account clone() {
+        return new Account(address, nonce, balance, binaryContract, memory, globals, createdBy);
     }
 }

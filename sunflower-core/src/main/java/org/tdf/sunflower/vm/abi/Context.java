@@ -1,10 +1,8 @@
 package org.tdf.sunflower.vm.abi;
 
 import lombok.Builder;
-import lombok.Getter;
-import org.checkerframework.checker.units.qual.C;
+import lombok.Data;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.BytesReader;
@@ -12,12 +10,13 @@ import org.tdf.sunflower.util.BytesReader;
 import java.nio.charset.StandardCharsets;
 
 
-@Getter
 @Builder
+@Data
 public class Context {
     public static Context disabled(){
         return Context.builder().build();
     }
+
 
     public static Context fromTransaction(Header header, Transaction transaction) {
         BytesReader reader = new BytesReader(transaction.getPayload().getBytes());
@@ -70,4 +69,8 @@ public class Context {
     private HexBytes signature;
 
     private boolean available;
+
+    private HexBytes createdBy;
+
+    private HexBytes contractAddress;
 }
