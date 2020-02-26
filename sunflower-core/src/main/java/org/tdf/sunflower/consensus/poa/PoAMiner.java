@@ -1,14 +1,13 @@
 package org.tdf.sunflower.consensus.poa;
 
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.DecoderException;
-import org.springframework.util.Assert;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.MinerListener;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
@@ -16,12 +15,9 @@ import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.time.OffsetDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -32,7 +28,7 @@ import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
 
 
 @Slf4j
-public class PoAMiner implements Miner {
+public class PoAMiner extends AbstractMiner {
     private PoAConfig poAConfig;
 
     HexBytes minerAddress;
@@ -45,6 +41,7 @@ public class PoAMiner implements Miner {
     private BlockRepository blockRepository;
 
     @Setter
+    @Getter
     private StateTrie<HexBytes, Account> accountTrie;
 
     private boolean stopped;
@@ -54,7 +51,18 @@ public class PoAMiner implements Miner {
     private List<HexBytes> minerAddresses;
 
     @Setter
+    @Getter
     private TransactionPool transactionPool;
+
+    @Override
+    protected Header createHeader(Block parent) {
+        return Header.builder()
+                .version(parent.getVersion())
+                .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
+                .createdAt(System.currentTimeMillis() / 1000)
+                .payload(PoAConstants.ZERO_BYTES)
+                .build();
+    }
 
     public void setGenesis(Genesis genesis) {
         this.genesis = genesis;
@@ -148,7 +156,7 @@ public class PoAMiner implements Miner {
         }
     }
 
-    private Transaction createCoinBase(long height){
+    protected Transaction createCoinBase(long height) {
         return Transaction.builder()
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
@@ -158,30 +166,6 @@ public class PoAMiner implements Miner {
                 .payload(HexBytes.EMPTY)
                 .to(minerAddress)
                 .signature(HexBytes.EMPTY).build();
-    }
-
-    private Block createBlock(Block parent) {
-        Header header = Header.builder()
-                .version(parent.getVersion())
-                .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
-                .createdAt(System.currentTimeMillis() / 1000)
-                .payload(PoAConstants.ZERO_BYTES)
-                .build();
-
-        Block b = new Block(header);
-        while (true) {
-            Optional<Transaction> tx = transactionPool.pop();
-            if (!tx.isPresent()) break;
-            b.getBody().add(tx.get());
-        }
-        b.getBody().add(0, createCoinBase(parent.getHeight() + 1));
-
-        // calculate state root
-        b.setStateRoot(
-                        accountTrie.getNewRoot(parent.getStateRoot().getBytes(), b)
-        );
-        b.resetTransactionsRoot();
-        return UnmodifiableBlock.of(b);
     }
 
 

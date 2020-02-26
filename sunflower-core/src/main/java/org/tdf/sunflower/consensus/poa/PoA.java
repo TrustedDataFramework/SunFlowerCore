@@ -101,8 +101,7 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
         setAccountTrie(trie);
         poaMiner.setAccountTrie(trie);
 
-        poAValidator = new PoAValidator();
-        poAValidator.setAccountTrie(getAccountTrie());
+        poAValidator = new PoAValidator(getAccountTrie());
         setValidator(poAValidator);
 
         // register dummy account

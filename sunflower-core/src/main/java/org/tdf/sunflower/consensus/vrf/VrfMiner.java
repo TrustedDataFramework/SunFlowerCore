@@ -10,8 +10,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import lombok.SneakyThrows;
 import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
+import org.tdf.common.trie.Trie;
+import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.facade.BlockRepository;
@@ -51,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @Setter
-public class VrfMiner implements Miner {
+public class VrfMiner extends AbstractMiner {
 
     private VrfConfig vrfConfig;
 
@@ -182,7 +185,7 @@ public class VrfMiner implements Miner {
         startVrfStateMachine();
     }
 
-    private Transaction createCoinBase(long height) throws DecoderException {
+    public Transaction createCoinBase(long height) {
         Transaction tx = Transaction.builder().version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(PoAConstants.ZERO_BYTES)
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(PoAConstants.ZERO_BYTES)
@@ -191,34 +194,23 @@ public class VrfMiner implements Miner {
         return tx;
     }
 
-    private Block createBlock(Block parent) throws DecoderException, IOException {
+    @Override
+    @SneakyThrows
+    protected Header createHeader(Block parent) {
         Header header = Header.builder().version(parent.getVersion()).hashPrev(parent.getHash())
                 .transactionsRoot(PoAConstants.ZERO_BYTES).height(parent.getHeight() + 1)
                 .createdAt(System.currentTimeMillis() / 1000).build();
 //                .payload(VrfConstants.ZERO_BYTES)
 //                .hash(new HexBytes(BigEndian.encodeInt64(parent.getHeight() + 1))).build();
-        Block b = new Block(header);
+
 
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
-        byte[] payLoadBytes = VrfUtil.genPayload(b.getHeight(), this.vrfStateMachine.getVrfRound().getRound(), vrfSeed,
+        byte[] payLoadBytes = VrfUtil.genPayload(header.getHeight(), this.vrfStateMachine.getVrfRound().getRound(), vrfSeed,
                 this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk, vrfPk,
                 vrfConfig);
         HexBytes payload = HexBytes.fromBytes(payLoadBytes);
-        b.setPayload(payload);
-
-        while (true) {
-            Optional<Transaction> tx = transactionPool.pop();
-            if (!tx.isPresent())
-                break;
-            b.getBody().add(tx.get());
-        }
-
-        b.getBody().add(createCoinBase(parent.getHeight() + 1));
-
-        // calculate state root
-        b.setStateRoot(accountTrie.getNewRoot(parent.getStateRoot().getBytes(), b));
-        b.resetTransactionsRoot();
-        return b;
+        header.setPayload(payload);
+        return header;
     }
 
     public static class EconomicModelImpl {

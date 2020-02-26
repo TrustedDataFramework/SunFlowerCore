@@ -103,7 +103,7 @@ public class Transaction {
      * @param transactions list of transaction in sequential
      * @return transactions root
      */
-    public static byte[] getTransactionsRoot(List<Transaction> transactions) {
+    public static HexBytes getTransactionsRoot(List<Transaction> transactions) {
         Trie<Integer, Transaction> tmp = Trie.<Integer, Transaction>builder()
                 .hashFunction(CryptoContext::digest)
                 .keyCodec(Codec.newInstance(RLPCodec::encode, RLPCodec::decodeInt))
@@ -114,7 +114,7 @@ public class Transaction {
         for (int i = 0; i < transactions.size(); i++) {
             tmp.put(i, transactions.get(i));
         }
-        return tmp.commit();
+        return HexBytes.fromBytes(tmp.commit());
     }
 
     public HexBytes getHash() {

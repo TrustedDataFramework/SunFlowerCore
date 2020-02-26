@@ -118,7 +118,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         );
         Map<ID, S> map = updater.createEmptyMap();
         relatedIds.forEach(k -> map.put(k, trie.get(k).orElse(updater.createEmpty(k))));
-        
+
         return commitInternal(
                 parentRoot,
                 getUpdater().update(
