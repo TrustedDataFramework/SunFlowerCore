@@ -1,9 +1,10 @@
 package org.tdf.sunflower.vm.abi;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.BytesReader;
@@ -13,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Context {
     public static Context disabled(){
         return Context.builder().build();
@@ -31,7 +34,7 @@ public class Context {
         } else {
             builder.method(getMethod(transaction.getPayload().getBytes()));
         }
-        builder.sender(Address.fromPublicKey(transaction.getFrom()))
+        builder.sender(transaction.getFromAddress())
                 .recipient(transaction.getTo())
                 .transactionHash(transaction.getHash())
                 .gasPrice(transaction.getGasPrice())
@@ -41,8 +44,10 @@ public class Context {
                 .transactionTimestamp(transaction.getCreatedAt())
                 .nonce(transaction.getNonce())
                 .signature(transaction.getSignature())
+                .amount(transaction.getAmount())
                 .available(true)
-                .blockTimestamp(header.getCreatedAt());
+                .blockTimestamp(header.getCreatedAt())
+        ;
         return builder.build();
     }
 
