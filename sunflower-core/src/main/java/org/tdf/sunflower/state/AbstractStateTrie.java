@@ -109,40 +109,23 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         return cache.get(HexBytes.fromBytes(rootHash), () -> ReadOnlyTrie.of(getTrie(rootHash)));
     }
 
-    @Override
-    public HexBytes commit(byte[] parentRoot, Block block) {
-        final Trie<ID, S> modified = commitInternal(
-                parentRoot,
-                getUpdater().update(batchGetWithEmpty(parentRoot, block), block)
-        );
 
-        modified.flush();
-        this.cache.asMap().putIfAbsent(HexBytes.fromBytes(modified.getRootHash()), ReadOnlyTrie.of(modified));
-        if (!block.getStateRoot().equals(HexBytes.fromBytes(modified.getRootHash())))
-            throw new IllegalArgumentException();
-        return HexBytes.fromBytes(modified.getRootHash());
-    }
-
-    @Override
-    public HexBytes getNewRoot(byte[] parentRoot, Block block) {
-        byte[] ret = commitInternal(
-                parentRoot,
-                getUpdater().update(
-                        batchGetWithEmpty(parentRoot, block),
-                        block
-                )
-        ).getRootHash();
-        return HexBytes.fromBytes(ret);
-    }
-
-    private Map<ID, S> batchGetWithEmpty(byte[] parentRoot, Block block) {
+    public Trie<ID, S> update(byte[] parentRoot, Block block) {
+        Trie<ID, S> trie = getTrieForReadOnly(parentRoot);
         Set<ID> relatedIds = getUpdater().getRelatedKeys(
                 block,
-                getTrieForReadOnly(parentRoot).asMap()
+                trie.asMap()
         );
-        Map<ID, S> map = batchGet(parentRoot, relatedIds);
-        relatedIds.forEach(id -> map.putIfAbsent(id, getUpdater().createEmpty(id)));
-        return map;
+        Map<ID, S> map = updater.createEmptyMap();
+        relatedIds.forEach(k -> map.put(k, trie.get(k).orElse(updater.createEmpty(k))));
+        
+        return commitInternal(
+                parentRoot,
+                getUpdater().update(
+                        map,
+                        block
+                )
+        );
     }
 
     @Override

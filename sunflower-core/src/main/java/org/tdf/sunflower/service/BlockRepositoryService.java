@@ -212,7 +212,8 @@ public class BlockRepositoryService implements BlockRepository {
     public void writeBlock(Block block) {
         headerDao.save(Mapping.getEntityFromHeader(block.getHeader()));
 
-        List<TransactionEntity> entities = Mapping.getTransactionEntitiesFromBlock(block).collect(Collectors.toList());
+        List<TransactionEntity> entities =
+                Mapping.getTransactionEntitiesFromBlock(block).collect(Collectors.toList());
         for(TransactionEntity e: entities){
             if(transactionDao.existsById(e.getHash()))
                 throw new ApplicationException("transaction " + HexBytes.fromBytes(e.getHash()) + " already exists in database");

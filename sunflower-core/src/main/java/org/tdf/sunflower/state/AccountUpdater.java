@@ -25,6 +25,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             case COIN_BASE:
                 return Collections.singleton(transaction.getTo());
             case TRANSFER:{
+                if(!store.containsKey(transaction.getFromAddress()))
+                    throw new RuntimeException("account " + transaction.getFromAddress() + " not exists");
                 Set<HexBytes> ret = new HashSet<>();
                 ret.add(transaction.getFromAddress());
                 ret.add(transaction.getTo());
@@ -33,14 +35,20 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             case CONTRACT_DEPLOY:{
                 Set<HexBytes> ret = new HashSet<>();
                 ret.add(transaction.getFromAddress());
+                if(store.containsKey(transaction.createContractAddress()))
+                    throw new RuntimeException("contract " + transaction.createContractAddress() + " exists");
                 ret.add(transaction.createContractAddress());
                 return ret;
             }
             case CONTRACT_CALL: {
                 Set<HexBytes> ret = new HashSet<>();
+                if(!store.containsKey(transaction.getFromAddress()))
+                    throw new RuntimeException("account " + transaction.getFromAddress() + " not exists");
+                if(!store.containsKey(transaction.getTo()))
+                    throw new RuntimeException("contract " + transaction.getFromAddress() + " not exists");
                 ret.add(transaction.getFromAddress());
                 ret.add(transaction.getTo());
-                ret.add(Objects.requireNonNull(store.get(transaction.getTo())).getCreatedBy());
+                ret.add(store.get(transaction.getTo()).getCreatedBy());
                 return ret;
             }
         }
