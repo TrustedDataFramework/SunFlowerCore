@@ -2,6 +2,7 @@ package org.tdf.crypto;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
+import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
 
 import java.util.function.BiFunction;
@@ -13,9 +14,11 @@ public class CryptoContext {
         boolean verify(byte[] pk, byte[] msg, byte[] sig);
     }
 
-    public static Function<byte[], byte[]> hashFunction = CryptoContext::keccak256;
+    public static Function<byte[], byte[]> hashFunction;
 
-    public static SignatureVerifier signatureVerifier = (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
+    public static SignatureVerifier signatureVerifier;
+
+    public static BiFunction<byte[], byte[], byte[]> signer;
 
     public static byte[] keccak256(byte[] in) {
         Digest digest = new KeccakDigest(256);

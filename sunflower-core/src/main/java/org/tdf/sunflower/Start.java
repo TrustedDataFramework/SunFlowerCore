@@ -16,7 +16,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.tdf.common.event.EventBus;
 import org.tdf.crypto.CryptoContext;
+import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
@@ -95,9 +97,11 @@ public class Start {
                 switch (ec){
                     case "ed25519":
                         CryptoContext.signatureVerifier =  (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
+                        CryptoContext.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
                         break;
                     case "sm2":
                         CryptoContext.signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
+                        CryptoContext.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
                         break;
                     default:
                         throw new ApplicationException("unknown ec curve " + ec);
