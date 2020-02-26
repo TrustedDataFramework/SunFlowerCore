@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import lombok.SneakyThrows;
 import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.tdf.common.trie.Trie;
@@ -191,6 +192,25 @@ public class VrfMiner extends AbstractMiner {
                 .to(minerAddress).signature(PoAConstants.ZERO_BYTES)
                 .build();
         return tx;
+    }
+
+    @Override
+    @SneakyThrows
+    protected Header createHeader(Block parent) {
+        Header header = Header.builder().version(parent.getVersion()).hashPrev(parent.getHash())
+                .transactionsRoot(PoAConstants.ZERO_BYTES).height(parent.getHeight() + 1)
+                .createdAt(System.currentTimeMillis() / 1000).build();
+//                .payload(VrfConstants.ZERO_BYTES)
+//                .hash(new HexBytes(BigEndian.encodeInt64(parent.getHeight() + 1))).build();
+
+
+        byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
+        byte[] payLoadBytes = VrfUtil.genPayload(header.getHeight(), this.vrfStateMachine.getVrfRound().getRound(), vrfSeed,
+                this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk, vrfPk,
+                vrfConfig);
+        HexBytes payload = HexBytes.fromBytes(payLoadBytes);
+        header.setPayload(payload);
+        return header;
     }
 
     public static class EconomicModelImpl {

@@ -30,13 +30,11 @@ public abstract class AbstractMiner implements Miner {
 
     protected abstract Transaction createCoinBase(long height);
 
+
+    protected abstract Header createHeader(Block parent);
+
     protected Block createBlock(Block parent){
-        Header header = Header.builder()
-                .version(parent.getVersion())
-                .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
-                .createdAt(System.currentTimeMillis() / 1000)
-                .payload(PoAConstants.ZERO_BYTES)
-                .build();
+        Header header = createHeader(parent);
 
         org.tdf.sunflower.types.Block b = new org.tdf.sunflower.types.Block(header);
 

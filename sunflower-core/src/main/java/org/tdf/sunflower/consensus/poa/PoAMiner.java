@@ -13,6 +13,7 @@ import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.time.OffsetDateTime;
@@ -52,6 +53,16 @@ public class PoAMiner extends AbstractMiner {
     @Setter
     @Getter
     private TransactionPool transactionPool;
+
+    @Override
+    protected Header createHeader(Block parent) {
+        return Header.builder()
+                .version(parent.getVersion())
+                .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
+                .createdAt(System.currentTimeMillis() / 1000)
+                .payload(PoAConstants.ZERO_BYTES)
+                .build();
+    }
 
     public void setGenesis(Genesis genesis) {
         this.genesis = genesis;
