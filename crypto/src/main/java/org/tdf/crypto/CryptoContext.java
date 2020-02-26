@@ -8,7 +8,6 @@ import org.tdf.crypto.ed25519.Ed25519PublicKey;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-// TODO: init crypto context by application.yml
 public class CryptoContext {
     public interface SignatureVerifier {
         boolean verify(byte[] pk, byte[] msg, byte[] sig);
@@ -16,8 +15,10 @@ public class CryptoContext {
 
     public static Function<byte[], byte[]> hashFunction;
 
+    // (pk, msg, sig) -> true/false
     public static SignatureVerifier signatureVerifier;
 
+    // (sk, msg) -> signature
     public static BiFunction<byte[], byte[], byte[]> signer;
 
     public static byte[] keccak256(byte[] in) {

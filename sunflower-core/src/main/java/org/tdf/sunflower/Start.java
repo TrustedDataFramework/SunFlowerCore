@@ -65,50 +65,54 @@ public class Start {
             .enable(SerializationFeature.INDENT_OUTPUT)
             .enable(JsonParser.Feature.ALLOW_COMMENTS);
 
+
+    public static void loadCryptoContext(Environment env){
+        String hash = env.getProperty("sunflower.crypto.hash");
+        hash = (hash == null || hash.isEmpty()) ? "keccak256" : hash;
+        hash = hash.toLowerCase();
+        switch (hash) {
+            case "sm3":
+                CryptoContext.hashFunction = SM3Util::hash;
+                break;
+            case "keccak256":
+            case "keccak-256":
+                CryptoContext.hashFunction = CryptoContext::keccak256;
+                break;
+            case "keccak512":
+            case "keccak-512":
+                CryptoContext.hashFunction = CryptoContext::keccak512;
+                break;
+            case "sha3256":
+            case "sha3-256":
+                CryptoContext.hashFunction = CryptoContext::sha3256;
+                break;
+            default:
+                throw new ApplicationException("unknown hash function: " + hash);
+        }
+        String ec = env.getProperty("sunflower.crypto.ec");
+        ec = (ec == null || ec.isEmpty()) ? "ed25519" : ec;
+        ec = ec.toLowerCase();
+        switch (ec){
+            case "ed25519":
+                CryptoContext.signatureVerifier =  (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
+                CryptoContext.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
+                break;
+            case "sm2":
+                CryptoContext.signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
+                CryptoContext.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
+                break;
+            default:
+                throw new ApplicationException("unknown ec curve " + ec);
+        }
+
+        log.info("use algorithm {} as hash function", hash);
+        log.info("use ec {} as signature algorithm", ec);
+    }
+
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(Start.class);
         app.addInitializers(applicationContext -> {
-            Environment env = applicationContext.getEnvironment();
-            String hash = env.getProperty("sunflower.crypto.hash");
-            hash = (hash == null || hash.isEmpty()) ? "keccak256" : hash;
-            hash = hash.toLowerCase();
-            switch (hash) {
-                case "sm3":
-                    CryptoContext.hashFunction = SM3Util::hash;
-                    break;
-                case "keccak256":
-                case "keccak-256":
-                    CryptoContext.hashFunction = CryptoContext::keccak256;
-                    break;
-                case "keccak512":
-                case "keccak-512":
-                    CryptoContext.hashFunction = CryptoContext::keccak512;
-                    break;
-                case "sha3256":
-                case "sha3-256":
-                    CryptoContext.hashFunction = CryptoContext::sha3256;
-                    break;
-                default:
-                    throw new ApplicationException("unknown hash function: " + hash);
-            }
-            String ec = env.getProperty("sunflower.crypto.ec");
-            ec = (ec == null || ec.isEmpty()) ? "ed25519" : ec;
-            ec = ec.toLowerCase();
-            switch (ec){
-                case "ed25519":
-                    CryptoContext.signatureVerifier =  (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
-                    CryptoContext.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
-                    break;
-                case "sm2":
-                    CryptoContext.signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
-                    CryptoContext.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
-                    break;
-                default:
-                    throw new ApplicationException("unknown ec curve " + ec);
-            }
-
-            log.info("use algorithm {} as hash function", hash);
-            log.info("use ec {} as signature algorithm", ec);
+            loadCryptoContext(applicationContext.getEnvironment());
         });
         app.run(args);
     }
