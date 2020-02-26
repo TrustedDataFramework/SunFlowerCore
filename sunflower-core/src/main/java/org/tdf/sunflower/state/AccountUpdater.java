@@ -24,17 +24,21 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         switch (Transaction.Type.TYPE_MAP.get(transaction.getType())) {
             case COIN_BASE:
                 return Collections.singleton(transaction.getTo());
-            case TRANSFER:
-                return Stream
-                        .of(transaction.getFrom(), transaction.getTo())
-                        .filter(x -> !x.isEmpty())
-                        .collect(Collectors.toSet());
-            case CONTRACT_DEPLOY: {
-                return Collections.singleton(transaction.createContractAddress());
+            case TRANSFER:{
+                Set<HexBytes> ret = new HashSet<>();
+                ret.add(transaction.getFromAddress());
+                ret.add(transaction.getTo());
+                return ret;
+            }
+            case CONTRACT_DEPLOY:{
+                Set<HexBytes> ret = new HashSet<>();
+                ret.add(transaction.getFromAddress());
+                ret.add(transaction.createContractAddress());
+                return ret;
             }
             case CONTRACT_CALL: {
                 Set<HexBytes> ret = new HashSet<>();
-                ret.add(transaction.getFrom());
+                ret.add(transaction.getFromAddress());
                 ret.add(transaction.getTo());
                 ret.add(Objects.requireNonNull(store.get(transaction.getTo())).getCreatedBy());
                 return ret;
@@ -47,6 +51,20 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     public Map<HexBytes, Account> update(Map<HexBytes, Account> states, Header header, Transaction transaction) {
         Map<HexBytes, Account> cloned = createEmptyMap();
         states.forEach((k, v) -> cloned.put(k, v.clone()));
+        if(transaction.getType() == Transaction.Type.COIN_BASE.code && header.getHeight() != transaction.getNonce()){
+            throw new RuntimeException("nonce of coinbase transaction should be " + header.getHeight());
+        }
+        for (Account state : cloned.values()) {
+            if(transaction.getType() == Transaction.Type.COIN_BASE.code)
+                continue;
+            if(state.getAddress().equals(transaction.getFromAddress())){
+                if(state.getNonce() +1 != transaction.getNonce())
+                    throw new RuntimeException("the nonce of transaction should be "
+                            + (state.getNonce() + 1) + " while "
+                            + transaction.getNonce() + " received");
+                state.setNonce(state.getNonce() + 1);
+            }
+        }
         switch (Transaction.Type.TYPE_MAP.get(transaction.getType())) {
             case TRANSFER:
                 return updateTransfer(cloned, transaction);
@@ -78,14 +96,16 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     private Map<HexBytes, Account> updateTransfer(Map<HexBytes, Account> states, Transaction t) {
         for (Map.Entry<HexBytes, Account> entry : states.entrySet()) {
             Account state = entry.getValue();
-            if (Address.fromPublicKey(t.getFrom()).equals(state.getAddress())) {
+            if (t.getFromAddress().equals(state.getAddress())) {
                 require(Long.compareUnsigned(state.getBalance(), t.getAmount()) >= 0, "the balance of sender is not enough");
                 state.setBalance(state.getBalance() - t.getAmount());
             }
             if (t.getTo().equals(state.getAddress())) {
                 state.setBalance(state.getBalance() + t.getAmount());
             }
-            if (!t.getFrom().equals(state.getAddress()) && !t.getTo().equals(state.getAddress()))
+            if (!t.getFromAddress().equals(state.getAddress())
+                    && !t.getTo().equals(state.getAddress())
+            )
                 throw new RuntimeException(
                         "unreachable: nor to or from " + t.getHash() + " equals to the account " + state.getAddress()
                 );
@@ -104,17 +124,15 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
 
     private Map<HexBytes, Account> updateDeploy(Map<HexBytes, Account> accounts, Header header, Transaction t) {
-        Account contractAccount = accounts.values().stream().findAny().orElse(null);
-        if (accounts.size() != 1 || !contractAccount.getAddress().equals(t.createContractAddress())
-        )
-            throw new RuntimeException("unreachable: contract deploy " + t.getHash() + " related to only one address");
-        contractAccount.setCreatedBy(Address.fromPublicKey(t.getFrom()));
+        Account contractAccount = Objects.requireNonNull(accounts.get(t.createContractAddress()));
+
+        contractAccount.setCreatedBy(t.getFromAddress());
         contractAccount.setNonce(t.getNonce());
         contractAccount.setBinaryContract(t.getPayload().getBytes());
         // build Parameters here
         Context context = Context.fromTransaction(header, t);
         context.setContractAddress(t.createContractAddress());
-        context.setCreatedBy(Address.fromPublicKey(t.getFrom()));
+        context.setCreatedBy(t.getFromAddress());
 
         Hosts hosts = new Hosts()
                 .withContext(context)
@@ -137,7 +155,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     private Map<HexBytes, Account> updateTransactionCall(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account contractAccount = accounts.get(t.getTo());
         for (Account account : accounts.values()) {
-            if(account.getAddress().equals(t.getFrom())){
+            if(account.getAddress().equals(t.getFromAddress())){
                 if(account.getBalance() < t.getAmount())
                     throw new RuntimeException("the balance of account " + account.getAddress() + " is not enough");
                 account.setBalance(account.getBalance() - t.getAmount());
@@ -145,7 +163,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             if(account.getAddress().equals(contractAccount.getCreatedBy())){
                 account.setBalance(account.getBalance() + t.getAmount());
             }
-            if(!account.getAddress().equals(t.getFrom()) &&
+            if(!account.getAddress().equals(t.getFromAddress()) &&
                     !account.getAddress().equals(t.getTo()) &&
                     !account.getAddress().equals(contractAccount.getCreatedBy())
             ) throw new RuntimeException("unexpected address " + account.getAddress() + " not a createdBy or from or to");

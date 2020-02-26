@@ -11,8 +11,9 @@ import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
+import static org.tdf.sunflower.ApplicationConstants.ADDRESS_SIZE;
+
 @AllArgsConstructor
-@NoArgsConstructor
 @Builder
 @Data
 public class Account {
@@ -32,6 +33,10 @@ public class Account {
     // for contract address this field is creator of this contract
     private HexBytes createdBy;
 
+    private Account(){
+
+    }
+
     // create a random account
     public static Account getRandomAccount() {
         return builder().address(
@@ -40,6 +45,7 @@ public class Account {
     }
 
     public Account(HexBytes address, long balance) {
+        if(address.size() != ADDRESS_SIZE) throw new RuntimeException("address size should be " + ADDRESS_SIZE);
         this.address = address;
         this.balance = balance;
     }

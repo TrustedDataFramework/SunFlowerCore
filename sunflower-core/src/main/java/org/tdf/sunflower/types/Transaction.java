@@ -1,5 +1,6 @@
 package org.tdf.sunflower.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -15,6 +16,7 @@ import org.tdf.crypto.CryptoContext;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
+import org.tdf.sunflower.account.Address;
 
 import java.util.Arrays;
 import java.util.List;
@@ -276,6 +278,12 @@ public class Transaction {
 
     public HexBytes getFrom() {
         return from == null ? HexBytes.EMPTY : from;
+    }
+
+    @JsonIgnore
+    public HexBytes getFromAddress(){
+        if(getFrom().isEmpty()) throw new RuntimeException("from not found: coinbase transaction");
+        return Address.fromPublicKey(getFrom());
     }
 
     public long getGasPrice() {
