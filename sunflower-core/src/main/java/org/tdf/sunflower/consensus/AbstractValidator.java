@@ -17,6 +17,10 @@ public abstract class AbstractValidator implements Validator {
     }
 
     protected ValidateResult commonValidate(Block block, Block parent){
+        for(Transaction t: block.getBody()){
+            ValidateResult res = t.basicValidate();
+            if(!res.isSuccess()) return res;
+        }
         if(!parent.isParentOf(block) || parent.getHeight() + 1 != block.getHeight()) {
             return ValidateResult.fault("dependency is not parent of block");
         }

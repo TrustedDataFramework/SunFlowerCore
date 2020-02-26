@@ -77,7 +77,7 @@ public class Start {
                         CryptoContext.hashFunction = SM3Util::hash;
                         break;
                     case "keccak256":
-                    case "keccak-256";
+                    case "keccak-256":
                         CryptoContext.hashFunction = CryptoContext::keccak256;
                         break;
                     case "keccak512":
