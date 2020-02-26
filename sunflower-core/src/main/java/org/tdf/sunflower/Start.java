@@ -7,7 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -65,51 +67,48 @@ public class Start {
 
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(Start.class);
-        app.addListeners(new ApplicationListener<ApplicationStartedEvent>() {
-            @Override
-            public void onApplicationEvent(ApplicationStartedEvent event) {
-                Environment env = event.getApplicationContext().getEnvironment();
-                String hash = env.getProperty("sunflower.crypto.hash");
-                hash = (hash == null || hash.isEmpty()) ? "keccak256" : hash;
-                hash = hash.toLowerCase();
-                switch (hash) {
-                    case "sm3":
-                        CryptoContext.hashFunction = SM3Util::hash;
-                        break;
-                    case "keccak256":
-                    case "keccak-256":
-                        CryptoContext.hashFunction = CryptoContext::keccak256;
-                        break;
-                    case "keccak512":
-                    case "keccak-512":
-                        CryptoContext.hashFunction = CryptoContext::keccak512;
-                        break;
-                    case "sha3256":
-                    case "sha3-256":
-                        CryptoContext.hashFunction = CryptoContext::sha3256;
-                        break;
-                    default:
-                        throw new ApplicationException("unknown hash function: " + hash);
-                }
-                String ec = env.getProperty("sunflower.crypto.ec");
-                ec = (ec == null || ec.isEmpty()) ? "ed25519" : ec;
-                ec = ec.toLowerCase();
-                switch (ec){
-                    case "ed25519":
-                        CryptoContext.signatureVerifier =  (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
-                        CryptoContext.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
-                        break;
-                    case "sm2":
-                        CryptoContext.signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
-                        CryptoContext.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
-                        break;
-                    default:
-                        throw new ApplicationException("unknown ec curve " + ec);
-                }
-
-                log.info("use algorithm {} as hash function", hash);
-                log.info("use ec {} as signature algorithm", ec);
+        app.addInitializers(applicationContext -> {
+            Environment env = applicationContext.getEnvironment();
+            String hash = env.getProperty("sunflower.crypto.hash");
+            hash = (hash == null || hash.isEmpty()) ? "keccak256" : hash;
+            hash = hash.toLowerCase();
+            switch (hash) {
+                case "sm3":
+                    CryptoContext.hashFunction = SM3Util::hash;
+                    break;
+                case "keccak256":
+                case "keccak-256":
+                    CryptoContext.hashFunction = CryptoContext::keccak256;
+                    break;
+                case "keccak512":
+                case "keccak-512":
+                    CryptoContext.hashFunction = CryptoContext::keccak512;
+                    break;
+                case "sha3256":
+                case "sha3-256":
+                    CryptoContext.hashFunction = CryptoContext::sha3256;
+                    break;
+                default:
+                    throw new ApplicationException("unknown hash function: " + hash);
             }
+            String ec = env.getProperty("sunflower.crypto.ec");
+            ec = (ec == null || ec.isEmpty()) ? "ed25519" : ec;
+            ec = ec.toLowerCase();
+            switch (ec){
+                case "ed25519":
+                    CryptoContext.signatureVerifier =  (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
+                    CryptoContext.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
+                    break;
+                case "sm2":
+                    CryptoContext.signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
+                    CryptoContext.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
+                    break;
+                default:
+                    throw new ApplicationException("unknown ec curve " + ec);
+            }
+
+            log.info("use algorithm {} as hash function", hash);
+            log.info("use ec {} as signature algorithm", ec);
         });
         app.run(args);
     }
