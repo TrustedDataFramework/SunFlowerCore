@@ -22,7 +22,7 @@ public class RuntimeTest {
         String filename = System.getenv("FILE_PATH");
         if (filename == null || "".equals(filename.trim())) return;
         byte[] data = Bytes.concat("hello world!!!!".getBytes(StandardCharsets.UTF_8), new byte[]{0});
-        Hosts hosts = new Hosts().withParameters(data);
+        Hosts hosts = new Hosts().withParameters(data, true);
         ModuleInstance instance =
                 ModuleInstance.builder()
                         .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
