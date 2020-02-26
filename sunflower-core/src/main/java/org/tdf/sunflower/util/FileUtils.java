@@ -1,13 +1,19 @@
 package org.tdf.sunflower.util;
 
+import lombok.SneakyThrows;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.tdf.sunflower.exception.ApplicationException;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.net.URL;
+import java.nio.file.Paths;
 
 public class FileUtils {
     public static Resource getResource(String pathOrUrl) {
@@ -46,5 +52,15 @@ public class FileUtils {
         } else {
             return false;
         }
+    }
+
+    @SneakyThrows
+    public static void write(byte[] data, String path){
+        File f = Paths.get(path).toFile();
+        OutputStream os = new FileOutputStream(f);
+        IOUtils.copy(new ByteArrayInputStream(data), os);
+        try{
+            os.close();
+        }catch (Exception ignored){}
     }
 }

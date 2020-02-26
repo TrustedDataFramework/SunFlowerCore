@@ -165,6 +165,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 .hostFunctions(hosts.getAll())
                 .memory(contractAccount.getMemory())
                 .globals(contractAccount.getGlobals())
+                .binary(contractAccount.getBinaryContract())
                 .build();
 
         instance.execute(context.getMethod());
