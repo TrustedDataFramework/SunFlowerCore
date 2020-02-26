@@ -26,17 +26,18 @@ public class PoAValidator implements Validator {
         if (block.getVersion() != PoAConstants.BLOCK_VERSION){
             return ValidateResult.fault("version not match");
         }
-        if(!HexBytes.fromBytes(Transaction.getTransactionsRoot(block.getBody()))
+        if(!Transaction.getTransactionsRoot(block.getBody())
                 .equals(block.getTransactionsRoot())
         ){
             return ValidateResult.fault("transactions root not match");
         }
         try{
-            HexBytes newRoot =
-                    accountTrie.getNewRoot(dependency.getStateRoot().getBytes(), block);
-            if(!newRoot.equals(block.getStateRoot())){
+            Trie<HexBytes, Account> updated =
+                    accountTrie.update(dependency.getStateRoot().getBytes(), block);
+            if(!HexBytes.fromBytes(updated.getRootHash()).equals(block.getStateRoot())){
                 return ValidateResult.fault("state root not match");
             }
+            updated.flush();
         }catch (Exception e){
             e.printStackTrace();
             return ValidateResult.fault("contract evaluation failed or " + e.getMessage());
