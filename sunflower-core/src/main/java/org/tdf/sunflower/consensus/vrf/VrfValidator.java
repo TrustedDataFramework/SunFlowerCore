@@ -1,15 +1,26 @@
 package org.tdf.sunflower.consensus.vrf;
 
 import org.slf4j.Logger;
+import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.facade.Validator;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
-public class VrfValidator implements Validator {
+public class VrfValidator extends AbstractValidator {
+    public VrfValidator(StateTrie<HexBytes, Account> accountTrie) {
+        super(accountTrie);
+    }
+
     @Override
     public ValidateResult validate(Block block, Block dependency) {
+        ValidateResult res = super.commonValidate(block, dependency);
+        if(!res.isSuccess()) return res;
+        
         if (dependency.getHeight() + 1 != block.getHeight()){
             return ValidateResult.fault("block height not increase strictly");
         }
