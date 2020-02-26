@@ -6,24 +6,36 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.tdf.common.event.EventBus;
+import org.tdf.crypto.CryptoContext;
+import org.tdf.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.sm2.SM2PublicKey;
+import org.tdf.gmhelper.SM2Util;
+import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.events.Bridge;
-import org.tdf.sunflower.facade.*;
+import org.tdf.sunflower.exception.ApplicationException;
+import org.tdf.sunflower.facade.ConsensusEngine;
+import org.tdf.sunflower.facade.ConsensusEngineFacade;
+import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.mq.BasicMessageQueue;
 import org.tdf.sunflower.mq.SocketIOMessageQueue;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.net.PeerServerImpl;
 import org.tdf.sunflower.pool.TransactionPoolImpl;
 import org.tdf.sunflower.service.SunflowerRepositoryService;
-import org.tdf.sunflower.state.*;
+import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.AccountUpdater;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -50,7 +62,52 @@ public class Start {
             .enable(JsonParser.Feature.ALLOW_COMMENTS);
 
     public static void main(String[] args) {
-        SpringApplication.run(Start.class, args);
+        SpringApplication app = new SpringApplication(Start.class);
+        app.addListeners(new ApplicationListener<ApplicationStartedEvent>() {
+            @Override
+            public void onApplicationEvent(ApplicationStartedEvent event) {
+                Environment env = event.getApplicationContext().getEnvironment();
+                String hash = env.getProperty("sunflower.crypto.hash");
+                hash = (hash == null || hash.isEmpty()) ? "keccak256" : hash;
+                hash = hash.toLowerCase();
+                switch (hash) {
+                    case "sm3":
+                        CryptoContext.hashFunction = SM3Util::hash;
+                        break;
+                    case "keccak256":
+                    case "keccak-256";
+                        CryptoContext.hashFunction = CryptoContext::keccak256;
+                        break;
+                    case "keccak512":
+                    case "keccak-512":
+                        CryptoContext.hashFunction = CryptoContext::keccak512;
+                        break;
+                    case "sha3256":
+                    case "sha3-256":
+                        CryptoContext.hashFunction = CryptoContext::sha3256;
+                        break;
+                    default:
+                        throw new ApplicationException("unknown hash function: " + hash);
+                }
+                String ec = env.getProperty("sunflower.crypto.ec");
+                ec = (ec == null || ec.isEmpty()) ? "ed25519" : ec;
+                ec = ec.toLowerCase();
+                switch (ec){
+                    case "ed25519":
+                        CryptoContext.signatureVerifier =  (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
+                        break;
+                    case "sm2":
+                        CryptoContext.signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
+                        break;
+                    default:
+                        throw new ApplicationException("unknown ec curve " + ec);
+                }
+
+                log.info("use algorithm {} as hash function", hash);
+                log.info("use ec {} as signature algorithm", ec);
+            }
+        });
+        app.run(args);
     }
 
     @Bean
@@ -72,12 +129,12 @@ public class Start {
     }
 
     @Bean
-    public AccountTrie accountTrie(ConsensusEngineFacade consensusEngine){
+    public AccountTrie accountTrie(ConsensusEngineFacade consensusEngine) {
         return (AccountTrie) consensusEngine.getAccountTrie();
     }
 
     @Bean
-    public AccountUpdater accountUpdater(AccountTrie accountTrie){
+    public AccountUpdater accountUpdater(AccountTrie accountTrie) {
         return (AccountUpdater) accountTrie.getUpdater();
     }
 

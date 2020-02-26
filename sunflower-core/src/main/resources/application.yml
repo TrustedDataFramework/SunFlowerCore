@@ -62,7 +62,7 @@ sunflower:
     max-open-files: '512' # defines a number of opened files by db instance
 
   # 密码算法，包含对称加密，非对称加密和哈希计算
-  crpto:
+  crypto:
     hash: 'sm3' # keccak256, keccak512
     ec: 'sm2' # ed25519
     ae: 'sm4' # 对称加密方法

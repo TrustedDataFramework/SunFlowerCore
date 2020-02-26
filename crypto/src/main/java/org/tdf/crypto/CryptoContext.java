@@ -2,10 +2,22 @@ package org.tdf.crypto;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
+import org.tdf.crypto.ed25519.Ed25519PublicKey;
+
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 // TODO: init crypto context by application.yml
 public class CryptoContext {
-    public static byte[] keccak256(byte[] in){
+    public interface SignatureVerifier {
+        boolean verify(byte[] pk, byte[] msg, byte[] sig);
+    }
+
+    public static Function<byte[], byte[]> hashFunction = CryptoContext::keccak256;
+
+    public static SignatureVerifier signatureVerifier = (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
+
+    public static byte[] keccak256(byte[] in) {
         Digest digest = new KeccakDigest(256);
         return CryptoContext.hash(in, digest);
     }
@@ -17,17 +29,17 @@ public class CryptoContext {
         return retValue;
     }
 
-    public static byte[] keccak512(byte[] in){
+    public static byte[] keccak512(byte[] in) {
         Digest digest = new KeccakDigest(512);
         return CryptoContext.hash(in, digest);
     }
 
     // TODO: configure digest according to -Dsunflower.crypto.hash
-    public static byte[] digest(byte[] in){
-        return keccak256(in);
+    public static byte[] digest(byte[] in) {
+        return hashFunction.apply(in);
     }
 
-    public static byte[] sha3256(byte[] in){
+    public static byte[] sha3256(byte[] in) {
         Digest digest = new SHA3Digest(256);
         return CryptoContext.hash(in, digest);
     }
