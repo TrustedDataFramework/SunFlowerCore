@@ -64,6 +64,7 @@ public class Account {
                 .withContext(ctx);
 
         ModuleInstance instance = ModuleInstance.builder()
+                .binary(binaryContract)
                 .memory(memory)
                 .globals(globals)
                 .hostFunctions(hosts.getAll())

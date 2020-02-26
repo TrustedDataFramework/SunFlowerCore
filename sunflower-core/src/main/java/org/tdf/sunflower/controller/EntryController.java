@@ -85,7 +85,7 @@ public class EntryController {
     }
 
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ContractView getContract(
+    public HexBytes getContract(
             @PathVariable("address") final String address,
             @RequestParam(value = "parameters") String parameters
     ) throws Exception {
@@ -95,19 +95,8 @@ public class EntryController {
                 .get(sunflowerRepository.getLastConfirmed().getStateRoot().getBytes(), addressHex)
                 .filter(Account::containsContract)
                 .orElseThrow(() -> new RuntimeException("the address " + addressHex + " has no contract deployed"));
-        ContractView view = new ContractView();
         byte[] result = a.view(params);
-        try {
-            view.json = objectMapper.readValue(result, JsonNode.class);
-        } catch (Exception ignored) {
-        }
-        view.raw = HexBytes.fromBytes(result);
-        return view;
-    }
-
-    private static class ContractView {
-        JsonNode json;
-        HexBytes raw;
+        return HexBytes.fromBytes(result);
     }
 
     @AllArgsConstructor
