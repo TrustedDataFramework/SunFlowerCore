@@ -5,7 +5,6 @@ import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.TransactionPool;
@@ -36,28 +35,36 @@ public abstract class AbstractMiner implements Miner {
     protected Block createBlock(Block parent){
         Header header = createHeader(parent);
 
-        org.tdf.sunflower.types.Block b = new org.tdf.sunflower.types.Block(header);
-
+        Block b = new Block(header);
         Store<byte[], byte[]> cache = new CachedStore<>(getAccountTrie().getTrieStore(), ByteArrayMap::new);
+
+        // get a trie at parent block's state
+        // modifications to the trie will not persisted until flush() called
         Trie<HexBytes, Account> tmp = getAccountTrie()
                 .getTrie()
                 .revert(parent.getStateRoot().getBytes(), cache);
 
         StateUpdater<HexBytes, Account> updater = getAccountTrie().getUpdater();
         while (true) {
+            // try to fetch transaction from pool
             Optional<Transaction> o = getTransactionPool().pop();
             if (!o.isPresent()) break;
             Transaction tx = o.get();
             try {
                 Set<HexBytes> keys = updater.getRelatedKeys(tx, tmp.asMap());
                 Map<HexBytes, Account> related = new HashMap<>();
+
+                // get all account related to this transaction in the trie
                 keys.forEach(k -> {
                     related.put(k, tmp.get(k).orElse(updater.createEmpty(k)));
                 });
+
+                // store updated result to the trie if update success
                 updater
                         .update(related, header, tx)
                         .forEach(tmp::put);
             } catch (Exception e) {
+                // prompt reason for failed updates
                 log.error("execute transaction " + tx.getHash() + " failed, reason = " + e.getMessage());
                 continue;
             }
@@ -69,8 +76,12 @@ public abstract class AbstractMiner implements Miner {
         b.setStateRoot(
                 HexBytes.fromBytes(tmp.commit())
         );
+
+        // persist modifications of trie to database
         tmp.flush();
         b.resetTransactionsRoot();
+
+        // the mined block cannot be modified any more
         return UnmodifiableBlock.of(b);
     }
 }
