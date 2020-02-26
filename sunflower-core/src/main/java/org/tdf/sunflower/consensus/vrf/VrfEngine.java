@@ -176,7 +176,6 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
             throw new ConsensusEngineInitException("failed to parse genesis: " + e.getMessage());
         }
 
-        setValidator(new VrfValidator());
         setPeerServerListener(this);
         vrfMiner.setConfig(vrfConfig);
         vrfMiner.setGenesis(genesis);
@@ -187,13 +186,16 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         AccountUpdater updater = new AccountUpdater(Collections.emptyMap());
         AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory());
         setAccountTrie(trie);
+        setValidator(new VrfValidator(getAccountTrie()));
         vrfMiner.setAccountTrie(getAccountTrie());
 
         setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
         // ------- Need well implementation.
         ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository());
+
+        // TODO: 这里 new 了两个 VrfValidator
         vrfStateMachine = new VrfStateMachine(validatorManager, new PendingVrfState(validatorManager),
-                new VrfValidator());
+                new VrfValidator(getAccountTrie()));
         vrfMiner.setVrfStateMachine(vrfStateMachine);
 
         setMiner(vrfMiner);

@@ -37,8 +37,9 @@ public interface StateTrie<ID, S> {
     // commit a new block, returns new trie's root
     HexBytes commit(byte[] parentRoot, Block block);
 
-    // get new root without make any modification to underlying database
-    HexBytes getNewRoot(byte[] parentRoot, Block block);
+    // get new trie without make any modification to underlying database
+    // call trie.flush() to persist modifications
+    Trie<ID, S> update(byte[] parentRoot, Block block);
 
     // collect garbage
     void gc(Collection<? extends byte[]> excludedRoots);

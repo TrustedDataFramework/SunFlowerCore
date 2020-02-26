@@ -124,15 +124,14 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     }
 
     @Override
-    public HexBytes getNewRoot(byte[] parentRoot, Block block) {
-        byte[] ret = commitInternal(
+    public Trie<ID, S> update(byte[] parentRoot, Block block) {
+        return commitInternal(
                 parentRoot,
                 getUpdater().update(
                         batchGetWithEmpty(parentRoot, block),
                         block
                 )
-        ).getRootHash();
-        return HexBytes.fromBytes(ret);
+        );
     }
 
     private Map<ID, S> batchGetWithEmpty(byte[] parentRoot, Block block) {

@@ -63,10 +63,9 @@ public class SunflowerRepositoryService implements SunflowerRepository {
 
     @Override
     public void writeBlock(Block block) {
-        Header parent = getHeader(block.getHashPrev().getBytes())
-                .orElseThrow(NoSuchElementException::new);
-
-        accountTrie.commit(parent.getStateRoot().getBytes(), block);
+        if(!accountTrie.getTrieStore().containsKey(block.getStateRoot().getBytes())){
+            throw new RuntimeException("unexpected error: account trie not synced");
+        }
         blockRepository.writeBlock(block);
         eventBus.publish(new NewBlockWritten(block));
         eventBus.publish(new NewBestBlock(block));

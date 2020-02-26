@@ -41,13 +41,13 @@ public class Genesis {
                             .store(new ByteArrayMapStore<>())
                             .hashFunction(CryptoContext::digest)
                             .build();
-        byte[] emptyRoot = Transaction.getTransactionsRoot(Collections.emptyList());
+        HexBytes emptyRoot = Transaction.getTransactionsRoot(Collections.emptyList());
 
         Header h = Header.builder()
                 .version(PoAConstants.BLOCK_VERSION)
                 .hashPrev(PoAConstants.ZERO_BYTES)
                 .stateRoot(HexBytes.fromBytes(trie.getNullHash()))
-                .transactionsRoot(HexBytes.fromBytes(emptyRoot))
+                .transactionsRoot(emptyRoot)
                 .height(0)
                 .createdAt(timestamp)
                 .payload(PoAConstants.ZERO_BYTES).build();
