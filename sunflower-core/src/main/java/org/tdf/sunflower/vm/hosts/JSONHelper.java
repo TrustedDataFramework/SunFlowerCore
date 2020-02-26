@@ -215,7 +215,7 @@ public class JSONHelper {
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONObject();
             String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            jsonHelper.element.getAsJsonObject().addProperty(key, new BigDecimal(Double.longBitsToDouble(parameters[2])));
+            jsonHelper.element.getAsJsonObject().addProperty(key, BigDecimal.valueOf(Double.longBitsToDouble(parameters[2])));
             return new long[0];
         }
     }
@@ -333,7 +333,7 @@ public class JSONHelper {
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONArray((int) parameters[0]);
             JsonArray array = jsonHelper.element.getAsJsonArray();
-            jsonHelper.element.getAsJsonArray().set((int) parameters[0], new JsonPrimitive(parameters[1] != 0));
+            array.set((int) parameters[0], new JsonPrimitive(parameters[1] != 0));
             return new long[0];
         }
     }

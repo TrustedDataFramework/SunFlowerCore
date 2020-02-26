@@ -4,10 +4,8 @@ import com.google.common.primitives.Bytes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.TestUtils;
-import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
 import java.nio.charset.StandardCharsets;
@@ -24,7 +22,7 @@ public class RuntimeTest {
         String filename = System.getenv("FILE_PATH");
         if (filename == null || "".equals(filename.trim())) return;
         byte[] data = Bytes.concat("hello world!!!!".getBytes(StandardCharsets.UTF_8), new byte[]{0});
-        Hosts hosts = new Hosts().withPayload(data);
+        Hosts hosts = new Hosts().withParameters(data);
         ModuleInstance instance =
                 ModuleInstance.builder()
                         .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))

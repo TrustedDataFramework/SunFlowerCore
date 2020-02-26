@@ -48,19 +48,22 @@ public class Account {
         this.address = Address.of(address);
     }
 
-    public byte[] view(String method, byte[] parameters) {
+    public byte[] view(byte[] parameters) {
         Context ctx = Context.disabled();
         ctx.setContractAddress(address);
         ctx.setCreatedBy(createdBy);
 
-        Hosts hosts = new Hosts().withPayload(parameters).withContext(ctx);
-        ModuleInstance.Builder builder = ModuleInstance.builder()
+        Hosts hosts = new Hosts()
+                .withParameters(parameters, true)
+                .withContext(ctx);
+
+        ModuleInstance instance = ModuleInstance.builder()
                 .memory(memory)
                 .globals(globals)
+                .hostFunctions(hosts.getAll())
+                .build();
 
-                .hostFunctions(new Hosts().withPayload(parameters).getAll());
-        ModuleInstance instance =
-                builder.hostFunctions(hosts.getAll()).build();
+        String method = Context.getMethod(parameters);
         instance.execute(method);
         return hosts.getResult();
     }

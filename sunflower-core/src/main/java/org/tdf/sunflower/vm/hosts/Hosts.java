@@ -24,8 +24,14 @@ public class Hosts {
         all.addAll(new JSONHelper().getHelpers());
     }
 
-    public Hosts withPayload(byte[] payload){
-        all.addAll(Arrays.asList(new Payload(payload), new PayloadLength(payload)));
+    public Hosts withParameters(byte[] payload, boolean available){
+        all.addAll(
+                Arrays.asList(
+                        new Parameters(payload),
+                        new ParametersLen(payload),
+                        new ParametersAvailable(available)
+                )
+        );
         return this;
     }
 

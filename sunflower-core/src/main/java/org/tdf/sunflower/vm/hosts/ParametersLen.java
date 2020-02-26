@@ -6,16 +6,16 @@ import org.tdf.lotusvm.types.ValueType;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class PayloadLength extends HostFunction {
+public class ParametersLen extends HostFunction {
     private byte[] data;
 
-    public PayloadLength(byte[] data) {
+    public ParametersLen(byte[] data) {
         this.data = data;
         setType(new FunctionType(
                 new ArrayList<>(),
                 Collections.singletonList(ValueType.I32)
         ));
-        setName("_payload_len");
+        setName("_parameters_len");
     }
 
     @Override

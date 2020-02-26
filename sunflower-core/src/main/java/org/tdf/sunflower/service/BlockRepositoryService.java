@@ -11,6 +11,7 @@ import org.tdf.sunflower.dao.HeaderDao;
 import org.tdf.sunflower.dao.Mapping;
 import org.tdf.sunflower.dao.TransactionDao;
 import org.tdf.sunflower.entity.TransactionEntity;
+import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.exception.GenesisConflictsException;
 import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.facade.BlockRepository;
@@ -210,7 +211,13 @@ public class BlockRepositoryService implements BlockRepository {
     @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public void writeBlock(Block block) {
         headerDao.save(Mapping.getEntityFromHeader(block.getHeader()));
-        transactionDao.saveAll(Mapping.getTransactionEntitiesFromBlock(block).collect(Collectors.toList()));
+
+        List<TransactionEntity> entities = Mapping.getTransactionEntitiesFromBlock(block).collect(Collectors.toList());
+        for(TransactionEntity e: entities){
+            if(transactionDao.existsById(e.getHash()))
+                throw new ApplicationException("transaction " + HexBytes.fromBytes(e.getHash()) + " already exists in database");
+        }
+        transactionDao.saveAll(entities);
     }
 
     @Override

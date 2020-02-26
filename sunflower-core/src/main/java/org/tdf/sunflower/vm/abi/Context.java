@@ -3,6 +3,7 @@ package org.tdf.sunflower.vm.abi;
 import lombok.Builder;
 import lombok.Data;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.BytesReader;
@@ -17,23 +18,26 @@ public class Context {
         return Context.builder().build();
     }
 
+    public static String getMethod(byte[] parameters){
+        BytesReader reader = new BytesReader(parameters);
+        int len = reader.read();
+        return new String(reader.read(len), StandardCharsets.US_ASCII);
+    }
 
     public static Context fromTransaction(Header header, Transaction transaction) {
-        BytesReader reader = new BytesReader(transaction.getPayload().getBytes());
         ContextBuilder builder = builder();
         if (transaction.getType() == Transaction.Type.CONTRACT_DEPLOY.code) {
             builder.method("init");
         } else {
-            int len = reader.read();
-            builder.method(new String(reader.read(len), StandardCharsets.US_ASCII));
+            builder.method(getMethod(transaction.getPayload().getBytes()));
         }
-        builder.sender(transaction.getFrom())
+        builder.sender(Address.fromPublicKey(transaction.getFrom()))
                 .recipient(transaction.getTo())
                 .transactionHash(transaction.getHash())
                 .gasPrice(transaction.getGasPrice())
                 .parentBlockHash(header.getHashPrev())
                 .blockHeight(header.getHeight())
-                .payload(reader.readAll())
+                .payload(transaction.getPayload().getBytes())
                 .transactionTimestamp(transaction.getCreatedAt())
                 .nonce(transaction.getNonce())
                 .signature(transaction.getSignature())

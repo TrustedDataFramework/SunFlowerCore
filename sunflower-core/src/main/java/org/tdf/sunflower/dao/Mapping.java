@@ -81,6 +81,8 @@ public class Mapping {
                 .payload(tx.getPayload().getBytes())
                 .to(tx.getTo().getBytes())
                 .signature(tx.getSignature().getBytes())
-                .position(index).build();
+                .height(header.getHeight())
+                .position(index).build()
+                ;
     }
 }

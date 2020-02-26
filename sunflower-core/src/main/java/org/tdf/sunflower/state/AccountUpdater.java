@@ -78,7 +78,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     private Map<HexBytes, Account> updateTransfer(Map<HexBytes, Account> states, Transaction t) {
         for (Map.Entry<HexBytes, Account> entry : states.entrySet()) {
             Account state = entry.getValue();
-            if (Address.fromPublicKey(t.getFrom().getBytes()).equals(state.getAddress())) {
+            if (Address.fromPublicKey(t.getFrom()).equals(state.getAddress())) {
                 require(Long.compareUnsigned(state.getBalance(), t.getAmount()) >= 0, "the balance of sender is not enough");
                 state.setBalance(state.getBalance() - t.getAmount());
             }
@@ -118,7 +118,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
         Hosts hosts = new Hosts()
                 .withContext(context)
-                .withPayload(context.getPayload());
+                .withParameters(new byte[0], false);
 
         // every contract must has a init method
         ModuleInstance instance = ModuleInstance.builder()
@@ -158,7 +158,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
         Hosts hosts = new Hosts()
                 .withContext(context)
-                .withPayload(context.getPayload());
+                .withParameters(context.getPayload(), true);
 
         // every contract must has a init method
         ModuleInstance instance = ModuleInstance.builder()

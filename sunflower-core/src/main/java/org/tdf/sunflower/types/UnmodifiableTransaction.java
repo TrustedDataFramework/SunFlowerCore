@@ -17,7 +17,6 @@ public class UnmodifiableTransaction extends Transaction {
                 tx.nonce, tx.from, tx.gasPrice,
                 tx.amount, tx.payload, tx.to, tx.signature
         );
-        this.hash = super.getHash();
         this.modifiable =
                 new Transaction(
                         version, type, createdAt,
@@ -33,7 +32,6 @@ public class UnmodifiableTransaction extends Transaction {
             HexBytes signature
     ) {
         super(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
-        this.hash = super.getHash();
         this.modifiable = new Transaction(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
     }
 

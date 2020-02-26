@@ -7,13 +7,13 @@ import org.tdf.lotusvm.types.ValueType;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class Payload extends HostFunction {
+public class Parameters extends HostFunction {
     private byte[] data;
 
-    public Payload(byte[] data) {
+    public Parameters(byte[] data) {
         this.data = data;
         setType(new FunctionType(Collections.singletonList(ValueType.I32), new ArrayList<>()));
-        setName("_payload");
+        setName("_parameters");
     }
 
     @Override
