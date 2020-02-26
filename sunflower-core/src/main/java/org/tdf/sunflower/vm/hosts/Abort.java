@@ -37,7 +37,7 @@ public class Abort extends HostFunction {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         byte[] mem = getInstance()
                 .getMemory();
-        for (int i = offset; ; i++) {
+        for (int i = offset; i < mem.length; i++) {
             if(mem[i] == 0 && mem[i+1] == 0) break;
             if(mem[i] == 0) continue;
             os.write(mem[i] & 0xff);
