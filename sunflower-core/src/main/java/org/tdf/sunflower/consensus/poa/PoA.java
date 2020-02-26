@@ -5,7 +5,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.core.io.Resource;
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
@@ -15,12 +17,14 @@ import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.net.Context;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
+import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.util.FileUtils;
 
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 // poa is a minimal non-trivial consensus engine
@@ -49,27 +53,29 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
     public void init(Properties properties) throws ConsensusEngineInitException {
         JavaPropsMapper mapper = new JavaPropsMapper();
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
-        try{
+        try {
             poAConfig = mapper.readPropertiesAs(properties, PoAConfig.class);
-        }catch (Exception e){
+        } catch (Exception e) {
             String schema = "";
-            try{
+            try {
                 schema = mapper.writeValueAsProperties(new PoAConfig()).toString();
-            }catch (Exception ignored){};
+            } catch (Exception ignored) {
+            }
+            ;
             throw new ConsensusEngineInitException(
                     "load properties failed :" + properties.toString() + " expecting " + schema
             );
         }
         poaMiner = new PoAMiner();
         Resource resource;
-        try{
+        try {
             resource = FileUtils.getResource(poAConfig.getGenesis());
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new ConsensusEngineInitException(e.getMessage());
         }
-        try{
+        try {
             genesis = objectMapper.readValue(resource.getInputStream(), Genesis.class);
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new ConsensusEngineInitException("failed to parse genesis");
         }
         poaMiner.setBlockRepository(this.getSunflowerRepository());
@@ -82,8 +88,16 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
 
         setPeerServerListener(this);
         // create state repository
-        AccountUpdater updater = new AccountUpdater(Collections.emptyMap());
+
+        Map<HexBytes, Account> alloc = new HashMap<>();
+        genesis.alloc.forEach((k, v) -> {
+            Account a = new Account(HexBytes.fromHex(k), v);
+            alloc.put(a.getAddress(), a);
+        });
+
+        AccountUpdater updater = new AccountUpdater(alloc);
         AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory());
+        getGenesisBlock().setStateRoot(trie.getGenesisRoot());
         setAccountTrie(trie);
         poaMiner.setAccountTrie(trie);
 
@@ -96,7 +110,7 @@ public class PoA extends ConsensusEngine implements PeerServerListener {
             @Override
             public void onBlockMined(Block block) {
                 try {
-                    if(peerServer == null) {
+                    if (peerServer == null) {
                         log.error("mining blocks before server start");
                         return;
                     }

@@ -178,9 +178,7 @@ public class PoAMiner implements Miner {
 
         // calculate state root
         b.setStateRoot(
-                HexBytes.fromBytes(
                         accountTrie.getNewRoot(parent.getStateRoot().getBytes(), b)
-                )
         );
         b.resetTransactionsRoot();
         return UnmodifiableBlock.of(b);

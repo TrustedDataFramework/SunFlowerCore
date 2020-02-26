@@ -2,6 +2,7 @@ package org.tdf.sunflower.state;
 
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.Block;
 
 import java.util.Collection;
@@ -21,7 +22,7 @@ public interface StateTrie<ID, S> {
     // get values batched
     Map<ID, S> batchGet(byte[] rootHash, Collection<? extends ID> ids);
 
-    byte[] getGenesisRoot();
+    HexBytes getGenesisRoot();
 
     Map<byte[], byte[]> getProof(byte[] rootHash, Collection<? extends ID> ids);
 
@@ -34,10 +35,10 @@ public interface StateTrie<ID, S> {
     Store<byte[], byte[]> getTrieStore();
 
     // commit a new block, returns new trie's root
-    byte[] commit(byte[] parentRoot, Block block);
+    HexBytes commit(byte[] parentRoot, Block block);
 
     // get new root without make any modification to underlying database
-    byte[] getNewRoot(byte[] parentRoot, Block block);
+    HexBytes getNewRoot(byte[] parentRoot, Block block);
 
     // collect garbage
     void gc(Collection<? extends byte[]> excludedRoots);

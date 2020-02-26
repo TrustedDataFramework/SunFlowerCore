@@ -4,7 +4,11 @@
   "miners": [{
       "addr": "87b8f0b097b48b282a5c661babc8096e141bd9fb"
     }
-  ]
+  ],
+  "alloc":{
+        "87b8f0b097b48b282a5c661babc8096e141bd9fb": 1000000,
+        "f0cf9664cab2b5fcd744c0ad1c02b30b6ede02a3": 1000000
+  }
 }
 
 /* ed25519

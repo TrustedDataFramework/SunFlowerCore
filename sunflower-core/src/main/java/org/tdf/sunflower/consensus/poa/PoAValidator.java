@@ -32,9 +32,9 @@ public class PoAValidator implements Validator {
             return ValidateResult.fault("transactions root not match");
         }
         try{
-            byte[] newRoot =
+            HexBytes newRoot =
                     accountTrie.getNewRoot(dependency.getStateRoot().getBytes(), block);
-            if(!HexBytes.fromBytes(newRoot).equals(block.getStateRoot())){
+            if(!newRoot.equals(block.getStateRoot())){
                 return ValidateResult.fault("state root not match");
             }
         }catch (Exception e){

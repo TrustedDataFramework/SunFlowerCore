@@ -16,6 +16,7 @@ import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class Genesis {
     public HexBytes parentHash;
@@ -29,6 +30,8 @@ public class Genesis {
     }
 
     public List<MinerInfo> miners;
+
+    public Map<String, Long> alloc;
 
     @JsonIgnore
     public Block getBlock(){
@@ -48,6 +51,6 @@ public class Genesis {
                 .height(0)
                 .createdAt(timestamp)
                 .payload(PoAConstants.ZERO_BYTES).build();
-        return UnmodifiableBlock.of(new Block(h));
+        return new Block(h);
     }
 }

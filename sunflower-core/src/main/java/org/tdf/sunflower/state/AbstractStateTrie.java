@@ -36,7 +36,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     @Getter
     private StateUpdater<ID, S> updater;
     @Getter
-    private byte[] genesisRoot;
+    private HexBytes genesisRoot;
     private Cache<HexBytes, Trie<ID, S>> cache =
             CacheBuilder.newBuilder()
                     .maximumSize(CACHE_SIZE)
@@ -67,7 +67,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         // sync to genesis
         Trie<ID, S> tmp = trie.revert();
         updater.getGenesisStates().forEach(tmp::put);
-        genesisRoot = tmp.commit();
+        genesisRoot = HexBytes.fromBytes(tmp.commit());
         tmp.flush();
     }
 
@@ -110,7 +110,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     }
 
     @Override
-    public byte[] commit(byte[] parentRoot, Block block) {
+    public HexBytes commit(byte[] parentRoot, Block block) {
         final Trie<ID, S> modified = commitInternal(
                 parentRoot,
                 getUpdater().update(batchGetWithEmpty(parentRoot, block), block)
@@ -120,18 +120,19 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         this.cache.asMap().putIfAbsent(HexBytes.fromBytes(modified.getRootHash()), ReadOnlyTrie.of(modified));
         if (!block.getStateRoot().equals(HexBytes.fromBytes(modified.getRootHash())))
             throw new IllegalArgumentException();
-        return modified.getRootHash();
+        return HexBytes.fromBytes(modified.getRootHash());
     }
 
     @Override
-    public byte[] getNewRoot(byte[] parentRoot, Block block) {
-        return commitInternal(
+    public HexBytes getNewRoot(byte[] parentRoot, Block block) {
+        byte[] ret = commitInternal(
                 parentRoot,
                 getUpdater().update(
                         batchGetWithEmpty(parentRoot, block),
                         block
                 )
         ).getRootHash();
+        return HexBytes.fromBytes(ret);
     }
 
     private Map<ID, S> batchGetWithEmpty(byte[] parentRoot, Block block) {
