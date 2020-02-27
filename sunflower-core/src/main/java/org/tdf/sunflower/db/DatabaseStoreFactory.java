@@ -15,7 +15,7 @@ public class DatabaseStoreFactory {
     private DatabaseConfig config;
     private static final List<DatabaseStore> STORES_LIST = new ArrayList<>();
 
-    public DatabaseStoreFactory(DatabaseConfig config) throws Exception{
+    public DatabaseStoreFactory(DatabaseConfig config) {
 
         if(config.getName() == null) config.setName("");
         this.config = config;
@@ -35,8 +35,8 @@ public class DatabaseStoreFactory {
                 store = new MemoryDatabaseStore();
                 break;
             default:
-                store = new RocksDb(config.getDirectory(), name);
-                log.warn("Data source is not supported, default is rocksdb");
+                store = new LevelDb(JniDBFactory.factory, config.getDirectory(), name);
+                log.warn("Data source is not supported, default is leveldb");
         }
 
         store.init(DBSettings.newInstance()

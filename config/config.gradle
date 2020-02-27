@@ -17,8 +17,8 @@ ext {
     commonsCollections4Version = '4.0'
     commonsLang3Version = '3.4'
     nettySocketIOVersion = '1.7.12'
-    rlpVersion = '1.1.18'
-    lotusvmVersion = '0.0.9'
+    rlpVersion = '1.1.20'
+    lotusvmVersion = '0.0.10'
     springShellVersion = '2.0.0.RELEASE'
     slf4jVersion = '1.7.28'
     fastjsonVersion = "1.2.62"

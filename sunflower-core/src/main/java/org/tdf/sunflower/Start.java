@@ -6,10 +6,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -19,13 +15,11 @@ import org.springframework.util.Assert;
 import org.tdf.common.event.EventBus;
 import org.tdf.crypto.CryptoContext;
 import org.tdf.crypto.ed25519.Ed25519;
-import org.tdf.crypto.ed25519.Ed25519KeyPair;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
-import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
@@ -68,6 +62,20 @@ public class Start {
             .enable(SerializationFeature.INDENT_OUTPUT)
             .enable(JsonParser.Feature.ALLOW_COMMENTS);
 
+    public static void loadConstants(Environment env){
+        String constant = env.getProperty("sunflower.cache.trie");
+        if(constant != null && !constant.isEmpty()){
+            ApplicationConstants.TRIE_CACHE_SIZE = Integer.parseInt(constant);
+        }
+        constant = env.getProperty("sunflower.cache.p2p-transaction");
+        if(constant != null && !constant.isEmpty()){
+            ApplicationConstants.P2P_TRANSACTION_CACHE_SIZE = Integer.parseInt(constant);
+        }
+        constant = env.getProperty("sunflower.cache.p2p-proposal");
+        if(constant != null && !constant.isEmpty()){
+            ApplicationConstants.P2P_PROPOSAL_CACHE_SIZE = Integer.parseInt(constant);
+        }
+    }
 
     public static void loadCryptoContext(Environment env){
         String hash = env.getProperty("sunflower.crypto.hash");
@@ -120,6 +128,7 @@ public class Start {
         SpringApplication app = new SpringApplication(Start.class);
         app.addInitializers(applicationContext -> {
             loadCryptoContext(applicationContext.getEnvironment());
+            loadConstants(applicationContext.getEnvironment());
         });
         app.run(args);
     }

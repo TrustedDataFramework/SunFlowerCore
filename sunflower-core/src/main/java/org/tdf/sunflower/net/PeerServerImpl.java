@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Hex;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.MapStore;
 import org.tdf.common.store.Store;
@@ -20,13 +19,14 @@ import org.tdf.sunflower.proto.Message;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
 public class PeerServerImpl implements ChannelListener, PeerServer {
     private PeerServerConfig config;
-    private List<Plugin> plugins = new ArrayList<>();
+    private List<Plugin> plugins = new CopyOnWriteArrayList<>();
     private Client client;
     private PeerImpl self;
     private MessageBuilder builder;
@@ -115,7 +115,6 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             config = mapper.readPropertiesAs(properties, PeerServerConfig.class);
             if (config.getMaxTTL() <= 0) config.setMaxTTL(PeerServerConfig.DEFAULT_MAX_TTL);
             if (config.getMaxPeers() <= 0) config.setMaxPeers(PeerServerConfig.DEFAULT_MAX_PEERS);
-            if (config.getName() == null) config.setName(PeerServerConfig.DEFAULT_NAME);
         } catch (Exception e) {
             String schema = "";
             try {

@@ -10,7 +10,7 @@ public interface Peer {
     // get the server port of remote
     int getPort();
 
-    // the id is typically a ed25519 public key
+    // the id is typically an ecc public key
     HexBytes getID();
 
     // encode the remote peer as uri

@@ -16,10 +16,7 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.UnmodifiableBlock;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 public abstract class AbstractMiner implements Miner {
@@ -45,11 +42,11 @@ public abstract class AbstractMiner implements Miner {
                 .revert(parent.getStateRoot().getBytes(), cache);
 
         StateUpdater<HexBytes, Account> updater = getAccountTrie().getUpdater();
-        while (true) {
+        Transaction coinbase = createCoinBase(parent.getHeight() + 1);
+        List<Transaction> transactionList = getTransactionPool().pop(-1);
+        transactionList.add(0, coinbase);
+        for (Transaction tx: transactionList) {
             // try to fetch transaction from pool
-            Optional<Transaction> o = getTransactionPool().pop();
-            if (!o.isPresent()) break;
-            Transaction tx = o.get();
             try {
                 Set<HexBytes> keys = updater.getRelatedKeys(tx, tmp.asMap());
                 Map<HexBytes, Account> related = new HashMap<>();
@@ -70,7 +67,6 @@ public abstract class AbstractMiner implements Miner {
             }
             b.getBody().add(tx);
         }
-        b.getBody().add(0, createCoinBase(parent.getHeight() + 1));
 
         // calculate state root
         b.setStateRoot(

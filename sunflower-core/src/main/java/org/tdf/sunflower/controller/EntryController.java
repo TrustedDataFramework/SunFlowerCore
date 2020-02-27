@@ -64,7 +64,7 @@ public class EntryController {
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
     public Response<String> sendTransaction(@RequestBody Transaction transaction) {
-        pool.collect(Collections.singleton(UnmodifiableTransaction.of(transaction)));
+        pool.collect(UnmodifiableTransaction.of(transaction));
         return Response.newSuccessFul("ok");
     }
 

@@ -13,6 +13,7 @@ import org.tdf.common.trie.ReadOnlyTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.types.Block;
@@ -23,7 +24,6 @@ import java.util.Optional;
 import java.util.Set;
 
 public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
-    private static final int CACHE_SIZE = 32;
 
     private final String name;
 
@@ -39,7 +39,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     private HexBytes genesisRoot;
     private Cache<HexBytes, Trie<ID, S>> cache =
             CacheBuilder.newBuilder()
-                    .maximumSize(CACHE_SIZE)
+                    .maximumSize(ApplicationConstants.TRIE_CACHE_SIZE)
                     .build();
 
     public AbstractStateTrie(

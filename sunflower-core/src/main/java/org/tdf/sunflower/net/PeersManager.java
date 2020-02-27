@@ -69,12 +69,12 @@ public class PeersManager implements Plugin {
 
         // keep self alive
         executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.scheduleAtFixedRate(() -> client.broadcast(
+        executorService.scheduleWithFixedDelay(() -> client.broadcast(
                 builder.buildPing()
         ), 0, DISCOVERY_RATE, TimeUnit.SECONDS);
 
         executorService
-                .scheduleAtFixedRate(() -> {
+                .scheduleWithFixedDelay(() -> {
                     try {
                         server.peerStore.put("peers",
                                 Start.MAPPER.writeValueAsString(

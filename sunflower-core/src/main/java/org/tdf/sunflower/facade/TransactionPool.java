@@ -3,6 +3,7 @@ package org.tdf.sunflower.facade;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,6 +11,10 @@ public interface TransactionPool{
 
     // collect transactions into transaction pool
     void collect(Collection<? extends Transaction> transactions);
+
+    default void collect(Transaction tx){
+        collect(Collections.singleton(tx));
+    }
 
     // pop a transaction from pool
     Optional<Transaction> pop();

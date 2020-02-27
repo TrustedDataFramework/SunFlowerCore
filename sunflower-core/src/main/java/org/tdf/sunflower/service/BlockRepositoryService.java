@@ -1,5 +1,6 @@
 package org.tdf.sunflower.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -17,12 +18,14 @@ import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class BlockRepositoryService implements BlockRepository {
     @Autowired
     private HeaderDao headerDao;
@@ -208,17 +211,21 @@ public class BlockRepositoryService implements BlockRepository {
     }
 
     @Override
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void writeBlock(Block block) {
-        headerDao.save(Mapping.getEntityFromHeader(block.getHeader()));
-
+        if(headerDao.existsById(block.getHash().getBytes()))
+            throw new RuntimeException(block + " had been persisted");
         List<TransactionEntity> entities =
                 Mapping.getTransactionEntitiesFromBlock(block).collect(Collectors.toList());
-        for(TransactionEntity e: entities){
-            if(transactionDao.existsById(e.getHash()))
-                throw new ApplicationException("transaction " + HexBytes.fromBytes(e.getHash()) + " already exists in database");
+
+        if(!transactionDao
+                .findAllById(block.getBody().stream().map(x -> x.getHash().getBytes()).collect(Collectors.toList()))
+                .isEmpty()){
+            throw new ApplicationException("transaction already exists in database");
         }
+        headerDao.save(Mapping.getEntityFromHeader(block.getHeader()));
         transactionDao.saveAll(entities);
+        log.info("write block at height " + block.getHeight() + " " + block.getHeader().getHash() + " to database success");
     }
 
     @Override

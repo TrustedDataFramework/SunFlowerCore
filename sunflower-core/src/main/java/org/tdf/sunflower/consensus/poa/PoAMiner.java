@@ -60,7 +60,7 @@ public class PoAMiner extends AbstractMiner {
                 .version(parent.getVersion())
                 .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
                 .createdAt(System.currentTimeMillis() / 1000)
-                .payload(PoAConstants.ZERO_BYTES)
+                .payload(HexBytes.EMPTY)
                 .build();
     }
 
