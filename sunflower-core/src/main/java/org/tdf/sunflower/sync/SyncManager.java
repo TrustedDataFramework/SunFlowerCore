@@ -163,9 +163,9 @@ public class SyncManager implements PeerServerListener {
     }
 
     private void onStatus(Context ctx, Status s) {
-        lock.lock();
         Block b = null;
         Block best = sunflowerRepository.getBestBlock();
+        lock.lock();
         try {
             b = queue.peek();
         } finally {
