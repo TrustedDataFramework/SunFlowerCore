@@ -38,8 +38,9 @@ public class SyncManager implements PeerServerListener {
     private final ConsensusEngineFacade engine;
     private final SunflowerRepository sunflowerRepository;
     private final TransactionPool transactionPool;
-    private final PriorityQueue<Block> queue = new PriorityQueue<>(Block.FAT_COMPARATOR);
+    private final TreeSet<Block> queue = new TreeSet<>(Block.FAT_COMPARATOR);
     private final SyncConfig syncConfig;
+    private final EventBus eventBus;
     private Cache<HexBytes, Boolean> receivedTransactions = CacheBuilder.newBuilder()
             .maximumSize(ApplicationConstants.P2P_TRANSACTION_CACHE_SIZE)
             .build();
@@ -48,7 +49,6 @@ public class SyncManager implements PeerServerListener {
             .build();
     private Lock lock = new ReentrantLock();
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-    private final EventBus eventBus;
 
     public SyncManager(
             PeerServer peerServer, ConsensusEngineFacade engine,
@@ -96,13 +96,13 @@ public class SyncManager implements PeerServerListener {
             case SyncMessage.GET_BLOCKS: {
                 GetBlocks getBlocks = msg.getBodyAs(GetBlocks.class);
                 List<Block> blocks;
-                if(getBlocks.isDescend()){
+                if (getBlocks.isDescend()) {
                     blocks = sunflowerRepository.getBlocksBetweenDescend(
                             getBlocks.getStartHeight(),
                             getBlocks.getStopHeight(),
                             syncConfig.getMaxBlocksTransfer()
                     );
-                }else{
+                } else {
                     blocks = sunflowerRepository.getBlocksBetween(
                             getBlocks.getStartHeight(),
                             getBlocks.getStopHeight(),
@@ -167,7 +167,9 @@ public class SyncManager implements PeerServerListener {
         Block best = sunflowerRepository.getBestBlock();
         lock.lock();
         try {
-            b = queue.peek();
+            b = queue.first();
+        } catch (NoSuchElementException ignored) {
+
         } finally {
             lock.unlock();
         }
@@ -183,24 +185,29 @@ public class SyncManager implements PeerServerListener {
 
     public void tryWrite() {
         lock.lock();
-        if(!queue.isEmpty())
-            log.info("try to write blocks... " + queue.size() + " blocks in queue");
         try {
             while (true) {
-                Block b = queue.poll();
+                Block b = null;
+                try {
+                    b = queue.first();
+                } catch (NoSuchElementException ignored) {
+                }
                 if (b == null) return;
-                if(sunflowerRepository.containsBlock(b.getHash().getBytes()))
+                if (sunflowerRepository.containsBlock(b.getHash().getBytes())) {
+                    queue.remove(b);
                     continue;
+                }
                 Optional<Block> o = sunflowerRepository.getBlock(b.getHashPrev().getBytes());
                 if (!o.isPresent()) {
-                    queue.add(b);
                     return;
                 }
                 ValidateResult res = engine.getValidator().validate(b, o.get());
                 if (!res.isSuccess()) {
+                    queue.remove(b);
                     log.error(res.getReason());
                     continue;
                 }
+                queue.remove(b);
                 sunflowerRepository.writeBlock(b);
             }
         } finally {
@@ -216,7 +223,7 @@ public class SyncManager implements PeerServerListener {
     }
 
 
-    public void propose(Block b){
+    public void propose(Block b) {
         peerServer.broadcast(SyncMessage.encode(SyncMessage.PROPOSAL, b));
     }
 
