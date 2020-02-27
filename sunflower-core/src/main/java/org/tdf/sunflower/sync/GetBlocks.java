@@ -11,4 +11,5 @@ public class GetBlocks {
     private long startHeight;
     private long stopHeight;
     private boolean descend;
+    private int limit;
 }

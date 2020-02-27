@@ -100,13 +100,13 @@ public class SyncManager implements PeerServerListener {
                     blocks = sunflowerRepository.getBlocksBetweenDescend(
                             getBlocks.getStartHeight(),
                             getBlocks.getStopHeight(),
-                            syncConfig.getMaxBlocksTransfer()
+                            Math.min(getBlocks.getLimit(), syncConfig.getMaxBlocksTransfer())
                     );
                 } else {
                     blocks = sunflowerRepository.getBlocksBetween(
                             getBlocks.getStartHeight(),
                             getBlocks.getStopHeight(),
-                            syncConfig.getMaxBlocksTransfer()
+                            Math.min(syncConfig.getMaxBlocksTransfer(), getBlocks.getLimit())
                     );
                 }
                 context.response(SyncMessage.encode(SyncMessage.BLOCKS, blocks));
@@ -174,11 +174,11 @@ public class SyncManager implements PeerServerListener {
             lock.unlock();
         }
         if (b != null && s.getBestBlockHeight() > b.getHeight()) {
-            GetBlocks getBlocks = new GetBlocks(best.getHeight(), b.getHeight(), true);
+            GetBlocks getBlocks = new GetBlocks(best.getHeight(), b.getHeight(), true, syncConfig.getMaxBlocksTransfer());
             ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks));
         }
         if (s.getBestBlockHeight() >= best.getHeight() && !s.getBestBlockHash().equals(best.getHash())) {
-            GetBlocks getBlocks = new GetBlocks(best.getHeight(), s.getBestBlockHeight(), false);
+            GetBlocks getBlocks = new GetBlocks(best.getHeight(), s.getBestBlockHeight(), false, syncConfig.getMaxBlocksTransfer());
             ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks));
         }
     }
