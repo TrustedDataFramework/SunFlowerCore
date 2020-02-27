@@ -183,10 +183,14 @@ public class SyncManager implements PeerServerListener {
 
     public void tryWrite() {
         lock.lock();
+        if(!queue.isEmpty())
+            log.info("try to write blocks... " + queue.size() + " blocks in queue");
         try {
             while (true) {
                 Block b = queue.poll();
                 if (b == null) return;
+                if(sunflowerRepository.containsBlock(b.getHash().getBytes()))
+                    continue;
                 Optional<Block> o = sunflowerRepository.getBlock(b.getHashPrev().getBytes());
                 if (!o.isPresent()) {
                     queue.add(b);
