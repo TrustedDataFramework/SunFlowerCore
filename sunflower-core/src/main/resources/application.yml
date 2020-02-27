@@ -12,7 +12,6 @@ spring:
     show-sql: false # enable jpa sql logs
 
 
-
 # sunflower configurations
 sunflower:
   consensus:
@@ -50,6 +49,10 @@ sunflower:
 
     # the node in blocked list are not allowed to be connected
     # blocked-list:
+
+    # if private-key is not pre-defined, node will generate private key
+    # private-key:
+
 
 
   message-queue:

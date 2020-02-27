@@ -40,6 +40,9 @@ public class PeerServerConfig {
     @JsonProperty(value = "blocked-list")
     private Set<HexBytes> blockedList;
 
+    @JsonProperty(value = "private-key")
+    private HexBytes privateKey;
+
     public static PeerServerConfig createDefault(){
         return PeerServerConfig.builder()
                 .maxPeers(DEFAULT_MAX_PEERS)

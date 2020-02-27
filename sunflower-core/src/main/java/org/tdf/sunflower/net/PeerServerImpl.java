@@ -10,6 +10,7 @@ import org.tdf.common.store.MapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.util.HexBytes;
+import org.tdf.crypto.CryptoContext;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.PeerServerListener;
@@ -87,17 +88,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         resolveHost();
         log.info("peer server is listening on " +
                 self.encodeURI());
-        log.info("your p2p secret address is " +
-                String.format("%s://%s@%s:%d",
-                        self.getProtocol(),
-                        HexBytes.fromBytes(
-                                self.getPrivateKey().getEncoded()
-                        )
-                                .concat(
-                                        HexBytes.fromBytes(self.getPrivateKey().generatePublicKey().getEncoded())
-                                ),
-                        self.getHost(),
-                        self.getPort()));
+        log.info("your p2p private key is " + HexBytes.encode(self.getPrivateKey()));
         if (config.getBootstraps() != null) {
             client.bootstrap(config.getBootstraps());
         }
@@ -173,24 +164,19 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
 
     private void resolveSelf() throws Exception{
         // find valid private key from properties
-        if (config.getAddress().getRawUserInfo() != null
-                && !config.getAddress().getRawUserInfo().equals("")) {
-            self = PeerImpl.create(config.getAddress(), HexBytes.decode(config.getAddress().getRawUserInfo()));
-            return;
+        byte[] sk = config.getPrivateKey() == null ? null : config.getPrivateKey().getBytes();
+        if(sk == null || sk.length == 0){
+            sk = peerStore.get("self").map(HexBytes::decode)
+                    .orElse(null);
         }
-        // try to load stored private key from db
-        Optional<HexBytes> selfPrivateKey = peerStore.get("self")
-                .map(HexBytes::fromHex);
-        if(selfPrivateKey.isPresent()){
-            self = PeerImpl.create(config.getAddress(), selfPrivateKey.get().getBytes());
-            return;
+        if(sk == null || sk.length == 0){
+            sk = CryptoContext.generateKeyPair().getPrivateKey().getEncoded();
         }
+
+        this.self = PeerImpl.createSelf(config.getAddress(), sk);
+
         // generate a new private key when not found
-        self = PeerImpl.create(config.getAddress());
-        peerStore.put("self",
-                Hex.encodeHexString(self.getPrivateKey().getEncoded())
-                        + Hex.encodeHexString(self.getPrivateKey().generatePublicKey().getEncoded())
-        );
+        peerStore.put("self", HexBytes.encode(sk));
     }
 
     @Override

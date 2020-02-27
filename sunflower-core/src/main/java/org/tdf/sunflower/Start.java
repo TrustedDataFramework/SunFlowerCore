@@ -18,8 +18,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.tdf.common.event.EventBus;
 import org.tdf.crypto.CryptoContext;
+import org.tdf.crypto.ed25519.Ed25519;
+import org.tdf.crypto.ed25519.Ed25519KeyPair;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM2Util;
@@ -68,7 +71,7 @@ public class Start {
 
     public static void loadCryptoContext(Environment env){
         String hash = env.getProperty("sunflower.crypto.hash");
-        hash = (hash == null || hash.isEmpty()) ? "keccak256" : hash;
+        hash = (hash == null || hash.isEmpty()) ? "sm3" : hash;
         hash = hash.toLowerCase();
         switch (hash) {
             case "sm3":
@@ -90,21 +93,25 @@ public class Start {
                 throw new ApplicationException("unknown hash function: " + hash);
         }
         String ec = env.getProperty("sunflower.crypto.ec");
-        ec = (ec == null || ec.isEmpty()) ? "ed25519" : ec;
+        ec = (ec == null || ec.isEmpty()) ? "sm2" : ec;
         ec = ec.toLowerCase();
         switch (ec){
             case "ed25519":
                 CryptoContext.signatureVerifier =  (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
                 CryptoContext.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
+                CryptoContext.generateKeyPair = Ed25519::generateKeyPair;
+                CryptoContext.getPkFromSk = (sk) -> new Ed25519PrivateKey(sk).generatePublicKey().getEncoded();
                 break;
             case "sm2":
                 CryptoContext.signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
                 CryptoContext.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
+                CryptoContext.generateKeyPair = SM2::generateKeyPair;
+                CryptoContext.getPkFromSk = (sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded();
                 break;
             default:
                 throw new ApplicationException("unknown ec curve " + ec);
         }
-
+        ApplicationConstants.PUBLIC_KEY_SIZE = CryptoContext.generateKeyPair().getPublicKey().getEncoded().length;
         log.info("use algorithm {} as hash function", hash);
         log.info("use ec {} as signature algorithm", ec);
     }

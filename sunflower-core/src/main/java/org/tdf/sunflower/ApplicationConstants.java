@@ -7,7 +7,7 @@ public class ApplicationConstants {
 
     public static final String CONSENSUS_NONE = "none";
 
-    public static final int PUBLIC_KEY_SIZE = 32;
+    public static int PUBLIC_KEY_SIZE;
 
     public static final int ADDRESS_SIZE = 20;
 

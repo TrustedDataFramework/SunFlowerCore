@@ -1,6 +1,5 @@
 package org.tdf.sunflower.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,10 +21,10 @@ import org.tdf.sunflower.types.UnmodifiableTransaction;
 import java.util.Collections;
 import java.util.List;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 @RestController
 @AllArgsConstructor
+@RequestMapping("/rpc")
 public class EntryController {
     private AccountTrie accountTrie;
 
@@ -39,21 +38,6 @@ public class EntryController {
 
     private ObjectMapper objectMapper;
 
-
-    @GetMapping(value = "/hello", produces = MediaType.APPLICATION_JSON_VALUE)
-    public byte[] hello() {
-        return "hello".getBytes(UTF_8);
-    }
-
-    @GetMapping(value = "/man", produces = MediaType.APPLICATION_JSON_VALUE)
-    public HexBytes man() throws Exception {
-        return HexBytes.fromHex("ffffffff");
-    }
-
-    @GetMapping(value = "/exception", produces = MediaType.APPLICATION_JSON_VALUE)
-    public String exception() throws RuntimeException {
-        throw new RuntimeException("error");
-    }
 
     @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)
     public AccountView getAccount(@PathVariable String addressOrPublicKey) throws Exception {
