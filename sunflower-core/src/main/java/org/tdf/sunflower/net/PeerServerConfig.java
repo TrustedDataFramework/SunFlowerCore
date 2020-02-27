@@ -3,9 +3,11 @@ package org.tdf.sunflower.net;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import org.tdf.common.util.BigEndian;
+import org.tdf.common.util.HexBytes;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -31,6 +33,12 @@ public class PeerServerConfig {
     private URI address;
     private List<URI> bootstraps;
     private List<URI> trusted;
+
+    @JsonProperty(value = "white-list")
+    private Set<HexBytes> whiteList;
+
+    @JsonProperty(value = "blocked-list")
+    private Set<HexBytes> blockedList;
 
     public static PeerServerConfig createDefault(){
         return PeerServerConfig.builder()
