@@ -28,6 +28,26 @@ public class CryptoContext {
     // (alice's sk, bob's pk) -> key
     public static BiFunction<byte[], byte[], byte[]> ecdh;
 
+    public static boolean verifySignature(byte[] pk, byte[] msg, byte[] sig) {
+        return signatureVerifier.verify(pk, msg, sig);
+    }
+
+    public static byte[] ecdh(byte[] sk, byte[] pk) {
+        return ecdh.apply(sk, pk);
+    }
+
+    public static byte[] sign(byte[] sk, byte[] msg) {
+        return signer.apply(sk, msg);
+    }
+
+    public static byte[] encrypt(byte[] sk, byte[] msg) {
+        return encrypt.apply(sk, msg);
+    }
+
+    public static byte[] decrypt(byte[] sk, byte[] encrypted) {
+        return decrypt.apply(sk, encrypted);
+    }
+
     public static byte[] keccak256(byte[] in) {
         Digest digest = new KeccakDigest(256);
         return CryptoContext.hash(in, digest);
