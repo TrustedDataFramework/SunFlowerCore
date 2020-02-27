@@ -25,6 +25,9 @@ public class CryptoContext {
     // (sk, encrypted) -> msg
     public static BiFunction<byte[], byte[], byte[]> decrypt;
 
+    // (alice's sk, bob's pk) -> key
+    public static BiFunction<byte[], byte[], byte[]> ecdh;
+
     public static byte[] keccak256(byte[] in) {
         Digest digest = new KeccakDigest(256);
         return CryptoContext.hash(in, digest);
