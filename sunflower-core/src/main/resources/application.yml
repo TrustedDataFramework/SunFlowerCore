@@ -44,6 +44,13 @@ sunflower:
     # trusted: # trusted nodes
       # - 'node://localhost:9999'
 
+    # if white list is not empty, only nodes in white list are allowed to be connected
+    white-list:
+
+    # the node in blocked list are not allowed to be connected
+    blocked-list:
+
+
   message-queue:
     name: 'socketIO'
     port: '8081'
