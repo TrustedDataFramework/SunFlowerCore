@@ -2,8 +2,6 @@ package org.tdf.crypto;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
-import org.tdf.crypto.ed25519.Ed25519PrivateKey;
-import org.tdf.crypto.ed25519.Ed25519PublicKey;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -20,6 +18,12 @@ public class CryptoContext {
 
     // (sk, msg) -> signature
     public static BiFunction<byte[], byte[], byte[]> signer;
+
+    // (sk, msg) -> encrypted
+    public static BiFunction<byte[], byte[], byte[]> encrypt;
+
+    // (sk, encrypted) -> msg
+    public static BiFunction<byte[], byte[], byte[]> decrypt;
 
     public static byte[] keccak256(byte[] in) {
         Digest digest = new KeccakDigest(256);

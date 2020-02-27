@@ -74,6 +74,10 @@ sunflower:
     ec: 'sm2' # ed25519
     ae: 'sm4' # 对称加密方法
 
+  web:
+    disabled: false
+    password: password
+
 server:
   port: '8080'
 
