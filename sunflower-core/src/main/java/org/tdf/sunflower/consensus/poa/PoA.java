@@ -82,7 +82,7 @@ public class PoA extends ConsensusEngine {
         getGenesisBlock().setStateRoot(trie.getGenesisRoot());
         setAccountTrie(trie);
         poaMiner.setAccountTrie(trie);
-
+        poaMiner.setEventBus(getEventBus());
         poAValidator = new PoAValidator(getAccountTrie());
         setValidator(poAValidator);
 

@@ -24,7 +24,6 @@ import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
-import org.tdf.sunflower.events.Bridge;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.ConsensusEngineFacade;
@@ -141,12 +140,10 @@ public class Start {
     @Bean
     public Miner miner(
             ConsensusEngineFacade engine,
-            Bridge bridge,
             // this dependency asserts the peer server had been initialized
             PeerServer peerServer
     ) {
         Miner miner = engine.getMiner();
-        miner.addListeners(bridge);
         miner.start();
         return miner;
     }

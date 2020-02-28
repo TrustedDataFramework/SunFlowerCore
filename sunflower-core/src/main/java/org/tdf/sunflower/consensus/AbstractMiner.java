@@ -1,6 +1,10 @@
 package org.tdf.sunflower.consensus;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.event.EventBus;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
@@ -20,12 +24,17 @@ import java.util.*;
 
 @Slf4j
 public abstract class AbstractMiner implements Miner {
-    protected abstract StateTrie<HexBytes, Account> getAccountTrie();
+    @Setter
+    @Getter(AccessLevel.PROTECTED)
+    private StateTrie<HexBytes, Account> accountTrie;
+
+    @Setter
+    @Getter(AccessLevel.PROTECTED)
+    private EventBus eventBus;
 
     protected abstract TransactionPool getTransactionPool();
 
     protected abstract Transaction createCoinBase(long height);
-
 
     protected abstract Header createHeader(Block parent);
 
@@ -33,15 +42,15 @@ public abstract class AbstractMiner implements Miner {
         Header header = createHeader(parent);
 
         Block b = new Block(header);
-        Store<byte[], byte[]> cache = new CachedStore<>(getAccountTrie().getTrieStore(), ByteArrayMap::new);
+        Store<byte[], byte[]> cache = new CachedStore<>(accountTrie.getTrieStore(), ByteArrayMap::new);
 
         // get a trie at parent block's state
         // modifications to the trie will not persisted until flush() called
-        Trie<HexBytes, Account> tmp = getAccountTrie()
+        Trie<HexBytes, Account> tmp = accountTrie
                 .getTrie()
                 .revert(parent.getStateRoot().getBytes(), cache);
 
-        StateUpdater<HexBytes, Account> updater = getAccountTrie().getUpdater();
+        StateUpdater<HexBytes, Account> updater = accountTrie.getUpdater();
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
         List<Transaction> transactionList = getTransactionPool().pop(-1);
         transactionList.add(0, coinbase);
