@@ -2,6 +2,7 @@ package org.tdf.sunflower.net;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
+import org.tdf.crypto.CryptoContext;
 import org.tdf.sunflower.proto.*;
 
 import java.util.Collection;
@@ -18,33 +19,34 @@ public class MessageBuilder {
         this.self = self;
     }
 
-    public Message buildNothing(){
+    public Message buildNothing() {
         return buildMessage(Code.NOTHING, 1, Nothing.newBuilder().build().toByteArray());
     }
 
-    public Message buildPing(){
+    public Message buildPing() {
         return buildMessage(Code.PING, 1, Ping.newBuilder().build().toByteArray());
     }
 
-    public Message buildPong(){
+    public Message buildPong() {
         return buildMessage(Code.PONG, 1, Pong.newBuilder().build().toByteArray());
     }
 
-    public Message buildLookup(){
+    public Message buildLookup() {
         return buildMessage(Code.LOOK_UP, 1, Lookup.newBuilder().build().toByteArray());
     }
 
-    public Message buildPeers(Collection<? extends Peer> peers){
+    public Message buildPeers(Collection<? extends Peer> peers) {
         return buildMessage(Code.PEERS, 1, Peers
                 .newBuilder().addAllPeers(
-                    peers.stream().map(Peer::encodeURI).collect(Collectors.toList())
+                        peers.stream().map(Peer::encodeURI).collect(Collectors.toList())
                 )
                 .build().toByteArray()
         );
     }
 
-    public Message buildAnother(byte[] body){
-        return buildMessage(Code.ANOTHER, 1, body);
+    public Message buildAnother(byte[] body, byte[] pk) {
+        byte[] sk = CryptoContext.ecdh(self.getPrivateKey().getEncoded(), pk);
+        return buildMessage(Code.ANOTHER, 1, CryptoContext.encrypt(sk, body));
     }
 
     public Message buildRelay(Message message) {

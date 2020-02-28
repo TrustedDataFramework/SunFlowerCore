@@ -52,7 +52,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
 
     @Override
     public void dial(Peer peer, byte[] message) {
-        client.dial(peer, builder.buildAnother(message));
+        client.dial(peer, builder.buildAnother(message, peer.getID().getBytes()));
     }
 
     @Override
@@ -171,7 +171,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         plugins.add(new PeersManager(config));
     }
 
-    private void resolveSelf() throws Exception{
+    private void resolveSelf() throws Exception {
         // find valid private key from properties
         if (config.getAddress().getRawUserInfo() != null
                 && !config.getAddress().getRawUserInfo().equals("")) {
@@ -181,7 +181,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         // try to load stored private key from db
         Optional<HexBytes> selfPrivateKey = peerStore.get("self")
                 .map(HexBytes::fromHex);
-        if(selfPrivateKey.isPresent()){
+        if (selfPrivateKey.isPresent()) {
             self = PeerImpl.create(config.getAddress(), selfPrivateKey.get().getBytes());
             return;
         }

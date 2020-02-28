@@ -1,6 +1,7 @@
 package org.tdf.sunflower.net;
 
 import lombok.Builder;
+import org.tdf.crypto.CryptoContext;
 import org.tdf.sunflower.proto.Message;
 
 import java.util.Collection;
@@ -53,7 +54,7 @@ public class ContextImpl implements Context {
     public void response(Collection<byte[]> messages) {
         if (exited || blocked || disconnected) return;
         for (byte[] msg : messages) {
-            channel.write(builder.buildAnother(msg));
+            channel.write(builder.buildAnother(msg, remote.getID().getBytes()));
         }
     }
 

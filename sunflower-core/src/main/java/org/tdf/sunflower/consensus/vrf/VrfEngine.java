@@ -5,7 +5,9 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
 
+import org.checkerframework.checker.units.qual.C;
 import org.springframework.core.io.Resource;
+import org.tdf.crypto.CryptoContext;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.state.AccountTrie;
@@ -62,7 +64,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         VrfMessageCodeAndBytes codeAndBytes = VrfUtil.parseMessageBytes(messageBytes);
         VrfMessageCode code = codeAndBytes.getCode();
         byte[] vrfBytes = codeAndBytes.getRlpBytes();
-
+        System.out.println("============================="+code);
         switch (code) {
         case VRF_BLOCK:
             processVrfBlockMsg(context, vrfBytes);
@@ -74,13 +76,16 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
             processCommitProofMsg(vrfBytes);
             break;
         case NEW_MINED_BLOCK:
-            processNewMinedBlockMsg(vrfBytes);
+            processNewMinedBlockMsg(context, vrfBytes);
             break;
         }
     }
 
-    private void processNewMinedBlockMsg(byte[] bodyBytes) {
-        Block blockNew = RLPCodec.decode(bodyBytes, Block.class);
+    private void processNewMinedBlockMsg(Context context, byte[] bodyBytes) {
+        PeerImpl peerImpl = (PeerImpl) peerServer.getSelf();
+        byte[] sk = CryptoContext.ecdh(peerImpl.getPrivateKey().getEncoded(),context.getRemote().getID().getBytes());
+        Block blockNew = RLPCodec.decode(CryptoContext.decrypt(sk, bodyBytes), Block.class);
+        System.out.println("============================="+blockNew.toString());
         log.info("New mined block received from peer. Num #{}, Hash {}", blockNew.getHeight(),
                 blockNew.getHash().toString());
         saveBlock(blockNew, this.getSunflowerRepository(), this);
