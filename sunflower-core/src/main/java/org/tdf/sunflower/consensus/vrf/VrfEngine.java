@@ -7,6 +7,7 @@ import java.util.Properties;
 
 import org.springframework.core.io.Resource;
 import org.tdf.rlp.RLPCodec;
+import org.tdf.rlp.RLPElement;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
@@ -59,6 +60,9 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
     @Override
     public void onMessage(Context context, PeerServer server) {
         byte[] messageBytes = context.getMessage();
+        if (RLPElement.fromEncoded(messageBytes).asRLPList().get(0).asInt() > VrfMessageCode.NEW_MINED_BLOCK.ordinal()){
+            return;
+        }
         VrfMessageCodeAndBytes codeAndBytes = VrfUtil.parseMessageBytes(messageBytes);
         VrfMessageCode code = codeAndBytes.getCode();
         byte[] vrfBytes = codeAndBytes.getRlpBytes();
