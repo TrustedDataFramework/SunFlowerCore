@@ -78,6 +78,6 @@ public abstract class AbstractMiner implements Miner {
         b.resetTransactionsRoot();
 
         // the mined block cannot be modified any more
-        return UnmodifiableBlock.of(b);
+        return b;
     }
 }
