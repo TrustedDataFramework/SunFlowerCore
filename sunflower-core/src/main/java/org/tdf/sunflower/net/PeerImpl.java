@@ -3,6 +3,7 @@ package org.tdf.sunflower.net;
 import lombok.*;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.exception.ApplicationException;
 
 import java.net.URI;
@@ -94,7 +95,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
 
     public int distance(PeerImpl that) {
         int res = 0;
-        byte[] bits = new byte[32];
+        byte[] bits = new byte[PUBLIC_KEY_SIZE];
         for (int i = 0; i < bits.length; i++) {
             bits[i] = (byte) (ID.getBytes()[i] ^ that.ID.getBytes()[i]);
         }
@@ -107,12 +108,12 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     }
 
     int subTree(byte[] thatID) {
-        byte[] bits = new byte[32];
+        byte[] bits = new byte[PUBLIC_KEY_SIZE];
         byte mask = (byte) (1 << 7);
         for (int i = 0; i < bits.length; i++) {
             bits[i] = (byte) (ID.getBytes()[i] ^ thatID[i]);
         }
-        for (int i = 0; i < 256; i++) {
+        for (int i = 0; i < PUBLIC_KEY_SIZE * 8; i++) {
             if ((bits[i / 8] & (mask >>> (i % 8))) != 0) {
                 return i;
             }
@@ -120,7 +121,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         return 0;
     }
 
-    // subtree is less than 256
+    // subtree is less than PUBLIC_KEY_SIZE * 8
     int subTree(Peer that) {
         return subTree(that.getID().getBytes());
     }
