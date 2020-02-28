@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
+import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.MinerListener;
@@ -35,14 +36,8 @@ public class PoAMiner extends AbstractMiner {
 
     private Genesis genesis;
 
-    private List<MinerListener> listeners = new CopyOnWriteArrayList<>();
-
     @Setter
     private BlockRepository blockRepository;
-
-    @Setter
-    @Getter
-    private StateTrie<HexBytes, Account> accountTrie;
 
     private boolean stopped;
 
@@ -150,7 +145,7 @@ public class PoAMiner extends AbstractMiner {
         try {
             Block b = createBlock(blockRepository.getBestBlock());
             log.info("mining success");
-            listeners.forEach(l -> l.onBlockMined(b));
+            getEventBus().publish(new NewBlockMined(b));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -167,26 +162,6 @@ public class PoAMiner extends AbstractMiner {
                 .to(minerAddress)
                 .signature(HexBytes.EMPTY).build();
     }
-
-
-    @Override
-    public void addListeners(MinerListener... listeners) {
-        this.listeners.addAll(Arrays.asList(listeners));
-    }
-
-    @Override
-    public void onBlockWritten(Block block) {
-    }
-
-    @Override
-    public void onNewBestBlock(Block block) {
-    }
-
-    @Override
-    public void onBlockConfirmed(Block block) {
-
-    }
-
 
     public static class EconomicModelImpl {
 
