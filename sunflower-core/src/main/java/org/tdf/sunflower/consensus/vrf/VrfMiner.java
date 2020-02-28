@@ -22,7 +22,6 @@ import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.types.Header;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.Miner;
-import org.tdf.sunflower.facade.MinerListener;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;

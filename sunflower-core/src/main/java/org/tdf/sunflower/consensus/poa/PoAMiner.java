@@ -9,17 +9,13 @@ import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.facade.MinerListener;
 import org.tdf.sunflower.facade.TransactionPool;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;

@@ -16,7 +16,6 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.net.Context;
-import org.tdf.sunflower.facade.MinerListener;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.facade.PeerServerListener;
