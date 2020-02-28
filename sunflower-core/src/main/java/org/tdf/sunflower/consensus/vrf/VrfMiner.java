@@ -189,8 +189,7 @@ public class VrfMiner extends AbstractMiner {
         Transaction tx = Transaction.builder().version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(PoAConstants.ZERO_BYTES)
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(PoAConstants.ZERO_BYTES)
-                .to(minerAddress).signature(PoAConstants.ZERO_BYTES)
-                .build();
+                .to(minerAddress).signature(PoAConstants.ZERO_BYTES).build();
         return tx;
     }
 
@@ -203,11 +202,10 @@ public class VrfMiner extends AbstractMiner {
 //                .payload(VrfConstants.ZERO_BYTES)
 //                .hash(new HexBytes(BigEndian.encodeInt64(parent.getHeight() + 1))).build();
 
-
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
-        byte[] payLoadBytes = VrfUtil.genPayload(header.getHeight(), this.vrfStateMachine.getVrfRound().getRound(), vrfSeed,
-                this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk, vrfPk,
-                vrfConfig);
+        byte[] payLoadBytes = VrfUtil.genPayload(header.getHeight(), this.vrfStateMachine.getVrfRound().getRound(),
+                vrfSeed, this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk,
+                vrfPk, vrfConfig);
         HexBytes payload = HexBytes.fromBytes(payLoadBytes);
         header.setPayload(payload);
         return header;
@@ -699,14 +697,26 @@ public class VrfMiner extends AbstractMiner {
         } else if (winnerBlock == null) {
             log.error("Empty winner block, give up Final Commit Proof, reach commit identifier {}, blockSyncing {}",
                     reachCommitIdentifier, blockSyncing);
-        } else if (!Arrays.equals(winnerBlock.getHash(), reachCommitIdentifier.getHash())
-                || winnerBlock.getNumber() != reachCommitIdentifier.getNumber()) {
-            log.error(
-                    "Identifier is NOT matched, winner block {}, committed identifier {}, give up Final Commit Proof, blockSyncing {}",
-                    Hex.toHexString(winnerBlock.getHash(), 0, 6),
-                    Hex.toHexString(reachCommitIdentifier.getHash(), 0, 6), blockSyncing);
-            log.error("PLEASE configure VrfStateMachine for longer broadcast time of new block in the network");
+
+            // !!!!!!!!!!! -----> Need to fix, should not be true.
+//        } else if (!Arrays.equals(winnerBlock.getHash(), reachCommitIdentifier.getHash())
+//                || winnerBlock.getNumber() != reachCommitIdentifier.getNumber()) {
+//            log.error(
+//                    "Identifier is NOT matched, winner block {}, committed identifier {}, give up Final Commit Proof, blockSyncing {}",
+//                    Hex.toHexString(winnerBlock.getHash(), 0, 6),
+//                    Hex.toHexString(reachCommitIdentifier.getHash(), 0, 6), blockSyncing);
+//            log.error("PLEASE configure VrfStateMachine for longer broadcast time of new block in the network");
         } else {
+
+            if (!Arrays.equals(winnerBlock.getHash(), reachCommitIdentifier.getHash())
+                    || winnerBlock.getNumber() != reachCommitIdentifier.getNumber()) {
+                log.error(
+                        "Identifier is NOT matched, winner block {}, committed identifier {}, give up Final Commit Proof, blockSyncing {} -----> Need to fix, should not be true.",
+                        Hex.toHexString(winnerBlock.getHash(), 0, 6),
+                        Hex.toHexString(reachCommitIdentifier.getHash(), 0, 6), blockSyncing);
+                log.error("PLEASE configure VrfStateMachine for longer broadcast time of new block in the network");
+            }
+
             // Check the best proposal and committed proposal
             ProposalProof bestProproserProof = vrfStateMachine.getBestProposalProof();
             if (!Arrays.equals(bestProproserProof.getBlockIdentifier().getHash(), reachCommitIdentifier.getHash())
