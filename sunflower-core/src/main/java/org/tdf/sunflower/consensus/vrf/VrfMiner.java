@@ -160,9 +160,9 @@ public class VrfMiner extends AbstractMiner {
 
     public Transaction createCoinBase(long height) {
         Transaction tx = Transaction.builder().version(PoAConstants.TRANSACTION_VERSION)
-                .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(PoAConstants.ZERO_BYTES)
-                .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(PoAConstants.ZERO_BYTES)
-                .to(minerAddress).signature(PoAConstants.ZERO_BYTES).build();
+                .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(HexBytes.EMPTY)
+                .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(HexBytes.EMPTY)
+                .to(minerAddress).signature(HexBytes.EMPTY).build();
         return tx;
     }
 
