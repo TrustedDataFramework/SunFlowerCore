@@ -11,6 +11,7 @@ import org.tdf.sunflower.types.Transaction;
 
 import java.util.Optional;
 
+// TODO: 对消息进行限流
 @NoArgsConstructor
 @AllArgsConstructor
 public class SyncMessage {
@@ -20,7 +21,7 @@ public class SyncMessage {
     public static final int GET_BLOCKS = 5;
     public static final int BLOCKS = 6;
     public static final int PROPOSAL = 7;
-    public static final int TRANSACTIONS = 8;
+    public static final int TRANSACTION = 8;
 
     public static byte[] encode(int code, Object msg){
         RLPList li = RLPElement.readRLPTree(msg).asRLPList();
@@ -47,7 +48,7 @@ public class SyncMessage {
             case PROPOSAL:
                 ret.data = li.subList(1, li.size()).as(Block.class);
                 return Optional.of(ret);
-            case TRANSACTIONS:
+            case TRANSACTION:
                 ret.data = li.subList(1, li.size()).as(Transaction.class);
                 return Optional.of(ret);
             default:

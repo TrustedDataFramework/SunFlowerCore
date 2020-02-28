@@ -78,6 +78,7 @@ sunflower:
     name: 'leveldb'
     directory: 'database/rocksdb'
     max-open-files: '512' # defines a number of opened files by db instance
+    block-store: 'rdbms' # optional: kv
 
   # 密码算法，包含对称加密，非对称加密和哈希计算
   crypto:
@@ -94,9 +95,10 @@ sunflower:
     # cache size for state trie
     trie: '32'
     # cache size for avoid message flood
-    p2p-transaction: '128'
-    # cache size for avoid message flood
-    p2p-proposal: '128'
+    p2p:
+      transaction: '128'
+      # cache size for avoid message flood
+      proposal: '128'
 
 
 server:

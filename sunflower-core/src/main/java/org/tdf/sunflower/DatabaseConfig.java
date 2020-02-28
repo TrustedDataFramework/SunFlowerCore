@@ -18,4 +18,5 @@ public class DatabaseConfig {
     private int maxOpenFiles;
     private String directory;
     private boolean reset;
+    private String blockStore;
 }
