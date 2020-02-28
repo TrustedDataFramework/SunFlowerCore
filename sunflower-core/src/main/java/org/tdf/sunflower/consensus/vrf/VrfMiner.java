@@ -15,13 +15,13 @@ import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.tdf.common.trie.Trie;
 import org.tdf.sunflower.consensus.AbstractMiner;
+import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.types.Header;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.Miner;
-import org.tdf.sunflower.facade.MinerListener;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
@@ -62,8 +62,6 @@ public class VrfMiner extends AbstractMiner {
 
     private VrfGenesis genesis;
 
-    private List<MinerListener> listeners;
-
     private BlockRepository blockRepository;
 
     private boolean stopped;
@@ -93,10 +91,7 @@ public class VrfMiner extends AbstractMiner {
 
     private TransactionPool transactionPool;
 
-    private StateTrie<HexBytes, Account> accountTrie;
-
-    public VrfMiner() {
-        listeners = new ArrayList<>();
+    public VrfMiner(){
     }
 
     public void setGenesis(VrfGenesis genesis) {
@@ -115,23 +110,6 @@ public class VrfMiner extends AbstractMiner {
         this.blockRepository = blockRepository;
     }
 
-    @Override
-    public void onBlockWritten(Block block) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void onNewBestBlock(Block block) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void onBlockConfirmed(Block block) {
-        // TODO Auto-generated method stub
-
-    }
 
     @Override
     public void start() {
@@ -146,11 +124,6 @@ public class VrfMiner extends AbstractMiner {
             thread.interrupt();
         }
         stopped = true;
-    }
-
-    @Override
-    public void addListeners(MinerListener... listeners) {
-        this.listeners.addAll(Arrays.asList(listeners));
     }
 
     public Optional<Proposer> getProposer(Block parent, long currentTimeSeconds) {
@@ -798,7 +771,7 @@ public class VrfMiner extends AbstractMiner {
 
     private ImportResult tryToConnect(Block block) {
         // Notify listeners.
-        listeners.forEach(l -> l.onBlockMined(block));
+        getEventBus().publish(new NewBlockMined(block));
         return ImportResult.IMPORTED_BEST;
     }
 

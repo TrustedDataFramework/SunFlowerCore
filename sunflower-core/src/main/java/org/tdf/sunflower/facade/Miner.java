@@ -1,12 +1,9 @@
 package org.tdf.sunflower.facade;
 
 
-import org.tdf.sunflower.types.Block;
-
-public interface Miner extends ConsortiumRepositoryListener {
+public interface Miner {
     void start();
     void stop();
-    void addListeners(MinerListener... listeners);
 
     Miner NONE = new Miner() {
         @Override
@@ -16,26 +13,6 @@ public interface Miner extends ConsortiumRepositoryListener {
 
         @Override
         public void stop() {
-
-        }
-
-        @Override
-        public void addListeners(MinerListener... listeners) {
-
-        }
-
-        @Override
-        public void onBlockWritten(Block block) {
-
-        }
-
-        @Override
-        public void onNewBestBlock(Block block) {
-
-        }
-
-        @Override
-        public void onBlockConfirmed(Block block) {
 
         }
     };
