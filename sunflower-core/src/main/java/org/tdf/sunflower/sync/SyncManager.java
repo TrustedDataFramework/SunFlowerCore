@@ -95,24 +95,17 @@ public class SyncManager implements PeerServerListener {
             }
             case SyncMessage.GET_BLOCKS: {
                 GetBlocks getBlocks = msg.getBodyAs(GetBlocks.class);
-                List<Block> blocks;
-                if (getBlocks.isDescend()) {
-                    blocks = sunflowerRepository.getBlocksBetweenDescend(
+                List<Block> blocks = sunflowerRepository.getBlocksBetween(
                             getBlocks.getStartHeight(),
                             getBlocks.getStopHeight(),
-                            Math.min(getBlocks.getLimit(), syncConfig.getMaxBlocksTransfer())
-                    );
-                } else {
-                    blocks = sunflowerRepository.getBlocksBetween(
-                            getBlocks.getStartHeight(),
-                            getBlocks.getStopHeight(),
-                            Math.min(syncConfig.getMaxBlocksTransfer(), getBlocks.getLimit())
-                    );
-                }
+                            Math.min(syncConfig.getMaxBlocksTransfer(), getBlocks.getLimit()),
+                            getBlocks.isDescend()
+                );
+
                 context.response(SyncMessage.encode(SyncMessage.BLOCKS, blocks));
                 return;
             }
-            case SyncMessage.TRANSACTIONS: {
+            case SyncMessage.TRANSACTION: {
                 Transaction tx = msg.getBodyAs(Transaction.class);
                 if (receivedTransactions.asMap().containsKey(tx.getHash())) return;
                 receivedTransactions.put(tx.getHash(), true);

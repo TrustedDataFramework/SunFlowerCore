@@ -24,7 +24,16 @@ public class Block implements Chained {
         if(a.getHeight() != b.getHeight())
             return Long.compare(a.getHeight(), b.getHeight());
         if(a.body.size() != b.body.size()){
-            return -Integer.compare(a.bodySize(), b.bodySize());
+            return -Integer.compare(a.getBody().size(), b.getBody().size());
+        }
+        return a.getHash().compareTo(b.getHash());
+    };
+
+    public static final Comparator<Block> BEST_COMPARATOR = (a, b) ->{
+        if(a.getHeight() != b.getHeight())
+            return Long.compare(a.getHeight(), b.getHeight());
+        if(a.body.size() != b.body.size()){
+            return Integer.compare(a.getBody().size(), b.getBody().size());
         }
         return a.getHash().compareTo(b.getHash());
     };

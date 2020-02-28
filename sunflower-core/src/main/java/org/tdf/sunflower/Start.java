@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -23,17 +24,20 @@ import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
+import org.tdf.sunflower.dao.HeaderDao;
+import org.tdf.sunflower.dao.TransactionDao;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.ConsensusEngineFacade;
 import org.tdf.sunflower.facade.Miner;
+import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.mq.BasicMessageQueue;
 import org.tdf.sunflower.mq.SocketIOMessageQueue;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.net.PeerServerImpl;
 import org.tdf.sunflower.pool.TransactionPoolImpl;
-import org.tdf.sunflower.service.SunflowerRepositoryService;
+import org.tdf.sunflower.service.*;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
 
@@ -66,11 +70,11 @@ public class Start {
         if(constant != null && !constant.isEmpty()){
             ApplicationConstants.TRIE_CACHE_SIZE = Integer.parseInt(constant);
         }
-        constant = env.getProperty("sunflower.cache.p2p-transaction");
+        constant = env.getProperty("sunflower.cache.p2p.transaction");
         if(constant != null && !constant.isEmpty()){
             ApplicationConstants.P2P_TRANSACTION_CACHE_SIZE = Integer.parseInt(constant);
         }
-        constant = env.getProperty("sunflower.cache.p2p-proposal");
+        constant = env.getProperty("sunflower.cache.p2p.proposal");
         if(constant != null && !constant.isEmpty()){
             ApplicationConstants.P2P_PROPOSAL_CACHE_SIZE = Integer.parseInt(constant);
         }
@@ -133,6 +137,27 @@ public class Start {
     }
 
     @Bean
+    public SunflowerRepository sunflowerRepository(
+            ApplicationContext context, EventBus eventBus,
+            DatabaseStoreFactory databaseStoreFactory
+    ){
+        String type = context.getEnvironment().getProperty("sunflower.database.block-store");
+        type = (type == null || type.isEmpty()) ? "rdbms" : type;
+        switch (type){
+            case "rdbms":{
+                TransactionDao transactionDao = context.getBean(TransactionDao.class);
+                HeaderDao headerDao = context.getBean(HeaderDao.class);
+                return new SunflowerRepositoryService(eventBus, headerDao, transactionDao);
+            }
+            case "kv":{
+                SunflowerRepositoryKVImpl ret = new SunflowerRepositoryKVImpl(eventBus, databaseStoreFactory);
+                return new ConcurrentSunflowerRepository(ret);
+            }
+        }
+        throw new RuntimeException("unknown block store type: " + type);
+    }
+
+    @Bean
     public ObjectMapper objectMapper() {
         return MAPPER;
     }
@@ -161,7 +186,7 @@ public class Start {
     @Bean
     public ConsensusEngineFacade consensusEngine(
             ConsensusProperties consensusProperties,
-            SunflowerRepositoryService repositoryService,
+            SunflowerRepository repositoryService,
             TransactionPoolImpl transactionPool,
             DatabaseStoreFactory databaseStoreFactory,
             EventBus eventBus

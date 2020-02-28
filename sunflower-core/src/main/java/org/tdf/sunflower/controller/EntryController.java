@@ -43,7 +43,7 @@ public class EntryController {
     public AccountView getAccount(@PathVariable String addressOrPublicKey) throws Exception {
         HexBytes addressHex = Address.of(addressOrPublicKey);
         return accountTrie
-                .get(sunflowerRepository.getLastConfirmed().getStateRoot().getBytes(), addressHex)
+                .get(sunflowerRepository.getBestBlock().getStateRoot().getBytes(), addressHex)
                 .map(AccountView::fromAccount)
                 .orElse(new AccountView(addressHex, 0))
                 ;
@@ -76,7 +76,7 @@ public class EntryController {
         HexBytes addressHex = Address.of(address);
         byte[] params = HexBytes.fromHex(parameters).getBytes();
         Account a = accountTrie
-                .get(sunflowerRepository.getLastConfirmed().getStateRoot().getBytes(), addressHex)
+                .get(sunflowerRepository.getBestBlock().getStateRoot().getBytes(), addressHex)
                 .filter(Account::containsContract)
                 .orElseThrow(() -> new RuntimeException("the address " + addressHex + " has no contract deployed"));
         byte[] result = a.view(params);

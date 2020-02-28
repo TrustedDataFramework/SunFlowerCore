@@ -53,7 +53,7 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.consensus.vrf.vm.DataWord;
-import org.tdf.sunflower.service.BlockRepositoryService;
+import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.types.Header;
 
 @RunWith(SpringRunner.class)
@@ -124,7 +124,7 @@ public class PendingVrfStateTest {
             .of("0000000000000000000000000000000000000000000000000000000000000011");
 
     @Autowired
-    private BlockRepositoryService repository;
+    private BlockRepository repository;
     private ValidatorManager validatorManager;
     private Header[] blockHeaders;
 

@@ -1,7 +1,10 @@
 package org.tdf.sunflower.facade;
 
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.GenesisConflictsException;
 import org.tdf.sunflower.exception.WriteGenesisFailedException;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -11,25 +14,20 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SunflowerRepository extends BlockRepository, TransactionRepository {
-    Block getLastConfirmed();
 
-    List<Block> getUnconfirmed();
 
     void setProvider(ConfirmedBlocksProvider provider);
+    void setAccountTrie(StateTrie<HexBytes, Account> accountTrie);
 
     SunflowerRepository NONE = new SunflowerRepository() {
-        @Override
-        public Block getLastConfirmed() {
-            return new Block();
-        }
-
-        @Override
-        public List<Block> getUnconfirmed() {
-            return Collections.emptyList();
-        }
 
         @Override
         public void setProvider(ConfirmedBlocksProvider provider) {
+
+        }
+
+        @Override
+        public void setAccountTrie(StateTrie<HexBytes, Account> accountTrie) {
 
         }
 
@@ -69,16 +67,6 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
         }
 
         @Override
-        public List<Header> getHeaders(long startHeight, int limit) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Block> getBlocks(long startHeight, int limit) {
-            return Collections.emptyList();
-        }
-
-        @Override
         public List<Header> getHeadersBetween(long startHeight, long stopHeight) {
             return Collections.emptyList();
         }
@@ -94,9 +82,10 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
         }
 
         @Override
-        public List<Header> getHeadersBetweenDescend(long startHeight, long stopHeight, int limit) {
-            return Collections.emptyList();
+        public List<Header> getHeadersBetween(long startHeight, long stopHeight, int limit, boolean descend) {
+            return null;
         }
+
 
         @Override
         public List<Block> getBlocksBetween(long startHeight, long stopHeight, int limit) {
@@ -104,28 +93,19 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
         }
 
         @Override
-        public List<Block> getBlocksBetweenDescend(long startHeight, long stopHeight, int limit) {
-            return Collections.emptyList();
+        public List<Block> getBlocksBetween(long startHeight, long stopHeight, int limit, boolean descend) {
+            return null;
+        }
+
+
+        @Override
+        public List<Header> getHeadersByHeight(long height) {
+            return null;
         }
 
         @Override
-        public Optional<Header> getHeaderByHeight(long height) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Block> getBlockByHeight(long height) {
-            return Optional.empty();
-        }
-
-        @Override
-        public List<Header> getAncestorHeaders(byte[] hash, int limit) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Block> getAncestorBlocks(byte[] hash, int limit) {
-            return Collections.emptyList();
+        public List<Block> getBlocksByHeight(long height) {
+            return null;
         }
 
         @Override
@@ -133,10 +113,6 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
 
         }
 
-        @Override
-        public void writeHeader(Header header) {
-
-        }
 
         @Override
         public boolean containsTransaction(byte[] hash) {
@@ -150,11 +126,6 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
 
         @Override
         public List<Transaction> getTransactionsByBlockHash(byte[] blockHash) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Transaction> getTransactionsByBlockHeight(long height) {
             return Collections.emptyList();
         }
     };
