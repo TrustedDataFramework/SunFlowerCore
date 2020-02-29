@@ -1,13 +1,12 @@
-package org.tdf.crypto;
+package org.tdf.sunflower.crypto;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
-import org.tdf.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM3Util;
-import org.tdf.gmhelper.SM4Util;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;

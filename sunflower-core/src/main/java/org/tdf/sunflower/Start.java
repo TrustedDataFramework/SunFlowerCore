@@ -14,7 +14,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.tdf.common.event.EventBus;
-import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;

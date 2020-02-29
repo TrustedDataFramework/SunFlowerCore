@@ -2,7 +2,7 @@ package org.tdf.sunflower.net;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
-import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.proto.*;
 
 import java.util.Collection;

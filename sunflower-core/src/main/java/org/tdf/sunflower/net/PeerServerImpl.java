@@ -9,7 +9,7 @@ import org.tdf.common.store.MapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.PeerServerListener;

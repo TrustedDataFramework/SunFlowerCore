@@ -7,12 +7,11 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.util.Collections;
 import java.util.List;

@@ -2,8 +2,7 @@ package org.tdf.sunflower.net;
 
 import lombok.*;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.CryptoContext;
-import org.tdf.sunflower.ApplicationConstants;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.exception.ApplicationException;
 
 import java.net.URI;

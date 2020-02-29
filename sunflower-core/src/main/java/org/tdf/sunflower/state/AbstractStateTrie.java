@@ -12,7 +12,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.ReadOnlyTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
