@@ -1,5 +1,6 @@
 package org.tdf.common;
 
+import org.tdf.common.trie.HashFunction;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPList;
 
@@ -43,6 +44,10 @@ public class HashUtil {
             throw new RuntimeException(e);
         }
     }
+
+    public static HashFunction sha3 = new HashFunction(HashUtil::sha3);
+
+    public static HashFunction sha256 = new HashFunction(HashUtil::sha256);
 
     public static byte[] sha3(byte[] input) {
         MessageDigest digest;

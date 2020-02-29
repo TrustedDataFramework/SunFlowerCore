@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 public class TrieImpl<K, V> extends AbstractTrie<K, V>{
     @Getter
     private final byte[] nullHash;
-    Function<byte[], byte[]> function;
+    HashFunction function;
     Store<byte[], byte[]> store;
     Codec<K, byte[]> kCodec;
     Codec<V, byte[]> vCodec;
@@ -48,14 +48,10 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
             @NonNull Codec<K, byte[]> keyCodec,
             @NonNull Codec<V, byte[]> valueCodec
     ) {
-        if(hashFunction.apply(HexBytes.EMPTY_BYTES).length != Node.MAX_KEY_SIZE)
-            throw new RuntimeException(
-                    String.format("the hash function result should be %d bytes", Node.MAX_KEY_SIZE)
-            );
 
         return new TrieImpl<>(
                 hashFunction.apply(RLPItem.NULL.getEncoded()),
-                hashFunction,
+                new HashFunction(hashFunction),
                 store,
                 keyCodec,
                 valueCodec,
