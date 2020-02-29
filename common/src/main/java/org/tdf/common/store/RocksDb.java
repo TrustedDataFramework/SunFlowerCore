@@ -9,9 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
@@ -310,5 +308,27 @@ public class RocksDb implements DatabaseStore {
         } finally {
             resetDbLock.readLock().unlock();
         }
+    }
+
+    public Iterator<Map.Entry<byte[], byte[]>> iterator() {
+        RocksIterator it = db.newIterator();
+        RocksDb t = this;
+        return new Iterator<Map.Entry<byte[], byte[]>>() {
+            @Override
+            public boolean hasNext() {
+                return it.isValid();
+            }
+
+            @Override
+            public Map.Entry<byte[], byte[]> next() {
+                it.next();
+                return new HashMap.SimpleImmutableEntry<>(it.key(), it.key());
+            }
+
+            @Override
+            public void remove() {
+                t.remove(it.key());
+            }
+        };
     }
 }

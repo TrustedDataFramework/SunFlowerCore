@@ -16,10 +16,11 @@ import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.types.Block;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
@@ -127,16 +128,18 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
     @Override
     public void prune(Collection<? extends byte[]> excludedRoots) {
-        Set<byte[]> dumped = new ByteArraySet();
-        for (byte[] h : excludedRoots) {
-            dumped.addAll(getTrieForReadOnly(h).dumpKeys());
+        Set<byte[]> excludes = new ByteArraySet();
+        for (byte[] root : excludedRoots) {
+            excludes.addAll(getTrieForReadOnly(root).dumpKeys());
         }
-        getTrieStore().forEach((k,v)->{
-
-        });
-        db.forEach((k, v) ->{
-            if(!dumped.contains(k))
+        Consumer<byte[]> fn = k ->{
+            if(!excludes.contains(k))
                 db.remove(k);
-        });
+        };
+        if(db instanceof MemoryDatabaseStore){
+            new ArrayList<>(db.keySet()).forEach(fn);
+        }else{
+            db.stream().forEach(e -> fn.accept(e.getKey()));
+        }
     }
 }

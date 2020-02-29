@@ -13,4 +13,6 @@ public class Status {
     private long bestBlockHeight;
     private HexBytes bestBlockHash;
     private HexBytes genesisBlockHash;
+    private long prunedHeight;
+    private HexBytes prunedHash;
 }

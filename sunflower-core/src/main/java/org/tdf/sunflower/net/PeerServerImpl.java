@@ -38,6 +38,11 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     public PeerServerImpl() {
     }
 
+    @Override
+    public boolean isFull() {
+        return client.peersCache.isFull();
+    }
+
     // persistent storage to store peers
     public PeerServerImpl withStore(@NonNull Store<byte[], byte[]> persistentStore) {
         this.peerStore = new StoreWrapper<>(persistentStore,

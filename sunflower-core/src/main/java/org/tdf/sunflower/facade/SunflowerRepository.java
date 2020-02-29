@@ -114,13 +114,18 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
         }
 
         @Override
-        public void writeHeader(Header header) {
+        public void prune(byte[] hash) {
 
         }
 
         @Override
-        public void prune(byte[] hash) {
+        public long getPrunedHeight() {
+            return 0;
+        }
 
+        @Override
+        public HexBytes getPrunedHash() {
+            return null;
         }
 
         @Override

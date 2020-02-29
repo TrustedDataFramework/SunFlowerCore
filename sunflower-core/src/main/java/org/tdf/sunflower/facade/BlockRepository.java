@@ -1,5 +1,6 @@
 package org.tdf.sunflower.facade;
 
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.GenesisConflictsException;
 import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.types.Block;
@@ -44,8 +45,12 @@ public interface BlockRepository{
 
     void writeBlock(Block block);
 
-    void writeHeader(Header header);
-
-    // delete all header and transactions until this height
+    // delete all header and transactions until this height(inclusive), exclude this block
     void prune(byte[] hash);
+
+    // pruned header height
+    long getPrunedHeight();
+
+    // hash of pruned header
+    HexBytes getPrunedHash();
 }

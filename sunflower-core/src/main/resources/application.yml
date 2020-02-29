@@ -63,6 +63,8 @@ sunflower:
     prune-hash: ''
     # enable fast sync process
     fast-sync-hash: ''
+    fast-sync-height: '0'
+    max-accounts-transfer: 512
 
 
   message-queue:

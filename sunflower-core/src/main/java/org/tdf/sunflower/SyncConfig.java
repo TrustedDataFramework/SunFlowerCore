@@ -1,5 +1,6 @@
 package org.tdf.sunflower;
 
+import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -17,8 +18,14 @@ public class SyncConfig {
 
     private int maxBlocksTransfer;
 
-
     private String pruneHash;
+
+    @Getter
+    private long fastSyncHeight;
+
+    private String fastSyncHash;
+
+    private int maxAccountsTransfer;
 
     public long getHeartRate() {
         return heartRate > 0 ? heartRate : 5;
@@ -36,7 +43,15 @@ public class SyncConfig {
         return maxBlocksTransfer > 0 ? maxBlocksTransfer : 2048;
     }
 
+    public int getMaxAccountsTransfer() {
+        return maxAccountsTransfer > 0? maxAccountsTransfer : 512;
+    }
+
     public byte[] getPruneHash() {
         return pruneHash == null ? new byte[0] : HexBytes.decode(pruneHash);
+    }
+
+    public byte[] getFastSyncHash() {
+        return fastSyncHash == null ? null : HexBytes.decode(fastSyncHash);
     }
 }

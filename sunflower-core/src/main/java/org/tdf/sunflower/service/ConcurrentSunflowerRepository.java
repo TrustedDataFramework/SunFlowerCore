@@ -223,16 +223,6 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
     }
 
     @Override
-    public void writeHeader(Header header) {
-        lock.writeLock().lock();
-        try {
-            delegate.writeHeader(header);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    @Override
     public void prune(byte[] hash) {
         lock.writeLock().lock();
         try {
@@ -240,5 +230,15 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    @Override
+    public long getPrunedHeight() {
+        return delegate.getPrunedHeight();
+    }
+
+    @Override
+    public HexBytes getPrunedHash() {
+        return delegate.getPrunedHash();
     }
 }

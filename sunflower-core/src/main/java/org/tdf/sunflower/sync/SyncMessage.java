@@ -1,19 +1,18 @@
 package org.tdf.sunflower.sync;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPList;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Transaction;
 
 import java.util.Optional;
 
 // TODO: 对消息进行限流
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class SyncMessage {
     public static final int UNKNOWN = 0;
 
@@ -22,46 +21,27 @@ public class SyncMessage {
     public static final int BLOCKS = 6;
     public static final int PROPOSAL = 7;
     public static final int TRANSACTION = 8;
+    public static final int GET_ADDRESSES = 9;
+    public static final int ADDRESSES = 10;
+    public static final int GET_ACCOUNTS = 11;
+    public static final int ACCOUNTS = 12;
 
-    public static byte[] encode(int code, Object msg){
-        RLPList li = RLPElement.readRLPTree(msg).asRLPList();
-        li.add(0, RLPElement.readRLPTree(code));
-        return li.getEncoded();
-    }
-
-    public static Optional<SyncMessage> decode(byte[] rlp){
-        RLPList li = RLPElement.fromEncoded(rlp).asRLPList();
-        int code = li.get(0).asInt();
-        if(code < STATUS) return Optional.empty();
-        SyncMessage ret = new SyncMessage();
-        ret.code = code;
-        switch (code){
-            case STATUS:
-                ret.data = li.subList(1, li.size()).as(Status.class);
-                return Optional.of(ret);
-            case GET_BLOCKS:
-                ret.data = li.subList(1, li.size()).as(GetBlocks.class);
-                return Optional.of(ret);
-            case BLOCKS:
-                ret.data = li.subList(1, li.size()).as(Block[].class);
-                return Optional.of(ret);
-            case PROPOSAL:
-                ret.data = li.subList(1, li.size()).as(Block.class);
-                return Optional.of(ret);
-            case TRANSACTION:
-                ret.data = li.subList(1, li.size()).as(Transaction.class);
-                return Optional.of(ret);
-            default:
-                return Optional.empty();
-        }
-    }
-
-    @Getter@Setter
     private int code;
 
-    private Object data;
+    private RLPElement body;
 
-    public <T> T getBodyAs(Class<T> clazz){
-        return (T) this.data;
+    public static byte[] encode(int code, Object msg) {
+        return RLPCodec.encode(new Object[]{code, msg});
+    }
+
+    public static Optional<SyncMessage> decode(byte[] rlp) {
+        RLPList li = RLPElement.fromEncoded(rlp).asRLPList();
+        int code = li.get(0).asInt();
+        if (code < STATUS) return Optional.empty();
+        return Optional.of(li.as(SyncMessage.class));
+    }
+
+    public <T> T getBodyAs(Class<T> clazz) {
+        return body.as(clazz);
     }
 }

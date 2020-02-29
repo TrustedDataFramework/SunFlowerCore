@@ -1,5 +1,6 @@
 package org.tdf.common.store;
 
+import java.util.Iterator;
 import java.util.Map;
 
 public class MemoryDatabaseStore extends ByteArrayMapStore<byte[]> implements DatabaseStore {
