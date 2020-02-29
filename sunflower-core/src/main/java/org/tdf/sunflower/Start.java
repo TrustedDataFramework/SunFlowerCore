@@ -45,6 +45,8 @@ import org.tdf.sunflower.state.AccountUpdater;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 @EnableAsync
 @EnableScheduling
@@ -62,6 +64,16 @@ public class Start {
     public static void devAssert(boolean truth, String error) {
         if (!enableAssertion) return;
         Assert.isTrue(truth, error);
+    }
+
+    public static void devAssert(Supplier<Boolean> supplier, String error) {
+        if(!enableAssertion) return;
+        Assert.isTrue(supplier.get(), error);
+    }
+
+    public static <T> void devAssert(T thing, Predicate<T> predicate, String error) {
+        if(!enableAssertion) return;
+        Assert.isTrue(predicate.test(thing), error);
     }
 
     public static final ObjectMapper MAPPER = new ObjectMapper()
@@ -83,7 +95,7 @@ public class Start {
         }
         constant = env.getProperty("sunflower.assert");
         if(constant != null && !constant.isEmpty()){
-            if(constant.toLowerCase().matches("true|false")) throw new IllegalArgumentException("sunflower.assert");
+            if(!constant.toLowerCase().matches("true|false")) throw new IllegalArgumentException("sunflower.assert");
             enableAssertion = constant.equals("true");
         }
     }
