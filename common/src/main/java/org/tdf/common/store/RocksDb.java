@@ -16,7 +16,7 @@ import java.util.function.BiFunction;
 
 import static java.lang.System.arraycopy;
 
-@Slf4j
+@Slf4j(topic = "rocksdb")
 public class RocksDb implements DatabaseStore {
     static {
         RocksDB.loadLibrary();

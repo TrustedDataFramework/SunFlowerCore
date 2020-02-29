@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Slf4j
+@Slf4j(topic = "net")
 // plugin for peers join/remove management
 public class PeersManager implements Plugin {
     private PeerServerImpl server;

@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
 
 
-@Slf4j
+@Slf4j(topic = "leveldb")
 public class LevelDb implements DatabaseStore {
     // subdirectory
     private String name;

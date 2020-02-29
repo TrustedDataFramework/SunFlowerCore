@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-@Slf4j
+@Slf4j(topic = "db")
 public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implements SunflowerRepository {
     private static final String BEST_HEADER = "best";
 

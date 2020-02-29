@@ -10,7 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 
 // communicating channel with peer
-@Slf4j
+@Slf4j(topic = "net")
 public class ProtoChannel implements Channel {
     public interface ChannelOut {
         void write(Message message);

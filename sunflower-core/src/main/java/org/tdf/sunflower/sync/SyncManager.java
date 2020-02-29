@@ -40,7 +40,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * sync manager for full-nodes
  */
 @Component
-@Slf4j
+@Slf4j(topic = "sync")
 public class SyncManager implements PeerServerListener {
     private final PeerServer peerServer;
     private final ConsensusEngineFacade engine;
@@ -223,7 +223,7 @@ public class SyncManager implements PeerServerListener {
                             return;
                         } else {
                             clearFastSyncCache();
-                            log.error("fast syncing failed, state root not match, malicious node may exists in network");
+                            log.error("fast sync failed, state root not match, malicious node may exists in network!!!");
                         }
                     }
                 } finally {
@@ -279,14 +279,14 @@ public class SyncManager implements PeerServerListener {
                                 SyncMessage.GET_BLOCKS,
                                 new GetBlocks(fastSyncHeight, fastSyncHeight, false, syncConfig.getMaxBlocksTransfer())
                         ));
-                log.info("try to fetch fast sync header at height {}", fastSyncHeight);
+                log.info("fetch fast sync block at height {}", fastSyncHeight);
             }
             if (fastSyncBlock != null) {
                 ctx.response(SyncMessage.encode(
                         SyncMessage.GET_ADDRESSES,
                         fastSyncBlock.getStateRoot()
                 ));
-                log.info("try to fetch account addresses");
+                log.info("fetch account addresses");
             }
             if (fastSyncBlock != null && fastSyncAddresses != null) {
                 fastSyncAddressesLock.readLock().lock();
