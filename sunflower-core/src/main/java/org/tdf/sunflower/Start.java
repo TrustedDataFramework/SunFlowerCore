@@ -3,6 +3,7 @@ package org.tdf.sunflower;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
@@ -53,6 +54,7 @@ import java.util.concurrent.Executors;
 // use SPRING_CONFIG_LOCATION environment to locate spring config
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 public class Start {
+    @Getter
     private static boolean enableAssertion;
 
     public static final Executor APPLICATION_THREAD_POOL = Executors.newCachedThreadPool();
