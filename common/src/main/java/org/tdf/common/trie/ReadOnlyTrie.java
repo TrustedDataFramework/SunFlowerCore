@@ -41,6 +41,11 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
+    public Set<byte[]> dumpKeys() {
+        return delegate.dumpKeys();
+    }
+
+    @Override
     public Map<byte[], byte[]> dump() {
         return delegate.dump();
     }

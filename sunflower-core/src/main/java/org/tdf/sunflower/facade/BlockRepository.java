@@ -14,7 +14,7 @@ public interface BlockRepository{
     void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException;
 
     // TODO: use guava cache
-    boolean containsBlock(byte[] hash);
+    boolean containsHeader(byte[] hash);
 
     Header getBestHeader();
 
@@ -43,4 +43,9 @@ public interface BlockRepository{
     List<Block> getBlocksByHeight(long height);
 
     void writeBlock(Block block);
+
+    void writeHeader(Header header);
+
+    // delete all header and transactions until this height
+    void prune(byte[] hash);
 }

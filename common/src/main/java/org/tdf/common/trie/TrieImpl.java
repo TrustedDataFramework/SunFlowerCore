@@ -13,10 +13,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -126,6 +123,14 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
     public void traverseInternal(BiFunction<TrieKey, Node, Boolean> action) {
         if (root == null) return;
         root.traverse(TrieKey.EMPTY, action);
+    }
+
+    @Override
+    public Set<byte[]> dumpKeys() {
+        if (isDirty()) throw new UnsupportedOperationException();
+        DumpKeys dump = new DumpKeys();
+        traverseInternal(dump);
+        return dump.getKeys();
     }
 
     @Override

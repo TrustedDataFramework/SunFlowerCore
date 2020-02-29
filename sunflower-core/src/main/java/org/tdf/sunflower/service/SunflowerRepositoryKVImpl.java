@@ -6,7 +6,9 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
+import org.tdf.common.util.ByteArraySet;
 import org.tdf.common.util.HexBytes;
+import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewBlockWritten;
@@ -24,6 +26,9 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implements SunflowerRepository {
+    private static final String BEST_HEADER = "best";
+
+    private static final String PRUNE = "prune";
 
     // transaction hash -> transaction
     private Store<byte[], Transaction> transactionsStore;
@@ -37,9 +42,10 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     // block height -> block hashes
     private Store<Long, HexBytes[]> heightIndex;
 
-    private Store<String, Header> bestHeaderStore;
+    private Store<String, Header> status;
 
     private Block bestBlock;
+
 
     public SunflowerRepositoryKVImpl(EventBus eventBus, DatabaseStoreFactory factory) {
         super(eventBus);
@@ -54,7 +60,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
                 Codecs.newRLPCodec(Header.class)
         );
         this.transactionsRoot = new StoreWrapper<>(
-                factory.create("transactionsRoot"),
+                factory.create("transactions-root"),
                 Codec.identity(),
                 Codecs.newRLPCodec(HexBytes[].class));
         this.heightIndex = new StoreWrapper<>(
@@ -62,8 +68,8 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
                 Codecs.newRLPCodec(Long.class),
                 Codecs.newRLPCodec(HexBytes[].class)
         );
-        this.bestHeaderStore = new StoreWrapper<>(
-                factory.create("best-header"),
+        this.status = new StoreWrapper<>(
+                factory.create("block-store-status"),
                 Codecs.STRING,
                 Codecs.newRLPCodec(Header.class)
         );
@@ -73,8 +79,8 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     @Override
     public void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
         super.saveGenesis(block);
-        if (!bestHeaderStore.get("best").isPresent()) {
-            bestHeaderStore.put("best", block.getHeader());
+        if (!status.get(BEST_HEADER).isPresent()) {
+            status.put(BEST_HEADER, block.getHeader());
         }
     }
 
@@ -100,14 +106,14 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     }
 
     @Override
-    public boolean containsBlock(byte[] hash) {
+    public boolean containsHeader(byte[] hash) {
         return headerStore.containsKey(hash);
     }
 
     @Override
     public Header getBestHeader() {
         if (bestBlock != null) return bestBlock.getHeader();
-        return bestHeaderStore.get("best").get();
+        return status.get(BEST_HEADER).get();
     }
 
 
@@ -166,7 +172,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         writeBlockNoReset(block);
         Block best = getBestBlock();
         if (Block.BEST_COMPARATOR.compare(best, block) < 0) {
-            bestHeaderStore.put("best", block.getHeader());
+            status.put(BEST_HEADER, block.getHeader());
             this.bestBlock = block;
             eventBus.publish(new NewBestBlock(block));
         }
@@ -197,11 +203,16 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         writeBlockNoReset(genesis);
     }
 
+    @Override
+    public void writeHeader(Header header) {
+        headerStore.put(header.getHash().getBytes(), header);
+    }
+
     private void writeBlockNoReset(Block block) {
         if (!accountTrie.getTrieStore().containsKey(block.getStateRoot().getBytes())) {
             throw new RuntimeException("unexpected error: account trie not synced");
         }
-        if (containsBlock(block.getHash().getBytes()))
+        if (containsHeader(block.getHash().getBytes()))
             return;
         headerStore.put(block.getHash().getBytes(), block.getHeader());
         block.getBody()
@@ -220,5 +231,50 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
         eventBus.publish(new NewBlockWritten(block));
         log.info("write block at height " + block.getHeight() + " " + block.getHeader().getHash() + " to database success");
+    }
+
+    @Override
+    public void prune(byte[] hash) {
+        Header header = getHeader(hash).orElseThrow(
+                () -> new RuntimeException("header " + HexBytes.fromBytes(hash) + " not found")
+        );
+
+        Optional<Header> lastPruned = status.get(PRUNE);
+        Block best = getBestBlock();
+
+        if(header.getHeight() >= best.getHeight())
+            throw new RuntimeException("the pruned block height should less than current best block " + best);
+
+        if(lastPruned.isPresent() && lastPruned.get().getHash().equals(header.getHash())){
+            return;
+        }
+
+        Set<HexBytes> txWhiteList = new HashSet<>();
+        Set<HexBytes> txRootWhiteList = new HashSet<>();
+        Set<byte[]> stateRootWhiteList = new ByteArraySet();
+
+        headerStore.forEach((k, h) -> {
+            if (h.getHeight() <= header.getHeight() && h.getHeight() != 0 && !h.getHash().equals(header.getHash())) {
+                headerStore.remove(k);
+            } else {
+                HexBytes[] txs = transactionsRoot.get(h.getTransactionsRoot().getBytes()).orElse(new HexBytes[0]);
+                txWhiteList.addAll(Arrays.asList(txs));
+                txRootWhiteList.add(h.getTransactionsRoot());
+                stateRootWhiteList.add(h.getStateRoot().getBytes());
+            }
+        });
+
+        transactionsRoot.forEach((k, v) -> {
+            if (!txRootWhiteList.contains(HexBytes.fromBytes(k)))
+                transactionsRoot.remove(k);
+        });
+
+        transactionsStore.forEach((k, v) -> {
+            if (!txWhiteList.contains(HexBytes.fromBytes(k)))
+                transactionsStore.remove(k);
+        });
+
+        accountTrie.prune(stateRootWhiteList);
+        status.put(PRUNE, header);
     }
 }

@@ -124,7 +124,7 @@ public class SyncManager implements PeerServerListener {
                 if (Math.abs(proposal.getHeight() - best.getHeight()) > syncConfig.getMaxPendingBlocks()) {
                     return;
                 }
-                if (sunflowerRepository.containsBlock(proposal.getHash().getBytes()))
+                if (sunflowerRepository.containsHeader(proposal.getHash().getBytes()))
                     return;
                 lock.lock();
                 try {
@@ -143,7 +143,7 @@ public class SyncManager implements PeerServerListener {
                     for (Block block : blocks) {
                         if (Math.abs(block.getHeight() - best.getHeight()) > syncConfig.getMaxPendingBlocks())
                             break;
-                        if (sunflowerRepository.containsBlock(block.getHash().getBytes()))
+                        if (sunflowerRepository.containsHeader(block.getHash().getBytes()))
                             continue;
                         queue.add(block);
                     }
@@ -186,7 +186,7 @@ public class SyncManager implements PeerServerListener {
                 } catch (NoSuchElementException ignored) {
                 }
                 if (b == null) return;
-                if (sunflowerRepository.containsBlock(b.getHash().getBytes())) {
+                if (sunflowerRepository.containsHeader(b.getHash().getBytes())) {
                     queue.remove(b);
                     continue;
                 }

@@ -7,6 +7,7 @@ import org.tdf.rlp.RLPElement;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -53,6 +54,11 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     @Override
     public byte[] commit() {
         return delegate.commit();
+    }
+
+    @Override
+    public Set<byte[]> dumpKeys() {
+        return delegate.dumpKeys();
     }
 
     @Override

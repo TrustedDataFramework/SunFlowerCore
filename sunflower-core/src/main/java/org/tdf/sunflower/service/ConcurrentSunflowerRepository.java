@@ -48,10 +48,10 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
     }
 
     @Override
-    public boolean containsBlock(byte[] hash) {
+    public boolean containsHeader(byte[] hash) {
         lock.readLock().lock();
         try {
-            return delegate.containsBlock(hash);
+            return delegate.containsHeader(hash);
         } finally {
             lock.readLock().unlock();
         }
@@ -220,5 +220,25 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
     @Override
     public void setProvider(ConfirmedBlocksProvider provider) {
 
+    }
+
+    @Override
+    public void writeHeader(Header header) {
+        lock.writeLock().lock();
+        try {
+            delegate.writeHeader(header);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void prune(byte[] hash) {
+        lock.writeLock().lock();
+        try {
+            delegate.prune(hash);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 }

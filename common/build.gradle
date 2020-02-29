@@ -54,5 +54,7 @@ dependencies {
 
     testCompile "org.slf4j:slf4j-api:${slf4jVersion}"
     testCompile "org.rocksdb:rocksdbjni:${rocksdbVersion}"
+// https://mvnrepository.com/artifact/org.slf4j/slf4j-nop
+    testCompile group: 'org.slf4j', name: 'slf4j-nop', version: '1.7.30'
 
 }

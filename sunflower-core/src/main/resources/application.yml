@@ -59,7 +59,10 @@ sunflower:
     block-write-rate: 1
     max-pending-blocks: 2048
     max-blocks-transfer: 1024
-
+    # drop old header, transaction and states
+    prune-hash: ''
+    # enable fast sync process
+    fast-sync-hash: ''
 
 
   message-queue:

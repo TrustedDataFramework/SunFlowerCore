@@ -76,7 +76,7 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
     }
 
     @Override
-    public boolean containsBlock(byte[] hash) {
+    public boolean containsHeader(byte[] hash) {
         return headerDao.existsById(hash);
     }
 
@@ -190,6 +190,11 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
 
     @Override
     public void setProvider(ConfirmedBlocksProvider provider) {
+
+    }
+
+    @Override
+    public void prune(byte[] hash) {
 
     }
 }

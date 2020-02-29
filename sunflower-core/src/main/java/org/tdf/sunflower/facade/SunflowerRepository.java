@@ -42,7 +42,7 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
         }
 
         @Override
-        public boolean containsBlock(byte[] hash) {
+        public boolean containsHeader(byte[] hash) {
             return false;
         }
 
@@ -113,6 +113,15 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
 
         }
 
+        @Override
+        public void writeHeader(Header header) {
+
+        }
+
+        @Override
+        public void prune(byte[] hash) {
+
+        }
 
         @Override
         public boolean containsTransaction(byte[] hash) {

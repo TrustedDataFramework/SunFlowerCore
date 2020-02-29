@@ -5,13 +5,11 @@ import com.google.common.cache.CacheBuilder;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.BatchStore;
-import org.tdf.common.store.CachedStore;
-import org.tdf.common.store.NoDeleteBatchStore;
-import org.tdf.common.store.Store;
+import org.tdf.common.store.*;
 import org.tdf.common.trie.ReadOnlyTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.consensus.vrf.util.ByteArraySet;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
@@ -26,6 +24,8 @@ import java.util.Set;
 public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
     private final String name;
+
+    private DatabaseStore db;
 
     @Getter
     private Store<byte[], byte[]> trieStore;
@@ -51,11 +51,8 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     ) {
         name = getPrefix() + "-trie";
         this.updater = updater;
-
-        trieStore = new NoDeleteBatchStore<>(
-                factory.create(name)
-        );
-
+        this.db = factory.create(name);
+        trieStore = new NoDeleteBatchStore<>(db);
 
         trie = Trie.<ID, S>builder()
                 .hashFunction(CryptoContext::digest)
@@ -129,16 +126,17 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     }
 
     @Override
-    public void gc(Collection<? extends byte[]> excludedRoots) {
-        Map<byte[], byte[]> dumped = new ByteArrayMap<>();
+    public void prune(Collection<? extends byte[]> excludedRoots) {
+        Set<byte[]> dumped = new ByteArraySet();
         for (byte[] h : excludedRoots) {
-            dumped.putAll(getTrieForReadOnly(h).dump());
+            dumped.addAll(getTrieForReadOnly(h).dumpKeys());
         }
-        getTrieStore().clear();
-        if (getTrieStore() instanceof BatchStore) {
-            ((BatchStore<byte[], byte[]>) getTrieStore()).putAll(dumped.entrySet());
-            return;
-        }
-        dumped.forEach(getTrieStore()::put);
+        getTrieStore().forEach((k,v)->{
+
+        });
+        db.forEach((k, v) ->{
+            if(!dumped.contains(k))
+                db.remove(k);
+        });
     }
 }
