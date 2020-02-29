@@ -3,6 +3,7 @@ package org.tdf.sunflower;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -52,12 +53,12 @@ import java.util.concurrent.Executors;
 // use SPRING_CONFIG_LOCATION environment to locate spring config
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 public class Start {
-    private static final boolean ENABLE_ASSERTION = "true".equals(System.getenv("ENABLE_ASSERTION"));
+    private static boolean enableAssertion;
 
     public static final Executor APPLICATION_THREAD_POOL = Executors.newCachedThreadPool();
 
     public static void devAssert(boolean truth, String error) {
-        if (!ENABLE_ASSERTION) return;
+        if (!enableAssertion) return;
         Assert.isTrue(truth, error);
     }
 
@@ -65,7 +66,7 @@ public class Start {
             .enable(SerializationFeature.INDENT_OUTPUT)
             .enable(JsonParser.Feature.ALLOW_COMMENTS);
 
-    public static void loadConstants(Environment env){
+    public static void loadConstants(Environment env) {
         String constant = env.getProperty("sunflower.cache.trie");
         if(constant != null && !constant.isEmpty()){
             ApplicationConstants.TRIE_CACHE_SIZE = Integer.parseInt(constant);
@@ -77,6 +78,11 @@ public class Start {
         constant = env.getProperty("sunflower.cache.p2p.proposal");
         if(constant != null && !constant.isEmpty()){
             ApplicationConstants.P2P_PROPOSAL_CACHE_SIZE = Integer.parseInt(constant);
+        }
+        constant = env.getProperty("sunflower.assert");
+        if(constant != null && !constant.isEmpty()){
+            if(constant.toLowerCase().matches("true|false")) throw new IllegalArgumentException("sunflower.assert");
+            enableAssertion = constant.equals("true");
         }
     }
 

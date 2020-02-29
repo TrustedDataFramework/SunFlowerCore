@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -20,16 +19,14 @@ import java.util.function.BiFunction;
 
 @Slf4j(topic = "leveldb")
 public class LevelDb implements DatabaseStore {
+    private final DBFactory factory;
     // subdirectory
     private String name;
     // parent directory
     private String directory;
-
     private DB db;
     private DBSettings dbSettings;
     private boolean alive;
-    private final DBFactory factory;
-
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
     public LevelDb(DBFactory factory, String directory, String name) {

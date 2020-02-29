@@ -14,6 +14,10 @@ spring:
 
 # sunflower configurations
 sunflower:
+  # enable assert in development
+  # call org.tdf.sunflower.Start.devAssert
+  assert: 'false'
+
   consensus:
     name: 'poa'
     genesis: 'genesis/poa.jsonc'

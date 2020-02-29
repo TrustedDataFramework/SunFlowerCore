@@ -36,6 +36,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static org.tdf.sunflower.Start.devAssert;
+
 /**
  * sync manager for full-nodes
  */
@@ -68,7 +70,7 @@ public class SyncManager implements PeerServerListener {
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     // when fastSyncing = true, the node
     private volatile boolean fastSyncing;
-    private Trie<HexBytes, Account> fastSyncTrie;
+    private volatile Trie<HexBytes, Account> fastSyncTrie;
     private volatile Set<HexBytes> fastSyncAddresses;
 
     public SyncManager(
@@ -218,6 +220,8 @@ public class SyncManager implements PeerServerListener {
                             fastSyncTrie.flush();
                             repository.writeBlock(fastSyncBlock);
                             repository.prune(fastSyncBlock.getHash().getBytes());
+                            devAssert(
+                                    repository.getPrunedHash().equals(fastSyncBlock.getHash()), "prune failed after fast sync");
                             log.info("fast sync success to height {} hash {}", fastSyncHeight, fastSyncBlock.getHash());
                             clearFastSyncCache();
                             return;

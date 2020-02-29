@@ -309,26 +309,4 @@ public class RocksDb implements DatabaseStore {
             resetDbLock.readLock().unlock();
         }
     }
-
-    public Iterator<Map.Entry<byte[], byte[]>> iterator() {
-        RocksIterator it = db.newIterator();
-        RocksDb t = this;
-        return new Iterator<Map.Entry<byte[], byte[]>>() {
-            @Override
-            public boolean hasNext() {
-                return it.isValid();
-            }
-
-            @Override
-            public Map.Entry<byte[], byte[]> next() {
-                it.next();
-                return new HashMap.SimpleImmutableEntry<>(it.key(), it.key());
-            }
-
-            @Override
-            public void remove() {
-                t.remove(it.key());
-            }
-        };
-    }
 }

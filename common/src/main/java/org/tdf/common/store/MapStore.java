@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  * @param <V> value type
  */
 public class MapStore<K, V> implements BatchStore<K, V> {
-    protected Map<K, V> map;
+    private Map<K, V> map;
 
     public MapStore() {
         this.map = new HashMap<>();
