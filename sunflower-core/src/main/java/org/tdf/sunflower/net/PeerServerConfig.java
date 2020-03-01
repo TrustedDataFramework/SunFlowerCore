@@ -47,4 +47,9 @@ public class PeerServerConfig {
 
     @JsonProperty(value = "private-key")
     private HexBytes privateKey;
+
+    private boolean persist;
+
+    @JsonProperty(value = "discover-rate")
+    private int discoverRate;
 }

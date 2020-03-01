@@ -269,9 +269,7 @@ public class Start {
         if (name.trim().toLowerCase().equals("none")) {
             return PeerServer.NONE;
         }
-        PeerServer peerServer = new PeerServerImpl().withStore(
-                factory.create("peers")
-        );
+        PeerServer peerServer = new PeerServerImpl(factory);
         peerServer.init(properties);
         peerServer.addListeners(engine.getPeerServerListener());
         peerServer.start();

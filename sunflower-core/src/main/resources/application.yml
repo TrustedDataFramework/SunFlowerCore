@@ -57,6 +57,12 @@ sunflower:
     # if private-key is not pre-defined, node will generate private key
     # private-key:
 
+    # persist peers to file database.directory/peers
+    persist: true
+
+    # lookup peers every 15 seconds
+    discover-rate: 15
+
   sync:
   #status rate(seconds)
     heart-rate: 5

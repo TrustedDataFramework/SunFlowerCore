@@ -20,7 +20,6 @@ import java.util.stream.Stream;
 @Slf4j(topic = "net")
 // plugin for peers join/remove management
 public class PeersManager implements Plugin {
-    private static final int DISCOVERY_RATE = 15;
     private PeerServerImpl server;
     private PeerServerConfig config;
     private ConcurrentHashMap<PeerImpl, Boolean> pending = new ConcurrentHashMap<>();
@@ -75,7 +74,7 @@ public class PeersManager implements Plugin {
         executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleWithFixedDelay(() -> client.broadcast(
                 builder.buildPing()
-        ), 0, DISCOVERY_RATE, TimeUnit.SECONDS);
+        ), 0, config.getDiscoverRate(), TimeUnit.SECONDS);
 
         executorService
                 .scheduleWithFixedDelay(() -> {
@@ -102,7 +101,7 @@ public class PeersManager implements Plugin {
                                     }
                             );
                     pending.clear();
-                }, 0, DISCOVERY_RATE, TimeUnit.SECONDS);
+                }, 0, config.getDiscoverRate(), TimeUnit.SECONDS);
     }
 
     private void lookup() {

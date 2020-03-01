@@ -4,7 +4,9 @@ import io.netty.util.internal.logging.InternalLogLevel;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.sunflower.DatabaseConfig;
 import org.tdf.sunflower.PeerServerProperties;
+import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.facade.PeerServerListener;
 
 import java.nio.charset.StandardCharsets;
@@ -30,8 +32,9 @@ public class P2PDebugTool {
                 return new Nop();
             }
         });
+        DatabaseStoreFactory factory = new DatabaseStoreFactory(new DatabaseConfig("memory", 1, "", false, "kv"));
         // port listening on
-        PeerServerImpl server = new PeerServerImpl();
+        PeerServerImpl server = new PeerServerImpl(factory);
         Properties properties = new PeerServerProperties();
         properties.setProperty("address", System.getenv("X_ADDRESS"));
         if(System.getenv("X_BOOTSTRAPS") != null){

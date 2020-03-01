@@ -11,6 +11,7 @@ import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.Start;
+import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.proto.Code;
@@ -33,22 +34,17 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     private NetLayer netLayer;
 
     // if non-database provided, use memory database
-    Store<String, String> peerStore = new MapStore<>();
+    Store<String, String> peerStore;
 
-    public PeerServerImpl() {
+    private final DatabaseStoreFactory factory;
+
+    public PeerServerImpl(DatabaseStoreFactory factory) {
+        this.factory = factory;
     }
 
     @Override
     public boolean isFull() {
         return client.peersCache.isFull();
-    }
-
-    // persistent storage to store peers
-    public PeerServerImpl withStore(@NonNull Store<byte[], byte[]> persistentStore) {
-        this.peerStore = new StoreWrapper<>(persistentStore,
-                Codecs.STRING,
-                Codecs.STRING);
-        return this;
     }
 
     @Override
@@ -135,6 +131,10 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
                     "load properties failed :" + properties.toString() + " expecting " + schema
             );
         }
+        this.peerStore = config.isPersist() ? new StoreWrapper<>(factory.create("peers"),
+                Codecs.STRING,
+                Codecs.STRING) : new MapStore<>();
+
         if (!config.isEnableDiscovery() &&
                 Stream.of(config.getBootstraps(), config.getTrusted())
                         .filter(Objects::nonNull)
@@ -167,7 +167,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     }
 
     private void resolveSelf() throws Exception{
-        // find valid private key from properties
+        // find valid private key from 1.properties 2.persist 3. generate
         byte[] sk = config.getPrivateKey() == null ? null : config.getPrivateKey().getBytes();
         if(sk == null || sk.length == 0){
             sk = peerStore.get("self").map(HexBytes::decode)
