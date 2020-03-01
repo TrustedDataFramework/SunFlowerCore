@@ -24,7 +24,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Slf4j
+@Slf4j(topic = "net")
 public class PeerServerImpl implements ChannelListener, PeerServer {
     private PeerServerConfig config;
     private List<Plugin> plugins = new CopyOnWriteArrayList<>();
