@@ -2,10 +2,11 @@ package org.tdf.sunflower.net;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Functions;
-import com.google.protobuf.InvalidProtocolBufferException;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.Start;
+import org.tdf.sunflower.proto.Disconnect;
 import org.tdf.sunflower.proto.Peers;
 
 import java.util.Optional;
@@ -19,11 +20,10 @@ import java.util.stream.Stream;
 @Slf4j(topic = "net")
 // plugin for peers join/remove management
 public class PeersManager implements Plugin {
+    private static final int DISCOVERY_RATE = 15;
     private PeerServerImpl server;
     private PeerServerConfig config;
     private ConcurrentHashMap<PeerImpl, Boolean> pending = new ConcurrentHashMap<>();
-    private static final int DISCOVERY_RATE = 15;
-
     private ScheduledExecutorService executorService;
 
     PeersManager(PeerServerConfig config) {
@@ -31,6 +31,7 @@ public class PeersManager implements Plugin {
     }
 
     @Override
+    @SneakyThrows
     public void onMessage(ContextImpl context, PeerServerImpl server) {
         Client client = server.getClient();
         PeersCache cache = client.peersCache;
@@ -42,21 +43,24 @@ public class PeersManager implements Plugin {
                 return;
             case LOOK_UP:
                 context.channel.write(
-                    builder.buildPeers(server.getPeers())
+                        builder.buildPeers(server.getPeers())
                 );
                 return;
             case PEERS:
-                if(!config.isEnableDiscovery()) return;
-                try {
-                    Peers.parseFrom(context.message.getBody()).getPeersList().stream()
-                            .map(PeerImpl::parse)
-                            .filter(Optional::isPresent)
-                            .map(Optional::get)
-                            .filter(x -> !cache.contains(x) && !x.equals(server.getSelf()))
-                            .forEach(x -> pending.put(x, true));
-                } catch (InvalidProtocolBufferException e) {
-                    log.error("parse peers message failed");
-                }
+                if (!config.isEnableDiscovery()) return;
+                Peers.parseFrom(context.message.getBody()).getPeersList().stream()
+                        .map(PeerImpl::parse)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .filter(x -> !cache.contains(x) && !x.equals(server.getSelf()))
+                        .forEach(x -> pending.put(x, true));
+                return;
+            case DISCONNECT:
+                String reason = Disconnect.parseFrom(context.message.getBody()).getReason();
+                if(reason != null && !reason.isEmpty())
+                    log.error("disconnect from peer " + context.getRemote() + " reason is " + reason);
+                context.channel.close();
+                return;
         }
     }
 
@@ -79,13 +83,13 @@ public class PeersManager implements Plugin {
                         server.peerStore.put("peers",
                                 Start.MAPPER.writeValueAsString(
                                         client.peersCache.getPeers().map(PeerImpl::encodeURI)
-                                .collect(Collectors.toList())));
+                                                .collect(Collectors.toList())));
                     } catch (JsonProcessingException ignored) {
 
                     }
                     lookup();
                     cache.half();
-                    if(!config.isEnableDiscovery()) return;
+                    if (!config.isEnableDiscovery()) return;
 
                     pending.keySet()
                             .stream()
@@ -101,12 +105,12 @@ public class PeersManager implements Plugin {
                 }, 0, DISCOVERY_RATE, TimeUnit.SECONDS);
     }
 
-    private void lookup(){
+    private void lookup() {
         Client client = server.getClient();
         PeersCache cache = client.peersCache;
         MessageBuilder builder = client.messageBuilder;
 
-        if(!config.isEnableDiscovery()){
+        if (!config.isEnableDiscovery()) {
             // keep channel to bootstraps and trusted alive
             Stream.of(cache.bootstraps.keySet().stream(), cache.trusted.keySet().stream())
                     .flatMap(Functions.identity())
@@ -115,7 +119,7 @@ public class PeersManager implements Plugin {
             return;
         }
         // query for neighbours when neighbours is not empty
-        if(cache.size() > 0){
+        if (cache.size() > 0) {
             client.broadcast(builder.buildLookup());
             cache.trusted.keySet().forEach(p -> client.dial(p, builder.buildPing()));
             return;

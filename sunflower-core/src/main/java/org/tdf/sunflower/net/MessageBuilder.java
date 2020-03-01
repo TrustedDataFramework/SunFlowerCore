@@ -35,6 +35,10 @@ public class MessageBuilder {
         return buildMessage(Code.LOOK_UP, 1, Lookup.newBuilder().build().toByteArray());
     }
 
+    public Message buildDisconnect(String reason){
+        return buildMessage(Code.DISCONNECT, 1, Disconnect.newBuilder().setReason(reason == null ? "" : reason).build().toByteArray());
+    }
+
     public Message buildPeers(Collection<? extends Peer> peers){
         return buildMessage(Code.PEERS, 1, Peers
                 .newBuilder().addAllPeers(

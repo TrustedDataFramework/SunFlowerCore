@@ -10,6 +10,11 @@ interface Channel{
     void write(Message message);
 
     // close the channel
+    default void close(){
+        close("");
+    }
+
+    // close the channel
     void close(String reason);
 
     default boolean isAlive(){
@@ -29,4 +34,6 @@ interface Channel{
 
     // bind listener to the channel
     void addListeners(ChannelListener... listeners);
+
+    void setMessageBuilder(MessageBuilder builder);
 }

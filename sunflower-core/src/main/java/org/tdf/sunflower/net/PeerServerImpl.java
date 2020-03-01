@@ -256,6 +256,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     @Override
     public void stop() {
         plugins.forEach(x -> x.onStop(this));
+
         client.peersCache
                 .getChannels()
                 .forEach(x -> x.close("application will shutdown"));

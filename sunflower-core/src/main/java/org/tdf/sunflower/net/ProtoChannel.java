@@ -1,5 +1,6 @@
 package org.tdf.sunflower.net;
 
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.sunflower.proto.Message;
 
@@ -22,9 +23,8 @@ public class ProtoChannel implements Channel {
     private ChannelOut out;
     private boolean pinged;
     private List<ChannelListener> listeners = new CopyOnWriteArrayList<>();
-
-    ProtoChannel() {
-    }
+    @Setter
+    private MessageBuilder messageBuilder;
 
     public void setOut(ChannelOut out) {
         this.out = out;
@@ -70,7 +70,10 @@ public class ProtoChannel implements Channel {
     public void close(String reason) {
         if(closed) return;
         closed = true;
-        log.error("close channel to " + remote + " reason is " + reason);
+        if(reason != null && !reason.isEmpty()){
+            out.write(messageBuilder.buildDisconnect(reason));
+            log.error("close channel to " + remote + " reason is " + reason);
+        }
         if(listeners == null) return;
         listeners.forEach(l -> l.onClose(this));
         listeners = null;
