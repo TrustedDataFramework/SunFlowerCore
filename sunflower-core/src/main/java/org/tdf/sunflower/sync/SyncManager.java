@@ -176,7 +176,13 @@ public class SyncManager implements PeerServerListener {
             case SyncMessage.GET_ADDRESSES: {
                 if (fastSyncing) return;
                 byte[] root = msg.getBodyAs(byte[].class);
-                context.response(SyncMessage.encode(SyncMessage.ADDRESSES, accountTrie.getTrie(root).keySet()));
+                Set<HexBytes> addresses = new HashSet<>();
+                accountTrie.getTrie(root).traverse(e ->{
+                    Account a = (Account) e.getValue();
+                    addresses.add(a.getAddress());
+                    return true;
+                });
+                context.response(SyncMessage.encode(SyncMessage.ADDRESSES, addresses));
                 return;
             }
             case SyncMessage.ADDRESSES: {

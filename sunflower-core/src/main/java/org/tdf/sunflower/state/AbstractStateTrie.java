@@ -7,6 +7,7 @@ import lombok.SneakyThrows;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.*;
 import org.tdf.common.trie.ReadOnlyTrie;
+import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.vrf.util.ByteArraySet;
@@ -55,11 +56,13 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         this.db = factory.create(name);
         trieStore = new NoDeleteBatchStore<>(db);
 
-        trie = Trie.<ID, S>builder()
+        trie = new SecureTrie<>(Trie.<ID, S>builder()
                 .hashFunction(CryptoContext::digest)
                 .store(trieStore)
                 .keyCodec(idCodec)
-                .valueCodec(stateCodec).build()
+                .valueCodec(stateCodec).build(),
+                CryptoContext.hashFunction
+        )
         ;
 
         // sync to genesis

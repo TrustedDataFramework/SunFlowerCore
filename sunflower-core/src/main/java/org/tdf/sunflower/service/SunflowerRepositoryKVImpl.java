@@ -221,7 +221,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
     @Override
     public void prune(byte[] hash) {
-        Header pruned = getHeader(hash).orElseThrow(
+        Block pruned = getBlock(hash).orElseThrow(
                 () -> new RuntimeException("pruned " + HexBytes.fromBytes(hash) + " not found")
         );
 
@@ -248,10 +248,9 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         Set<HexBytes> txRootWhiteList = new HashSet<>();
         Set<byte[]> stateRootWhiteList = new ByteArraySet();
         stateRootWhiteList.add(genesis.getStateRoot().getBytes());
-        stateRootWhiteList.add(pruned.getStateRoot().getBytes());
 
         BiConsumer<byte[], Header> fn = (k, h) -> {
-            if (h.getHeight() <= pruned.getHeight() && h.getHeight() != 0) {
+            if (h.getHeight() <= pruned.getHeight() && h.getHeight() != 0 && !h.getHash().equals(pruned.getHash())) {
                 headerStore.remove(k);
                 heightIndex.remove(h.getHeight());
             } else {
@@ -290,11 +289,10 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
             transactionsRoot.forEach(fn2);
         }
 
-        headerStore.put(pruned.getHash().getBytes(), pruned);
-        heightIndex.put(pruned.getHeight(), new HexBytes[]{pruned.getHash()});
-        this.pruned = pruned;
+
+        this.pruned = pruned.getHeader();
         accountTrie.prune(stateRootWhiteList);
-        status.put(PRUNE, pruned);
+        status.put(PRUNE, pruned.getHeader());
     }
 
     @Override

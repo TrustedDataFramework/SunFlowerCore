@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
 
 
-@Slf4j
+@Slf4j(topic = "poa.miner")
 public class PoAMiner extends AbstractMiner {
     private PoAConfig poAConfig;
 
@@ -70,7 +70,8 @@ public class PoAMiner extends AbstractMiner {
 
 
     public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
-        if (genesis.miners.isEmpty()) {
+
+        if (currentEpochSeconds - parent.getCreatedAt() < poAConfig.getBlockInterval()) {
             return Optional.empty();
         }
         if (parent.getHeight() == 0) {
@@ -86,11 +87,11 @@ public class PoAMiner extends AbstractMiner {
         }
 
         long step = (currentEpochSeconds - parent.getCreatedAt())
-                / poAConfig.getBlockInterval() + 1;
+                / poAConfig.getBlockInterval();
 
         int currentIndex = (int) ((prevIndex + step) % genesis.miners.size());
-        long endTime = parent.getCreatedAt() + step * poAConfig.getBlockInterval();
-        long startTime = endTime - poAConfig.getBlockInterval();
+        long startTime = parent.getCreatedAt() + step * poAConfig.getBlockInterval();
+        long endTime = startTime + poAConfig.getBlockInterval();
 
         return Optional.of(new Proposer(
                 genesis.miners.get(currentIndex).address,

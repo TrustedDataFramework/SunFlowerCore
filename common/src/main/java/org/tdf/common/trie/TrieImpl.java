@@ -120,7 +120,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
         );
     }
 
-    public void traverseInternal(BiFunction<TrieKey, Node, Boolean> action) {
+    public void traverseTrie(BiFunction<TrieKey, Node, Boolean> action) {
         if (root == null) return;
         root.traverse(TrieKey.EMPTY, action);
     }
@@ -129,7 +129,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
     public Set<byte[]> dumpKeys() {
         if (isDirty()) throw new UnsupportedOperationException();
         DumpKeys dump = new DumpKeys();
-        traverseInternal(dump);
+        traverseTrie(dump);
         return dump.getKeys();
     }
 
@@ -137,7 +137,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
     public Map<byte[], byte[]> dump() {
         if (isDirty()) throw new UnsupportedOperationException();
         Dump dump = new Dump();
-        traverseInternal(dump);
+        traverseTrie(dump);
         return dump.getPairs();
     }
 
@@ -170,13 +170,10 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
     }
 
     @Override
-    public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
-        traverseInternal((k, n) -> {
+    void traverseInternal(BiFunction<byte[], byte[], Boolean> traverser) {
+        traverseTrie((k, n) -> {
             if (n.getType() != Node.Type.EXTENSION && n.getValue() != null) {
-                return traverser.apply(
-                        kCodec.getDecoder().apply(k.toNormal()),
-                        vCodec.getDecoder().apply(n.getValue())
-                );
+                return traverser.apply(k.toNormal(), n.getValue());
             }
             return true;
         });
