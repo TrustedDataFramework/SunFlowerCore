@@ -33,8 +33,11 @@ public class PeerServerConfig {
     private long maxTTL;
     @JsonProperty(value = "enable-discovery")
     private boolean enableDiscovery;
+
+    @Deprecated
     @JsonProperty(value = "enable-message-log")
     private boolean enableMessageLog;
+
     private URI address;
     private List<URI> bootstraps;
     private List<URI> trusted;

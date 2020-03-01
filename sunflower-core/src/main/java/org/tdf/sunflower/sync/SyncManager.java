@@ -279,7 +279,7 @@ public class SyncManager implements PeerServerListener {
     private void onStatus(Context ctx, PeerServer server, Status s) {
         if (fastSyncing) {
             boolean fastSyncEnabled =
-                    s.getPrunedHeight() > fastSyncHeight
+                    s.getPrunedHeight() < fastSyncHeight
                             || s.getPrunedHash().equals(fastSyncHash);
             if (!fastSyncEnabled && server.isFull()) {
                 log.info("cannot fast sync by peer " + ctx.getRemote() + " block him");

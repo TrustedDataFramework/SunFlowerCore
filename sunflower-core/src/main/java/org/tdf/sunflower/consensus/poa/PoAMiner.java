@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
 
 
-@Slf4j(topic = "poa.miner")
+@Slf4j(topic = "miner")
 public class PoAMiner extends AbstractMiner {
     private PoAConfig poAConfig;
 
@@ -138,10 +138,10 @@ public class PoAMiner extends AbstractMiner {
                 OffsetDateTime.now().toEpochSecond()
         ).filter(p -> p.getAddress().equals(minerAddress));
         if (!o.isPresent()) return;
-        log.info("try to mining at height " + (best.getHeight() + 1));
+        log.debug("try to mining at height " + (best.getHeight() + 1));
         try {
             Block b = createBlock(blockRepository.getBestBlock());
-            log.info("mining success");
+            log.info("mining success block: {}", b.getHeader());
             getEventBus().publish(new NewBlockMined(b));
         } catch (Exception e) {
             e.printStackTrace();

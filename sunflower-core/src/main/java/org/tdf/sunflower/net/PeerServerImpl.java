@@ -140,7 +140,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
                         .filter(Objects::nonNull)
                         .map(List::size).reduce(0, Integer::sum) == 0
         ) {
-            throw new PeerServerInitException("cannot connect to any peer fot the discovery " +
+            log.warn("cannot connect to any peer for the discovery " +
                     "is disabled and none bootstraps and trusted provided");
         }
         try {
@@ -160,9 +160,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
 
         // loading plugins
         plugins.add(new MessageFilter(config));
-        if (config.isEnableMessageLog()) {
-            plugins.add(new MessageLogger());
-        }
+        plugins.add(new MessageLogger());
         plugins.add(new PeersManager(config));
     }
 
