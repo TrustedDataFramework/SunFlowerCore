@@ -18,10 +18,10 @@ public class ProtoChannel implements Channel {
         void close();
     }
 
-    private boolean closed;
+    private volatile boolean closed;
     private PeerImpl remote;
     private ChannelOut out;
-    private boolean pinged;
+    private volatile boolean pinged;
     private List<ChannelListener> listeners = new CopyOnWriteArrayList<>();
     @Setter
     private MessageBuilder messageBuilder;

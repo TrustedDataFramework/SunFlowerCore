@@ -260,6 +260,7 @@ public class SyncManager implements PeerServerListener {
                             continue;
                         if (Math.abs(block.getHeight() - best.getHeight()) > syncConfig.getMaxPendingBlocks())
                             break;
+                        block.resetTransactionsRoot();
                         if (repository.containsHeader(block.getHash().getBytes()))
                             continue;
                         queue.add(block);
