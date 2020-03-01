@@ -23,6 +23,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
@@ -153,7 +154,7 @@ public class SyncManager implements PeerServerListener {
                     context.relay();
                     return;
                 }
-                Block best = repository.getBestBlock();
+                Header best = repository.getBestHeader();
                 Block proposal = msg.getBodyAs(Block.class);
                 if (receivedProposals.asMap().containsKey(proposal.getHash())) {
                     return;
@@ -178,7 +179,7 @@ public class SyncManager implements PeerServerListener {
                 byte[] root = msg.getBodyAs(byte[].class);
                 Set<HexBytes> addresses = new HashSet<>();
                 accountTrie.getTrie(root).traverse(e ->{
-                    Account a = (Account) e.getValue();
+                    Account a = e.getValue();
                     addresses.add(a.getAddress());
                     return true;
                 });
@@ -244,6 +245,7 @@ public class SyncManager implements PeerServerListener {
                 Block[] blocks = msg.getBodyAs(Block[].class);
                 if (fastSyncing) {
                     for (Block b : blocks) {
+                        b.resetTransactionsRoot();
                         if (b.getHash().equals(fastSyncHash)) {
                             this.fastSyncBlock = b;
                             return;
@@ -251,7 +253,7 @@ public class SyncManager implements PeerServerListener {
                     }
                     return;
                 }
-                Block best = repository.getBestBlock();
+                Header best = repository.getBestHeader();
                 Arrays.sort(blocks, Block.FAT_COMPARATOR);
                 blockQueueLock.lock();
                 try {
@@ -284,6 +286,7 @@ public class SyncManager implements PeerServerListener {
                 ctx.block();
                 return;
             }
+            if(!fastSyncEnabled) return;
             if (fastSyncBlock == null) {
                 ctx.response(
                         SyncMessage.encode(
@@ -323,7 +326,7 @@ public class SyncManager implements PeerServerListener {
             return;
         }
         Block b = null;
-        Block best = repository.getBestBlock();
+        Header best = repository.getBestHeader();
         blockQueueLock.lock();
         try {
             b = queue.first();
@@ -335,17 +338,28 @@ public class SyncManager implements PeerServerListener {
         if (b != null
                 && s.getBestBlockHeight() >= b.getHeight()
                 && b.getHeight() > s.getPrunedHeight()
+                && !repository.containsHeader(b.getHashPrev().getBytes())
         ) {
-            GetBlocks getBlocks = new GetBlocks(best.getHeight(), b.getHeight(), true, syncConfig.getMaxBlocksTransfer());
+            // remote: prune < b <= best
+            GetBlocks getBlocks = new GetBlocks(
+                    s.getPrunedHeight(), b.getHeight(), true,
+                    syncConfig.getMaxBlocksTransfer()
+            ).clip();
+
             ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks));
         }
         if (s.getBestBlockHeight() >= best.getHeight() && !s.getBestBlockHash().equals(best.getHash())) {
-            GetBlocks getBlocks = new GetBlocks(best.getHeight(), s.getBestBlockHeight(), false, syncConfig.getMaxBlocksTransfer());
+            GetBlocks getBlocks = new GetBlocks(
+                    Math.max(s.getPrunedHeight(), best.getHeight()),
+                    s.getBestBlockHeight(), false,
+                    syncConfig.getMaxBlocksTransfer()
+            ).clip();
             ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks));
         }
     }
 
     public void tryWrite() {
+        Header best = repository.getBestHeader();
         blockQueueLock.lock();
         try {
             while (true) {
@@ -355,7 +369,9 @@ public class SyncManager implements PeerServerListener {
                 } catch (NoSuchElementException ignored) {
                 }
                 if (b == null) return;
-                if (b.getHeight() <= repository.getPrunedHeight()) {
+                if (Math.abs(best.getHeight() - b.getHeight()) > syncConfig.getMaxAccountsTransfer()
+                        || b.getHeight() <= repository.getPrunedHeight()
+                ) {
                     queue.remove(b);
                     continue;
                 }
@@ -383,7 +399,7 @@ public class SyncManager implements PeerServerListener {
 
     public void sendStatus() {
         if (fastSyncing) return;
-        Block best = repository.getBestBlock();
+        Header best = repository.getBestHeader();
         Block genesis = repository.getGenesis();
         Status status = new Status(
                 best.getHeight(),

@@ -46,7 +46,7 @@ public class Transaction {
     protected long nonce;
 
     /**
-     * for coinbase, this field is null
+     * for coinbase, this field is null or empty bytes
      */
     @RLP(4)
     protected HexBytes from;

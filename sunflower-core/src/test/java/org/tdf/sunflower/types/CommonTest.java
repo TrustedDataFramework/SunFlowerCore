@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 
 @RunWith(JUnit4.class)
@@ -34,5 +35,15 @@ public class CommonTest {
         System.out.println(mapper.writeValueAsString(header));
 
         RLPCodec.encode( UnmodifiableHeader.of(header));
+    }
+
+    private static class N{
+        private HexBytes m;
+    }
+
+    @Test
+    public void test1(){
+        byte[] b = RLPCodec.encode(new N());
+        assert RLPCodec.decode(b, N.class).m != null;
     }
 }

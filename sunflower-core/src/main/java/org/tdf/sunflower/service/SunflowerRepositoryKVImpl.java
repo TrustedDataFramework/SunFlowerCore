@@ -43,6 +43,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     // block height -> block hashes
     private Store<Long, HexBytes[]> heightIndex;
 
+    // best -> best header prune -> pruned header
     private Store<String, Header> status;
 
     private Header pruned;
