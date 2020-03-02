@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
-import org.tdf.rlp.RLPElement;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -15,10 +14,10 @@ import java.util.stream.Stream;
 public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     protected AbstractTrie<K, V> delegate;
 
-    public static <K, V> Trie<K, V> of(AbstractTrie<K, V> trie) {
-        if (trie instanceof ReadOnlyTrie) return trie;
+    public static <K, V> ReadOnlyTrie<K, V> of(Trie<K, V> trie) {
+        if (trie instanceof ReadOnlyTrie) return (ReadOnlyTrie<K, V>) trie;
         if (trie.isDirty()) throw new UnsupportedOperationException();
-        return new ReadOnlyTrie<>(trie);
+        return new ReadOnlyTrie<>(((AbstractTrie<K, V>) trie));
     }
 
     @Override
