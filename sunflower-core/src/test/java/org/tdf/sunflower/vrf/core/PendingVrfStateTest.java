@@ -36,7 +36,6 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.sunflower.TestContext;
-import org.tdf.sunflower.consensus.poa.PoAUtils;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.contract.PrecompiledContracts;
 import org.tdf.sunflower.consensus.vrf.contract.VrfContracts;
@@ -54,7 +53,7 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.consensus.vrf.vm.DataWord;
-import org.tdf.sunflower.service.BlockRepositoryService;
+import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.types.Header;
 
 @RunWith(SpringRunner.class)
@@ -125,7 +124,7 @@ public class PendingVrfStateTest {
             .of("0000000000000000000000000000000000000000000000000000000000000011");
 
     @Autowired
-    private BlockRepositoryService repository;
+    private BlockRepository repository;
     private ValidatorManager validatorManager;
     private Header[] blockHeaders;
 
@@ -233,7 +232,7 @@ public class PendingVrfStateTest {
             VrfUtil.setSeed(blockHeaders[i], nonce);
             VrfUtil.setPriority(blockHeaders[i], emptyArray);
             VrfUtil.setMiner(blockHeaders[i], COINBASE_ARRAY[i]);
-            blockHeaders[i].setHash(HexBytes.fromBytes(PoAUtils.getHash(blockHeaders[i])));
+            // blockHeaders[i].setHash(HexBytes.fromBytes(PoAUtils.getHash(blockHeaders[i])));
         }
 
         // Setup validator manager

@@ -4,13 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Hex;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.MapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.Start;
+import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.proto.Code;
@@ -19,30 +20,31 @@ import org.tdf.sunflower.proto.Message;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Slf4j
+@Slf4j(topic = "net")
 public class PeerServerImpl implements ChannelListener, PeerServer {
     private PeerServerConfig config;
-    private List<Plugin> plugins = new ArrayList<>();
+    private List<Plugin> plugins = new CopyOnWriteArrayList<>();
     private Client client;
     private PeerImpl self;
     private MessageBuilder builder;
     private NetLayer netLayer;
 
     // if non-database provided, use memory database
-    Store<String, String> peerStore = new MapStore<>();
+    Store<String, String> peerStore;
 
-    public PeerServerImpl() {
+    private final DatabaseStoreFactory factory;
+
+    public PeerServerImpl(DatabaseStoreFactory factory) {
+        this.factory = factory;
     }
 
-    // persistent storage to store peers
-    public PeerServerImpl withStore(@NonNull Store<byte[], byte[]> persistentStore) {
-        this.peerStore = new StoreWrapper<>(persistentStore,
-                Codecs.STRING,
-                Codecs.STRING);
-        return this;
+    @Override
+    public boolean isFull() {
+        return client.peersCache.isFull();
     }
 
     @Override
@@ -87,17 +89,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         resolveHost();
         log.info("peer server is listening on " +
                 self.encodeURI());
-        log.info("your p2p secret address is " +
-                String.format("%s://%s@%s:%d",
-                        self.getProtocol(),
-                        HexBytes.fromBytes(
-                                self.getPrivateKey().getEncoded()
-                        )
-                                .concat(
-                                        HexBytes.fromBytes(self.getPrivateKey().generatePublicKey().getEncoded())
-                                ),
-                        self.getHost(),
-                        self.getPort()));
+        log.info("your p2p private key is " + HexBytes.encode(self.getPrivateKey()));
         if (config.getBootstraps() != null) {
             client.bootstrap(config.getBootstraps());
         }
@@ -124,7 +116,6 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             config = mapper.readPropertiesAs(properties, PeerServerConfig.class);
             if (config.getMaxTTL() <= 0) config.setMaxTTL(PeerServerConfig.DEFAULT_MAX_TTL);
             if (config.getMaxPeers() <= 0) config.setMaxPeers(PeerServerConfig.DEFAULT_MAX_PEERS);
-            if (config.getName() == null) config.setName(PeerServerConfig.DEFAULT_NAME);
         } catch (Exception e) {
             String schema = "";
             try {
@@ -140,12 +131,16 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
                     "load properties failed :" + properties.toString() + " expecting " + schema
             );
         }
+        this.peerStore = config.isPersist() ? new StoreWrapper<>(factory.create("peers"),
+                Codecs.STRING,
+                Codecs.STRING) : new MapStore<>();
+
         if (!config.isEnableDiscovery() &&
                 Stream.of(config.getBootstraps(), config.getTrusted())
                         .filter(Objects::nonNull)
                         .map(List::size).reduce(0, Integer::sum) == 0
         ) {
-            throw new PeerServerInitException("cannot connect to any peer fot the discovery " +
+            log.warn("cannot connect to any peer for the discovery " +
                     "is disabled and none bootstraps and trusted provided");
         }
         try {
@@ -165,32 +160,25 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
 
         // loading plugins
         plugins.add(new MessageFilter(config));
-        if (config.isEnableMessageLog()) {
-            plugins.add(new MessageLogger());
-        }
+        plugins.add(new MessageLogger());
         plugins.add(new PeersManager(config));
     }
 
     private void resolveSelf() throws Exception{
-        // find valid private key from properties
-        if (config.getAddress().getRawUserInfo() != null
-                && !config.getAddress().getRawUserInfo().equals("")) {
-            self = PeerImpl.create(config.getAddress(), HexBytes.decode(config.getAddress().getRawUserInfo()));
-            return;
+        // find valid private key from 1.properties 2.persist 3. generate
+        byte[] sk = config.getPrivateKey() == null ? null : config.getPrivateKey().getBytes();
+        if(sk == null || sk.length == 0){
+            sk = peerStore.get("self").map(HexBytes::decode)
+                    .orElse(null);
         }
-        // try to load stored private key from db
-        Optional<HexBytes> selfPrivateKey = peerStore.get("self")
-                .map(HexBytes::fromHex);
-        if(selfPrivateKey.isPresent()){
-            self = PeerImpl.create(config.getAddress(), selfPrivateKey.get().getBytes());
-            return;
+        if(sk == null || sk.length == 0){
+            sk = CryptoContext.generateKeyPair().getPrivateKey().getEncoded();
         }
+
+        this.self = PeerImpl.createSelf(config.getAddress(), sk);
+
         // generate a new private key when not found
-        self = PeerImpl.create(config.getAddress());
-        peerStore.put("self",
-                Hex.encodeHexString(self.getPrivateKey().getEncoded())
-                        + Hex.encodeHexString(self.getPrivateKey().generatePublicKey().getEncoded())
-        );
+        peerStore.put("self", HexBytes.encode(sk));
     }
 
     @Override
@@ -266,6 +254,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     @Override
     public void stop() {
         plugins.forEach(x -> x.onStop(this));
+
         client.peersCache
                 .getChannels()
                 .forEach(x -> x.close("application will shutdown"));

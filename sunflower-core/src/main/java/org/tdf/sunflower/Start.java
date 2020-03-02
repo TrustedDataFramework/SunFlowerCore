@@ -3,57 +3,178 @@ package org.tdf.sunflower;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.tdf.common.event.EventBus;
+import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.crypto.ed25519.Ed25519;
+import org.tdf.crypto.ed25519.Ed25519PrivateKey;
+import org.tdf.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.sm2.SM2;
+import org.tdf.crypto.sm2.SM2PrivateKey;
+import org.tdf.crypto.sm2.SM2PublicKey;
+import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
+import org.tdf.sunflower.dao.HeaderDao;
+import org.tdf.sunflower.dao.TransactionDao;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
-import org.tdf.sunflower.facade.*;
+import org.tdf.sunflower.exception.ApplicationException;
+import org.tdf.sunflower.facade.ConsensusEngine;
+import org.tdf.sunflower.facade.ConsensusEngineFacade;
+import org.tdf.sunflower.facade.Miner;
+import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.mq.BasicMessageQueue;
 import org.tdf.sunflower.mq.SocketIOMessageQueue;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.net.PeerServerImpl;
 import org.tdf.sunflower.pool.TransactionPoolImpl;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.ConsortiumStateRepository;
-import org.tdf.sunflower.state.InMemoryStateTree;
-import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.service.*;
+import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.AccountUpdater;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 @EnableAsync
 @EnableScheduling
 @SpringBootApplication
 @EnableTransactionManagement
-@Slf4j
+@Slf4j(topic = "init")
 // use SPRING_CONFIG_LOCATION environment to locate spring config
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 public class Start {
-    private static final boolean ENABLE_ASSERTION = "true".equals(System.getenv("ENABLE_ASSERTION"));
+    @Getter
+    private static boolean enableAssertion;
 
     public static final Executor APPLICATION_THREAD_POOL = Executors.newCachedThreadPool();
 
     public static void devAssert(boolean truth, String error) {
-        if (!ENABLE_ASSERTION) return;
+        if (!enableAssertion) return;
         Assert.isTrue(truth, error);
+    }
+
+    public static void devAssert(Supplier<Boolean> supplier, String error) {
+        if(!enableAssertion) return;
+        Assert.isTrue(supplier.get(), error);
+    }
+
+    public static <T> void devAssert(T thing, Predicate<T> predicate, String error) {
+        if(!enableAssertion) return;
+        Assert.isTrue(predicate.test(thing), error);
     }
 
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .enable(JsonParser.Feature.ALLOW_COMMENTS);
 
+    public static void loadConstants(Environment env) {
+        String constant = env.getProperty("sunflower.cache.trie");
+        if(constant != null && !constant.isEmpty()){
+            ApplicationConstants.TRIE_CACHE_SIZE = Integer.parseInt(constant);
+        }
+        constant = env.getProperty("sunflower.cache.p2p.transaction");
+        if(constant != null && !constant.isEmpty()){
+            ApplicationConstants.P2P_TRANSACTION_CACHE_SIZE = Integer.parseInt(constant);
+        }
+        constant = env.getProperty("sunflower.cache.p2p.proposal");
+        if(constant != null && !constant.isEmpty()){
+            ApplicationConstants.P2P_PROPOSAL_CACHE_SIZE = Integer.parseInt(constant);
+        }
+        constant = env.getProperty("sunflower.assert");
+        if(constant != null && !constant.isEmpty()){
+            if(!constant.toLowerCase().matches("true|false")) throw new IllegalArgumentException("sunflower.assert");
+            enableAssertion = constant.equals("true");
+        }
+    }
+
+    public static void loadCryptoContext(Environment env){
+        String hash = env.getProperty("sunflower.crypto.hash");
+        hash = (hash == null || hash.isEmpty()) ? "sm3" : hash;
+        hash = hash.toLowerCase();
+        switch (hash) {
+            case "sm3":
+                CryptoContext.hashFunction = SM3Util::hash;
+                break;
+            case "keccak256":
+            case "keccak-256":
+                CryptoContext.hashFunction = CryptoContext::keccak256;
+                break;
+            case "keccak512":
+            case "keccak-512":
+                CryptoContext.hashFunction = CryptoContext::keccak512;
+                break;
+            case "sha3256":
+            case "sha3-256":
+                CryptoContext.hashFunction = CryptoContext::sha3256;
+                break;
+            default:
+                throw new ApplicationException("unknown hash function: " + hash);
+        }
+        String ec = env.getProperty("sunflower.crypto.ec");
+        ec = (ec == null || ec.isEmpty()) ? "sm2" : ec;
+        ec = ec.toLowerCase();
+        switch (ec){
+            case "ed25519":
+                CryptoContext.signatureVerifier =  (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
+                CryptoContext.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
+                CryptoContext.generateKeyPair = Ed25519::generateKeyPair;
+                CryptoContext.getPkFromSk = (sk) -> new Ed25519PrivateKey(sk).generatePublicKey().getEncoded();
+                break;
+            case "sm2":
+                CryptoContext.signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
+                CryptoContext.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
+                CryptoContext.generateKeyPair = SM2::generateKeyPair;
+                CryptoContext.getPkFromSk = (sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded();
+                break;
+            default:
+                throw new ApplicationException("unknown ec curve " + ec);
+        }
+        ApplicationConstants.PUBLIC_KEY_SIZE = CryptoContext.generateKeyPair().getPublicKey().getEncoded().length;
+        log.info("use algorithm {} as hash function", hash);
+        log.info("use ec {} as signature algorithm", ec);
+    }
+
     public static void main(String[] args) {
-        SpringApplication.run(Start.class, args);
+        SpringApplication app = new SpringApplication(Start.class);
+        app.addInitializers(applicationContext -> {
+            loadCryptoContext(applicationContext.getEnvironment());
+            loadConstants(applicationContext.getEnvironment());
+        });
+        app.run(args);
+    }
+
+    @Bean
+    public SunflowerRepository sunflowerRepository(
+            ApplicationContext context, EventBus eventBus,
+            DatabaseStoreFactory databaseStoreFactory
+    ){
+        String type = context.getEnvironment().getProperty("sunflower.database.block-store");
+        type = (type == null || type.isEmpty()) ? "rdbms" : type;
+        switch (type){
+            case "rdbms":{
+                TransactionDao transactionDao = context.getBean(TransactionDao.class);
+                HeaderDao headerDao = context.getBean(HeaderDao.class);
+                return new SunflowerRepositoryService(eventBus, headerDao, transactionDao);
+            }
+            case "kv":{
+                SunflowerRepositoryKVImpl ret = new SunflowerRepositoryKVImpl(eventBus, databaseStoreFactory);
+                return new ConcurrentSunflowerRepository(ret);
+            }
+        }
+        throw new RuntimeException("unknown block store type: " + type);
     }
 
     @Bean
@@ -62,62 +183,38 @@ public class Start {
     }
 
     @Bean
-    public Miner miner(ConsensusEngine engine, NewMinedBlockWriter writer,
-                       // those dependencies ensure transaction pool, consortium repository and peer server
-                       // had been initialized and injected before miner start
-                       TransactionPool transactionPool, ConsortiumRepository repository, PeerServer peerServer) {
+    public Miner miner(
+            ConsensusEngineFacade engine,
+            // this dependency asserts the peer server had been initialized
+            PeerServer peerServer
+    ) {
         Miner miner = engine.getMiner();
-        miner.addListeners(writer);
         miner.start();
         return miner;
     }
 
     @Bean
-    public StateRepository stateRepository(
-            ConsensusEngine engine,
-            DatabaseStoreFactory factory,
-            ConsortiumRepository consortiumRepository
-    ) {
-        if (!(engine.getStateRepository() instanceof ConsortiumStateRepository)) return engine.getStateRepository();
-        ConsortiumStateRepository repo = (ConsortiumStateRepository) engine.getStateRepository();
-        if (!repo.getClasses().contains(Account.class)) {
-            return repo;
-        }
-        // TODO: replace byte array map store with persistent data storage
-        InMemoryStateTree<Account> tree = repo.getStateTree(Account.class);
-        long current = consortiumRepository.getBlock(tree.getWhere().getBytes()).map(Block::getHeight).orElseThrow(() ->
-                new RuntimeException("cannot find state at " + tree.getWhere() + " please clear account db manually")
-        );
-        Block best = consortiumRepository.getBestBlock();
-        int blocksPerUpdate = 4096;
-        if (tree.getWhere().equals(best.getHash())) {
-            return repo;
-        }
-        while (true) {
-            List<Block> blocks = consortiumRepository.getBlocksBetween(current + 1, current + blocksPerUpdate);
-            if (blocks.size() == 0) break;
-            log.info("update account state from height {} to {}", blocks.get(0).getHeight(), blocks.get(blocks.size() - 1).getHeight());
-            blocks.forEach(x -> {
-                tree.update(x);
-                tree.confirm(x.getHash().getBytes());
-            });
-            if (blocks.stream().allMatch(x -> x.getHash().equals(best.getHash()))) {
-                break;
-            }
-            current = blocks.get(blocks.size() - 1).getHeight();
-        }
-        return repo;
+    public AccountTrie accountTrie(ConsensusEngineFacade consensusEngine) {
+        return (AccountTrie) consensusEngine.getAccountTrie();
     }
 
     @Bean
-    public ConsensusEngine consensusEngine(
+    public AccountUpdater accountUpdater(AccountTrie accountTrie) {
+        return (AccountUpdater) accountTrie.getUpdater();
+    }
+
+    @Bean
+    public ConsensusEngineFacade consensusEngine(
             ConsensusProperties consensusProperties,
-            ConsortiumRepository consortiumRepository,
-            TransactionPoolImpl transactionPool
+            SunflowerRepository repositoryService,
+            TransactionPoolImpl transactionPool,
+            DatabaseStoreFactory databaseStoreFactory,
+            EventBus eventBus,
+            SyncConfig syncConfig
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
         name = name == null ? "" : name;
-        final ConsensusEngine engine;
+        final ConsensusEngineFacade engine;
         switch (name.trim().toLowerCase()) {
             // none consensus selected, used for unit test
             case ApplicationConstants.CONSENSUS_NONE:
@@ -141,46 +238,30 @@ public class Start {
                 log.error("roll back to poa consensus");
                 engine = new PoA();
         }
-        engine.setConsortiumRepository(consortiumRepository);
+        engine.setSunflowerRepository(repositoryService);
         engine.setTransactionPool(transactionPool);
+        engine.setDatabaseStoreFactory(databaseStoreFactory);
+        engine.setEventBus(eventBus);
+
         engine.init(consensusProperties);
-        consortiumRepository.setProvider(engine.getConfirmedBlocksProvider());
-        // register event listeners
-        // None consensus actually has no genesis block
+
+        repositoryService.setProvider(engine.getConfirmedBlocksProvider());
+        repositoryService.setAccountTrie(engine.getAccountTrie());
+
         transactionPool.setEngine(engine);
         if (engine == ConsensusEngine.NONE) return engine;
-        consortiumRepository.saveGenesis(engine.getGenesisBlock());
+        repositoryService.saveGenesis(engine.getGenesisBlock());
+        if(syncConfig.getPruneHash().length > 0){
+            repositoryService.prune(syncConfig.getPruneHash());
+        }
         return engine;
-    }
-
-    abstract static class NewMinedBlockWriter implements MinerListener {
-    }
-
-    // create a miner listener for write block
-    @Bean
-    public NewMinedBlockWriter newMinedBlockWriter(ConsortiumRepository repository, ConsensusEngine engine) {
-        return new NewMinedBlockWriter() {
-            @Override
-            public void onBlockMined(Block block) {
-                Optional<Block> o = repository.getBlock(block.getHashPrev().getBytes());
-                if (!o.isPresent()) return;
-                if (engine.getValidator().validate(block, o.get()).isSuccess()) {
-                    repository.writeBlock(block);
-                }
-            }
-
-            @Override
-            public void onMiningFailed(Block block) {
-
-            }
-        };
     }
 
     // create peer server from properties
     @Bean
     public PeerServer peerServer(
             PeerServerProperties properties,
-            ConsensusEngine engine,
+            ConsensusEngineFacade engine,
             DatabaseStoreFactory factory
     ) throws Exception {
         String name = properties.getProperty("name");
@@ -188,9 +269,7 @@ public class Start {
         if (name.trim().toLowerCase().equals("none")) {
             return PeerServer.NONE;
         }
-        PeerServer peerServer = new PeerServerImpl().withStore(
-                factory.create("peers")
-        );
+        PeerServer peerServer = new PeerServerImpl(factory);
         peerServer.init(properties);
         peerServer.addListeners(engine.getPeerServerListener());
         peerServer.start();
@@ -207,7 +286,7 @@ public class Start {
     }
 
     @Bean
-    public EventBus eventBus(){
+    public EventBus eventBus() {
         return new EventBus();
     }
 }

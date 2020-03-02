@@ -1,6 +1,9 @@
 package org.tdf.sunflower.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
@@ -15,11 +18,12 @@ import javax.persistence.*;
         @Index(name = "height_index", columnList = HeaderEntity.COLUMN_HEIGHT),
         @Index(name = "created_at_index", columnList = HeaderEntity.COLUMN_CREATED_AT)
 })
-public class HeaderEntity{
+public class HeaderEntity {
     static final String COLUMN_HASH = "block_hash";
     static final String COLUMN_VERSION = "version";
     static final String COLUMN_HASH_PREV = "hash_prev";
-    static final String COLUMN_MERKLE_ROOT = "merkle_root";
+    static final String COLUMN_TRANSACTIONS_ROOT = "tx_root";
+    static final String COLUMN_STATE_ROOT = "state_root";
     static final String COLUMN_HEIGHT = "block_height";
     static final String COLUMN_CREATED_AT = "created_at";
     static final String COLUMN_PAYLOAD = "payload";
@@ -35,8 +39,11 @@ public class HeaderEntity{
     @Column(name = COLUMN_HASH_PREV, nullable = false)
     private byte[] hashPrev;
 
-    @Column(name = COLUMN_MERKLE_ROOT, nullable = false)
-    private byte[] merkleRoot;
+    @Column(name = COLUMN_TRANSACTIONS_ROOT, nullable = false)
+    private byte[] transactionsRoot;
+
+    @Column(name = COLUMN_STATE_ROOT, nullable = false)
+    private byte[] stateRoot;
 
     @Column(name = COLUMN_HEIGHT, nullable = false)
     private long height;
@@ -44,6 +51,6 @@ public class HeaderEntity{
     @Column(name = COLUMN_CREATED_AT, nullable = false)
     private long createdAt;
 
-    @Column(name = COLUMN_PAYLOAD, nullable = false)
+    @Column(name = COLUMN_PAYLOAD, nullable = false, length = Short.MAX_VALUE)
     private byte[] payload;
 }

@@ -1,133 +1,91 @@
 package org.tdf.sunflower.consensus.poa;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
-import org.tdf.sunflower.Start;
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.ConsensusEngine;
-import org.tdf.sunflower.facade.MinerListener;
 import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.net.Context;
-import org.tdf.sunflower.net.Peer;
-import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.ConsortiumStateRepository;
-import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.util.FileUtils;
 
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
-
-import static org.tdf.sunflower.consensus.poa.PoAHashPolicy.HASH_POLICY;
 
 // poa is a minimal non-trivial consensus engine
 @Slf4j
-public class PoA extends ConsensusEngine implements PeerServerListener {
+public class PoA extends ConsensusEngine {
     private PoAConfig poAConfig;
     private Genesis genesis;
     private PoAMiner poaMiner;
+    private PoAValidator poAValidator;
 
     public PoA() {
-        setValidator(new PoAValidator());
     }
 
-    private PeerServer peerServer;
-
-    @Override
-    public Block getGenesisBlock() {
-        Block genesisBlock = super.getGenesisBlock();
-        if (genesisBlock != null) return genesisBlock;
-        genesisBlock = genesis.getBlock();
-        setGenesisBlock(genesisBlock);
-        return genesisBlock;
-    }
 
     @Override
     public void init(Properties properties) throws ConsensusEngineInitException {
         JavaPropsMapper mapper = new JavaPropsMapper();
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
-        try{
+        try {
             poAConfig = mapper.readPropertiesAs(properties, PoAConfig.class);
-        }catch (Exception e){
+        } catch (Exception e) {
             String schema = "";
-            try{
+            try {
                 schema = mapper.writeValueAsProperties(new PoAConfig()).toString();
-            }catch (Exception ignored){};
+            } catch (Exception ignored) {
+            }
+            ;
             throw new ConsensusEngineInitException(
                     "load properties failed :" + properties.toString() + " expecting " + schema
             );
         }
         poaMiner = new PoAMiner();
         Resource resource;
-        try{
+        try {
             resource = FileUtils.getResource(poAConfig.getGenesis());
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new ConsensusEngineInitException(e.getMessage());
         }
-        try{
+        try {
             genesis = objectMapper.readValue(resource.getInputStream(), Genesis.class);
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new ConsensusEngineInitException("failed to parse genesis");
         }
+        poaMiner.setBlockRepository(this.getSunflowerRepository());
         poaMiner.setPoAConfig(poAConfig);
         poaMiner.setGenesis(genesis);
         poaMiner.setTransactionPool(getTransactionPool());
+
         setMiner(poaMiner);
         setGenesisBlock(genesis.getBlock());
 
-        setHashPolicy(HASH_POLICY);
-        setPeerServerListener(this);
+        setPeerServerListener(PeerServerListener.NONE);
         // create state repository
-        ConsortiumStateRepository repo = new ConsortiumStateRepository();
-        setStateRepository(repo);
+
+        Map<HexBytes, Account> alloc = new HashMap<>();
+        genesis.alloc.forEach((k, v) -> {
+            Account a = new Account(HexBytes.fromHex(k), v);
+            alloc.put(a.getAddress(), a);
+        });
+
+        AccountUpdater updater = new AccountUpdater(alloc);
+        AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory());
+        getGenesisBlock().setStateRoot(trie.getGenesisRoot());
+        setAccountTrie(trie);
+        poaMiner.setAccountTrie(trie);
+        poaMiner.setEventBus(getEventBus());
+        poAValidator = new PoAValidator(getAccountTrie());
+        setValidator(poAValidator);
 
         // register dummy account
-        repo.register(getGenesisBlock(), Collections.singleton(Account.getRandomAccount()));
-
-        getMiner().addListeners(new MinerListener() {
-            @Override
-            public void onBlockMined(Block block) {
-                try {
-                    if(peerServer == null) {
-                        log.error("mining blocks before server start");
-                        return;
-                    }
-                    peerServer.broadcast(Start.MAPPER.writeValueAsBytes(block));
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onMiningFailed(Block block) {
-
-            }
-        });
-    }
-
-
-    @Override
-    public void onMessage(Context context, PeerServer server) {
-
-    }
-
-    @Override
-    public void onStart(PeerServer server) {
-        this.peerServer = server;
-    }
-
-    @Override
-    public void onNewPeer(Peer peer, PeerServer server) {
-
-    }
-
-    @Override
-    public void onDisconnect(Peer peer, PeerServer server) {
-
     }
 }

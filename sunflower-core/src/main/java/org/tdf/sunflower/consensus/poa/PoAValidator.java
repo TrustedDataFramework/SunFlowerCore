@@ -1,21 +1,27 @@
 package org.tdf.sunflower.consensus.poa;
 
-import org.tdf.sunflower.facade.Validator;
+import lombok.Setter;
+import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.consensus.AbstractValidator;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
-public class PoAValidator implements Validator {
+@Setter
+public class PoAValidator extends AbstractValidator {
+    public PoAValidator(StateTrie<HexBytes, Account> accountTrie) {
+        super(accountTrie);
+    }
+
     @Override
     public ValidateResult validate(Block block, Block dependency) {
-        if (dependency.getHeight() + 1 != block.getHeight()){
-            return ValidateResult.fault("block height not increase strictly");
-        }
+        ValidateResult res = super.commonValidate(block, dependency);
+        if(!res.isSuccess()) return res;
+
         if (block.getVersion() != PoAConstants.BLOCK_VERSION){
             return ValidateResult.fault("version not match");
-        }
-        if (!PoAHashPolicy.HASH_POLICY.getHash(block).equals(block.getHash())){
-            return ValidateResult.fault("hash not match");
         }
         return ValidateResult.success();
     }

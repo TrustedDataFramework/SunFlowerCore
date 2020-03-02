@@ -13,10 +13,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -27,7 +24,7 @@ import java.util.stream.Collectors;
 public class TrieImpl<K, V> extends AbstractTrie<K, V>{
     @Getter
     private final byte[] nullHash;
-    Function<byte[], byte[]> function;
+    HashFunction function;
     Store<byte[], byte[]> store;
     Codec<K, byte[]> kCodec;
     Codec<V, byte[]> vCodec;
@@ -48,14 +45,10 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
             @NonNull Codec<K, byte[]> keyCodec,
             @NonNull Codec<V, byte[]> valueCodec
     ) {
-        if(hashFunction.apply(HexBytes.EMPTY_BYTES).length != Node.MAX_KEY_SIZE)
-            throw new RuntimeException(
-                    String.format("the hash function result should be %d bytes", Node.MAX_KEY_SIZE)
-            );
 
         return new TrieImpl<>(
                 hashFunction.apply(RLPItem.NULL.getEncoded()),
-                hashFunction,
+                new HashFunction(hashFunction),
                 store,
                 keyCodec,
                 valueCodec,
@@ -127,16 +120,24 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
         );
     }
 
-    public void traverseInternal(BiFunction<TrieKey, Node, Boolean> action) {
+    public void traverseTrie(BiFunction<TrieKey, Node, Boolean> action) {
         if (root == null) return;
         root.traverse(TrieKey.EMPTY, action);
+    }
+
+    @Override
+    public Set<byte[]> dumpKeys() {
+        if (isDirty()) throw new UnsupportedOperationException();
+        DumpKeys dump = new DumpKeys();
+        traverseTrie(dump);
+        return dump.getKeys();
     }
 
     @Override
     public Map<byte[], byte[]> dump() {
         if (isDirty()) throw new UnsupportedOperationException();
         Dump dump = new Dump();
-        traverseInternal(dump);
+        traverseTrie(dump);
         return dump.getPairs();
     }
 
@@ -169,13 +170,10 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
     }
 
     @Override
-    public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
-        traverseInternal((k, n) -> {
+    void traverseInternal(BiFunction<byte[], byte[], Boolean> traverser) {
+        traverseTrie((k, n) -> {
             if (n.getType() != Node.Type.EXTENSION && n.getValue() != null) {
-                return traverser.apply(
-                        kCodec.getDecoder().apply(k.toNormal()),
-                        vCodec.getDecoder().apply(n.getValue())
-                );
+                return traverser.apply(k.toNormal(), n.getValue());
             }
             return true;
         });

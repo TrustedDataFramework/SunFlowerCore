@@ -1,6 +1,8 @@
 package org.tdf.sunflower.db;
 
 import lombok.extern.slf4j.Slf4j;
+import org.fusesource.leveldbjni.JniDBFactory;
+import org.iq80.leveldb.impl.Iq80DBFactory;
 import org.springframework.stereotype.Component;
 import org.tdf.common.store.*;
 import org.tdf.sunflower.DatabaseConfig;
@@ -14,7 +16,7 @@ public class DatabaseStoreFactory {
     private DatabaseConfig config;
     private static final List<DatabaseStore> STORES_LIST = new ArrayList<>();
 
-    public DatabaseStoreFactory(DatabaseConfig config) throws Exception{
+    public DatabaseStoreFactory(DatabaseConfig config) {
 
         if(config.getName() == null) config.setName("");
         this.config = config;
@@ -24,8 +26,12 @@ public class DatabaseStoreFactory {
         DatabaseStore store;
 
         switch (config.getName().trim().toLowerCase()) {
+            case "leveldb-jni":
             case "leveldb":
-                store = new LevelDb(config.getDirectory(), name);
+                store = new LevelDb(JniDBFactory.factory, config.getDirectory(), name);
+                break;
+            case "leveldb-iq80":
+                store = new LevelDb(Iq80DBFactory.factory, config.getDirectory(), name);
                 break;
             case "rocksdb":
                 store = new RocksDb(config.getDirectory(), name);
@@ -34,8 +40,8 @@ public class DatabaseStoreFactory {
                 store = new MemoryDatabaseStore();
                 break;
             default:
-                store = new RocksDb(config.getDirectory(), name);
-                log.warn("Data source is not supported, default is rocksdb");
+                store = new LevelDb(JniDBFactory.factory, config.getDirectory(), name);
+                log.warn("Data source is not supported, default is leveldb");
         }
 
         store.init(DBSettings.newInstance()

@@ -45,16 +45,6 @@ public class ConcurrentChainCache<T extends Chained> implements ChainCache<T> {
     }
 
     @Override
-    public List<List<T>> getAllForks() {
-        lock.readLock().lock();
-        try {
-            return delegate.getAllForks();
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    @Override
     public void removeDescendants(byte[] hash) {
         lock.writeLock().lock();
         try {
@@ -89,16 +79,6 @@ public class ConcurrentChainCache<T extends Chained> implements ChainCache<T> {
         lock.writeLock().lock();
         try {
             return delegate.removeByHash(hash);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    @Override
-    public List<T> popLongestChain() {
-        lock.writeLock().lock();
-        try {
-            return delegate.popLongestChain();
         } finally {
             lock.writeLock().unlock();
         }

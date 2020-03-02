@@ -65,8 +65,7 @@ dependencies {
     compile "com.madgag.spongycastle:prov:${scastleVersion}" // for SHA3 and SECP256K1
     compile "org.bouncycastle:bcprov-jdk15on:${bouncycastleVersion}"
     compile "org.rocksdb:rocksdbjni:${rocksdbVersion}"
-    compile "org.iq80.leveldb:leveldb:${leveldbVersion}"
-    compile "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
+    compile "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
     compile "org.apache.commons:commons-collections4:${commonsCollections4Version}"
     compile "org.apache.commons:commons-lang3:${commonsLang3Version}"
     compile "com.corundumstudio.socketio:netty-socketio:${nettySocketIOVersion}" // for message push
@@ -76,8 +75,10 @@ dependencies {
     compile "org.slf4j:slf4j-api:${slf4jVersion}"
     compile "org.slf4j:jul-to-slf4j:${slf4jVersion}"
 
-    // for test
-    testCompile 'com.h2database:h2'
+    compile "org.fusesource.leveldbjni:leveldbjni-linux64:${leveldbJNIVersion}"
+    compile "org.iq80.leveldb:leveldb:${leveldbVersion}"
+    // for test and dev
+    compile 'com.h2database:h2'
 }
 
 task runTestCommunicationTool(type: JavaExec){

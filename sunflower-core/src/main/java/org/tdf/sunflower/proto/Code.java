@@ -56,6 +56,14 @@ public enum Code
    * <code>ANOTHER = 5;</code>
    */
   ANOTHER(5),
+  /**
+   * <pre>
+   * disconnect message, prompt peers to delete yourself in cache
+   * </pre>
+   *
+   * <code>DISCONNECT = 6;</code>
+   */
+  DISCONNECT(6),
   UNRECOGNIZED(-1),
   ;
 
@@ -107,6 +115,14 @@ public enum Code
    * <code>ANOTHER = 5;</code>
    */
   public static final int ANOTHER_VALUE = 5;
+  /**
+   * <pre>
+   * disconnect message, prompt peers to delete yourself in cache
+   * </pre>
+   *
+   * <code>DISCONNECT = 6;</code>
+   */
+  public static final int DISCONNECT_VALUE = 6;
 
 
   public final int getNumber() {
@@ -139,6 +155,7 @@ public enum Code
       case 3: return LOOK_UP;
       case 4: return PEERS;
       case 5: return ANOTHER;
+      case 6: return DISCONNECT;
       default: return null;
     }
   }

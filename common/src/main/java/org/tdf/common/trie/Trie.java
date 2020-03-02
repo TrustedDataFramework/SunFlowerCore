@@ -8,6 +8,7 @@ import org.tdf.rlp.RLPElement;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 public interface Trie<K, V> extends Store<K, V> {
@@ -47,6 +48,14 @@ public interface Trie<K, V> extends Store<K, V> {
      * @return root hash of new trie
      */
     byte[] commit();
+
+    /**
+     * dump keys this trie
+     *
+     * @return minimal key value pairs to store this trie
+     * @throws RuntimeException if the trie is both non-null and dirty
+     */
+    Set<byte[]> dumpKeys();
 
     /**
      * dump this trie
@@ -131,4 +140,6 @@ public interface Trie<K, V> extends Store<K, V> {
             return TrieImpl.newInstance(hashFunction, store, keyCodec, valueCodec);
         }
     }
+
+
 }

@@ -1,5 +1,6 @@
 package org.tdf.common.event;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +20,7 @@ public class EventBus {
      * @param listener  listener which applied when some event published
      * @param <T>       generic
      */
-    public synchronized <T> void subscribe(Class<T> eventType, Consumer<T> listener) {
+    public synchronized <T> void subscribe(Class<T> eventType, Consumer<? super T> listener) {
         // copy when write, avoid concurrent modifications
         Map<Class, List<Consumer<?>>> copied = copy(listeners);
         copied.putIfAbsent(eventType, new ArrayList<>());
@@ -38,8 +39,8 @@ public class EventBus {
         for (Consumer consumer : consumers) {
             try {
                 consumer.accept(event);
-            } catch (Exception ignored) {
-
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.ApplicationConstants;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +30,7 @@ class PeersCache {
         Channel channel;
     }
 
-    private Bucket[] peers = new Bucket[256];
+    private Bucket[] peers = new Bucket[ApplicationConstants.PUBLIC_KEY_SIZE * 8];
 
     Map<PeerImpl, Boolean> bootstraps = new ConcurrentHashMap<>();
 
@@ -190,12 +191,12 @@ class PeersCache {
         List<PeerImpl> toRemoves = Stream.of(peers)
                 .filter(Objects::nonNull)
                 .flatMap(x -> x.values().stream())
-                .map(b -> b.peer)
-                .filter(p -> {
+                .filter(b -> {
+                    PeerImpl p = b.peer;
                     p.score -= p.score < 8 ? p.score : 8;
                     p.score /= 2;
-                    return p.score == 0;
-                }).collect(Collectors.toList());
+                    return p.score == 0 || b.channel.isClosed();
+                }).map(b -> b.peer).collect(Collectors.toList());
         toRemoves.forEach(x -> remove(x.getID(), " the score of " + x + " is 0"));
         List<PeerImpl> toRestores
                 = blocked.keySet().stream()

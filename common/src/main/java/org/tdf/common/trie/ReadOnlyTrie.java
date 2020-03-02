@@ -14,10 +14,10 @@ import java.util.stream.Stream;
 public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     protected AbstractTrie<K, V> delegate;
 
-    public static <K, V> ReadOnlyTrie<K, V> of(Trie<K, V> trie) {
-        if (trie instanceof ReadOnlyTrie) return (ReadOnlyTrie<K, V>) trie;
+    public static <K, V> Trie<K, V> of(Trie<K, V> trie) {
+        if (trie instanceof ReadOnlyTrie) return trie;
         if (trie.isDirty()) throw new UnsupportedOperationException();
-        return new ReadOnlyTrie<>(((AbstractTrie<K, V>) trie));
+        return new ReadOnlyTrie<>((AbstractTrie<K, V>) trie);
     }
 
     @Override
@@ -38,6 +38,11 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     @Override
     public byte[] commit() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Set<byte[]> dumpKeys() {
+        return delegate.dumpKeys();
     }
 
     @Override
@@ -183,5 +188,10 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     @Override
     public Map<byte[], byte[]> getProofInternal(byte[] key) {
         return delegate.getProofInternal(key);
+    }
+
+    @Override
+    public void traverseInternal(BiFunction<byte[], byte[], Boolean> traverser) {
+        delegate.traverseInternal(traverser);
     }
 }

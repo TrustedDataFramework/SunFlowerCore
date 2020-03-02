@@ -3,23 +3,20 @@ package org.tdf.common.store;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
-import org.iq80.leveldb.util.FileUtils;
 import org.rocksdb.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
 
 import static java.lang.System.arraycopy;
 
-@Slf4j
+@Slf4j(topic = "rocksdb")
 public class RocksDb implements DatabaseStore {
     static {
         RocksDB.loadLibrary();
@@ -133,7 +130,7 @@ public class RocksDb implements DatabaseStore {
 
     public void reset() {
         close();
-        FileUtils.deleteRecursively(getPath().toFile());
+        FileUtil.recursiveDelete(getPath().toString());
         init(dbSettings);
     }
 

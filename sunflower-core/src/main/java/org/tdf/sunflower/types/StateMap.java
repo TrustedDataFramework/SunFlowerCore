@@ -6,8 +6,8 @@ import org.tdf.common.util.ChainedWrapper;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.ExceptionUtil;
 
-import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 @Deprecated
@@ -34,6 +34,15 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
     }
 
     @Override
+    public void setHashPrev(HexBytes hashPrev) {
+        if (raw == null) {
+            super.setHashPrev(hashPrev);
+            return;
+        }
+        raw.put(HASH_PREV_PREFIX, hashPrev.getBytes());
+    }
+
+    @Override
     public HexBytes getHash() {
         if (raw == null) return super.getHash();
         return HexBytes.fromBytes(
@@ -48,15 +57,6 @@ public class StateMap<T extends ForkAbleState<T>> extends ChainedWrapper<Store<S
             return;
         }
         raw.put(WHERE_PREFIX, hash.getBytes());
-    }
-
-    @Override
-    public void setHashPrev(HexBytes hashPrev) {
-        if (raw == null) {
-            super.setHashPrev(hashPrev);
-            return;
-        }
-        raw.put(HASH_PREV_PREFIX, hashPrev.getBytes());
     }
 
     private void assertNoConflict(String k) {

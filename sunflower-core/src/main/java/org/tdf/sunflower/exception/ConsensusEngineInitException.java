@@ -1,6 +1,6 @@
 package org.tdf.sunflower.exception;
 
-public class ConsensusEngineInitException extends Exception{
+public class ConsensusEngineInitException extends RuntimeException{
     public ConsensusEngineInitException() {
     }
 

@@ -2,43 +2,55 @@ package org.tdf.sunflower.consensus.poa.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.ByteArrayMapStore;
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
-import org.tdf.sunflower.consensus.poa.PoAUtils;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class Genesis {
-    public HexBytes coinbase;
-
-    public HexBytes nonce;
-
-    public HexBytes hashBlock;
-
     public HexBytes parentHash;
 
     public long timestamp;
 
+    @Getter
     public static class MinerInfo {
         @JsonProperty("addr")
-        public String address;
+        public HexBytes address;
     }
 
     public List<MinerInfo> miners;
 
+    public Map<String, Long> alloc;
+
     @JsonIgnore
     public Block getBlock(){
+        Trie<?, ?> trie = Trie.<byte[], byte[]>builder()
+                            .keyCodec(Codec.identity())
+                            .valueCodec(Codec.identity())
+                            .store(new ByteArrayMapStore<>())
+                            .hashFunction(CryptoContext::digest)
+                            .build();
+        HexBytes emptyRoot = Transaction.getTransactionsRoot(Collections.emptyList());
+
         Header h = Header.builder()
                 .version(PoAConstants.BLOCK_VERSION)
                 .hashPrev(PoAConstants.ZERO_BYTES)
-                .merkleRoot(PoAConstants.ZERO_BYTES)
+                .stateRoot(HexBytes.fromBytes(trie.getNullHash()))
+                .transactionsRoot(emptyRoot)
                 .height(0)
+                .payload(HexBytes.EMPTY)
                 .createdAt(timestamp)
-                .payload(PoAConstants.ZERO_BYTES).build();
-        Block b = new Block(h);
-        b.setHash(HexBytes.fromBytes(PoAUtils.getHash(b)));
-        return b;
+                .build();
+        return new Block(h);
     }
 }

@@ -5,6 +5,8 @@ import lombok.NonNull;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -162,6 +164,12 @@ public interface Store<K, V> {
      * @param traverser operation of key-value mapping, if traverser return false, the traverse will stop
      */
     void traverse(BiFunction<? super K, ? super V, Boolean> traverser);
+
+    default void traverse(Function<Map.Entry<K, V>, Boolean> traverser){
+        traverse((k, v) ->
+            traverser.apply(new AbstractMap.SimpleImmutableEntry<>(k, v))
+        );
+    }
 
 
     default void forEach(BiConsumer<? super K, ? super V> consumer) {

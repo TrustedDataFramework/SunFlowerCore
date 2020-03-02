@@ -45,13 +45,16 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
     compileOnly "org.rocksdb:rocksdbjni:${rocksdbVersion}"
-    compileOnly "org.iq80.leveldb:leveldb:${leveldbVersion}"
-    compileOnly "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
+    compileOnly "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
     compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"
 
+    testCompile "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
+    testCompile "org.fusesource.leveldbjni:leveldbjni-linux64:${leveldbJNIVersion}"
     testCompile "org.iq80.leveldb:leveldb:${leveldbVersion}"
-    testCompile "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
+
     testCompile "org.slf4j:slf4j-api:${slf4jVersion}"
     testCompile "org.rocksdb:rocksdbjni:${rocksdbVersion}"
+// https://mvnrepository.com/artifact/org.slf4j/slf4j-nop
+    testCompile group: 'org.slf4j', name: 'slf4j-nop', version: '1.7.30'
 
 }

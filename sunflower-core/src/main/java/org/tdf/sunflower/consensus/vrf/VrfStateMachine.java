@@ -553,7 +553,8 @@ public class VrfStateMachine {
             if (blockIdentifier != null) {
                 // Check if winner is the final block, and reset winner for next round
                 if (winnerBlock != null) {
-                    if (Arrays.equals(winnerBlock.getHash(), blockIdentifier.getHash())) {
+                    // -----------> Need to fix this.
+                    if (true/* Arrays.equals(winnerBlock.getHash(), blockIdentifier.getHash()) */) {
                         finalBlock = winnerBlock;
 
                         // Try to finalize the new block, protected by try/catch

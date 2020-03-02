@@ -2,7 +2,7 @@
 # for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 spring:
   datasource:
-    url: 'jdbc:postgresql://localhost:5432/your-data-base' # SPRING_DATASOURCE_URL
+    url: 'jdbc:h2:mem:testdb' # SPRING_DATASOURCE_URL
     username: 'username'
     password: 'password'
 
@@ -12,15 +12,18 @@ spring:
     show-sql: false # enable jpa sql logs
 
 
-
 # sunflower configurations
 sunflower:
+  # enable assert in development
+  # call org.tdf.sunflower.Start.devAssert
+  assert: 'false'
+
   consensus:
-    name: 'none'
-    genesis: 'genesis/wisdom-genesis-generator-test.jsonc'
+    name: 'poa'
+    genesis: 'genesis/poa.jsonc'
     block-interval: '30'
     enable-mining: 'true'
-    miner-coin-base: '1JWhUiZCWps56uZckAvzxy2ex6VGhrMXdD'
+    miner-coin-base: '87b8f0b097b48b282a5c661babc8096e141bd9fb'
     
     # VRF configs
  # consensus:
@@ -39,10 +42,40 @@ sunflower:
     address: 'node://localhost:9999'
     enable-discovery: 'true'
     enable-message-log: 'true' # set false to disable verbose log
-    bootstraps: # bootstraps nodes
-      - 'node://localhost:9998'
-    trusted: # trusted nodes
-      - 'node://localhost:9999'
+    # bootstraps:
+      # - 'node://localhost:9998'
+    # trusted: # trusted nodes
+      # - 'node://localhost:9999'
+
+    # if white list is not empty, only nodes in white list are allowed to be connected
+    # white-list:
+      # - ffff
+
+    # the node in blocked list are not allowed to be connected
+    # blocked-list:
+
+    # if private-key is not pre-defined, node will generate private key
+    # private-key:
+
+    # persist peers to file database.directory/peers
+    persist: true
+
+    # lookup peers every 15 seconds
+    discover-rate: 15
+
+  sync:
+  #status rate(seconds)
+    heart-rate: 5
+    block-write-rate: 1
+    max-pending-blocks: 2048
+    max-blocks-transfer: 1024
+    # drop old header, transaction and states
+    prune-hash: ''
+    # enable fast sync process
+    fast-sync-hash: ''
+    fast-sync-height: '0'
+    max-accounts-transfer: 512
+
 
   message-queue:
     name: 'socketIO'
@@ -57,10 +90,30 @@ sunflower:
 
   database:
     # Key value data source values: [rocksdb/leveldb/memory]
-    name: 'rocksdb'
+    name: 'leveldb'
     directory: 'database/rocksdb'
     max-open-files: '512' # defines a number of opened files by db instance
+    block-store: 'rdbms' # optional: kv
 
+  # 密码算法，包含对称加密，非对称加密和哈希计算
+  crypto:
+    hash: 'sm3' # keccak256, keccak512
+    ec: 'sm2' # ed25519
+    ae: 'sm4' # 对称加密方法
+
+  web:
+    disabled: false
+    password: password
+
+  # constants for cache
+  cache:
+    # cache size for state trie
+    trie: '32'
+    # cache size for avoid message flood
+    p2p:
+      transaction: '128'
+      # cache size for avoid message flood
+      proposal: '128'
 
 
 server:

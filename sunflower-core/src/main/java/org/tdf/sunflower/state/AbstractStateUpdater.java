@@ -1,46 +1,37 @@
 package org.tdf.sunflower.state;
 
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Transaction;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public abstract class AbstractStateUpdater<ID, S> implements StateUpdater<ID, S> {
     @Override
-    public Set<ID> getRelatedKeys(Block block) {
+    public Set<ID> getRelatedKeys(Collection<? extends Transaction> transactions, Map<ID, S> store) {
         Set<ID> set = createEmptySet();
-        block.getBody().forEach(tx -> set.addAll(this.getRelatedKeys(tx)));
+        transactions.forEach(t -> set.addAll(getRelatedKeys(t, store)));
         return set;
     }
 
     @Override
-    public Set<ID> getRelatedKeys(List<Block> block) {
-        Set<ID> set = createEmptySet();
-        block.forEach(b -> set.addAll(getRelatedKeys(b)));
-        return set;
+    public Set<ID> getRelatedKeys(Block block, Map<ID, S> store) {
+        return getRelatedKeys(block.getBody(), store);
     }
+
 
     public Map<ID, S> update(Map<ID, S> beforeUpdate, Block block) {
         Map<ID, S> ret = createEmptyMap();
         ret.putAll(beforeUpdate);
-        block.getBody().forEach(
-                tx -> getRelatedKeys(tx)
-                        .forEach(k -> ret.put(k, update(k, ret.get(k), block.getHeader(), tx)))
-        );
-        return ret;
-    }
-
-    public Map<ID, S> update(Map<ID, S> beforeUpdate, List<Block> blocks) {
-        Map<ID, S> ret = createEmptyMap();
-        ret.putAll(beforeUpdate);
-        blocks.forEach(b -> {
-            b.getBody().forEach(tx -> {
-                getRelatedKeys(tx).forEach(k -> {
-                    ret.put(k, update(k, ret.get(k), b.getHeader(), tx));
-                });
-            });
-        });
+        for (Transaction tx : block.getBody()) {
+            Map<ID, S> tmp = createEmptyMap();
+            getRelatedKeys(tx, ret)
+                    .forEach(k -> tmp.put(k, ret.get(k)));
+            Map<ID, S> tmp2 = update(tmp, block.getHeader(), tx);
+            ret.putAll(tmp2);
+        }
         return ret;
     }
 }

@@ -1,20 +1,34 @@
 package org.tdf.sunflower.util;
 
+import lombok.SneakyThrows;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.tdf.sunflower.exception.ApplicationException;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.nio.file.Paths;
 
 public class FileUtils {
-    public static Resource getResource(String path) throws ApplicationException {
-        Resource resource = new FileSystemResource(path);
+    public static Resource getResource(String pathOrUrl) {
+        try{
+            URL url = new URL(pathOrUrl);
+            return new UrlResource(url);
+        }catch (Exception ignored){
+
+        }
+        Resource resource = new FileSystemResource(pathOrUrl);
         if (!resource.exists()) {
-            resource = new ClassPathResource(path);
+            resource = new ClassPathResource(pathOrUrl);
         }
         if (!resource.exists()) {
-            throw new ApplicationException("resource " + path + " not found");
+            throw new ApplicationException("resource " + pathOrUrl + " not found");
         }
         return resource;
     }
@@ -38,5 +52,15 @@ public class FileUtils {
         } else {
             return false;
         }
+    }
+
+    @SneakyThrows
+    public static void write(byte[] data, String path){
+        File f = Paths.get(path).toFile();
+        OutputStream os = new FileOutputStream(f);
+        IOUtils.copy(new ByteArrayInputStream(data), os);
+        try{
+            os.close();
+        }catch (Exception ignored){}
     }
 }

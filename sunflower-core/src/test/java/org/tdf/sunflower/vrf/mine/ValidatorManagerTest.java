@@ -49,7 +49,6 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.vm.DataWord;
 import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.service.BlockRepositoryService;
 import org.tdf.sunflower.util.ByteUtil;
 
 /**
@@ -115,7 +114,7 @@ public class ValidatorManagerTest {
             .of("0000000000000000000000000000000000000000000000000000000000000011");
 
     @Autowired
-    private BlockRepositoryService repository;
+    private BlockRepository repository;
     // private BlockRepository repository; // = ConsortiumRepositoryService.NONE;
 //    private static final Repository cacheTrack = repository.startTracking();
 

@@ -7,8 +7,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
+import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.ByteArrayMapStore;
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.consensus.poa.PoAUtils;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
@@ -30,7 +33,7 @@ public class VrfGenesis {
 
     public static class MinerInfo {
         @JsonProperty("addr")
-        public String address;
+        public HexBytes address;
     }
 
     public List<MinerInfo> miners;
@@ -38,9 +41,14 @@ public class VrfGenesis {
     @JsonIgnore
     public Block getBlock(VrfConfig vrfConfig) throws IOException {
         long blockNum = ByteUtil.byteArrayToLong(number.getBytes());
+
+        Trie<?, ?> trie = Trie.<byte[], byte[]>builder().keyCodec(Codec.identity()).valueCodec(Codec.identity())
+                .store(new ByteArrayMapStore<>()).hashFunction(CryptoContext::digest).build();
+
         Header header = Header.builder().version(VrfConstants.BLOCK_VERSION).hashPrev(parentHash)
-                .merkleRoot(VrfConstants.ZERO_BYTES).height(blockNum)
-                .createdAt(ByteUtil.byteArrayToLong(timestamp.getBytes())).payload(VrfConstants.ZERO_BYTES).build();
+                .transactionsRoot(VrfConstants.ZERO_BYTES).height(blockNum)
+                .createdAt(ByteUtil.byteArrayToLong(timestamp.getBytes())).payload(VrfConstants.ZERO_BYTES)
+                .stateRoot(HexBytes.fromBytes(trie.getNullHash())).build();
 
         Block block = new Block(header);
 
@@ -51,7 +59,6 @@ public class VrfGenesis {
          */
         setPayload(block, vrfConfig);
 
-        block.setHash(HexBytes.fromBytes(PoAUtils.getHash(block)));
 
         return block;
     }
@@ -62,7 +69,7 @@ public class VrfGenesis {
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
         int round = 0;
         byte[] payloadBytes = VrfUtil.genPayload(blockNum, round, seed, coinbase, difficulty,
-                HexBytes.fromBytes(PoAUtils.getHash(block)), vrfSk, vrfPk, vrfConfig);
+                block.getHash(), vrfSk, vrfPk, vrfConfig);
         HexBytes payload = HexBytes.fromBytes(payloadBytes);
         block.setPayload(payload);
     }

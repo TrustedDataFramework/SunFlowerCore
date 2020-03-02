@@ -20,6 +20,8 @@ public interface PeerServer {
     // get all bootstraps
     List<Peer> getBootStraps();
 
+    boolean isFull();
+
     void addListeners(PeerServerListener... peerServerListeners);
 
     void start();
@@ -74,6 +76,11 @@ public interface PeerServer {
         @Override
         public Peer getSelf() {
             return Peer.NONE;
+        }
+
+        @Override
+        public boolean isFull() {
+            return false;
         }
     };
 }

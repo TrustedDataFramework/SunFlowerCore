@@ -7,6 +7,7 @@ import org.tdf.rlp.RLPElement;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 abstract class AbstractTrie<K, V> implements Trie<K, V>{
@@ -35,6 +36,12 @@ abstract class AbstractTrie<K, V> implements Trie<K, V>{
         removeBytes(data);
     }
 
+    abstract void traverseInternal(BiFunction<byte[], byte[], Boolean> traverser);
+
+    @Override
+    public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
+        traverseInternal((k, v) -> traverser.apply(getKCodec().getDecoder().apply(k), getVCodec().getDecoder().apply(v)));
+    }
 
     @Override
     public Map<byte[], byte[]> getProof(K k) {

@@ -16,6 +16,7 @@ enum Code {
     LOOK_UP = 3; // query for peers
     PEERS = 4; // response to peers query
     ANOTHER = 5; // used for application handlers
+    DISCONNECT = 6; // disconnect message, prompt peers to delete yourself in cache
 }
 
 message Message {
@@ -47,4 +48,8 @@ message Peers {
 
 
 message Nothing {
+}
+
+message Disconnect{
+    string reason = 1;
 }

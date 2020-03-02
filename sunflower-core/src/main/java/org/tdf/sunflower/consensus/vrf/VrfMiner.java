@@ -1,7 +1,6 @@
 package org.tdf.sunflower.consensus.vrf;
 
 import static org.junit.Assert.assertTrue;
-import static org.tdf.sunflower.consensus.vrf.VrfHashPolicy.HASH_POLICY;
 import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
 
 import java.io.IOException;
@@ -11,18 +10,23 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import lombok.SneakyThrows;
 import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
+import org.tdf.common.trie.Trie;
+import org.tdf.sunflower.consensus.AbstractMiner;
+import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.types.Header;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.Miner;
-import org.tdf.sunflower.facade.MinerListener;
+import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.PeerServer;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.account.PublicKeyHash;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.poa.Proposer;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
@@ -50,15 +54,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @Setter
-public class VrfMiner implements Miner {
+public class VrfMiner extends AbstractMiner {
 
     private VrfConfig vrfConfig;
 
-    PublicKeyHash minerPublicKeyHash;
+    HexBytes minerAddress;
 
     private VrfGenesis genesis;
-
-    private List<MinerListener> listeners;
 
     private BlockRepository blockRepository;
 
@@ -87,8 +89,9 @@ public class VrfMiner implements Miner {
     private PeerServer peerServer;
     private MessageBuilder messageBuilder;
 
-    public VrfMiner() {
-        listeners = new ArrayList<>();
+    private TransactionPool transactionPool;
+
+    public VrfMiner(){
     }
 
     public void setGenesis(VrfGenesis genesis) {
@@ -97,9 +100,8 @@ public class VrfMiner implements Miner {
 
     public void setConfig(VrfConfig vrfConfig) throws ConsensusEngineInitException {
         this.vrfConfig = vrfConfig;
-        this.minerPublicKeyHash = PublicKeyHash.from(vrfConfig.getMinerCoinBase())
-                .orElseThrow(() -> new ConsensusEngineInitException("invalid address " + vrfConfig.getMinerCoinBase()));
-        this.minerCoinbase = this.minerPublicKeyHash.getPublicKeyHash();
+        this.minerAddress = HexBytes.fromHex(vrfConfig.getMinerCoinBase());
+        this.minerCoinbase = this.minerAddress.getBytes();
         vrfSk = VrfUtil.getVrfPrivateKey(vrfConfig);
         VrfUtil.VRF_PK = Hex.toHexString(vrfSk.getSigner().generatePublicKey().getEncoded());
     }
@@ -108,23 +110,6 @@ public class VrfMiner implements Miner {
         this.blockRepository = blockRepository;
     }
 
-    @Override
-    public void onBlockWritten(Block block) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void onNewBestBlock(Block block) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void onBlockConfirmed(Block block) {
-        // TODO Auto-generated method stub
-
-    }
 
     @Override
     public void start() {
@@ -141,11 +126,6 @@ public class VrfMiner implements Miner {
         stopped = true;
     }
 
-    @Override
-    public void addListeners(MinerListener... listeners) {
-        this.listeners.addAll(Arrays.asList(listeners));
-    }
-
     public Optional<Proposer> getProposer(Block parent, long currentTimeSeconds) {
         if (genesis.miners.size() == 0) {
             return Optional.empty();
@@ -155,7 +135,7 @@ public class VrfMiner implements Miner {
         }
         if (parent.getBody() == null || parent.getBody().size() == 0 || parent.getBody().get(0).getTo() == null)
             return Optional.empty();
-        String prev = new PublicKeyHash(parent.getBody().get(0).getTo().getBytes()).getAddress();
+        HexBytes prev = parent.getBody().get(0).getTo();
         int prevIndex = genesis.miners.stream().map(x -> x.address).collect(Collectors.toList()).indexOf(prev);
         if (prevIndex < 0) {
             return Optional.empty();
@@ -178,34 +158,30 @@ public class VrfMiner implements Miner {
         startVrfStateMachine();
     }
 
-    private Transaction createCoinBase(long height) throws DecoderException {
-        Transaction tx = Transaction.builder().height(height).version(PoAConstants.TRANSACTION_VERSION)
-                .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(PoAConstants.ZERO_BYTES)
-                .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(PoAConstants.ZERO_BYTES)
-                .to(HexBytes.fromBytes(minerPublicKeyHash.getPublicKeyHash())).signature(PoAConstants.ZERO_BYTES)
-                .build();
-        tx.setHash(HASH_POLICY.getHash(tx));
+    public Transaction createCoinBase(long height) {
+        Transaction tx = Transaction.builder().version(PoAConstants.TRANSACTION_VERSION)
+                .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(HexBytes.EMPTY)
+                .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(HexBytes.EMPTY)
+                .to(minerAddress).signature(HexBytes.EMPTY).build();
         return tx;
     }
 
-    private Block createBlock(Block parent) throws DecoderException, IOException {
+    @Override
+    @SneakyThrows
+    protected Header createHeader(Block parent) {
         Header header = Header.builder().version(parent.getVersion()).hashPrev(parent.getHash())
-                .merkleRoot(PoAConstants.ZERO_BYTES).height(parent.getHeight() + 1)
+                .transactionsRoot(PoAConstants.ZERO_BYTES).height(parent.getHeight() + 1)
                 .createdAt(System.currentTimeMillis() / 1000).build();
 //                .payload(VrfConstants.ZERO_BYTES)
 //                .hash(new HexBytes(BigEndian.encodeInt64(parent.getHeight() + 1))).build();
-        Block b = new Block(header);
 
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
-        byte[] payLoadBytes = VrfUtil.genPayload(b.getHeight(), this.vrfStateMachine.getVrfRound().getRound(), vrfSeed,
-                this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk, vrfPk,
-                vrfConfig);
+        byte[] payLoadBytes = VrfUtil.genPayload(header.getHeight(), this.vrfStateMachine.getVrfRound().getRound(),
+                vrfSeed, this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk,
+                vrfPk, vrfConfig);
         HexBytes payload = HexBytes.fromBytes(payLoadBytes);
-        b.setPayload(payload);
-        b.getBody().add(createCoinBase(parent.getHeight() + 1));
-
-        b.setHash(HASH_POLICY.getHash(b));
-        return b;
+        header.setPayload(payload);
+        return header;
     }
 
     public static class EconomicModelImpl {
@@ -694,14 +670,26 @@ public class VrfMiner implements Miner {
         } else if (winnerBlock == null) {
             log.error("Empty winner block, give up Final Commit Proof, reach commit identifier {}, blockSyncing {}",
                     reachCommitIdentifier, blockSyncing);
-        } else if (!Arrays.equals(winnerBlock.getHash(), reachCommitIdentifier.getHash())
-                || winnerBlock.getNumber() != reachCommitIdentifier.getNumber()) {
-            log.error(
-                    "Identifier is NOT matched, winner block {}, committed identifier {}, give up Final Commit Proof, blockSyncing {}",
-                    Hex.toHexString(winnerBlock.getHash(), 0, 6),
-                    Hex.toHexString(reachCommitIdentifier.getHash(), 0, 6), blockSyncing);
-            log.error("PLEASE configure VrfStateMachine for longer broadcast time of new block in the network");
+
+            // !!!!!!!!!!! -----> Need to fix, should not be true.
+//        } else if (!Arrays.equals(winnerBlock.getHash(), reachCommitIdentifier.getHash())
+//                || winnerBlock.getNumber() != reachCommitIdentifier.getNumber()) {
+//            log.error(
+//                    "Identifier is NOT matched, winner block {}, committed identifier {}, give up Final Commit Proof, blockSyncing {}",
+//                    Hex.toHexString(winnerBlock.getHash(), 0, 6),
+//                    Hex.toHexString(reachCommitIdentifier.getHash(), 0, 6), blockSyncing);
+//            log.error("PLEASE configure VrfStateMachine for longer broadcast time of new block in the network");
         } else {
+
+            if (!Arrays.equals(winnerBlock.getHash(), reachCommitIdentifier.getHash())
+                    || winnerBlock.getNumber() != reachCommitIdentifier.getNumber()) {
+                log.error(
+                        "Identifier is NOT matched, winner block {}, committed identifier {}, give up Final Commit Proof, blockSyncing {} -----> Need to fix, should not be true.",
+                        Hex.toHexString(winnerBlock.getHash(), 0, 6),
+                        Hex.toHexString(reachCommitIdentifier.getHash(), 0, 6), blockSyncing);
+                log.error("PLEASE configure VrfStateMachine for longer broadcast time of new block in the network");
+            }
+
             // Check the best proposal and committed proposal
             ProposalProof bestProproserProof = vrfStateMachine.getBestProposalProof();
             if (!Arrays.equals(bestProproserProof.getBlockIdentifier().getHash(), reachCommitIdentifier.getHash())
@@ -793,7 +781,7 @@ public class VrfMiner implements Miner {
 
     private ImportResult tryToConnect(Block block) {
         // Notify listeners.
-        listeners.forEach(l -> l.onBlockMined(block));
+        getEventBus().publish(new NewBlockMined(block));
         return ImportResult.IMPORTED_BEST;
     }
 

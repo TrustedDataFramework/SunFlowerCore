@@ -7,6 +7,7 @@ import java.util.List;
 import org.junit.Test;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
+import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.vrf.VrfConfig;
 import org.tdf.sunflower.consensus.vrf.core.CommitProof;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
@@ -14,16 +15,22 @@ import org.tdf.sunflower.consensus.vrf.core.VrfProof;
 import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
 import org.tdf.sunflower.consensus.vrf.struct.VrfBlockFields;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
+import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.ByteUtil;
 
 public class VrfBlockFieldsTest {
     private VrfConfig vrfConfig = new VrfConfig();
     int round = 1;
     long blockNum = 2;
+    int version = 999;
 
     // !!! Following hex string length should be even number.
+    String prevHashStr = "fedcba";
+    HexBytes prevHash = HexBytes.fromHex(prevHashStr);
     String seedStr = "abcd";
     String priorityStr = "cdef";
     String blockHashStr = "abcdef";
@@ -37,6 +44,8 @@ public class VrfBlockFieldsTest {
         genCommitProofsCache();
     }
 
+    // TODO: for string and byte array, both null and empty sequence are encoded as
+    // RLP null item [0x80]
     @Test
     public void testRlpNull() {
         VrfBlockFields vbf1 = VrfBlockFields.builder().seed(null).priority(null).proposalProof(null)
@@ -46,8 +55,8 @@ public class VrfBlockFieldsTest {
         assert (ByteUtil.isNullOrZeroArray(vbf2.getSeed()));
         assert (ByteUtil.isNullOrZeroArray(vbf2.getPriority()));
         assert (ByteUtil.isNullOrZeroArray(vbf2.getProposalProof()));
-        assert (vbf2.getParentReductionCommitProofs() == null);
-        assert (vbf2.getParentFinalCommitProofs() == null);
+        assert (vbf2.getParentReductionCommitProofs() == null || vbf2.getParentReductionCommitProofs().equals(""));
+        assert (vbf2.getParentFinalCommitProofs() == null || vbf2.getParentFinalCommitProofs().equals(""));
     }
 
     @Test
@@ -267,5 +276,37 @@ public class VrfBlockFieldsTest {
         finalCommitProofs.put(minerCoinbase, finalCommitProof);
 
         VrfUtil.writeFinalCommitProofsToFile(finalCommitProofs, vrfConfig);
+    }
+
+    @Test
+    public void testBlockRLPMessage() throws IOException {
+        Header header = Header.builder().version(version).hashPrev(prevHash).transactionsRoot(PoAConstants.ZERO_BYTES)
+                .height(blockNum).createdAt(System.currentTimeMillis() / 1000).build();
+        // Create a new block and set fields.
+        Block block = new Block(header);
+
+        byte[] encoded = VrfUtil.genPayload(blockNum, round, seedStr, minerCoinbaseStr, priorityStr, blockHashStr,
+                vrfSk, vrfPk, vrfConfig);
+        HexBytes payload = HexBytes.fromBytes(encoded);
+        block.setPayload(payload);
+        // block.setHash(HASH_POLICY.getHash(block));
+
+        // Build block message bytes.
+        byte[] blockMsgEncoded = VrfUtil.buildMessageBytes(VrfMessageCode.VRF_BLOCK, block);
+
+        // Parse block message bytes.
+        VrfMessageCodeAndBytes codeAndBytes = VrfUtil.parseMessageBytes(blockMsgEncoded);
+        VrfMessageCode code = codeAndBytes.getCode();
+        assert (code == VrfMessageCode.VRF_BLOCK);
+        byte[] vrfBytes = codeAndBytes.getRlpBytes();
+
+        // Decode block from message bytes.
+        Block blockDecoded = RLPCodec.decode(vrfBytes, Block.class);
+
+        // Assertions.
+        assert (block.getHashPrev().equals(blockDecoded.getHashPrev()));
+        assert (block.getPayload().equals(blockDecoded.getPayload()));
+        assert (blockDecoded.getHash() != null);
+        assert (block.getHash().equals(blockDecoded.getHash()));
     }
 }

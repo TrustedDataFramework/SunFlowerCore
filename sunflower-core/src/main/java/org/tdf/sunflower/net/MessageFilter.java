@@ -3,26 +3,26 @@ package org.tdf.sunflower.net;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Hex;
-import org.tdf.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.crypto.CryptoContext;
 
 /**
  * message filter
  */
 @Slf4j
 public class MessageFilter implements Plugin {
-    private Cache<String, Boolean> cache;
+    private Cache<HexBytes, Boolean> cache;
 
     MessageFilter(PeerServerConfig config) {
         this.cache = CacheBuilder.newBuilder()
-                .maximumSize(config.getMaxPeers() * 2).build();
+                .maximumSize(config.getMaxPeers() * 8).build();
     }
 
     @Override
     public void onMessage(ContextImpl context, PeerServerImpl server) {
         // filter invalid signatures
-        if (!new Ed25519PublicKey(context.getRemote().getID().getBytes()).verify(
-                Util.getRawForSign(context.message), context.message.getSignature().toByteArray()
+        if (!CryptoContext.verifySignature(
+                context.getRemote().getID().getBytes(), Util.getRawForSign(context.message), context.message.getSignature().toByteArray()
         )) {
             log.error("invalid signature received from " + context.remote);
             context.exit();
@@ -46,7 +46,7 @@ public class MessageFilter implements Plugin {
             context.exit();
             return;
         }
-        String k = Hex.encodeHexString(context.message.getSignature().toByteArray());
+        HexBytes k = HexBytes.fromBytes(context.message.getSignature().toByteArray());
         // filter message had been received
         if (cache.asMap().containsKey(k)) {
             context.exit();

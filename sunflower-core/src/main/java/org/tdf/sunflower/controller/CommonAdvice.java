@@ -31,9 +31,9 @@ public class CommonAdvice implements ResponseBodyAdvice {
 
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
-        if (body.getClass().equals(byte[].class) || 
-                body.getClass().equals(String.class) || 
-                body.getClass().equals(Response.class)
+        if (body instanceof byte[] ||
+                body instanceof CharSequence ||
+                body instanceof Response
         ){
             return body;
         }

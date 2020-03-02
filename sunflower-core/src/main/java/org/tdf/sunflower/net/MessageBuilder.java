@@ -2,6 +2,7 @@ package org.tdf.sunflower.net;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.proto.*;
 
 import java.util.Collection;
@@ -34,6 +35,10 @@ public class MessageBuilder {
         return buildMessage(Code.LOOK_UP, 1, Lookup.newBuilder().build().toByteArray());
     }
 
+    public Message buildDisconnect(String reason){
+        return buildMessage(Code.DISCONNECT, 1, Disconnect.newBuilder().setReason(reason == null ? "" : reason).build().toByteArray());
+    }
+
     public Message buildPeers(Collection<? extends Peer> peers){
         return buildMessage(Code.PEERS, 1, Peers
                 .newBuilder().addAllPeers(
@@ -55,7 +60,7 @@ public class MessageBuilder {
                 .setRemotePeer(self.encodeURI())
                 .setNonce(nonce.incrementAndGet())
                 .setTtl(message.getTtl() - 1);
-        byte[] sig = self.getPrivateKey().sign(getRawForSign(builder.build()));
+        byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }
 
@@ -67,7 +72,7 @@ public class MessageBuilder {
                 .setTtl(ttl)
                 .setNonce(nonce.incrementAndGet())
                 .setBody(ByteString.copyFrom(msg));
-        byte[] sig = self.getPrivateKey().sign(getRawForSign(builder.build()));
+        byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }
 }

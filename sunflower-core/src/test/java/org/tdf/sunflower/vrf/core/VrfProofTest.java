@@ -28,7 +28,6 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
-import org.tdf.sunflower.consensus.poa.PoAUtils;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.core.VrfProof;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
@@ -87,7 +86,7 @@ public class VrfProofTest {
         VrfUtil.setSeed(header, nonce);
         VrfUtil.setPriority(header, emptyArray);
         VrfUtil.setMiner(header, coinbase);
-        header.setHash(HexBytes.fromBytes(PoAUtils.getHash(header)));
+        // header.setHash(HexBytes.fromBytes(PoAUtils.getHash(header)));
 
         return header;
     }

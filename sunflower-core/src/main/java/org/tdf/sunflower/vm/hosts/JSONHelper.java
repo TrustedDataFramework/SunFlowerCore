@@ -48,7 +48,12 @@ public class JSONHelper {
                 new JSONBuilderPutU64(this),
                 new JSONBuilderSetU64(this),
                 new JSONReaderGetStrByIndex(),
-                new JSONReaderGetI64ByIndex()
+                new JSONReaderGetI64ByIndex(),
+                new JSONReaderGetJsonByIndex(),
+                new JSONReaderGetStrByKey(),
+                new JSONReaderGetJsonLenByIndex(),
+                new JSONReaderGetI64ByKey(),
+                new JSONReaderGetStrLenByKey()
         );
     }
 
@@ -59,12 +64,12 @@ public class JSONHelper {
 
     public void ensureJSONObject() {
         if (element != null && element.isJsonArray()) throw new RuntimeException("cannot put element to json array");
-        if (element == null) element = GSON.toJsonTree(new HashMap());
+        if (element == null) element = GSON.toJsonTree(new HashMap<>());
     }
 
     public void ensureJSONArray(int size) {
         if (element != null && element.isJsonObject()) throw new RuntimeException("cannot push element to json object");
-        if (element == null) element = GSON.toJsonTree(new ArrayList());
+        if (element == null) element = GSON.toJsonTree(new ArrayList<>());
         while (element.getAsJsonArray().size() <= size){
             element.getAsJsonArray().add(JsonNull.INSTANCE);
         }
@@ -210,7 +215,7 @@ public class JSONHelper {
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONObject();
             String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            jsonHelper.element.getAsJsonObject().addProperty(key, new BigDecimal(Double.longBitsToDouble(parameters[2])));
+            jsonHelper.element.getAsJsonObject().addProperty(key, BigDecimal.valueOf(Double.longBitsToDouble(parameters[2])));
             return new long[0];
         }
     }
@@ -328,7 +333,7 @@ public class JSONHelper {
         public long[] execute(long... parameters) {
             jsonHelper.ensureJSONArray((int) parameters[0]);
             JsonArray array = jsonHelper.element.getAsJsonArray();
-            jsonHelper.element.getAsJsonArray().set((int) parameters[0], new JsonPrimitive(parameters[1] != 0));
+            array.set((int) parameters[0], new JsonPrimitive(parameters[1] != 0));
             return new long[0];
         }
     }
@@ -500,8 +505,8 @@ public class JSONHelper {
             setName("_json_reader_get_str_len_by_key");
             setType(
                     new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            new ArrayList<>()
+                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
+                            Collections.singletonList(ValueType.I32)
                     )
             );
         }
@@ -521,8 +526,8 @@ public class JSONHelper {
             setName("_json_reader_get_i64_by_key");
             setType(
                     new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I64),
-                            new ArrayList<>()
+                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
+                            Collections.singletonList(ValueType.I64)
                     )
             );
         }
@@ -542,8 +547,8 @@ public class JSONHelper {
             setName("_json_reader_get_u64_by_key");
             setType(
                     new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I64),
-                            new ArrayList<>()
+                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
+                            Collections.singletonList(ValueType.I64)
                     )
             );
         }
@@ -563,8 +568,8 @@ public class JSONHelper {
             setName("_json_reader_get_bool_by_key");
             setType(
                     new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            new ArrayList<>()
+                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
+                            Collections.singletonList(ValueType.I64)
                     )
             );
         }
@@ -584,8 +589,8 @@ public class JSONHelper {
             setName("_json_reader_get_f64_by_key");
             setType(
                     new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.F64),
-                            new ArrayList<>()
+                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
+                            Collections.singletonList(ValueType.F64)
                     )
             );
         }
@@ -614,9 +619,12 @@ public class JSONHelper {
         @Override
         public long[] execute(long... parameters) {
             String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
+            JsonElement element = GSON
+                    .fromJson(json, JsonElement.class)
+                    .getAsJsonArray().get((int) parameters[2]);
+
             int ptr = (int) parameters[3];
-            putStringIntoMemory(ptr, element.getAsJsonObject().getAsString());
+            putStringIntoMemory(ptr, element.toString());
             return new long[0];
         }
     }
@@ -627,8 +635,8 @@ public class JSONHelper {
             setName("_json_reader_get_json_len_by_index");
             setType(
                     new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            new ArrayList<>()
+                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32),
+                            Collections.singletonList(ValueType.I32)
                     )
             );
         }
@@ -637,7 +645,7 @@ public class JSONHelper {
         public long[] execute(long... parameters) {
             String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
-            return new long[element.getAsJsonObject().getAsString().getBytes(StandardCharsets.UTF_8).length];
+            return new long[]{element.toString().getBytes(StandardCharsets.UTF_8).length};
         }
     }
 
@@ -719,7 +727,7 @@ public class JSONHelper {
         public long[] execute(long... parameters) {
             String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
             JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
-            return new long[]{UnsignedLong.valueOf(element.getAsBigInteger()).longValue()};
+            return new long[]{element.getAsLong()};
         }
     }
 

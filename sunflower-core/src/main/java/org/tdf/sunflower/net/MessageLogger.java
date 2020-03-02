@@ -2,14 +2,14 @@ package org.tdf.sunflower.net;
 
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
+@Slf4j(topic = "net")
 class MessageLogger implements Plugin {
     @Override
     public void onMessage(ContextImpl context, PeerServerImpl server) {
-        log.info("receive {} message from {}:{}",
+        log.debug("receive {} message from {}:{}",
                 context.message.getCode(), context.remote.getHost(), context.remote.getPort()
         );
-        log.info(context.message.toString());
+        log.debug(context.message.toString());
     }
 
     @Override

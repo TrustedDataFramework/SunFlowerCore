@@ -1,116 +1,86 @@
 package org.tdf.sunflower.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import org.apache.commons.codec.binary.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.GlobalConfig;
-import org.tdf.sunflower.account.PublicKeyHash;
-import org.tdf.sunflower.facade.ConsortiumRepository;
-import org.tdf.sunflower.facade.StateRepository;
+import org.tdf.sunflower.account.Address;
+import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.UnmodifiableTransaction;
 
 import java.util.Collections;
 import java.util.List;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 @RestController
+@AllArgsConstructor
+@RequestMapping("/rpc")
 public class EntryController {
-    @Autowired
-    private StateRepository repository;
+    private AccountTrie accountTrie;
 
-    @Autowired
     private GlobalConfig config;
 
-    @Autowired
     private PeerServer peerServer;
 
-    @Autowired
     private TransactionPool pool;
 
-    @Autowired
-    private ConsortiumRepository consortiumRepository;
+    private SunflowerRepository sunflowerRepository;
 
-    @Autowired
     private ObjectMapper objectMapper;
 
-    @GetMapping(value = "/hello", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object hello() {
-        return "hello".getBytes(UTF_8);
-    }
 
-    @GetMapping(value = "/man", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object man() throws Exception {
-        return HexBytes.fromHex("ffffffff");
-    }
-
-    @GetMapping(value = "/exception", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object exception() throws RuntimeException {
-        throw new RuntimeException("error");
-    }
-
-    @GetMapping(value = "/account/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object getAccount(@PathVariable String address) throws Exception {
-        PublicKeyHash publicKeyHash = PublicKeyHash
-                .from(address)
-                .orElseThrow(() -> new RuntimeException("invalid format " + address));
-        return AccountView.fromAccount(repository.getLastConfirmed(publicKeyHash.getAddress(), Account.class));
+    @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public AccountView getAccount(@PathVariable String addressOrPublicKey) throws Exception {
+        HexBytes addressHex = Address.of(addressOrPublicKey);
+        return accountTrie
+                .get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex)
+                .map(AccountView::fromAccount)
+                .orElse(new AccountView(addressHex, 0))
+                ;
     }
 
     @GetMapping(value = "/config", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object config() {
+    public GlobalConfig config() {
         return config;
     }
 
     @GetMapping(value = "/peers", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object peers() {
+    public PeersInfo peers() {
         return new PeersInfo(
                 peerServer.getPeers(),
                 peerServer.getBootStraps()
-                );
+        );
     }
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object sendTransaction(@RequestBody Transaction transaction){
-        pool.collect(Collections.singleton(transaction));
+    public Response<String> sendTransaction(@RequestBody Transaction transaction) {
+        pool.collect(UnmodifiableTransaction.of(transaction));
         return Response.newSuccessFul("ok");
     }
 
-    @GetMapping(value = "/contract/{address}/{method}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object getContract(
+    @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public HexBytes getContract(
             @PathVariable("address") final String address,
-            @PathVariable("method") String method,
-            @RequestParam(value = "parameters", required = false) String parameters
-    ) throws Exception{
-        PublicKeyHash publicKeyHash = PublicKeyHash.from(address).orElseThrow(() -> new RuntimeException("invalid format " + address));
-        byte[] params = parameters == null ? new byte[0] : HexBytes.fromHex(parameters).getBytes();
-        byte[] hash = consortiumRepository.getBestBlock().getHash().getBytes();
-        Account a = repository.get(publicKeyHash.getAddress(), hash, Account.class)
-                .filter(x -> x.getBinaryContract() != null)
-                .orElseThrow(() -> new RuntimeException("the address " + address + " has no contract deployed"));
-        ContractView view = new ContractView();
-        byte[] result = a.view(method, params);
-        try{
-            view.json = objectMapper.readValue(result, JsonNode.class);
-        }catch (Exception ignored){}
-        view.raw = HexBytes.fromBytes(result);
-        return view;
-    }
-
-    private static class ContractView {
-        JsonNode json;
-        HexBytes raw;
+            @RequestParam(value = "parameters") String parameters
+    ) throws Exception {
+        HexBytes addressHex = Address.of(address);
+        byte[] params = HexBytes.fromHex(parameters).getBytes();
+        Account a = accountTrie
+                .get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex)
+                .filter(Account::containsContract)
+                .orElseThrow(() -> new RuntimeException("the address " + addressHex + " has no contract deployed"));
+        byte[] result = a.view(params);
+        return HexBytes.fromBytes(result);
     }
 
     @AllArgsConstructor
@@ -122,16 +92,14 @@ public class EntryController {
 
     @Builder
     @Getter
-    static class AccountView{
-        private String address;
-        private String publicKeyHash;
+    static class AccountView {
+        private HexBytes address;
         private long balance;
 
-        static AccountView fromAccount(Account account){
+        static AccountView fromAccount(Account account) {
             return builder()
-                    .address(account.getIdentifier())
+                    .address(account.getAddress())
                     .balance(account.getBalance())
-                    .publicKeyHash(account.getPublicKeyHash().getHex())
                     .build();
         }
     }

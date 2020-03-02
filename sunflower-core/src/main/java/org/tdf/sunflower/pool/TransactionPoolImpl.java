@@ -57,33 +57,29 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private EventBus eventBus;
 
-    private HashPolicy hashPolicy;
-
     private final TreeSet<Transaction> cache;
 
     private PendingTransactionValidator validator;
 
-    public void setEngine(ConsensusEngine engine) {
-        this.hashPolicy = engine.getHashPolicy();
+    public void setEngine(ConsensusEngineFacade engine) {
         this.validator = engine.getValidator();
     }
 
     public TransactionPoolImpl(EventBus eventBus) {
         this.eventBus = eventBus;
         this.eventBus.subscribe(NewBestBlock.class, this::onNewBestBlock);
-        cache = new TreeSet<>((a, b) -> {
-            if (a.getNonce() != b.getNonce()) return Long.compare(a.getNonce(), b.getNonce());
-            return a.getHash().compareTo(b.getHash());
-        });
+        cache = new TreeSet<>(Transaction.NONCE_COMPARATOR);
     }
 
     @Override
     public void collect(Collection<? extends Transaction> transactions) {
         for (Transaction transaction : transactions) {
-            if (transaction.getHash() == null) {
-                transaction.setHash(hashPolicy.getHash(transaction));
+            ValidateResult res = transaction.basicValidate();
+            if(!res.isSuccess()){
+                log.error(res.getReason());
+                continue;
             }
-            ValidateResult res = validator.validate(transaction);
+            res = validator.validate(transaction);
             if (!res.isSuccess()) {
                 log.error(res.getReason());
                 continue;
