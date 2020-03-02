@@ -8,6 +8,7 @@ import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.abi.Context;
+import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
 import java.util.*;
@@ -148,6 +149,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
         // every contract must has a init method
         ModuleInstance instance = ModuleInstance.builder()
+                .hooks(Collections.singleton(new GasLimit()))
                 .binary(t.getPayload().getBytes())
                 .hostFunctions(hosts.getAll())
                 .build();
@@ -188,6 +190,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
         // every contract must has a init method
         ModuleInstance instance = ModuleInstance.builder()
+                .hooks(Collections.singleton(new GasLimit()))
                 .hostFunctions(hosts.getAll())
                 .memory(contractAccount.getMemory())
                 .globals(contractAccount.getGlobals())
