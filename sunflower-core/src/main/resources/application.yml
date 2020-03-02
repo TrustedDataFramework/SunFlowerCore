@@ -126,9 +126,9 @@ server:
 
 logging:
   level:
-    org.hibernate:
-      SQL: 'DEBUG'
-      type.descriptor.sql.BasicBinder: 'TRACE'
-    org.springframework.jdbc.core:
-      JdbcTemplate: 'DEBUG'
-      StatementCreatorUtils: 'TRACE'
+    #org.hibernate:
+      #SQL: 'DEBUG'
+      #type.descriptor.sql.BasicBinder: 'TRACE'
+    #org.springframework.jdbc.core:
+      #JdbcTemplate: 'DEBUG'
+      #StatementCreatorUtils: 'TRACE'
