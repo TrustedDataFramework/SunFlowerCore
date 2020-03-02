@@ -124,8 +124,8 @@ sunflower:
 server:
   port: '8080'
 
-logging:
-  level:
+#logging:
+  #level:
     #org.hibernate:
       #SQL: 'DEBUG'
       #type.descriptor.sql.BasicBinder: 'TRACE'
