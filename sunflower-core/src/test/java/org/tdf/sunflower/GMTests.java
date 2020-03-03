@@ -9,12 +9,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.gmhelper.SM3Util;
-import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.crypto.CryptoContext;
 
 import java.util.Arrays;
@@ -68,7 +66,7 @@ public class GMTests {
 
     @Test
     @SneakyThrows
-    @Ignore
+//    @Ignore
     public void test5(){
         Cache<HexBytes, byte[]> cache = CacheBuilder.newBuilder()
                 .maximumSize(1024)

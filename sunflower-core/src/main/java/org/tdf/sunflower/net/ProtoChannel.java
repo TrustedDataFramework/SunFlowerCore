@@ -17,6 +17,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ProtoChannel implements Channel {
     public interface ChannelOut {
         void write(Message message);
+
         void close();
     }
 
@@ -34,11 +35,11 @@ public class ProtoChannel implements Channel {
 
     @Override
     public void message(Message message) {
-        if(closed) return;
+        if (closed) return;
         handlePing(message);
-        if(listeners == null) return;
-        for(ChannelListener listener: listeners){
-            if(closed) return;
+        if (listeners == null) return;
+        for (ChannelListener listener : listeners) {
+            if (closed) return;
             listener.onMessage(message, this);
         }
     }
@@ -52,36 +53,37 @@ public class ProtoChannel implements Channel {
         }
         pinged = true;
         remote = o.get();
-        if(listeners == null) return;
-        for(ChannelListener listener: listeners){
-            if(closed) return;
+        if (listeners == null) return;
+        for (ChannelListener listener : listeners) {
+            if (closed) return;
             listener.onConnect(remote, this);
         }
     }
 
     @Override
     public void error(Throwable throwable) {
-        if(closed || listeners == null) return;
-        for(ChannelListener listener: listeners){
-            if(closed) return;
+        if (closed || listeners == null) return;
+        for (ChannelListener listener : listeners) {
+            if (closed) return;
             listener.onError(throwable, this);
         }
     }
 
 
     public void close(String reason) {
-        if(closed) return;
+        if (closed) return;
         closed = true;
-        if(reason != null && !reason.isEmpty()){
+        if (reason != null && !reason.isEmpty()) {
             out.write(messageBuilder.buildDisconnect(reason));
             log.error("close channel to " + remote + " reason is " + reason);
         }
-        if(listeners == null) return;
+        if (listeners == null) return;
         listeners.forEach(l -> l.onClose(this));
         listeners = null;
-        try{
+        try {
             out.close();
-        }catch (Exception ignore){}
+        } catch (Exception ignore) {
+        }
     }
 
     public void write(Message message) {
@@ -94,7 +96,7 @@ public class ProtoChannel implements Channel {
         } catch (Throwable e) {
             e.printStackTrace();
             log.error(e.getMessage());
-            if(listeners == null) return;
+            if (listeners == null) return;
             error(e);
         }
     }
@@ -109,7 +111,7 @@ public class ProtoChannel implements Channel {
 
     @Override
     public void addListeners(ChannelListener... listeners) {
-        if(listeners == null) return;
+        if (listeners == null) return;
         this.listeners.addAll(Arrays.asList(listeners));
     }
 }

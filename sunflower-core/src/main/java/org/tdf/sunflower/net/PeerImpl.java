@@ -23,9 +23,6 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     private HexBytes ID;
     private byte[] privateKey;
 
-    // ecdh
-    @Getter@Setter
-    private byte[] secret;
 
     @Setter
     long score;
@@ -41,15 +38,15 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     }
 
     public static Optional<PeerImpl> parse(String url) {
-        try{
+        try {
             return Optional.of(parseInternal(url));
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return Optional.empty();
         }
     }
 
-        // parse peer from uri like protocol://id@host:port
+    // parse peer from uri like protocol://id@host:port
     // the id should be an ec public key
     @SneakyThrows
     private static PeerImpl parseInternal(String url) {

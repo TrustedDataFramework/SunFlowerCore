@@ -53,7 +53,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
 
     @Override
     public void dial(Peer peer, byte[] message) {
-        client.dial(peer, builder.buildAnother(message, peer.getID().getBytes()));
+        client.dial(peer, builder.buildAnother(message, (PeerImpl) peer));
     }
 
     @Override
