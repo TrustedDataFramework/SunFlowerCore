@@ -1,6 +1,8 @@
 package org.tdf.sunflower.net;
 
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 
 import java.net.URI;
@@ -17,6 +19,7 @@ public class Client implements ChannelListener {
     PeersCache peersCache;
     private NetLayer netLayer;
     private PeerImpl self;
+    private MessageBuilder builder;
     public Client(
             PeerImpl self,
             PeerServerConfig config,
@@ -28,6 +31,7 @@ public class Client implements ChannelListener {
         this.messageBuilder = messageBuilder;
         this.netLayer = netLayer;
         this.self = self;
+        this.builder = new MessageBuilder(self);
     }
 
     Client withListener(ChannelListener listener) {
@@ -36,7 +40,15 @@ public class Client implements ChannelListener {
     }
 
     void broadcast(Message message) {
-        peersCache.getChannels().forEach(ch -> ch.write(message));
+        peersCache.getChannels().forEach(ch -> {
+            if (message.getCode() == Code.ANOTHER){
+                byte[] sk = CryptoContext.ecdh(true, self.getPrivateKey(), ch.getRemote().get().getID().getBytes());
+                byte[] encryptMessage = CryptoContext.encrypt(sk, message.getBody().toByteArray());
+                ch.write(builder.buildMessage(Code.ANOTHER, config.getMaxTTL(), encryptMessage));
+                return;
+            }
+            ch.write(message);
+        });
     }
 
     public void dial(Peer peer, Message message) {
@@ -72,17 +84,14 @@ public class Client implements ChannelListener {
 
             @Override
             public void onMessage(Message message, Channel channel) {
-
             }
 
             @Override
             public void onError(Throwable throwable, Channel channel) {
-
             }
 
             @Override
             public void onClose(Channel channel) {
-
             }
         })
         .flatMap(Channel::getRemote)

@@ -2,6 +2,7 @@ package org.tdf.sunflower.crypto;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
@@ -17,33 +18,39 @@ public class CryptoContext {
         boolean verify(byte[] pk, byte[] msg, byte[] sig);
     }
 
+    public interface Ecdh {
+        byte[] exchange(boolean initiator, byte[] sk, byte[] pk);
+    }
+
     public static Function<byte[], byte[]> hashFunction = SM3Util::hash;
 
     // (pk, msg, sig) -> true/false
     public static SignatureVerifier signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
 
+    public static Ecdh ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
+
     // (sk, msg) -> signature
     public static BiFunction<byte[], byte[], byte[]> signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
 
+
     // (sk, msg) -> encrypted
-    public static BiFunction<byte[], byte[], byte[]> encrypt;
+    // TODO replace this encrypt
+    public static BiFunction<byte[], byte[], byte[]> encrypt = ByteUtils::concatenate;
 
     // (sk, encrypted) -> msg
-    public static BiFunction<byte[], byte[], byte[]> decrypt;
-
-    // (alice's sk, bob's pk) -> key
-    public static BiFunction<byte[], byte[], byte[]> ecdh;
+    // TODO replace this decrypt
+    public static BiFunction<byte[], byte[], byte[]> decrypt = (sk, encrypted) -> ByteUtils.subArray(encrypted , sk.length);
 
     // (sk) -> pk
     public static Function<byte[], byte[]> getPkFromSk = (sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded();
 
-    public static byte[] getPkFromSk(byte[] sk){
+    public static byte[] getPkFromSk(byte[] sk) {
         return getPkFromSk.apply(sk);
     }
 
     public static Supplier<KeyPair> generateKeyPair = SM2::generateKeyPair;
 
-    public static KeyPair generateKeyPair(){
+    public static KeyPair generateKeyPair() {
         return generateKeyPair.get();
     }
 
@@ -51,8 +58,9 @@ public class CryptoContext {
         return signatureVerifier.verify(pk, msg, sig);
     }
 
-    public static byte[] ecdh(byte[] sk, byte[] pk) {
-        return ecdh.apply(sk, pk);
+
+    public static byte[] ecdh(boolean initiator, byte[] sk, byte[] pk) {
+        return ecdh.exchange(initiator, sk, pk);
     }
 
     public static byte[] sign(byte[] sk, byte[] msg) {

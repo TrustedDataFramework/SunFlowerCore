@@ -2,15 +2,14 @@ package org.tdf.sunflower.net;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.MapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.Start;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.PeerServerListener;
@@ -54,7 +53,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
 
     @Override
     public void dial(Peer peer, byte[] message) {
-        client.dial(peer, builder.buildAnother(message));
+        client.dial(peer, builder.buildAnother(message, peer.getID().getBytes()));
     }
 
     @Override

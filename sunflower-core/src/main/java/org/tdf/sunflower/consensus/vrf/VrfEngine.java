@@ -1,44 +1,34 @@
 package org.tdf.sunflower.consensus.vrf;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.tdf.rlp.RLPCodec;
+import org.tdf.rlp.RLPElement;
+import org.tdf.sunflower.consensus.vrf.core.*;
+import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
+import org.tdf.sunflower.events.NewBlockMined;
+import org.tdf.sunflower.exception.ConsensusEngineInitException;
+import org.tdf.sunflower.facade.ConsensusEngine;
+import org.tdf.sunflower.facade.PeerServerListener;
+import org.tdf.sunflower.facade.SunflowerRepository;
+import org.tdf.sunflower.net.*;
+import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.AccountUpdater;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.util.ByteUtil;
+import org.tdf.sunflower.util.FileUtils;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
-
-import org.springframework.core.io.Resource;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPElement;
-import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.exception.ConsensusEngineInitException;
-import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.AccountUpdater;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.facade.ConsensusEngine;
-import org.tdf.sunflower.facade.SunflowerRepository;
-import org.tdf.sunflower.net.Context;
-import org.tdf.sunflower.net.Peer;
-import org.tdf.sunflower.net.PeerServer;
-import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.consensus.vrf.core.CommitProof;
-import org.tdf.sunflower.consensus.vrf.core.PendingVrfState;
-import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
-import org.tdf.sunflower.consensus.vrf.core.ValidatorManager;
-import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
-import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
-import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
-import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
-import org.tdf.sunflower.net.MessageBuilder;
-import org.tdf.sunflower.net.PeerImpl;
-import org.tdf.sunflower.util.ByteUtil;
-import org.tdf.sunflower.util.FileUtils;
-
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
-
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 
 @Getter
 @Setter
@@ -60,26 +50,25 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
     @Override
     public void onMessage(Context context, PeerServer server) {
         byte[] messageBytes = context.getMessage();
-        if (RLPElement.fromEncoded(messageBytes).asRLPList().get(0).asInt() > VrfMessageCode.NEW_MINED_BLOCK.ordinal()){
+        if (RLPElement.fromEncoded(messageBytes).asRLPList().get(0).asInt() > VrfMessageCode.NEW_MINED_BLOCK.ordinal()) {
             return;
         }
         VrfMessageCodeAndBytes codeAndBytes = VrfUtil.parseMessageBytes(messageBytes);
         VrfMessageCode code = codeAndBytes.getCode();
         byte[] vrfBytes = codeAndBytes.getRlpBytes();
-
         switch (code) {
-        case VRF_BLOCK:
-            processVrfBlockMsg(context, vrfBytes);
-            break;
-        case VRF_PROPOSAL_PROOF:
-            processVrfProposalProofMsg(vrfBytes);
-            break;
-        case VRF_COMMIT_PROOF:
-            processCommitProofMsg(vrfBytes);
-            break;
-        case NEW_MINED_BLOCK:
-            processNewMinedBlockMsg(vrfBytes);
-            break;
+            case VRF_BLOCK:
+                processVrfBlockMsg(context, vrfBytes);
+                break;
+            case VRF_PROPOSAL_PROOF:
+                processVrfProposalProofMsg(vrfBytes);
+                break;
+            case VRF_COMMIT_PROOF:
+                processCommitProofMsg(vrfBytes);
+                break;
+            case NEW_MINED_BLOCK:
+                processNewMinedBlockMsg(vrfBytes);
+                break;
         }
     }
 
@@ -123,7 +112,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         vrfMiner.setPeerServer(peerServer);
         vrfMiner.setMessageBuilder(messageBuilder);
 
-        getEventBus().subscribe(NewBlockMined.class, (e) ->{
+        getEventBus().subscribe(NewBlockMined.class, (e) -> {
             Block block = e.getBlock();
             log.info("!!! Wow, new block mined. #{}, {}", block.getHeight(),
                     ByteUtil.toHexString(block.getHash().getBytes()));

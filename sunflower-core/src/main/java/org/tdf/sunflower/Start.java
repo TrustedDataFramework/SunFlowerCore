@@ -135,12 +135,15 @@ public class Start {
                 CryptoContext.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
                 CryptoContext.generateKeyPair = Ed25519::generateKeyPair;
                 CryptoContext.getPkFromSk = (sk) -> new Ed25519PrivateKey(sk).generatePublicKey().getEncoded();
+                // TODO add ed25519 ecdh
+                // CryptoContext.ecdh =
                 break;
             case "sm2":
                 CryptoContext.signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
                 CryptoContext.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
                 CryptoContext.generateKeyPair = SM2::generateKeyPair;
                 CryptoContext.getPkFromSk = (sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded();
+                CryptoContext.ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
                 break;
             default:
                 throw new ApplicationException("unknown ec curve " + ec);
