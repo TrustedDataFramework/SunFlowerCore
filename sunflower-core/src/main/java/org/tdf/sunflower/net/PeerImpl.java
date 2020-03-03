@@ -23,6 +23,10 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     private HexBytes ID;
     private byte[] privateKey;
 
+    // ecdh
+    @Getter@Setter
+    private byte[] secret;
+
     @Setter
     long score;
 
