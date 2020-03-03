@@ -18,10 +18,7 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
 import org.tdf.sunflower.account.Address;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,6 +29,10 @@ import static org.tdf.sunflower.ApplicationConstants.ADDRESS_SIZE;
 @ToString
 @NoArgsConstructor
 public class Transaction {
+    public static final Comparator<Transaction> NONCE_COMPARATOR = (a, b) -> {
+        if (a.getNonce() != b.getNonce()) return Long.compare(a.getNonce(), b.getNonce());
+        return a.getHash().compareTo(b.getHash());
+    };
 
     @RLP(0)
     protected int version;
@@ -303,7 +304,7 @@ public class Transaction {
     }
 
     public HexBytes getSignature() {
-        return signature;
+        return signature == null ? HexBytes.EMPTY : signature;
     }
 
     public ValidateResult basicValidate() {

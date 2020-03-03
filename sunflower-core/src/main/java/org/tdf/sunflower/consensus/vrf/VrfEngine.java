@@ -9,6 +9,8 @@ import org.checkerframework.checker.units.qual.C;
 import org.springframework.core.io.Resource;
 import org.tdf.crypto.CryptoContext;
 import org.tdf.rlp.RLPCodec;
+import org.tdf.rlp.RLPElement;
+import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
@@ -16,7 +18,6 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.net.Context;
-import org.tdf.sunflower.facade.MinerListener;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.facade.PeerServerListener;
@@ -61,34 +62,34 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
     @Override
     public void onMessage(Context context, PeerServer server) {
         byte[] messageBytes = context.getMessage();
+        if (RLPElement.fromEncoded(messageBytes).asRLPList().get(0).asInt() > VrfMessageCode.NEW_MINED_BLOCK.ordinal()) {
+            return;
+        }
         VrfMessageCodeAndBytes codeAndBytes = VrfUtil.parseMessageBytes(messageBytes);
         VrfMessageCode code = codeAndBytes.getCode();
         byte[] vrfBytes = codeAndBytes.getRlpBytes();
-        System.out.println("============================="+code);
         switch (code) {
-        case VRF_BLOCK:
-            processVrfBlockMsg(context, vrfBytes);
-            break;
-        case VRF_PROPOSAL_PROOF:
-            processVrfProposalProofMsg(vrfBytes);
-            break;
-        case VRF_COMMIT_PROOF:
-            processCommitProofMsg(vrfBytes);
-            break;
-        case NEW_MINED_BLOCK:
-            processNewMinedBlockMsg(context, vrfBytes);
-            break;
+            case VRF_BLOCK:
+                processVrfBlockMsg(context, vrfBytes);
+                break;
+            case VRF_PROPOSAL_PROOF:
+                processVrfProposalProofMsg(vrfBytes);
+                break;
+            case VRF_COMMIT_PROOF:
+                processCommitProofMsg(vrfBytes);
+                break;
+            case NEW_MINED_BLOCK:
+                processNewMinedBlockMsg(vrfBytes);
+                break;
         }
     }
 
-    private void processNewMinedBlockMsg(Context context, byte[] bodyBytes) {
-        PeerImpl peerImpl = (PeerImpl) peerServer.getSelf();
-        byte[] sk = CryptoContext.ecdh(peerImpl.getPrivateKey().getEncoded(),context.getRemote().getID().getBytes());
-        Block blockNew = RLPCodec.decode(CryptoContext.decrypt(sk, bodyBytes), Block.class);
-        System.out.println("============================="+blockNew.toString());
+    private void processNewMinedBlockMsg(byte[] bodyBytes) {
+        Block blockNew = RLPCodec.decode(bodyBytes, Block.class);
         log.info("New mined block received from peer. Num #{}, Hash {}", blockNew.getHeight(),
                 blockNew.getHash().toString());
-        saveBlock(blockNew, this.getSunflowerRepository(), this);
+        // merged into org.tdf.sunflower.service.NewMinedBlockWriter
+        // saveBlock(blockNew, this.getSunflowerRepository(), this);
         vrfMiner.stop();
         vrfMiner.start();
     }
@@ -123,21 +124,14 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         vrfMiner.setPeerServer(peerServer);
         vrfMiner.setMessageBuilder(messageBuilder);
 
-        getMiner().addListeners(new MinerListener() {
-            @Override
-            public void onBlockMined(Block block) {
-                log.info("!!! Wow, new block mined. #{}, {}", block.getHeight(),
-                        ByteUtil.toHexString(block.getHash().getBytes()));
+        getEventBus().subscribe(NewBlockMined.class, (e) -> {
+            Block block = e.getBlock();
+            log.info("!!! Wow, new block mined. #{}, {}", block.getHeight(),
+                    ByteUtil.toHexString(block.getHash().getBytes()));
 //                byte[] encoded = RLPSerializer.SERIALIZER.serialize(block);
 //                Message message = messageBuilder.buildMessage(Code.NEW_MINED_BLOCK, VrfConstants.MESSAGE_TTL, encoded);
-                byte[] encoded = VrfUtil.buildMessageBytes(VrfMessageCode.NEW_MINED_BLOCK, block);
-                peerServer.broadcast(encoded);
-            }
-
-            @Override
-            public void onMiningFailed(Block block) {
-
-            }
+            byte[] encoded = VrfUtil.buildMessageBytes(VrfMessageCode.NEW_MINED_BLOCK, block);
+            peerServer.broadcast(encoded);
         });
     }
 
@@ -193,12 +187,12 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         setAccountTrie(trie);
         setValidator(new VrfValidator(getAccountTrie()));
         vrfMiner.setAccountTrie(getAccountTrie());
+        vrfMiner.setEventBus(getEventBus());
 
         setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
         // ------- Need well implementation.
         ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository());
 
-        // TODO: 这里 new 了两个 VrfValidator
         vrfStateMachine = new VrfStateMachine(validatorManager, new PendingVrfState(validatorManager),
                 new VrfValidator(getAccountTrie()));
         vrfMiner.setVrfStateMachine(vrfStateMachine);

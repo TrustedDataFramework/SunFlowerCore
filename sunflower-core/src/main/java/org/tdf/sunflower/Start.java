@@ -6,10 +6,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -18,16 +14,16 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.tdf.common.event.EventBus;
 import org.tdf.crypto.CryptoContext;
+import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
-import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
-import org.tdf.sunflower.events.Bridge;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.ConsensusEngineFacade;
@@ -65,10 +61,24 @@ public class Start {
             .enable(SerializationFeature.INDENT_OUTPUT)
             .enable(JsonParser.Feature.ALLOW_COMMENTS);
 
+    public static void loadConstants(Environment env){
+        String constant = env.getProperty("sunflower.cache.trie");
+        if(constant != null && !constant.isEmpty()){
+            ApplicationConstants.TRIE_CACHE_SIZE = Integer.parseInt(constant);
+        }
+        constant = env.getProperty("sunflower.cache.p2p-transaction");
+        if(constant != null && !constant.isEmpty()){
+            ApplicationConstants.P2P_TRANSACTION_CACHE_SIZE = Integer.parseInt(constant);
+        }
+        constant = env.getProperty("sunflower.cache.p2p-proposal");
+        if(constant != null && !constant.isEmpty()){
+            ApplicationConstants.P2P_PROPOSAL_CACHE_SIZE = Integer.parseInt(constant);
+        }
+    }
 
     public static void loadCryptoContext(Environment env){
         String hash = env.getProperty("sunflower.crypto.hash");
-        hash = (hash == null || hash.isEmpty()) ? "keccak256" : hash;
+        hash = (hash == null || hash.isEmpty()) ? "sm3" : hash;
         hash = hash.toLowerCase();
         switch (hash) {
             case "sm3":
@@ -90,21 +100,26 @@ public class Start {
                 throw new ApplicationException("unknown hash function: " + hash);
         }
         String ec = env.getProperty("sunflower.crypto.ec");
-        ec = (ec == null || ec.isEmpty()) ? "ed25519" : ec;
+        ec = (ec == null || ec.isEmpty()) ? "sm2" : ec;
         ec = ec.toLowerCase();
         switch (ec){
             case "ed25519":
                 CryptoContext.signatureVerifier =  (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
                 CryptoContext.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
+                CryptoContext.generateKeyPair = Ed25519::generateKeyPair;
+                CryptoContext.getPkFromSk = (sk) -> new Ed25519PrivateKey(sk).generatePublicKey().getEncoded();
                 break;
             case "sm2":
                 CryptoContext.signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
                 CryptoContext.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
+                CryptoContext.generateKeyPair = SM2::generateKeyPair;
+                CryptoContext.getPkFromSk = (sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded();
+                CryptoContext.ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
                 break;
             default:
                 throw new ApplicationException("unknown ec curve " + ec);
         }
-
+        ApplicationConstants.PUBLIC_KEY_SIZE = CryptoContext.generateKeyPair().getPublicKey().getEncoded().length;
         log.info("use algorithm {} as hash function", hash);
         log.info("use ec {} as signature algorithm", ec);
     }
@@ -113,6 +128,7 @@ public class Start {
         SpringApplication app = new SpringApplication(Start.class);
         app.addInitializers(applicationContext -> {
             loadCryptoContext(applicationContext.getEnvironment());
+            loadConstants(applicationContext.getEnvironment());
         });
         app.run(args);
     }
@@ -125,12 +141,10 @@ public class Start {
     @Bean
     public Miner miner(
             ConsensusEngineFacade engine,
-            Bridge bridge,
             // this dependency asserts the peer server had been initialized
             PeerServer peerServer
     ) {
         Miner miner = engine.getMiner();
-        miner.addListeners(bridge);
         miner.start();
         return miner;
     }

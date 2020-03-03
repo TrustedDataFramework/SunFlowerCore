@@ -14,11 +14,21 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLP;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class Block implements Chained {
+    public static final Comparator<Block> FAT_COMPARATOR = (a, b) ->{
+        if(a.getHeight() != b.getHeight())
+            return Long.compare(a.getHeight(), b.getHeight());
+        if(a.body.size() != b.body.size()){
+            return -Integer.compare(a.bodySize(), b.bodySize());
+        }
+        return a.getHash().compareTo(b.getHash());
+    };
+
     // extend from header
     @Getter
     @JsonIgnore

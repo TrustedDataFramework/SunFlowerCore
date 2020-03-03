@@ -51,6 +51,6 @@ public class HeaderEntity {
     @Column(name = COLUMN_CREATED_AT, nullable = false)
     private long createdAt;
 
-    @Column(name = COLUMN_PAYLOAD, nullable = false)
+    @Column(name = COLUMN_PAYLOAD, nullable = false, length = Short.MAX_VALUE)
     private byte[] payload;
 }

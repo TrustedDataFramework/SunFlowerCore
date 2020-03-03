@@ -76,6 +76,7 @@ dependencies {
     compile "org.slf4j:jul-to-slf4j:${slf4jVersion}"
 
     compile "org.fusesource.leveldbjni:leveldbjni-all:${leveldbJNIVersion}"
+    compile "org.iq80.leveldb:leveldb:${leveldbVersion}"
     // for test and dev
     compile 'com.h2database:h2'
 }

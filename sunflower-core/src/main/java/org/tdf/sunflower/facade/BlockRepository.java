@@ -13,14 +13,17 @@ public interface BlockRepository{
 
     void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException;
 
+    // TODO: use guava cache
     boolean containsBlock(byte[] hash);
 
     Header getBestHeader();
 
     Block getBestBlock();
 
+    // TODO: use guava cache
     Optional<Header> getHeader(byte[] hash);
 
+    // TODO: use guava cache
     Optional<Block> getBlock(byte[] hash);
 
     List<Header> getHeaders(long startHeight, int limit);

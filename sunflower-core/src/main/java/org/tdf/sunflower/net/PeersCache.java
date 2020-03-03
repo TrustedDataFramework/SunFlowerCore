@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.ApplicationConstants;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +30,7 @@ class PeersCache {
         Channel channel;
     }
 
-    private Bucket[] peers = new Bucket[256];
+    private Bucket[] peers = new Bucket[ApplicationConstants.PUBLIC_KEY_SIZE * 8];
 
     Map<PeerImpl, Boolean> bootstraps = new ConcurrentHashMap<>();
 

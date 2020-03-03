@@ -1,33 +1,30 @@
 package org.tdf.sunflower.net;
 
-import com.google.common.primitives.Bytes;
 import lombok.*;
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.KeyPair;
-import org.tdf.crypto.ed25519.Ed25519;
-import org.tdf.crypto.ed25519.Ed25519PrivateKey;
+import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.ApplicationConstants;
+import org.tdf.sunflower.exception.ApplicationException;
 
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.Optional;
 
+import static org.tdf.sunflower.ApplicationConstants.PUBLIC_KEY_SIZE;
+
 @Getter
-@Setter
-@Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
 public class PeerImpl implements Peer, Comparable<PeerImpl> {
-    private static final int PUBLIC_KEY_LENGTH = 32;
-    private static final int PRIVATE_KEY_LENGTH = 64;
 
     private String protocol;
+
+    @Setter
     private String host;
     private int port;
     private HexBytes ID;
-    private Ed25519PrivateKey privateKey;
+    private byte[] privateKey;
+
+    @Setter
     long score;
 
     public String toString() {
@@ -40,16 +37,20 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         return toString();
     }
 
-    // parse peer from uri like protocol://id@host:port
-    // the id may be a 64 byte encoded ed25519 private key (sk[32]+pk[32])
-    // or a 32 byte encoded ed25519 public key
     public static Optional<PeerImpl> parse(String url) {
-        URI u;
-        try {
-            u = new URI(url.trim());
-        } catch (URISyntaxException e) {
+        try{
+            return Optional.of(parseInternal(url));
+        }catch (Exception e){
+            e.printStackTrace();
             return Optional.empty();
         }
+    }
+
+        // parse peer from uri like protocol://id@host:port
+    // the id should be an ec public key
+    @SneakyThrows
+    private static PeerImpl parseInternal(String url) {
+        URI u = new URI(url.trim());
         PeerImpl p = new PeerImpl();
         String scheme = u.getScheme();
         p.protocol = (scheme == null || scheme.equals("")) ? PeerServerConfig.DEFAULT_PROTOCOL : scheme;
@@ -58,59 +59,43 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
             p.port = PeerServerConfig.DEFAULT_PORT;
         }
         p.host = u.getHost();
-        if (u.getRawUserInfo() == null || u.getRawUserInfo().equals("")) return Optional.empty();
+        if (u.getRawUserInfo() == null || u.getRawUserInfo().isEmpty())
+            throw new ApplicationException("parse peer failed: missing public key");
         p.ID = HexBytes.fromHex(u.getRawUserInfo());
-        if (p.ID.size() != PRIVATE_KEY_LENGTH && p.ID.size() != PUBLIC_KEY_LENGTH) {
-            return Optional.empty();
+        if (p.ID.size() != PUBLIC_KEY_SIZE) {
+            throw new ApplicationException("peer " + url + " public key size should be " + PUBLIC_KEY_SIZE);
         }
-        if (p.ID.size() == PRIVATE_KEY_LENGTH) {
-            p.privateKey = new Ed25519PrivateKey(p.ID.slice(0, 32).getBytes());
-            p.ID = p.ID.slice(32, p.ID.size());
-        }
-        return Optional.of(p);
+        return p;
     }
 
     // create self as peer from input
     // if private key is missing, generate key automatically
-    public static PeerImpl create(URI u) throws Exception {
-        if (u.getRawUserInfo() == null || u.getRawUserInfo().equals("")) {
-            KeyPair kp = Ed25519.generateKeyPair();
-            return create(u,
-                    Bytes.concat(
-                            kp.getPrivateKey().getEncoded(),
-                            kp.getPublicKey().getEncoded()
-            ));
-        }
-        HexBytes hexBytes = HexBytes.fromHex(u.getRawUserInfo());
-        if (hexBytes.size() != PRIVATE_KEY_LENGTH) {
-            throw new Exception("length of private key is 64");
-        }
-        return create(u, hexBytes.getBytes());
+    public static PeerImpl createSelf(URI u) {
+        return createSelf(u, CryptoContext.generateKeyPair().getPrivateKey().getEncoded());
     }
+
 
     // create self as peer from input
     // if private key is missing, generate key automatically
-    public static PeerImpl create(URI u, byte[] privateKey) throws Exception {
-        if (privateKey.length != PRIVATE_KEY_LENGTH) {
-            throw new Exception("length of private key is 64");
+    public static PeerImpl createSelf(URI u, byte[] privateKey) {
+        if (u.getRawUserInfo() != null && !u.getRawUserInfo().isEmpty()) {
+            throw new RuntimeException(u.getUserInfo() + " should be empty");
         }
+        PeerImpl ret = new PeerImpl();
         String scheme = u.getScheme();
-        scheme = (scheme == null || scheme.equals("")) ? PeerServerConfig.DEFAULT_PROTOCOL : scheme;
+        ret.protocol = (scheme == null || scheme.equals("")) ? PeerServerConfig.DEFAULT_PROTOCOL : scheme;
         int port = u.getPort();
-        String host = (u.getHost() == null || u.getHost().trim().equals("")) ? "localhost" : u.getHost();
-        port = port <= 0 ? PeerServerConfig.DEFAULT_PORT : port;
-
-        String uri = String.format("%s://%s@%s:%d", scheme,
-                Hex.encodeHexString(privateKey) ,
-                host, port
-        );
-        String errorMsg = "failed to parse url " + uri;
-        return PeerImpl.parse(uri).orElseThrow(() -> new Exception(errorMsg));
+        ret.host = (u.getHost() == null || u.getHost().trim().equals("")) ? "localhost" : u.getHost();
+        ret.port = port <= 0 ? PeerServerConfig.DEFAULT_PORT : port;
+        ret.ID = HexBytes.fromBytes(CryptoContext.getPkFromSk(privateKey));
+        ret.privateKey = privateKey;
+        return ret;
     }
+
 
     public int distance(PeerImpl that) {
         int res = 0;
-        byte[] bits = new byte[32];
+        byte[] bits = new byte[PUBLIC_KEY_SIZE];
         for (int i = 0; i < bits.length; i++) {
             bits[i] = (byte) (ID.getBytes()[i] ^ that.ID.getBytes()[i]);
         }
@@ -123,12 +108,12 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     }
 
     int subTree(byte[] thatID) {
-        byte[] bits = new byte[32];
+        byte[] bits = new byte[PUBLIC_KEY_SIZE];
         byte mask = (byte) (1 << 7);
         for (int i = 0; i < bits.length; i++) {
             bits[i] = (byte) (ID.getBytes()[i] ^ thatID[i]);
         }
-        for (int i = 0; i < 256; i++) {
+        for (int i = 0; i < PUBLIC_KEY_SIZE * 8; i++) {
             if ((bits[i / 8] & (mask >>> (i % 8))) != 0) {
                 return i;
             }
@@ -136,7 +121,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         return 0;
     }
 
-    // subtree is less than 256
+    // subtree is less than PUBLIC_KEY_SIZE * 8
     int subTree(Peer that) {
         return subTree(that.getID().getBytes());
     }
@@ -160,9 +145,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     }
 
     public static void main(String[] args) throws Exception {
-        PeerImpl p = PeerImpl.parse("wisdom://f43d5ab89d1705cc02131ffe18137e60e0d35e0569cb334f61ca6db7db4c964716d4b57a3de0a6adcf0bc9e3c8da39870bdabc1027fa05b8e25f36484afddfd9@192.168.1.142:9589").get();
-        System.out.println(p);
-        PeerImpl p2 = create(new URI("enode://localhost"));
+        PeerImpl p2 = createSelf(new URI("enode://localhost"));
         System.out.println(p2);
     }
 }

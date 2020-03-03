@@ -9,11 +9,10 @@ import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor
 public class PeerServerConfig {
     public static final int DEFAULT_PORT = BigEndian.decodeInt32(new byte[]{0, 0, 'w', 'i'});
     public static final String DEFAULT_PROTOCOL = "node";
@@ -21,7 +20,13 @@ public class PeerServerConfig {
     public static final int DEFAULT_MAX_PEERS = 32;
     public static final String DEFAULT_NAME = "websocket";
 
+    @Getter(AccessLevel.NONE)
     private String name;
+
+    public String getName() {
+        return (name == null || name.isEmpty()) ? DEFAULT_NAME : name;
+    }
+
     @JsonProperty(value = "max-peers")
     private int maxPeers;
     @JsonProperty(value = "max-ttl")
@@ -40,9 +45,6 @@ public class PeerServerConfig {
     @JsonProperty(value = "blocked-list")
     private Set<HexBytes> blockedList;
 
-    public static PeerServerConfig createDefault(){
-        return PeerServerConfig.builder()
-                .maxPeers(DEFAULT_MAX_PEERS)
-                .maxTTL(DEFAULT_MAX_TTL).build();
-    }
+    @JsonProperty(value = "private-key")
+    private HexBytes privateKey;
 }

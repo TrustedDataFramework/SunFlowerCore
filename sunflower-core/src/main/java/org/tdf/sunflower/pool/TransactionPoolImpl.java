@@ -68,10 +68,7 @@ public class TransactionPoolImpl implements TransactionPool {
     public TransactionPoolImpl(EventBus eventBus) {
         this.eventBus = eventBus;
         this.eventBus.subscribe(NewBestBlock.class, this::onNewBestBlock);
-        cache = new TreeSet<>((a, b) -> {
-            if (a.getNonce() != b.getNonce()) return Long.compare(a.getNonce(), b.getNonce());
-            return a.getHash().compareTo(b.getHash());
-        });
+        cache = new TreeSet<>(Transaction.NONCE_COMPARATOR);
     }
 
     @Override

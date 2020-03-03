@@ -12,7 +12,6 @@ spring:
     show-sql: false # enable jpa sql logs
 
 
-
 # sunflower configurations
 sunflower:
   consensus:
@@ -51,6 +50,17 @@ sunflower:
     # the node in blocked list are not allowed to be connected
     # blocked-list:
 
+    # if private-key is not pre-defined, node will generate private key
+    # private-key:
+
+  sync:
+  #status rate(seconds)
+    heart-rate: 5
+    block-write-rate: 1
+    max-pending-blocks: 2048
+    max-blocks-transfer: 1024
+
+
 
   message-queue:
     name: 'socketIO'
@@ -65,7 +75,7 @@ sunflower:
 
   database:
     # Key value data source values: [rocksdb/leveldb/memory]
-    name: 'rocksdb'
+    name: 'leveldb'
     directory: 'database/rocksdb'
     max-open-files: '512' # defines a number of opened files by db instance
 
@@ -78,6 +88,16 @@ sunflower:
   web:
     disabled: false
     password: password
+
+  # constants for cache
+  cache:
+    # cache size for state trie
+    trie: '32'
+    # cache size for avoid message flood
+    p2p-transaction: '128'
+    # cache size for avoid message flood
+    p2p-proposal: '128'
+
 
 server:
   port: '8080'

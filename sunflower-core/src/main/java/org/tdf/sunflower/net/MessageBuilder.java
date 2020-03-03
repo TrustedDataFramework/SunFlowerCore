@@ -2,16 +2,19 @@ package org.tdf.sunflower.net;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
+import lombok.Getter;
 import org.tdf.crypto.CryptoContext;
 import org.tdf.sunflower.proto.*;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static org.tdf.sunflower.net.Util.getRawForSign;
 
 public class MessageBuilder {
+    @Getter
     private PeerImpl self;
     private AtomicLong nonce = new AtomicLong();
 
@@ -44,9 +47,10 @@ public class MessageBuilder {
         );
     }
 
-    public Message buildAnother(byte[] body, byte[] pk) {
-        byte[] sk = CryptoContext.ecdh(self.getPrivateKey().getEncoded(), pk);
-        return buildMessage(Code.ANOTHER, 1, CryptoContext.encrypt(sk, body));
+    public Message buildAnother(byte[] body,byte[] pk) {
+        byte[] sk = CryptoContext.ecdh(true, self.getPrivateKey(), pk);
+        byte[] encryptMessage = CryptoContext.encrypt(sk, body);
+        return buildMessage(Code.ANOTHER, 1, encryptMessage);
     }
 
     public Message buildRelay(Message message) {
@@ -57,7 +61,7 @@ public class MessageBuilder {
                 .setRemotePeer(self.encodeURI())
                 .setNonce(nonce.incrementAndGet())
                 .setTtl(message.getTtl() - 1);
-        byte[] sig = self.getPrivateKey().sign(getRawForSign(builder.build()));
+        byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }
 
@@ -69,7 +73,7 @@ public class MessageBuilder {
                 .setTtl(ttl)
                 .setNonce(nonce.incrementAndGet())
                 .setBody(ByteString.copyFrom(msg));
-        byte[] sig = self.getPrivateKey().sign(getRawForSign(builder.build()));
+        byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }
 }

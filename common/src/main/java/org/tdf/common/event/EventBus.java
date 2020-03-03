@@ -39,8 +39,8 @@ public class EventBus {
         for (Consumer consumer : consumers) {
             try {
                 consumer.accept(event);
-            } catch (Exception ignored) {
-
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

@@ -49,8 +49,9 @@ public class Genesis {
                 .stateRoot(HexBytes.fromBytes(trie.getNullHash()))
                 .transactionsRoot(emptyRoot)
                 .height(0)
+                .payload(HexBytes.EMPTY)
                 .createdAt(timestamp)
-                .payload(PoAConstants.ZERO_BYTES).build();
+                .build();
         return new Block(h);
     }
 }

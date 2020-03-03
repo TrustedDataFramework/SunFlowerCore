@@ -29,10 +29,7 @@ public class Ed25519 {
                 continue;
             }
             Ed25519PublicKeyParameters publicKey = privateKey.generatePublicKey();
-            Ed25519KeyPair nkp = new Ed25519KeyPair();
-            nkp.setPrivateKey(new Ed25519PrivateKey(privateKey));
-            nkp.setPublicKey(new Ed25519PublicKey(publicKey));
-            return nkp;
+            return new Ed25519KeyPair(new Ed25519PrivateKey(privateKey),new Ed25519PublicKey(publicKey));
         }
     }
 }
