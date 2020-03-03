@@ -1,8 +1,14 @@
 package org.tdf.sunflower.crypto;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import lombok.Data;
+import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
@@ -27,6 +33,27 @@ public class CryptoContext {
     // (pk, msg, sig) -> true/false
     public static SignatureVerifier signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
 
+    @Data
+    public static class ECDHParameters {
+        private boolean initiator;
+        private HexBytes sk;
+        private HexBytes pk;
+
+        public ECDHParameters(boolean initiator, @NonNull byte[] sk, @NonNull byte[] pk) {
+            this.initiator = initiator;
+            this.sk = HexBytes.fromBytes(sk);
+            this.pk = HexBytes.fromBytes(pk);
+        }
+    }
+
+    private static final Cache<ECDHParameters, byte[]> cache = CacheBuilder.newBuilder().maximumSize(1024)
+            .build();
+
+    @SneakyThrows
+    public static byte[] ecdhWithCache(boolean initiator, byte[] sk, byte[] pk) {
+        return cache.get(new ECDHParameters(initiator, sk, pk), () -> ecdh(initiator, sk, pk));
+    }
+
     public static Ecdh ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
 
     // (sk, msg) -> signature
@@ -39,7 +66,7 @@ public class CryptoContext {
 
     // (sk, encrypted) -> msg
     // TODO replace this decrypt
-    public static BiFunction<byte[], byte[], byte[]> decrypt = (sk, encrypted) -> ByteUtils.subArray(encrypted , sk.length);
+    public static BiFunction<byte[], byte[], byte[]> decrypt = (sk, encrypted) -> ByteUtils.subArray(encrypted, sk.length);
 
     // (sk) -> pk
     public static Function<byte[], byte[]> getPkFromSk = (sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded();

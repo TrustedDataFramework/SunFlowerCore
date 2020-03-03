@@ -73,8 +73,8 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         if (p.ID.size() != PUBLIC_KEY_SIZE) {
             throw new ApplicationException("peer " + url + " public key size should be " + PUBLIC_KEY_SIZE);
         }
-        p.setSendSecret(CryptoContext.ecdh(true, self.getPrivateKey(), p.getID().getBytes()));
-        p.setReceiveSecret(CryptoContext.ecdh(false, self.getPrivateKey(), p.getID().getBytes()));
+        p.setSendSecret(CryptoContext.ecdhWithCache(true, self.getPrivateKey(), p.getID().getBytes()));
+        p.setReceiveSecret(CryptoContext.ecdhWithCache(false, self.getPrivateKey(), p.getID().getBytes()));
         return p;
     }
 
