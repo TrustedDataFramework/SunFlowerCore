@@ -34,6 +34,4 @@ interface Channel{
 
     // bind listener to the channel
     void addListeners(ChannelListener... listeners);
-
-    void setMessageBuilder(MessageBuilder builder);
 }

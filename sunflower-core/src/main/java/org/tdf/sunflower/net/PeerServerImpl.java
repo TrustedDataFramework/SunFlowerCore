@@ -149,13 +149,13 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             e.printStackTrace();
             throw new PeerServerInitException("failed to load peer server invalid address " + config.getAddress());
         }
+        builder = new MessageBuilder(self);
         if ("websocket".equals(config.getName().trim().toLowerCase())) {
-            netLayer = new WebSocketNetLayer(self.getPort());
+            netLayer = new WebSocketNetLayer(self.getPort(), builder);
         } else {
-            netLayer = new GRpcNetLayer(self.getPort());
+            netLayer = new GRpcNetLayer(self.getPort(), builder);
         }
         netLayer.setHandler((c) -> c.addListeners(client, this));
-        builder = new MessageBuilder(self);
         client = new Client(self, config, builder, netLayer).withListener(this);
 
         // loading plugins

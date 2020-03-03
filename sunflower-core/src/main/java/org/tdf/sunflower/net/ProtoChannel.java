@@ -1,5 +1,6 @@
 package org.tdf.sunflower.net;
 
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.sunflower.proto.Message;
@@ -12,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 // communicating channel with peer
 @Slf4j(topic = "net")
+@RequiredArgsConstructor
 public class ProtoChannel implements Channel {
     public interface ChannelOut {
         void write(Message message);
@@ -23,8 +25,8 @@ public class ProtoChannel implements Channel {
     private ChannelOut out;
     private volatile boolean pinged;
     private List<ChannelListener> listeners = new CopyOnWriteArrayList<>();
-    @Setter
-    private MessageBuilder messageBuilder;
+
+    private final MessageBuilder messageBuilder;
 
     public void setOut(ChannelOut out) {
         this.out = out;

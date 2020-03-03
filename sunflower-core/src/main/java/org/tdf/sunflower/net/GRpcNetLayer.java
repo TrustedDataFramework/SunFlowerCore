@@ -20,12 +20,15 @@ import java.util.function.Consumer;
 public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
     private Consumer<Channel> handler;
 
-    private int port;
+    private final int port;
 
     private Server server;
 
-    GRpcNetLayer(int port) {
+    private final MessageBuilder builder;
+
+    GRpcNetLayer(int port, MessageBuilder builder) {
         this.port = port;
+        this.builder = builder;
     }
 
     @Override
@@ -48,7 +51,7 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
             ManagedChannel ch = ManagedChannelBuilder
                     .forAddress(host, port).usePlaintext().build();
             EntryGrpc.EntryStub stub = EntryGrpc.newStub(ch);
-            ProtoChannel channel = new ProtoChannel();
+            ProtoChannel channel = new ProtoChannel(builder);
             channel.addListeners(listeners);
             channel.setOut(new GRpcChannelOut(stub.entry(
                     new ChannelWrapper(channel)
@@ -61,7 +64,7 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
 
     @Override
     public StreamObserver<Message> entry(StreamObserver<Message> responseObserver) {
-        ProtoChannel ch = new ProtoChannel();
+        ProtoChannel ch = new ProtoChannel(builder);
         ch.setOut(new GRpcChannelOut(responseObserver));
         handler.accept(ch);
         return new ChannelWrapper(ch);

@@ -103,7 +103,6 @@ public class Client implements ChannelListener {
         ch = netLayer
                 .createChannel(peer.getHost(), peer.getPort(), this, listener)
                 .filter(Channel::isAlive);
-        ch.ifPresent(c -> c.setMessageBuilder(messageBuilder));
         return ch;
     }
 
@@ -123,7 +122,6 @@ public class Client implements ChannelListener {
                 .createChannel(host, port, listeners)
                 .filter(Channel::isAlive)
         ;
-        ch.ifPresent(c -> c.setMessageBuilder(messageBuilder));
         ch.ifPresent(c -> c.write(messageBuilder.buildPing()));
         return ch;
     }

@@ -27,14 +27,16 @@ import java.util.function.Consumer;
 public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
     private final Map<WebSocket, Channel> channels = new ConcurrentHashMap<>();
     private Consumer<Channel> channelHandler;
+    private final MessageBuilder builder;
 
-    WebSocketNetLayer(int port) {
+    WebSocketNetLayer(int port, MessageBuilder builder) {
         super(new InetSocketAddress(port));
+        this.builder = builder;
     }
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        ProtoChannel ch = new ProtoChannel();
+        ProtoChannel ch = new ProtoChannel(builder);
         ch.setOut(new WebSocketChannelOut(conn));
         channelHandler.accept(ch);
         channels.put(conn, ch);
@@ -85,7 +87,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
     @Override
     public Optional<Channel> createChannel(String host, int port, ChannelListener... listeners) {
         try {
-            Client client = new Client(host, port);
+            Client client = new Client(host, port, builder);
             client.getChannel().addListeners(listeners);
             if (client.connectBlocking(1, TimeUnit.SECONDS)){
                 return Optional.of(client.getChannel());
@@ -116,9 +118,9 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
     private static class Client extends WebSocketClient {
         private ProtoChannel channel;
 
-        Client(String host, int port) throws Exception {
+        Client(String host, int port, MessageBuilder builder) throws Exception {
             super(new URI("ws", "", host, port, "", "", ""));
-            this.channel = new ProtoChannel();
+            this.channel = new ProtoChannel(builder);
             this.channel.setOut(new WebSocketClientChannelOut(this));
         }
 
