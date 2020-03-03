@@ -191,12 +191,12 @@ class PeersCache {
         List<PeerImpl> toRemoves = Stream.of(peers)
                 .filter(Objects::nonNull)
                 .flatMap(x -> x.values().stream())
-                .map(b -> b.peer)
-                .filter(p -> {
+                .filter(b -> {
+                    PeerImpl p = b.peer;
                     p.score -= p.score < 8 ? p.score : 8;
                     p.score /= 2;
-                    return p.score == 0;
-                }).collect(Collectors.toList());
+                    return p.score == 0 || b.channel.isClosed();
+                }).map(b -> b.peer).collect(Collectors.toList());
         toRemoves.forEach(x -> remove(x.getID(), " the score of " + x + " is 0"));
         List<PeerImpl> toRestores
                 = blocked.keySet().stream()

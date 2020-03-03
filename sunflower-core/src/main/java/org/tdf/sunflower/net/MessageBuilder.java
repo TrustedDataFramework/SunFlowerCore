@@ -3,11 +3,10 @@ package org.tdf.sunflower.net;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import lombok.Getter;
-import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.proto.*;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -38,7 +37,12 @@ public class MessageBuilder {
         return buildMessage(Code.LOOK_UP, 1, Lookup.newBuilder().build().toByteArray());
     }
 
-    public Message buildPeers(Collection<? extends Peer> peers) {
+
+    public Message buildDisconnect(String reason){
+        return buildMessage(Code.DISCONNECT, 1, Disconnect.newBuilder().setReason(reason == null ? "" : reason).build().toByteArray());
+    }
+
+    public Message buildPeers(Collection<? extends Peer> peers){
         return buildMessage(Code.PEERS, 1, Peers
                 .newBuilder().addAllPeers(
                         peers.stream().map(Peer::encodeURI).collect(Collectors.toList())

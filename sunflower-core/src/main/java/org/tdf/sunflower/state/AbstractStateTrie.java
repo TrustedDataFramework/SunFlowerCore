@@ -5,27 +5,29 @@ import com.google.common.cache.CacheBuilder;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.BatchStore;
-import org.tdf.common.store.CachedStore;
-import org.tdf.common.store.NoDeleteBatchStore;
-import org.tdf.common.store.Store;
+import org.tdf.common.store.*;
 import org.tdf.common.trie.ReadOnlyTrie;
+import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.consensus.vrf.util.ByteArraySet;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.types.Block;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
     private final String name;
+
+    private DatabaseStore db;
 
     @Getter
     private Store<byte[], byte[]> trieStore;
@@ -51,17 +53,16 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     ) {
         name = getPrefix() + "-trie";
         this.updater = updater;
+        this.db = factory.create(name);
+        trieStore = new NoDeleteBatchStore<>(db);
 
-        trieStore = new NoDeleteBatchStore<>(
-                factory.create(name)
-        );
-
-
-        trie = Trie.<ID, S>builder()
+        trie = new SecureTrie<>(Trie.<ID, S>builder()
                 .hashFunction(CryptoContext::digest)
                 .store(trieStore)
                 .keyCodec(idCodec)
-                .valueCodec(stateCodec).build()
+                .valueCodec(stateCodec).build(),
+                CryptoContext.hashFunction
+        )
         ;
 
         // sync to genesis
@@ -129,16 +130,19 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     }
 
     @Override
-    public void gc(Collection<? extends byte[]> excludedRoots) {
-        Map<byte[], byte[]> dumped = new ByteArrayMap<>();
-        for (byte[] h : excludedRoots) {
-            dumped.putAll(getTrieForReadOnly(h).dump());
+    public void prune(Collection<? extends byte[]> excludedRoots) {
+        Set<byte[]> excludes = new ByteArraySet();
+        for (byte[] root : excludedRoots) {
+            excludes.addAll(getTrieForReadOnly(root).dumpKeys());
         }
-        getTrieStore().clear();
-        if (getTrieStore() instanceof BatchStore) {
-            ((BatchStore<byte[], byte[]>) getTrieStore()).putAll(dumped.entrySet());
-            return;
+        Consumer<byte[]> fn = k ->{
+            if(!excludes.contains(k))
+                db.remove(k);
+        };
+        if(db instanceof MemoryDatabaseStore){
+            new ArrayList<>(db.keySet()).forEach(fn);
+        }else{
+            db.stream().forEach(e -> fn.accept(e.getKey()));
         }
-        dumped.forEach(getTrieStore()::put);
     }
 }

@@ -1,7 +1,7 @@
 package org.tdf.sunflower.net;
 
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 
@@ -109,9 +109,11 @@ public class Client implements ChannelListener {
                 .getChannel(peer.getID())
                 .filter(Channel::isAlive);
         if(ch.isPresent()) return ch;
-        return netLayer
+        ch = netLayer
                 .createChannel(peer.getHost(), peer.getPort(), this, listener)
                 .filter(Channel::isAlive);
+        ch.ifPresent(c -> c.setMessageBuilder(messageBuilder));
+        return ch;
     }
 
     // try to get channel from cache, if channel not exists in cache,
@@ -130,6 +132,7 @@ public class Client implements ChannelListener {
                 .createChannel(host, port, listeners)
                 .filter(Channel::isAlive)
         ;
+        ch.ifPresent(c -> c.setMessageBuilder(messageBuilder));
         ch.ifPresent(c -> c.write(messageBuilder.buildPing()));
         return ch;
     }

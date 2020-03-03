@@ -17,18 +17,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
 
 
-@Slf4j
+@Slf4j(topic = "leveldb")
 public class LevelDb implements DatabaseStore {
+    private final DBFactory factory;
     // subdirectory
     private String name;
     // parent directory
     private String directory;
-
     private DB db;
     private DBSettings dbSettings;
     private boolean alive;
-    private final DBFactory factory;
-
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
     public LevelDb(DBFactory factory, String directory, String name) {

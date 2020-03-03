@@ -44,6 +44,11 @@ public final class Sunflower {
   static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_Nothing_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_Disconnect_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_Disconnect_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -59,11 +64,12 @@ public final class Sunflower {
       "f.Timestamp\022\023\n\013remote_peer\030\003 \001(\t\022\013\n\003ttl\030" +
       "\004 \001(\004\022\r\n\005nonce\030\005 \001(\004\022\021\n\tsignature\030\006 \001(\014\022" +
       "\014\n\004body\030\007 \001(\014\"\006\n\004Ping\"\006\n\004Pong\"\010\n\006Lookup\"" +
-      "\026\n\005Peers\022\r\n\005peers\030\001 \003(\t\"\t\n\007Nothing*L\n\004Co" +
-      "de\022\013\n\007NOTHING\020\000\022\010\n\004PING\020\001\022\010\n\004PONG\020\002\022\013\n\007L" +
-      "OOK_UP\020\003\022\t\n\005PEERS\020\004\022\013\n\007ANOTHER\020\0052*\n\005Entr" +
-      "y\022!\n\005Entry\022\010.Message\032\010.Message\"\000(\0010\001B\033\n\027" +
-      "org.tdf.sunflower.protoP\001b\006proto3"
+      "\026\n\005Peers\022\r\n\005peers\030\001 \003(\t\"\t\n\007Nothing\"\034\n\nDi" +
+      "sconnect\022\016\n\006reason\030\001 \001(\t*\\\n\004Code\022\013\n\007NOTH" +
+      "ING\020\000\022\010\n\004PING\020\001\022\010\n\004PONG\020\002\022\013\n\007LOOK_UP\020\003\022\t" +
+      "\n\005PEERS\020\004\022\013\n\007ANOTHER\020\005\022\016\n\nDISCONNECT\020\0062*" +
+      "\n\005Entry\022!\n\005Entry\022\010.Message\032\010.Message\"\000(\001" +
+      "0\001B\033\n\027org.tdf.sunflower.protoP\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -106,6 +112,12 @@ public final class Sunflower {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_Nothing_descriptor,
         new java.lang.String[] { });
+    internal_static_Disconnect_descriptor =
+      getDescriptor().getMessageTypes().get(6);
+    internal_static_Disconnect_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_Disconnect_descriptor,
+        new java.lang.String[] { "Reason", });
     com.google.protobuf.TimestampProto.getDescriptor();
   }
 

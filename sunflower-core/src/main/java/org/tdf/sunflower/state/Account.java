@@ -9,7 +9,10 @@ import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.vm.abi.Context;
+import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
+
+import java.util.Collections;
 
 import static org.tdf.sunflower.ApplicationConstants.ADDRESS_SIZE;
 
@@ -64,6 +67,7 @@ public class Account {
                 .withContext(ctx);
 
         ModuleInstance instance = ModuleInstance.builder()
+                .hooks(Collections.singleton(new GasLimit()))
                 .binary(binaryContract)
                 .memory(memory)
                 .globals(globals)

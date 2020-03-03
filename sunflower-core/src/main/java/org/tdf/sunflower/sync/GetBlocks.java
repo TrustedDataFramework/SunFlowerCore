@@ -12,4 +12,14 @@ public class GetBlocks {
     private long stopHeight;
     private boolean descend;
     private int limit;
+
+    GetBlocks clip(){
+        if(stopHeight - startHeight < limit) return this;
+        if(descend){
+            startHeight = stopHeight - limit;
+        }else{
+            stopHeight = startHeight + limit;
+        }
+        return this;
+    }
 }

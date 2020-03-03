@@ -1,5 +1,6 @@
 package org.tdf.common.trie;
 
+import org.iq80.leveldb.impl.Iq80DBFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,8 +9,7 @@ import org.spongycastle.util.encoders.Hex;
 import org.tdf.common.HashUtil;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
-import org.tdf.common.store.ByteArrayMapStore;
-import org.tdf.common.store.Store;
+import org.tdf.common.store.*;
 import org.tdf.common.util.ByteArraySet;
 
 import java.io.File;
@@ -506,32 +506,32 @@ public abstract class AbstractTrieTest {
     @Test
 //    count n = 1000000 size trie 2349 ms
     public void test7() throws Exception{
-        TimeUnit.SECONDS.sleep(10);
         boolean performance = false;
         int n = 1000000;
         if (!performance) return;
-        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(HashUtil::sha256, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(
+                HashUtil::sha256,
+                new NoDoubleDeleteStore(),
+                Codec.identity(),
+                Codec.identity()
+        );
         byte[] dummy = new byte[]{1};
         SecureRandom sr = new SecureRandom();
-        Set<byte[]> set = new ByteArraySet();
-        for (int i = 0; i < n; i++) {
-            byte[] bytes = new byte[32];
-            sr.nextBytes(bytes);
-            set.add(bytes);
-            trie.put(bytes, dummy);
-        }
-
         long start = System.currentTimeMillis();
-        set.forEach(x -> trie.put(x, dummy));
-        long end = System.currentTimeMillis();
-        System.out.println("insert " + set.size() + " " + (end - start) + " ms");
-        start = System.currentTimeMillis();
-        trie.flush();
+        for (int i = 0; i < n; i++) {
+            byte[] bytes = new byte[16];
+            sr.nextBytes(bytes);
+            trie.put(bytes, dummy);
+//            if(i % 100000 == 0) {
+//                byte[] root = trie.commit();
+//                trie.flush();
+//                trie = trie.revert(root);
+//            }
+        }
         trie.commit();
-        int size = trie.size();
-        end = System.currentTimeMillis();
-        System.out.println("count size at " + size + " " + (end - start) + " ms");
-        assert size == set.size();
+        trie.flush();
+        long end = System.currentTimeMillis();
+        System.out.println("insert " + n + " " + (end - start) + " ms");
     }
 
     @Test // update the trie with blog key/val

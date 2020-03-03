@@ -3,6 +3,8 @@ package org.tdf.sunflower.net;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.sunflower.DatabaseConfig;
+import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.util.FileUtils;
 
@@ -28,7 +30,9 @@ public class P2PDebug {
         });
 
         // port listening on
-        PeerServerImpl server = new PeerServerImpl();
+        PeerServerImpl server = new PeerServerImpl(new DatabaseStoreFactory(new DatabaseConfig(
+                "memory", 512, "m", false, "kv"
+        )));
         Properties properties = new Properties();
         properties.load(FileUtils.getResource("p2p/node3.properties").getInputStream());
         System.out.println(properties);

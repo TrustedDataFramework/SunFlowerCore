@@ -1,8 +1,9 @@
-package org.tdf.crypto;
+package org.tdf.sunflower.crypto;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
@@ -33,9 +34,11 @@ public class CryptoContext {
 
 
     // (sk, msg) -> encrypted
+    // TODO replace this encrypt
     public static BiFunction<byte[], byte[], byte[]> encrypt = ByteUtils::concatenate;
 
     // (sk, encrypted) -> msg
+    // TODO replace this decrypt
     public static BiFunction<byte[], byte[], byte[]> decrypt = (sk, encrypted) -> ByteUtils.subArray(encrypted , sk.length);
 
     // (sk) -> pk

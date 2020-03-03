@@ -12,7 +12,7 @@ import org.tdf.common.util.Constants;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
@@ -46,7 +46,7 @@ public class Transaction {
     protected long nonce;
 
     /**
-     * for coinbase, this field is null
+     * for coinbase, this field is null or empty bytes
      */
     @RLP(4)
     protected HexBytes from;

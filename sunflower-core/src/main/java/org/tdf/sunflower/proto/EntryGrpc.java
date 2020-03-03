@@ -2,13 +2,23 @@ package org.tdf.sunflower.proto;
 
 import static io.grpc.MethodDescriptor.generateFullMethodName;
 import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;
+import static io.grpc.stub.ClientCalls.asyncClientStreamingCall;
+import static io.grpc.stub.ClientCalls.asyncServerStreamingCall;
+import static io.grpc.stub.ClientCalls.asyncUnaryCall;
+import static io.grpc.stub.ClientCalls.blockingServerStreamingCall;
+import static io.grpc.stub.ClientCalls.blockingUnaryCall;
+import static io.grpc.stub.ClientCalls.futureUnaryCall;
 import static io.grpc.stub.ServerCalls.asyncBidiStreamingCall;
+import static io.grpc.stub.ServerCalls.asyncClientStreamingCall;
+import static io.grpc.stub.ServerCalls.asyncServerStreamingCall;
+import static io.grpc.stub.ServerCalls.asyncUnaryCall;
 import static io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall;
+import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
 
 /**
  */
 @javax.annotation.Generated(
-    value = "by gRPC proto compiler (version 1.25.0)",
+    value = "by gRPC proto compiler (version 1.22.1)",
     comments = "Source: sunflower.proto")
 public final class EntryGrpc {
 
@@ -31,21 +41,22 @@ public final class EntryGrpc {
     if ((getEntryMethod = EntryGrpc.getEntryMethod) == null) {
       synchronized (EntryGrpc.class) {
         if ((getEntryMethod = EntryGrpc.getEntryMethod) == null) {
-          EntryGrpc.getEntryMethod = getEntryMethod =
+          EntryGrpc.getEntryMethod = getEntryMethod = 
               io.grpc.MethodDescriptor.<org.tdf.sunflower.proto.Message, org.tdf.sunflower.proto.Message>newBuilder()
               .setType(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
-              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "Entry"))
+              .setFullMethodName(generateFullMethodName(
+                  "Entry", "Entry"))
               .setSampledToLocalTracing(true)
               .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
                   org.tdf.sunflower.proto.Message.getDefaultInstance()))
               .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
                   org.tdf.sunflower.proto.Message.getDefaultInstance()))
-              .setSchemaDescriptor(new EntryMethodDescriptorSupplier("Entry"))
-              .build();
+                  .setSchemaDescriptor(new EntryMethodDescriptorSupplier("Entry"))
+                  .build();
+          }
         }
-      }
-    }
-    return getEntryMethod;
+     }
+     return getEntryMethod;
   }
 
   /**

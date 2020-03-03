@@ -1,46 +1,34 @@
 package org.tdf.sunflower.consensus.vrf;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.tdf.rlp.RLPCodec;
+import org.tdf.rlp.RLPElement;
+import org.tdf.sunflower.consensus.vrf.core.*;
+import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
+import org.tdf.sunflower.events.NewBlockMined;
+import org.tdf.sunflower.exception.ConsensusEngineInitException;
+import org.tdf.sunflower.facade.ConsensusEngine;
+import org.tdf.sunflower.facade.PeerServerListener;
+import org.tdf.sunflower.facade.SunflowerRepository;
+import org.tdf.sunflower.net.*;
+import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.AccountUpdater;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.util.ByteUtil;
+import org.tdf.sunflower.util.FileUtils;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
-
-import org.checkerframework.checker.units.qual.C;
-import org.springframework.core.io.Resource;
-import org.tdf.crypto.CryptoContext;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPElement;
-import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.exception.ConsensusEngineInitException;
-import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.AccountUpdater;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.facade.ConsensusEngine;
-import org.tdf.sunflower.facade.SunflowerRepository;
-import org.tdf.sunflower.net.Context;
-import org.tdf.sunflower.net.Peer;
-import org.tdf.sunflower.net.PeerServer;
-import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.consensus.vrf.core.CommitProof;
-import org.tdf.sunflower.consensus.vrf.core.PendingVrfState;
-import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
-import org.tdf.sunflower.consensus.vrf.core.ValidatorManager;
-import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
-import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
-import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
-import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
-import org.tdf.sunflower.net.MessageBuilder;
-import org.tdf.sunflower.net.PeerImpl;
-import org.tdf.sunflower.util.ByteUtil;
-import org.tdf.sunflower.util.FileUtils;
-
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
-
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 
 @Getter
 @Setter

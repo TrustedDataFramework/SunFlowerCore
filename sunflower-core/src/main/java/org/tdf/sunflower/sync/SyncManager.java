@@ -5,6 +5,9 @@ import com.google.common.cache.CacheBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.tdf.common.event.EventBus;
+import org.tdf.common.store.CachedStore;
+import org.tdf.common.trie.Trie;
+import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
@@ -16,7 +19,11 @@ import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.Context;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
@@ -26,42 +33,65 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static org.tdf.sunflower.Start.devAssert;
 
 /**
  * sync manager for full-nodes
  */
 @Component
-@Slf4j
+@Slf4j(topic = "sync")
 public class SyncManager implements PeerServerListener {
     private final PeerServer peerServer;
     private final ConsensusEngineFacade engine;
-    private final SunflowerRepository sunflowerRepository;
+    private final SunflowerRepository repository;
     private final TransactionPool transactionPool;
     private final TreeSet<Block> queue = new TreeSet<>(Block.FAT_COMPARATOR);
     private final SyncConfig syncConfig;
     private final EventBus eventBus;
+    private final StateTrie<HexBytes, Account> accountTrie;
+    private final long fastSyncHeight;
+    private final HexBytes fastSyncHash;
+
+    private volatile Block fastSyncBlock;
+
     private Cache<HexBytes, Boolean> receivedTransactions = CacheBuilder.newBuilder()
             .maximumSize(ApplicationConstants.P2P_TRANSACTION_CACHE_SIZE)
             .build();
     private Cache<HexBytes, Boolean> receivedProposals = CacheBuilder.newBuilder()
             .maximumSize(ApplicationConstants.P2P_PROPOSAL_CACHE_SIZE)
             .build();
-    private Lock lock = new ReentrantLock();
+    private Lock blockQueueLock = new ReentrantLock();
+
+    private ReadWriteLock fastSyncAddressesLock = new ReentrantReadWriteLock();
+
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    // when fastSyncing = true, the node
+    private volatile boolean fastSyncing;
+    private volatile Trie<HexBytes, Account> fastSyncTrie;
+    private volatile Set<HexBytes> fastSyncAddresses;
 
     public SyncManager(
             PeerServer peerServer, ConsensusEngineFacade engine,
-            SunflowerRepository sunflowerRepository,
+            SunflowerRepository repository,
             TransactionPool transactionPool, SyncConfig syncConfig,
-            EventBus eventBus
+            EventBus eventBus,
+            AccountTrie accountTrie
     ) {
         this.peerServer = peerServer;
         this.engine = engine;
-        this.sunflowerRepository = sunflowerRepository;
+        this.repository = repository;
         this.transactionPool = transactionPool;
         this.syncConfig = syncConfig;
         this.eventBus = eventBus;
+        this.fastSyncing = syncConfig.getFastSyncHeight() > 0
+                && repository.getBestHeader().getHeight() == 0;
+        this.fastSyncHash = HexBytes.fromBytes(syncConfig.getFastSyncHash());
+        this.fastSyncHeight = syncConfig.getFastSyncHeight();
+        this.accountTrie = accountTrie;
     }
 
     @PostConstruct
@@ -80,6 +110,12 @@ public class SyncManager implements PeerServerListener {
         });
     }
 
+    private void clearFastSyncCache() {
+        this.fastSyncBlock = null;
+        this.fastSyncAddresses = null;
+        this.fastSyncTrie = null;
+    }
+
     @Override
     public void onMessage(Context context, PeerServer server) {
         Optional<SyncMessage> o = SyncMessage.decode(context.getMessage());
@@ -90,29 +126,22 @@ public class SyncManager implements PeerServerListener {
                 return;
             case SyncMessage.STATUS: {
                 Status s = msg.getBodyAs(Status.class);
-                this.onStatus(context, s);
+                this.onStatus(context, server, s);
                 return;
             }
             case SyncMessage.GET_BLOCKS: {
+                if (fastSyncing) return;
                 GetBlocks getBlocks = msg.getBodyAs(GetBlocks.class);
-                List<Block> blocks;
-                if (getBlocks.isDescend()) {
-                    blocks = sunflowerRepository.getBlocksBetweenDescend(
-                            getBlocks.getStartHeight(),
-                            getBlocks.getStopHeight(),
-                            Math.min(getBlocks.getLimit(), syncConfig.getMaxBlocksTransfer())
-                    );
-                } else {
-                    blocks = sunflowerRepository.getBlocksBetween(
-                            getBlocks.getStartHeight(),
-                            getBlocks.getStopHeight(),
-                            Math.min(syncConfig.getMaxBlocksTransfer(), getBlocks.getLimit())
-                    );
-                }
+                List<Block> blocks = repository.getBlocksBetween(
+                        getBlocks.getStartHeight(),
+                        getBlocks.getStopHeight(),
+                        Math.min(syncConfig.getMaxBlocksTransfer(), getBlocks.getLimit()),
+                        getBlocks.isDescend()
+                );
                 context.response(SyncMessage.encode(SyncMessage.BLOCKS, blocks));
                 return;
             }
-            case SyncMessage.TRANSACTIONS: {
+            case SyncMessage.TRANSACTION: {
                 Transaction tx = msg.getBodyAs(Transaction.class);
                 if (receivedTransactions.asMap().containsKey(tx.getHash())) return;
                 receivedTransactions.put(tx.getHash(), true);
@@ -121,7 +150,11 @@ public class SyncManager implements PeerServerListener {
                 return;
             }
             case SyncMessage.PROPOSAL: {
-                Block best = sunflowerRepository.getBestBlock();
+                if (fastSyncing) {
+                    context.relay();
+                    return;
+                }
+                Header best = repository.getBestHeader();
                 Block proposal = msg.getBodyAs(Block.class);
                 if (receivedProposals.asMap().containsKey(proposal.getHash())) {
                     return;
@@ -131,60 +164,203 @@ public class SyncManager implements PeerServerListener {
                 if (Math.abs(proposal.getHeight() - best.getHeight()) > syncConfig.getMaxPendingBlocks()) {
                     return;
                 }
-                if (sunflowerRepository.containsBlock(proposal.getHash().getBytes()))
+                if (repository.containsHeader(proposal.getHash().getBytes()))
                     return;
-                lock.lock();
+                blockQueueLock.lock();
                 try {
                     queue.add(proposal);
                 } finally {
-                    lock.unlock();
+                    blockQueueLock.unlock();
                 }
                 return;
             }
+            case SyncMessage.GET_ADDRESSES: {
+                if (fastSyncing) return;
+                byte[] root = msg.getBodyAs(byte[].class);
+                Set<HexBytes> addresses = new HashSet<>();
+                accountTrie.getTrie(root).traverse(e ->{
+                    Account a = e.getValue();
+                    addresses.add(a.getAddress());
+                    return true;
+                });
+                context.response(SyncMessage.encode(SyncMessage.ADDRESSES, addresses));
+                return;
+            }
+            case SyncMessage.ADDRESSES: {
+                if (!fastSyncing || fastSyncAddresses != null) return;
+                this.fastSyncAddresses = new HashSet<>(Arrays.asList(msg.getBodyAs(HexBytes[].class)));
+                return;
+            }
+            case SyncMessage.GET_ACCOUNTS: {
+                if (fastSyncing) return;
+                GetAccounts getAccounts = msg.getBodyAs(GetAccounts.class);
+                List<Account> accounts = new ArrayList<>();
+                Trie<HexBytes, Account> trie = accountTrie.getTrie(getAccounts.getStateRoot().getBytes());
+                int i = 0;
+                for (HexBytes address : getAccounts.getAddresses()) {
+                    if (i > syncConfig.getMaxAccountsTransfer())
+                        break;
+                    accounts.add(trie.get(address).get());
+                    i++;
+                }
+                context.response(SyncMessage.encode(SyncMessage.ACCOUNTS, accounts));
+                return;
+            }
+            case SyncMessage.ACCOUNTS: {
+                if (!fastSyncing) return;
+                if (fastSyncTrie == null) {
+                    fastSyncTrie = accountTrie.getTrie().revert(
+                            accountTrie.getTrie().getNullHash(),
+                            new CachedStore<>(accountTrie.getTrieStore(), ByteArrayMap::new)
+                    );
+                }
+                fastSyncAddressesLock.writeLock().lock();
+                try {
+                    for (Account a : msg.getBodyAs(Account[].class)) {
+                        fastSyncTrie.put(a.getAddress(), a);
+                        fastSyncAddresses.remove(a.getAddress());
+                    }
+                    if (fastSyncAddresses.isEmpty()) {
+                        HexBytes stateRoot = HexBytes.fromBytes(fastSyncTrie.commit());
+                        if (fastSyncBlock.getStateRoot().equals(stateRoot)) {
+                            this.fastSyncing = false;
+                            fastSyncTrie.flush();
+                            repository.writeBlock(fastSyncBlock);
+                            repository.prune(fastSyncBlock.getHash().getBytes());
+                            devAssert(
+                                    repository.getPrunedHash().equals(fastSyncBlock.getHash()), "prune failed after fast sync");
+                            log.info("fast sync success to height {} hash {}", fastSyncHeight, fastSyncBlock.getHash());
+                            clearFastSyncCache();
+                            return;
+                        } else {
+                            clearFastSyncCache();
+                            log.error("fast sync failed, state root not match, malicious node may exists in network!!!");
+                        }
+                    }
+                } finally {
+                    fastSyncAddressesLock.writeLock().unlock();
+                }
+            }
             case SyncMessage.BLOCKS: {
-                Block best = sunflowerRepository.getBestBlock();
                 Block[] blocks = msg.getBodyAs(Block[].class);
+                if (fastSyncing) {
+                    for (Block b : blocks) {
+                        b.resetTransactionsRoot();
+                        if (b.getHash().equals(fastSyncHash)) {
+                            this.fastSyncBlock = b;
+                            return;
+                        }
+                    }
+                    return;
+                }
+                Header best = repository.getBestHeader();
                 Arrays.sort(blocks, Block.FAT_COMPARATOR);
-                lock.lock();
+                blockQueueLock.lock();
                 try {
                     for (Block block : blocks) {
+                        if (block.getHeight() <= repository.getPrunedHeight())
+                            continue;
                         if (Math.abs(block.getHeight() - best.getHeight()) > syncConfig.getMaxPendingBlocks())
                             break;
-                        if (sunflowerRepository.containsBlock(block.getHash().getBytes()))
+                        block.resetTransactionsRoot();
+                        if (repository.containsHeader(block.getHash().getBytes()))
                             continue;
                         queue.add(block);
                     }
                 } finally {
-                    lock.unlock();
+                    blockQueueLock.unlock();
                 }
                 return;
             }
         }
     }
 
-    private void onStatus(Context ctx, Status s) {
+
+    private void onStatus(Context ctx, PeerServer server, Status s) {
+        if (fastSyncing) {
+            boolean fastSyncEnabled =
+                    s.getPrunedHeight() < fastSyncHeight
+                            || s.getPrunedHash().equals(fastSyncHash);
+            if (!fastSyncEnabled && server.isFull()) {
+                log.info("cannot fast sync by peer " + ctx.getRemote() + " block him");
+                ctx.block();
+                return;
+            }
+            if(!fastSyncEnabled) return;
+            if (fastSyncBlock == null) {
+                ctx.response(
+                        SyncMessage.encode(
+                                SyncMessage.GET_BLOCKS,
+                                new GetBlocks(fastSyncHeight, fastSyncHeight, false, syncConfig.getMaxBlocksTransfer())
+                        ));
+                log.info("fetch fast sync block at height {}", fastSyncHeight);
+            }
+            if (fastSyncBlock != null) {
+                ctx.response(SyncMessage.encode(
+                        SyncMessage.GET_ADDRESSES,
+                        fastSyncBlock.getStateRoot()
+                ));
+                log.info("fetch account addresses");
+            }
+            if (fastSyncBlock != null && fastSyncAddresses != null) {
+                fastSyncAddressesLock.readLock().lock();
+                List<HexBytes> accountAddresses = new ArrayList<>();
+                try {
+                    int i = 0;
+                    for (HexBytes address : fastSyncAddresses) {
+                        if (i > syncConfig.getMaxAccountsTransfer()) break;
+                        accountAddresses.add(address);
+                        i++;
+                    }
+                } finally {
+                    fastSyncAddressesLock.readLock().unlock();
+                }
+                log.info("try to fetch addresses at state root " + fastSyncBlock.getHeader());
+                ctx.response(
+                        SyncMessage.encode(
+                                SyncMessage.GET_ACCOUNTS,
+                                new GetAccounts(fastSyncBlock.getStateRoot(), accountAddresses)
+                        )
+                );
+            }
+            return;
+        }
         Block b = null;
-        Block best = sunflowerRepository.getBestBlock();
-        lock.lock();
+        Header best = repository.getBestHeader();
+        blockQueueLock.lock();
         try {
             b = queue.first();
         } catch (NoSuchElementException ignored) {
 
         } finally {
-            lock.unlock();
+            blockQueueLock.unlock();
         }
-        if (b != null && s.getBestBlockHeight() > b.getHeight()) {
-            GetBlocks getBlocks = new GetBlocks(best.getHeight(), b.getHeight(), true, syncConfig.getMaxBlocksTransfer());
+        if (b != null
+                && s.getBestBlockHeight() >= b.getHeight()
+                && b.getHeight() > s.getPrunedHeight()
+                && !repository.containsHeader(b.getHashPrev().getBytes())
+        ) {
+            // remote: prune < b <= best
+            GetBlocks getBlocks = new GetBlocks(
+                    s.getPrunedHeight(), b.getHeight(), true,
+                    syncConfig.getMaxBlocksTransfer()
+            ).clip();
+
             ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks));
         }
         if (s.getBestBlockHeight() >= best.getHeight() && !s.getBestBlockHash().equals(best.getHash())) {
-            GetBlocks getBlocks = new GetBlocks(best.getHeight(), s.getBestBlockHeight(), false, syncConfig.getMaxBlocksTransfer());
+            GetBlocks getBlocks = new GetBlocks(
+                    Math.max(s.getPrunedHeight(), best.getHeight()),
+                    s.getBestBlockHeight(), false,
+                    syncConfig.getMaxBlocksTransfer()
+            ).clip();
             ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks));
         }
     }
 
     public void tryWrite() {
-        lock.lock();
+        Header best = repository.getBestHeader();
+        blockQueueLock.lock();
         try {
             while (true) {
                 Block b = null;
@@ -193,11 +369,17 @@ public class SyncManager implements PeerServerListener {
                 } catch (NoSuchElementException ignored) {
                 }
                 if (b == null) return;
-                if (sunflowerRepository.containsBlock(b.getHash().getBytes())) {
+                if (Math.abs(best.getHeight() - b.getHeight()) > syncConfig.getMaxAccountsTransfer()
+                        || b.getHeight() <= repository.getPrunedHeight()
+                ) {
                     queue.remove(b);
                     continue;
                 }
-                Optional<Block> o = sunflowerRepository.getBlock(b.getHashPrev().getBytes());
+                if (repository.containsHeader(b.getHash().getBytes())) {
+                    queue.remove(b);
+                    continue;
+                }
+                Optional<Block> o = repository.getBlock(b.getHashPrev().getBytes());
                 if (!o.isPresent()) {
                     return;
                 }
@@ -208,17 +390,24 @@ public class SyncManager implements PeerServerListener {
                     continue;
                 }
                 queue.remove(b);
-                sunflowerRepository.writeBlock(b);
+                repository.writeBlock(b);
             }
         } finally {
-            lock.unlock();
+            blockQueueLock.unlock();
         }
     }
 
     public void sendStatus() {
-        Block best = sunflowerRepository.getBestBlock();
-        Block genesis = sunflowerRepository.getGenesis();
-        Status status = new Status(best.getHeight(), best.getHash(), genesis.getHash());
+        if (fastSyncing) return;
+        Header best = repository.getBestHeader();
+        Block genesis = repository.getGenesis();
+        Status status = new Status(
+                best.getHeight(),
+                best.getHash(),
+                genesis.getHash(),
+                repository.getPrunedHeight(),
+                repository.getPrunedHash()
+        );
         peerServer.broadcast(SyncMessage.encode(SyncMessage.STATUS, status));
     }
 

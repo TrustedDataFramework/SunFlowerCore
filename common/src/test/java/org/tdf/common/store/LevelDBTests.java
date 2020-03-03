@@ -1,6 +1,6 @@
 package org.tdf.common.store;
 
-import org.fusesource.leveldbjni.JniDBFactory;
+import org.iq80.leveldb.impl.Iq80DBFactory;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -8,6 +8,6 @@ import org.junit.runners.JUnit4;
 public class LevelDBTests extends DBTests {
     @Override
     DatabaseStore getDB() {
-        return new LevelDb(JniDBFactory.factory, "local/leveldb", "tmp");
+        return new LevelDb(Iq80DBFactory.factory, "local/leveldb", "tmp");
     }
 }

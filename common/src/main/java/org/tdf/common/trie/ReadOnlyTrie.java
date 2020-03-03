@@ -41,6 +41,11 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
+    public Set<byte[]> dumpKeys() {
+        return delegate.dumpKeys();
+    }
+
+    @Override
     public Map<byte[], byte[]> dump() {
         return delegate.dump();
     }
@@ -183,5 +188,10 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     @Override
     public Map<byte[], byte[]> getProofInternal(byte[] key) {
         return delegate.getProofInternal(key);
+    }
+
+    @Override
+    public void traverseInternal(BiFunction<byte[], byte[], Boolean> traverser) {
+        delegate.traverseInternal(traverser);
     }
 }

@@ -1,5 +1,6 @@
 package org.tdf.common.trie;
 
+import lombok.Value;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
 import org.tdf.rlp.RLPElement;
@@ -7,6 +8,8 @@ import org.tdf.rlp.RLPElement;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -36,12 +39,12 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public Trie<K, V> revert(byte[] rootHash, Store<byte[], byte[]> store) throws RuntimeException {
+    public Trie<K, V> revert(byte[] rootHash, Store<byte[], byte[]> store) {
         return new SecureTrie<>(delegate.revert(rootHash, store), hashFunction);
     }
 
     @Override
-    public Trie<K, V> revert(byte[] rootHash) throws RuntimeException {
+    public Trie<K, V> revert(byte[] rootHash) {
         return new SecureTrie<>(delegate.revert(rootHash), hashFunction);
     }
 
@@ -56,12 +59,17 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
+    public Set<byte[]> dumpKeys() {
+        return delegate.dumpKeys();
+    }
+
+    @Override
     public Map<byte[], byte[]> dump() {
         return delegate.dump();
     }
 
     @Override
-    public byte[] getRootHash() throws RuntimeException {
+    public byte[] getRootHash() {
         return delegate.getRootHash();
     }
 
@@ -104,6 +112,34 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     @Override
     public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
         throw new UnsupportedOperationException("not supported in secure trie");
+    }
+
+    public class ValueOnlyEntry implements Map.Entry<K, V>{
+        private V value;
+
+        public ValueOnlyEntry(V value) {
+            this.value = value;
+        }
+
+        @Override
+        public K getKey() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V getValue() {
+            return value;
+        }
+
+        @Override
+        public V setValue(V value) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @Override
+    public void traverse(Function<Map.Entry<K, V>, Boolean> traverser) {
+        traverseInternal((k, v) -> traverser.apply(new ValueOnlyEntry(getVCodec().getDecoder().apply(v))));
     }
 
     @Override
@@ -149,5 +185,10 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     @Override
     public Map<byte[], byte[]> getProofInternal(byte[] key) {
         return delegate.getProofInternal(hashFunction.apply(key));
+    }
+
+    @Override
+    void traverseInternal(BiFunction<byte[], byte[], Boolean> traverser) {
+        delegate.traverseInternal(traverser);
     }
 }

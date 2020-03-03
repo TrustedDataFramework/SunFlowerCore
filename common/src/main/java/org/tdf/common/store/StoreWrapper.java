@@ -1,6 +1,7 @@
 package org.tdf.common.store;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 
@@ -16,6 +17,8 @@ import java.util.function.BiFunction;
 @AllArgsConstructor
 public class StoreWrapper<K, V, U, R>
         implements Store<K, V> {
+
+    @Getter
     private Store<U, R> store;
 
     private Codec<K, U> keyCodec;

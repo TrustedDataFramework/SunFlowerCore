@@ -1,5 +1,6 @@
 package org.tdf.sunflower.facade;
 
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.GenesisConflictsException;
 import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.types.Block;
@@ -14,7 +15,7 @@ public interface BlockRepository{
     void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException;
 
     // TODO: use guava cache
-    boolean containsBlock(byte[] hash);
+    boolean containsHeader(byte[] hash);
 
     Header getBestHeader();
 
@@ -26,31 +27,30 @@ public interface BlockRepository{
     // TODO: use guava cache
     Optional<Block> getBlock(byte[] hash);
 
-    List<Header> getHeaders(long startHeight, int limit);
-
-    List<Block> getBlocks(long startHeight, int limit);
-
     List<Header> getHeadersBetween(long startHeight, long stopHeight);
 
     List<Block> getBlocksBetween(long startHeight, long stopHeight);
 
     List<Header> getHeadersBetween(long startHeight, long stopHeight, int limit);
 
-    List<Header> getHeadersBetweenDescend(long startHeight, long stopHeight, int limit);
+    List<Header> getHeadersBetween(long startHeight, long stopHeight, int limit, boolean descend);
 
     List<Block> getBlocksBetween(long startHeight, long stopHeight, int limit);
 
-    List<Block> getBlocksBetweenDescend(long startHeight, long stopHeight, int limit);
+    List<Block> getBlocksBetween(long startHeight, long stopHeight, int limit, boolean descend);
 
-    Optional<Header> getHeaderByHeight(long height);
+    List<Header> getHeadersByHeight(long height);
 
-    Optional<Block> getBlockByHeight(long height);
-
-    List<Header> getAncestorHeaders(byte[] hash, int limit);
-
-    List<Block> getAncestorBlocks(byte[] hash, int limit);
+    List<Block> getBlocksByHeight(long height);
 
     void writeBlock(Block block);
 
-    void writeHeader(Header header);
+    // delete all header and transactions until this height(inclusive), exclude this block
+    void prune(byte[] hash);
+
+    // pruned header height
+    long getPrunedHeight();
+
+    // hash of pruned header
+    HexBytes getPrunedHash();
 }

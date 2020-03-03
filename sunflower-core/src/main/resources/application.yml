@@ -14,6 +14,10 @@ spring:
 
 # sunflower configurations
 sunflower:
+  # enable assert in development
+  # call org.tdf.sunflower.Start.devAssert
+  assert: 'false'
+
   consensus:
     name: 'poa'
     genesis: 'genesis/poa.jsonc'
@@ -37,7 +41,7 @@ sunflower:
     max-peers: '16' # maximum peers
     address: 'node://localhost:9999'
     enable-discovery: 'true'
-    enable-message-log: 'true' # set false to disable verbose log
+    # enable-message-log: 'true' # set false to disable verbose log
     # bootstraps:
       # - 'node://localhost:9998'
     # trusted: # trusted nodes
@@ -53,13 +57,24 @@ sunflower:
     # if private-key is not pre-defined, node will generate private key
     # private-key:
 
+    # persist peers to file database.directory/peers
+    persist: true
+
+    # lookup peers every 15 seconds
+    discover-rate: 15
+
   sync:
   #status rate(seconds)
     heart-rate: 5
     block-write-rate: 1
     max-pending-blocks: 2048
     max-blocks-transfer: 1024
-
+    # drop old header, transaction and states
+    prune-hash: ''
+    # enable fast sync process
+    fast-sync-hash: ''
+    fast-sync-height: '0'
+    max-accounts-transfer: 512
 
 
   message-queue:
@@ -78,12 +93,18 @@ sunflower:
     name: 'leveldb'
     directory: 'database/rocksdb'
     max-open-files: '512' # defines a number of opened files by db instance
+    block-store: 'rdbms' # optional: kv
 
   # 密码算法，包含对称加密，非对称加密和哈希计算
   crypto:
     hash: 'sm3' # keccak256, keccak512
     ec: 'sm2' # ed25519
     ae: 'sm4' # 对称加密方法
+
+
+  vm:
+    # gas limit for contract execution, any vm code or host function execution consumes one gas
+    gas-limit: '65536'
 
   web:
     disabled: false
@@ -94,19 +115,20 @@ sunflower:
     # cache size for state trie
     trie: '32'
     # cache size for avoid message flood
-    p2p-transaction: '128'
-    # cache size for avoid message flood
-    p2p-proposal: '128'
+    p2p:
+      transaction: '128'
+      # cache size for avoid message flood
+      proposal: '128'
 
 
 server:
   port: '8080'
 
-logging:
-  level:
-    org.hibernate:
-      SQL: 'DEBUG'
-      type.descriptor.sql.BasicBinder: 'TRACE'
-    org.springframework.jdbc.core:
-      JdbcTemplate: 'DEBUG'
-      StatementCreatorUtils: 'TRACE'
+#logging:
+  #level:
+    #org.hibernate:
+      #SQL: 'DEBUG'
+      #type.descriptor.sql.BasicBinder: 'TRACE'
+    #org.springframework.jdbc.core:
+      #JdbcTemplate: 'DEBUG'
+      #StatementCreatorUtils: 'TRACE'

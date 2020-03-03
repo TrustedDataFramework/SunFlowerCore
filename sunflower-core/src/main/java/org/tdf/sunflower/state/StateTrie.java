@@ -39,5 +39,5 @@ public interface StateTrie<ID, S> {
     Trie<ID, S> update(byte[] parentRoot, Block block);
 
     // collect garbage
-    void gc(Collection<? extends byte[]> excludedRoots);
+    void prune(Collection<? extends byte[]> excludedRoots);
 }

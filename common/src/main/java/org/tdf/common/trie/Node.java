@@ -27,7 +27,6 @@ import static org.tdf.common.trie.TrieKey.EMPTY;
 @Builder(access = AccessLevel.PRIVATE)
 class Node {
     static final int BRANCH_SIZE = 17;
-    static final int MAX_KEY_SIZE = 32;
     // rlp encoded of this node, for serialization
     RLPList rlp;
     @Getter(AccessLevel.PACKAGE)
@@ -43,9 +42,9 @@ class Node {
     // the first element is trie key and the second element is value(leaf node) or child node(extension node)
     private Object[] children;
 
-    private Function<byte[], byte[]> hashFunction;
+    private HashFunction hashFunction;
 
-    static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache, Function<byte[], byte[]> hashFunction) {
+    static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache, HashFunction hashFunction) {
         return builder()
                 .hash(hash)
                 .readOnlyCache(readOnlyCache)
@@ -54,7 +53,7 @@ class Node {
     }
 
     // create root node from database and reference
-    static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> readOnlyCache, Function<byte[], byte[]> hashFunction) {
+    static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> readOnlyCache, HashFunction hashFunction) {
         return fromEncoded(RLPElement.fromEncoded(encoded), readOnlyCache, hashFunction);
     }
 
@@ -62,7 +61,7 @@ class Node {
     static Node fromEncoded(
             RLPElement rlp,
             Store<byte[], byte[]> readOnlyCache,
-            Function<byte[], byte[]> hashFunction
+            HashFunction hashFunction
     ) {
         if (rlp.isRLPList())
             return builder()
@@ -77,21 +76,21 @@ class Node {
                 .build();
     }
 
-    static Node newBranch(Function<byte[], byte[]> hashFunction) {
+    static Node newBranch(HashFunction hashFunction) {
         return builder()
                 .children(new Object[BRANCH_SIZE])
                 .hashFunction(hashFunction)
                 .dirty(true).build();
     }
 
-    static Node newLeaf(TrieKey key, byte[] value, Function<byte[], byte[]> hashFunction) {
+    static Node newLeaf(TrieKey key, byte[] value, HashFunction hashFunction) {
         return builder()
                 .children(new Object[]{key, value})
                 .hashFunction(hashFunction)
                 .dirty(true).build();
     }
 
-    static Node newExtension(TrieKey key, Node child, Function<byte[], byte[]> hashFunction) {
+    static Node newExtension(TrieKey key, Node child, HashFunction hashFunction) {
         return builder()
                 .children(new Object[]{key, child})
                 .hashFunction(hashFunction)
@@ -144,7 +143,7 @@ class Node {
         byte[] raw = rlp.getEncoded();
 
         // if encoded size is great than or equals to 32, store node to db and return a hash reference
-        if (raw.length >= MAX_KEY_SIZE || forceHash) {
+        if (raw.length >= hashFunction.getSize() || forceHash) {
             hash = hashFunction.apply(raw);
             cache.put(hash, raw);
             return RLPItem.fromBytes(hash);
@@ -200,7 +199,7 @@ class Node {
     }
 
     // wrap o to an extension or leaf node
-    private Node newShort(TrieKey key, Object o, Function<byte[], byte[]> hashFunction) {
+    private Node newShort(TrieKey key, Object o, HashFunction hashFunction) {
         // if size of key is zero, no need to wrap child
         if (key.size() == 0 && o instanceof Node) {
             return (Node) o;

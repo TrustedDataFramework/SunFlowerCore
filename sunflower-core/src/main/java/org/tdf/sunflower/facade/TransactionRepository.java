@@ -13,8 +13,6 @@ public interface TransactionRepository {
 
     List<Transaction> getTransactionsByBlockHash(byte[] blockHash);
 
-    List<Transaction> getTransactionsByBlockHeight(long height);
-
     TransactionRepository NONE = new TransactionRepository() {
         @Override
         public boolean containsTransaction(byte[] hash) {
@@ -30,11 +28,6 @@ public interface TransactionRepository {
 
         @Override
         public List<Transaction> getTransactionsByBlockHash(byte[] blockHash) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Transaction> getTransactionsByBlockHeight(long height) {
             return Collections.emptyList();
         }
     };
