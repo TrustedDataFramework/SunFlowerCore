@@ -53,6 +53,7 @@ public class GMTests {
     }
 
     @Test
+    @Ignore
     public void test4(){
         KeyPair kp1 = SM2.generateKeyPair();
         KeyPair kp2 = SM2.generateKeyPair();
@@ -67,6 +68,7 @@ public class GMTests {
 
     @Test
     @SneakyThrows
+    @Ignore
     public void test5(){
         Cache<HexBytes, byte[]> cache = CacheBuilder.newBuilder()
                 .maximumSize(1024)
