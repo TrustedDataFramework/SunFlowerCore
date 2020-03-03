@@ -101,6 +101,11 @@ sunflower:
     ec: 'sm2' # ed25519
     ae: 'sm4' # 对称加密方法
 
+
+  vm:
+    # gas limit for contract execution, any vm code or host function execution consumes one gas
+    gas-limit: '65536'
+
   web:
     disabled: false
     password: password
@@ -119,11 +124,11 @@ sunflower:
 server:
   port: '8080'
 
-logging:
-  level:
-    org.hibernate:
-      SQL: 'DEBUG'
-      type.descriptor.sql.BasicBinder: 'TRACE'
-    org.springframework.jdbc.core:
-      JdbcTemplate: 'DEBUG'
-      StatementCreatorUtils: 'TRACE'
+#logging:
+  #level:
+    #org.hibernate:
+      #SQL: 'DEBUG'
+      #type.descriptor.sql.BasicBinder: 'TRACE'
+    #org.springframework.jdbc.core:
+      #JdbcTemplate: 'DEBUG'
+      #StatementCreatorUtils: 'TRACE'

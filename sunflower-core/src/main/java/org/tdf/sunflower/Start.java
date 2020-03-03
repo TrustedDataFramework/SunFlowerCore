@@ -98,6 +98,9 @@ public class Start {
             if(!constant.toLowerCase().matches("true|false")) throw new IllegalArgumentException("sunflower.assert");
             enableAssertion = constant.equals("true");
         }
+        constant = env.getProperty("sunflower.vm.gas-limit");
+        if(constant != null && !constant.isEmpty())
+            ApplicationConstants.GAS_LIMIT = Integer.parseInt(constant);
     }
 
     public static void loadCryptoContext(Environment env){

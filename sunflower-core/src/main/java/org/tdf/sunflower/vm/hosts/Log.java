@@ -1,5 +1,6 @@
 package org.tdf.sunflower.vm.hosts;
 
+import lombok.extern.slf4j.Slf4j;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
@@ -7,6 +8,7 @@ import org.tdf.lotusvm.types.ValueType;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+@Slf4j(topic = "vm")
 public class Log extends HostFunction {
     public Log() {
         setType(new FunctionType(
@@ -19,7 +21,7 @@ public class Log extends HostFunction {
 
     @Override
     public long[] execute(long... parameters) {
-        System.out.println(
+        log.info(
                 loadStringFromMemory((int)parameters[0], (int)parameters[1])
         );
         return new long[0];
