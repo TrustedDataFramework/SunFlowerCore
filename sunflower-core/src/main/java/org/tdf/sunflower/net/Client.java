@@ -42,7 +42,7 @@ public class Client implements ChannelListener {
     void broadcast(Message message) {
         peersCache.getChannels().forEach(ch -> {
             if (message.getCode() == Code.ANOTHER){
-                byte[] sk = CryptoContext.ecdh(true, self.getPrivateKey(), ch.getRemote().get().getID().getBytes());
+                byte[] sk = ch.getRemote().get().getSendSecret();
                 byte[] encryptMessage = CryptoContext.encrypt(sk, message.getBody().toByteArray());
                 ch.write(builder.buildMessage(Code.ANOTHER, config.getMaxTTL(), encryptMessage));
                 return;

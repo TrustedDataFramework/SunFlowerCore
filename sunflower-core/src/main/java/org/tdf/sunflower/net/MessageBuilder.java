@@ -51,9 +51,8 @@ public class MessageBuilder {
         );
     }
 
-    public Message buildAnother(byte[] body,byte[] pk) {
-        byte[] sk = CryptoContext.ecdh(true, self.getPrivateKey(), pk);
-        byte[] encryptMessage = CryptoContext.encrypt(sk, body);
+    public Message buildAnother(byte[] body,PeerImpl remote) {
+        byte[] encryptMessage = CryptoContext.encrypt(remote.getSendSecret(), body);
         return buildMessage(Code.ANOTHER, 1, encryptMessage);
     }
 

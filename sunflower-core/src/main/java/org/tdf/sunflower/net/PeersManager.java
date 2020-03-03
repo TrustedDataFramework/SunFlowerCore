@@ -48,7 +48,7 @@ public class PeersManager implements Plugin {
             case PEERS:
                 if (!config.isEnableDiscovery()) return;
                 Peers.parseFrom(context.message.getBody()).getPeersList().stream()
-                        .map(PeerImpl::parse)
+                        .map(url -> PeerImpl.parse(url, builder.getSelf()))
                         .filter(Optional::isPresent)
                         .map(Optional::get)
                         .filter(x -> !cache.contains(x) && !x.equals(server.getSelf()))
@@ -56,7 +56,7 @@ public class PeersManager implements Plugin {
                 return;
             case DISCONNECT:
                 String reason = Disconnect.parseFrom(context.message.getBody()).getReason();
-                if(reason != null && !reason.isEmpty())
+                if (reason != null && !reason.isEmpty())
                     log.error("disconnect from peer " + context.getRemote() + " reason is " + reason);
                 context.channel.close();
                 return;
