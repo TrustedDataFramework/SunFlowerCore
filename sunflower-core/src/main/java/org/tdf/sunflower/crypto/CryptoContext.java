@@ -34,12 +34,12 @@ public class CryptoContext {
     public static SignatureVerifier signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
 
     @Data
-    public static class ECDHParameters {
+    private static class ECDHParameters {
         private boolean initiator;
         private HexBytes sk;
         private HexBytes pk;
 
-        public ECDHParameters(boolean initiator, @NonNull byte[] sk, @NonNull byte[] pk) {
+        ECDHParameters(boolean initiator, @NonNull byte[] sk, @NonNull byte[] pk) {
             this.initiator = initiator;
             this.sk = HexBytes.fromBytes(sk);
             this.pk = HexBytes.fromBytes(pk);
@@ -50,8 +50,8 @@ public class CryptoContext {
             .build();
 
     @SneakyThrows
-    public static byte[] ecdhWithCache(boolean initiator, byte[] sk, byte[] pk) {
-        return cache.get(new ECDHParameters(initiator, sk, pk), () -> ecdh(initiator, sk, pk));
+    public static byte[] ecdh(boolean initiator, byte[] sk, byte[] pk) {
+        return cache.get(new ECDHParameters(initiator, sk, pk), () -> ecdhInternal(initiator, sk, pk));
     }
 
     public static Ecdh ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
@@ -86,7 +86,7 @@ public class CryptoContext {
     }
 
 
-    public static byte[] ecdh(boolean initiator, byte[] sk, byte[] pk) {
+    private static byte[] ecdhInternal(boolean initiator, byte[] sk, byte[] pk) {
         return ecdh.exchange(initiator, sk, pk);
     }
 

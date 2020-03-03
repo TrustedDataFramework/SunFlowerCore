@@ -46,7 +46,7 @@ public class ProtoChannel implements Channel {
 
     private void handlePing(Message message) {
         if (pinged) return;
-        Optional<PeerImpl> o = PeerImpl.parse(message.getRemotePeer(), messageBuilder.getSelf());
+        Optional<PeerImpl> o = PeerImpl.parse(message.getRemotePeer());
         if (!o.isPresent()) {
             close("invalid peer " + message.getRemotePeer());
             return;

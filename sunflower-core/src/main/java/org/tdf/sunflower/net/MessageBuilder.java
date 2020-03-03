@@ -52,7 +52,7 @@ public class MessageBuilder {
     }
 
     public Message buildAnother(byte[] body,PeerImpl remote) {
-        byte[] encryptMessage = CryptoContext.encrypt(remote.getSendSecret(), body);
+        byte[] encryptMessage = CryptoContext.encrypt(CryptoContext.ecdh(true, self.getPrivateKey(), remote.getID().getBytes()), body);
         return buildMessage(Code.ANOTHER, 1, encryptMessage);
     }
 

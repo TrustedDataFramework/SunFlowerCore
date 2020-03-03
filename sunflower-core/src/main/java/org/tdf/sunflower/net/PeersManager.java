@@ -48,7 +48,7 @@ public class PeersManager implements Plugin {
             case PEERS:
                 if (!config.isEnableDiscovery()) return;
                 Peers.parseFrom(context.message.getBody()).getPeersList().stream()
-                        .map(url -> PeerImpl.parse(url, builder.getSelf()))
+                        .map(PeerImpl::parse)
                         .filter(Optional::isPresent)
                         .map(Optional::get)
                         .filter(x -> !cache.contains(x) && !x.equals(server.getSelf()))

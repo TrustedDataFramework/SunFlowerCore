@@ -23,14 +23,6 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     private HexBytes ID;
     private byte[] privateKey;
 
-    // ecdh
-    @Getter
-    @Setter
-    private byte[] sendSecret;
-
-    @Getter
-    @Setter
-    private byte[] receiveSecret;
 
     @Setter
     long score;
@@ -45,9 +37,9 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         return toString();
     }
 
-    public static Optional<PeerImpl> parse(String url, PeerImpl self) {
+    public static Optional<PeerImpl> parse(String url) {
         try {
-            return Optional.of(parseInternal(url, self));
+            return Optional.of(parseInternal(url));
         } catch (Exception e) {
             e.printStackTrace();
             return Optional.empty();
@@ -57,7 +49,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     // parse peer from uri like protocol://id@host:port
     // the id should be an ec public key
     @SneakyThrows
-    private static PeerImpl parseInternal(String url,PeerImpl self) {
+    private static PeerImpl parseInternal(String url) {
         URI u = new URI(url.trim());
         PeerImpl p = new PeerImpl();
         String scheme = u.getScheme();
@@ -73,8 +65,6 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         if (p.ID.size() != PUBLIC_KEY_SIZE) {
             throw new ApplicationException("peer " + url + " public key size should be " + PUBLIC_KEY_SIZE);
         }
-        p.setSendSecret(CryptoContext.ecdhWithCache(true, self.getPrivateKey(), p.getID().getBytes()));
-        p.setReceiveSecret(CryptoContext.ecdhWithCache(false, self.getPrivateKey(), p.getID().getBytes()));
         return p;
     }
 
