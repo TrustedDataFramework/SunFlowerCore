@@ -72,10 +72,13 @@ public class PoA extends ConsensusEngine {
         // create state repository
 
         Map<HexBytes, Account> alloc = new HashMap<>();
-        genesis.alloc.forEach((k, v) -> {
-            Account a = new Account(HexBytes.fromHex(k), v);
-            alloc.put(a.getAddress(), a);
-        });
+
+        if(genesis.alloc != null){
+            genesis.alloc.forEach((k, v) -> {
+                Account a = new Account(HexBytes.fromHex(k), v);
+                alloc.put(a.getAddress(), a);
+            });
+        }
 
         AccountUpdater updater = new AccountUpdater(alloc);
         AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory());

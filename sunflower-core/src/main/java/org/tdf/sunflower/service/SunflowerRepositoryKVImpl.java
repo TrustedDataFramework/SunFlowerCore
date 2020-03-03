@@ -196,8 +196,10 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     }
 
     private void writeBlockNoReset(Block block) {
-        if (!accountTrie.getTrieStore().containsKey(block.getStateRoot().getBytes())) {
-            throw new RuntimeException("unexpected error: account trie not synced");
+        if (!block.getStateRoot().equals(HexBytes.fromBytes(accountTrie.getTrie().getNullHash()))
+                && !accountTrie.getTrieStore().containsKey(block.getStateRoot().getBytes())
+        ) {
+            throw new RuntimeException("unexpected error: account trie " + block.getStateRoot() + " not synced");
         }
         if (containsHeader(block.getHash().getBytes()))
             return;
