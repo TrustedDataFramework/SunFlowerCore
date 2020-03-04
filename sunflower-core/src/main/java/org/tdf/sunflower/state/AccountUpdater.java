@@ -100,7 +100,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
     @Override
     public Account createEmpty(HexBytes address) {
-        return new Account(address, 0);
+        return new Account(address, 0, 0, HexBytes.EMPTY, new byte[0], storageTrie.getNullHash());
     }
 
     @Override

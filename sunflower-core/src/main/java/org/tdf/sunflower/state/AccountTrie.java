@@ -1,13 +1,11 @@
 package org.tdf.sunflower.state;
 
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
-import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
@@ -25,6 +23,8 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
             Trie<byte[], byte[]> contractStorageTrie
             ) {
         super(updater, Codecs.newRLPCodec(HexBytes.class), Codecs.newRLPCodec(Account.class), factory);
+        this.contractStorageTrie = contractStorageTrie;
+        this.contractCodeStore = contractCodeStore;
     }
 
     public byte[] view(byte[] stateRoot, HexBytes address, byte[] parameters) {

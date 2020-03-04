@@ -20,9 +20,13 @@ import java.util.Properties;
 public abstract class ConsensusEngine implements ConsensusEngineFacade{
     protected ApplicationContext applicationContext;
 
+    // contract storage trie
     private Trie<byte[], byte[]> contractStorageTrie;
+
+    // a map between hash and wasm byte code
     private Store<byte[], byte[]> contractCodeStore;
 
+    // inject dependencies before init() called
     public void setApplicationContext(ApplicationContext context){
         this.applicationContext = context;
         this.eventBus = context.getBean(EventBus.class);
