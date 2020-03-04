@@ -77,9 +77,9 @@ public class CryptoContext {
     };
 
     // (sk, encrypted) -> msg
-    public static BiFunction<byte[], byte[], byte[]> decrypt = (key, msg) -> {
+    public static BiFunction<byte[], byte[], byte[]> decrypt = (key, encryptMsg) -> {
         try {
-            return restore(SM4Util.decrypt_Ecb_NoPadding(key, msg));
+            return restore(SM4Util.decrypt_Ecb_NoPadding(key, encryptMsg));
         } catch (Exception e) {
             logger.error("decrypt_Ecb_NoPadding " + e.getMessage());
         }
