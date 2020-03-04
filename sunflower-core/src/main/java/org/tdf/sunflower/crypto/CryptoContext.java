@@ -100,7 +100,7 @@ public class CryptoContext {
         System.arraycopy(msg, 0, len, 0, len.length);
         int length = BigEndian.decodeInt32(len);
         byte[] ret = new byte[length];
-        System.arraycopy(msg, length, ret, 0, length);
+        System.arraycopy(msg, len.length, ret, 0, length);
         return ret;
     }
 
