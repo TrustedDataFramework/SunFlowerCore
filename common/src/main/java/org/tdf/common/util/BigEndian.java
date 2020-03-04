@@ -2,6 +2,7 @@ package org.tdf.common.util;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 /**
@@ -19,12 +20,14 @@ public class BigEndian {
 
     public static int decodeInt32(byte[] data) {
         return ByteBuffer.wrap(data)
+                .order(ByteOrder.BIG_ENDIAN)
                 .getInt();
     }
 
     // big-endian encoding
     public static byte[] encodeInt32(int val) {
         return ByteBuffer.allocate(Integer.BYTES)
+                .order(ByteOrder.BIG_ENDIAN)
                 .putInt(val).array();
     }
 
