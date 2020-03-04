@@ -5,11 +5,14 @@ import com.google.common.cache.CacheBuilder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.SneakyThrows;
+import org.apache.commons.codec.binary.Hex;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.LittleEndian;
 import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
@@ -71,9 +74,8 @@ public class CryptoContext {
         try {
             return SM4Util.encrypt_Ecb_NoPadding(key, fill(msg));
         } catch (Exception e) {
-            logger.error("encrypt_Ecb_NoPadding " + e.getMessage());
+            throw new RuntimeException(e);
         }
-        return new byte[]{};
     };
 
     // (sk, encrypted) -> msg
@@ -81,32 +83,33 @@ public class CryptoContext {
         try {
             return restore(SM4Util.decrypt_Ecb_NoPadding(key, encryptMsg));
         } catch (Exception e) {
-            logger.error("decrypt_Ecb_NoPadding " + e.getMessage());
+            throw new RuntimeException(e);
         }
-        return new byte[]{};
     };
 
+    // len + msg + (0x00...)
     private static byte[] fill(byte[] msg) {
-        int rest = msg.length % 16;
+        byte[] len = LittleEndian.encodeInt32(msg.length);
+        int rest = (msg.length + 4) % 16;
         if (rest == 0) {
-            return msg;
+            byte[] message = new byte[msg.length + 4];
+            System.arraycopy(len, 0, message, 0, len.length);
+            System.arraycopy(msg, 0, message, 4, msg.length);
+            return message;
         }
-        byte[] message = new byte[msg.length + 16 - rest];
-        System.arraycopy(msg, 0, message, 0, msg.length);
-        Arrays.fill(message, msg.length, message.length, (byte) 0x00);
+        byte[] message = new byte[msg.length + len.length + 16 - rest];
+        System.arraycopy(len, 0, message, 0, 4);
+        System.arraycopy(msg, 0, message, 4, msg.length);
+        Arrays.fill(message, msg.length + 4, message.length, (byte) 0x00);
         return message;
     }
 
     private static byte[] restore(byte[] msg) {
-        int index = 0;
-        for (int i = msg.length - 16; i < msg.length; i++) {
-            if (msg[i] == 0x00) {
-                index = i;
-                break;
-            }
-        }
-        byte[] message = new byte[index];
-        System.arraycopy(msg, 0, message, 0, message.length);
+        byte[] len = new byte[4];
+        System.arraycopy(msg, 0, len, 0, 4);
+        int length = LittleEndian.decodeInt32(len);
+        byte[] message = new byte[length];
+        System.arraycopy(msg, 4, message, 0, message.length);
         return message;
     }
 
