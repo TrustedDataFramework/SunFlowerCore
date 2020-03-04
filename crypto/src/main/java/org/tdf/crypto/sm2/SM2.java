@@ -16,7 +16,7 @@ public class SM2 {
     public static String getAlgorithm() {
         return ALGORITHM;
     }
-    public static int KEY_BITS = 128;//密钥协商生成的Key密钥长度，可以修改
+    public static int KEY_BITS = 16;//密钥协商生成的Key密钥长度，可以修改
     /**
      * @return SM2 keypair for signature and verifying
      */
