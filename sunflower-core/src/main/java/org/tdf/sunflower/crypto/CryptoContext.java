@@ -5,14 +5,10 @@ import com.google.common.cache.CacheBuilder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.SneakyThrows;
-import org.apache.commons.codec.binary.Hex;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
-import org.tdf.common.util.LittleEndian;
 import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
@@ -26,8 +22,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class CryptoContext {
-
-    private static final Logger logger = LoggerFactory.getLogger("CryptoContext");
 
     public interface SignatureVerifier {
         boolean verify(byte[] pk, byte[] msg, byte[] sig);
@@ -89,7 +83,7 @@ public class CryptoContext {
 
     // len + msg + (0x00...)
     private static byte[] fill(byte[] msg) {
-        byte[] len = LittleEndian.encodeInt32(msg.length);
+        byte[] len = BigEndian.encodeInt32(msg.length);
         int rest = (msg.length + 4) % 16;
         if (rest == 0) {
             byte[] message = new byte[msg.length + 4];
@@ -107,7 +101,7 @@ public class CryptoContext {
     private static byte[] restore(byte[] msg) {
         byte[] len = new byte[4];
         System.arraycopy(msg, 0, len, 0, 4);
-        int length = LittleEndian.decodeInt32(len);
+        int length = BigEndian.decodeInt32(len);
         byte[] message = new byte[length];
         System.arraycopy(msg, 4, message, 0, message.length);
         return message;
