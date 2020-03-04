@@ -7,19 +7,25 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM3Util;
+import org.tdf.gmhelper.SM4Util;
 
+import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class CryptoContext {
+
+    private static final Logger logger = LoggerFactory.getLogger("CryptoContext");
+
     public interface SignatureVerifier {
         boolean verify(byte[] pk, byte[] msg, byte[] sig);
     }
@@ -61,12 +67,48 @@ public class CryptoContext {
 
 
     // (sk, msg) -> encrypted
-    // TODO replace this encrypt
-    public static BiFunction<byte[], byte[], byte[]> encrypt = ByteUtils::concatenate;
+    public static BiFunction<byte[], byte[], byte[]> encrypt = (key, msg) -> {
+        try {
+            return SM4Util.encrypt_Ecb_NoPadding(key, fill(msg));
+        } catch (Exception e) {
+            logger.error("encrypt_Ecb_NoPadding " + e.getMessage());
+        }
+        return new byte[]{};
+    };
 
     // (sk, encrypted) -> msg
-    // TODO replace this decrypt
-    public static BiFunction<byte[], byte[], byte[]> decrypt = (sk, encrypted) -> ByteUtils.subArray(encrypted, sk.length);
+    public static BiFunction<byte[], byte[], byte[]> decrypt = (key, msg) -> {
+        try {
+            return restore(SM4Util.decrypt_Ecb_NoPadding(key, msg));
+        } catch (Exception e) {
+            logger.error("decrypt_Ecb_NoPadding " + e.getMessage());
+        }
+        return new byte[]{};
+    };
+
+    private static byte[] fill(byte[] msg) {
+        int rest = msg.length % 16;
+        if (rest == 0) {
+            return msg;
+        }
+        byte[] message = new byte[msg.length + 16 - rest];
+        System.arraycopy(msg, 0, message, 0, msg.length);
+        Arrays.fill(message, msg.length, message.length, (byte) 0x00);
+        return message;
+    }
+
+    private static byte[] restore(byte[] msg) {
+        int index = 0;
+        for (int i = msg.length - 16; i < msg.length; i++) {
+            if (msg[i] == 0x00) {
+                index = i;
+                break;
+            }
+        }
+        byte[] message = new byte[index];
+        System.arraycopy(msg, 0, message, 0, message.length);
+        return message;
+    }
 
     // (sk) -> pk
     public static Function<byte[], byte[]> getPkFromSk = (sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded();
