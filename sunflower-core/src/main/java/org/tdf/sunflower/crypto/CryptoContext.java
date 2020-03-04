@@ -16,7 +16,6 @@ import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.gmhelper.SM4Util;
 
-import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -84,27 +83,24 @@ public class CryptoContext {
     // len + msg + (0x00...)
     private static byte[] fill(byte[] msg) {
         byte[] len = BigEndian.encodeInt32(msg.length);
-        int rest = (msg.length + 4) % 16;
-        if (rest == 0) {
-            byte[] message = new byte[msg.length + 4];
-            System.arraycopy(len, 0, message, 0, len.length);
-            System.arraycopy(msg, 0, message, 4, msg.length);
-            return message;
-        }
-        byte[] message = new byte[msg.length + len.length + 16 - rest];
-        System.arraycopy(len, 0, message, 0, 4);
-        System.arraycopy(msg, 0, message, 4, msg.length);
-        Arrays.fill(message, msg.length + 4, message.length, (byte) 0x00);
-        return message;
+        byte[] tail = new byte[16 - (msg.length + len.length) % 16];
+        byte[] ret = new byte[len.length + msg.length + tail.length];
+        int pos = 0;
+        System.arraycopy(len, 0, ret, pos, len.length);
+        pos += len.length;
+        System.arraycopy(msg, 0, ret, pos, msg.length);
+        pos += msg.length;
+        System.arraycopy(tail, 0, ret, pos, tail.length);
+        return ret;
     }
 
     private static byte[] restore(byte[] msg) {
         byte[] len = new byte[4];
-        System.arraycopy(msg, 0, len, 0, 4);
+        System.arraycopy(msg, 0, len, 0, len.length);
         int length = BigEndian.decodeInt32(len);
-        byte[] message = new byte[length];
-        System.arraycopy(msg, 4, message, 0, message.length);
-        return message;
+        byte[] ret = new byte[length];
+        System.arraycopy(msg, len.length, ret, 0, length);
+        return ret;
     }
 
     // (sk) -> pk
