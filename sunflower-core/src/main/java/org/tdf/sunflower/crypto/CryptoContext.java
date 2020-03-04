@@ -84,7 +84,7 @@ public class CryptoContext {
     // len + msg + (0x00...)
     private static byte[] fill(byte[] msg) {
         byte[] len = BigEndian.encodeInt32(msg.length);
-        byte[] tail = new byte[(msg.length + len.length) % 16];
+        byte[] tail = new byte[16 - (msg.length + len.length) % 16];
         byte[] ret = new byte[len.length + msg.length + tail.length];
         int pos = 0;
         System.arraycopy(len, 0, ret, pos, len.length);
