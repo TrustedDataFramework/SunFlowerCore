@@ -11,8 +11,6 @@ import java.util.Set;
 public class Hosts {
     private Result result = new Result();
 
-    private boolean disableLog;
-
     private boolean disableEvent;
 
     private Context context;
@@ -21,10 +19,7 @@ public class Hosts {
 
     private List<HostFunction> parameters;
 
-    public Hosts disableLog() {
-        this.disableLog = true;
-        return this;
-    }
+
 
     public Hosts disableEvent(){
         this.disableEvent = true;
@@ -40,11 +35,8 @@ public class Hosts {
         all.addAll(Arrays.asList(new Abort(), new Keccak256(), result));
         all.addAll(new Decimal().getHelpers());
         all.addAll(new JSONHelper().getHelpers());
-        if (!disableLog) {
-            all.add(new Log());
-        } else {
-            all.add(new PseudoLog());
-        }
+        all.add(new Log());
+
         if (context != null) {
             all.addAll(new ContextHelper(context).getHelpers());
         }

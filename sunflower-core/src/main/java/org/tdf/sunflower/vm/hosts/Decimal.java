@@ -11,12 +11,12 @@ import java.util.Collections;
 import java.util.List;
 
 public class Decimal {
-    private enum Type{
-        ADD, SUB,MUL, DIV,  COMPARE
-    }
-
     public List<HostFunction> getHelpers() {
         return Collections.singletonList(new DecimalHost());
+    }
+
+    private enum Type {
+        ADD, SUB, MUL, DIV, COMPARE
     }
 
     private static class DecimalHost extends HostFunction {
@@ -41,10 +41,10 @@ public class Decimal {
         public long[] execute(long... parameters) {
             String x = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
             String y = loadStringFromMemory((int) parameters[3], (int) parameters[4]);
-            Type t = Type.values()[(int)parameters[0]];
+            Type t = Type.values()[(int) parameters[0]];
             int ptr = (int) parameters[5];
             String ret;
-            switch (t){
+            switch (t) {
                 case ADD:
                     ret = new BigDecimal(x).add(new BigDecimal(y)).toString();
                     break;
@@ -62,7 +62,7 @@ public class Decimal {
                 default:
                     throw new RuntimeException("unreachable");
             }
-            if(parameters[7] != 0){
+            if (parameters[7] != 0) {
                 putStringIntoMemory(ptr, ret);
             }
             return new long[]{ret.length()};
