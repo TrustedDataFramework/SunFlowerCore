@@ -1,201 +1,71 @@
 package org.tdf.sunflower.vm.hosts;
 
-import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class Decimal {
-
-    private String result;
-
-    public void requireResult(){
-        if(result == null) throw new RuntimeException("non result found");
+    private enum Type{
+        ADD, SUB,MUL, DIV,  COMPARE
     }
 
     public List<HostFunction> getHelpers() {
-        return Arrays.asList(
-                new DecimalResult(this),
-                new DecimalAdd(this),
-                new DecimalSub(this),
-                new DecimalMul(this),
-                new DecimalStrictDiv(this),
-                new DecimalDiv(this),
-                new DecimalCompare()
-        );
+        return Collections.singletonList(new DecimalHost());
     }
 
-    private static class DecimalResult extends HostFunction {
-        private Decimal decimal;
-        public DecimalResult(Decimal decimal) {
-            this.decimal = decimal;
-            setName("_decimal_result");
+    private static class DecimalHost extends HostFunction {
+
+        public DecimalHost() {
+            setName("_decimal");
             setType(
                     new FunctionType(
-                            Arrays.asList(ValueType.I32),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            decimal.requireResult();
-            putStringIntoMemory((int) parameters[0], decimal.result);
-            return new long[0];
-        }
-    }
-
-    private static class DecimalAdd extends HostFunction {
-        Decimal decimal;
-        public DecimalAdd(Decimal decimal) {
-            this.decimal = decimal;
-            setName("_decimal_add");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            Arrays.asList(ValueType.I32)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            ModuleInstance instance = getInstance();
-            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            String z = new BigDecimal(x).add(new BigDecimal(y)).toString();
-            decimal.result = z;
-            return new long[]{z.getBytes(StandardCharsets.UTF_8).length};
-        }
-    }
-
-    private static class DecimalSub extends HostFunction {
-        Decimal decimal;
-        public DecimalSub(Decimal decimal) {
-            this.decimal = decimal;
-            setName("_decimal_sub");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            Arrays.asList(ValueType.I32)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            ModuleInstance instance = getInstance();
-            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            String z = new BigDecimal(x).subtract(new BigDecimal(y)).toString();
-            decimal.result = z;
-            return new long[]{z.getBytes(StandardCharsets.UTF_8).length};
-        }
-    }
-
-    private static class DecimalMul extends HostFunction {
-        Decimal decimal;
-        public DecimalMul(Decimal decimal) {
-            this.decimal = decimal;
-            setName("_decimal_mul");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            Arrays.asList(ValueType.I32)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            ModuleInstance instance = getInstance();
-            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            String z = new BigDecimal(x).multiply(new BigDecimal(y)).toString();
-            decimal.result = z;
-            return new long[]{z.getBytes(StandardCharsets.UTF_8).length};
-        }
-    }
-
-    private static class DecimalStrictDiv extends HostFunction {
-        Decimal decimal;
-        public DecimalStrictDiv(Decimal decimal) {
-            this.decimal = decimal;
-            setName("_decimal_strict_div");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            Arrays.asList(ValueType.I32)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            ModuleInstance instance = getInstance();
-            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            BigDecimal z = new BigDecimal(x).divide(new BigDecimal(y), 1, RoundingMode.HALF_UP);
-            if (new BigDecimal(z.intValue()).compareTo(z) != 0) {
-                throw new RuntimeException(String.format("%s Strict div %s is noninteger", x, y));
-            }
-            decimal.result = new BigDecimal(x).divide(new BigDecimal(y), 0, RoundingMode.HALF_UP).toString();
-            return new long[]{z.toString().getBytes(StandardCharsets.UTF_8).length};
-        }
-    }
-
-    private static class DecimalDiv extends HostFunction {
-        Decimal decimal;
-        public DecimalDiv(Decimal decimal) {
-            this.decimal = decimal;
-            setName("_decimal_div");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            Arrays.asList(ValueType.I32)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            ModuleInstance instance = getInstance();
-            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            int scale = (int) parameters[4];
-            String z = new BigDecimal(x).divide(new BigDecimal(y), scale, RoundingMode.HALF_UP).toString();
-            decimal.result = z;
-            return new long[]{z.getBytes(StandardCharsets.UTF_8).length};
-        }
-    }
-
-    private static class DecimalCompare extends HostFunction {
-        public DecimalCompare() {
-            setName("_decimal_compare_to");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
+                            Arrays.asList
+                                    (ValueType.I32,
+                                            ValueType.I32, ValueType.I32,
+                                            ValueType.I32, ValueType.I32,
+                                            ValueType.I64, ValueType.I64,
+                                            ValueType.I64
+                                    ),
                             Collections.singletonList(ValueType.I32)
                     )
             );
         }
 
-
         @Override
         public long[] execute(long... parameters) {
-            ModuleInstance instance = getInstance();
-            String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String y = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            return new long[]{new BigDecimal(x).compareTo(new BigDecimal(y))};
+            String x = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
+            String y = loadStringFromMemory((int) parameters[3], (int) parameters[4]);
+            Type t = Type.values()[(int)parameters[0]];
+            int ptr = (int) parameters[5];
+            String ret;
+            switch (t){
+                case ADD:
+                    ret = new BigDecimal(x).add(new BigDecimal(y)).toString();
+                    break;
+                case SUB:
+                    ret = new BigDecimal(x).subtract(new BigDecimal(y)).toString();
+                    break;
+                case MUL:
+                    ret = new BigDecimal(x).multiply(new BigDecimal(y)).toString();
+                    break;
+                case DIV:
+                    ret = new BigDecimal(x).divide(new BigDecimal(y), (int) parameters[6], RoundingMode.UNNECESSARY).toString();
+                    break;
+                case COMPARE:
+                    return new long[]{new BigDecimal(x).compareTo(new BigDecimal(y))};
+                default:
+                    throw new RuntimeException("unreachable");
+            }
+            if(parameters[7] != 0){
+                putStringIntoMemory(ptr, ret);
+            }
+            return new long[]{ret.length()};
         }
     }
 }

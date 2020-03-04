@@ -18,7 +18,7 @@ import java.util.*;
  */
 public class JSONHelper {
     private enum Type {
-        JSON, STRING, I64, U64, BOOL, F64
+        JSON, STRING, I64, U64, BOOL, F64;
     }
 
     private static final Gson GSON = new Gson();
@@ -30,7 +30,6 @@ public class JSONHelper {
         return Arrays.asList(
                 new JSONBuilderPut(this),
                 new JSONBuilderBuild(this),
-                new JSONBuilderBuildArraySize(this),
                 new JSONBuilderBuildLength(this),
                 new JSONBuilderPut(this),
                 new JSONBuilderSet(this),
@@ -171,30 +170,6 @@ public class JSONHelper {
             return new long[0];
         }
     }
-
-
-    private static class JSONBuilderBuildArraySize extends HostFunction {
-        private JSONHelper jsonHelper;
-
-        JSONBuilderBuildArraySize(JSONHelper jsonHelper) {
-            this.jsonHelper = jsonHelper;
-            setName("_json_builder_array_size");
-            setType(
-                    new FunctionType(
-                            new ArrayList<>(),
-                            Collections.singletonList(ValueType.I32)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            if (jsonHelper.element == null) throw new RuntimeException("cannot build json without any put or set");
-            jsonHelper.built = GSON.toJson(jsonHelper.element);
-            return new long[]{jsonHelper.element.getAsJsonArray().size()};
-        }
-    }
-
 
     private static class JSONBuilderBuild extends HostFunction {
         private JSONHelper jsonHelper;
