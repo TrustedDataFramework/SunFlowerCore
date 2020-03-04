@@ -2,23 +2,34 @@ package org.tdf.sunflower.state;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.tdf.common.store.CachedStore;
+import org.tdf.common.store.Store;
+import org.tdf.common.trie.Trie;
+import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.sunflower.account.Address;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.abi.Context;
+import org.tdf.sunflower.vm.hosts.ContractDB;
 import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @AllArgsConstructor
 public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     @Getter
     private Map<HexBytes, Account> genesisStates;
+
+    @Qualifier("contractCodeStore")
+    private Store<byte[], byte[]> contractStore;
+
+    @Qualifier("contractStorageTrie")
+    private Trie<byte[], byte[]> storageTrie;
+
 
     @Override
     public Set<HexBytes> getRelatedKeys(Transaction transaction, Map<HexBytes, Account> store) {
@@ -137,15 +148,24 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
         contractAccount.setCreatedBy(t.getFromAddress());
         contractAccount.setNonce(t.getNonce());
-        contractAccount.setBinaryContract(t.getPayload().getBytes());
+
         // build Parameters here
         Context context = Context.fromTransaction(header, t);
         context.setContractAddress(t.createContractAddress());
         context.setCreatedBy(t.getFromAddress());
 
+        ContractDB contractDB = new ContractDB(
+                storageTrie.revert(
+                        storageTrie.getNullHash(),
+                        new CachedStore<>(storageTrie, ByteArrayMap::new)
+                )
+        );
+
         Hosts hosts = new Hosts()
                 .withContext(context)
-                .withParameters(new byte[0], false);
+                .withParameters(new byte[0], false)
+                .withDB(contractDB)
+                ;
 
         // every contract must has a init method
         ModuleInstance instance = ModuleInstance.builder()
@@ -154,11 +174,13 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 .hostFunctions(hosts.getAll())
                 .build();
 
+        contractStore.put(CryptoContext.digest(t.getPayload().getBytes()), t.getPayload().getBytes());
+        contractAccount.setContractHash(CryptoContext.digest(t.getPayload().getBytes()));
+        contractDB.getStorageTrie().flush();
+
         if(instance.containsExport("init")){
            instance.execute("init");
         }
-        contractAccount.setMemory(instance.getMemory());
-        contractAccount.setGlobals(instance.getGlobals());
         return accounts;
     }
 
@@ -183,23 +205,27 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         Context context = Context.fromTransaction(header, t);
         context.setCreatedBy(contractAccount.getCreatedBy());
         context.setContractAddress(contractAccount.getAddress());
+        ContractDB contractDB = new ContractDB(
+                storageTrie.revert(
+                        storageTrie.getNullHash(),
+                        new CachedStore<>(storageTrie, ByteArrayMap::new)
+                )
+        );
 
         Hosts hosts = new Hosts()
                 .withContext(context)
-                .withParameters(context.getPayload(), true);
+                .withParameters(context.getPayload(), true)
+                .withDB(contractDB)
+                ;
 
         // every contract must has a init method
         ModuleInstance instance = ModuleInstance.builder()
                 .hooks(Collections.singleton(new GasLimit()))
                 .hostFunctions(hosts.getAll())
-                .memory(contractAccount.getMemory())
-                .globals(contractAccount.getGlobals())
-                .binary(contractAccount.getBinaryContract())
                 .build();
 
         instance.execute(context.getMethod());
-        contractAccount.setMemory(instance.getMemory());
-        contractAccount.setGlobals(instance.getGlobals());
+        contractDB.getStorageTrie().flush();
         return accounts;
     }
 
@@ -208,6 +234,4 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             throw new RuntimeException(msg);
         }
     }
-
-
 }

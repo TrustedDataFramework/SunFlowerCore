@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -15,6 +16,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.tdf.common.event.EventBus;
+import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.Store;
+import org.tdf.common.trie.Trie;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
@@ -101,7 +105,7 @@ public class Start {
         }
         constant = env.getProperty("sunflower.vm.gas-limit");
         if(constant != null && !constant.isEmpty())
-            ApplicationConstants.GAS_LIMIT = Integer.parseInt(constant);
+            ApplicationConstants.GAS_LIMIT = Long.parseLong(constant);
     }
 
     public static void loadCryptoContext(Environment env){
@@ -217,7 +221,11 @@ public class Start {
             TransactionPoolImpl transactionPool,
             DatabaseStoreFactory databaseStoreFactory,
             EventBus eventBus,
-            SyncConfig syncConfig
+            SyncConfig syncConfig,
+            ApplicationContext context,
+            @Qualifier("contractStorageTrie") Trie<byte[], byte[]> contractStorageTrie,
+            @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore
+
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
         name = name == null ? "" : name;
@@ -245,10 +253,7 @@ public class Start {
                 log.error("roll back to poa consensus");
                 engine = new PoA();
         }
-        engine.setSunflowerRepository(repositoryService);
-        engine.setTransactionPool(transactionPool);
-        engine.setDatabaseStoreFactory(databaseStoreFactory);
-        engine.setEventBus(eventBus);
+        engine.setApplicationContext(context);
 
         engine.init(consensusProperties);
 
@@ -295,5 +300,27 @@ public class Start {
     @Bean
     public EventBus eventBus() {
         return new EventBus();
+    }
+
+    // storage root of contract store
+    @Bean
+    public Trie<byte[], byte[]> contractStorageTrie(DatabaseStoreFactory factory){
+        return Trie.<byte[], byte[]>builder()
+                .hashFunction(CryptoContext.hashFunction)
+                .keyCodec(Codec.identity())
+                .valueCodec(Codec.identity())
+                .store(factory.create("contract-storage-trie"))
+                .build();
+    }
+
+    // contract hash code -> contract binary
+    @Bean
+    public Store<byte[], byte[]> contractCodeStore(DatabaseStoreFactory factory){
+        return Trie.<byte[], byte[]>builder()
+                .hashFunction(CryptoContext.hashFunction)
+                .keyCodec(Codec.identity())
+                .valueCodec(Codec.identity())
+                .store(factory.create("contract-code"))
+                .build();
     }
 }

@@ -7,7 +7,7 @@ import org.tdf.lotusvm.types.Instruction;
 import org.tdf.sunflower.ApplicationConstants;
 
 public class GasLimit implements Hook {
-    private int gas;
+    private long gas;
 
     @Override
     public void onInstruction(Instruction ins, ModuleInstanceImpl module) {

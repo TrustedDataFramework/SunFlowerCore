@@ -80,8 +80,11 @@ public class PoA extends ConsensusEngine {
             });
         }
 
-        AccountUpdater updater = new AccountUpdater(alloc);
-        AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory());
+        AccountUpdater updater = new AccountUpdater(alloc, getContractCodeStore(), getContractStorageTrie());
+        AccountTrie trie = new AccountTrie(
+                updater, getDatabaseStoreFactory(),
+                getContractCodeStore(), getContractStorageTrie()
+        );
         getGenesisBlock().setStateRoot(trie.getGenesisRoot());
         setAccountTrie(trie);
         poaMiner.setAccountTrie(trie);

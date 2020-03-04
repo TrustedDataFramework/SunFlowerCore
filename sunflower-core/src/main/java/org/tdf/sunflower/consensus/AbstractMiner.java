@@ -71,6 +71,7 @@ public abstract class AbstractMiner implements Miner {
                         .forEach(tmp::put);
             } catch (Exception e) {
                 // prompt reason for failed updates
+                e.printStackTrace();
                 log.error("execute transaction " + tx.getHash() + " failed, reason = " + e.getMessage());
                 continue;
             }

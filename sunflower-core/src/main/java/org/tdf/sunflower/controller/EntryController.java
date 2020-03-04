@@ -15,10 +15,10 @@ import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.UnmodifiableTransaction;
 
-import java.util.Collections;
 import java.util.List;
 
 
@@ -75,11 +75,12 @@ public class EntryController {
     ) throws Exception {
         HexBytes addressHex = Address.of(address);
         byte[] params = HexBytes.fromHex(parameters).getBytes();
+        Header h = sunflowerRepository.getBestHeader();
         Account a = accountTrie
                 .get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex)
                 .filter(Account::containsContract)
                 .orElseThrow(() -> new RuntimeException("the address " + addressHex + " has no contract deployed"));
-        byte[] result = a.view(params);
+        byte[] result = accountTrie.view(h.getStateRoot().getBytes(), addressHex, params);
         return HexBytes.fromBytes(result);
     }
 

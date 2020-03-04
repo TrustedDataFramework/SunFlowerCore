@@ -107,7 +107,11 @@ public class CryptoContext {
         return CryptoContext.hash(in, digest);
     }
 
-    public static byte[] hash(byte[] input, Digest digest) {
+    public static byte[] hash(byte[] input) {
+        return digest(input);
+    }
+
+    private static byte[] hash(byte[] input, Digest digest) {
         byte[] retValue = new byte[digest.getDigestSize()];
         digest.update(input, 0, input.length);
         digest.doFinal(retValue, 0);

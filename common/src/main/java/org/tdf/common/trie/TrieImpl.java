@@ -25,7 +25,10 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
     @Getter
     private final byte[] nullHash;
     HashFunction function;
+
+    @Getter
     Store<byte[], byte[]> store;
+
     Codec<K, byte[]> kCodec;
     Codec<V, byte[]> vCodec;
 

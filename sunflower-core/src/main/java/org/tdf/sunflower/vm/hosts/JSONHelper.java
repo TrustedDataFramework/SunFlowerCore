@@ -1,7 +1,10 @@
 package org.tdf.sunflower.vm.hosts;
 
 import com.google.common.primitives.UnsignedLong;
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonPrimitive;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
@@ -14,6 +17,10 @@ import java.util.*;
  * Standard built-in json library for smart contract development
  */
 public class JSONHelper {
+    private enum Type {
+        JSON, STRING, I64, U64, BOOL, F64
+    }
+
     private static final Gson GSON = new Gson();
     // singleton builder target
     private JsonElement element;
@@ -21,39 +28,16 @@ public class JSONHelper {
 
     public List<HostFunction> getHelpers() {
         return Arrays.asList(
-                new JSONBuilderPutJSON(this),
+                new JSONBuilderPut(this),
                 new JSONBuilderBuild(this),
                 new JSONBuilderBuildArraySize(this),
                 new JSONBuilderBuildLength(this),
-                new JSONBuilderPutBoolean(this),
-                new JSONBuilderPutF64(this),
-                new JSONBuilderPutI64(this),
-                new JSONBuilderPutJSON(this),
-                new JSONBuilderPutString(this),
-                new JSONBuilderPutU64(this),
-                new JSONBuilderSetBoolean(this),
-                new JSONBuilderSetF64(this),
-                new JSONBuilderSetString(this),
-                new JSONBuilderSetI64(this),
-                new JSONBuilderSetJSON(this),
-                new JSONReaderGetJSONByKey(),
-                new JSONReaderGetJSONLenByKey(),
-                new JSONReaderGetBooleanByIndex(),
-                new JSONReaderGetBooleanByKey(),
-                new JSONReaderGetU64ByKey(),
-                new JSONReaderGetStrLenByIndex(),
-                new JSONReaderGetF64ByKey(),
-                new JSONReaderGetF64ByIndex(),
-                new JSONReaderGetU64ByIndex(),
-                new JSONBuilderPutU64(this),
-                new JSONBuilderSetU64(this),
-                new JSONReaderGetStrByIndex(),
-                new JSONReaderGetI64ByIndex(),
-                new JSONReaderGetJsonByIndex(),
-                new JSONReaderGetStrByKey(),
-                new JSONReaderGetJsonLenByIndex(),
-                new JSONReaderGetI64ByKey(),
-                new JSONReaderGetStrLenByKey()
+                new JSONBuilderPut(this),
+                new JSONBuilderSet(this),
+                new JSONReaderGetByKey(),
+                new JSONReaderGetLenByKey(),
+                new JSONReaderGetByIndex(),
+                new JSONReaderGetLenByIndex()
         );
     }
 
@@ -70,296 +54,124 @@ public class JSONHelper {
     public void ensureJSONArray(int size) {
         if (element != null && element.isJsonObject()) throw new RuntimeException("cannot push element to json object");
         if (element == null) element = GSON.toJsonTree(new ArrayList<>());
-        while (element.getAsJsonArray().size() <= size){
+        while (element.getAsJsonArray().size() <= size) {
             element.getAsJsonArray().add(JsonNull.INSTANCE);
         }
     }
 
-    private static class JSONBuilderPutJSON extends HostFunction {
+    private static class JSONBuilderPut extends HostFunction {
         private JSONHelper jsonHelper;
 
-        JSONBuilderPutJSON(JSONHelper jsonHelper) {
+        JSONBuilderPut(JSONHelper jsonHelper) {
             this.jsonHelper = jsonHelper;
-            setName("_json_builder_put_json");
+            setName("_json_builder_put");
             setType(
                     new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            new ArrayList<>()
+                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I64, ValueType.I64
+                            ),
+                            Collections.emptyList()
                     )
             );
         }
 
         @Override
         public long[] execute(long... parameters) {
+            Type t = Type.values()[(int) parameters[0]];
+            String key = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
             jsonHelper.ensureJSONObject();
-            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String value = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            jsonHelper.element.getAsJsonObject().add(key, GSON.fromJson(value, JsonElement.class));
 
+            switch (t) {
+                case JSON: {
+                    String value = loadStringFromMemory((int) parameters[3], (int) parameters[4]);
+                    jsonHelper.element.getAsJsonObject().add(key, GSON.fromJson(value, JsonElement.class));
+                    break;
+                }
+                case STRING: {
+                    String value = loadStringFromMemory((int) parameters[3], (int) parameters[4]);
+                    jsonHelper.element.getAsJsonObject().addProperty(key, value);
+                    break;
+                }
+                case I64: {
+                    jsonHelper.element.getAsJsonObject().addProperty(key, parameters[3]);
+                    break;
+                }
+                case U64: {
+                    jsonHelper.element.getAsJsonObject().addProperty(key, UnsignedLong.fromLongBits(parameters[3]));
+                    break;
+                }
+                case BOOL: {
+                    jsonHelper.element.getAsJsonObject().addProperty(key, parameters[3] != 0);
+                    break;
+                }
+                case F64: {
+                    jsonHelper.element.getAsJsonObject()
+                            .addProperty(key, BigDecimal.valueOf(Double.longBitsToDouble(parameters[3])));
+                    break;
+                }
+                default: {
+                    throw new RuntimeException("unreachable");
+                }
+            }
             return new long[0];
         }
     }
 
-    private static class JSONBuilderPutString extends HostFunction {
+
+    private static class JSONBuilderSet extends HostFunction {
+
         private JSONHelper jsonHelper;
 
-        public JSONBuilderPutString(JSONHelper jsonHelper) {
+        public JSONBuilderSet(JSONHelper jsonHelper) {
             this.jsonHelper = jsonHelper;
-            setName("_json_builder_put_str");
+            setName("_json_builder_set");
             setType(
                     new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            new ArrayList<>()
+                            Arrays.asList(
+                                    ValueType.I32,
+                                    ValueType.I32, ValueType.I64, ValueType.I64
+                            ),
+                            Collections.emptyList()
                     )
             );
         }
 
         @Override
         public long[] execute(long... parameters) {
-            jsonHelper.ensureJSONObject();
-            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String value = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            jsonHelper.element.getAsJsonObject().addProperty(key, value);
+            Type t = Type.values()[(int) parameters[0]];
+            int index = (int) parameters[1];
+            jsonHelper.ensureJSONArray(index);
+
+            switch (t) {
+                case JSON: {
+                    String value = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
+                    jsonHelper.element.getAsJsonArray().set(index, GSON.fromJson(value, JsonElement.class));
+                    break;
+                }
+                case STRING: {
+                    String value = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
+                    jsonHelper.element.getAsJsonArray().set(index, new JsonPrimitive(value));
+                    break;
+                }
+                case U64:
+                case I64: {
+                    jsonHelper.element.getAsJsonArray().set(index, new JsonPrimitive(parameters[2]));
+                    break;
+                }
+                case F64: {
+                    jsonHelper.element.getAsJsonArray()
+                            .set(index, new JsonPrimitive(Double.longBitsToDouble(parameters[2])));
+                    break;
+                }
+                case BOOL: {
+                    jsonHelper.element.getAsJsonArray()
+                            .set(index, new JsonPrimitive(parameters[2] != 0));
+                    break;
+                }
+            }
             return new long[0];
         }
     }
 
-    private static class JSONBuilderPutI64 extends HostFunction {
-
-        private JSONHelper jsonHelper;
-
-        public JSONBuilderPutI64(JSONHelper jsonHelper) {
-            setName("_json_builder_put_i64");
-            this.jsonHelper = jsonHelper;
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I64),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            jsonHelper.ensureJSONObject();
-            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            jsonHelper.element.getAsJsonObject().addProperty(key, parameters[2]);
-            return new long[0];
-        }
-    }
-
-    private static class JSONBuilderPutU64 extends HostFunction {
-
-        private JSONHelper jsonHelper;
-
-        public JSONBuilderPutU64(JSONHelper jsonHelper) {
-            this.jsonHelper = jsonHelper;
-            setName("_json_builder_put_u64");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I64),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            jsonHelper.ensureJSONObject();
-            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            jsonHelper.element.getAsJsonObject().addProperty(key, UnsignedLong.fromLongBits(parameters[2]));
-            return new long[0];
-        }
-    }
-
-    private static class JSONBuilderPutBoolean extends HostFunction {
-
-        private JSONHelper jsonHelper;
-
-        public JSONBuilderPutBoolean(JSONHelper jsonHelper) {
-            this.jsonHelper = jsonHelper;
-            setName("_json_builder_put_bool");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I64),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            jsonHelper.ensureJSONObject();
-            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            jsonHelper.element.getAsJsonObject().addProperty(key, parameters[2] != 0);
-            return new long[0];
-        }
-    }
-
-    private static class JSONBuilderPutF64 extends HostFunction {
-
-        private JSONHelper jsonHelper;
-
-        public JSONBuilderPutF64(JSONHelper jsonHelper) {
-            this.jsonHelper = jsonHelper;
-            setName("_json_builder_put_f64");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.F64),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            jsonHelper.ensureJSONObject();
-            String key = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            jsonHelper.element.getAsJsonObject().addProperty(key, BigDecimal.valueOf(Double.longBitsToDouble(parameters[2])));
-            return new long[0];
-        }
-    }
-
-    private static class JSONBuilderSetJSON extends HostFunction {
-
-        private JSONHelper jsonHelper;
-
-        public JSONBuilderSetJSON(JSONHelper jsonHelper) {
-            this.jsonHelper = jsonHelper;
-            setName("_json_builder_set_json");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            jsonHelper.ensureJSONArray((int) parameters[0]);
-            String value = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
-            jsonHelper.element.getAsJsonArray().set((int) parameters[0], GSON.fromJson(value, JsonElement.class));
-            return new long[0];
-        }
-    }
-
-    private static class JSONBuilderSetString extends HostFunction {
-
-        private JSONHelper jsonHelper;
-
-        public JSONBuilderSetString(JSONHelper jsonHelper) {
-            this.jsonHelper = jsonHelper;
-            setName("_json_builder_set_str");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            jsonHelper.ensureJSONArray((int) parameters[0]);
-            String value = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
-            jsonHelper.element.getAsJsonArray().set((int) parameters[0], new JsonPrimitive(value));
-            return new long[0];
-        }
-    }
-
-    private static class JSONBuilderSetI64 extends HostFunction {
-
-        private JSONHelper jsonHelper;
-
-        public JSONBuilderSetI64(JSONHelper jsonHelper) {
-            this.jsonHelper = jsonHelper;
-            setName("_json_builder_set_i64");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I64),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            jsonHelper.ensureJSONArray((int) parameters[0]);
-            jsonHelper.element.getAsJsonArray().set((int) parameters[0], new JsonPrimitive(parameters[1]));
-            return new long[0];
-        }
-    }
-
-    private static class JSONBuilderSetU64 extends HostFunction {
-
-        private JSONHelper jsonHelper;
-
-        public JSONBuilderSetU64(JSONHelper jsonHelper) {
-            this.jsonHelper = jsonHelper;
-            setName("_json_builder_set_u64");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I64),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            jsonHelper.ensureJSONArray((int) parameters[0]);
-            jsonHelper.element.getAsJsonArray().set((int) parameters[0], new JsonPrimitive(parameters[1]));
-            return new long[0];
-        }
-    }
-
-    private static class JSONBuilderSetBoolean extends HostFunction {
-
-        private JSONHelper jsonHelper;
-
-        public JSONBuilderSetBoolean(JSONHelper jsonHelper) {
-            this.jsonHelper = jsonHelper;
-            setName("_json_builder_set_bool");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I64),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            jsonHelper.ensureJSONArray((int) parameters[0]);
-            JsonArray array = jsonHelper.element.getAsJsonArray();
-            array.set((int) parameters[0], new JsonPrimitive(parameters[1] != 0));
-            return new long[0];
-        }
-    }
-
-    private static class JSONBuilderSetF64 extends HostFunction {
-
-        private JSONHelper jsonHelper;
-
-        public JSONBuilderSetF64(JSONHelper jsonHelper) {
-            this.jsonHelper = jsonHelper;
-            setName("_json_builder_set_f64");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.F64),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            jsonHelper.ensureJSONArray((int) parameters[0]);
-            jsonHelper.element.getAsJsonArray().set((int) parameters[0], new JsonPrimitive(Double.longBitsToDouble(parameters[1])));
-            return new long[0];
-        }
-    }
 
     private static class JSONBuilderBuildArraySize extends HostFunction {
         private JSONHelper jsonHelper;
@@ -432,101 +244,59 @@ public class JSONHelper {
         }
     }
 
-    private static class JSONReaderGetJSONByKey extends HostFunction {
+    private static class JSONReaderGetByKey extends HostFunction {
 
-        public JSONReaderGetJSONByKey() {
-            setName("_json_reader_get_json_by_key");
+        public JSONReaderGetByKey() {
+            setName("_json_reader_get_by_key");
+            setType(
+                    new FunctionType(
+                            Arrays.asList(
+                                    ValueType.I32,
+                                    ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
+                            Collections.singletonList(ValueType.I64)
+                    )
+            );
+        }
+
+        @Override
+        public long[] execute(long... parameters) {
+            String json = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
+            String key = loadStringFromMemory((int) parameters[3], (int) parameters[4]);
+            Type t = Type.values()[(int) parameters[0]];
+            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
+            switch (t) {
+                case JSON: {
+                    int ptr = (int) parameters[5];
+                    putStringIntoMemory(ptr, GSON.toJson(element));
+                    break;
+                }
+                case STRING: {
+                    int ptr = (int) parameters[5];
+                    putStringIntoMemory(ptr, element.getAsString());
+                    break;
+                }
+                case BOOL: {
+                    return new long[]{element.getAsBoolean() ? 1 : 0};
+                }
+                case U64:
+                case I64: {
+                    return new long[]{element.getAsLong()};
+                }
+                case F64: {
+                    return new long[]{Double.doubleToLongBits(element.getAsDouble())};
+                }
+            }
+            return new long[1];
+        }
+    }
+
+    private static class JSONReaderGetByIndex extends HostFunction {
+
+        public JSONReaderGetByIndex() {
+            setName("_json_reader_get_by_index");
             setType(
                     new FunctionType(
                             Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
-            int ptr = (int) parameters[4];
-            putStringIntoMemory(ptr, GSON.toJson(element));
-            return new long[0];
-        }
-    }
-
-    private static class JSONReaderGetJSONLenByKey extends HostFunction {
-
-        public JSONReaderGetJSONLenByKey() {
-            setName("_json_reader_get_json_len_by_key");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            Collections.singletonList(ValueType.I32)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
-            return new long[]{GSON.toJson(element).getBytes(StandardCharsets.UTF_8).length};
-        }
-    }
-
-    private static class JSONReaderGetStrByKey extends HostFunction {
-
-        public JSONReaderGetStrByKey() {
-            setName("_json_reader_get_str_by_key");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
-            int ptr = (int) parameters[4];
-            putStringIntoMemory(ptr, element.getAsString());
-            return new long[0];
-        }
-    }
-
-    private static class JSONReaderGetStrLenByKey extends HostFunction {
-
-        public JSONReaderGetStrLenByKey() {
-            setName("_json_reader_get_str_len_by_key");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            Collections.singletonList(ValueType.I32)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
-            return new long[]{element.getAsString().getBytes(StandardCharsets.UTF_8).length};
-        }
-    }
-
-    private static class JSONReaderGetI64ByKey extends HostFunction {
-
-        public JSONReaderGetI64ByKey() {
-            setName("_json_reader_get_i64_by_key");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
                             Collections.singletonList(ValueType.I64)
                     )
             );
@@ -534,108 +304,45 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
-            return new long[]{element.getAsLong()};
-        }
-    }
-
-    private static class JSONReaderGetU64ByKey extends HostFunction {
-
-        public JSONReaderGetU64ByKey() {
-            setName("_json_reader_get_u64_by_key");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            Collections.singletonList(ValueType.I64)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
-            return new long[]{element.getAsLong()};
-        }
-    }
-
-    private static class JSONReaderGetBooleanByKey extends HostFunction {
-
-        public JSONReaderGetBooleanByKey() {
-            setName("_json_reader_get_bool_by_key");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            Collections.singletonList(ValueType.I64)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
-            return new long[]{element.getAsBoolean() ? 1 : 0};
-        }
-    }
-
-    private static class JSONReaderGetF64ByKey extends HostFunction {
-
-        public JSONReaderGetF64ByKey() {
-            setName("_json_reader_get_f64_by_key");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            Collections.singletonList(ValueType.F64)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            String key = loadStringFromMemory((int) parameters[2], (int) parameters[3]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
-            return new long[]{Double.doubleToLongBits(element.getAsDouble())};
-        }
-    }
-
-    private static class JSONReaderGetJsonByIndex extends HostFunction {
-
-        public JSONReaderGetJsonByIndex() {
-            setName("_json_reader_get_json_by_index");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+            Type t = Type.values()[(int) parameters[0]];
+            String json = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
             JsonElement element = GSON
                     .fromJson(json, JsonElement.class)
-                    .getAsJsonArray().get((int) parameters[2]);
-
-            int ptr = (int) parameters[3];
-            putStringIntoMemory(ptr, element.toString());
-            return new long[0];
+                    .getAsJsonArray().get((int) parameters[3]);
+            int ptr = (int) parameters[4];
+            switch (t) {
+                case JSON: {
+                    putStringIntoMemory(ptr, element.toString());
+                    break;
+                }
+                case STRING: {
+                    putStringIntoMemory(ptr, element.getAsString());
+                    break;
+                }
+                case BOOL: {
+                    return new long[]{element.getAsBoolean() ? 1 : 0};
+                }
+                case U64:
+                case I64:{
+                    return new long[]{element.getAsLong()};
+                }
+                case F64:{
+                    return new long[]{Double.doubleToLongBits(element.getAsDouble())};
+                }
+            }
+            return new long[1];
         }
     }
 
-    private static class JSONReaderGetJsonLenByIndex extends HostFunction {
+    private static class JSONReaderGetLenByKey extends HostFunction {
 
-        public JSONReaderGetJsonLenByIndex() {
-            setName("_json_reader_get_json_len_by_index");
+        public JSONReaderGetLenByKey() {
+            setName("_json_reader_get_len_by_key");
             setType(
                     new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32),
+                            Arrays.asList(
+                                    ValueType.I32,
+                                    ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
                             Collections.singletonList(ValueType.I32)
                     )
             );
@@ -643,41 +350,28 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
-            return new long[]{element.toString().getBytes(StandardCharsets.UTF_8).length};
+            String json = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
+            String key = loadStringFromMemory((int) parameters[3], (int) parameters[4]);
+            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonObject().get(key);
+            Type t = Type.values()[(int) parameters[0]];
+            switch (t) {
+                case JSON:
+                    return new long[]{GSON.toJson(element).getBytes(StandardCharsets.UTF_8).length};
+                case STRING:
+                    return new long[]{element.getAsString().getBytes(StandardCharsets.UTF_8).length};
+            }
+            throw new RuntimeException("unreachable");
         }
     }
 
-    private static class JSONReaderGetStrByIndex extends HostFunction {
 
-        public JSONReaderGetStrByIndex() {
-            setName("_json_reader_get_str_by_index");
+    private static class JSONReaderGetLenByIndex extends HostFunction {
+
+        public JSONReaderGetLenByIndex() {
+            setName("_json_reader_get_len_by_index");
             setType(
                     new FunctionType(
                             Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                            new ArrayList<>()
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
-            int ptr = (int) parameters[3];
-            putStringIntoMemory(ptr, element.getAsString());
-            return new long[0];
-        }
-    }
-
-    private static class JSONReaderGetStrLenByIndex extends HostFunction {
-
-        public JSONReaderGetStrLenByIndex() {
-            setName("_json_reader_get_str_len_by_index");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32),
                             Collections.singletonList(ValueType.I32)
                     )
             );
@@ -685,90 +379,16 @@ public class JSONHelper {
 
         @Override
         public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
-            return new long[]{element.getAsString().getBytes(StandardCharsets.UTF_8).length};
+            String json = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
+            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[3]);
+            Type t = Type.values()[(int) parameters[0]];
+            switch (t) {
+                case JSON:
+                    return new long[]{GSON.toJson(element).getBytes(StandardCharsets.UTF_8).length};
+                case STRING:
+                    return new long[]{element.getAsString().getBytes(StandardCharsets.UTF_8).length};
+            }
+            throw new RuntimeException("unreachable");
         }
     }
-
-    private static class JSONReaderGetI64ByIndex extends HostFunction {
-
-        public JSONReaderGetI64ByIndex() {
-            setName("_json_reader_get_i64_by_index");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32),
-                            Collections.singletonList(ValueType.I64)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
-            return new long[]{element.getAsLong()};
-        }
-    }
-
-    private static class JSONReaderGetU64ByIndex extends HostFunction {
-
-        public JSONReaderGetU64ByIndex() {
-            setName("_json_reader_get_u64_by_index");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32),
-                            Collections.singletonList(ValueType.I64)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
-            return new long[]{element.getAsLong()};
-        }
-    }
-
-    private static class JSONReaderGetBooleanByIndex extends HostFunction {
-
-        public JSONReaderGetBooleanByIndex() {
-            setName("_json_reader_get_bool_by_index");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32),
-                            Collections.singletonList(ValueType.I64)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
-            return new long[]{element.getAsBoolean() ? 1 : 0};
-        }
-    }
-
-    private static class JSONReaderGetF64ByIndex extends HostFunction {
-
-        public JSONReaderGetF64ByIndex() {
-            setName("_json_reader_get_f64_by_index");
-            setType(
-                    new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32),
-                            Collections.singletonList(ValueType.F64)
-                    )
-            );
-        }
-
-        @Override
-        public long[] execute(long... parameters) {
-            String json = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-            JsonElement element = GSON.fromJson(json, JsonElement.class).getAsJsonArray().get((int) parameters[2]);
-            return new long[]{Double.doubleToLongBits(element.getAsDouble())};
-        }
-    }
-
 }

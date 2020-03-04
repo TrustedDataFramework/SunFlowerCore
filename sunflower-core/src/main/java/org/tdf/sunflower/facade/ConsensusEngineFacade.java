@@ -1,5 +1,6 @@
 package org.tdf.sunflower.facade;
 
+import org.springframework.context.ApplicationContext;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
@@ -20,10 +21,7 @@ public interface ConsensusEngineFacade {
     PeerServerListener getPeerServerListener();
 
     // the below methods are called before init() to inject dependencies
-    void setEventBus(EventBus eventBus);
-    void setTransactionPool(TransactionPool transactionPool);
-    void setDatabaseStoreFactory(DatabaseStoreFactory databaseStoreFactory);
-    void setSunflowerRepository(SunflowerRepository sunflowerRepository);
+    void setApplicationContext(ApplicationContext context);
 
     // inject configurations, throw exception if configuration is invalid
     void init(Properties properties) throws ConsensusEngineInitException;

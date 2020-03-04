@@ -170,8 +170,12 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
 
         vrfMiner.setTransactionPool(getTransactionPool());
 
-        AccountUpdater updater = new AccountUpdater(Collections.emptyMap());
-        AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory());
+        AccountUpdater updater =
+                new AccountUpdater(Collections.emptyMap(), getContractCodeStore(), getContractStorageTrie());
+        AccountTrie trie = new AccountTrie(
+                updater, getDatabaseStoreFactory(),
+                getContractCodeStore(), getContractStorageTrie()
+        );
         setAccountTrie(trie);
         setValidator(new VrfValidator(getAccountTrie()));
         vrfMiner.setAccountTrie(getAccountTrie());

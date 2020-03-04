@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.lotusvm.ModuleInstance;
@@ -25,16 +26,20 @@ public class Account {
     // for normal address this field is
     private long nonce;
     private long balance;
-    // if the account contains none contract, binary contract will be null
-    private byte[] binaryContract;
 
-    // TODO: reduce zero content of memory
-    private byte[] memory;
-    private long[] globals;
 
     // for normal address this field is null
     // for contract address this field is creator of this contract
     private HexBytes createdBy;
+
+    // hash code of contract code
+    // if the account contains none contract, binary contract will be null
+    private byte[] contractHash;
+
+    // root hash of contract db
+    private byte[] storageRoot;
+
+    // TODO: reduce zero content of memory
 
     private Account(){
 
@@ -57,34 +62,14 @@ public class Account {
         this.address = Address.of(address);
     }
 
-    public byte[] view(byte[] parameters) {
-        Context ctx = Context.disabled();
-        ctx.setContractAddress(address);
-        ctx.setCreatedBy(createdBy);
 
-        Hosts hosts = new Hosts()
-                .withParameters(parameters, true)
-                .withContext(ctx);
-
-        ModuleInstance instance = ModuleInstance.builder()
-                .hooks(Collections.singleton(new GasLimit()))
-                .binary(binaryContract)
-                .memory(memory)
-                .globals(globals)
-                .hostFunctions(hosts.getAll())
-                .build();
-
-        String method = Context.getMethod(parameters);
-        instance.execute(method);
-        return hosts.getResult();
-    }
 
     public boolean containsContract() {
-        return binaryContract != null && binaryContract.length != 0;
+        return contractHash != null && contractHash.length != 0;
     }
 
     @Override
     public Account clone() {
-        return new Account(address, nonce, balance, binaryContract, memory, globals, createdBy);
+        return new Account(address, nonce, balance, createdBy, contractHash, storageRoot);
     }
 }

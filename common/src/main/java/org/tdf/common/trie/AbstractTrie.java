@@ -2,6 +2,7 @@ package org.tdf.common.trie;
 
 import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.Store;
 import org.tdf.rlp.RLPElement;
 
 import java.util.Collection;
@@ -17,6 +18,7 @@ abstract class AbstractTrie<K, V> implements Trie<K, V>{
     abstract Optional<V> getFromBytes(byte[] data);
     abstract void putBytes(byte[] key, byte[] value);
     abstract void removeBytes(byte[] data);
+
     abstract Map<byte[], byte[]> getProofInternal(byte[] key);
 
     @Override

@@ -104,7 +104,7 @@ sunflower:
 
   vm:
     # gas limit for contract execution, any vm code or host function execution consumes one gas
-    gas-limit: '65536'
+    gas-limit: '4294967296'
 
   web:
     disabled: false

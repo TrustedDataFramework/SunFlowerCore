@@ -17,6 +17,8 @@ public class Hosts {
 
     private Context context;
 
+    private ContractDB contractDb;
+
     private List<HostFunction> parameters;
 
     public Hosts disableLog() {
@@ -49,6 +51,9 @@ public class Hosts {
         if (parameters != null) {
             all.addAll(parameters);
         }
+        if(contractDb != null){
+            all.addAll(contractDb.getHelpers());
+        }
         return all;
     }
 
@@ -66,6 +71,11 @@ public class Hosts {
 
     public Hosts withContext(Context context) {
         this.context = context;
+        return this;
+    }
+
+    public Hosts withDB(ContractDB contractDb){
+        this.contractDb = contractDb;
         return this;
     }
 
