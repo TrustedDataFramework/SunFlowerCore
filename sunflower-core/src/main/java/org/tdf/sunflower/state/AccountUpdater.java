@@ -47,7 +47,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             case CONTRACT_DEPLOY:{
                 Set<HexBytes> ret = new HashSet<>();
                 ret.add(transaction.getFromAddress());
-                if(store.containsKey(transaction.createContractAddress()))
+                Account a = store.get(transaction.createContractAddress());
+                if(a != null && a.containsContract())
                     throw new RuntimeException("contract " + transaction.createContractAddress() + " exists");
                 ret.add(transaction.createContractAddress());
                 return ret;
