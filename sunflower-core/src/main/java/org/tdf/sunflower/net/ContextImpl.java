@@ -20,6 +20,8 @@ public class ContextImpl implements Context {
     MessageBuilder builder;
     Client client;
 
+    private byte[] decrypted;
+
     @Override
     public void exit() {
         exited = true;
@@ -69,9 +71,12 @@ public class ContextImpl implements Context {
     @Override
     public byte[] getMessage() {
         if (message.getCode() == Code.ANOTHER) {
-            return CryptoContext.decrypt(
+            if(decrypted != null)
+                return decrypted;
+            decrypted = CryptoContext.decrypt(
                     CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), remote.getID().getBytes()),
                     message.getBody().toByteArray());
+            return decrypted;
         }
         return message.getBody().toByteArray();
     }
