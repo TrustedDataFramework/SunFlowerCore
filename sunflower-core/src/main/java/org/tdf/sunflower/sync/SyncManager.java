@@ -112,7 +112,7 @@ public class SyncManager implements PeerServerListener {
         });
         eventBus.subscribe(NewTransactionCollected.class, (e) -> {
             if(receivedTransactions.asMap().containsKey(e.getTransaction().getHash()))return;
-            receivedTransactions.asMap().put()
+            receivedTransactions.asMap().put(e.getTransaction().getHash(), true);
             peerServer.broadcast(SyncMessage.encode(SyncMessage.TRANSACTION, RLPCodec.encode(e.getTransaction())));
         });
     }
