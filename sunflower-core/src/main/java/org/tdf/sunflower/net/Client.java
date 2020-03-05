@@ -179,6 +179,17 @@ public class Client implements ChannelListener {
     void relay(Message message, PeerImpl receivedFrom) {
         peersCache.getChannels()
                 .filter(x -> x.getRemote().map(p -> !p.equals(receivedFrom)).orElse(false))
-                .forEach(c -> c.write(messageBuilder.buildRelay(message)));
+                .forEach(c -> {
+                    if (message.getCode() == Code.ANOTHER){
+                        byte[] msg = CryptoContext.decrypt(
+                                CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), receivedFrom.getID().getBytes()),
+                                message.getBody().toByteArray());
+                        byte[] sk = CryptoContext.ecdh(true, self.getPrivateKey(), c.getRemote().get().getID().getBytes());
+                        byte[] encryptMessage = CryptoContext.encrypt(sk, msg);
+                        c.write(builder.buildMessage(Code.ANOTHER, config.getMaxTTL(), encryptMessage));
+                        return;
+                    }
+                    c.write(messageBuilder.buildRelay(message));
+                });
     }
 }

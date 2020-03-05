@@ -1,6 +1,7 @@
 package org.tdf.sunflower.net;
 
 import lombok.Builder;
+import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
