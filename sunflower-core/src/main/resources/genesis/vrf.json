@@ -9,9 +9,23 @@
     "gasUsed": "0x00",
     "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
     "hashBlock": "0x0000000000000000000000000000000000000000000000000000000000000000",
-    
-    "miners": [{
+    "miners": [
+        {
             "addr": "87b8f0b097b48b282a5c661babc8096e141bd9fb"
         }
-    ]
+    ],
+    "alloc": {
+        "87b8f0b097b48b282a5c661babc8096e141bd9fb": 1000000000,
+        "d78d381e2e4f03a43ecedac63e7612476c2ab22f": 1000000000
+    }    /*
+private key = 057e8d683f454a4b8542e9a963d8e156bc4bf2f910e86615932c9ad91f0550f4
+public key = e54090596bcdfe5441e1e3d838cdbf5a8eed6b1fd71d105cc4f59646faadb6da
+address = 87b8f0b097b48b282a5c661babc8096e141bd9fb
+address = last 20 bytes of keccak256(public key)
+
+ #private key = 06633abf318efe0054b14e11deed23ada6cbd41c6d0a5b2d4eb907c20814ada0
+ #public key = 8d9258af05b5a71adcd387a9b85d3b45059377ef30f13dce1e796f70e6a5d8f1
+ #address = d78d381e2e4f03a43ecedac63e7612476c2ab22f
+*/
+
 }
