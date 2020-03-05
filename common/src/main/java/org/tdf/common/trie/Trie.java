@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.function.Function;
 
 public interface Trie<K, V> extends Store<K, V> {
+    Store<byte[], byte[]> getStore();
+
     static <K, V> Builder<K, V> builder() {
         return new Builder<>();
     }

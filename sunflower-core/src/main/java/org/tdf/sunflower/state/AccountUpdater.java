@@ -2,6 +2,7 @@ package org.tdf.sunflower.state;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.Store;
@@ -19,7 +20,9 @@ import org.tdf.sunflower.vm.hosts.Hosts;
 
 import java.util.*;
 
+
 @AllArgsConstructor
+@Slf4j(topic = "account")
 public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     @Getter
     private Map<HexBytes, Account> genesisStates;
@@ -158,7 +161,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         ContractDB contractDB = new ContractDB(
                 storageTrie.revert(
                         storageTrie.getNullHash(),
-                        new CachedStore<>(storageTrie, ByteArrayMap::new)
+                        new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new)
                 )
         );
 
@@ -177,11 +180,15 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
         contractStore.put(CryptoContext.digest(t.getPayload().getBytes()), t.getPayload().getBytes());
         contractAccount.setContractHash(CryptoContext.digest(t.getPayload().getBytes()));
-        contractDB.getStorageTrie().flush();
+
 
         if(instance.containsExport("init")){
            instance.execute("init");
         }
+        contractDB.getStorageTrie().commit();
+        contractDB.getStorageTrie().flush();
+        contractAccount.setStorageRoot(contractDB.getStorageTrie().getRootHash());
+        log.info("deploy contract at " + contractAccount.getAddress() + " success");
         return accounts;
     }
 
@@ -208,8 +215,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         context.setContractAddress(contractAccount.getAddress());
         ContractDB contractDB = new ContractDB(
                 storageTrie.revert(
-                        storageTrie.getNullHash(),
-                        new CachedStore<>(storageTrie, ByteArrayMap::new)
+                        contractAccount.getStorageRoot(),
+                        new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new)
                 )
         );
 
@@ -223,10 +230,13 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         ModuleInstance instance = ModuleInstance.builder()
                 .hooks(Collections.singleton(new GasLimit()))
                 .hostFunctions(hosts.getAll())
+                .binary(contractStore.get(contractAccount.getContractHash()).get())
                 .build();
 
         instance.execute(context.getMethod());
+        contractDB.getStorageTrie().commit();
         contractDB.getStorageTrie().flush();
+        contractAccount.setStorageRoot(contractDB.getStorageTrie().getRootHash());
         return accounts;
     }
 

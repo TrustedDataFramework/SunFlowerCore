@@ -3,113 +3,105 @@ package org.tdf.sunflower.vm.hosts;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @RequiredArgsConstructor
 public class ContractDB {
+    enum Type {
+        SET, GET, REMOVE, HAS, NEXT, CURRENT_KEY, CURRENT_VALUE, HAS_NEXT, RESET
+    }
+
     @Getter
     private final Trie<byte[], byte[]> storageTrie;
 
-    public List<HostFunction> getHelpers(){
-        return Arrays.asList(
-                new DBGet(storageTrie),
-                new DBGetLen(storageTrie),
-                new DBSet(storageTrie),
-                new DBHas(storageTrie)
+    public List<HostFunction> getHelpers() {
+        return Collections.singletonList(
+                new DBFunctions(storageTrie)
         );
     }
 
-    public static class DBGet extends HostFunction{
+    public static class DBFunctions extends HostFunction {
         private final Trie<byte[], byte[]> storageTrie;
+        private List<Map.Entry<HexBytes, byte[]>> entries;
+        private int index;
 
-        public DBGet(Trie<byte[], byte[]> storageTrie) {
+        private void reset(){
+            Map<HexBytes, byte[]> m = new TreeMap<>();
+            storageTrie.forEach((x, y) -> m.put(HexBytes.fromBytes(x), y));
+            this.entries = new ArrayList<>(m.entrySet());
+        }
+
+        public DBFunctions(Trie<byte[], byte[]> storageTrie) {
             this.storageTrie = storageTrie;
-            setName("_db_get");
+            setName("_db");
             setType(new FunctionType(
-                    Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32),
-                    Collections.emptyList()
-            ));
-        }
-
-        @Override
-        public long[] execute(long... longs) {
-            byte[] key = loadMemory((int)longs[0], (int) longs[1]);
-            byte[] val = storageTrie.get(key).orElseThrow(
-                    () -> new RuntimeException("execute contract failed, key not exists in db")
-            );
-            putMemory((int)longs[2], val);
-            return new long[0];
-        }
-    }
-
-    public static class DBGetLen extends HostFunction{
-        private final Trie<byte[], byte[]> storageTrie;
-
-        public DBGetLen(Trie<byte[], byte[]> storageTrie) {
-            this.storageTrie = storageTrie;
-            setName("_db_get_len");
-            setType(new FunctionType(
-                    Arrays.asList(ValueType.I32, ValueType.I32),
-                    Collections.singletonList(ValueType.I32)
-            ));
-        }
-
-        @Override
-        public long[] execute(long... longs) {
-            byte[] key = loadMemory((int)longs[0], (int) longs[1]);
-            byte[] val = storageTrie.get(key).orElseThrow(
-                    () -> new RuntimeException("execute contract failed, key not exists in db")
-            );
-            return new long[]{val.length};
-        }
-    }
-
-    public static class DBSet extends HostFunction{
-        private final Trie<byte[], byte[]> storageTrie;
-
-        public DBSet(Trie<byte[], byte[]> storageTrie) {
-            this.storageTrie = storageTrie;
-            setName("_db_set");
-            setType(new FunctionType(
-                    Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
-                    Collections.emptyList()
-            ));
-        }
-
-        @Override
-        public long[] execute(long... longs) {
-            byte[] key = loadMemory((int)longs[0], (int) longs[1]);
-            byte[] val = loadMemory((int)longs[2], (int) longs[3]);
-            storageTrie.put(key, val);
-            return new long[0];
-        }
-    }
-
-
-    public static class DBHas extends HostFunction{
-        private final Trie<byte[], byte[]> storageTrie;
-
-        public DBHas(Trie<byte[], byte[]> storageTrie) {
-            this.storageTrie = storageTrie;
-            setName("_db_has");
-            setType(new FunctionType(
-                    Arrays.asList(ValueType.I32, ValueType.I32),
+                    Arrays.asList(ValueType.I32, ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),
                     Collections.singletonList(ValueType.I64)
             ));
+            reset();
         }
 
         @Override
         public long[] execute(long... longs) {
-            byte[] key = loadMemory((int)longs[0], (int) longs[1]);
-            return new long[]{
-                    storageTrie.containsKey(key) ? 1 : 0
-            };
+            Type t = Type.values()[(int) longs[0]];
+            switch (t) {
+                case SET: {
+                    byte[] key = loadMemory((int) longs[1], (int) longs[2]);
+                    byte[] value = loadMemory((int) longs[3], (int) longs[4]);
+                    this.storageTrie.put(key, value);
+                    break;
+                }
+                case GET: {
+                    byte[] key = loadMemory((int) longs[1], (int) longs[2]);
+                    byte[] value = storageTrie.get(key).orElseThrow(() -> new RuntimeException(HexBytes.fromBytes(key) + " not found"));
+                    if (longs[4] != 0) {
+                        putMemory((int) longs[3], value);
+                    }
+                    return new long[]{value.length};
+                }
+                case HAS: {
+                    byte[] key = loadMemory((int) longs[1], (int) longs[2]);
+                    return new long[]{storageTrie.containsKey(key) ? 1 : 0};
+                }
+                case REMOVE:{
+                    byte[] key = loadMemory((int) longs[1], (int) longs[2]);
+                    storageTrie.remove(key);
+                    break;
+                }
+                case NEXT:{
+                    this.index++;
+                    break;
+                }
+                case HAS_NEXT:{
+                    return new long[]{this.index < entries.size() - 1 ? 1 : 0};
+                }
+                case CURRENT_KEY:{
+                    Map.Entry<HexBytes, byte[]> entry = entries.get(index);
+                    if(longs[2] != 0){
+                        putMemory((int)longs[1], entry.getKey().getBytes());
+                    }
+                    return new long[]{entry.getKey().size()};
+                }
+                case CURRENT_VALUE:{
+                    Map.Entry<HexBytes, byte[]> entry = entries.get(index);
+                    if(longs[2] != 0){
+                        putMemory((int)longs[1], entry.getValue());
+                    }
+                    return new long[]{entry.getValue().length};
+                }
+                case RESET:{
+                    reset();
+                    break;
+                }
+                default:
+                    throw new RuntimeException("unreachable");
+            }
+            return new long[1];
         }
     }
 }

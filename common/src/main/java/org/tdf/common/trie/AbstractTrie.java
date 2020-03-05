@@ -15,6 +15,8 @@ abstract class AbstractTrie<K, V> implements Trie<K, V>{
     abstract Codec<K, byte[]> getKCodec();
     abstract Codec<V, byte[]> getVCodec();
 
+    public abstract Store<byte[], byte[]> getStore();
+
     abstract Optional<V> getFromBytes(byte[] data);
     abstract void putBytes(byte[] key, byte[] value);
     abstract void removeBytes(byte[] data);

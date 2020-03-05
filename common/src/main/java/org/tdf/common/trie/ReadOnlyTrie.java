@@ -194,4 +194,9 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     public void traverseInternal(BiFunction<byte[], byte[], Boolean> traverser) {
         delegate.traverseInternal(traverser);
     }
+
+    @Override
+    public Store<byte[], byte[]> getStore() {
+        return delegate.getStore();
+    }
 }

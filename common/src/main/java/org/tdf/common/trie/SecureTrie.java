@@ -114,6 +114,11 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
         throw new UnsupportedOperationException("not supported in secure trie");
     }
 
+    @Override
+    public Store<byte[], byte[]> getStore() {
+        return delegate.getStore();
+    }
+
     public class ValueOnlyEntry implements Map.Entry<K, V>{
         private V value;
 
