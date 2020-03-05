@@ -1,6 +1,7 @@
 package org.tdf.sunflower.net;
 
 import lombok.Builder;
+import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
@@ -63,9 +64,6 @@ public class ContextImpl implements Context {
     public void relay() {
         if (exited || blocked || disconnected || relayed || message.getTtl() == 0) return;
         relayed = true;
-        if (message.getCode() == Code.ANOTHER) {
-            message = builder.buildAnother(message.getBody().toByteArray(), remote);
-        }
         client.relay(message, remote);
     }
 
