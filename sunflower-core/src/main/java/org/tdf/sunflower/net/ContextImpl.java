@@ -63,6 +63,10 @@ public class ContextImpl implements Context {
     public void relay() {
         if (exited || blocked || disconnected || relayed || message.getTtl() == 0) return;
         relayed = true;
+        if (message.getCode() == Code.ANOTHER) {
+            message = builder.buildAnother(message.getBody().toByteArray(), remote);
+            return;
+        }
         client.relay(message, remote);
     }
 
