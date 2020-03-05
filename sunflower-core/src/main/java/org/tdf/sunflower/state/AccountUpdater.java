@@ -20,7 +20,9 @@ import org.tdf.sunflower.vm.hosts.Hosts;
 
 import java.util.*;
 
-
+/**
+ * where state transition happens
+ */
 @AllArgsConstructor
 @Slf4j(topic = "account")
 public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
@@ -39,28 +41,28 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         switch (Transaction.Type.TYPE_MAP.get(transaction.getType())) {
             case COIN_BASE:
                 return Collections.singleton(transaction.getTo());
-            case TRANSFER:{
-                if(!store.containsKey(transaction.getFromAddress()))
+            case TRANSFER: {
+                if (!store.containsKey(transaction.getFromAddress()))
                     throw new RuntimeException("account " + transaction.getFromAddress() + " not exists");
                 Set<HexBytes> ret = new HashSet<>();
                 ret.add(transaction.getFromAddress());
                 ret.add(transaction.getTo());
                 return ret;
             }
-            case CONTRACT_DEPLOY:{
+            case CONTRACT_DEPLOY: {
                 Set<HexBytes> ret = new HashSet<>();
                 ret.add(transaction.getFromAddress());
                 Account a = store.get(transaction.createContractAddress());
-                if(a != null && a.containsContract())
+                if (a != null && !a.isFresh())
                     throw new RuntimeException("contract " + transaction.createContractAddress() + " exists");
                 ret.add(transaction.createContractAddress());
                 return ret;
             }
             case CONTRACT_CALL: {
                 Set<HexBytes> ret = new HashSet<>();
-                if(!store.containsKey(transaction.getFromAddress()))
+                if (!store.containsKey(transaction.getFromAddress()))
                     throw new RuntimeException("account " + transaction.getFromAddress() + " not exists");
-                if(!store.containsKey(transaction.getTo()))
+                if (!store.containsKey(transaction.getTo()))
                     throw new RuntimeException("contract " + transaction.getFromAddress() + " not exists");
                 ret.add(transaction.getFromAddress());
                 ret.add(transaction.getTo());
@@ -75,14 +77,14 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     public Map<HexBytes, Account> update(Map<HexBytes, Account> states, Header header, Transaction transaction) {
         Map<HexBytes, Account> cloned = createEmptyMap();
         states.forEach((k, v) -> cloned.put(k, v.clone()));
-        if(transaction.getType() == Transaction.Type.COIN_BASE.code && header.getHeight() != transaction.getNonce()){
+        if (transaction.getType() == Transaction.Type.COIN_BASE.code && header.getHeight() != transaction.getNonce()) {
             throw new RuntimeException("nonce of coinbase transaction should be " + header.getHeight());
         }
         for (Account state : cloned.values()) {
-            if(transaction.getType() == Transaction.Type.COIN_BASE.code)
+            if (transaction.getType() == Transaction.Type.COIN_BASE.code)
                 continue;
-            if(state.getAddress().equals(transaction.getFromAddress())){
-                if(state.getNonce() +1 != transaction.getNonce())
+            if (state.getAddress().equals(transaction.getFromAddress())) {
+                if (state.getNonce() + 1 != transaction.getNonce())
                     throw new RuntimeException("the nonce of transaction should be "
                             + (state.getNonce() + 1) + " while "
                             + transaction.getNonce() + " received");
@@ -102,9 +104,15 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         throw new RuntimeException("unknown type " + transaction.getType());
     }
 
+    /**
+     * create a fresh new account by address
+     *
+     * @param address address
+     * @return a fresh new account
+     */
     @Override
     public Account createEmpty(HexBytes address) {
-        return new Account(address, 0, 0, HexBytes.EMPTY, new byte[0], storageTrie.getNullHash());
+        return new Account(address, 0, 0, HexBytes.EMPTY, new byte[0], storageTrie.getNullHash(), true);
     }
 
     @Override
@@ -168,8 +176,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         Hosts hosts = new Hosts()
                 .withContext(context)
                 .withParameters(new byte[0], false)
-                .withDB(contractDB)
-                ;
+                .withDB(contractDB);
 
         // every contract must has a init method
         ModuleInstance instance = ModuleInstance.builder()
@@ -182,8 +189,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         contractAccount.setContractHash(CryptoContext.digest(t.getPayload().getBytes()));
 
 
-        if(instance.containsExport("init")){
-           instance.execute("init");
+        if (instance.containsExport("init")) {
+            instance.execute("init");
         }
         contractDB.getStorageTrie().commit();
         contractDB.getStorageTrie().flush();
@@ -195,18 +202,19 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     private Map<HexBytes, Account> updateTransactionCall(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account contractAccount = accounts.get(t.getTo());
         for (Account account : accounts.values()) {
-            if(account.getAddress().equals(t.getFromAddress())){
-                if(account.getBalance() < t.getAmount())
+            if (account.getAddress().equals(t.getFromAddress())) {
+                if (account.getBalance() < t.getAmount())
                     throw new RuntimeException("the balance of account " + account.getAddress() + " is not enough");
                 account.setBalance(account.getBalance() - t.getAmount());
             }
-            if(account.getAddress().equals(contractAccount.getCreatedBy())){
+            if (account.getAddress().equals(contractAccount.getCreatedBy())) {
                 account.setBalance(account.getBalance() + t.getAmount());
             }
-            if(!account.getAddress().equals(t.getFromAddress()) &&
+            if (!account.getAddress().equals(t.getFromAddress()) &&
                     !account.getAddress().equals(t.getTo()) &&
                     !account.getAddress().equals(contractAccount.getCreatedBy())
-            ) throw new RuntimeException("unexpected address " + account.getAddress() + " not a createdBy or from or to");
+            )
+                throw new RuntimeException("unexpected address " + account.getAddress() + " not a createdBy or from or to");
         }
 
         // build Parameters here
@@ -223,10 +231,9 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         Hosts hosts = new Hosts()
                 .withContext(context)
                 .withParameters(context.getPayload(), true)
-                .withDB(contractDB)
-                ;
+                .withDB(contractDB);
 
-        // every contract must has a init method
+        // every contract should have a init method
         ModuleInstance instance = ModuleInstance.builder()
                 .hooks(Collections.singleton(new GasLimit()))
                 .hostFunctions(hosts.getAll())
