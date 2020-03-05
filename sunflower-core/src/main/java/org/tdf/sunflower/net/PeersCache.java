@@ -3,6 +3,7 @@ package org.tdf.sunflower.net;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
+import lombok.Value;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
 
@@ -22,9 +23,7 @@ class PeersCache {
     static class Bucket extends ConcurrentHashMap<HexBytes, PeerChannel>{}
 
     // helper for store peer and channel in a single value in Bucket
-    @AllArgsConstructor
-    @Builder
-    @NoArgsConstructor
+    @Value
     static class PeerChannel{
         PeerImpl peer;
         Channel channel;
@@ -83,10 +82,7 @@ class PeersCache {
         }
 
         peer.setScore(PEER_SCORE);
-        PeerChannel newPeerChannel = PeerChannel.builder()
-                .peer(peer)
-                .channel(channel)
-                .build();
+        PeerChannel newPeerChannel = new PeerChannel(peer, channel);
 
         if (size() < config.getMaxPeers()) {
             peers[idx].put(peer.getID(), newPeerChannel);
@@ -217,8 +213,9 @@ class PeersCache {
                 .flatMap(x ->
                         x.values()
                         .stream()
-
-                ).map(bucket -> bucket.channel);
+                ).map(bucket -> bucket.channel)
+                .filter(Channel::isAlive)
+                ;
     }
 
     // get channel of the peer
@@ -231,7 +228,9 @@ class PeersCache {
         int idx = self.subTree(id.getBytes());
         return Optional.ofNullable(peers[idx])
                 .map(x -> x.get(id))
-                .map(x -> x.channel);
+                .map(x -> x.channel)
+                .filter(Channel::isAlive)
+                ;
     }
 
     boolean hasBlocked(PeerImpl peer) {

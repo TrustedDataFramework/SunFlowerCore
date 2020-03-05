@@ -106,8 +106,7 @@ public class Client implements ChannelListener {
         // cannot create channel connect to your self
         if(peer.equals(self)) return Optional.empty();
         Optional<Channel> ch = peersCache
-                .getChannel(peer.getID())
-                .filter(Channel::isAlive);
+                .getChannel(peer.getID());
         if(ch.isPresent()) return ch;
         ch = netLayer
                 .createChannel(peer.getHost(), peer.getPort(), this, listener)
@@ -124,8 +123,7 @@ public class Client implements ChannelListener {
                                 p -> p.getHost().equals(host) && p.getPort() == port
                         ).orElse(false)
                 )
-                .findAny()
-                .filter(Channel::isAlive);
+                .findAny();
         if (ch.isPresent()) return ch;
         ch = netLayer
                 .createChannel(host, port, listeners)

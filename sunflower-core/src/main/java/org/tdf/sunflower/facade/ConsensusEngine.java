@@ -5,15 +5,21 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.context.ApplicationContext;
 import org.tdf.common.event.EventBus;
+import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 
+import java.util.Collections;
 import java.util.Properties;
 
 @Getter
@@ -85,6 +91,9 @@ public abstract class ConsensusEngine implements ConsensusEngineFacade{
             }
             if(getDatabaseStoreFactory() == null)
                 throw new ConsensusEngineInitException("database factory not injected");
+            setMiner(Miner.NONE);
+            AccountUpdater updater = new AccountUpdater(Collections.emptyMap(), getContractCodeStore(), getContractStorageTrie());
+            setAccountTrie(new AccountTrie(updater, getDatabaseStoreFactory(), getContractCodeStore(), getContractStorageTrie()));
         }
     };
 }
