@@ -65,7 +65,6 @@ public class ContextImpl implements Context {
         relayed = true;
         if (message.getCode() == Code.ANOTHER) {
             message = builder.buildAnother(message.getBody().toByteArray(), remote);
-            return;
         }
         client.relay(message, remote);
     }
