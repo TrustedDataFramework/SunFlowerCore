@@ -34,9 +34,7 @@ public class JSONHelper {
                 new JSONBuilderPut(this),
                 new JSONBuilderSet(this),
                 new JSONReaderGetByKey(),
-                new JSONReaderGetLenByKey(),
-                new JSONReaderGetByIndex(),
-                new JSONReaderGetLenByIndex()
+                new JSONReaderGetByIndex()
         );
     }
 
@@ -227,7 +225,9 @@ public class JSONHelper {
                     new FunctionType(
                             Arrays.asList(
                                     ValueType.I32,
-                                    ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
+                                    ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32,
+                                    ValueType.I64
+                            ),
                             Collections.singletonList(ValueType.I64)
                     )
             );
@@ -242,13 +242,14 @@ public class JSONHelper {
             switch (t) {
                 case JSON: {
                     int ptr = (int) parameters[5];
-                    putStringIntoMemory(ptr, GSON.toJson(element));
-                    break;
+                    String ret = GSON.toJson(element);
+                    if(parameters[6] != 0) putStringIntoMemory(ptr, ret);
+                    return new long[]{ret.length()};
                 }
                 case STRING: {
                     int ptr = (int) parameters[5];
-                    putStringIntoMemory(ptr, element.getAsString());
-                    break;
+                    if(parameters[6] != 0) putStringIntoMemory(ptr, element.getAsString());
+                    return new long[]{element.getAsString().length()};
                 }
                 case BOOL: {
                     return new long[]{element.getAsBoolean() ? 1 : 0};
@@ -260,8 +261,9 @@ public class JSONHelper {
                 case F64: {
                     return new long[]{Double.doubleToLongBits(element.getAsDouble())};
                 }
+                default:
+                    throw new RuntimeException("unreachable");
             }
-            return new long[1];
         }
     }
 
@@ -271,7 +273,12 @@ public class JSONHelper {
             setName("_json_reader_get_by_index");
             setType(
                     new FunctionType(
-                            Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
+                            Arrays.asList(
+                                    ValueType.I32,
+                                    ValueType.I32, ValueType.I32,
+                                    ValueType.I32,
+                                    ValueType.I32, ValueType.I64
+                            ),
                             Collections.singletonList(ValueType.I64)
                     )
             );
@@ -287,12 +294,13 @@ public class JSONHelper {
             int ptr = (int) parameters[4];
             switch (t) {
                 case JSON: {
-                    putStringIntoMemory(ptr, element.toString());
-                    break;
+                    String ret = GSON.toJson(element);
+                    if(parameters[5] != 0) putStringIntoMemory(ptr, ret);
+                    return new long[]{ret.length()};
                 }
                 case STRING: {
-                    putStringIntoMemory(ptr, element.getAsString());
-                    break;
+                    if(parameters[5] != 0) putStringIntoMemory(ptr, element.getAsString());
+                    return new long[]{element.getAsString().length()};
                 }
                 case BOOL: {
                     return new long[]{element.getAsBoolean() ? 1 : 0};
@@ -304,8 +312,9 @@ public class JSONHelper {
                 case F64:{
                     return new long[]{Double.doubleToLongBits(element.getAsDouble())};
                 }
+                default:
+                    throw new RuntimeException("unreachable");
             }
-            return new long[1];
         }
     }
 
