@@ -76,6 +76,10 @@ sunflower:
     fast-sync-height: '0'
     max-accounts-transfer: 512
 
+    # limit message rates
+    rate-limits:
+      status: '16'
+      get-blocks: '16'
 
   message-queue:
     name: 'socketIO'

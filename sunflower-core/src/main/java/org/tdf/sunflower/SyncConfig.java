@@ -6,6 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.tdf.common.util.HexBytes;
 
+import java.util.Map;
+
 @ConfigurationProperties(prefix = "sunflower.sync")
 @Component
 @Setter
@@ -54,4 +56,7 @@ public class SyncConfig {
     public byte[] getFastSyncHash() {
         return fastSyncHash == null ? null : HexBytes.decode(fastSyncHash);
     }
+
+    @Getter
+    private Map<String, Integer> rateLimits;
 }

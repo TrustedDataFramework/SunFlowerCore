@@ -9,7 +9,6 @@ import org.tdf.common.store.CachedStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
 import org.tdf.sunflower.events.NewBlockMined;
@@ -58,6 +57,7 @@ public class SyncManager implements PeerServerListener {
     private final long fastSyncHeight;
     private final HexBytes fastSyncHash;
 
+    private Limiters limiters;
     private volatile Block fastSyncBlock;
 
     private Cache<HexBytes, Boolean> receivedTransactions = CacheBuilder.newBuilder()
@@ -94,6 +94,7 @@ public class SyncManager implements PeerServerListener {
         this.fastSyncHash = HexBytes.fromBytes(syncConfig.getFastSyncHash());
         this.fastSyncHeight = syncConfig.getFastSyncHeight();
         this.accountTrie = accountTrie;
+        this.limiters = new Limiters(syncConfig.getRateLimits());
     }
 
     @PostConstruct
@@ -132,11 +133,16 @@ public class SyncManager implements PeerServerListener {
             case SyncMessage.UNKNOWN:
                 return;
             case SyncMessage.STATUS: {
+                if(limiters.getStatus() != null && !limiters.getStatus().tryAcquire())
+                    return;
                 Status s = msg.getBodyAs(Status.class);
                 this.onStatus(context, server, s);
                 return;
             }
             case SyncMessage.GET_BLOCKS: {
+                if(limiters.getStatus() != null && !limiters.getGetBlocks().tryAcquire()){
+                    return;
+                }
                 if (fastSyncing) return;
                 GetBlocks getBlocks = msg.getBodyAs(GetBlocks.class);
                 List<Block> blocks = repository.getBlocksBetween(
