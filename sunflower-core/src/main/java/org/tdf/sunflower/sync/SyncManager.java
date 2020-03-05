@@ -9,9 +9,11 @@ import org.tdf.common.store.CachedStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
+import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
 import org.tdf.sunflower.events.NewBlockMined;
+import org.tdf.sunflower.events.NewTransactionCollected;
 import org.tdf.sunflower.facade.ConsensusEngineFacade;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.facade.SunflowerRepository;
@@ -108,6 +110,11 @@ public class SyncManager implements PeerServerListener {
         eventBus.subscribe(NewBlockMined.class, (e) -> {
             propose(e.getBlock());
         });
+        eventBus.subscribe(NewTransactionCollected.class, (e) -> {
+            if(receivedTransactions.asMap().containsKey(e.getTransaction().getHash()))return;
+            receivedTransactions.asMap().put()
+            peerServer.broadcast(SyncMessage.encode(SyncMessage.TRANSACTION, RLPCodec.encode(e.getTransaction())));
+        });
     }
 
     private void clearFastSyncCache() {
@@ -178,7 +185,7 @@ public class SyncManager implements PeerServerListener {
                 if (fastSyncing) return;
                 byte[] root = msg.getBodyAs(byte[].class);
                 Set<HexBytes> addresses = new HashSet<>();
-                accountTrie.getTrie(root).traverse(e ->{
+                accountTrie.getTrie(root).traverse(e -> {
                     Account a = e.getValue();
                     addresses.add(a.getAddress());
                     return true;
@@ -286,7 +293,7 @@ public class SyncManager implements PeerServerListener {
                 ctx.block();
                 return;
             }
-            if(!fastSyncEnabled) return;
+            if (!fastSyncEnabled) return;
             if (fastSyncBlock == null) {
                 ctx.response(
                         SyncMessage.encode(

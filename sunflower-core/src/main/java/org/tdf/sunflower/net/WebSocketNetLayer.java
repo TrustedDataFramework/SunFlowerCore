@@ -158,11 +158,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
 
         @Override
         public void write(Message message) {
-            try {
-                conn.send(message.toByteArray());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            conn.send(message.toByteArray());
         }
 
         @Override
