@@ -1,11 +1,9 @@
 package org.tdf.sunflower.sync;
 
 import com.google.common.util.concurrent.RateLimiter;
-import lombok.Getter;
 
 import java.util.Map;
 
-@Getter
 public class Limiters {
     private RateLimiter status;
     private RateLimiter getBlocks;
@@ -16,5 +14,13 @@ public class Limiters {
         if(config.get("get-blocks") != null){
             this.getBlocks = RateLimiter.create(config.get("get-blocks"));
         }
+    }
+
+    public RateLimiter status() {
+        return status;
+    }
+
+    public RateLimiter getBlocks() {
+        return getBlocks;
     }
 }

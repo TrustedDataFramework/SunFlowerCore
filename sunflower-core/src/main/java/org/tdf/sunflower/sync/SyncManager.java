@@ -133,14 +133,17 @@ public class SyncManager implements PeerServerListener {
             case SyncMessage.UNKNOWN:
                 return;
             case SyncMessage.STATUS: {
-                if(limiters.getStatus() != null && !limiters.getStatus().tryAcquire())
+                if(limiters.status() != null && !limiters.status().tryAcquire()){
+                    log.error("receive status message too frequent");
                     return;
+                }
                 Status s = msg.getBodyAs(Status.class);
                 this.onStatus(context, server, s);
                 return;
             }
             case SyncMessage.GET_BLOCKS: {
-                if(limiters.getStatus() != null && !limiters.getGetBlocks().tryAcquire()){
+                if(limiters.getBlocks() != null && !limiters.getBlocks().tryAcquire()){
+                    log.error("receive get-blocks message too frequent");
                     return;
                 }
                 if (fastSyncing) return;
