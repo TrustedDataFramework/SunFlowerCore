@@ -1,5 +1,6 @@
 package org.tdf.sunflower.net;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.crypto.CryptoContext;
@@ -21,6 +22,8 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     private String host;
     private int port;
     private HexBytes ID;
+
+    @JsonIgnore
     private byte[] privateKey;
 
 
