@@ -17,10 +17,6 @@ public class Hosts {
 
     private ContractDB contractDb;
 
-    private List<HostFunction> parameters;
-
-
-
     public Hosts disableEvent(){
         this.disableEvent = true;
         return this;
@@ -40,25 +36,10 @@ public class Hosts {
         if (context != null) {
             all.addAll(new ContextHelper(context).getHelpers());
         }
-        if (parameters != null) {
-            all.addAll(parameters);
-        }
         if(contractDb != null){
             all.addAll(contractDb.getHelpers());
         }
         return all;
-    }
-
-
-    public Hosts withParameters(byte[] payload, boolean available) {
-        parameters =
-                Arrays.asList(
-                        new Parameters(payload),
-                        new ParametersLen(payload),
-                        new ParametersAvailable(available)
-                )
-        ;
-        return this;
     }
 
     public Hosts withContext(Context context) {

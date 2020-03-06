@@ -162,9 +162,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         contractAccount.setNonce(t.getNonce());
 
         // build Parameters here
-        Context context = Context.fromTransaction(header, t);
-        context.setContractAddress(t.createContractAddress());
-        context.setCreatedBy(t.getFromAddress());
+        Context context = new Context(header, t, contractAccount, null);
 
         ContractDB contractDB = new ContractDB(
                 storageTrie.revert(
@@ -175,7 +173,6 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
         Hosts hosts = new Hosts()
                 .withContext(context)
-                .withParameters(new byte[0], false)
                 .withDB(contractDB);
 
         // every contract must has a init method
@@ -218,9 +215,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         }
 
         // build Parameters here
-        Context context = Context.fromTransaction(header, t);
-        context.setCreatedBy(contractAccount.getCreatedBy());
-        context.setContractAddress(contractAccount.getAddress());
+        Context context = new Context(header, t, contractAccount, null);
+
         ContractDB contractDB = new ContractDB(
                 storageTrie.revert(
                         contractAccount.getStorageRoot(),
@@ -230,7 +226,6 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
         Hosts hosts = new Hosts()
                 .withContext(context)
-                .withParameters(context.getPayload(), true)
                 .withDB(contractDB);
 
         // every contract should have a init method

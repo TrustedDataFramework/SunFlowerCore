@@ -71,16 +71,12 @@ public class EntryController {
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public HexBytes getContract(
             @PathVariable("address") final String address,
-            @RequestParam(value = "parameters") String parameters
+            @RequestParam(value = "parameters") String arguments
     ) throws Exception {
         HexBytes addressHex = Address.of(address);
-        byte[] params = HexBytes.fromHex(parameters).getBytes();
+        HexBytes args = HexBytes.fromHex(arguments);
         Header h = sunflowerRepository.getBestHeader();
-        Account a = accountTrie
-                .get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex)
-                .filter(Account::containsContract)
-                .orElseThrow(() -> new RuntimeException("the address " + addressHex + " has no contract deployed"));
-        byte[] result = accountTrie.view(h.getStateRoot().getBytes(), addressHex, params);
+        byte[] result = accountTrie.view(h.getStateRoot().getBytes(), addressHex, args);
         return HexBytes.fromBytes(result);
     }
 

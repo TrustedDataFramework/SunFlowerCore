@@ -7,6 +7,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.vm.abi.Context;
+import org.tdf.sunflower.vm.abi.ContextContract;
 import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
@@ -27,18 +28,16 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
         this.contractCodeStore = contractCodeStore;
     }
 
-    public byte[] view(byte[] stateRoot, HexBytes address, byte[] parameters) {
+    public byte[] view(byte[] stateRoot, HexBytes address, HexBytes args) {
         Account account = getTrie(stateRoot)
                 .get(address)
                 .filter(Account::containsContract)
                 .orElseThrow(() -> new RuntimeException(address + " not exists or not a contract address"));
 
-        Context ctx = Context.disabled();
-        ctx.setContractAddress(address);
-        ctx.setCreatedBy(account.getCreatedBy());
+        Context ctx =
+                new Context(null, null, account, args);
 
         Hosts hosts = new Hosts()
-                .withParameters(parameters, true)
                 .withContext(ctx);
 
         ModuleInstance instance = ModuleInstance.builder()
@@ -47,8 +46,8 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
                 .hostFunctions(hosts.getAll())
                 .build();
 
-        String method = Context.getMethod(parameters);
-        instance.execute(method);
+
+        instance.execute(ctx.getMethod());
         return hosts.getResult();
     }
 

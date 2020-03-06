@@ -22,7 +22,7 @@ import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.util.*;
 
-@Slf4j
+@Slf4j(topic = "miner")
 public abstract class AbstractMiner implements Miner {
     @Setter
     @Getter(AccessLevel.PROTECTED)

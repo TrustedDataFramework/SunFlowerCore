@@ -1,85 +1,50 @@
 package org.tdf.sunflower.vm.abi;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.util.BytesReader;
 
 import java.nio.charset.StandardCharsets;
 
 
-@Builder
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
 public class Context {
-    public static Context disabled(){
-        return Context.builder().build();
+    private ContextHeader header;
+    private ContextTransaction transaction;
+    private ContextContract contextContract;
+    private HexBytes viewParameters;
+
+    public Context(ContextHeader header, ContextTransaction transaction, ContextContract contextContract, HexBytes viewParameters) {
+        this.header = header;
+        this.transaction = transaction;
+        this.contextContract = contextContract;
+        this.viewParameters = viewParameters;
     }
 
-    public static String getMethod(byte[] parameters){
-        BytesReader reader = new BytesReader(parameters);
-        int len = reader.read();
-        return new String(reader.read(len), StandardCharsets.US_ASCII);
+    public Context(Header header, Transaction transaction, Account account, HexBytes bytes){
+        this(
+                header == null ? null : new ContextHeader(header),
+                transaction == null ? null : new ContextTransaction(transaction),
+                account == null ? null : new ContextContract(account),
+                bytes
+        );
     }
 
-    public static Context fromTransaction(Header header, Transaction transaction) {
-        ContextBuilder builder = builder();
-        if (transaction.getType() == Transaction.Type.CONTRACT_DEPLOY.code) {
-            builder.method("init");
-        } else {
-            builder.method(getMethod(transaction.getPayload().getBytes()));
+    public String getMethod(){
+        if(transaction != null && transaction.getType() == Transaction.Type.CONTRACT_DEPLOY.code)
+            return "init";
+        if(transaction != null){
+            return readMethod(transaction.getPayload());
         }
-        builder.sender(transaction.getFromAddress())
-                .recipient(transaction.getTo())
-                .transactionHash(transaction.getHash())
-                .gasPrice(transaction.getGasPrice())
-                .parentBlockHash(header.getHashPrev())
-                .blockHeight(header.getHeight())
-                .payload(transaction.getPayload().getBytes())
-                .transactionTimestamp(transaction.getCreatedAt())
-                .nonce(transaction.getNonce())
-                .signature(transaction.getSignature())
-                .amount(transaction.getAmount())
-                .available(true)
-                .blockTimestamp(header.getCreatedAt())
-        ;
-        return builder.build();
+        return readMethod(viewParameters);
     }
 
-    private HexBytes transactionHash;
-
-    private String method;
-
-    private HexBytes sender;
-
-    private HexBytes recipient;
-
-    private long amount;
-
-    private long gasPrice;
-
-    private long blockTimestamp;
-
-    private long transactionTimestamp;
-
-    private HexBytes parentBlockHash;
-
-    private byte[] payload;
-
-    private long blockHeight;
-
-    private long nonce;
-
-    private HexBytes signature;
-
-    private boolean available;
-
-    private HexBytes createdBy;
-
-    private HexBytes contractAddress;
+    private String readMethod(HexBytes bytes){
+        int len = bytes.getBytes()[0];
+        byte[] arr = new byte[len];
+        System.arraycopy(bytes.getBytes(), 1, arr, 0, len);
+        return new String(arr, StandardCharsets.US_ASCII);
+    }
 }
