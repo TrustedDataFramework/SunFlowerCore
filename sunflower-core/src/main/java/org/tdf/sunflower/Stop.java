@@ -11,7 +11,7 @@ import javax.annotation.PreDestroy;
 
 // resource cleaner
 @Component
-@Slf4j
+@Slf4j(topic = "stop")
 public class Stop {
 
     @Autowired

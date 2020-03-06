@@ -1,6 +1,7 @@
 package org.tdf.sunflower.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
@@ -48,8 +49,8 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
     private Header pruned;
 
-    public SunflowerRepositoryKVImpl(EventBus eventBus, DatabaseStoreFactory factory) {
-        super(eventBus);
+    public SunflowerRepositoryKVImpl(ApplicationContext context) {
+        super(context);
         this.transactionsStore = new StoreWrapper<>(
                 factory.create("transactions"),
                 Codec.identity(),

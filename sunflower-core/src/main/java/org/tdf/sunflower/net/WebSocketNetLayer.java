@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 // net layer implemented by websocket
-@Slf4j
+@Slf4j(topic = "net")
 public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
     private final Map<WebSocket, Channel> channels = new ConcurrentHashMap<>();
     private Consumer<Channel> channelHandler;

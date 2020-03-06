@@ -10,7 +10,7 @@ import org.tdf.sunflower.DatabaseConfig;
 import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j
+@Slf4j(topic = "db")
 @Component
 public class DatabaseStoreFactory {
     private DatabaseConfig config;

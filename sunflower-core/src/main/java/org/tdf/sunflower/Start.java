@@ -169,19 +169,16 @@ public class Start {
 
     @Bean
     public SunflowerRepository sunflowerRepository(
-            ApplicationContext context, EventBus eventBus,
-            DatabaseStoreFactory databaseStoreFactory
+            ApplicationContext context
     ){
         String type = context.getEnvironment().getProperty("sunflower.database.block-store");
         type = (type == null || type.isEmpty()) ? "rdbms" : type;
         switch (type){
             case "rdbms":{
-                TransactionDao transactionDao = context.getBean(TransactionDao.class);
-                HeaderDao headerDao = context.getBean(HeaderDao.class);
-                return new SunflowerRepositoryService(eventBus, headerDao, transactionDao);
+                return new SunflowerRepositoryService(context);
             }
             case "kv":{
-                SunflowerRepositoryKVImpl ret = new SunflowerRepositoryKVImpl(eventBus, databaseStoreFactory);
+                SunflowerRepositoryKVImpl ret = new SunflowerRepositoryKVImpl(context);
                 return new ConcurrentSunflowerRepository(ret);
             }
         }

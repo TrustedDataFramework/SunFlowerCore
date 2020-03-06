@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Properties;
 
 // poa is a minimal non-trivial consensus engine
-@Slf4j
+@Slf4j(topic = "poa")
 public class PoA extends ConsensusEngine {
     private PoAConfig poAConfig;
     private Genesis genesis;
@@ -43,7 +43,6 @@ public class PoA extends ConsensusEngine {
                 schema = mapper.writeValueAsProperties(new PoAConfig()).toString();
             } catch (Exception ignored) {
             }
-            ;
             throw new ConsensusEngineInitException(
                     "load properties failed :" + properties.toString() + " expecting " + schema
             );

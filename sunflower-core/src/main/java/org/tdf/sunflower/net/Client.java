@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-@Slf4j
+@Slf4j(topic = "net")
 public class Client implements ChannelListener {
     // listener for channel event
     private ChannelListener listener = ChannelListener.NONE;

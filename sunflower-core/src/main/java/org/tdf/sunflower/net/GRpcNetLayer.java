@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-@Slf4j
+@Slf4j(topic = "net")
 public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
     private Consumer<Channel> handler;
 

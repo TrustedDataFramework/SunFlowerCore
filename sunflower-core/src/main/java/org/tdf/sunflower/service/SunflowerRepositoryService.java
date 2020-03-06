@@ -2,6 +2,7 @@ package org.tdf.sunflower.service;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Isolation;
@@ -25,19 +26,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-@Slf4j
+@Slf4j(topic = "db")
 public class SunflowerRepositoryService extends AbstractBlockRepository implements SunflowerRepository {
     private final HeaderDao headerDao;
     private final TransactionDao transactionDao;
 
     public SunflowerRepositoryService(
-            EventBus eventBus,
-            HeaderDao headerDao,
-            TransactionDao transactionDao
+        ApplicationContext context
     ) {
-        super(eventBus);
-        this.headerDao = headerDao;
-        this.transactionDao = transactionDao;
+        super(context);
+        this.headerDao = context.getBean(HeaderDao.class);
+        this.transactionDao = context.getBean(TransactionDao.class);
     }
 
     protected Block getBlockFromHeader(Header header) {

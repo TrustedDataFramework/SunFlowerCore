@@ -12,7 +12,7 @@ import org.tdf.sunflower.types.ValidateResult;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Slf4j
+@Slf4j(topic = "txPool")
 @Component
 public class TransactionPoolImpl implements TransactionPool {
     enum PendingTransactionState {

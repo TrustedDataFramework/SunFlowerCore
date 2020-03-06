@@ -16,7 +16,7 @@ import java.security.SecureRandom;
 import java.util.UUID;
 
 // api for web console
-@Component
+//@Component
 public class WebConsole {
     static final SecureRandom SECURE_RANDOM = new SecureRandom();
     static final int SALT_LENGTH = 8;

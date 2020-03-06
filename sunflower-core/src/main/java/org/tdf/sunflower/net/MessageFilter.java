@@ -9,7 +9,7 @@ import org.tdf.sunflower.crypto.CryptoContext;
 /**
  * message filter
  */
-@Slf4j
+@Slf4j(topic = "net")
 public class MessageFilter implements Plugin {
     private Cache<HexBytes, Boolean> cache;
 
@@ -22,7 +22,9 @@ public class MessageFilter implements Plugin {
     public void onMessage(ContextImpl context, PeerServerImpl server) {
         // filter invalid signatures
         if (!CryptoContext.verifySignature(
-                context.getRemote().getID().getBytes(), Util.getRawForSign(context.message), context.message.getSignature().toByteArray()
+                context.getRemote().getID().getBytes(),
+                Util.getRawForSign(context.message),
+                context.message.getSignature().toByteArray()
         )) {
             log.error("invalid signature received from " + context.remote);
             context.exit();

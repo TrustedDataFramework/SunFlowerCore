@@ -189,6 +189,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         if (instance.containsExport("init")) {
             instance.execute("init");
         }
+
         contractDB.getStorageTrie().commit();
         contractDB.getStorageTrie().flush();
         contractAccount.setStorageRoot(contractDB.getStorageTrie().getRootHash());

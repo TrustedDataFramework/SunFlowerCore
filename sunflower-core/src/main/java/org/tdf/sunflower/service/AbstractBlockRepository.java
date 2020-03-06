@@ -1,9 +1,10 @@
 package org.tdf.sunflower.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.springframework.context.ApplicationContext;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.GenesisConflictsException;
 import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.facade.BlockRepository;
@@ -16,12 +17,20 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-@RequiredArgsConstructor
 public abstract class AbstractBlockRepository implements BlockRepository {
-    protected final EventBus eventBus;
+    protected EventBus eventBus;
     protected Block genesis;
+
     @Setter
     protected StateTrie<HexBytes, Account> accountTrie;
+
+    protected DatabaseStoreFactory factory;
+
+
+    public AbstractBlockRepository(ApplicationContext context) {
+        this.eventBus = context.getBean(EventBus.class);
+        this.factory = context.getBean(DatabaseStoreFactory.class);
+    }
 
     @Override
     public Block getGenesis() {

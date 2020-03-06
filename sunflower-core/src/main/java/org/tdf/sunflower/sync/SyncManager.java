@@ -3,14 +3,18 @@ package org.tdf.sunflower.sync;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.store.CachedStore;
+import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
+import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
+import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.events.NewTransactionCollected;
 import org.tdf.sunflower.facade.ConsensusEngineFacade;
@@ -56,6 +60,8 @@ public class SyncManager implements PeerServerListener {
     private final StateTrie<HexBytes, Account> accountTrie;
     private final long fastSyncHeight;
     private final HexBytes fastSyncHash;
+    private final Trie<byte[], byte[]> contractStorageTrie;
+    private final Store<byte[], byte[]> contractCodeStore;
 
     private Limiters limiters;
     private volatile Block fastSyncBlock;
@@ -71,17 +77,21 @@ public class SyncManager implements PeerServerListener {
     private ReadWriteLock fastSyncAddressesLock = new ReentrantReadWriteLock();
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-    // when fastSyncing = true, the node
+    // when fastSyncing = true, the node is in fast-syncing mode
     private volatile boolean fastSyncing;
     private volatile Trie<HexBytes, Account> fastSyncTrie;
     private volatile Set<HexBytes> fastSyncAddresses;
+    private volatile Set<HexBytes> fastSyncContracts;
+    private volatile TreeSet<HexBytes> fastSyncStorageRoots;
 
     public SyncManager(
             PeerServer peerServer, ConsensusEngineFacade engine,
             SunflowerRepository repository,
             TransactionPool transactionPool, SyncConfig syncConfig,
             EventBus eventBus,
-            AccountTrie accountTrie
+            AccountTrie accountTrie,
+            @Qualifier("contractStorageTrie") Trie<byte[], byte[]> contractStorageTrie,
+            @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore
     ) {
         this.peerServer = peerServer;
         this.engine = engine;
@@ -95,6 +105,8 @@ public class SyncManager implements PeerServerListener {
         this.fastSyncHeight = syncConfig.getFastSyncHeight();
         this.accountTrie = accountTrie;
         this.limiters = new Limiters(syncConfig.getRateLimits());
+        this.contractStorageTrie = contractStorageTrie;
+        this.contractCodeStore = contractCodeStore;
     }
 
     @PostConstruct
@@ -112,7 +124,7 @@ public class SyncManager implements PeerServerListener {
             propose(e.getBlock());
         });
         eventBus.subscribe(NewTransactionCollected.class, (e) -> {
-            if(receivedTransactions.asMap().containsKey(e.getTransaction().getHash()))return;
+            if (receivedTransactions.asMap().containsKey(e.getTransaction().getHash())) return;
             receivedTransactions.asMap().put(e.getTransaction().getHash(), true);
             peerServer.broadcast(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransaction()));
         });
@@ -122,6 +134,8 @@ public class SyncManager implements PeerServerListener {
         this.fastSyncBlock = null;
         this.fastSyncAddresses = null;
         this.fastSyncTrie = null;
+        this.fastSyncContracts = null;
+        this.fastSyncStorageRoots = null;
     }
 
     @Override
@@ -133,7 +147,7 @@ public class SyncManager implements PeerServerListener {
             case SyncMessage.UNKNOWN:
                 return;
             case SyncMessage.STATUS: {
-                if(limiters.status() != null && !limiters.status().tryAcquire()){
+                if (limiters.status() != null && !limiters.status().tryAcquire()) {
                     log.error("receive status message too frequent");
                     return;
                 }
@@ -142,7 +156,7 @@ public class SyncManager implements PeerServerListener {
                 return;
             }
             case SyncMessage.GET_BLOCKS: {
-                if(limiters.getBlocks() != null && !limiters.getBlocks().tryAcquire()){
+                if (limiters.getBlocks() != null && !limiters.getBlocks().tryAcquire()) {
                     log.error("receive get-blocks message too frequent");
                     return;
                 }
@@ -205,6 +219,8 @@ public class SyncManager implements PeerServerListener {
             case SyncMessage.ADDRESSES: {
                 if (!fastSyncing || fastSyncAddresses != null) return;
                 this.fastSyncAddresses = new HashSet<>(Arrays.asList(msg.getBodyAs(HexBytes[].class)));
+                this.fastSyncContracts = new HashSet<>();
+                this.fastSyncStorageRoots = new TreeSet<>();
                 return;
             }
             case SyncMessage.GET_ACCOUNTS: {
@@ -222,6 +238,65 @@ public class SyncManager implements PeerServerListener {
                 context.response(SyncMessage.encode(SyncMessage.ACCOUNTS, accounts));
                 return;
             }
+            case SyncMessage.GET_CONTRACTS: {
+                if(fastSyncing) return;
+                byte[][] contractHashes = msg.getBodyAs(byte[][].class);
+                List<byte[]> ret = new ArrayList<>(contractHashes.length);
+                for (byte[] hash : contractHashes) {
+                    contractCodeStore.get(hash).ifPresent(ret::add);
+                }
+                context.response(SyncMessage.encode(SyncMessage.CONTRACTS, ret));
+                return;
+            }
+            case SyncMessage.CONTRACTS: {
+                if (!fastSyncing || fastSyncContracts == null) return;
+                byte[][] contracts = msg.getBodyAs(byte[][].class);
+                fastSyncAddressesLock.writeLock().lock();
+                try {
+                    for (byte[] contract : contracts) {
+                        byte[] key = CryptoContext.digest(contract);
+                        if (!fastSyncContracts.contains(HexBytes.fromBytes(key)))
+                            continue;
+                        fastSyncContracts.remove(HexBytes.fromBytes(key));
+                        contractCodeStore.put(key, contract);
+                    }
+                } finally {
+                    fastSyncAddressesLock.writeLock().unlock();
+                }
+                tryFinishFastSync();
+                return;
+            }
+            case SyncMessage.CONTRACT_STORAGE: {
+                if (!fastSyncing || fastSyncContracts == null) return;
+                byte[][] kv = msg.getBodyAs(byte[][].class);
+                fastSyncAddressesLock.writeLock().lock();
+                Trie<byte[], byte[]> empty = contractStorageTrie.revert();
+                try {
+                    for (int i = 0; i < kv.length/2; i += 1) {
+                        byte[] k = kv[2 * i];
+                        byte[] v = kv[2 * i + 1];
+                        empty.put(k, v);
+                    }
+                    byte[] root = empty.commit();
+                    fastSyncStorageRoots.remove(HexBytes.fromBytes(root));
+                } finally {
+                    fastSyncAddressesLock.writeLock().unlock();
+                }
+                tryFinishFastSync();
+                return;
+            }
+            case SyncMessage.GET_CONTRACT_STORAGE: {
+                if(fastSyncing)return;
+                byte[] root = msg.getBodyAs(byte[].class);
+                List<byte[]> ret = new ArrayList<>();
+                this.contractStorageTrie.revert(root)
+                        .forEach((k, v) -> {
+                            ret.add(k);
+                            ret.add(v);
+                        });
+                context.response(SyncMessage.encode(SyncMessage.CONTRACT_STORAGE, ret));
+                return;
+            }
             case SyncMessage.ACCOUNTS: {
                 if (!fastSyncing) return;
                 if (fastSyncTrie == null) {
@@ -235,28 +310,25 @@ public class SyncManager implements PeerServerListener {
                     for (Account a : msg.getBodyAs(Account[].class)) {
                         fastSyncTrie.put(a.getAddress(), a);
                         fastSyncAddresses.remove(a.getAddress());
-                    }
-                    if (fastSyncAddresses.isEmpty()) {
-                        HexBytes stateRoot = HexBytes.fromBytes(fastSyncTrie.commit());
-                        if (fastSyncBlock.getStateRoot().equals(stateRoot)) {
-                            this.fastSyncing = false;
-                            fastSyncTrie.flush();
-                            repository.writeBlock(fastSyncBlock);
-                            repository.prune(fastSyncBlock.getHash().getBytes());
-                            devAssert(
-                                    repository.getPrunedHash().equals(fastSyncBlock.getHash()), "prune failed after fast sync");
-                            log.info("fast sync success to height {} hash {}", fastSyncHeight, fastSyncBlock.getHash());
-                            clearFastSyncCache();
-                            return;
-                        } else {
-                            clearFastSyncCache();
-                            log.error("fast sync failed, state root not match, malicious node may exists in network!!!");
+                        if (a.containsContract() && !contractCodeStore.containsKey(a.getAddress().getBytes())) {
+                            fastSyncContracts.add(HexBytes.fromBytes(a.getContractHash()));
+                        }
+                        if (
+                                a.getStorageRoot() != null
+                                        && a.getStorageRoot().length != 0
+                                        && !FastByteComparisons.equal(contractStorageTrie.getNullHash(), a.getStorageRoot())
+                                        && !contractStorageTrie.getStore().containsKey(a.getStorageRoot())
+                        ) {
+                            fastSyncStorageRoots.add(HexBytes.fromBytes(a.getStorageRoot()));
                         }
                     }
+                    tryFinishFastSync();
                 } finally {
                     fastSyncAddressesLock.writeLock().unlock();
                 }
+                return;
             }
+
             case SyncMessage.BLOCKS: {
                 Block[] blocks = msg.getBodyAs(Block[].class);
                 if (fastSyncing) {
@@ -291,6 +363,25 @@ public class SyncManager implements PeerServerListener {
         }
     }
 
+    private void tryFinishFastSync(){
+        if (fastSyncAddresses.isEmpty() && fastSyncContracts.isEmpty() && fastSyncStorageRoots.isEmpty()) {
+            HexBytes stateRoot = HexBytes.fromBytes(fastSyncTrie.commit());
+            if (fastSyncBlock.getStateRoot().equals(stateRoot)) {
+                this.fastSyncing = false;
+                fastSyncTrie.flush();
+                repository.writeBlock(fastSyncBlock);
+                repository.prune(fastSyncBlock.getHash().getBytes());
+                devAssert(
+                        repository.getPrunedHash().equals(fastSyncBlock.getHash()), "prune failed after fast sync");
+                log.info("fast sync success to height {} hash {}", fastSyncHeight, fastSyncBlock.getHash());
+                clearFastSyncCache();
+                return;
+            } else {
+                clearFastSyncCache();
+                log.error("fast sync failed, state root not match, malicious node may exists in network!!!");
+            }
+        }
+    }
 
     private void onStatus(Context ctx, PeerServer server, Status s) {
         if (fastSyncing) {
@@ -311,16 +402,23 @@ public class SyncManager implements PeerServerListener {
                         ));
                 log.info("fetch fast sync block at height {}", fastSyncHeight);
             }
-            if (fastSyncBlock != null) {
+            if (fastSyncBlock != null && fastSyncAddresses == null) {
                 ctx.response(SyncMessage.encode(
                         SyncMessage.GET_ADDRESSES,
                         fastSyncBlock.getStateRoot()
                 ));
                 log.info("fetch account addresses");
             }
-            if (fastSyncBlock != null && fastSyncAddresses != null) {
+            if (
+                    fastSyncBlock != null
+                            && fastSyncAddresses != null
+                            && fastSyncContracts != null
+                            && fastSyncStorageRoots != null
+            ) {
                 fastSyncAddressesLock.readLock().lock();
                 List<HexBytes> accountAddresses = new ArrayList<>();
+                List<HexBytes> contractAddresses = new ArrayList<>();
+                HexBytes root = null;
                 try {
                     int i = 0;
                     for (HexBytes address : fastSyncAddresses) {
@@ -328,16 +426,41 @@ public class SyncManager implements PeerServerListener {
                         accountAddresses.add(address);
                         i++;
                     }
+                    i = 0;
+                    for (HexBytes address : fastSyncContracts) {
+                        if (i > syncConfig.getMaxAccountsTransfer()) break;
+                        contractAddresses.add(address);
+                        i++;
+                    }
+                    root = fastSyncStorageRoots.isEmpty() ? null : fastSyncStorageRoots.first();
                 } finally {
                     fastSyncAddressesLock.readLock().unlock();
                 }
                 log.info("try to fetch addresses at state root " + fastSyncBlock.getHeader());
-                ctx.response(
-                        SyncMessage.encode(
-                                SyncMessage.GET_ACCOUNTS,
-                                new GetAccounts(fastSyncBlock.getStateRoot(), accountAddresses)
-                        )
-                );
+                if(!accountAddresses.isEmpty()){
+                    ctx.response(
+                            SyncMessage.encode(
+                                    SyncMessage.GET_ACCOUNTS,
+                                    new GetAccounts(fastSyncBlock.getStateRoot(), accountAddresses)
+                            )
+                    );
+                }
+                if(!contractAddresses.isEmpty()){
+                    ctx.response(
+                            SyncMessage.encode(
+                                    SyncMessage.GET_CONTRACTS,
+                                    contractAddresses
+                            )
+                    );
+                }
+                if(root != null){
+                    ctx.response(
+                            SyncMessage.encode(
+                                    SyncMessage.GET_CONTRACT_STORAGE,
+                                    root
+                            )
+                    );
+                }
             }
             return;
         }
