@@ -9,6 +9,7 @@ public class Limiters {
     private RateLimiter getBlocks;
 
     public Limiters(Map<String, Integer> config){
+        if(config == null) return;
         if(config.get("status") != null)
             this.status = RateLimiter.create(config.get("status"));
         if(config.get("get-blocks") != null){
