@@ -1,6 +1,7 @@
 package org.tdf.sunflower.state;
 
 import org.tdf.common.serialize.Codecs;
+import org.tdf.common.store.ReadOnlyStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
@@ -8,6 +9,7 @@ import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.abi.ContextContract;
+import org.tdf.sunflower.vm.hosts.ContractDB;
 import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
@@ -37,8 +39,12 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
         Context ctx =
                 new Context(null, null, account, args);
 
+        Trie<byte[], byte[]> trie =
+                contractStorageTrie.revert(account.getStorageRoot(), ReadOnlyStore.of(contractStorageTrie.getStore()));
+
         Hosts hosts = new Hosts()
-                .withContext(ctx);
+                .withContext(ctx)
+                .withDB(new ContractDB(trie));
 
         ModuleInstance instance = ModuleInstance.builder()
                 .hooks(Collections.singleton(new GasLimit()))
