@@ -2,11 +2,11 @@
   "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "timestamp": 1572511433,
   "miners": [{
-      "addr": "87b8f0b097b48b282a5c661babc8096e141bd9fb"
+      "addr": "38842c0c2c4caadaf88af398777f274637c3dbce"
     }
   ],
   "alloc":{
-        "87b8f0b097b48b282a5c661babc8096e141bd9fb": 1000000,
+        "38842c0c2c4caadaf88af398777f274637c3dbce": 1000000,
         "f0cf9664cab2b5fcd744c0ad1c02b30b6ede02a3": 1000000
   }
 }

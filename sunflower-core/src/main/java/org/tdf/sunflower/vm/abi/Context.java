@@ -23,11 +23,11 @@ public class Context {
         this.viewParameters = viewParameters;
     }
 
-    public Context(Header header, Transaction transaction, Account account, HexBytes bytes){
+    public Context(Header header, Transaction transaction, Account contractAccount, HexBytes bytes){
         this(
                 header == null ? null : new ContextHeader(header),
                 transaction == null ? null : new ContextTransaction(transaction),
-                account == null ? null : new ContextContract(account),
+                contractAccount == null ? null : new ContextContract(contractAccount),
                 bytes
         );
     }

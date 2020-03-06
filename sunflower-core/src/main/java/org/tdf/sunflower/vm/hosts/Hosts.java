@@ -5,7 +5,6 @@ import org.tdf.sunflower.vm.abi.Context;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class Hosts {
@@ -28,7 +27,7 @@ public class Hosts {
 
     public Set<HostFunction> getAll() {
         Set<HostFunction> all = new HashSet<>();
-        all.addAll(Arrays.asList(new Abort(), new Keccak256(), result));
+        all.addAll(Arrays.asList(new Abort(), new HashHost(), result));
         all.addAll(new Decimal().getHelpers());
         all.addAll(new JSONHelper().getHelpers());
         all.add(new Log());
