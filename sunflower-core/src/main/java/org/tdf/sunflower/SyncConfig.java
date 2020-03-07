@@ -58,5 +58,5 @@ public class SyncConfig {
     }
 
     @Getter
-    private Map<String, Integer> rateLimits;
+    private Map<String, Double> rateLimits;
 }

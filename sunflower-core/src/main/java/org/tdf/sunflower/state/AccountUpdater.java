@@ -131,6 +131,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             if (t.getFromAddress().equals(state.getAddress())) {
                 require(Long.compareUnsigned(state.getBalance(), t.getAmount()) >= 0, "the balance of sender is not enough");
                 state.setBalance(state.getBalance() - t.getAmount());
+                log.info("transfer from " + t.getFromAddress() + " to " + t.getTo() + " amount = " + t.getAmount());
             }
             if (t.getTo().equals(state.getAddress())) {
                 state.setBalance(state.getBalance() + t.getAmount());

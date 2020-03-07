@@ -1,0 +1,16 @@
+{
+  "name": "assembly-script-template",
+  "version": "1.0.0",
+  "description": "template for writing contract code",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "node ./deploy.js"
+  },
+  "author": "Salpadding",
+  "license": "MIT",
+  "devDependencies": {
+    "axios": "^0.19.2",
+    "commander": "^2.20.0"
+  }
+}

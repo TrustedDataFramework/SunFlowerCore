@@ -17,10 +17,7 @@ import org.tdf.sunflower.SyncConfig;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.events.NewTransactionCollected;
-import org.tdf.sunflower.facade.ConsensusEngineFacade;
-import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.facade.SunflowerRepository;
-import org.tdf.sunflower.facade.TransactionPool;
+import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.Context;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
@@ -62,6 +59,7 @@ public class SyncManager implements PeerServerListener {
     private final HexBytes fastSyncHash;
     private final Trie<byte[], byte[]> contractStorageTrie;
     private final Store<byte[], byte[]> contractCodeStore;
+    private final Miner miner;
 
     private Limiters limiters;
     private volatile Block fastSyncBlock;
@@ -91,7 +89,8 @@ public class SyncManager implements PeerServerListener {
             EventBus eventBus,
             AccountTrie accountTrie,
             @Qualifier("contractStorageTrie") Trie<byte[], byte[]> contractStorageTrie,
-            @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore
+            @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore,
+            Miner miner
     ) {
         this.peerServer = peerServer;
         this.engine = engine;
@@ -107,6 +106,9 @@ public class SyncManager implements PeerServerListener {
         this.limiters = new Limiters(syncConfig.getRateLimits());
         this.contractStorageTrie = contractStorageTrie;
         this.contractCodeStore = contractCodeStore;
+        this.miner = miner;
+        if(this.fastSyncing)
+            this.miner.stop();
     }
 
     @PostConstruct
@@ -203,7 +205,7 @@ public class SyncManager implements PeerServerListener {
                 return;
             }
             case SyncMessage.GET_ADDRESSES: {
-                if (fastSyncing) return;
+                if (fastSyncing || !limiters.getAddresses().tryAcquire()) return;
                 byte[] root = msg.getBodyAs(byte[].class);
                 Set<HexBytes> addresses = new HashSet<>();
                 accountTrie.getTrie(root).traverse(e -> {
@@ -222,7 +224,7 @@ public class SyncManager implements PeerServerListener {
                 return;
             }
             case SyncMessage.GET_ACCOUNTS: {
-                if (fastSyncing) return;
+                if (fastSyncing || !limiters.getAccounts().tryAcquire()) return;
                 GetAccounts getAccounts = msg.getBodyAs(GetAccounts.class);
                 List<Account> accounts = new ArrayList<>();
                 Trie<HexBytes, Account> trie = accountTrie.getTrie(getAccounts.getStateRoot().getBytes());
@@ -320,6 +322,7 @@ public class SyncManager implements PeerServerListener {
                             fastSyncStorageRoots.add(HexBytes.fromBytes(a.getStorageRoot()));
                         }
                     }
+                    log.info("not synced accounts = " + fastSyncAddresses.size());
                     tryFinishFastSync();
                 } finally {
                     fastSyncAddressesLock.writeLock().unlock();
@@ -378,6 +381,7 @@ public class SyncManager implements PeerServerListener {
         devAssert(
                 repository.getPrunedHash().equals(fastSyncBlock.getHash()), "prune failed after fast sync");
         log.info("fast sync success to height {} hash {}", fastSyncHeight, fastSyncBlock.getHash());
+        this.miner.start();
         clearFastSyncCache();
 
     }

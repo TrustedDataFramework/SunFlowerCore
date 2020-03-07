@@ -80,6 +80,8 @@ sunflower:
     rate-limits:
       status: '16'
       get-blocks: '16'
+      get-accounts: '0.5'
+      get-addresses: '0.5'
 
   message-queue:
     name: 'socketIO'
