@@ -497,6 +497,8 @@ public class SyncManager implements PeerServerListener {
     }
 
     public void tryWrite() {
+        if(fastSyncing)
+            return;
         Header best = repository.getBestHeader();
         blockQueueLock.lock();
         try {

@@ -177,7 +177,10 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
             status.put(BEST_HEADER, block.getHeader());
             byte[] hash = block.getHash().getBytes();
             while (true){
-                Header h = headerStore.get(hash).get();
+                Optional<Header> o = headerStore.get(hash);
+                if(!o.isPresent())
+                    break;
+                Header h = o.get();
                 Optional<byte[]> canonicalHash = canonicalIndex.get(h.getHeight());
                 if(canonicalHash.isPresent() && FastByteComparisons.equal(canonicalHash.get(), hash))
                     break;
