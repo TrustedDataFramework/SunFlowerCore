@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.tdf.common.util.HexBytes;
@@ -13,12 +14,15 @@ import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
+import org.tdf.sunflower.proto.Sunflower;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.UnmodifiableTransaction;
 
+import java.util.Collections;
 import java.util.List;
 
 
@@ -37,6 +41,51 @@ public class EntryController {
     private SunflowerRepository sunflowerRepository;
 
     private ObjectMapper objectMapper;
+
+    private SunflowerRepository repository;
+
+    @GetMapping(value = "/block/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Block getBlock(@PathVariable String hashOrHeight) throws Exception {
+        try{
+            long height = Long.parseLong(hashOrHeight);
+            Header h = repository.getBestHeader();
+            while (height < 0){
+                height += h.getHeight() + 1;
+            }
+            final long finalHeight = height;
+            return repository.getCanonicalBlock(height)
+                    .orElseThrow(() -> new RuntimeException("block at height " + finalHeight + " not found"));
+        }catch (Exception ignored){
+
+        }
+        return repository.getBlock(HexBytes.decode(hashOrHeight))
+                .orElseThrow(() -> new RuntimeException("block of hash " + hashOrHeight + " not found"));
+    }
+
+    @GetMapping(value = "/header/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Header getHeaders(@PathVariable String hashOrHeight) throws Exception {
+        try{
+            long height = Long.parseLong(hashOrHeight);
+            Header h = repository.getBestHeader();
+            while (height < 0){
+                height += h.getHeight() + 1;
+            }
+            final long finalHeight = height;
+            return repository.getCanonicalHeader(height)
+                    .orElseThrow(() -> new RuntimeException("header at height " + finalHeight + " not found"));
+        }catch (Exception ignored){
+
+        }
+        return repository.getHeader(HexBytes.decode(hashOrHeight))
+                .orElseThrow(() -> new RuntimeException("header of hash " + hashOrHeight + " not found"));
+    }
+
+    @GetMapping(value = "/transaction/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Transaction getTransaction(@PathVariable String hash) throws Exception {
+        return repository
+                .getTransactionByHash(HexBytes.decode(hash))
+                .orElseThrow(() -> new RuntimeException("transaction " + hash + " not exists"));
+    }
 
 
     @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)

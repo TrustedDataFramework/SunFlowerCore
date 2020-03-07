@@ -178,6 +178,26 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
     }
 
     @Override
+    public Optional<Block> getCanonicalBlock(long height) {
+        lock.readLock().lock();
+        try {
+            return delegate.getCanonicalBlock(height);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public Optional<Header> getCanonicalHeader(long height) {
+        lock.readLock().lock();
+        try {
+            return delegate.getCanonicalHeader(height);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
     public void writeBlock(Block block) {
         lock.writeLock().lock();
         try {

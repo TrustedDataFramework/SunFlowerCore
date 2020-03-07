@@ -75,6 +75,11 @@ public abstract class AbstractBlockRepository implements BlockRepository {
 
     protected abstract List<Block> getBlocksFromHeaders(Collection<? extends Header> headers);
 
+    @Override
+    public Optional<Block> getCanonicalBlock(long height) {
+        return getCanonicalHeader(height).map(this::getBlockFromHeader);
+    }
+
     public Block getBestBlock() {
         return getBlockFromHeader(getBestHeader());
     }

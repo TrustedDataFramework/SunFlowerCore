@@ -44,6 +44,9 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     // block height -> block hashes
     private Store<Long, HexBytes[]> heightIndex;
 
+    // block height -> canonical hash
+    private Store<Long, byte[]> canonicalIndex;
+
     // best -> best header prune -> pruned header
     private Store<String, Header> status;
 
@@ -74,6 +77,11 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
                 factory.create("block-store-status"),
                 Codecs.STRING,
                 Codecs.newRLPCodec(Header.class)
+        );
+        this.canonicalIndex = new StoreWrapper<>(
+            factory.create("canonical-index"),
+                Codecs.newRLPCodec(Long.class),
+                Codec.identity()
         );
     }
 
@@ -167,6 +175,15 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         Block best = getBestBlock();
         if (Block.BEST_COMPARATOR.compare(best, block) < 0) {
             status.put(BEST_HEADER, block.getHeader());
+            byte[] hash = block.getHash().getBytes();
+            while (true){
+                Header h = headerStore.get(hash).get();
+                Optional<byte[]> canonicalHash = canonicalIndex.get(h.getHeight());
+                if(canonicalHash.isPresent() && FastByteComparisons.equal(canonicalHash.get(), hash))
+                    break;
+                canonicalIndex.put(h.getHeight(), hash);
+                hash = h.getHashPrev().getBytes();
+            }
             eventBus.publish(new NewBestBlock(block));
         }
     }
@@ -194,6 +211,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     @Override
     protected void writeGenesis(Block genesis) {
         writeBlockNoReset(genesis);
+        canonicalIndex.put(0L, genesis.getHash().getBytes());
     }
 
     private void writeBlockNoReset(Block block) {
@@ -322,5 +340,11 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     @Override
     public HexBytes getPrunedHash() {
         return pruned == null ? null : pruned.getHash();
+    }
+
+    @Override
+    public Optional<Header> getCanonicalHeader(long height) {
+        return canonicalIndex.get(height)
+                .flatMap(this::getHeader);
     }
 }

@@ -43,6 +43,10 @@ public interface BlockRepository{
 
     List<Block> getBlocksByHeight(long height);
 
+    Optional<Block> getCanonicalBlock(long height);
+
+    Optional<Header> getCanonicalHeader(long height);
+
     void writeBlock(Block block);
 
     // delete all header and transactions until this height(inclusive), exclude this block

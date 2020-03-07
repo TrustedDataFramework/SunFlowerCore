@@ -109,6 +109,16 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
         }
 
         @Override
+        public Optional<Block> getCanonicalBlock(long height) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Header> getCanonicalHeader(long height) {
+            return Optional.empty();
+        }
+
+        @Override
         public void writeBlock(Block block) {
 
         }

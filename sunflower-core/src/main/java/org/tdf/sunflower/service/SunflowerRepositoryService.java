@@ -39,6 +39,11 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
         this.transactionDao = context.getBean(TransactionDao.class);
     }
 
+    @Override
+    public Optional<Header> getCanonicalHeader(long height) {
+        return Optional.empty();
+    }
+
     protected Block getBlockFromHeader(Header header) {
         Block b = new Block(header);
         b.setBody(
