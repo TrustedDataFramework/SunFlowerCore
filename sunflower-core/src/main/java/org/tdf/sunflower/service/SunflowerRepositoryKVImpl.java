@@ -2,15 +2,14 @@ package org.tdf.sunflower.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
-import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.MemoryDatabaseStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.util.ByteArraySet;
+import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewBlockWritten;
 import org.tdf.sunflower.exception.ApplicationException;
@@ -18,6 +17,7 @@ import org.tdf.sunflower.exception.GenesisConflictsException;
 import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.facade.ConfirmedBlocksProvider;
 import org.tdf.sunflower.facade.SunflowerRepository;
+import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -296,6 +296,21 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
         this.pruned = pruned.getHeader();
         accountTrie.prune(stateRootWhiteList);
+
+        Set<byte[]> storageRootWhiteList = new ByteArraySet();
+        for (byte[] bytes : stateRootWhiteList) {
+            accountTrie.getTrie(bytes).traverse(e -> {
+                Account v = e.getValue();
+                if(v.getStorageRoot() != null
+                        && v.getStorageRoot().length != 0
+                        && !FastByteComparisons.equal(contractStorageTrie.getNullHash(), v.getStorageRoot())
+                ){
+                    storageRootWhiteList.add(v.getStorageRoot());
+                }
+                return true;
+            });
+        }
+        contractStorageTrie.prune(storageRootWhiteList);
         status.put(PRUNE, pruned.getHeader());
     }
 

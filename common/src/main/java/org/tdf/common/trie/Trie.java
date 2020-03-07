@@ -1,14 +1,14 @@
 package org.tdf.common.trie;
 
 import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.MemoryDatabaseStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.ByteArrayMap;
+import org.tdf.common.util.ByteArraySet;
 import org.tdf.rlp.RLPElement;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public interface Trie<K, V> extends Store<K, V> {
@@ -143,5 +143,23 @@ public interface Trie<K, V> extends Store<K, V> {
         }
     }
 
+    default void prune(Collection<? extends byte[]> excludedRoots){
+        prune(excludedRoots, getStore());
+    }
 
+    default void prune(Collection<? extends byte[]> excludedRoots, Store<byte[], byte[]> db) {
+        Set<byte[]> excludes = new ByteArraySet();
+        for (byte[] root : excludedRoots) {
+            excludes.addAll(revert(root).dumpKeys());
+        }
+        Consumer<byte[]> fn = k ->{
+            if(!excludes.contains(k))
+                db.remove(k);
+        };
+        if(db instanceof MemoryDatabaseStore){
+            new ArrayList<>(db.keySet()).forEach(fn);
+        }else{
+            db.stream().forEach(e -> fn.accept(e.getKey()));
+        }
+    }
 }

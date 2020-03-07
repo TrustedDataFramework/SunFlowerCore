@@ -3,6 +3,9 @@ package org.tdf.sunflower.service;
 import lombok.Setter;
 import org.springframework.context.ApplicationContext;
 import org.tdf.common.event.EventBus;
+import org.tdf.common.store.DatabaseStore;
+import org.tdf.common.store.Store;
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.GenesisConflictsException;
@@ -18,18 +21,23 @@ import java.util.List;
 import java.util.Optional;
 
 public abstract class AbstractBlockRepository implements BlockRepository {
-    protected EventBus eventBus;
+    protected final EventBus eventBus;
     protected Block genesis;
 
     @Setter
     protected StateTrie<HexBytes, Account> accountTrie;
 
-    protected DatabaseStoreFactory factory;
+    protected final DatabaseStoreFactory factory;
 
+    protected final Trie<byte[], byte[]> contractStorageTrie;
+
+    protected final Store<byte[], byte[]> contractCodeStore;
 
     public AbstractBlockRepository(ApplicationContext context) {
         this.eventBus = context.getBean(EventBus.class);
         this.factory = context.getBean(DatabaseStoreFactory.class);
+        this.contractStorageTrie = context.getBean("contractStorageTrie", Trie.class);
+        this.contractCodeStore = context.getBean("contractCodeStore", Store.class);
     }
 
     @Override

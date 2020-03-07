@@ -120,9 +120,7 @@ public class SyncManager implements PeerServerListener {
                 this::sendStatus, 0,
                 syncConfig.getHeartRate(), TimeUnit.SECONDS
         );
-        eventBus.subscribe(NewBlockMined.class, (e) -> {
-            propose(e.getBlock());
-        });
+        eventBus.subscribe(NewBlockMined.class, (e) -> propose(e.getBlock()));
         eventBus.subscribe(NewTransactionCollected.class, (e) -> {
             if (receivedTransactions.asMap().containsKey(e.getTransaction().getHash())) return;
             receivedTransactions.asMap().put(e.getTransaction().getHash(), true);
@@ -232,14 +230,14 @@ public class SyncManager implements PeerServerListener {
                 for (HexBytes address : getAccounts.getAddresses()) {
                     if (i > syncConfig.getMaxAccountsTransfer())
                         break;
-                    accounts.add(trie.get(address).get());
+                    trie.get(address).ifPresent(accounts::add);
                     i++;
                 }
                 context.response(SyncMessage.encode(SyncMessage.ACCOUNTS, accounts));
                 return;
             }
             case SyncMessage.GET_CONTRACTS: {
-                if(fastSyncing) return;
+                if (fastSyncing) return;
                 byte[][] contractHashes = msg.getBodyAs(byte[][].class);
                 List<byte[]> ret = new ArrayList<>(contractHashes.length);
                 for (byte[] hash : contractHashes) {
@@ -272,7 +270,7 @@ public class SyncManager implements PeerServerListener {
                 fastSyncAddressesLock.writeLock().lock();
                 Trie<byte[], byte[]> empty = contractStorageTrie.revert();
                 try {
-                    for (int i = 0; i < kv.length/2; i += 1) {
+                    for (int i = 0; i < kv.length / 2; i += 1) {
                         byte[] k = kv[2 * i];
                         byte[] v = kv[2 * i + 1];
                         empty.put(k, v);
@@ -286,7 +284,7 @@ public class SyncManager implements PeerServerListener {
                 return;
             }
             case SyncMessage.GET_CONTRACT_STORAGE: {
-                if(fastSyncing)return;
+                if (fastSyncing) return;
                 byte[] root = msg.getBodyAs(byte[].class);
                 List<byte[]> ret = new ArrayList<>();
                 this.contractStorageTrie.revert(root)
@@ -363,24 +361,25 @@ public class SyncManager implements PeerServerListener {
         }
     }
 
-    private void tryFinishFastSync(){
-        if (fastSyncAddresses.isEmpty() && fastSyncContracts.isEmpty() && fastSyncStorageRoots.isEmpty()) {
-            HexBytes stateRoot = HexBytes.fromBytes(fastSyncTrie.commit());
-            if (fastSyncBlock.getStateRoot().equals(stateRoot)) {
-                this.fastSyncing = false;
-                fastSyncTrie.flush();
-                repository.writeBlock(fastSyncBlock);
-                repository.prune(fastSyncBlock.getHash().getBytes());
-                devAssert(
-                        repository.getPrunedHash().equals(fastSyncBlock.getHash()), "prune failed after fast sync");
-                log.info("fast sync success to height {} hash {}", fastSyncHeight, fastSyncBlock.getHash());
-                clearFastSyncCache();
-                return;
-            } else {
-                clearFastSyncCache();
-                log.error("fast sync failed, state root not match, malicious node may exists in network!!!");
-            }
+    private void tryFinishFastSync() {
+        if (!fastSyncAddresses.isEmpty() || !fastSyncContracts.isEmpty() || !fastSyncStorageRoots.isEmpty()) {
+            return;
         }
+        HexBytes stateRoot = HexBytes.fromBytes(fastSyncTrie.commit());
+        if (!fastSyncBlock.getStateRoot().equals(stateRoot)) {
+            clearFastSyncCache();
+            log.error("fast sync failed, state root not match, malicious node may exists in network!!!");
+            return;
+        }
+        this.fastSyncing = false;
+        fastSyncTrie.flush();
+        repository.writeBlock(fastSyncBlock);
+        repository.prune(fastSyncBlock.getHash().getBytes());
+        devAssert(
+                repository.getPrunedHash().equals(fastSyncBlock.getHash()), "prune failed after fast sync");
+        log.info("fast sync success to height {} hash {}", fastSyncHeight, fastSyncBlock.getHash());
+        clearFastSyncCache();
+
     }
 
     private void onStatus(Context ctx, PeerServer server, Status s) {
@@ -437,7 +436,7 @@ public class SyncManager implements PeerServerListener {
                     fastSyncAddressesLock.readLock().unlock();
                 }
                 log.info("try to fetch addresses at state root " + fastSyncBlock.getHeader());
-                if(!accountAddresses.isEmpty()){
+                if (!accountAddresses.isEmpty()) {
                     ctx.response(
                             SyncMessage.encode(
                                     SyncMessage.GET_ACCOUNTS,
@@ -445,7 +444,7 @@ public class SyncManager implements PeerServerListener {
                             )
                     );
                 }
-                if(!contractAddresses.isEmpty()){
+                if (!contractAddresses.isEmpty()) {
                     ctx.response(
                             SyncMessage.encode(
                                     SyncMessage.GET_CONTRACTS,
@@ -453,7 +452,7 @@ public class SyncManager implements PeerServerListener {
                             )
                     );
                 }
-                if(root != null){
+                if (root != null) {
                     ctx.response(
                             SyncMessage.encode(
                                     SyncMessage.GET_CONTRACT_STORAGE,

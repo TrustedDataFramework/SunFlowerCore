@@ -131,18 +131,6 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
     @Override
     public void prune(Collection<? extends byte[]> excludedRoots) {
-        Set<byte[]> excludes = new ByteArraySet();
-        for (byte[] root : excludedRoots) {
-            excludes.addAll(getTrieForReadOnly(root).dumpKeys());
-        }
-        Consumer<byte[]> fn = k ->{
-            if(!excludes.contains(k))
-                db.remove(k);
-        };
-        if(db instanceof MemoryDatabaseStore){
-            new ArrayList<>(db.keySet()).forEach(fn);
-        }else{
-            db.stream().forEach(e -> fn.accept(e.getKey()));
-        }
+        getTrie().prune(excludedRoots, db);
     }
 }

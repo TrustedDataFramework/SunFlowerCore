@@ -182,8 +182,10 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 .hostFunctions(hosts.getAll())
                 .build();
 
-        contractStore.put(CryptoContext.digest(t.getPayload().getBytes()), t.getPayload().getBytes());
-        contractAccount.setContractHash(CryptoContext.digest(t.getPayload().getBytes()));
+        byte[] contractHash = CryptoContext.digest(t.getPayload().getBytes());
+
+        contractStore.put(contractHash, t.getPayload().getBytes());
+        contractAccount.setContractHash(contractHash);
 
 
         if (instance.containsExport("init")) {
@@ -233,7 +235,14 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         ModuleInstance instance = ModuleInstance.builder()
                 .hooks(Collections.singleton(new GasLimit()))
                 .hostFunctions(hosts.getAll())
-                .binary(contractStore.get(contractAccount.getContractHash()).get())
+                .binary(
+                        contractStore
+                                .get(contractAccount.getContractHash())
+                                .orElseThrow(
+                                        () ->
+                                                new RuntimeException("contract " + HexBytes.encode(contractAccount.getContractHash()) + " not found in db")
+                                )
+                )
                 .build();
 
         instance.execute(context.getMethod());

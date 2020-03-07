@@ -313,11 +313,6 @@ public class Start {
     // contract hash code -> contract binary
     @Bean
     public Store<byte[], byte[]> contractCodeStore(DatabaseStoreFactory factory){
-        return Trie.<byte[], byte[]>builder()
-                .hashFunction(CryptoContext.hashFunction)
-                .keyCodec(Codec.identity())
-                .valueCodec(Codec.identity())
-                .store(factory.create("contract-code"))
-                .build();
+        return factory.create("contract-code");
     }
 }
