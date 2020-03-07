@@ -1,5 +1,6 @@
 package org.tdf.sunflower.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +23,7 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.UnmodifiableTransaction;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -94,10 +96,11 @@ public class EntryController {
         return accountTrie
                 .get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex)
                 .map(AccountView::fromAccount)
-                .orElse(new AccountView(addressHex, 0))
+                .orElse(new AccountView(addressHex, 0, 0))
                 ;
     }
 
+    // TODO: enclose this config
     @GetMapping(value = "/config", produces = MediaType.APPLICATION_JSON_VALUE)
     public GlobalConfig config() {
         return config;
@@ -112,8 +115,12 @@ public class EntryController {
     }
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Response<String> sendTransaction(@RequestBody Transaction transaction) {
-        pool.collect(UnmodifiableTransaction.of(transaction));
+    public Response<String> sendTransaction(@RequestBody JsonNode node) {
+        if(node.isArray()){
+            pool.collect(Arrays.asList(objectMapper.convertValue(node, Transaction[].class)));
+            return Response.newSuccessFul("ok");
+        }
+        pool.collect(objectMapper.convertValue(node, Transaction.class));
         return Response.newSuccessFul("ok");
     }
 
@@ -141,11 +148,13 @@ public class EntryController {
     static class AccountView {
         private HexBytes address;
         private long balance;
+        private long nonce;
 
         static AccountView fromAccount(Account account) {
             return builder()
                     .address(account.getAddress())
                     .balance(account.getBalance())
+                    .nonce(account.getNonce())
                     .build();
         }
     }
