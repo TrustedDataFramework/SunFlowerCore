@@ -7,7 +7,7 @@ const froms =
 const crypto = require('crypto');
 
 const entry = 'http://localhost:30501';
-const count = 800;
+const count = 2000;
 const axios = require('axios');
 
 const transaction = {
@@ -43,5 +43,5 @@ const transfer = () => froms.forEach(from => {
         .catch(console.error);
 })
 
-setInterval(transfer, 9000);
+setInterval(transfer, 6000);
 

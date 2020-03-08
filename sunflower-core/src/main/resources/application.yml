@@ -68,7 +68,7 @@ sunflower:
 
   transaction-pool:
     expired-in: '300'
-
+    lock-timeout: '1'
   sync:
   #status rate(seconds)
     heart-rate: 5

@@ -4,6 +4,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.controller.PageSize;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.types.PagedView;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.*;
@@ -26,11 +27,11 @@ public interface TransactionPool{
     int size();
 
     // get pending transactions
-    List<Transaction> get(PageSize pageSize);
+    PagedView<Transaction> get(PageSize pageSize);
 
     void setValidator(PendingTransactionValidator validator);
 
-    Collection<Transaction> getDropped(PageSize pageSize);
+    PagedView<Transaction> getDropped(PageSize pageSize);
 
     void drop(Transaction transaction);
 }

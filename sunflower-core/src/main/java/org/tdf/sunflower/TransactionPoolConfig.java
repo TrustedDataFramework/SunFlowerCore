@@ -10,7 +10,14 @@ import org.springframework.stereotype.Component;
 public class TransactionPoolConfig {
     private long expiredIn;
 
+    private long lockTimeout;
+
     public long getExpiredIn() {
         return expiredIn <= 0 ? 300 : expiredIn;
+    }
+
+
+    public long getLockTimeout() {
+        return lockTimeout <= 0 ? 1 : lockTimeout;
     }
 }

@@ -18,10 +18,7 @@ import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.proto.Sunflower;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.UnmodifiableTransaction;
+import org.tdf.sunflower.types.*;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -116,7 +113,7 @@ public class EntryController {
     }
 
     @GetMapping(value = "/pool", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Collection<Transaction> getPool(@ModelAttribute PoolQuery poolQuery) {
+    public PagedView<Transaction> getPool(@ModelAttribute PoolQuery poolQuery) {
         switch (poolQuery.getStatus()){
             case "pending":
                 return pool.get(poolQuery);

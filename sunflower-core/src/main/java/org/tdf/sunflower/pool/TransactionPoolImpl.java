@@ -3,6 +3,7 @@ package org.tdf.sunflower.pool;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.tdf.common.event.EventBus;
@@ -17,6 +18,7 @@ import org.tdf.sunflower.facade.PendingTransactionValidator;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.facade.TransactionRepository;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.types.PagedView;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
@@ -24,6 +26,8 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 @Slf4j(topic = "txPool")
@@ -81,6 +85,8 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final TransactionRepository transactionRepository;
 
+    private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
+
     // dropped transactions
     private Cache<HexBytes, Transaction> dropped;
 
@@ -89,18 +95,18 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @AllArgsConstructor
-    static class TransactionInfo implements Comparable<TransactionInfo>{
+    static class TransactionInfo implements Comparable<TransactionInfo> {
         private long receivedAt;
         private Transaction tx;
 
         @Override
         public int compareTo(TransactionInfo o) {
             int cmp = tx.getFrom().compareTo(o.tx.getFrom());
-            if(cmp != 0) return cmp;
+            if (cmp != 0) return cmp;
             cmp = Long.compare(tx.getNonce(), o.tx.getNonce());
-            if(cmp != 0) return cmp;
+            if (cmp != 0) return cmp;
             cmp = -Long.compare(tx.getGasPrice(), o.tx.getGasPrice());
-            if(cmp != 0) return cmp;
+            if (cmp != 0) return cmp;
             return tx.getHash().compareTo(o.tx.getHash());
         }
     }
@@ -122,46 +128,65 @@ public class TransactionPoolImpl implements TransactionPool {
         this.transactionRepository = repository;
     }
 
-    private void clear(){
+    @SneakyThrows
+    private void clear() {
         long now = System.currentTimeMillis();
-        synchronized (cache) {
+        if (!this.cacheLock.writeLock().tryLock(config.getLockTimeout(), TimeUnit.SECONDS)) {
+            return;
+        }
+        try {
             cache.removeIf(info -> {
                 boolean remove = (now - info.receivedAt) / 1000 > config.getExpiredIn();
-                if(remove && !transactionRepository.containsTransaction(info.tx.getHash().getBytes())){
+                if (remove && !transactionRepository.containsTransaction(info.tx.getHash().getBytes())) {
                     dropped.put(info.tx.getHash(), info.tx);
                 }
                 return remove;
             });
+        } finally {
+            this.cacheLock.writeLock().unlock();
         }
     }
 
     @Override
+    @SneakyThrows
     public void collect(Collection<? extends Transaction> transactions) {
-        for (Transaction transaction : transactions) {
-            ValidateResult res = transaction.basicValidate();
-            if (!res.isSuccess()) {
-                log.error(res.getReason());
-                continue;
-            }
-            res = validator.validate(transaction);
-            if (!res.isSuccess()) {
-                log.error(res.getReason());
-                continue;
-            }
-            synchronized (cache) {
+        if (!this.cacheLock.writeLock().tryLock(config.getLockTimeout(), TimeUnit.SECONDS)) {
+            return;
+        }
+        try {
+            for (Transaction transaction : transactions) {
+                ValidateResult res = transaction.basicValidate();
+                if (!res.isSuccess()) {
+                    log.error(res.getReason());
+                    continue;
+                }
+                res = validator.validate(transaction);
+                if (!res.isSuccess()) {
+                    log.error(res.getReason());
+                    continue;
+                }
+
                 TransactionInfo info = new TransactionInfo(System.currentTimeMillis(), transaction);
                 if (cache.contains(info)) continue;
                 if (validator.validate(transaction).isSuccess()) {
                     cache.add(info);
                     eventBus.publish(new NewTransactionCollected(transaction));
                 }
+
             }
+        } finally {
+            this.cacheLock.writeLock().unlock();
         }
     }
 
+    @SneakyThrows
     public List<Transaction> popPackable(Store<HexBytes, Account> accountStore, int limit) {
-        Map<HexBytes, Long> nonceMap = new HashMap<>();
-        synchronized (cache) {
+        if (!this.cacheLock.writeLock().tryLock(config.getLockTimeout(), TimeUnit.SECONDS)) {
+            return Collections.emptyList();
+        }
+        try {
+            Map<HexBytes, Long> nonceMap = new HashMap<>();
+
             Iterator<TransactionInfo> it = cache.iterator();
             List<Transaction> ret = new ArrayList<>();
             int count = 0;
@@ -182,6 +207,8 @@ public class TransactionPoolImpl implements TransactionPool {
                 count++;
             }
             return ret;
+        } finally {
+            this.cacheLock.writeLock().unlock();
         }
     }
 
@@ -191,13 +218,20 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public List<Transaction> get(PageSize pageSize) {
-        synchronized (cache) {
-            return cache.stream()
+    @SneakyThrows
+    public PagedView<Transaction> get(PageSize pageSize) {
+        if (!this.cacheLock.readLock().tryLock(config.getLockTimeout(), TimeUnit.SECONDS)) {
+            throw new RuntimeException("busying...");
+        }
+        try{
+            List<Transaction> ret = cache.stream()
                     .skip(pageSize.getPage() * pageSize.getSize())
                     .limit(pageSize.getSize())
                     .map(info -> info.tx)
                     .collect(Collectors.toList());
+            return new PagedView<>(pageSize.getPage(), pageSize.getSize(), cache.size(), ret);
+        }finally {
+            this.cacheLock.readLock().unlock();
         }
     }
 
@@ -211,20 +245,28 @@ public class TransactionPoolImpl implements TransactionPool {
         dropped.asMap().put(transaction.getHash(), transaction);
     }
 
+    @SneakyThrows
     public void onNewBestBlock(NewBestBlock event) {
-        synchronized (cache) {
+        if (!this.cacheLock.writeLock().tryLock(config.getLockTimeout(), TimeUnit.SECONDS)) {
+            return;
+        }
+        try{
             event.getBlock().getBody().forEach(t ->
                     cache.remove(new TransactionInfo(System.currentTimeMillis(), t))
             );
+
+        }finally {
+            this.cacheLock.writeLock().unlock();
         }
     }
 
     @Override
-    public Collection<Transaction> getDropped(PageSize pageSize) {
-        return dropped.asMap().values()
+    public PagedView<Transaction> getDropped(PageSize pageSize) {
+        List<Transaction> ret = dropped.asMap().values()
                 .stream()
                 .skip(pageSize.getPage() * pageSize.getSize())
                 .limit(pageSize.getSize())
                 .collect(Collectors.toList());
+        return new PagedView<>(pageSize.getPage(), pageSize.getSize(), dropped.asMap().size(), ret);
     }
 }
