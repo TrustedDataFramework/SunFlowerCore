@@ -198,6 +198,12 @@ public class TransactionPoolImpl implements TransactionPool {
                                 accountStore.get(t.getFromAddress())
                                         .map(Account::getNonce)
                                         .orElse(0L);
+                if(t.getNonce() <= prevNonce){
+                    it.remove();
+                    if(!transactionRepository.containsTransaction(t.getHash().getBytes()))
+                        dropped.put(t.getHash(), t);
+                    continue;
+                }
                 if (t.getNonce() != prevNonce + 1) {
                     continue;
                 }
