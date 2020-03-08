@@ -4,7 +4,7 @@ const from =
 const crypto = require('crypto');
 
 const entry = 'http://localhost:7080';
-const count = 500;
+const count = 1000;
 const axios = require('axios');
 
 const transaction = {

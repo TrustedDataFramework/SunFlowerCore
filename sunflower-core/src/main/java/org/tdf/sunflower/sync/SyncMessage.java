@@ -23,10 +23,6 @@ public class SyncMessage {
     public static final int TRANSACTION = 8;
     public static final int GET_ACCOUNTS = 11;
     public static final int ACCOUNTS = 12;
-    public static final int GET_CONTRACTS = 13;
-    public static final int CONTRACTS = 14;
-    public static final int GET_CONTRACT_STORAGE = 15;
-    public static final int CONTRACT_STORAGE = 16;
 
     private int code;
 

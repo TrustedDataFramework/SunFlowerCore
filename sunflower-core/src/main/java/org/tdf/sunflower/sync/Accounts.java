@@ -3,7 +3,6 @@ package org.tdf.sunflower.sync;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.tdf.sunflower.state.Account;
 
 import java.util.List;
 
@@ -12,6 +11,6 @@ import java.util.List;
 @Getter
 public class Accounts {
     private int total;
-    private List<Account> accounts;
+    private List<SyncAccount> accounts;
     private boolean traversed;
 }

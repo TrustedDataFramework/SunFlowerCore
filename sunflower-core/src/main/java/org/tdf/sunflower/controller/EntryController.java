@@ -96,7 +96,7 @@ public class EntryController {
         return accountTrie
                 .get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex)
                 .map(AccountView::fromAccount)
-                .orElse(new AccountView(addressHex, 0, 0))
+                .orElse(new AccountView(addressHex, 0, 0, HexBytes.EMPTY, HexBytes.EMPTY, HexBytes.empty()))
                 ;
     }
 
@@ -143,19 +143,38 @@ public class EntryController {
         List<Peer> bootstraps;
     }
 
-    @Builder
+    @AllArgsConstructor
     @Getter
     static class AccountView {
         private HexBytes address;
-        private long balance;
+
+        // for normal account this field is continuous integer
+        // for contract account this field is nonce of deploy transaction
         private long nonce;
 
+        // the balance of account
+        // for contract account, this field is zero
+        private long balance;
+
+
+        // for normal address this field is null
+        // for contract address this field is creator of this contract
+        private HexBytes createdBy;
+
+        // hash code of contract code
+        // if the account contains none contract, contract hash will be null
+        private HexBytes contractHash;
+
+        // root hash of contract db
+        // if the account is not contract account, this field will be null
+        private HexBytes storageRoot;
+
         static AccountView fromAccount(Account account) {
-            return builder()
-                    .address(account.getAddress())
-                    .balance(account.getBalance())
-                    .nonce(account.getNonce())
-                    .build();
+            return new AccountView(
+                    account.getAddress(), account.getNonce(), account.getBalance(),
+                    account.getCreatedBy(), HexBytes.fromBytes(account.getContractHash()),
+                    HexBytes.fromBytes(account.getStorageRoot())
+            );
         }
     }
 }

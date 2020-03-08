@@ -10,4 +10,5 @@ import org.tdf.common.util.HexBytes;
 @Getter
 public class GetAccounts {
     private HexBytes stateRoot;
+    private int maxAccounts;
 }

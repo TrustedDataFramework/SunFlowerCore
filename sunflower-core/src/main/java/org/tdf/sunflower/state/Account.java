@@ -28,10 +28,11 @@ public class Account {
     private HexBytes createdBy;
 
     // hash code of contract code
-    // if the account contains none contract, binary contract will be null
+    // if the account contains none contract, contract hash will be null
     private byte[] contractHash;
 
     // root hash of contract db
+    // if the account is not contract account, this field will be null
     private byte[] storageRoot;
 
     /**
