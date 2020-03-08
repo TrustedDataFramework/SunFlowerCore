@@ -1,16 +1,13 @@
 package org.tdf.sunflower.sync;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.tdf.common.util.HexBytes;
 
-import java.util.List;
-
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
 public class GetAccounts {
     private HexBytes stateRoot;
-    private List<HexBytes> addresses;
 }

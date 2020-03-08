@@ -53,10 +53,10 @@ public class MessageFilter implements Plugin {
         if (cache.asMap().containsKey(k)) {
             context.exit();
         }
-//        log.info("receive " + context.message.getCode()
-//                + " from " +
-//                context.remote.getHost() + ":" + context.remote.getPort()
-//        );
+        log.debug("receive " + context.message.getCode()
+                + " from " +
+                context.remote.getHost() + ":" + context.remote.getPort()
+        );
         cache.put(k, true);
     }
 

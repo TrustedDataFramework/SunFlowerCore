@@ -2,13 +2,14 @@ package org.tdf.sunflower.sync;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.tdf.common.util.HexBytes;
 
 
-@Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Getter
 public class Status {
     private long bestBlockHeight;
     private HexBytes bestBlockHash;

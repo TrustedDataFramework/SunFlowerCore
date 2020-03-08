@@ -159,6 +159,7 @@ public class Client implements ChannelListener {
 
     @Override
     public void onError(Throwable throwable, Channel channel) {
+        throwable.printStackTrace();
         channel.getRemote()
                 .ifPresent(x -> {
                     peersCache.half(x);

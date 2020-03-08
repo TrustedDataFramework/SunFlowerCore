@@ -21,8 +21,6 @@ public class SyncMessage {
     public static final int BLOCKS = 6;
     public static final int PROPOSAL = 7;
     public static final int TRANSACTION = 8;
-    public static final int GET_ADDRESSES = 9;
-    public static final int ADDRESSES = 10;
     public static final int GET_ACCOUNTS = 11;
     public static final int ACCOUNTS = 12;
     public static final int GET_CONTRACTS = 13;

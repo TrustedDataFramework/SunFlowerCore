@@ -4,7 +4,7 @@ const from =
 const crypto = require('crypto');
 
 const entry = 'http://localhost:7080';
-const count = 3000;
+const count = 500;
 const axios = require('axios');
 
 const transaction = {
@@ -20,7 +20,7 @@ const transaction = {
 };
 
 
-axios
+const transfer = () => axios
     .get(`${entry}/rpc/account/${from}`)
     .then(resp => resp.data)
     .then(data => {
@@ -34,5 +34,7 @@ axios
         return axios.post(`${entry}/rpc/transaction`, body);
     })
     .then(console.log)
-    .catch(console.error)
+    .catch(console.error);
+
+setInterval(transfer, 6000);
 

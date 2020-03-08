@@ -16,6 +16,7 @@ import org.tdf.sunflower.types.Transaction;
 
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +36,7 @@ public class PoAMiner extends AbstractMiner {
     @Setter
     private BlockRepository blockRepository;
 
-    private boolean stopped;
+    private volatile boolean stopped;
 
     private ScheduledExecutorService minerExecutor;
 
@@ -103,6 +104,7 @@ public class PoAMiner extends AbstractMiner {
 
     @Override
     public void start() {
+        this.stopped = false;
         minerExecutor = Executors.newSingleThreadScheduledExecutor();
         minerExecutor.scheduleAtFixedRate(() -> {
             try {
