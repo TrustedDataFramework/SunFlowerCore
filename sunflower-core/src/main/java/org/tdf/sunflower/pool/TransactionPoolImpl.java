@@ -69,17 +69,17 @@ public class TransactionPoolImpl implements TransactionPool {
         }
     }
 
-    private EventBus eventBus;
+    private final EventBus eventBus;
 
     private final TreeSet<TransactionInfo> cache;
 
     private PendingTransactionValidator validator;
 
-    private ScheduledExecutorService poolExecutor;
+    private final ScheduledExecutorService poolExecutor;
 
-    private TransactionPoolConfig config;
+    private final TransactionPoolConfig config;
 
-    private TransactionRepository transactionRepository;
+    private final TransactionRepository transactionRepository;
 
     // dropped transactions
     private Cache<HexBytes, Transaction> dropped;
@@ -119,6 +119,7 @@ public class TransactionPoolImpl implements TransactionPool {
         dropped = CacheBuilder.newBuilder()
                 .expireAfterWrite(config.getExpiredIn(), TimeUnit.SECONDS)
                 .build();
+        this.transactionRepository = repository;
     }
 
     private void clear(){
