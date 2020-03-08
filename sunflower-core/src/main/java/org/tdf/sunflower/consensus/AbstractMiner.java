@@ -32,15 +32,23 @@ public abstract class AbstractMiner implements Miner {
     @Getter(AccessLevel.PROTECTED)
     private EventBus eventBus;
 
+    private final MinerConfig minerConfig;
+
+    public AbstractMiner(MinerConfig minerConfig) {
+        this.minerConfig = minerConfig;
+    }
+
     protected abstract TransactionPool getTransactionPool();
 
     protected abstract Transaction createCoinBase(long height);
 
     protected abstract Header createHeader(Block parent);
 
-    protected Block createBlock(Block parent){
-        Header header = createHeader(parent);
+    protected Optional<Block> createBlock(Block parent){
+        if(!minerConfig.isAllowEmptyBlock() && getTransactionPool().size() == 0)
+            return Optional.empty();
 
+        Header header = createHeader(parent);
         Block b = new Block(header);
         Store<byte[], byte[]> cache = new CachedStore<>(accountTrie.getTrieStore(), ByteArrayMap::new);
 
@@ -52,7 +60,10 @@ public abstract class AbstractMiner implements Miner {
 
         StateUpdater<HexBytes, Account> updater = accountTrie.getUpdater();
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
-        List<Transaction> transactionList = getTransactionPool().pop(-1);
+        List<Transaction> transactionList = getTransactionPool().popPackable(
+                getAccountTrie().getTrie(parent.getStateRoot().getBytes()),
+                minerConfig.getMaxBodySize()
+        );
         transactionList.add(0, coinbase);
         for (Transaction tx: transactionList) {
             // try to fetch transaction from pool
@@ -73,6 +84,7 @@ public abstract class AbstractMiner implements Miner {
                 // prompt reason for failed updates
                 e.printStackTrace();
                 log.error("execute transaction " + tx.getHash() + " failed, reason = " + e.getMessage());
+                getTransactionPool().drop(tx);
                 continue;
             }
             b.getBody().add(tx);
@@ -88,6 +100,6 @@ public abstract class AbstractMiner implements Miner {
         b.resetTransactionsRoot();
 
         // the mined block cannot be modified any more
-        return b;
+        return Optional.of(b);
     }
 }

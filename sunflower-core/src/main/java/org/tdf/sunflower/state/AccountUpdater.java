@@ -99,7 +99,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             case CONTRACT_DEPLOY:
                 return updateDeploy(cloned, header, transaction);
             case CONTRACT_CALL:
-                return updateTransactionCall(cloned, header, transaction);
+                return updateContractCall(cloned, header, transaction);
         }
         throw new RuntimeException("unknown type " + transaction.getType());
     }
@@ -129,12 +129,12 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         for (Map.Entry<HexBytes, Account> entry : states.entrySet()) {
             Account state = entry.getValue();
             if (t.getFromAddress().equals(state.getAddress())) {
-                require(Long.compareUnsigned(state.getBalance(), t.getAmount()) >= 0, "the balance of sender is not enough");
+                require(state.getBalance() >= t.getAmount(), "the balance of sender is not enough");
                 state.setBalance(state.getBalance() - t.getAmount());
-                log.info("transfer from " + t.getFromAddress() + " to " + t.getTo() + " amount = " + t.getAmount());
             }
             if (t.getTo().equals(state.getAddress())) {
                 state.setBalance(state.getBalance() + t.getAmount());
+                if(state.getBalance() < 0) throw new RuntimeException("math overflow");
             }
             if (!t.getFromAddress().equals(state.getAddress())
                     && !t.getTo().equals(state.getAddress())
@@ -200,7 +200,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         return accounts;
     }
 
-    private Map<HexBytes, Account> updateTransactionCall(Map<HexBytes, Account> accounts, Header header, Transaction t) {
+    private Map<HexBytes, Account> updateContractCall(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account contractAccount = accounts.get(t.getTo());
         for (Account account : accounts.values()) {
             if (account.getAddress().equals(t.getFromAddress())) {
@@ -210,6 +210,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             }
             if (account.getAddress().equals(contractAccount.getCreatedBy())) {
                 account.setBalance(account.getBalance() + t.getAmount());
+                if(account.getBalance() < 0) throw new RuntimeException("math overflow");
             }
             if (!account.getAddress().equals(t.getFromAddress()) &&
                     !account.getAddress().equals(t.getTo()) &&

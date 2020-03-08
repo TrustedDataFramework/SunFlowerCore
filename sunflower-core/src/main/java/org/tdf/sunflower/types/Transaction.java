@@ -8,10 +8,7 @@ import lombok.*;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.util.Constants;
-import org.tdf.common.util.EpochSecondDeserializer;
-import org.tdf.common.util.EpochSecondsSerializer;
-import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.*;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
@@ -30,6 +27,9 @@ import static org.tdf.sunflower.ApplicationConstants.ADDRESS_SIZE;
 @NoArgsConstructor
 public class Transaction {
     public static final Comparator<Transaction> NONCE_COMPARATOR = (a, b) -> {
+        int cmp = a.getFrom().compareTo(b.getFrom());
+        if(cmp != 0)
+            return cmp;
         if (a.getNonce() != b.getNonce()) return Long.compare(a.getNonce(), b.getNonce());
         return a.getHash().compareTo(b.getHash());
     };

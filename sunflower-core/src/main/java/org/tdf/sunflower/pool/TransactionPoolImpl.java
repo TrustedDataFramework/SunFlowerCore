@@ -1,15 +1,29 @@
 package org.tdf.sunflower.pool;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.tdf.common.event.EventBus;
+import org.tdf.common.store.Store;
+import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.TransactionPoolConfig;
+import org.tdf.sunflower.controller.PageSize;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewTransactionCollected;
-import org.tdf.sunflower.facade.*;
+import org.tdf.sunflower.facade.ConsensusEngineFacade;
+import org.tdf.sunflower.facade.PendingTransactionValidator;
+import org.tdf.sunflower.facade.TransactionPool;
+import org.tdf.sunflower.facade.TransactionRepository;
+import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j(topic = "txPool")
@@ -57,25 +71,74 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private EventBus eventBus;
 
-    private final TreeSet<Transaction> cache;
+    private final TreeSet<TransactionInfo> cache;
 
     private PendingTransactionValidator validator;
+
+    private ScheduledExecutorService poolExecutor;
+
+    private TransactionPoolConfig config;
+
+    private TransactionRepository transactionRepository;
+
+    // dropped transactions
+    private Cache<HexBytes, Transaction> dropped;
 
     public void setEngine(ConsensusEngineFacade engine) {
         this.validator = engine.getValidator();
     }
 
-    public TransactionPoolImpl(EventBus eventBus) {
+    @AllArgsConstructor
+    static class TransactionInfo implements Comparable<TransactionInfo>{
+        private long receivedAt;
+        private Transaction tx;
+
+        @Override
+        public int compareTo(TransactionInfo o) {
+            int cmp = tx.getFrom().compareTo(o.tx.getFrom());
+            if(cmp != 0) return cmp;
+            cmp = Long.compare(tx.getNonce(), o.tx.getNonce());
+            if(cmp != 0) return cmp;
+            cmp = -Long.compare(tx.getGasPrice(), o.tx.getGasPrice());
+            if(cmp != 0) return cmp;
+            return tx.getHash().compareTo(o.tx.getHash());
+        }
+    }
+
+    public TransactionPoolImpl(
+            EventBus eventBus,
+            TransactionPoolConfig config,
+            TransactionRepository repository
+    ) {
         this.eventBus = eventBus;
-        this.eventBus.subscribe(NewBestBlock.class, this::onNewBestBlock);
-        cache = new TreeSet<>(Transaction.NONCE_COMPARATOR);
+        eventBus.subscribe(NewBestBlock.class, this::onNewBestBlock);
+        cache = new TreeSet<>();
+        this.config = config;
+        poolExecutor = Executors.newSingleThreadScheduledExecutor();
+        poolExecutor.scheduleWithFixedDelay(this::clear, 0, config.getExpiredIn(), TimeUnit.SECONDS);
+        dropped = CacheBuilder.newBuilder()
+                .expireAfterWrite(config.getExpiredIn(), TimeUnit.SECONDS)
+                .build();
+    }
+
+    private void clear(){
+        long now = System.currentTimeMillis();
+        synchronized (cache) {
+            cache.removeIf(info -> {
+                boolean remove = (now - info.receivedAt) / 1000 > config.getExpiredIn();
+                if(remove && !transactionRepository.containsTransaction(info.tx.getHash().getBytes())){
+                    dropped.put(info.tx.getHash(), info.tx);
+                }
+                return remove;
+            });
+        }
     }
 
     @Override
     public void collect(Collection<? extends Transaction> transactions) {
         for (Transaction transaction : transactions) {
             ValidateResult res = transaction.basicValidate();
-            if(!res.isSuccess()){
+            if (!res.isSuccess()) {
                 log.error(res.getReason());
                 continue;
             }
@@ -85,38 +148,38 @@ public class TransactionPoolImpl implements TransactionPool {
                 continue;
             }
             synchronized (cache) {
-                if (cache.contains(transaction)) continue;
+                TransactionInfo info = new TransactionInfo(System.currentTimeMillis(), transaction);
+                if (cache.contains(info)) continue;
                 if (validator.validate(transaction).isSuccess()) {
-                    cache.add(transaction);
+                    cache.add(info);
                     eventBus.publish(new NewTransactionCollected(transaction));
                 }
             }
         }
     }
 
-    @Override
-    public Optional<Transaction> pop() {
+    public List<Transaction> popPackable(Store<HexBytes, Account> accountStore, int limit) {
+        Map<HexBytes, Long> nonceMap = new HashMap<>();
         synchronized (cache) {
-            if (cache.isEmpty()) {
-                return Optional.empty();
+            Iterator<TransactionInfo> it = cache.iterator();
+            List<Transaction> ret = new ArrayList<>();
+            int count = 0;
+            while (count < ((limit < 0) ? Long.MAX_VALUE : limit) && it.hasNext()) {
+                Transaction t = it.next().tx;
+                long prevNonce =
+                        nonceMap.containsKey(t.getFromAddress()) ?
+                                nonceMap.get(t.getFromAddress()) :
+                                accountStore.get(t.getFromAddress())
+                                        .map(Account::getNonce)
+                                        .orElse(0L);
+                if (t.getNonce() != prevNonce + 1) {
+                    continue;
+                }
+                nonceMap.put(t.getFromAddress(), t.getNonce());
+                ret.add(t);
+                it.remove();
+                count++;
             }
-
-            Transaction tx = cache.first();
-            cache.remove(tx);
-            return Optional.of(tx);
-        }
-    }
-
-    @Override
-    public List<Transaction> pop(int limit) {
-        synchronized (cache) {
-
-            List<Transaction> ret = cache
-                    .stream()
-                    .limit(limit < 0 ? Long.MAX_VALUE : limit)
-                    .collect(Collectors.toList());
-
-            ret.forEach(cache::remove);
             return ret;
         }
     }
@@ -127,11 +190,12 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public List<Transaction> get(int page, int size) {
+    public List<Transaction> get(PageSize pageSize) {
         synchronized (cache) {
             return cache.stream()
-                    .skip(page * size)
-                    .limit(size)
+                    .skip(pageSize.getPage() * pageSize.getSize())
+                    .limit(pageSize.getSize())
+                    .map(info -> info.tx)
                     .collect(Collectors.toList());
         }
     }
@@ -141,10 +205,25 @@ public class TransactionPoolImpl implements TransactionPool {
         this.validator = validator;
     }
 
+    @Override
+    public void drop(Transaction transaction) {
+        dropped.asMap().put(transaction.getHash(), transaction);
+    }
 
     public void onNewBestBlock(NewBestBlock event) {
         synchronized (cache) {
-            event.getBlock().getBody().forEach(cache::remove);
+            event.getBlock().getBody().forEach(t ->
+                    cache.remove(new TransactionInfo(System.currentTimeMillis(), t))
+            );
         }
+    }
+
+    @Override
+    public Collection<Transaction> getDropped(PageSize pageSize) {
+        return dropped.asMap().values()
+                .stream()
+                .skip(pageSize.getPage() * pageSize.getSize())
+                .limit(pageSize.getSize())
+                .collect(Collectors.toList());
     }
 }

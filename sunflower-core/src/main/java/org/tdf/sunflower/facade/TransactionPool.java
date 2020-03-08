@@ -1,11 +1,12 @@
 package org.tdf.sunflower.facade;
 
+import org.tdf.common.store.Store;
+import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.controller.PageSize;
+import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.types.Transaction;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public interface TransactionPool{
 
@@ -16,18 +17,20 @@ public interface TransactionPool{
         collect(Collections.singleton(tx));
     }
 
-    // pop a transaction from pool
-    Optional<Transaction> pop();
 
-    // pop at most n transactions
+    // pop at most n packable transactions
     // if limit < 0, pop all transactions
-    List<Transaction> pop(int limit);
+    List<Transaction> popPackable(Store<HexBytes, Account> accountStore, int limit);
 
     // get size of current transaction pool
     int size();
 
-    // get transactions paged
-    List<Transaction> get(int page, int size);
+    // get pending transactions
+    List<Transaction> get(PageSize pageSize);
 
     void setValidator(PendingTransactionValidator validator);
+
+    Collection<Transaction> getDropped(PageSize pageSize);
+
+    void drop(Transaction transaction);
 }

@@ -24,6 +24,7 @@ import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.UnmodifiableTransaction;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -113,6 +114,19 @@ public class EntryController {
                 peerServer.getBootStraps()
         );
     }
+
+    @GetMapping(value = "/pool", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Collection<Transaction> getPool(@ModelAttribute PoolQuery poolQuery) {
+        switch (poolQuery.getStatus()){
+            case "pending":
+                return pool.get(poolQuery);
+            case "dropped":
+                return pool.getDropped(poolQuery);
+            default:
+                throw new RuntimeException("unknown status " + poolQuery.getStatus());
+        }
+    }
+
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
     public Response<String> sendTransaction(@RequestBody JsonNode node) {

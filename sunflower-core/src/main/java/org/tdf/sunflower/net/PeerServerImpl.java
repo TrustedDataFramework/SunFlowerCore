@@ -200,9 +200,12 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
                 .message(message)
                 .builder(builder)
                 .remote(peer.get()).build();
-
         for (Plugin plugin : plugins) {
-            plugin.onMessage(context, this);
+            try{
+                plugin.onMessage(context, this);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
         }
     }
 

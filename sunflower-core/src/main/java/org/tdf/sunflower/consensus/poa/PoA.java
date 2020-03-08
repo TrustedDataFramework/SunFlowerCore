@@ -47,7 +47,7 @@ public class PoA extends ConsensusEngine {
                     "load properties failed :" + properties.toString() + " expecting " + schema
             );
         }
-        poaMiner = new PoAMiner();
+        poaMiner = new PoAMiner(poAConfig);
         Resource resource;
         try {
             resource = FileUtils.getResource(poAConfig.getGenesis());

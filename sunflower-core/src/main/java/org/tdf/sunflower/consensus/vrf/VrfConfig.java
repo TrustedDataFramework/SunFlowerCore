@@ -5,12 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.tdf.sunflower.consensus.MinerConfig;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class VrfConfig {
+public class VrfConfig implements MinerConfig {
     private String name;
     private String genesis;
     @JsonProperty("block-interval")
@@ -21,4 +22,8 @@ public class VrfConfig {
     private String minerCoinBase;
     @JsonProperty("vrf-data-dir")
     private String vrfDataDir;
+    @JsonProperty("allow-empty-block")
+    private boolean allowEmptyBlock;
+    @JsonProperty("max-body-size")
+    private int maxBodySize;
 }

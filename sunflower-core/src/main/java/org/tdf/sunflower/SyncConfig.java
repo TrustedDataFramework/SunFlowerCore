@@ -25,6 +25,9 @@ public class SyncConfig {
     @Getter
     private long fastSyncHeight;
 
+    @Getter
+    private long lockTimeout;
+
     private String fastSyncHash;
 
     private int maxAccountsTransfer;

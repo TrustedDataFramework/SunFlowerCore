@@ -164,7 +164,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
             throw new ConsensusEngineInitException(
                     "load properties failed :" + properties.toString() + " expecting " + schema);
         }
-        vrfMiner = new VrfMiner();
+        vrfMiner = new VrfMiner(vrfConfig);
         Resource resource;
         try {
             resource = FileUtils.getResource(vrfConfig.getGenesis());

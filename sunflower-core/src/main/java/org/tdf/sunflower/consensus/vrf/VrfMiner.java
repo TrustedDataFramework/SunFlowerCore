@@ -15,6 +15,7 @@ import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.tdf.common.trie.Trie;
 import org.tdf.sunflower.consensus.AbstractMiner;
+import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.types.Block;
@@ -91,7 +92,8 @@ public class VrfMiner extends AbstractMiner {
 
     private TransactionPool transactionPool;
 
-    public VrfMiner(){
+    public VrfMiner(MinerConfig minerConfig){
+        super(minerConfig);
     }
 
     public void setGenesis(VrfGenesis genesis) {
@@ -393,7 +395,7 @@ public class VrfMiner extends AbstractMiner {
         log.debug("getNewBlockForMining best blocks: PendingState: " + bestPendingState.getHeight() + ", Blockchain: "
                 + bestBlock.getHeight());
 
-        Block newMiningBlock = createBlock(bestBlock);// blockchain.createNewBlock(bestPendingState,
+        Block newMiningBlock = createBlock(bestBlock).get();// blockchain.createNewBlock(bestPendingState,
                                                       // getAllPendingTransactions(), getUncles(bestPendingState));
         log.info("######## Get new block for mining: #" + newMiningBlock.getHeight());
 

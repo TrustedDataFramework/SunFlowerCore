@@ -24,6 +24,9 @@ sunflower:
     block-interval: '30'
     enable-mining: 'true'
     miner-coin-base: '87b8f0b097b48b282a5c661babc8096e141bd9fb'
+    allow-empty-block: 'true'
+    # maximum transactions in a block
+    max-body-size: '2048'
     
     # VRF configs
  # consensus:
@@ -63,6 +66,9 @@ sunflower:
     # lookup peers every 15 seconds
     discover-rate: 15
 
+  transaction-pool:
+    expired-in: '300'
+
   sync:
   #status rate(seconds)
     heart-rate: 5
@@ -75,6 +81,7 @@ sunflower:
     fast-sync-hash: ''
     fast-sync-height: '0'
     max-accounts-transfer: 512
+    lock-timeout: 1
 
     # limit message rates
     rate-limits:

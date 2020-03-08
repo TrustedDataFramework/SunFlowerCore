@@ -2,6 +2,7 @@ package org.tdf.sunflower.sync;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -139,6 +140,7 @@ public class SyncManager implements PeerServerListener {
     }
 
     @Override
+    @SneakyThrows
     public void onMessage(Context context, PeerServer server) {
         Optional<SyncMessage> o = SyncMessage.decode(context.getMessage());
         if (!o.isPresent()) return;
@@ -196,7 +198,8 @@ public class SyncManager implements PeerServerListener {
                 }
                 if (repository.containsHeader(proposal.getHash().getBytes()))
                     return;
-                blockQueueLock.lock();
+                if(!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
+                    return;
                 try {
                     queue.add(proposal);
                 } finally {
@@ -265,7 +268,8 @@ public class SyncManager implements PeerServerListener {
                     Accounts accounts = msg.getBodyAs(Accounts.class);
                     for (SyncAccount sa : accounts.getAccounts()) {
                         Account a = sa.getAccount();
-
+                        if(this.fastSyncAddresses.contains(a.getAddress()))
+                            continue;
                         // validate contract code
                         if (a.getContractHash() != null && a.getContractHash().length != 0) {
                             byte[] key = CryptoContext.digest(sa.getContractCode());
@@ -326,7 +330,8 @@ public class SyncManager implements PeerServerListener {
                 }
                 Header best = repository.getBestHeader();
                 Arrays.sort(blocks, Block.FAT_COMPARATOR);
-                blockQueueLock.lock();
+                if(!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
+                    return;
                 try {
                     for (Block block : blocks) {
                         if (block.getHeight() <= repository.getPrunedHeight())
@@ -358,6 +363,7 @@ public class SyncManager implements PeerServerListener {
         clearFastSyncCache();
     }
 
+    @SneakyThrows
     private void onStatus(Context ctx, PeerServer server, Status s) {
         if (fastSyncing) {
             boolean fastSyncEnabled =
@@ -388,7 +394,8 @@ public class SyncManager implements PeerServerListener {
         }
         Block b = null;
         Header best = repository.getBestHeader();
-        blockQueueLock.lock();
+        if(!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
+            return;
         try {
             b = queue.first();
         } catch (NoSuchElementException ignored) {
@@ -419,11 +426,13 @@ public class SyncManager implements PeerServerListener {
         }
     }
 
+    @SneakyThrows
     public void tryWrite() {
         if (fastSyncing)
             return;
         Header best = repository.getBestHeader();
-        blockQueueLock.lock();
+        if(!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
+            return;
         try {
             while (true) {
                 Block b = null;

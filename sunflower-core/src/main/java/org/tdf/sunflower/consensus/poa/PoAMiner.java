@@ -5,6 +5,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
+import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
@@ -45,6 +46,10 @@ public class PoAMiner extends AbstractMiner {
     @Setter
     @Getter
     private TransactionPool transactionPool;
+
+    public PoAMiner(MinerConfig minerConfig) {
+        super(minerConfig);
+    }
 
     @Override
     protected Header createHeader(Block parent) {
@@ -142,9 +147,10 @@ public class PoAMiner extends AbstractMiner {
         if (!o.isPresent()) return;
         log.debug("try to mining at height " + (best.getHeight() + 1));
         try {
-            Block b = createBlock(blockRepository.getBestBlock());
-            log.info("mining success block: {}", b.getHeader());
-            getEventBus().publish(new NewBlockMined(b));
+            Optional<Block> b = createBlock(blockRepository.getBestBlock());
+            if(!b.isPresent()) return;
+            log.info("mining success block: {}", b.get().getHeader());
+            getEventBus().publish(new NewBlockMined(b.get()));
         } catch (Exception e) {
             e.printStackTrace();
         }
