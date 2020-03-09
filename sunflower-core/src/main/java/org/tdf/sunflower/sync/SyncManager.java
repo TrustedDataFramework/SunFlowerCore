@@ -392,29 +392,29 @@ public class SyncManager implements PeerServerListener {
             }
             return;
         }
-        Block b = null;
         Header best = repository.getBestHeader();
-        if(!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
-            return;
-        try {
-            b = queue.first();
-        } catch (NoSuchElementException ignored) {
-
-        } finally {
-            blockQueueLock.unlock();
+        List<Block> orphans = Collections.emptyList();
+        if(blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
+            try{
+                orphans = getOrphans();
+            }finally {
+                blockQueueLock.unlock();
+            }
         }
-        if (b != null
-                && s.getBestBlockHeight() >= b.getHeight()
-                && b.getHeight() > s.getPrunedHeight()
-                && !repository.containsHeader(b.getHashPrev().getBytes())
-        ) {
-            // remote: prune < b <= best
-            GetBlocks getBlocks = new GetBlocks(
-                    s.getPrunedHeight(), b.getHeight(), true,
-                    syncConfig.getMaxBlocksTransfer()
-            ).clip();
+        for (Block b : orphans) {
+            if (b != null
+                    && s.getBestBlockHeight() >= b.getHeight()
+                    && b.getHeight() > s.getPrunedHeight()
+                    && !repository.containsHeader(b.getHashPrev().getBytes())
+            ) {
+                // remote: prune < b <= best
+                GetBlocks getBlocks = new GetBlocks(
+                        s.getPrunedHeight(), b.getHeight(), true,
+                        syncConfig.getMaxBlocksTransfer()
+                ).clip();
 
-            ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks));
+                ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks));
+            }
         }
         if (s.getBestBlockHeight() >= best.getHeight() && !s.getBestBlockHash().equals(best.getHash())) {
             GetBlocks getBlocks = new GetBlocks(
@@ -424,6 +424,29 @@ public class SyncManager implements PeerServerListener {
             ).clip();
             ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks));
         }
+    }
+
+    public List<Block> getOrphans(){
+        List<Block> orphanHeads = new ArrayList<>();
+        Set<HexBytes> orphans = new HashSet<>();
+        Set<HexBytes> noOrphans = new HashSet<>();
+        for (Block block : queue) {
+            if(noOrphans.contains(block.getHashPrev())){
+                noOrphans.add(block.getHash());
+                continue;
+            }
+            if(orphans.contains(block.getHashPrev())){
+                orphans.add(block.getHash());
+                continue;
+            }
+            if(repository.containsHeader(block.getHashPrev().getBytes())){
+                noOrphans.add(block.getHash());
+            }else{
+                orphanHeads.add(block);
+                orphans.add(block.getHash());
+            }
+        }
+        return orphanHeads;
     }
 
     @SneakyThrows
