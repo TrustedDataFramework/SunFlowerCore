@@ -146,6 +146,7 @@ public class SyncManager implements PeerServerListener {
         Optional<SyncMessage> o = SyncMessage.decode(context.getMessage());
         if (!o.isPresent()) return;
         SyncMessage msg = o.get();
+        log.debug("receive {} message from {}", msg.getCode(), context.getRemote());
         switch (msg.getCode()) {
             case SyncMessage.UNKNOWN:
                 return;
@@ -336,6 +337,8 @@ public class SyncManager implements PeerServerListener {
                     return;
                 try {
                     for (Block block : blocks) {
+                        if(queue.contains(block))
+                            continue;
                         if (block.getHeight() <= repository.getPrunedHeight())
                             continue;
                         if (Math.abs(block.getHeight() - best.getHeight()) > syncConfig.getMaxPendingBlocks())
