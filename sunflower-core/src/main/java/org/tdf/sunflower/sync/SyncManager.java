@@ -405,19 +405,21 @@ public class SyncManager implements PeerServerListener {
         Header best = repository.getBestHeader();
         List<Block> orphans = Collections.emptyList();
         // try to sync orphans
-        if (blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
-            try {
+        if(blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)){
+            try{
                 orphans = getOrphansInternal();
-            } finally {
+            }finally {
                 blockQueueLock.unlock();
             }
         }
+
         for (Block b : orphans) {
             if (b != null
                     && s.getBestBlockHeight() >= b.getHeight()
                     && b.getHeight() > s.getPrunedHeight()
                     && !repository.containsHeader(b.getHashPrev().getBytes())
             ) {
+                log.debug("try to fetch orphans, head height {} hash {}", b.getHeight(), b.getHash());
                 // remote: prune < b <= best
                 GetBlocks getBlocks = new GetBlocks(
                         s.getPrunedHeight(), b.getHeight(), true,
@@ -500,22 +502,18 @@ public class SyncManager implements PeerServerListener {
         Set<HexBytes> orphans = new HashSet<>();
         if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
             return;
+        Iterator<Block> it = queue.iterator();
         try {
-            while (true) {
-                Block b = null;
-                try {
-                    b = queue.first();
-                } catch (NoSuchElementException ignored) {
-                }
-                if (b == null) return;
+            while (it.hasNext()) {
+                Block b = it.next();
                 if (Math.abs(best.getHeight() - b.getHeight()) > syncConfig.getMaxAccountsTransfer()
                         || b.getHeight() <= repository.getPrunedHeight()
                 ) {
-                    queue.remove(b);
+                    it.remove();
                     continue;
                 }
                 if (repository.containsHeader(b.getHash().getBytes())) {
-                    queue.remove(b);
+                    it.remove();
                     continue;
                 }
                 if (orphans.contains(b.getHashPrev())) {
@@ -529,11 +527,11 @@ public class SyncManager implements PeerServerListener {
                 }
                 ValidateResult res = engine.getValidator().validate(b, o.get());
                 if (!res.isSuccess()) {
-                    queue.remove(b);
+                    it.remove();
                     log.error(res.getReason());
                     continue;
                 }
-                queue.remove(b);
+                it.remove();
                 repository.writeBlock(b);
             }
         } finally {
