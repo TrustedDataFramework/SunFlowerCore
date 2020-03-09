@@ -78,7 +78,7 @@ public class SyncManager implements PeerServerListener {
     // lock when accounts received, avoid concurrent handling
     private Lock fastSyncAddressesLock = new ReentrantLock();
 
-    private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() / 2);
+    private ScheduledExecutorService executorService;
 
     // when fastSyncing = true, the node is in fast-syncing mode
     private volatile boolean fastSyncing;
@@ -112,6 +112,10 @@ public class SyncManager implements PeerServerListener {
         this.contractStorageTrie = contractStorageTrie;
         this.contractCodeStore = contractCodeStore;
         this.miner = miner;
+        int core = Runtime.getRuntime().availableProcessors();
+        executorService = Executors.newScheduledThreadPool(
+                core > 1 ? core / 2 : core
+        );
         if (this.fastSyncing)
             this.miner.stop();
     }
@@ -202,7 +206,7 @@ public class SyncManager implements PeerServerListener {
                 }
                 if (repository.containsHeader(proposal.getHash().getBytes()))
                     return;
-                if(!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
+                if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
                     return;
                 try {
                     queue.add(proposal);
@@ -228,7 +232,7 @@ public class SyncManager implements PeerServerListener {
                                         .forEach((k, v) -> {
                                             kv.add(k);
                                             kv.add(v);
-                                });
+                                        });
                             }
                             accounts.add(new SyncAccount(
                                     a,
@@ -272,7 +276,7 @@ public class SyncManager implements PeerServerListener {
                     Accounts accounts = msg.getBodyAs(Accounts.class);
                     for (SyncAccount sa : accounts.getAccounts()) {
                         Account a = sa.getAccount();
-                        if(this.fastSyncAddresses.contains(a.getAddress()))
+                        if (this.fastSyncAddresses.contains(a.getAddress()))
                             continue;
                         // validate contract code
                         if (a.getContractHash() != null && a.getContractHash().length != 0) {
@@ -285,7 +289,7 @@ public class SyncManager implements PeerServerListener {
                         }
 
                         // validate storage root
-                        if(a.getStorageRoot() != null && a.getStorageRoot().length != 0){
+                        if (a.getStorageRoot() != null && a.getStorageRoot().length != 0) {
                             Trie<byte[], byte[]> empty = contractStorageTrie.revert();
                             for (int i = 0; i < sa.getContractStorage().size() / 2; i += 1) {
                                 byte[] k = sa.getContractStorage().get(2 * i);
@@ -334,11 +338,11 @@ public class SyncManager implements PeerServerListener {
                 }
                 Header best = repository.getBestHeader();
                 Arrays.sort(blocks, Block.FAT_COMPARATOR);
-                if(!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
+                if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
                     return;
                 try {
                     for (Block block : blocks) {
-                        if(queue.contains(block))
+                        if (queue.contains(block))
                             continue;
                         if (block.getHeight() <= repository.getPrunedHeight())
                             continue;
@@ -401,10 +405,10 @@ public class SyncManager implements PeerServerListener {
         Header best = repository.getBestHeader();
         List<Block> orphans = Collections.emptyList();
         // try to sync orphans
-        if(blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
-            try{
+        if (blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
+            try {
                 orphans = getOrphansInternal();
-            }finally {
+            } finally {
                 blockQueueLock.unlock();
             }
         }
@@ -433,22 +437,22 @@ public class SyncManager implements PeerServerListener {
         }
     }
 
-    private List<Block> getOrphansInternal(){
+    private List<Block> getOrphansInternal() {
         List<Block> orphanHeads = new ArrayList<>();
         Set<HexBytes> orphans = new HashSet<>();
         Set<HexBytes> noOrphans = new HashSet<>();
         for (Block block : queue) {
-            if(noOrphans.contains(block.getHashPrev())){
+            if (noOrphans.contains(block.getHashPrev())) {
                 noOrphans.add(block.getHash());
                 continue;
             }
-            if(orphans.contains(block.getHashPrev())){
+            if (orphans.contains(block.getHashPrev())) {
                 orphans.add(block.getHash());
                 continue;
             }
-            if(repository.containsHeader(block.getHashPrev().getBytes())){
+            if (repository.containsHeader(block.getHashPrev().getBytes())) {
                 noOrphans.add(block.getHash());
-            }else{
+            } else {
                 orphanHeads.add(block);
                 orphans.add(block.getHash());
             }
@@ -457,33 +461,33 @@ public class SyncManager implements PeerServerListener {
     }
 
     @SneakyThrows
-    public List<Block> getOrphans(){
-        if(!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)){
+    public List<Block> getOrphans() {
+        if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
             throw new RuntimeException("busy...");
         }
-        try{
+        try {
             List<Block> ret = new ArrayList<>();
             Set<HexBytes> orphans = new HashSet<>();
             Set<HexBytes> noOrphans = new HashSet<>();
             for (Block block : queue) {
-                if(noOrphans.contains(block.getHashPrev())){
+                if (noOrphans.contains(block.getHashPrev())) {
                     noOrphans.add(block.getHash());
                     continue;
                 }
-                if(orphans.contains(block.getHashPrev())){
+                if (orphans.contains(block.getHashPrev())) {
                     orphans.add(block.getHash());
                     ret.add(block);
                     continue;
                 }
-                if(repository.containsHeader(block.getHashPrev().getBytes())){
+                if (repository.containsHeader(block.getHashPrev().getBytes())) {
                     noOrphans.add(block.getHash());
-                }else{
+                } else {
                     ret.add(block);
                     orphans.add(block.getHash());
                 }
             }
             return ret;
-        }finally {
+        } finally {
             blockQueueLock.unlock();
         }
     }
@@ -494,7 +498,7 @@ public class SyncManager implements PeerServerListener {
             return;
         Header best = repository.getBestHeader();
         Set<HexBytes> orphans = new HashSet<>();
-        if(!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
+        if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
             return;
         try {
             while (true) {
@@ -514,7 +518,7 @@ public class SyncManager implements PeerServerListener {
                     queue.remove(b);
                     continue;
                 }
-                if(orphans.contains(b.getHashPrev())){
+                if (orphans.contains(b.getHashPrev())) {
                     orphans.add(b.getHash());
                     continue;
                 }
