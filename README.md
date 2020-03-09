@@ -94,5 +94,6 @@ bash sunflower-core/docker/build.sh -i your_name_space/your_repository_name:tag 
 
 5. rest apis
 
-- /account/{address} display account 
-- /config display application configuration
+- /rpc/account/{address} display account 
+- /rpc/config display application configuration
+
