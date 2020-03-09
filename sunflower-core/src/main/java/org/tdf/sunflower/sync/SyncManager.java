@@ -431,6 +431,7 @@ public class SyncManager implements PeerServerListener {
         if (fastSyncing)
             return;
         Header best = repository.getBestHeader();
+        Set<HexBytes> orphans = new HashSet<>();
         if(!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
             return;
         try {
@@ -451,9 +452,14 @@ public class SyncManager implements PeerServerListener {
                     queue.remove(b);
                     continue;
                 }
+                if(orphans.contains(b.getHashPrev())){
+                    orphans.add(b.getHash());
+                    continue;
+                }
                 Optional<Block> o = repository.getBlock(b.getHashPrev().getBytes());
                 if (!o.isPresent()) {
-                    return;
+                    orphans.add(b.getHash());
+                    continue;
                 }
                 ValidateResult res = engine.getValidator().validate(b, o.get());
                 if (!res.isSuccess()) {
