@@ -552,7 +552,6 @@ public class SyncManager implements PeerServerListener {
                 repository.getPrunedHeight(),
                 repository.getPrunedHash()
         );
-        log.info("send status ....");
         peerServer.broadcast(SyncMessage.encode(SyncMessage.STATUS, status));
     }
 
