@@ -179,9 +179,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @SneakyThrows
     public List<Transaction> popPackable(Store<HexBytes, Account> accountStore, int limit) {
-        if (!this.cacheLock.writeLock().tryLock(config.getLockTimeout(), TimeUnit.SECONDS)) {
-            return Collections.emptyList();
-        }
+        this.cacheLock.writeLock().lock();
         try {
             Map<HexBytes, Long> nonceMap = new HashMap<>();
 
