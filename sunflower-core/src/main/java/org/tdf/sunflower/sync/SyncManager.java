@@ -72,9 +72,10 @@ public class SyncManager implements PeerServerListener {
             .build();
     private Lock blockQueueLock = new ReentrantLock();
 
-    // lock when another node ask for all addresses in the trie, avoid concurrent traverse
+    // lock when another node ask for all accounts in the trie, avoid concurrent traverse
     private volatile boolean trieTraverseLock;
 
+    // lock when accounts received, avoid concurrent handling
     private Lock fastSyncAddressesLock = new ReentrantLock();
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -82,7 +83,7 @@ public class SyncManager implements PeerServerListener {
     private volatile boolean fastSyncing;
     private volatile Trie<HexBytes, Account> fastSyncTrie;
 
-    // not null when accounts transports
+    // not null when accounts transports, all accounts received when the size of this set == Accounts.getTotal()
     private volatile Set<HexBytes> fastSyncAddresses;
 
     public SyncManager(
@@ -394,6 +395,7 @@ public class SyncManager implements PeerServerListener {
         }
         Header best = repository.getBestHeader();
         List<Block> orphans = Collections.emptyList();
+        // try to sync orphans
         if(blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
             try{
                 orphans = getOrphans();
