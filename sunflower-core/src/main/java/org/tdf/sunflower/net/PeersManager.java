@@ -71,7 +71,10 @@ public class PeersManager implements Plugin {
         MessageBuilder builder = client.messageBuilder;
 
         // keep self alive
-        executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService = Executors.newScheduledThreadPool(
+                Runtime.getRuntime().availableProcessors() / 2
+        );
+
         executorService.scheduleWithFixedDelay(() -> client.broadcast(
                 builder.buildPing()
         ), 0, config.getDiscoverRate(), TimeUnit.SECONDS);

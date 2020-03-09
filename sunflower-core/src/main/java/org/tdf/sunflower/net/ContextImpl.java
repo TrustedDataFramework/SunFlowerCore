@@ -58,7 +58,7 @@ public class ContextImpl implements Context {
     public void response(Collection<byte[]> messages) {
         if (exited || blocked || disconnected) return;
         for (byte[] msg : messages) {
-            channel.write(builder.buildAnother(msg, remote));
+            channel.write(builder.buildAnother(msg, 1, remote));
         }
     }
 

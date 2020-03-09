@@ -51,9 +51,9 @@ public class MessageBuilder {
         );
     }
 
-    public Message buildAnother(byte[] body,PeerImpl remote) {
+    public Message buildAnother(byte[] body, long ttl, Peer remote) {
         byte[] encryptMessage = CryptoContext.encrypt(CryptoContext.ecdh(true, self.getPrivateKey(), remote.getID().getBytes()), body);
-        return buildMessage(Code.ANOTHER, 1, encryptMessage);
+        return buildMessage(Code.ANOTHER, ttl, encryptMessage);
     }
 
     public Message buildRelay(Message message) {

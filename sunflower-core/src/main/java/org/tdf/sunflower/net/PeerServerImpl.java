@@ -53,14 +53,16 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
 
     @Override
     public void dial(Peer peer, byte[] message) {
-        client.dial(peer, builder.buildAnother(message, (PeerImpl) peer));
+        client.dial(peer, builder.buildAnother(message, 1, (PeerImpl) peer));
     }
 
     @Override
     public void broadcast(byte[] message) {
-        client.broadcast(
-                builder.buildMessage(Code.ANOTHER, config.getMaxTTL(), message)
-        );
+        client.peersCache.getChannels()
+                .filter(ch -> ch.getRemote().isPresent())
+                .forEach(ch ->
+                        ch.write(builder.buildAnother(message, config.getMaxTTL(), ch.getRemote().get()))
+                );
     }
 
     @Override

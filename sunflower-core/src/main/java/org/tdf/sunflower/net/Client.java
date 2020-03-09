@@ -40,15 +40,7 @@ public class Client implements ChannelListener {
     }
 
     void broadcast(Message message) {
-        peersCache.getChannels().forEach(ch -> {
-            if (message.getCode() == Code.ANOTHER){
-                byte[] sk = CryptoContext.ecdh(true, self.getPrivateKey(), ch.getRemote().get().getID().getBytes());
-                byte[] encryptMessage = CryptoContext.encrypt(sk, message.getBody().toByteArray());
-                ch.write(builder.buildMessage(Code.ANOTHER, config.getMaxTTL(), encryptMessage));
-                return;
-            }
-            ch.write(message);
-        });
+        peersCache.getChannels().forEach(ch -> ch.write(message));
     }
 
     public void dial(Peer peer, Message message) {

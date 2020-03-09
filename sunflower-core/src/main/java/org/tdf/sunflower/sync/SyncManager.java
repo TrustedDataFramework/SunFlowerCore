@@ -78,7 +78,8 @@ public class SyncManager implements PeerServerListener {
     // lock when accounts received, avoid concurrent handling
     private Lock fastSyncAddressesLock = new ReentrantLock();
 
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() / 2);
+
     // when fastSyncing = true, the node is in fast-syncing mode
     private volatile boolean fastSyncing;
     private volatile Trie<HexBytes, Account> fastSyncTrie;
@@ -547,6 +548,7 @@ public class SyncManager implements PeerServerListener {
                 repository.getPrunedHeight(),
                 repository.getPrunedHash()
         );
+        log.info("send status ....");
         peerServer.broadcast(SyncMessage.encode(SyncMessage.STATUS, status));
     }
 
