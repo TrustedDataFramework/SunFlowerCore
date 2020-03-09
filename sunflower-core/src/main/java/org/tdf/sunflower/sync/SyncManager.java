@@ -398,7 +398,7 @@ public class SyncManager implements PeerServerListener {
         // try to sync orphans
         if(blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
             try{
-                orphans = getOrphans();
+                orphans = getOrphansInternal();
             }finally {
                 blockQueueLock.unlock();
             }
@@ -428,7 +428,7 @@ public class SyncManager implements PeerServerListener {
         }
     }
 
-    public List<Block> getOrphans(){
+    private List<Block> getOrphansInternal(){
         List<Block> orphanHeads = new ArrayList<>();
         Set<HexBytes> orphans = new HashSet<>();
         Set<HexBytes> noOrphans = new HashSet<>();
@@ -449,6 +449,38 @@ public class SyncManager implements PeerServerListener {
             }
         }
         return orphanHeads;
+    }
+
+    @SneakyThrows
+    public List<Block> getOrphans(){
+        if(!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)){
+            throw new RuntimeException("busy...");
+        }
+        try{
+            List<Block> ret = new ArrayList<>();
+            Set<HexBytes> orphans = new HashSet<>();
+            Set<HexBytes> noOrphans = new HashSet<>();
+            for (Block block : queue) {
+                if(noOrphans.contains(block.getHashPrev())){
+                    noOrphans.add(block.getHash());
+                    continue;
+                }
+                if(orphans.contains(block.getHashPrev())){
+                    orphans.add(block.getHash());
+                    ret.add(block);
+                    continue;
+                }
+                if(repository.containsHeader(block.getHashPrev().getBytes())){
+                    noOrphans.add(block.getHash());
+                }else{
+                    ret.add(block);
+                    orphans.add(block.getHash());
+                }
+            }
+            return ret;
+        }finally {
+            blockQueueLock.unlock();
+        }
     }
 
     @SneakyThrows

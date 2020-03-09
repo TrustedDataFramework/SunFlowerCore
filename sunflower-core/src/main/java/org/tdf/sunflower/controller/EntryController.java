@@ -18,6 +18,7 @@ import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.proto.Sunflower;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
 
 import java.util.Arrays;
@@ -43,6 +44,8 @@ public class EntryController {
     private ObjectMapper objectMapper;
 
     private SunflowerRepository repository;
+
+    private SyncManager syncManager;
 
     @GetMapping(value = "/block/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Block getBlock(@PathVariable String hashOrHeight) throws Exception {
@@ -110,6 +113,11 @@ public class EntryController {
                 peerServer.getPeers(),
                 peerServer.getBootStraps()
         );
+    }
+
+    @GetMapping(value = "/orphan", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<Block> orphans() {
+        return syncManager.getOrphans();
     }
 
     @GetMapping(value = "/pool", produces = MediaType.APPLICATION_JSON_VALUE)
