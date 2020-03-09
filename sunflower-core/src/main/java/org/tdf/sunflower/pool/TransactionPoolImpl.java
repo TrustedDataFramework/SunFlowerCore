@@ -150,11 +150,12 @@ public class TransactionPoolImpl implements TransactionPool {
     @Override
     @SneakyThrows
     public void collect(Collection<? extends Transaction> transactions) {
-        if (!this.cacheLock.writeLock().tryLock(config.getLockTimeout(), TimeUnit.SECONDS)) {
-            return;
-        }
+       this.cacheLock.writeLock().lock();
         try {
             for (Transaction transaction : transactions) {
+                TransactionInfo info = new TransactionInfo(System.currentTimeMillis(), transaction);
+                if (cache.contains(info) || dropped.asMap().containsKey(transaction.getHash()))
+                    continue;
                 ValidateResult res = transaction.basicValidate();
                 if (!res.isSuccess()) {
                     log.error(res.getReason());
@@ -165,9 +166,6 @@ public class TransactionPoolImpl implements TransactionPool {
                     log.error(res.getReason());
                     continue;
                 }
-
-                TransactionInfo info = new TransactionInfo(System.currentTimeMillis(), transaction);
-                if (cache.contains(info)) continue;
                 if (validator.validate(transaction).isSuccess()) {
                     cache.add(info);
                     eventBus.publish(new NewTransactionCollected(transaction));
