@@ -183,12 +183,13 @@ public class SyncManager implements PeerServerListener {
                 return;
             }
             case SyncMessage.PROPOSAL: {
-                if (fastSyncing) {
+                Block proposal = msg.getBodyAs(Block.class);
+                if (fastSyncing && !receivedProposals.asMap().containsKey(proposal.getHash())) {
+                    receivedProposals.put(proposal.getHash(), true);
                     context.relay();
                     return;
                 }
                 Header best = repository.getBestHeader();
-                Block proposal = msg.getBodyAs(Block.class);
                 if (receivedProposals.asMap().containsKey(proposal.getHash())) {
                     return;
                 }

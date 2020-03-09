@@ -186,7 +186,7 @@ public class Client implements ChannelListener {
                                 message.getBody().toByteArray());
                         byte[] sk = CryptoContext.ecdh(true, self.getPrivateKey(), c.getRemote().get().getID().getBytes());
                         byte[] encryptMessage = CryptoContext.encrypt(sk, msg);
-                        c.write(builder.buildMessage(Code.ANOTHER, config.getMaxTTL(), encryptMessage));
+                        c.write(builder.buildMessage(Code.ANOTHER, message.getTtl() - 1, encryptMessage));
                         return;
                     }
                     c.write(messageBuilder.buildRelay(message));
