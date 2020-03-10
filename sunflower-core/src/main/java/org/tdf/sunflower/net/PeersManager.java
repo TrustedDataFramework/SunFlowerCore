@@ -2,6 +2,7 @@ package org.tdf.sunflower.net;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Functions;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.sunflower.ApplicationConstants;
@@ -73,7 +74,8 @@ public class PeersManager implements Plugin {
         // keep self alive
         int core = Runtime.getRuntime().availableProcessors();
         executorService = Executors.newScheduledThreadPool(
-                core > 1 ? core / 2 : core
+                core > 1 ? core / 2 : core,
+                new ThreadFactoryBuilder().setNameFormat("peers-manger-thread-%d").build()
         );
 
         executorService.scheduleWithFixedDelay(() -> client.broadcast(

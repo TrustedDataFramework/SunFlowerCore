@@ -2,6 +2,7 @@ package org.tdf.sunflower.sync;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -113,8 +114,10 @@ public class SyncManager implements PeerServerListener {
         this.contractCodeStore = contractCodeStore;
         this.miner = miner;
         int core = Runtime.getRuntime().availableProcessors();
+
         executorService = Executors.newScheduledThreadPool(
-                core > 1 ? core / 2 : core
+                core > 1 ? core / 2 : core,
+                new ThreadFactoryBuilder().setNameFormat("sync-manger-thread-%d").build()
         );
         if (this.fastSyncing)
             this.miner.stop();
