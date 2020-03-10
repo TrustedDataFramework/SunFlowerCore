@@ -13,13 +13,14 @@ import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,6 +32,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     private PeerImpl self;
     private MessageBuilder builder;
     private NetLayer netLayer;
+    private Executor executor;
 
     // if non-database provided, use memory database
     Store<String, String> peerStore;
@@ -112,6 +114,9 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
 
     @Override
     public void init(Properties properties) throws PeerServerInitException {
+        int core = Runtime.getRuntime().availableProcessors();
+        executor = Executors.newFixedThreadPool(core > 1 ? core / 2 : core);
+
         JavaPropsMapper mapper = new JavaPropsMapper();
         try {
             config = mapper.readPropertiesAs(properties, PeerServerConfig.class);
@@ -165,14 +170,14 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         plugins.add(new PeersManager(config));
     }
 
-    private void resolveSelf() throws Exception{
+    private void resolveSelf() throws Exception {
         // find valid private key from 1.properties 2.persist 3. generate
         byte[] sk = config.getPrivateKey() == null ? null : config.getPrivateKey().getBytes();
-        if(sk == null || sk.length == 0){
+        if (sk == null || sk.length == 0) {
             sk = peerStore.get("self").map(HexBytes::decode)
                     .orElse(null);
         }
-        if(sk == null || sk.length == 0){
+        if (sk == null || sk.length == 0) {
             sk = CryptoContext.generateKeyPair().getPrivateKey().getEncoded();
         }
 
@@ -203,11 +208,13 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
                 .builder(builder)
                 .remote(peer.get()).build();
         for (Plugin plugin : plugins) {
-            try{
-                plugin.onMessage(context, this);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
+            executor.execute(() -> {
+                try {
+                    plugin.onMessage(context, this);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
         }
     }
 

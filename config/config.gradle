@@ -11,7 +11,7 @@ ext {
     math3Version = '3.6'
     cedarsoftwareVersion = '1.8.0'
     scastleVersion = '1.58.0.0'
-    rocksdbVersion = '6.3.6'
+    rocksdbVersion = '5.9.2'
     leveldbVersion = '0.7'
     leveldbJNIVersion = '1.8'
     commonsCollections4Version = '4.0'
