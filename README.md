@@ -67,19 +67,19 @@ our: 2515ms
 
 1. start application: (Windows) 
 
-```.\gradlew consortium:bootRun```
+```.\gradlew sunflower-core:bootRun```
 
 2. clear builds (Windows) 
 
-```.\gradlew consortium:clean```
+```.\gradlew clean```
 
 3. build and run fat jar (Windows)
 
 ```shell script
-.\gradlew consortium:bootJar       
+.\gradlew sunflowe-core:bootJar       
 
 # override default spring config with your custom config                     
-java -jar consortium\build\libs\consortium-0.0.1-SNAPSHOT.jar -Dspring.config.location=classpath:\application.yml,some-path\custom-config.yml
+java -jar sunflower-core\build\libs\sunflower*.jar -Dspring.config.location=classpath:\application.yml,some-path\custom-config.yml
 
 # you can also load your config by environment
 set SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml 
@@ -94,5 +94,6 @@ bash sunflower-core/docker/build.sh -i your_name_space/your_repository_name:tag 
 
 5. rest apis
 
-- /account/{address} display account 
-- /config display application configuration
+- /rpc/account/{address} display account 
+- /rpc/config display application configuration
+
