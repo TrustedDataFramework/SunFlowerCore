@@ -115,7 +115,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     @Override
     public void init(Properties properties) throws PeerServerInitException {
         int core = Runtime.getRuntime().availableProcessors();
-        executor = Executors.newFixedThreadPool(core > 1 ? core / 2 : core);
+        executor = Executors.newFixedThreadPool(core * 2);
 
         JavaPropsMapper mapper = new JavaPropsMapper();
         try {
