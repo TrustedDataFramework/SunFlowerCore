@@ -12,7 +12,7 @@ const froms =
 const crypto = require('crypto');
 
 const entry = 'http://192.168.1.118:8081';
-const count = 50;
+const count = 20;
 const axios = require('axios');
 
 const transaction = {
@@ -48,5 +48,5 @@ const transfer = () => froms.forEach(from => {
         .catch(console.error);
 })
 
-setInterval(transfer, 10000);
+setInterval(transfer, 7000);
 
