@@ -11,8 +11,8 @@ const froms =
 
 const crypto = require('crypto');
 
-const entry = 'http://192.168.1.118:8085';
-const count = 50;
+const entry = 'http://localhost:8888';
+const count = 5;
 const axios = require('axios');
 
 const transaction = {

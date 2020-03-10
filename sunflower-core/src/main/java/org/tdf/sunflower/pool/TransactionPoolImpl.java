@@ -12,7 +12,8 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.TransactionPoolConfig;
 import org.tdf.sunflower.controller.PageSize;
 import org.tdf.sunflower.events.NewBestBlock;
-import org.tdf.sunflower.events.NewTransactionCollected;
+import org.tdf.sunflower.events.NewTransactionsCollected;
+import org.tdf.sunflower.events.NewTransactionsReceived;
 import org.tdf.sunflower.facade.ConsensusEngineFacade;
 import org.tdf.sunflower.facade.PendingTransactionValidator;
 import org.tdf.sunflower.facade.TransactionPool;
@@ -150,8 +151,10 @@ public class TransactionPoolImpl implements TransactionPool {
     @Override
     @SneakyThrows
     public void collect(Collection<? extends Transaction> transactions) {
-       this.cacheLock.writeLock().lock();
+        eventBus.publish(new NewTransactionsReceived(new ArrayList<>(transactions)));
+        this.cacheLock.writeLock().lock();
         try {
+            List<Transaction> newCollected = new ArrayList<>(transactions.size());
             for (Transaction transaction : transactions) {
                 TransactionInfo info = new TransactionInfo(System.currentTimeMillis(), transaction);
                 if (cache.contains(info) || dropped.asMap().containsKey(transaction.getHash()))
@@ -168,10 +171,10 @@ public class TransactionPoolImpl implements TransactionPool {
                 }
                 if (validator.validate(transaction).isSuccess()) {
                     cache.add(info);
-                    eventBus.publish(new NewTransactionCollected(transaction));
+                    newCollected.add(transaction);
                 }
-
             }
+            eventBus.publish(new NewTransactionsCollected(newCollected));
         } finally {
             this.cacheLock.writeLock().unlock();
         }
@@ -194,9 +197,9 @@ public class TransactionPoolImpl implements TransactionPool {
                                 accountStore.get(t.getFromAddress())
                                         .map(Account::getNonce)
                                         .orElse(0L);
-                if(t.getNonce() <= prevNonce){
+                if (t.getNonce() <= prevNonce) {
                     it.remove();
-                    if(!transactionRepository.containsTransaction(t.getHash().getBytes()))
+                    if (!transactionRepository.containsTransaction(t.getHash().getBytes()))
                         dropped.put(t.getHash(), t);
                     continue;
                 }
@@ -225,14 +228,14 @@ public class TransactionPoolImpl implements TransactionPool {
         if (!this.cacheLock.readLock().tryLock(config.getLockTimeout(), TimeUnit.SECONDS)) {
             throw new RuntimeException("busying...");
         }
-        try{
+        try {
             List<Transaction> ret = cache.stream()
                     .skip(pageSize.getPage() * pageSize.getSize())
                     .limit(pageSize.getSize())
                     .map(info -> info.tx)
                     .collect(Collectors.toList());
             return new PagedView<>(pageSize.getPage(), pageSize.getSize(), cache.size(), ret);
-        }finally {
+        } finally {
             this.cacheLock.readLock().unlock();
         }
     }
@@ -252,12 +255,12 @@ public class TransactionPoolImpl implements TransactionPool {
         if (!this.cacheLock.writeLock().tryLock(config.getLockTimeout(), TimeUnit.SECONDS)) {
             return;
         }
-        try{
+        try {
             event.getBlock().getBody().forEach(t ->
                     cache.remove(new TransactionInfo(System.currentTimeMillis(), t))
             );
 
-        }finally {
+        } finally {
             this.cacheLock.writeLock().unlock();
         }
     }

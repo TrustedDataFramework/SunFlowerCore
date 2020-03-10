@@ -18,7 +18,8 @@ import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.events.NewTransactionCollected;
+import org.tdf.sunflower.events.NewTransactionsCollected;
+import org.tdf.sunflower.events.NewTransactionsReceived;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.Context;
 import org.tdf.sunflower.net.Peer;
@@ -135,11 +136,9 @@ public class SyncManager implements PeerServerListener {
                 syncConfig.getHeartRate(), TimeUnit.SECONDS
         );
         eventBus.subscribe(NewBlockMined.class, (e) -> propose(e.getBlock()));
-        eventBus.subscribe(NewTransactionCollected.class, (e) -> {
-            if (receivedTransactions.asMap().containsKey(e.getTransaction().getHash())) return;
-            receivedTransactions.asMap().put(e.getTransaction().getHash(), true);
-            peerServer.broadcast(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransaction()));
-        });
+        eventBus.subscribe(NewTransactionsReceived.class,
+                (e) -> peerServer.broadcast(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransactions()))
+        );
     }
 
     private void clearFastSyncCache() {
@@ -149,8 +148,12 @@ public class SyncManager implements PeerServerListener {
     }
 
     @Override
-    @SneakyThrows
     public void onMessage(Context context, PeerServer server) {
+        executorService.execute(() -> onMessageInternal(context, server));
+    }
+
+    @SneakyThrows
+    private void onMessageInternal(Context context, PeerServer server) {
         Optional<SyncMessage> o = SyncMessage.decode(context.getMessage());
         if (!o.isPresent()) return;
         SyncMessage msg = o.get();
@@ -184,11 +187,13 @@ public class SyncManager implements PeerServerListener {
                 return;
             }
             case SyncMessage.TRANSACTION: {
-                Transaction tx = msg.getBodyAs(Transaction.class);
-                if (receivedTransactions.asMap().containsKey(tx.getHash())) return;
-                receivedTransactions.put(tx.getHash(), true);
+                List<Transaction> txs = Arrays.asList(msg.getBodyAs(Transaction[].class));
+                HexBytes root = Transaction.getTransactionsRoot(txs);
+                if(receivedTransactions.asMap().containsKey(root))
+                    return;
+                receivedTransactions.put(root, true);
+                transactionPool.collect(txs);
                 context.relay();
-                transactionPool.collect(tx);
                 return;
             }
             case SyncMessage.PROPOSAL: {
