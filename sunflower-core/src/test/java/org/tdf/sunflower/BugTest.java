@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class BugTest {
     private static DatabaseStoreFactory factory =
-            new DatabaseStoreFactory(new DatabaseConfig("memory", 0, "", false, ""));
+            new DatabaseStoreFactory(new DatabaseConfig("leveldb-iq80", 512, "test", true, ""));
 
     @Qualifier("contractCodeStore")
     private static Store<byte[], byte[]> contractStore = factory.create("contractCodeStore");
@@ -107,6 +107,7 @@ public class BugTest {
                     t.flush();
                 });
                 futures[pi] = future;
+//                future.join();
             }
             CompletableFuture.allOf(futures).join();
         }
