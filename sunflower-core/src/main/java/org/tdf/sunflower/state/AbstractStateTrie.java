@@ -112,7 +112,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
 
     public Trie<ID, S> update(byte[] parentRoot, Block block) {
-        Trie<ID, S> trie = getTrie().revert(parentRoot);
+        Trie<ID, S> trie = getTrieForReadOnly(parentRoot);
         Set<ID> relatedIds = getUpdater().getRelatedKeys(
                 block,
                 trie.asMap()

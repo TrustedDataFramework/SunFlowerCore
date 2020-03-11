@@ -1,9 +1,5 @@
 package org.tdf.common.trie;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
@@ -12,8 +8,9 @@ import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static org.tdf.common.trie.TrieKey.EMPTY;
 
@@ -23,16 +20,12 @@ import static org.tdf.common.trie.TrieKey.EMPTY;
  * https://medium.com/shyft-network-media/understanding-trie-databases-in-ethereum-9f03d2c3325d
  * https://github.com/ethereum/wiki/wiki/Patricia-Tree#optimization
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder(access = AccessLevel.PRIVATE)
 class Node {
     static final int BRANCH_SIZE = 17;
     // rlp encoded of this node, for serialization
     RLPList rlp;
-    @Getter(AccessLevel.PACKAGE)
     private boolean dirty;
     // if hash is not null, resolve rlp encoded from db
-    @Getter(AccessLevel.PACKAGE)
     private byte[] hash;
     // for lazy load, read only
     private Store<byte[], byte[]> readOnlyCache;
@@ -43,6 +36,18 @@ class Node {
     private Object[] children;
 
     private HashFunction hashFunction;
+
+
+
+    private Node(RLPList rlp, boolean dirty, byte[] hash, Store<byte[], byte[]> readOnlyCache, Object[] children, HashFunction hashFunction) {
+        this.rlp = rlp;
+        this.dirty = dirty;
+        this.hash = hash;
+        this.readOnlyCache = readOnlyCache;
+        this.children = children;
+        this.hashFunction = hashFunction;
+    }
+
 
     static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache, HashFunction hashFunction) {
         return builder()
@@ -96,6 +101,10 @@ class Node {
                 .hashFunction(hashFunction)
                 .dirty(true)
                 .build();
+    }
+
+    private static NodeBuilder builder() {
+        return new NodeBuilder();
     }
 
     private void setDirty() {
@@ -163,8 +172,9 @@ class Node {
                 .orElseThrow(() -> new RuntimeException("rlp encoding not found in cache"));
     }
 
+
     // parse encoded from cache
-    private void parse() {
+    private synchronized void parse() {
         // has parsed
         if (children != null) return;
         resolve();
@@ -550,6 +560,14 @@ class Node {
         return getType().toString() + " " + HexBytes.encode(hash);
     }
 
+    boolean isDirty() {
+        return this.dirty;
+    }
+
+    byte[] getHash() {
+        return this.hash;
+    }
+
     enum Type {
         BRANCH,
         EXTENSION,
@@ -581,5 +599,55 @@ class Node {
             }
         }
         throw new RuntimeException();
+    }
+
+    private static class NodeBuilder {
+        private RLPList rlp;
+        private boolean dirty;
+        private byte[] hash;
+        private Store<byte[], byte[]> readOnlyCache;
+        private Object[] children;
+        private HashFunction hashFunction;
+
+        NodeBuilder() {
+        }
+
+        private Node.NodeBuilder rlp(RLPList rlp) {
+            this.rlp = rlp;
+            return this;
+        }
+
+        private Node.NodeBuilder dirty(boolean dirty) {
+            this.dirty = dirty;
+            return this;
+        }
+
+        private Node.NodeBuilder hash(byte[] hash) {
+            this.hash = hash;
+            return this;
+        }
+
+        private Node.NodeBuilder readOnlyCache(Store<byte[], byte[]> readOnlyCache) {
+            this.readOnlyCache = readOnlyCache;
+            return this;
+        }
+
+        private Node.NodeBuilder children(Object[] children) {
+            this.children = children;
+            return this;
+        }
+
+        private Node.NodeBuilder hashFunction(HashFunction hashFunction) {
+            this.hashFunction = hashFunction;
+            return this;
+        }
+
+        private Node build() {
+            return new Node(rlp, dirty, hash, readOnlyCache, children, hashFunction);
+        }
+
+        public String toString() {
+            return "Node.NodeBuilder(rlp=" + this.rlp + ", dirty=" + this.dirty + ", hash=" + java.util.Arrays.toString(this.hash) + ", readOnlyCache=" + this.readOnlyCache + ", children=" + java.util.Arrays.deepToString(this.children) + ", hashFunction=" + this.hashFunction + ")";
+        }
     }
 }

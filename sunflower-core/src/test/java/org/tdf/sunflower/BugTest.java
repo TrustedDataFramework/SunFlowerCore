@@ -54,8 +54,8 @@ public class BugTest {
                 "02281b065a508bace266556f239e491a44a0a64789c7d4fc333d2a875a7ddc1714",
                 "039608d098f275db24db04211d62f66e1438bdd0d93d7e3dbe33136ef3fc53c726"
         };
-        int iters = 100;
-        int count = 10;
+        int iters = 50;
+        int count = 100;
         String[] addresses = new String[]{"9cbf30db111483e4b84e77ca0e39378fd7605e1b",
                 "bf0aba026e5a0e1a69094c8a0d19d905367d64cf",
                 "54e670985631117904d10341676a57d11687bbc5",
@@ -82,7 +82,7 @@ public class BugTest {
         for (String s : addresses) {
             roots.add(accountTrie.getGenesisRoot().getBytes());
         }
-
+        long start = System.currentTimeMillis();
         for (int i = 0; i < iters; i++) {
             CompletableFuture[] futures = new CompletableFuture[pks.length];
             for (int pi = 0; pi < pks.length; pi++) {
@@ -111,6 +111,8 @@ public class BugTest {
             }
             CompletableFuture.allOf(futures).join();
         }
+        long end = System.currentTimeMillis();
+        System.out.println(end -start);
     }
 }
 
