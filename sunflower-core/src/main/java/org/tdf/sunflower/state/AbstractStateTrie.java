@@ -39,10 +39,6 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     private StateUpdater<ID, S> updater;
     @Getter
     private HexBytes genesisRoot;
-    private Cache<HexBytes, Trie<ID, S>> cache =
-            CacheBuilder.newBuilder()
-                    .maximumSize(ApplicationConstants.TRIE_CACHE_SIZE)
-                    .build();
 
     public AbstractStateTrie(
             StateUpdater<ID, S> updater,
@@ -107,7 +103,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
     @SneakyThrows
     private Trie<ID, S> getTrieForReadOnly(byte[] rootHash) {
-        return cache.get(HexBytes.fromBytes(rootHash), () -> ReadOnlyTrie.of(getTrie(rootHash)));
+        return ReadOnlyTrie.of(getTrie(rootHash));
     }
 
 

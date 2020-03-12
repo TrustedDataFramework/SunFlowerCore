@@ -174,7 +174,7 @@ class Node {
 
 
     // parse encoded from cache
-    private synchronized void parse() {
+    private void parse() {
         // has parsed
         if (children != null) return;
         resolve();
