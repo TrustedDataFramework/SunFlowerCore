@@ -1,3 +1,7 @@
+![Docker](https://github.com/TrustedDataFramework/SunFlowerCore/workflows/Docker/badge.svg)
+
+![Java CI](https://github.com/TrustedDataFramework/SunFlowerCore/workflows/Java%20CI/badge.svg)
+
 # Sunflower developer guide
 
 1. git subtree usage
