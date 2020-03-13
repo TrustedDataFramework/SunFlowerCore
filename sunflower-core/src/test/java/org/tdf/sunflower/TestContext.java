@@ -19,6 +19,7 @@ import org.springframework.shell.standard.commands.StandardCommandsAutoConfigura
 import javax.annotation.PostConstruct;
 
 // disable spring shell auto configuration to avoid NPE
+// test cache
 @SpringBootConfiguration
 @EnableAutoConfiguration(exclude = {
         SpringShellAutoConfiguration.class,
