@@ -563,7 +563,7 @@ public class VrfMiner extends AbstractMiner {
             // Add proposal to VrfStateMachine
             ProposalProof proposalProof = blockProof.getProof();
             if (vrfStateMachine.addProof(proposalProof, false)) {
-                log.info("Try to broadcast a new proposal for block, block header {}", newBlock.getHeader().toString());
+                log.info("Try to broadcast a new proposal for block, block header {}", newBlock.getHeader().getHash().toHex());
 
                 // Broadcast proposal to other peers
                 // ethereum.getChannelManager().sendProposalProof(proposalProof, null);
