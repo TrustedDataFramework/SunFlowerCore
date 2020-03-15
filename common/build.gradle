@@ -49,7 +49,7 @@ dependencies {
     compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"
 
     testCompile "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
-    testCompile "org.fusesource.leveldbjni:leveldbjni-linux64:${leveldbJNIVersion}"
+    testCompile "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
     testCompile "org.iq80.leveldb:leveldb:${leveldbVersion}"
 
     testCompile "org.slf4j:slf4j-api:${slf4jVersion}"
