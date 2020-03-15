@@ -10,4 +10,6 @@ import org.springframework.stereotype.Component;
 public class MessageQueueConfig {
     private String name;
     private int port;
+    private String host;
+    private String origin;
 }

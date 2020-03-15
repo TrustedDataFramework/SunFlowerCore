@@ -15,6 +15,12 @@ public class SocketIOMessageQueue implements BasicMessageQueue{
         this.config = config;
         Configuration configuration = new Configuration();
         configuration.setPort(config.getPort());
+        if(config.getHost() != null && !config.getHost().isEmpty()){
+            configuration.setHostname(config.getHost());
+        }
+        if(config.getOrigin() != null && !config.getOrigin().isEmpty()){
+            configuration.setOrigin(config.getOrigin());
+        }
         socketIOServer = new SocketIOServer(configuration);
         socketIOServer.start();
     }
