@@ -98,7 +98,7 @@ mkdir $CUR/build
 # project root path
 PROJECT_ROOT=$CUR/../
 PROJECT_ROOT=`cd $PROJECT_ROOT; pwd`
-GRADLE_WRAPPER=$PROJECT_ROOT/../gradlew
+GRADLE_WRAPPER="bash $PROJECT_ROOT/../gradlew"
 
 cd $PROJECT_ROOT
 

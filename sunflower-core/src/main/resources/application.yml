@@ -91,6 +91,8 @@ sunflower:
   message-queue:
     name: 'socketIO'
     port: '8081'
+    host: '0.0.0.0'
+    origin: ''
     #enable-message-log: 'true' # set false to disable verbose log
 
   # command line interface
