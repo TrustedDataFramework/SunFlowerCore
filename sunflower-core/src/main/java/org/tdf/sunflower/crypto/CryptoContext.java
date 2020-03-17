@@ -158,7 +158,6 @@ public class CryptoContext {
         return CryptoContext.hash(in, digest);
     }
 
-    // TODO: configure digest according to -Dsunflower.crypto.hash
     public static byte[] digest(byte[] in) {
         return hashFunction.apply(in);
     }

@@ -2,7 +2,6 @@ package org.tdf.common.store;
 
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
-import org.tdf.common.util.ByteArrayMap;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -28,11 +27,6 @@ public class MapStore<K, V> implements BatchStore<K, V> {
 
     protected Map<K, V> getMap() {
         return map;
-    }
-
-    private void assertKeyIsNotByteArray(K k) {
-        if ((k instanceof byte[]) && !(map instanceof ByteArrayMap))
-            throw new RuntimeException("please use ByteArrayMapStore instead of plain MapStore since byte array is mutable");
     }
 
     @Override

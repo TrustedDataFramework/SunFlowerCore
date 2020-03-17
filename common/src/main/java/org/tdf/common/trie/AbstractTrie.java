@@ -3,13 +3,10 @@ package org.tdf.common.trie;
 import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
-import org.tdf.rlp.RLPElement;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 abstract class AbstractTrie<K, V> implements Trie<K, V>{
     abstract Codec<K, byte[]> getKCodec();

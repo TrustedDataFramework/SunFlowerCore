@@ -9,7 +9,6 @@ import org.tdf.rlp.RLPList;
 
 import java.util.Optional;
 
-// TODO: 对消息进行限流
 @NoArgsConstructor
 @AllArgsConstructor
 @Data

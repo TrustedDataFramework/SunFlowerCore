@@ -1,6 +1,5 @@
 package org.tdf.common.event;
 
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

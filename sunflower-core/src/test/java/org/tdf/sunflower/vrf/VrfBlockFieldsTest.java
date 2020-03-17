@@ -44,7 +44,7 @@ public class VrfBlockFieldsTest {
         genCommitProofsCache();
     }
 
-    // TODO: for string and byte array, both null and empty sequence are encoded as
+    // for string and byte array, both null and empty sequence are encoded as
     // RLP null item [0x80]
     @Test
     public void testRlpNull() {

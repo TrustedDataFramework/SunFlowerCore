@@ -4,6 +4,8 @@ import com.google.common.primitives.Bytes;
 import org.tdf.common.util.BigEndian;
 import org.tdf.sunflower.proto.Message;
 
+import lombok.SneakyThrows;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -22,10 +24,10 @@ public class Util {
         );
     }
 
+    @SneakyThrows
     public static boolean ping(String host, int port){
-        Socket s = new Socket();
-        SocketAddress add = new InetSocketAddress(host, port);
-        try {
+        try (Socket s = new Socket()){
+            SocketAddress add = new InetSocketAddress(host, port);
             s.connect(add, 1000);// 1 second timeout
             return true;
         } catch (IOException e) {
