@@ -177,11 +177,9 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
             throw new ConsensusEngineInitException("failed to parse genesis: " + e.getMessage());
         }
 
-        setPeerServerListener(this);
+        vrfMiner.setBlockRepository(this.getSunflowerRepository());
         vrfMiner.setConfig(vrfConfig);
         vrfMiner.setGenesis(genesis);
-        vrfMiner.setBlockRepository(this.getSunflowerRepository());
-
         vrfMiner.setTransactionPool(getTransactionPool());
         setMiner(vrfMiner);
         try {
@@ -190,6 +188,8 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
             throw new ConsensusEngineInitException(e);
         }
 
+        setPeerServerListener(this);
+
         Map<HexBytes, Account> alloc = new HashMap<>();
         if (genesis.alloc != null) {
             genesis.alloc.forEach((k, v) -> {
@@ -197,6 +197,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
                 alloc.put(a.getAddress(), a);
             });
         }
+
         AccountUpdater updater = new AccountUpdater(alloc, getContractCodeStore(), getContractStorageTrie());
         AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory(), getContractCodeStore(),
                 getContractStorageTrie());
@@ -206,7 +207,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         vrfMiner.setAccountTrie(getAccountTrie());
         vrfMiner.setEventBus(getEventBus());
 
-        setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
+//        setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
         // ------- Need well implementation.
         ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository());
 
