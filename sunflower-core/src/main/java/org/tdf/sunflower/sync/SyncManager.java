@@ -508,7 +508,7 @@ public class SyncManager implements PeerServerListener {
             return;
         Header best = repository.getBestHeader();
         Set<HexBytes> orphans = new HashSet<>();
-        if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
+        if (!blockQueueLock.tryLock(8 * syncConfig.getLockTimeout(), TimeUnit.SECONDS))
             return;
         Iterator<Block> it = queue.iterator();
         try {

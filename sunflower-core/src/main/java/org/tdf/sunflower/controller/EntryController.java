@@ -3,9 +3,7 @@ package org.tdf.sunflower.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.tdf.common.util.HexBytes;
@@ -15,16 +13,18 @@ import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
-import org.tdf.sunflower.proto.Sunflower;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.sync.SyncManager;
-import org.tdf.sunflower.types.*;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.PagedView;
+import org.tdf.sunflower.types.Transaction;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
 
 @RestController
@@ -47,40 +47,34 @@ public class EntryController {
 
     private SyncManager syncManager;
 
-    @GetMapping(value = "/block/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Block getBlock(@PathVariable String hashOrHeight) throws Exception {
-        try{
-            long height = Long.parseLong(hashOrHeight);
+    private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func, Function<byte[], Optional<T>> func1) {
+        Long height = null;
+        try {
+            height = Long.parseLong(hashOrHeight);
             Header h = repository.getBestHeader();
-            while (height < 0){
+            while (height < 0) {
                 height += h.getHeight() + 1;
             }
-            final long finalHeight = height;
-            return repository.getCanonicalBlock(height)
-                    .orElseThrow(() -> new RuntimeException("block at height " + finalHeight + " not found"));
-        }catch (Exception ignored){
+        } catch (Exception ignored) {
 
         }
-        return repository.getBlock(HexBytes.decode(hashOrHeight))
+        if (height != null) {
+            final long finalHeight = height;
+            return func.apply(height)
+                    .orElseThrow(() -> new RuntimeException("block at height " + finalHeight + " not found"));
+        }
+        return func1.apply(HexBytes.decode(hashOrHeight))
                 .orElseThrow(() -> new RuntimeException("block of hash " + hashOrHeight + " not found"));
     }
 
-    @GetMapping(value = "/header/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Header getHeaders(@PathVariable String hashOrHeight) throws Exception {
-        try{
-            long height = Long.parseLong(hashOrHeight);
-            Header h = repository.getBestHeader();
-            while (height < 0){
-                height += h.getHeight() + 1;
-            }
-            final long finalHeight = height;
-            return repository.getCanonicalHeader(height)
-                    .orElseThrow(() -> new RuntimeException("header at height " + finalHeight + " not found"));
-        }catch (Exception ignored){
+    @GetMapping(value = "/block/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Block getBlock(@PathVariable String hashOrHeight) {
+        return getBlockOrHeader(hashOrHeight, repository::getCanonicalBlock, repository::getBlock);
+    }
 
-        }
-        return repository.getHeader(HexBytes.decode(hashOrHeight))
-                .orElseThrow(() -> new RuntimeException("header of hash " + hashOrHeight + " not found"));
+    @GetMapping(value = "/header/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Header getHeaders(@PathVariable String hashOrHeight) {
+        return getBlockOrHeader(hashOrHeight, repository::getCanonicalHeader, repository::getHeader);
     }
 
     @GetMapping(value = "/transaction/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -122,7 +116,7 @@ public class EntryController {
 
     @GetMapping(value = "/pool", produces = MediaType.APPLICATION_JSON_VALUE)
     public PagedView<Transaction> getPool(@ModelAttribute PoolQuery poolQuery) {
-        switch (poolQuery.getStatus()){
+        switch (poolQuery.getStatus()) {
             case "pending":
                 return pool.get(poolQuery);
             case "dropped":
@@ -135,7 +129,7 @@ public class EntryController {
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
     public Response<String> sendTransaction(@RequestBody JsonNode node) {
-        if(node.isArray()){
+        if (node.isArray()) {
             pool.collect(Arrays.asList(objectMapper.convertValue(node, Transaction[].class)));
             return Response.newSuccessFul("ok");
         }
