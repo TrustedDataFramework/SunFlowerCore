@@ -1,0 +1,47 @@
+spring:
+  shell:
+    interactive:
+      enabled:  'false'
+
+logging:
+      config: 'http://192.168.1.118/sunflower/vrf/logback2.xml'
+
+# sunflower configurations
+sunflower:
+  consensus:
+    name: 'vrf'
+    genesis: 'http://192.168.1.118/sunflower/vrf/vrf.json'
+    enable-mining: 'true'
+    miner-coin-base: '4e48bf86c3cc844b7b6489fa323a9db8f96d4144'
+    # relative path to /home/$USER/.sunflower
+    vrf-data-dir: vrfdata
+# SM2
+#private key = 99dd95572f9def13de61f27f11f4557d96017cd264595566945f9fa2466752ed
+#public key = 03f5058c783199b83259b11d44a30255faaada47270baa6aa132efd2366ea4b304
+#address = 4b984384d03782ce6c1f53eb974d8f1dfc53eee9
+
+#private key = 10d6e8dfa3bf2b1d748f8bf7466c3313c45f19552b4b2529ac35a7dcb785a217
+#public key = 03810d30823bfaa055064424763bda38ef767f3ad81a259728b5c86719bcf86bf4
+#address = 4e48bf86c3cc844b7b6489fa323a9db8f96d4144
+
+#private key = c6079cffc5e8dd49ad12182e961184c2b5c75c5aebd43e31cc736f4138074f7c
+#public key = 03db73ea4b9eb3f0f9d46034f194ba098229841133467a209070207b75a202db8b
+#address = ac9019a3c01be5056af55b43c510c3203bb9fc62
+
+  p2p:
+    name: 'websocket' # choose p2p protocol, gRPC is default optional: websocket
+    max-peers: '16' # maximum peers
+    address: 'node://0.0.0.0:9999'
+    enable-discovery: 'true'
+    enable-message-log: 'false' # set false to disable verbose log
+    bootstraps: # bootstraps nodes
+      - 'node://vrf1:9999'
+      - 'node://vrf3:9999'
+    trusted: # trusted nodes
+      - 'node://vrf1:9999'
+      - 'node://vrf3:9999'
+
+  database:
+    name: 'leveldb'
+    directory: '/leveldb'
+    block-store: 'kv'

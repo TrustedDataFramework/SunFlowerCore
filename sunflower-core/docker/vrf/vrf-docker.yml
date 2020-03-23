@@ -1,0 +1,38 @@
+version: '2'
+
+services:
+  vrf1:
+    image: '192.168.1.12:5000/sunflower:vrf'
+    container_name: 'vrf1'
+    volumes:
+      - /home/sunflower/sunflower/leveldb_vrf1:/leveldb
+    ports:
+      - '8081:8080' #rpc
+      - '9091:9999' #p2p
+    entrypoint: 'java -jar /app.jar'
+    environment:
+      SPRING_CONFIG_LOCATION: 'classpath:application.yml,http://192.168.1.118/sunflower/vrf/vrf1.yml'
+
+  vrf2:
+    image: '192.168.1.12:5000/sunflower:vrf'
+    container_name: 'vrf2'
+    volumes:
+      - /home/sunflower/sunflower/leveldb_vrf2:/leveldb
+    ports:
+      - '8082:8080' #rpc
+      - '9092:9999' #p2p
+    entrypoint: 'java -jar /app.jar'
+    environment:
+      SPRING_CONFIG_LOCATION: 'classpath:application.yml,http://192.168.1.118/sunflower/vrf/vrf2.yml'
+
+  vrf3:
+    image: '192.168.1.12:5000/sunflower:vrf'
+    container_name: 'vrf3'
+    volumes:
+      - /home/sunflower/sunflower/leveldb_vrf3:/leveldb
+    ports:
+      - '8083:8080' #rpc
+      - '9093:9999' #p2p
+    entrypoint: 'java -jar /app.jar'
+    environment:
+      SPRING_CONFIG_LOCATION: 'classpath:application.yml,http://192.168.1.118/sunflower/vrf/vrf3.yml'
