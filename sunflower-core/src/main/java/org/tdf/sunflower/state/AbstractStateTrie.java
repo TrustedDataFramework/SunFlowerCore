@@ -4,6 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import lombok.Getter;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.*;
 import org.tdf.common.trie.ReadOnlyTrie;
@@ -23,6 +24,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+@Slf4j(topic = "trie")
 public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
     private final String name;
@@ -108,6 +110,9 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
 
     public Trie<ID, S> update(byte[] parentRoot, Block block) {
+        if(!trieStore.containsKey(parentRoot)){
+            log.error("update failed: trie root {} at height {} hash {} not found", HexBytes.fromBytes(parentRoot), block.getHeight() - 1, block.getHashPrev());
+        }
         Trie<ID, S> trie = getTrieForReadOnly(parentRoot);
         Set<ID> relatedIds = getUpdater().getRelatedKeys(
                 block,
