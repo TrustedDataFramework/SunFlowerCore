@@ -18,6 +18,7 @@ import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.events.NewBlockMined;
+import org.tdf.sunflower.events.NewBlocksReceived;
 import org.tdf.sunflower.events.NewTransactionsCollected;
 import org.tdf.sunflower.events.NewTransactionsReceived;
 import org.tdf.sunflower.facade.*;
@@ -139,6 +140,7 @@ public class SyncManager implements PeerServerListener {
         eventBus.subscribe(NewTransactionsReceived.class,
                 (e) -> peerServer.broadcast(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransactions()))
         );
+        eventBus.subscribe(NewBlocksReceived.class, (e) -> onBlocks(e.getBlocks()));
     }
 
     private void clearFastSyncCache() {
@@ -334,38 +336,43 @@ public class SyncManager implements PeerServerListener {
 
             case SyncMessage.BLOCKS: {
                 Block[] blocks = msg.getBodyAs(Block[].class);
-                if (fastSyncing) {
-                    for (Block b : blocks) {
-                        b.resetTransactionsRoot();
-                        if (b.getHash().equals(fastSyncHash)) {
-                            this.fastSyncBlock = b;
-                            return;
-                        }
-                    }
-                    return;
-                }
-                Header best = repository.getBestHeader();
-                Arrays.sort(blocks, Block.FAT_COMPARATOR);
-                if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
-                    return;
-                try {
-                    for (Block block : blocks) {
-                        if (queue.contains(block))
-                            continue;
-                        if (block.getHeight() <= repository.getPrunedHeight())
-                            continue;
-                        if (Math.abs(block.getHeight() - best.getHeight()) > syncConfig.getMaxPendingBlocks())
-                            break;
-                        block.resetTransactionsRoot();
-                        if (repository.containsHeader(block.getHash().getBytes()))
-                            continue;
-                        queue.add(block);
-                    }
-                } finally {
-                    blockQueueLock.unlock();
-                }
+                onBlocks(Arrays.asList(blocks));
                 return;
             }
+        }
+    }
+
+    @SneakyThrows
+    private void onBlocks(List<Block> blocks){
+        if (fastSyncing) {
+            for (Block b : blocks) {
+                b.resetTransactionsRoot();
+                if (b.getHash().equals(fastSyncHash)) {
+                    this.fastSyncBlock = b;
+                    return;
+                }
+            }
+            return;
+        }
+        Header best = repository.getBestHeader();
+        blocks.sort(Block.FAT_COMPARATOR);
+        if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
+            return;
+        try {
+            for (Block block : blocks) {
+                if (queue.contains(block))
+                    continue;
+                if (block.getHeight() <= repository.getPrunedHeight())
+                    continue;
+                if (Math.abs(block.getHeight() - best.getHeight()) > syncConfig.getMaxPendingBlocks())
+                    break;
+                block.resetTransactionsRoot();
+                if (repository.containsHeader(block.getHash().getBytes()))
+                    continue;
+                queue.add(block);
+            }
+        } finally {
+            blockQueueLock.unlock();
         }
     }
 

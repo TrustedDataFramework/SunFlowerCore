@@ -4,10 +4,7 @@ import static org.junit.Assert.assertTrue;
 import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import lombok.SneakyThrows;
@@ -17,6 +14,7 @@ import org.tdf.common.trie.Trie;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.events.NewBlockMined;
+import org.tdf.sunflower.events.NewBlocksReceived;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.facade.BlockRepository;
@@ -783,7 +781,7 @@ public class VrfMiner extends AbstractMiner {
 
     private ImportResult tryToConnect(Block block) {
         // Notify listeners.
-        getEventBus().publish(new NewBlockMined(block));
+        getEventBus().publish(new NewBlocksReceived(Collections.singletonList(block)));
         return ImportResult.IMPORTED_BEST;
     }
 
