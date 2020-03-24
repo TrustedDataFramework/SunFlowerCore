@@ -18,6 +18,7 @@ import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.events.NewBlockMined;
+import org.tdf.sunflower.events.NewBlocksReceived;
 import org.tdf.sunflower.events.NewTransactionsCollected;
 import org.tdf.sunflower.events.NewTransactionsReceived;
 import org.tdf.sunflower.facade.*;
@@ -139,6 +140,16 @@ public class SyncManager implements PeerServerListener {
         eventBus.subscribe(NewTransactionsReceived.class,
                 (e) -> peerServer.broadcast(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransactions()))
         );
+        eventBus.subscribe(NewBlocksReceived.class, (e) -> {
+            if(this.fastSyncing)
+                return;
+            this.blockQueueLock.lock();
+            try{
+                this.queue.addAll(e.getBlocks());
+            }finally {
+                this.blockQueueLock.unlock();
+            }
+        });
     }
 
     private void clearFastSyncCache() {
