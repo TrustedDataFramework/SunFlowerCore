@@ -141,6 +141,10 @@ public class VrfUtil {
         header.setPayload(HexBytes.fromBytes(encoded));
     }
 
+    public static void setMiner(Block block, HexBytes miner) {
+        setMiner(block.getHeader(), miner.getBytes());
+    }
+
     public static void setMiner(Block block, byte[] miner) {
         setMiner(block.getHeader(), miner);
     }

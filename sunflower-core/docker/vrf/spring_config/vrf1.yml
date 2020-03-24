@@ -43,5 +43,5 @@ sunflower:
 
   database:
     name: 'leveldb'
-    directory: 'database/leveldb'
+    directory: '/leveldb'
     block-store: 'kv'

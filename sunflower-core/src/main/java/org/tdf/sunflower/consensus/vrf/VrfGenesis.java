@@ -37,6 +37,8 @@ public class VrfGenesis {
     public static class MinerInfo {
         @JsonProperty("addr")
         public HexBytes address;
+        @JsonProperty("collateral")
+        public Long collateral;
     }
 
     public List<MinerInfo> miners;
@@ -57,7 +59,6 @@ public class VrfGenesis {
                 .payload(VrfConstants.ZERO_BYTES).stateRoot(HexBytes.fromBytes(trie.getNullHash())).build();
 
         Block block = new Block(header);
-
         /*
          * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Some issues here, there is a loop,
          * need to clarify: current block hash is used to generate ProposalProof, but
