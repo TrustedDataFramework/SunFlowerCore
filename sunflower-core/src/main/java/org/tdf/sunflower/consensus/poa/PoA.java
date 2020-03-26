@@ -15,6 +15,7 @@ import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.util.FileUtils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -79,7 +80,7 @@ public class PoA extends ConsensusEngine {
             });
         }
 
-        AccountUpdater updater = new AccountUpdater(alloc, getContractCodeStore(), getContractStorageTrie());
+        AccountUpdater updater = new AccountUpdater(alloc, getContractCodeStore(), getContractStorageTrie(), Collections.emptyList());
         AccountTrie trie = new AccountTrie(
                 updater, getDatabaseStoreFactory(),
                 getContractCodeStore(), getContractStorageTrie()

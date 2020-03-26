@@ -2,6 +2,7 @@ package org.tdf.sunflower.state;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.tdf.common.store.CachedStore;
@@ -19,22 +20,45 @@ import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * where state transition happens
  */
-@AllArgsConstructor
 @Slf4j(topic = "account")
 public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     @Getter
-    private Map<HexBytes, Account> genesisStates;
+    private final Map<HexBytes, Account> genesisStates;
 
     @Qualifier("contractCodeStore")
-    private Store<byte[], byte[]> contractStore;
+    private final Store<byte[], byte[]> contractStore;
 
     @Qualifier("contractStorageTrie")
-    private Trie<byte[], byte[]> storageTrie;
+    private final Trie<byte[], byte[]> storageTrie;
 
+    private final List<BiosContractUpdater> biosContractUpdaters;
+
+
+    private final Map<HexBytes, BiosContractUpdater> biosContractAddresses;
+
+    public AccountUpdater(
+            Map<HexBytes, Account> genesisStates,
+            Store<byte[], byte[]> contractStore,
+            Trie<byte[], byte[]> storageTrie,
+            List<BiosContractUpdater> biosContractUpdaters
+    ) {
+        this.genesisStates = genesisStates;
+        this.contractStore = contractStore;
+        this.storageTrie = storageTrie;
+        this.biosContractUpdaters = biosContractUpdaters;
+        biosContractAddresses = new HashMap<>();
+        for (BiosContractUpdater updater : biosContractUpdaters) {
+            biosContractAddresses.put(updater.getGenesisAccount().getAddress(), updater);
+        }
+        for (BiosContractUpdater updater : biosContractUpdaters) {
+            genesisStates.put(updater.getGenesisAccount().getAddress(), updater.getGenesisAccount());
+        }
+    }
 
     @Override
     public Set<HexBytes> getRelatedKeys(Transaction transaction, Map<HexBytes, Account> store) {
@@ -217,6 +241,18 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                     !account.getAddress().equals(contractAccount.getCreatedBy())
             )
                 throw new RuntimeException("unexpected address " + account.getAddress() + " not a createdBy or from or to");
+        }
+
+        if(biosContractAddresses.containsKey(contractAccount.getAddress())){
+            Trie<byte[], byte[]> before = storageTrie.revert(
+                    contractAccount.getStorageRoot(),
+                    new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new)
+            );
+            BiosContractUpdater updater = biosContractAddresses.get(contractAccount.getAddress());
+            updater.update(header, t, contractAccount, before);
+            before.commit();
+            before.flush();
+            return accounts;
         }
 
         // build Parameters here

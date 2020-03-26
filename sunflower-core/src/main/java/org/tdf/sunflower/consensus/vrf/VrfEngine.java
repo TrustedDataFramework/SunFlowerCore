@@ -1,10 +1,7 @@
 package org.tdf.sunflower.consensus.vrf;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 
 import org.springframework.core.io.Resource;
 import org.tdf.common.util.HexBytes;
@@ -198,7 +195,12 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
             });
         }
 
-        AccountUpdater updater = new AccountUpdater(alloc, getContractCodeStore(), getContractStorageTrie());
+        AccountUpdater updater = new AccountUpdater(
+                alloc,
+                getContractCodeStore(),
+                getContractStorageTrie(),
+                Collections.emptyList()
+        );
         AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory(), getContractCodeStore(),
                 getContractStorageTrie());
         getGenesisBlock().setStateRoot(trie.getGenesisRoot());

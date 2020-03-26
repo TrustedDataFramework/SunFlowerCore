@@ -92,7 +92,12 @@ public abstract class ConsensusEngine implements ConsensusEngineFacade{
             if(getDatabaseStoreFactory() == null)
                 throw new ConsensusEngineInitException("database factory not injected");
             setMiner(Miner.NONE);
-            AccountUpdater updater = new AccountUpdater(Collections.emptyMap(), getContractCodeStore(), getContractStorageTrie());
+            AccountUpdater updater = new AccountUpdater(
+                    Collections.emptyMap(),
+                    getContractCodeStore(),
+                    getContractStorageTrie(),
+                    Collections.emptyList()
+            );
             setAccountTrie(new AccountTrie(updater, getDatabaseStoreFactory(), getContractCodeStore(), getContractStorageTrie()));
         }
     };
