@@ -53,11 +53,20 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         this.biosContractUpdaters = biosContractUpdaters;
         biosContractAddresses = new HashMap<>();
         for (BiosContractUpdater updater : biosContractUpdaters) {
+            Account genesisAccount = updater.getGenesisAccount();
+            Trie<byte[], byte[]> trie = storageTrie.revert();
+            for (Map.Entry<byte[], byte[]> entry : updater.getGenesisStorage().entrySet()) {
+                trie.put(entry.getKey(), entry.getValue());
+            }
+            byte[] root = trie.commit();
+            trie.flush();
+            genesisAccount.setStorageRoot(root);
             biosContractAddresses.put(updater.getGenesisAccount().getAddress(), updater);
         }
         for (BiosContractUpdater updater : biosContractUpdaters) {
             genesisStates.put(updater.getGenesisAccount().getAddress(), updater.getGenesisAccount());
         }
+
     }
 
     @Override
