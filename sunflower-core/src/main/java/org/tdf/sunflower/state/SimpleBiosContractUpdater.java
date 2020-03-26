@@ -15,7 +15,7 @@ public class SimpleBiosContractUpdater implements BiosContractUpdater{
     public Account getGenesisAccount() {
         return new Account(
                 HexBytes.fromHex("0000000000000000000000000000000000000000000000000000000000000000"), 0,
-                0, null,
+                0, HexBytes.fromHex("0000000000000000000000000000000000000000000000000000000000000000"),
                 null,
                 CryptoContext.digest(RLPItem.NULL.getEncoded()),
                 true
