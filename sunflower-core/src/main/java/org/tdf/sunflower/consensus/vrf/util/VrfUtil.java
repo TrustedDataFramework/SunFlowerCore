@@ -1,5 +1,7 @@
 package org.tdf.sunflower.consensus.vrf.util;
 
+import static org.tdf.sunflower.consensus.vrf.util.VrfConstants.VRF_KEYSTORE_PASSWORD;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -204,7 +206,6 @@ public class VrfUtil {
 //    }
 
     public static VrfPrivateKey getVrfPrivateKey(String vrfDataDir) {
-        final String password = "SilkChain@2019@ChangZhou@China#Linux";
         final String vrfPkDir = vrfDataDir + "/keystore";
 
         PrivateKey key = null;
@@ -216,16 +217,16 @@ public class VrfUtil {
                     fileSystemKeystore.getKeyStoreLocation().toAbsolutePath());
 
             key = new VrfPrivateKey(Ed25519.getAlgorithm()).getSigner();
-            fileSystemKeystore.storeKey(key, password);
+            fileSystemKeystore.storeKey(key, VRF_KEYSTORE_PASSWORD);
         } else {
             // We use the first private key as default one
-            key = fileSystemKeystore.loadStoredKey(pubkeys[0], password);
+            key = fileSystemKeystore.loadStoredKey(pubkeys[0], VRF_KEYSTORE_PASSWORD);
             if (key == null) {
                 log.error("Fail to load Vrf SK from keystore, create a new one and save it in keystore, {}",
                         fileSystemKeystore.getKeyStoreLocation().toAbsolutePath());
 
                 key = new VrfPrivateKey(Ed25519.getAlgorithm()).getSigner();
-                fileSystemKeystore.storeKey(key, password);
+                fileSystemKeystore.storeKey(key, VRF_KEYSTORE_PASSWORD);
             } else {
                 log.info("Vrf Sk is loaded from keystore, {}, pubkey {}",
                         fileSystemKeystore.getKeyStoreLocation().toAbsolutePath(), pubkeys[0]);

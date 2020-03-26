@@ -4,28 +4,16 @@ import static org.junit.Assert.assertTrue;
 import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-import lombok.SneakyThrows;
 import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
-import org.tdf.common.trie.Trie;
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
-import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.events.NewBlocksReceived;
-import org.tdf.sunflower.exception.ConsensusEngineInitException;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.types.Header;
-import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.facade.Miner;
-import org.tdf.sunflower.facade.TransactionPool;
-import org.tdf.sunflower.net.PeerServer;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.poa.Proposer;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
@@ -41,13 +29,22 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
 import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
+import org.tdf.sunflower.events.NewBlocksReceived;
+import org.tdf.sunflower.exception.ConsensusEngineInitException;
+import org.tdf.sunflower.facade.BlockRepository;
+import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.MessageBuilder;
+import org.tdf.sunflower.net.PeerServer;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -90,7 +87,7 @@ public class VrfMiner extends AbstractMiner {
 
     private TransactionPool transactionPool;
 
-    public VrfMiner(MinerConfig minerConfig){
+    public VrfMiner(MinerConfig minerConfig) {
         super(minerConfig);
     }
 
@@ -109,7 +106,6 @@ public class VrfMiner extends AbstractMiner {
     public void setRepository(BlockRepository blockRepository) {
         this.blockRepository = blockRepository;
     }
-
 
     @Override
     public void start() {
@@ -161,8 +157,8 @@ public class VrfMiner extends AbstractMiner {
     public Transaction createCoinBase(long height) {
         Transaction tx = Transaction.builder().version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(HexBytes.EMPTY)
-                .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(HexBytes.EMPTY)
-                .to(minerAddress).signature(HexBytes.EMPTY).build();
+                .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(HexBytes.EMPTY).to(minerAddress)
+                .signature(HexBytes.EMPTY).build();
         return tx;
     }
 
@@ -394,7 +390,7 @@ public class VrfMiner extends AbstractMiner {
                 + bestBlock.getHeight());
 
         Block newMiningBlock = createBlock(bestBlock).get();// blockchain.createNewBlock(bestPendingState,
-                                                      // getAllPendingTransactions(), getUncles(bestPendingState));
+        // getAllPendingTransactions(), getUncles(bestPendingState));
         log.info("######## Get new block for mining: #" + newMiningBlock.getHeight());
 
         VrfMined vrfMined = new VrfMined(newMiningBlock, vrfSeed);
@@ -561,7 +557,8 @@ public class VrfMiner extends AbstractMiner {
             // Add proposal to VrfStateMachine
             ProposalProof proposalProof = blockProof.getProof();
             if (vrfStateMachine.addProof(proposalProof, false)) {
-                log.info("Try to broadcast a new proposal for block, block header {}", newBlock.getHeader().getHash().toHex());
+                log.info("Try to broadcast a new proposal for block, block header {}",
+                        newBlock.getHeader().getHash().toHex());
 
                 // Broadcast proposal to other peers
                 // ethereum.getChannelManager().sendProposalProof(proposalProof, null);

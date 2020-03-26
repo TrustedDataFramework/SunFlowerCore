@@ -1,5 +1,5 @@
 package org.tdf.sunflower.state;
-
+import static org.tdf.sunflower.state.Constants.SIMPLE_BIOS_CONTRACT_ADDR;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
@@ -14,7 +14,7 @@ public class SimpleBiosContractUpdater implements BiosContractUpdater{
     @Override
     public Account getGenesisAccount() {
         return new Account(
-                HexBytes.fromHex("0000000000000000000000000000000000000000000000000000000000000000"), 0,
+                HexBytes.fromHex(SIMPLE_BIOS_CONTRACT_ADDR), 0,
                 0, HexBytes.fromHex("0000000000000000000000000000000000000000000000000000000000000000"),
                 null,
                 CryptoContext.digest(RLPItem.NULL.getEncoded()),

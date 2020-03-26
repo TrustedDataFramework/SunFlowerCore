@@ -1,12 +1,19 @@
 package org.tdf.sunflower.consensus.vrf;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 
 import org.springframework.core.io.Resource;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
+import org.tdf.sunflower.consensus.vrf.contract.VrfBiosContractUpdater;
 import org.tdf.sunflower.consensus.vrf.core.CommitProof;
 import org.tdf.sunflower.consensus.vrf.core.PendingVrfState;
 import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
@@ -28,6 +35,7 @@ import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
+import org.tdf.sunflower.state.BiosContractUpdater;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.FileUtils;
@@ -195,12 +203,12 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
             });
         }
 
-        AccountUpdater updater = new AccountUpdater(
-                alloc,
-                getContractCodeStore(),
-                getContractStorageTrie(),
-                Collections.emptyList()
-        );
+        VrfBiosContractUpdater vrfContract = new VrfBiosContractUpdater();
+        List<BiosContractUpdater> contractList = new ArrayList<>();
+        contractList.add(vrfContract);
+
+        AccountUpdater updater = new AccountUpdater(alloc, getContractCodeStore(), getContractStorageTrie(),
+                contractList);
         AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory(), getContractCodeStore(),
                 getContractStorageTrie());
         getGenesisBlock().setStateRoot(trie.getGenesisRoot());
