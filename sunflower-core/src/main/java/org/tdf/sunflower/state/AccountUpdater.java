@@ -157,6 +157,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 state.setBalance(state.getBalance() - t.getAmount());
             }
             if (t.getTo().equals(state.getAddress())) {
+                if(state.getCreatedBy() != null && !state.getCreatedBy().isEmpty())
+                    throw new RuntimeException("transfer to contract address is not allowed");
                 state.setBalance(state.getBalance() + t.getAmount());
                 if(state.getBalance() < 0) throw new RuntimeException("math overflow");
             }
