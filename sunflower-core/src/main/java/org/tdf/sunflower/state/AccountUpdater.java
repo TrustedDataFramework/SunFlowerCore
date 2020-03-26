@@ -261,8 +261,9 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             );
             BiosContractUpdater updater = biosContractAddresses.get(contractAccount.getAddress());
             updater.update(header, t, contractAccount, before);
-            before.commit();
+            byte[] root = before.commit();
             before.flush();
+            contractAccount.setStorageRoot(root);
             return accounts;
         }
 
