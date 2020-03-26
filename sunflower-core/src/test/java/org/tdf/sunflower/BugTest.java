@@ -16,10 +16,7 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicLong;
@@ -75,7 +72,7 @@ public class BugTest {
         for (String addr : addresses) {
             alloc.put(HexBytes.fromHex(addr), new Account(HexBytes.fromHex(addr), 10000000));
         }
-        AccountUpdater updater = new AccountUpdater(alloc, contractStore, storageTrie);
+        AccountUpdater updater = new AccountUpdater(alloc, contractStore, storageTrie, Collections.emptyList());
         AccountTrie accountTrie = new AccountTrie(updater, factory, contractStore, storageTrie);
 
         List<byte[]> roots = new ArrayList<>();
