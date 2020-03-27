@@ -241,7 +241,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             Trie<byte[], byte[]> before = storageTrie.revert(contractAccount.getStorageRoot(),
                     new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new));
             BiosContractUpdater updater = biosContractAddresses.get(contractAccount.getAddress());
-            updater.update(header, t, contractAccount, before);
+            updater.update(header, t, accounts, before);
             byte[] root = before.commit();
             before.flush();
             contractAccount.setStorageRoot(root);

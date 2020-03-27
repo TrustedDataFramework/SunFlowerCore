@@ -41,7 +41,7 @@ public class Context {
         return readMethod(viewParameters);
     }
 
-    private String readMethod(HexBytes bytes){
+    public static String readMethod(HexBytes bytes){
         int len = bytes.getBytes()[0];
         byte[] arr = new byte[len];
         System.arraycopy(bytes.getBytes(), 1, arr, 0, len);

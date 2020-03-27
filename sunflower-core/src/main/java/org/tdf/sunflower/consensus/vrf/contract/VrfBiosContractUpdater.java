@@ -5,6 +5,7 @@ import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPItem;
@@ -35,22 +36,23 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
     }
 
     @Override
-    public void update(Header header, Transaction transaction, Account account, Trie<byte[], byte[]> contractStorage) {
+    public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
 
-        Context context = new Context(header, transaction, account, null);
-        String methodName = context.getMethod();
+        String methodName = Context.readMethod(transaction.getPayload());
 
-        if (methodName == null || methodName == "") {
+        if (methodName.trim().isEmpty()) {
             log.error("No method name ");
             return;
         }
 
         if (methodName.equals("deposit")) {
-            deposit(transaction, account, contractStorage);
+            deposit(transaction, accounts, contractStorage);
+            return;
         }
 
         if (methodName.equals("withdraw")) {
-            withdraw(transaction, account, contractStorage);
+            withdraw(transaction, accounts, contractStorage);
+            return;
         }
 
         log.error("Calling unknown contract method {}", methodName);
@@ -68,7 +70,7 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
         return genesisStorage;
     }
 
-    private void deposit(Transaction transaction, Account account, Trie<byte[], byte[]> contractStorage) {
+    private void deposit(Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
         // Assuming that transaction amount and account balance have been verified in
         // Transactions.basicValidate().
         // Account has been updated in AccountUpdater.updateContractCall().
@@ -95,7 +97,7 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
     }
 
-    private void withdraw(Transaction transaction, Account account, Trie<byte[], byte[]> contractStorage) {
+    private void withdraw(Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
         // Assuming that transaction amount and account balance have been verified in
         // Transactions.basicValidate().
         // Account has been updated in AccountUpdater.updateContractCall().
