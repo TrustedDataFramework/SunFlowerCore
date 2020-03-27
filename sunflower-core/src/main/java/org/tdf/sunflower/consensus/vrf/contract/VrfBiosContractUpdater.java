@@ -1,11 +1,12 @@
 package org.tdf.sunflower.consensus.vrf.contract;
+
 import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPItem;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.state.Account;
@@ -16,15 +17,16 @@ import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.vm.abi.Context;
 
 import lombok.extern.slf4j.Slf4j;
+
 /**
  * 
- * @author mawenpeng
- * Precompiled contract (i.e. bios contract) for VRF consensus.
- * Functions: deposit(), withdraw(), getDeposit()
+ * @author mawenpeng Precompiled contract (i.e. bios contract) for VRF
+ *         consensus. Functions: deposit(), withdraw()
  */
 
 @Slf4j
 public class VrfBiosContractUpdater implements BiosContractUpdater {
+    private Map<byte[], byte[]> genesisStorage;
 
     @Override
     public Account getGenesisAccount() {
@@ -51,32 +53,73 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
             withdraw(transaction, account, contractStorage);
         }
 
-        if (methodName.equals("getDeposit")) {
-            getDeposit(transaction, account, contractStorage);
-        }
+        log.error("Calling unknown contract method {}", methodName);
+    }
 
-        int n = contractStorage.get("key".getBytes(StandardCharsets.UTF_8)).map(RLPCodec::decodeInt).orElse(0) + 1;
-        contractStorage.put("key".getBytes(StandardCharsets.UTF_8), RLPCodec.encode(n));
+    @Override
+    public Map<byte[], byte[]> getGenesisStorage() {
+        if (genesisStorage == null) {
+            synchronized (VrfBiosContractUpdater.class) {
+                if (genesisStorage == null) {
+                    genesisStorage = new HashMap<byte[], byte[]>();
+                }
+            }
+        }
+        return genesisStorage;
     }
 
     private void deposit(Transaction transaction, Account account, Trie<byte[], byte[]> contractStorage) {
-        // Assuming that transaction amount and account balance have been verified in Transactions.basicValidate().
+        // Assuming that transaction amount and account balance have been verified in
+        // Transactions.basicValidate().
         // Account has been updated in AccountUpdater.updateContractCall().
+
         long amount = transaction.getAmount();
+
+        if (amount <= 0) {
+            log.error("Depositing negative value, amount {}", amount);
+            return;
+        }
+
         byte[] fromAddr = transaction.getFromAddress().getBytes();
         long deposit = 0;
-        if(contractStorage.get(fromAddr).isPresent()) {
+        if (contractStorage.get(fromAddr).isPresent()) {
             deposit = ByteUtil.byteArrayToLong(contractStorage.get(fromAddr).get());
         }
+        long formerDeposit = deposit;
         deposit += amount;
+
+        if (deposit < formerDeposit) {
+            log.error("Deposit overflow. Former {}, depositing {}", formerDeposit, amount);
+            return;
+        }
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
     }
 
     private void withdraw(Transaction transaction, Account account, Trie<byte[], byte[]> contractStorage) {
+        // Assuming that transaction amount and account balance have been verified in
+        // Transactions.basicValidate().
+        // Account has been updated in AccountUpdater.updateContractCall().
 
-    }
+        long amount = transaction.getAmount();
 
-    private void getDeposit(Transaction transaction, Account account, Trie<byte[], byte[]> contractStorage) {
+        if (amount <= 0) {
+            log.error("Withdrawing negative value, amount {}", amount);
+            return;
+        }
 
+        byte[] fromAddr = transaction.getFromAddress().getBytes();
+        long deposit = 0;
+        if (contractStorage.get(fromAddr).isPresent()) {
+            deposit = ByteUtil.byteArrayToLong(contractStorage.get(fromAddr).get());
+        }
+
+        if (deposit < amount) {
+            log.error("Withdrawing value {} is larger than current deposit {}", amount, deposit);
+            return;
+        }
+
+        deposit -= amount;
+
+        contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
     }
 }

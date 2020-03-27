@@ -13,6 +13,7 @@ import org.springframework.core.io.Resource;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
+import org.tdf.sunflower.consensus.vrf.VrfGenesis.MinerInfo;
 import org.tdf.sunflower.consensus.vrf.contract.VrfBiosContractUpdater;
 import org.tdf.sunflower.consensus.vrf.core.CommitProof;
 import org.tdf.sunflower.consensus.vrf.core.PendingVrfState;
@@ -203,7 +204,10 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
             });
         }
 
+        // Precompiled contracts
         VrfBiosContractUpdater vrfContract = new VrfBiosContractUpdater();
+        // Set collaterals from genesis
+        setGenesisCollateral(genesis.miners, vrfContract.getGenesisStorage());
         List<BiosContractUpdater> contractList = new ArrayList<>();
         contractList.add(vrfContract);
 
@@ -229,6 +233,12 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
 //        getStateRepository().register(getGenesisBlock(),
 //                Collections.singleton(new Account(vrfMiner.minerPublicKeyHash, 0)));
 
+    }
+
+    private void setGenesisCollateral(List<MinerInfo> miners, Map<byte[], byte[]> storage) {
+        miners.forEach(miner -> {
+            storage.put(miner.address.getBytes(), ByteUtil.longToBytes(miner.collateral));
+        });
     }
 
     @Override
