@@ -30,7 +30,7 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
 
     @Override
     public Account getGenesisAccount() {
-        return new Account(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), 0, 0, null, null,
+        return new Account(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), 0, 0, HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), null,
                 CryptoContext.digest(RLPItem.NULL.getEncoded()), true);
     }
 

@@ -206,8 +206,10 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
 
         // Precompiled contracts
         VrfBiosContractUpdater vrfContract = new VrfBiosContractUpdater();
+
         // Set collaterals from genesis
         setGenesisCollateral(genesis.miners, vrfContract.getGenesisStorage());
+
         List<BiosContractUpdater> contractList = new ArrayList<>();
         contractList.add(vrfContract);
 

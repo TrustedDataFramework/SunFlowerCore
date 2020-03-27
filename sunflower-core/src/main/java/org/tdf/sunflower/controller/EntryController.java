@@ -1,11 +1,24 @@
 package org.tdf.sunflower.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.tdf.common.store.ReadOnlyStore;
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.account.Address;
@@ -20,18 +33,22 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.PagedView;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.util.ByteUtil;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 @RestController
 @AllArgsConstructor
 @RequestMapping("/rpc")
 public class EntryController {
     private AccountTrie accountTrie;
+
+    @Qualifier("contractStorageTrie")
+    private Trie<byte[], byte[]> contractStorageTrie;
 
     private GlobalConfig config;
 
@@ -47,7 +64,8 @@ public class EntryController {
 
     private SyncManager syncManager;
 
-    private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func, Function<byte[], Optional<T>> func1) {
+    private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func,
+            Function<byte[], Optional<T>> func1) {
         Long height = null;
         try {
             height = Long.parseLong(hashOrHeight);
@@ -79,20 +97,16 @@ public class EntryController {
 
     @GetMapping(value = "/transaction/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Transaction getTransaction(@PathVariable String hash) throws Exception {
-        return repository
-                .getTransactionByHash(HexBytes.decode(hash))
+        return repository.getTransactionByHash(HexBytes.decode(hash))
                 .orElseThrow(() -> new RuntimeException("transaction " + hash + " not exists"));
     }
-
 
     @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)
     public AccountView getAccount(@PathVariable String addressOrPublicKey) throws Exception {
         HexBytes addressHex = Address.of(addressOrPublicKey);
-        return accountTrie
-                .get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex)
+        return accountTrie.get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex)
                 .map(AccountView::fromAccount)
-                .orElse(new AccountView(addressHex, 0, 0, HexBytes.EMPTY, HexBytes.EMPTY, HexBytes.empty()))
-                ;
+                .orElse(new AccountView(addressHex, 0, 0, HexBytes.EMPTY, HexBytes.EMPTY, HexBytes.empty()));
     }
 
     // TODO: enclose this config
@@ -103,10 +117,7 @@ public class EntryController {
 
     @GetMapping(value = "/peers", produces = MediaType.APPLICATION_JSON_VALUE)
     public PeersInfo peers() {
-        return new PeersInfo(
-                peerServer.getPeers(),
-                peerServer.getBootStraps()
-        );
+        return new PeersInfo(peerServer.getPeers(), peerServer.getBootStraps());
     }
 
     @GetMapping(value = "/orphan", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -117,15 +128,14 @@ public class EntryController {
     @GetMapping(value = "/pool", produces = MediaType.APPLICATION_JSON_VALUE)
     public PagedView<Transaction> getPool(@ModelAttribute PoolQuery poolQuery) {
         switch (poolQuery.getStatus()) {
-            case "pending":
-                return pool.get(poolQuery);
-            case "dropped":
-                return pool.getDropped(poolQuery);
-            default:
-                throw new RuntimeException("unknown status " + poolQuery.getStatus());
+        case "pending":
+            return pool.get(poolQuery);
+        case "dropped":
+            return pool.getDropped(poolQuery);
+        default:
+            throw new RuntimeException("unknown status " + poolQuery.getStatus());
         }
     }
-
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
     public Response<String> sendTransaction(@RequestBody JsonNode node) {
@@ -138,15 +148,28 @@ public class EntryController {
     }
 
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public HexBytes getContract(
-            @PathVariable("address") final String address,
-            @RequestParam(value = "parameters") String arguments
-    ) throws Exception {
+    public HexBytes getContract(@PathVariable("address") final String address,
+            @RequestParam(value = "parameters") String arguments) throws Exception {
         HexBytes addressHex = Address.of(address);
         HexBytes args = HexBytes.fromHex(arguments);
         Header h = sunflowerRepository.getBestHeader();
+        if (VRF_BIOS_CONTRACT_ADDR.equals(address)) {
+            return HexBytes.fromBytes(vrfBiosContractView(addressHex, h, arguments));
+        }
         byte[] result = accountTrie.view(h.getStateRoot().getBytes(), addressHex, args);
         return HexBytes.fromBytes(result);
+    }
+
+    private byte[] vrfBiosContractView(HexBytes contractAddress, Header h, String arguments) {
+        Account account = null;
+        Optional<Account> accountOpt = accountTrie.get(h.getStateRoot().getBytes(), contractAddress);
+        if(accountOpt.isPresent()) {
+            account=accountOpt.get();
+        } else {
+            return null;
+        }
+        Trie<byte[], byte[]> trie = contractStorageTrie.revert(account.getStorageRoot());
+        return trie.get(HexBytes.fromHex(arguments).getBytes()).orElse(null);
     }
 
     @AllArgsConstructor
@@ -169,7 +192,6 @@ public class EntryController {
         // for contract account, this field is zero
         private long balance;
 
-
         // for normal address this field is null
         // for contract address this field is creator of this contract
         private HexBytes createdBy;
@@ -183,11 +205,9 @@ public class EntryController {
         private HexBytes storageRoot;
 
         static AccountView fromAccount(Account account) {
-            return new AccountView(
-                    account.getAddress(), account.getNonce(), account.getBalance(),
+            return new AccountView(account.getAddress(), account.getNonce(), account.getBalance(),
                     account.getCreatedBy(), HexBytes.fromBytes(account.getContractHash()),
-                    HexBytes.fromBytes(account.getStorageRoot())
-            );
+                    HexBytes.fromBytes(account.getStorageRoot()));
         }
     }
 }
