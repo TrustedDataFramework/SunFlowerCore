@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.tdf.common.store.Store;
-import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPItem;
 import org.tdf.sunflower.crypto.CryptoContext;
@@ -17,6 +16,7 @@ import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.vm.abi.Context;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -28,15 +28,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class VrfBiosContractUpdater implements BiosContractUpdater {
     private Map<byte[], byte[]> genesisStorage;
+    public static final byte[] TOTAL_KEY = "total_deposits".getBytes();
 
     @Override
     public Account getGenesisAccount() {
-        return new Account(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), 0, 0, HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), null,
-                CryptoContext.digest(RLPItem.NULL.getEncoded()), true);
+        return new Account(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), 0, 0, HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR),
+                null, CryptoContext.digest(RLPItem.NULL.getEncoded()), true);
     }
 
     @Override
-    public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
+    public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts,
+            Store<byte[], byte[]> contractStorage) {
 
         String methodName = Context.readMethod(transaction.getPayload());
 
@@ -55,7 +57,7 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
             return;
         }
 
-        log.error("Calling unknown contract method {}", methodName);
+        log.error("Invoking unknown contract method {}", methodName);
     }
 
     @Override
@@ -70,7 +72,8 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
         return genesisStorage;
     }
 
-    private void deposit(Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
+    private void deposit(Transaction transaction, Map<HexBytes, Account> accounts,
+            Store<byte[], byte[]> contractStorage) {
         // Assuming that transaction amount and account balance have been verified in
         // Transactions.basicValidate().
         // Account has been updated in AccountUpdater.updateContractCall().
@@ -84,35 +87,51 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
 
         byte[] fromAddr = transaction.getFromAddress().getBytes();
         long deposit = 0;
+        long total = 0;
         if (contractStorage.get(fromAddr).isPresent()) {
             deposit = ByteUtil.byteArrayToLong(contractStorage.get(fromAddr).get());
         }
+        if (contractStorage.get(TOTAL_KEY).isPresent()) {
+            total = ByteUtil.byteArrayToLong(contractStorage.get(TOTAL_KEY).get());
+        }
+
         long formerDeposit = deposit;
+
         deposit += amount;
+        total += amount;
 
         if (deposit < formerDeposit) {
             log.error("Deposit overflow. Former {}, depositing {}", formerDeposit, amount);
             return;
         }
+
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
+        contractStorage.put(TOTAL_KEY, ByteUtil.longToBytes(total));
+
     }
 
-    private void withdraw(Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
+    private void withdraw(Transaction transaction, Map<HexBytes, Account> accounts,
+            Store<byte[], byte[]> contractStorage) {
         // Assuming that transaction amount and account balance have been verified in
         // Transactions.basicValidate().
-        // Account has been updated in AccountUpdater.updateContractCall().
 
         long amount = transaction.getAmount();
-
         if (amount <= 0) {
             log.error("Withdrawing negative value, amount {}", amount);
             return;
         }
 
         byte[] fromAddr = transaction.getFromAddress().getBytes();
+        Account fromAccount = accounts.get(HexBytes.fromBytes(fromAddr));
+        Account contractAccount = accounts.get(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR));
+
         long deposit = 0;
+        long total = 0;
         if (contractStorage.get(fromAddr).isPresent()) {
             deposit = ByteUtil.byteArrayToLong(contractStorage.get(fromAddr).get());
+        }
+        if (contractStorage.get(TOTAL_KEY).isPresent()) {
+            total = ByteUtil.byteArrayToLong(contractStorage.get(TOTAL_KEY).get());
         }
 
         if (deposit < amount) {
@@ -121,7 +140,13 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
         }
 
         deposit -= amount;
+        total -= amount;
+
+        // Update account balance
+        fromAccount.setBalance(fromAccount.getBalance() + amount);
+        contractAccount.setBalance(contractAccount.getBalance() - amount);
 
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
+        contractStorage.put(TOTAL_KEY, ByteUtil.longToBytes(total));
     }
 }
