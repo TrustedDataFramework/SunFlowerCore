@@ -238,9 +238,12 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
     }
 
     private void setGenesisCollateral(List<MinerInfo> miners, Map<byte[], byte[]> storage) {
-        miners.forEach(miner -> {
+        long total = 0;
+        for (MinerInfo miner : miners) {
             storage.put(miner.address.getBytes(), ByteUtil.longToBytes(miner.collateral));
-        });
+            total += miner.collateral;
+        }
+        storage.put(VrfBiosContractUpdater.TOTAL_KEY, ByteUtil.longToBytes(total));
     }
 
     @Override

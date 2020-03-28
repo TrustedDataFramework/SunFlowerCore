@@ -17,11 +17,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.tdf.common.store.ReadOnlyStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.account.Address;
+import org.tdf.sunflower.consensus.vrf.contract.VrfBiosContractUpdater;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.Peer;
@@ -33,7 +33,6 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.PagedView;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.util.ByteUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -154,22 +153,46 @@ public class EntryController {
         HexBytes args = HexBytes.fromHex(arguments);
         Header h = sunflowerRepository.getBestHeader();
         if (VRF_BIOS_CONTRACT_ADDR.equals(address)) {
-            return HexBytes.fromBytes(vrfBiosContractView(addressHex, h, arguments));
+            return HexBytes.fromBytes(vrfBiosContractViewDeposit(addressHex, h, arguments));
         }
         byte[] result = accountTrie.view(h.getStateRoot().getBytes(), addressHex, args);
         return HexBytes.fromBytes(result);
     }
 
-    private byte[] vrfBiosContractView(HexBytes contractAddress, Header h, String arguments) {
+    @GetMapping(value = "/contract/vrf/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public HexBytes getVrfContract(@PathVariable("address") final String address,
+            @RequestParam(value = "parameters") String arguments) throws Exception {
+        HexBytes addressHex = Address.of(address);
+        HexBytes args = HexBytes.fromHex(arguments);
+        Header h = sunflowerRepository.getBestHeader();
+        if (VRF_BIOS_CONTRACT_ADDR.equals(address)) {
+            return HexBytes.fromBytes(vrfBiosContractViewTotal(addressHex, h, arguments));
+        }
+        return HexBytes.fromBytes("NOT_VRF_CONTRACT_ADDRESS".getBytes());
+    }
+
+    private byte[] vrfBiosContractViewDeposit(HexBytes contractAddress, Header h, String arguments) {
         Account account = null;
         Optional<Account> accountOpt = accountTrie.get(h.getStateRoot().getBytes(), contractAddress);
-        if(accountOpt.isPresent()) {
-            account=accountOpt.get();
+        if (accountOpt.isPresent()) {
+            account = accountOpt.get();
         } else {
             return null;
         }
         Trie<byte[], byte[]> trie = contractStorageTrie.revert(account.getStorageRoot());
         return trie.get(HexBytes.fromHex(arguments).getBytes()).orElse(null);
+    }
+
+    private byte[] vrfBiosContractViewTotal(HexBytes contractAddress, Header h, String arguments) {
+        Account account = null;
+        Optional<Account> accountOpt = accountTrie.get(h.getStateRoot().getBytes(), contractAddress);
+        if (accountOpt.isPresent()) {
+            account = accountOpt.get();
+        } else {
+            return null;
+        }
+        Trie<byte[], byte[]> trie = contractStorageTrie.revert(account.getStorageRoot());
+        return trie.get(VrfBiosContractUpdater.TOTAL_KEY).orElse(null);
     }
 
     @AllArgsConstructor

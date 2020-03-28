@@ -27,13 +27,23 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class VrfBiosContractUpdater implements BiosContractUpdater {
+    private Account genesisAccount;
     private Map<byte[], byte[]> genesisStorage;
     public static final byte[] TOTAL_KEY = "total_deposits".getBytes();
 
     @Override
     public Account getGenesisAccount() {
-        return new Account(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), 0, 0, HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR),
-                null, CryptoContext.digest(RLPItem.NULL.getEncoded()), true);
+        if (genesisAccount == null) {
+            synchronized (VrfBiosContractUpdater.class) {
+                if (genesisAccount == null) {
+                    genesisAccount = new Account(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), 0, 3,
+                            HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), null,
+                            CryptoContext.digest(RLPItem.NULL.getEncoded()), true);
+                }
+            }
+        }
+        return genesisAccount;
+
     }
 
     @Override
@@ -41,6 +51,7 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
             Store<byte[], byte[]> contractStorage) {
 
         String methodName = Context.readMethod(transaction.getPayload());
+        log.info("++++++>> VrfBiosContract method {}, txn hash {}", methodName, transaction.getHash().toHex());
 
         if (methodName.trim().isEmpty()) {
             log.error("No method name ");
