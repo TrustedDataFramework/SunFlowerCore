@@ -25,11 +25,11 @@ public class Validator {
      * NOTE:
      * DEPOSIT_MIN_VALUE and DEPOSIT_MAX_VALUE must be a multiple of DEPOSIT_UNIT_VALUE
      */
-    public static final long DEPOSIT_UNIT_VALUE = 100000L;
-    public static final long DEPOSIT_MIN_VALUE  = DEPOSIT_UNIT_VALUE * 1;
-    public static final long DEPOSIT_MAX_VALUE  = DEPOSIT_UNIT_VALUE * 10;
+    public static final long DEPOSIT_UNIT_VALUE = 100L;
+    public static final long DEPOSIT_MIN_VALUE  = DEPOSIT_UNIT_VALUE * 1000;
+    public static final long DEPOSIT_MAX_VALUE  = DEPOSIT_UNIT_VALUE * 10000;
 
-    public static final int ETHER_POW_WEI = 18;
+    public static final int ETHER_POW_WEI = 1;
     public static final BigInteger ETHER_TO_WEI = BigInteger.valueOf(10).pow(ETHER_POW_WEI);
 
     /* The 160-bit address to which all fees collected from the

@@ -12,7 +12,7 @@
     "miners": [
         {
             "addr": "4b984384d03782ce6c1f53eb974d8f1dfc53eee9",
-            "collateral": 100000
+            "collateral": 500000
         },
         {
             "addr": "4e48bf86c3cc844b7b6489fa323a9db8f96d4144",

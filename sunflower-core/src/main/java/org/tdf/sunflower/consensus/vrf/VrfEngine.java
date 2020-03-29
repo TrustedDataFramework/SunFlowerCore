@@ -226,7 +226,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
 
 //        setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
         // ------- Need well implementation.
-        ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository());
+        ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository(), trie, getContractStorageTrie(), vrfConfig);
 
         vrfStateMachine = new VrfStateMachine(validatorManager, new PendingVrfState(validatorManager),
                 new VrfValidator(getAccountTrie()));

@@ -788,25 +788,4 @@ public class VrfMiner extends AbstractMiner {
         getEventBus().publish(new NewBlocksReceived(Collections.singletonList(block)));
         return ImportResult.IMPORTED_BEST;
     }
-
-    public long getCollateral(String address) {
-        Optional<Account> accountOpt = this.getAccountTrie().get(
-                blockRepository.getBestBlock().getStateRoot().getBytes(), Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES);
-
-        if (!accountOpt.isPresent()) {
-            return 0;
-        }
-
-        Account account = accountOpt.get();
-        Trie<byte[], byte[]> trie = contractStorageTrie.revert(account.getStorageRoot());
-
-        Optional<byte[]> collateralOpt = trie.get(HexBytes.fromHex(address).getBytes());
-
-        if (!collateralOpt.isPresent()) {
-            return 0;
-        }
-
-        long collateral = ByteUtil.byteArrayToLong(collateralOpt.get());
-        return collateral;
-    }
 }
