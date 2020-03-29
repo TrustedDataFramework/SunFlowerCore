@@ -22,6 +22,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.consensus.vrf.contract.VrfBiosContractUpdater;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.Peer;
@@ -153,7 +154,8 @@ public class EntryController {
         HexBytes args = HexBytes.fromHex(arguments);
         Header h = sunflowerRepository.getBestHeader();
         if (VRF_BIOS_CONTRACT_ADDR.equals(address)) {
-            return HexBytes.fromBytes(vrfBiosContractViewDeposit(addressHex, h, arguments));
+            return HexBytes.fromBytes(VrfUtil.getFromContractStorage(addressHex, h,
+                    HexBytes.fromHex(arguments).getBytes(), accountTrie, contractStorageTrie));
         }
         byte[] result = accountTrie.view(h.getStateRoot().getBytes(), addressHex, args);
         return HexBytes.fromBytes(result);
@@ -166,33 +168,10 @@ public class EntryController {
         HexBytes args = HexBytes.fromHex(arguments);
         Header h = sunflowerRepository.getBestHeader();
         if (VRF_BIOS_CONTRACT_ADDR.equals(address)) {
-            return HexBytes.fromBytes(vrfBiosContractViewTotal(addressHex, h, arguments));
+            return HexBytes.fromBytes(VrfUtil.getFromContractStorage(addressHex, h,
+                    VrfBiosContractUpdater.TOTAL_KEY, accountTrie, contractStorageTrie));
         }
         return HexBytes.fromBytes("NOT_VRF_CONTRACT_ADDRESS".getBytes());
-    }
-
-    private byte[] vrfBiosContractViewDeposit(HexBytes contractAddress, Header h, String arguments) {
-        Account account = null;
-        Optional<Account> accountOpt = accountTrie.get(h.getStateRoot().getBytes(), contractAddress);
-        if (accountOpt.isPresent()) {
-            account = accountOpt.get();
-        } else {
-            return null;
-        }
-        Trie<byte[], byte[]> trie = contractStorageTrie.revert(account.getStorageRoot());
-        return trie.get(HexBytes.fromHex(arguments).getBytes()).orElse(null);
-    }
-
-    private byte[] vrfBiosContractViewTotal(HexBytes contractAddress, Header h, String arguments) {
-        Account account = null;
-        Optional<Account> accountOpt = accountTrie.get(h.getStateRoot().getBytes(), contractAddress);
-        if (accountOpt.isPresent()) {
-            account = accountOpt.get();
-        } else {
-            return null;
-        }
-        Trie<byte[], byte[]> trie = contractStorageTrie.revert(account.getStorageRoot());
-        return trie.get(VrfBiosContractUpdater.TOTAL_KEY).orElse(null);
     }
 
     @AllArgsConstructor

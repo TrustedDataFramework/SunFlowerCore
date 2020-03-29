@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519;
@@ -27,6 +29,8 @@ import org.tdf.sunflower.consensus.vrf.keystore.FileSystemKeystore;
 import org.tdf.sunflower.consensus.vrf.struct.VrfBlockFields;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.ByteUtil;
@@ -551,5 +555,18 @@ public class VrfUtil {
         }
 
         return tmp.toString();
+    }
+
+    public static byte[] getFromContractStorage(HexBytes contractAddress, Header h, byte[] key, AccountTrie accountTrie,
+            Trie<byte[], byte[]> contractStorageTrie) {
+        Account account = null;
+        Optional<Account> accountOpt = accountTrie.get(h.getStateRoot().getBytes(), contractAddress);
+        if (accountOpt.isPresent()) {
+            account = accountOpt.get();
+        } else {
+            return null;
+        }
+        Trie<byte[], byte[]> trie = contractStorageTrie.revert(account.getStorageRoot());
+        return trie.get(key).orElse(null);
     }
 }

@@ -11,11 +11,13 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.poa.Proposer;
+import org.tdf.sunflower.consensus.vrf.contract.VrfBiosContractUpdater;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
 import org.tdf.sunflower.consensus.vrf.core.CommitProof;
 import org.tdf.sunflower.consensus.vrf.core.ImportResult;
@@ -35,6 +37,8 @@ import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.MessageBuilder;
 import org.tdf.sunflower.net.PeerServer;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -86,6 +90,8 @@ public class VrfMiner extends AbstractMiner {
     private MessageBuilder messageBuilder;
 
     private TransactionPool transactionPool;
+    // contract storage trie
+    private Trie<byte[], byte[]> contractStorageTrie;
 
     public VrfMiner(MinerConfig minerConfig) {
         super(minerConfig);
@@ -232,6 +238,7 @@ public class VrfMiner extends AbstractMiner {
                 Hex.toHexString(vrfPk, 0, 6));
 
         final Block bestPendingState = blockRepository.getBestBlock();
+
         final long nextBlockNum = bestPendingState.getHeight() + 1;
 
         if (!setupVrfStateMachine(vrfStateMachine)) {
@@ -782,4 +789,24 @@ public class VrfMiner extends AbstractMiner {
         return ImportResult.IMPORTED_BEST;
     }
 
+    public long getCollateral(String address) {
+        Optional<Account> accountOpt = this.getAccountTrie().get(
+                blockRepository.getBestBlock().getStateRoot().getBytes(), Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES);
+
+        if (!accountOpt.isPresent()) {
+            return 0;
+        }
+
+        Account account = accountOpt.get();
+        Trie<byte[], byte[]> trie = contractStorageTrie.revert(account.getStorageRoot());
+
+        Optional<byte[]> collateralOpt = trie.get(HexBytes.fromHex(address).getBytes());
+
+        if (!collateralOpt.isPresent()) {
+            return 0;
+        }
+
+        long collateral = ByteUtil.byteArrayToLong(collateralOpt.get());
+        return collateral;
+    }
 }

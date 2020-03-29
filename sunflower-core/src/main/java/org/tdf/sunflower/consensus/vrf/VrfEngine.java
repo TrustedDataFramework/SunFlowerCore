@@ -222,6 +222,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         setValidator(new VrfValidator(getAccountTrie()));
         vrfMiner.setAccountTrie(getAccountTrie());
         vrfMiner.setEventBus(getEventBus());
+        vrfMiner.setContractStorageTrie(getContractStorageTrie());
 
 //        setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
         // ------- Need well implementation.
