@@ -36,7 +36,7 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
         if (genesisAccount == null) {
             synchronized (VrfBiosContractUpdater.class) {
                 if (genesisAccount == null) {
-                    genesisAccount = new Account(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), 0, 3,
+                    genesisAccount = new Account(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), 0, 0,
                             HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), null,
                             CryptoContext.digest(RLPItem.NULL.getEncoded()), true);
                 }

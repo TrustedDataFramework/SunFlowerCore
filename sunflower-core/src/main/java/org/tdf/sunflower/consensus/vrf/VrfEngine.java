@@ -2,7 +2,6 @@ package org.tdf.sunflower.consensus.vrf;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +36,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.state.BiosContractUpdater;
+import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.FileUtils;
@@ -208,10 +208,10 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
         VrfBiosContractUpdater vrfContract = new VrfBiosContractUpdater();
 
         // Set collaterals from genesis
-        setGenesisCollateral(genesis.miners, vrfContract.getGenesisStorage());
-
+        setGenesisCollateral(genesis.miners, vrfContract);
         List<BiosContractUpdater> contractList = new ArrayList<>();
         contractList.add(vrfContract);
+        alloc.put(Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES, vrfContract.getGenesisAccount());
 
         AccountUpdater updater = new AccountUpdater(alloc, getContractCodeStore(), getContractStorageTrie(),
                 contractList);
@@ -226,7 +226,8 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
 
 //        setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
         // ------- Need well implementation.
-        ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository(), trie, getContractStorageTrie(), vrfConfig);
+        ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository(), trie,
+                getContractStorageTrie(), vrfConfig);
 
         vrfStateMachine = new VrfStateMachine(validatorManager, new PendingVrfState(validatorManager),
                 new VrfValidator(getAccountTrie()));
@@ -238,11 +239,14 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
 
     }
 
-    private void setGenesisCollateral(List<MinerInfo> miners, Map<byte[], byte[]> storage) {
+    private void setGenesisCollateral(List<MinerInfo> miners, VrfBiosContractUpdater vrfBiosContractUpdater) {
         long total = 0;
+        Map<byte[], byte[]> storage = vrfBiosContractUpdater.getGenesisStorage();
+        Account contractAccount = vrfBiosContractUpdater.getGenesisAccount();
         for (MinerInfo miner : miners) {
             storage.put(miner.address.getBytes(), ByteUtil.longToBytes(miner.collateral));
             total += miner.collateral;
+            contractAccount.setBalance(contractAccount.getBalance() + miner.collateral);
         }
         storage.put(VrfBiosContractUpdater.TOTAL_KEY, ByteUtil.longToBytes(total));
     }
