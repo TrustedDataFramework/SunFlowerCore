@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.NoDeleteBatchStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.crypto.ed25519.Ed25519;
@@ -306,7 +307,7 @@ public class Start {
                 .hashFunction(CryptoContext.hashFunction)
                 .keyCodec(Codec.identity())
                 .valueCodec(Codec.identity())
-                .store(factory.create("contract-storage-trie"))
+                .store(new NoDeleteBatchStore<>(factory.create("contract-storage-trie")))
                 .build();
     }
 

@@ -2,12 +2,15 @@ package org.tdf.common.trie;
 
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.MemoryDatabaseStore;
+import org.tdf.common.store.NoDeleteStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.ByteArraySet;
-import org.tdf.rlp.RLPElement;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -94,6 +97,7 @@ public interface Trie<K, V> extends Store<K, V> {
      * Merkle proof are used to decide upon the following factors
      * If the key belongs in the merkle Trie
      * To concisely prove the validity of data being part of a dataset without storing the whole data set
+     *
      * @param k key to prove be absent or valid
      * @return merkle path of key
      */
@@ -101,10 +105,11 @@ public interface Trie<K, V> extends Store<K, V> {
 
     /**
      * get merkle proof batched
+     *
      * @param keys keys to included in the proof
      * @return merkle proof
      */
-    default Map<byte[], byte[]> getProof(Collection<? extends K> keys){
+    default Map<byte[], byte[]> getProof(Collection<? extends K> keys) {
         Map<byte[], byte[]> ret = new ByteArrayMap<>();
         for (K key : keys) {
             ret.putAll(getProof(key));
@@ -143,7 +148,7 @@ public interface Trie<K, V> extends Store<K, V> {
         }
     }
 
-    default void prune(Collection<? extends byte[]> excludedRoots){
+    default void prune(Collection<? extends byte[]> excludedRoots) {
         prune(excludedRoots, getStore());
     }
 
@@ -152,13 +157,18 @@ public interface Trie<K, V> extends Store<K, V> {
         for (byte[] root : excludedRoots) {
             excludes.addAll(revert(root).dumpKeys());
         }
-        Consumer<byte[]> fn = k ->{
-            if(!excludes.contains(k))
+        Consumer<byte[]> fn = k -> {
+            if (!excludes.contains(k))
                 db.remove(k);
         };
-        if(db instanceof MemoryDatabaseStore){
+        boolean isMem = db instanceof MemoryDatabaseStore ||
+                (
+                        db instanceof NoDeleteStore &&
+                                ((NoDeleteStore) db).getDelegate() instanceof MemoryDatabaseStore
+                );
+        if (isMem) {
             new ArrayList<>(db.keySet()).forEach(fn);
-        }else{
+        } else {
             db.stream().forEach(e -> fn.accept(e.getKey()));
         }
     }

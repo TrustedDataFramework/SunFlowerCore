@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  * no delete store will store deleted key-value pair to @see deleted
  * when compact method called, clean the key-pari in @see deleted
  */
-@Getter(AccessLevel.PROTECTED)
+@Getter
 public class NoDeleteStore<K, V> implements Store<K, V> {
     private Store<K, V> delegate;
 
