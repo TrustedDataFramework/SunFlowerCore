@@ -238,6 +238,11 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
     }
 
     @Override
+    public long getConfirms(byte[] transactionHash) {
+        return 0;
+    }
+
+    @Override
     public void setProvider(ConfirmedBlocksProvider provider) {
 
     }

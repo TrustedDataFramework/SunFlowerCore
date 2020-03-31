@@ -152,5 +152,10 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
         public List<Transaction> getTransactionsByBlockHash(byte[] blockHash) {
             return Collections.emptyList();
         }
+
+        @Override
+        public long getConfirms(byte[] transactionHash) {
+            return 0;
+        }
     };
 }

@@ -185,6 +185,11 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public long getConfirms(byte[] transactionHash) {
+        return 0;
+    }
+
     public List<Transaction> getTransactionsByBlockHeight(long height) {
         return transactionDao.findByHeight(height)
                 .stream().sorted(Comparator.comparingInt(TransactionEntity::getPosition))

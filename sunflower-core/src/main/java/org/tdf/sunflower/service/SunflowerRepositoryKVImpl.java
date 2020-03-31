@@ -47,8 +47,11 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     // block height -> canonical hash
     private Store<Long, byte[]> canonicalIndex;
 
-    // best -> best header prune -> pruned header
+    // "best" -> best header, "prune" -> pruned header
     private Store<String, Header> status;
+
+    // transaction hash -> block hashes which includes this transaction
+    private Store<byte[], HexBytes[]> transactionIncludes;
 
     private Header pruned;
 
@@ -82,6 +85,11 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
             factory.create("canonical-index"),
                 Codecs.newRLPCodec(Long.class),
                 Codec.identity()
+        );
+        this.transactionIncludes = new StoreWrapper<>(
+                factory.create("transaction-includes"),
+                Codec.identity(),
+                Codecs.newRLPCodec(HexBytes[].class)
         );
     }
 
@@ -212,6 +220,11 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     }
 
     @Override
+    public long getConfirms(byte[] transactionHash) {
+        return 0;
+    }
+
+    @Override
     protected void writeGenesis(Block genesis) {
         writeBlockNoReset(genesis);
         canonicalIndex.put(0L, genesis.getHash().getBytes());
@@ -226,8 +239,18 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         if (containsHeader(block.getHash().getBytes()))
             return;
         headerStore.put(block.getHash().getBytes(), block.getHeader());
-        block.getBody()
-                .forEach(t -> transactionsStore.put(t.getHash().getBytes(), t));
+
+
+        for (Transaction t : block.getBody()) {
+            transactionsStore.put(t.getHash().getBytes(), t);
+            Set<HexBytes> headerHashes = transactionIncludes.get(t.getHash().getBytes())
+                    .map(x -> new HashSet<>(Arrays.asList(x)))
+                    .orElse(new HashSet<>());
+            headerHashes.add(block.getHash());
+            transactionIncludes.put(t.getHash().getBytes(), headerHashes.toArray(new HexBytes[0]));
+        }
+
+
         HexBytes[] txHashes = block.getBody().stream().map(Transaction::getHash)
                 .toArray(HexBytes[]::new);
         transactionsRoot.put(
@@ -239,6 +262,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
                 .orElse(new HashSet<>());
         headerHashes.add(block.getHash());
         heightIndex.put(block.getHeight(), headerHashes.toArray(new HexBytes[0]));
+
 
         eventBus.publish(new NewBlockWritten(block));
         log.info("write block at height " + block.getHeight() + " " + block.getHeader().getHash() + " to database success");
@@ -292,26 +316,19 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
             headerStore.forEach(fn);
         }
 
-        BiConsumer<byte[], Object> fn1 = (k, v) -> {
-            if (!txRootWhiteList.contains(HexBytes.fromBytes(k)))
-                transactionsRoot.remove(k);
-        };
-
-        BiConsumer<byte[], Object> fn2 = (k, v) -> {
-            if (!txWhiteList.contains(HexBytes.fromBytes(k)))
-                transactionsStore.remove(k);
-        };
-
-        if (((StoreWrapper) transactionsStore).getStore() instanceof MemoryDatabaseStore) {
-            transactionsStore.stream().collect(Collectors.toList()).forEach(e -> fn1.accept(e.getKey(), e.getValue()));
-        } else {
-            transactionsStore.forEach(fn1);
-        }
-
-        if (((StoreWrapper) transactionsRoot).getStore() instanceof MemoryDatabaseStore) {
-            transactionsRoot.stream().collect(Collectors.toList()).forEach(e -> fn2.accept(e.getKey(), e.getValue()));
-        } else {
-            transactionsRoot.forEach(fn2);
+        for (Store<byte[], ?> store : Arrays.asList(transactionsStore, transactionsRoot, transactionIncludes)) {
+            BiConsumer<byte[], Object> f = (k, v) -> {
+                if (!txWhiteList.contains(HexBytes.fromBytes(k)))
+                    store.remove(k);
+            };
+            if (((StoreWrapper) store).getStore() instanceof MemoryDatabaseStore) {
+                transactionsStore
+                        .stream()
+                        .collect(Collectors.toList())
+                        .forEach(e -> f.accept(e.getKey(), e.getValue()));
+            } else {
+                transactionsStore.forEach(f);
+            }
         }
 
 
