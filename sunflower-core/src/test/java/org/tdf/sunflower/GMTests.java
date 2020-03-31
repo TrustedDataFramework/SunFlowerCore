@@ -12,6 +12,8 @@ import org.junit.runners.JUnit4;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
+import org.tdf.crypto.sm2.SM2PrivateKey;
+import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.crypto.CryptoContext;
 
@@ -83,5 +85,24 @@ public class GMTests {
         }
         long end = System.currentTimeMillis();
         System.out.println( (end - start) * 1.0 /(count));
+    }
+
+    @Test
+    @Ignore
+    public void test6(){
+        HexBytes pk = HexBytes.fromHex("03DD5726AA2186FE1B0F03C31CBED058E8F8895E0FEB22991EF191EB944D38738E");
+        HexBytes sk = HexBytes.fromHex("8AC8F54188960F0BDF4A949E7431CC552E35C16AA3C03739F1655AD8CDCDA363");
+        HexBytes one = HexBytes.fromHex("0000000000000000000000000000000000000000000000000000000000000001");
+
+        HexBytes expectedPk = HexBytes.fromBytes(new SM2PrivateKey(sk.getBytes())
+                .generatePublicKey().getEncoded());
+
+        HexBytes GX = HexBytes.fromBytes(new SM2PrivateKey(one.getBytes())
+                .generatePublicKey().getEncoded());
+
+        System.out.println(pk);
+        System.out.println(expectedPk);
+
+        System.out.println("gx = " + GX);
     }
 }
