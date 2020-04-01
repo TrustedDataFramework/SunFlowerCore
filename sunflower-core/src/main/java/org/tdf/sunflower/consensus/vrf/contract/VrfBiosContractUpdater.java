@@ -2,12 +2,14 @@ package org.tdf.sunflower.consensus.vrf.contract;
 
 import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPItem;
+import org.tdf.sunflower.Start;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.BiosContractUpdater;
@@ -16,7 +18,9 @@ import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.vm.abi.Context;
 
-import lombok.Getter;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -51,7 +55,8 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
             Store<byte[], byte[]> contractStorage) {
 
         String methodName = Context.readMethod(transaction.getPayload());
-        log.info("++++++>> VrfBiosContract method {}, txn hash {}", methodName, transaction.getHash().toHex());
+        log.info("++++++>> VrfBiosContract method {}, txn hash {}, nonce {}", methodName, transaction.getHash().toHex(),
+                transaction.getNonce());
 
         if (methodName.trim().isEmpty()) {
             log.error("No method name ");
@@ -59,12 +64,20 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
         }
 
         if (methodName.equals("deposit")) {
-            deposit(transaction, accounts, contractStorage);
+            try {
+                deposit(transaction, accounts, contractStorage);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return;
         }
 
         if (methodName.equals("withdraw")) {
-            withdraw(transaction, accounts, contractStorage);
+            try {
+                withdraw(transaction, accounts, contractStorage);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return;
         }
 
@@ -84,19 +97,26 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
     }
 
     private void deposit(Transaction transaction, Map<HexBytes, Account> accounts,
-            Store<byte[], byte[]> contractStorage) {
-        // Assuming that transaction amount and account balance have been verified in
-        // Transactions.basicValidate().
-        // Account has been updated in AccountUpdater.updateContractCall().
+            Store<byte[], byte[]> contractStorage) throws JsonParseException, JsonMappingException, IOException {
 
-        long amount = transaction.getAmount();
+        DepositParams depositParams = parseDepositParams(transaction);
+        long amount = depositParams.getDepositAmount();
 
         if (amount <= 0) {
-            log.error("Depositing negative value, amount {}", amount);
+            log.error("Depositing negative or zero value, amount {}", amount);
             return;
         }
 
         byte[] fromAddr = transaction.getFromAddress().getBytes();
+        Account fromAccount = accounts.get(HexBytes.fromBytes(fromAddr));
+        Account contractAccount = accounts.get(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR));
+
+        if (fromAccount.getBalance() < amount) {
+            log.error("Deposit amount {} is less than account {} balance {}", amount, fromAddr,
+                    fromAccount.getBalance());
+            return;
+        }
+
         long deposit = 0;
         long total = 0;
         if (contractStorage.get(fromAddr).isPresent()) {
@@ -115,20 +135,29 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
             log.error("Deposit overflow. Former {}, depositing {}", formerDeposit, amount);
             return;
         }
+        if (deposit > total) {
+            log.error("Deposit greater than total. Deposit {}, total {}", deposit, total);
+            return;
+        }
 
+        // Update account balance
+        fromAccount.setBalance(fromAccount.getBalance() - amount);
+        contractAccount.setBalance(contractAccount.getBalance() + amount);
+
+        // Update contract storage
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
         contractStorage.put(TOTAL_KEY, ByteUtil.longToBytes(total));
 
     }
 
     private void withdraw(Transaction transaction, Map<HexBytes, Account> accounts,
-            Store<byte[], byte[]> contractStorage) {
-        // Assuming that transaction amount and account balance have been verified in
-        // Transactions.basicValidate().
+            Store<byte[], byte[]> contractStorage) throws JsonParseException, JsonMappingException, IOException {
 
-        long amount = transaction.getAmount();
+        WithdrawParams withdrawParams = parseWithdrawParams(transaction);
+
+        long amount = withdrawParams.getWithdrawAmount();
         if (amount <= 0) {
-            log.error("Withdrawing negative value, amount {}", amount);
+            log.error("Withdrawing negative or zero value, amount {}", amount);
             return;
         }
 
@@ -136,6 +165,7 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
         Account fromAccount = accounts.get(HexBytes.fromBytes(fromAddr));
         Account contractAccount = accounts.get(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR));
 
+        // Get current address deposit and contract total
         long deposit = 0;
         long total = 0;
         if (contractStorage.get(fromAddr).isPresent()) {
@@ -159,5 +189,27 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
 
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
         contractStorage.put(TOTAL_KEY, ByteUtil.longToBytes(total));
+    }
+
+    private WithdrawParams parseWithdrawParams(Transaction transaction)
+            throws JsonParseException, JsonMappingException, IOException {
+        byte[] payload = transaction.getPayload().getBytes();
+        int methodNameLen = payload[0];
+        int paramBytesLen = payload.length - methodNameLen - 1;
+        byte[] paramBytes = new byte[paramBytesLen];
+        System.arraycopy(payload, 1 + methodNameLen, paramBytes, 0, paramBytesLen);
+        WithdrawParams withdrawParams = Start.MAPPER.readValue(paramBytes, WithdrawParams.class);
+        return withdrawParams;
+    }
+
+    private DepositParams parseDepositParams(Transaction transaction)
+            throws JsonParseException, JsonMappingException, IOException {
+        byte[] payload = transaction.getPayload().getBytes();
+        int methodNameLen = payload[0];
+        int paramBytesLen = payload.length - methodNameLen - 1;
+        byte[] paramBytes = new byte[paramBytesLen];
+        System.arraycopy(payload, 1 + methodNameLen, paramBytes, 0, paramBytesLen);
+        DepositParams depositParams = Start.MAPPER.readValue(paramBytes, DepositParams.class);
+        return depositParams;
     }
 }
