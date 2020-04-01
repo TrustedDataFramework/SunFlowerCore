@@ -15,10 +15,13 @@ import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
+import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.crypto.CryptoContext;
 
 import java.util.Arrays;
 import java.util.PriorityQueue;
+
+import static org.tdf.sunflower.ApplicationConstants.ADDRESS_SIZE;
 
 @RunWith(JUnit4.class)
 public class GMTests {
@@ -88,10 +91,10 @@ public class GMTests {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void test6(){
-        HexBytes pk = HexBytes.fromHex("03DD5726AA2186FE1B0F03C31CBED058E8F8895E0FEB22991EF191EB944D38738E");
-        HexBytes sk = HexBytes.fromHex("8AC8F54188960F0BDF4A949E7431CC552E35C16AA3C03739F1655AD8CDCDA363");
+        HexBytes pk = HexBytes.fromHex("03C5D05CB953CD842CECE23DB312688C17D4863F73F678961F7DFBD328DBA509E9");
+        HexBytes sk = HexBytes.fromHex("49CC13189AE10A60AA757169AEAEC491F4F6932D67E4E5D02D9889A6E244ACED");
         HexBytes one = HexBytes.fromHex("0000000000000000000000000000000000000000000000000000000000000001");
 
         HexBytes expectedPk = HexBytes.fromBytes(new SM2PrivateKey(sk.getBytes())
@@ -103,6 +106,10 @@ public class GMTests {
         System.out.println(pk);
         System.out.println(expectedPk);
 
+        HexBytes ret = HexBytes.fromBytes(SM3Util.hash(pk.getBytes()));
+        ret = ret.slice(ret.size() - ADDRESS_SIZE, ret.size());
         System.out.println("gx = " + GX);
+        System.out.println("address = " + ret);
+        System.out.println(HexBytes.fromBytes(SM3Util.hash(new byte[32])));
     }
 }
