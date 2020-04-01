@@ -153,23 +153,25 @@ public class EntryController {
         HexBytes addressHex = Address.of(address);
         HexBytes args = HexBytes.fromHex(arguments);
         Header h = sunflowerRepository.getBestHeader();
-        if (VRF_BIOS_CONTRACT_ADDR.equals(address)) {
-            return HexBytes.fromBytes(VrfUtil.getFromContractStorage(addressHex, h,
-                    HexBytes.fromHex(arguments).getBytes(), accountTrie, contractStorageTrie));
-        }
         byte[] result = accountTrie.view(h.getStateRoot().getBytes(), addressHex, args);
         return HexBytes.fromBytes(result);
     }
 
     @GetMapping(value = "/contract/vrf/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public HexBytes getVrfContract(@PathVariable("address") final String address,
-            @RequestParam(value = "parameters") String arguments) throws Exception {
-        HexBytes addressHex = Address.of(address);
-        HexBytes args = HexBytes.fromHex(arguments);
+            String depAddr) throws Exception {
+        HexBytes contractAddressHex = Address.of(address);
         Header h = sunflowerRepository.getBestHeader();
         if (VRF_BIOS_CONTRACT_ADDR.equals(address)) {
-            return HexBytes.fromBytes(VrfUtil.getFromContractStorage(addressHex, h,
-                    VrfBiosContractUpdater.TOTAL_KEY, accountTrie, contractStorageTrie));
+            if (depAddr != null && !depAddr.equals("")) {
+                HexBytes depositAddress = HexBytes.fromHex(depAddr);
+                return HexBytes.fromBytes(VrfUtil.getFromContractStorage(contractAddressHex, h, depositAddress.getBytes(), accountTrie,
+                        contractStorageTrie));
+            } else {
+                return HexBytes.fromBytes(VrfUtil.getFromContractStorage(contractAddressHex, h,
+                        VrfBiosContractUpdater.TOTAL_KEY, accountTrie, contractStorageTrie));
+            }
+
         }
         return HexBytes.fromBytes("NOT_VRF_CONTRACT_ADDRESS".getBytes());
     }
