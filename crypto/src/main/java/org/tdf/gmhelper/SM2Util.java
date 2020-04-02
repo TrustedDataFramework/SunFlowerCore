@@ -21,9 +21,11 @@ import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.gm.SM2P256V1Curve;
+import sun.nio.cs.US_ASCII;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -62,6 +64,7 @@ public class SM2Util extends GMBaseUtil {
     //////////////////////////////////////////////////////////////////////////////////////
 
     public static final int SM3_DIGEST_LENGTH = 32;
+    public static final byte[] WITH_ID = "userid@soie-chain.com".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * 生成ECC密钥对
@@ -292,7 +295,7 @@ public class SM2Util extends GMBaseUtil {
 
     public static byte[] sign(BCECPrivateKey priKey, byte[] srcData) throws CryptoException {
         ECPrivateKeyParameters priKeyParameters = BCECUtil.convertPrivateKeyToParameters(priKey);
-        return sign(priKeyParameters, "userid@soie-chain.com".getBytes(), srcData);
+        return sign(priKeyParameters, WITH_ID, srcData);
     }
 
     /**
@@ -388,7 +391,7 @@ public class SM2Util extends GMBaseUtil {
      * @return 验签成功返回true，失败返回false
      */
     public static boolean verify(ECPublicKeyParameters pubKeyParameters, byte[] srcData, byte[] sign) {
-        return verify(pubKeyParameters, "userid@soie-chain.com".getBytes(), srcData, sign);
+        return verify(pubKeyParameters, SM2Util.WITH_ID, srcData, sign);
     }
 
     public static boolean verify(BCECPublicKey pubKey, byte[] withId, byte[] srcData, byte[] sign) {

@@ -13,6 +13,7 @@ import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
+import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.gmhelper.SM4Util;
 
@@ -56,7 +57,8 @@ public class CryptoContext {
         return cache.get(new ECDHParameters(initiator, sk, pk), () -> ecdhInternal(initiator, sk, pk));
     }
 
-    public static Ecdh ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
+    public static Ecdh ecdh = (initiator, sk, pk) ->
+            SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID);
 
     // (sk, msg) -> signature
     public static BiFunction<byte[], byte[], byte[]> signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);

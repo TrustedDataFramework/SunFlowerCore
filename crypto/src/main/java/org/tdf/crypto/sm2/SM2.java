@@ -51,7 +51,7 @@ public class SM2 {
         SM2PublicKey pkEphemeral = new SM2PublicKey(publicEphemeral);
         ECPublicKeyParameters pkpStatic = BCECUtil.convertPublicKeyToParameters(pkStatic.getBcecPublicKey());
         ECPublicKeyParameters pkpEphemeral = BCECUtil.convertPublicKeyToParameters(pkEphemeral.getBcecPublicKey());
-        return SM2KeyExchangeUtil.calculateKey(initiator, KEY_BITS, skpStatic, skpEphemeral, "userid@soie-chain.com".getBytes(),
+        return SM2KeyExchangeUtil.calculateKey(initiator, KEY_BITS, skpStatic, skpEphemeral, SM2Util.WITH_ID,
                 pkpStatic, pkpEphemeral, userId);
 
     }
