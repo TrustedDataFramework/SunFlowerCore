@@ -27,7 +27,6 @@ sunflower:
     max-peers: '16' # maximum peers
     address: 'node://localhost:9999'
     enable-discovery: 'true'
-    enable-message-log: 'true' # set false to disable verbose log
     bootstraps: # bootstraps nodes
       - 'node://localhost:9998'
     trusted: # trusted nodes
@@ -36,7 +35,6 @@ sunflower:
   message-queue:
     name: 'none'
     port: '8081'
-    enable-message-log: 'true' # set false to disable verbose log
 
   # command line interface
   console:

@@ -27,4 +27,6 @@ public class ApplicationConstants {
     public static final long MAX_SHUTDOWN_WAITING = 5;
 
     public static long GAS_LIMIT = 4294967296L;
+
+    public static boolean VALIDATE;
 }

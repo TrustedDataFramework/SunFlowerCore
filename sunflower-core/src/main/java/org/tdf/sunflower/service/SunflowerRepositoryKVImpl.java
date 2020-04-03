@@ -10,6 +10,7 @@ import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.util.ByteArraySet;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewBlockWritten;
 import org.tdf.sunflower.exception.ApplicationException;

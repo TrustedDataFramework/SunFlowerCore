@@ -17,7 +17,7 @@ sunflower:
   # enable assert in development
   # call org.tdf.sunflower.Start.devAssert
   assert: 'false'
-
+  validate: 'false'
   consensus:
     name: 'poa'
     genesis: 'genesis/poa.jsonc'

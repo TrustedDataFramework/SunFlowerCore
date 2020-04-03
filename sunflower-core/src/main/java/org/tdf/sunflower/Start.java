@@ -20,6 +20,7 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.NoDeleteBatchStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
@@ -30,8 +31,6 @@ import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.crypto.CryptoContext;
-import org.tdf.sunflower.dao.HeaderDao;
-import org.tdf.sunflower.dao.TransactionDao;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.ConsensusEngine;
@@ -48,6 +47,7 @@ import org.tdf.sunflower.service.SunflowerRepositoryKVImpl;
 import org.tdf.sunflower.service.SunflowerRepositoryService;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
+import org.tdf.sunflower.types.Header;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -73,12 +73,12 @@ public class Start {
     }
 
     public static void devAssert(Supplier<Boolean> supplier, String error) {
-        if(!enableAssertion) return;
+        if (!enableAssertion) return;
         Assert.isTrue(supplier.get(), error);
     }
 
     public static <T> void devAssert(T thing, Predicate<T> predicate, String error) {
-        if(!enableAssertion) return;
+        if (!enableAssertion) return;
         Assert.isTrue(predicate.test(thing), error);
     }
 
@@ -88,28 +88,33 @@ public class Start {
 
     public static void loadConstants(Environment env) {
         String constant = env.getProperty("sunflower.cache.trie");
-        if(constant != null && !constant.isEmpty()){
+        if (constant != null && !constant.isEmpty()) {
             ApplicationConstants.TRIE_CACHE_SIZE = Integer.parseInt(constant);
         }
         constant = env.getProperty("sunflower.cache.p2p.transaction");
-        if(constant != null && !constant.isEmpty()){
+        if (constant != null && !constant.isEmpty()) {
             ApplicationConstants.P2P_TRANSACTION_CACHE_SIZE = Integer.parseInt(constant);
         }
         constant = env.getProperty("sunflower.cache.p2p.proposal");
-        if(constant != null && !constant.isEmpty()){
+        if (constant != null && !constant.isEmpty()) {
             ApplicationConstants.P2P_PROPOSAL_CACHE_SIZE = Integer.parseInt(constant);
         }
         constant = env.getProperty("sunflower.assert");
-        if(constant != null && !constant.isEmpty()){
-            if(!constant.toLowerCase().matches("true|false")) throw new IllegalArgumentException("sunflower.assert");
+        if (constant != null && !constant.isEmpty()) {
+            if (!constant.toLowerCase().matches("true|false")) throw new IllegalArgumentException("sunflower.assert");
             enableAssertion = constant.equals("true");
         }
         constant = env.getProperty("sunflower.vm.gas-limit");
-        if(constant != null && !constant.isEmpty())
+        if (constant != null && !constant.isEmpty())
             ApplicationConstants.GAS_LIMIT = Long.parseLong(constant);
+
+        constant = env.getProperty("sunflower.validate");
+        if (constant != null && constant.trim().toLowerCase().equals("true")) {
+            ApplicationConstants.VALIDATE = true;
+        }
     }
 
-    public static void loadCryptoContext(Environment env){
+    public static void loadCryptoContext(Environment env) {
         String hash = env.getProperty("sunflower.crypto.hash");
         hash = (hash == null || hash.isEmpty()) ? "sm3" : hash;
         hash = hash.toLowerCase();
@@ -135,9 +140,9 @@ public class Start {
         String ec = env.getProperty("sunflower.crypto.ec");
         ec = (ec == null || ec.isEmpty()) ? "sm2" : ec;
         ec = ec.toLowerCase();
-        switch (ec){
+        switch (ec) {
             case "ed25519":
-                CryptoContext.signatureVerifier =  (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
+                CryptoContext.signatureVerifier = (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
                 CryptoContext.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
                 CryptoContext.generateKeyPair = Ed25519::generateKeyPair;
                 CryptoContext.getPkFromSk = (sk) -> new Ed25519PrivateKey(sk).generatePublicKey().getEncoded();
@@ -171,14 +176,14 @@ public class Start {
     @Bean
     public SunflowerRepository sunflowerRepository(
             ApplicationContext context
-    ){
+    ) {
         String type = context.getEnvironment().getProperty("sunflower.database.block-store");
         type = (type == null || type.isEmpty()) ? "rdbms" : type;
-        switch (type){
-            case "rdbms":{
+        switch (type) {
+            case "rdbms": {
                 return new SunflowerRepositoryService(context);
             }
-            case "kv":{
+            case "kv": {
                 SunflowerRepositoryKVImpl ret = new SunflowerRepositoryKVImpl(context);
                 return new ConcurrentSunflowerRepository(ret);
             }
@@ -261,9 +266,21 @@ public class Start {
         transactionPool.setEngine(engine);
         if (engine == ConsensusEngine.NONE) return engine;
         repositoryService.saveGenesis(engine.getGenesisBlock());
-        if(syncConfig.getPruneHash().length > 0){
+        if (syncConfig.getPruneHash().length > 0) {
             repositoryService.prune(syncConfig.getPruneHash());
         }
+
+        Header best = repositoryService.getBestHeader();
+
+        // validate trie
+        if (ApplicationConstants.VALIDATE) {
+            HexBytes root = best.getStateRoot();
+            engine.getAccountTrie().getTrie()
+                    .revert(root.getBytes())
+                    .forEach((x, v) -> {
+                    });
+        }
+
         return engine;
     }
 
@@ -302,7 +319,7 @@ public class Start {
 
     // storage root of contract store
     @Bean
-    public Trie<byte[], byte[]> contractStorageTrie(DatabaseStoreFactory factory){
+    public Trie<byte[], byte[]> contractStorageTrie(DatabaseStoreFactory factory) {
         return Trie.<byte[], byte[]>builder()
                 .hashFunction(CryptoContext.hashFunction)
                 .keyCodec(Codec.identity())
@@ -313,7 +330,7 @@ public class Start {
 
     // contract hash code -> contract binary
     @Bean
-    public Store<byte[], byte[]> contractCodeStore(DatabaseStoreFactory factory){
+    public Store<byte[], byte[]> contractCodeStore(DatabaseStoreFactory factory) {
         return factory.create("contract-code");
     }
 }
