@@ -56,7 +56,6 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
     private VrfGenesis genesis;
     private VrfConfig vrfConfig;
     private VrfStateMachine vrfStateMachine;
-    private MessageBuilder messageBuilder;
 
     private PeerServer peerServer;
     private VrfMiner vrfMiner;
@@ -128,9 +127,7 @@ public class VrfEngine extends ConsensusEngine implements PeerServerListener {
     public void onStart(PeerServer server) {
 
         setPeerServer(server);
-        setMessageBuilder(new MessageBuilder((PeerImpl) peerServer.getSelf()));
         vrfMiner.setPeerServer(peerServer);
-        vrfMiner.setMessageBuilder(messageBuilder);
 
         getEventBus().subscribe(NewBlockMined.class, (e) -> {
             Block block = e.getBlock();

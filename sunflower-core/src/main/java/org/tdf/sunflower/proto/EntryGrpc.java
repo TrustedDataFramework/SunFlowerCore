@@ -18,7 +18,7 @@ import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
 /**
  */
 @javax.annotation.Generated(
-    value = "by gRPC proto compiler (version 1.22.1)",
+    value = "by gRPC proto compiler (version 1.25.0)",
     comments = "Source: sunflower.proto")
 public final class EntryGrpc {
 
@@ -41,22 +41,21 @@ public final class EntryGrpc {
     if ((getEntryMethod = EntryGrpc.getEntryMethod) == null) {
       synchronized (EntryGrpc.class) {
         if ((getEntryMethod = EntryGrpc.getEntryMethod) == null) {
-          EntryGrpc.getEntryMethod = getEntryMethod = 
+          EntryGrpc.getEntryMethod = getEntryMethod =
               io.grpc.MethodDescriptor.<org.tdf.sunflower.proto.Message, org.tdf.sunflower.proto.Message>newBuilder()
               .setType(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
-              .setFullMethodName(generateFullMethodName(
-                  "Entry", "Entry"))
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "Entry"))
               .setSampledToLocalTracing(true)
               .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
                   org.tdf.sunflower.proto.Message.getDefaultInstance()))
               .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
                   org.tdf.sunflower.proto.Message.getDefaultInstance()))
-                  .setSchemaDescriptor(new EntryMethodDescriptorSupplier("Entry"))
-                  .build();
-          }
+              .setSchemaDescriptor(new EntryMethodDescriptorSupplier("Entry"))
+              .build();
         }
-     }
-     return getEntryMethod;
+      }
+    }
+    return getEntryMethod;
   }
 
   /**

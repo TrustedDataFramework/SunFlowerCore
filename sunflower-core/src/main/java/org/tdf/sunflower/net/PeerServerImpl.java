@@ -53,7 +53,8 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
 
     @Override
     public void dial(Peer peer, byte[] message) {
-        client.dial(peer, builder.buildAnother(message, 1, (PeerImpl) peer));
+        builder.buildAnother(message, 1, peer)
+                .forEach(m -> client.dial(peer, m));
     }
 
     @Override
@@ -61,7 +62,8 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         client.peersCache.getChannels()
                 .filter(ch -> ch.getRemote().isPresent())
                 .forEach(ch ->
-                        ch.write(builder.buildAnother(message, config.getMaxTTL(), ch.getRemote().get()))
+                                builder.buildAnother(message, config.getMaxTTL(), ch.getRemote().get())
+                                .forEach(ch::write)
                 );
     }
 
@@ -144,7 +146,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             e.printStackTrace();
             throw new PeerServerInitException("failed to load peer server invalid address " + config.getAddress());
         }
-        builder = new MessageBuilder(self);
+        builder = new MessageBuilder(self, config);
         if ("websocket".equals(config.getName().trim().toLowerCase())) {
             netLayer = new WebSocketNetLayer(self.getPort(), builder);
         } else {

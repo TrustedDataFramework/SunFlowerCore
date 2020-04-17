@@ -31,7 +31,7 @@ public class Client implements ChannelListener {
         this.messageBuilder = messageBuilder;
         this.netLayer = netLayer;
         this.self = self;
-        this.builder = new MessageBuilder(self);
+        this.builder = new MessageBuilder(self, config);
     }
 
     Client withListener(ChannelListener listener) {

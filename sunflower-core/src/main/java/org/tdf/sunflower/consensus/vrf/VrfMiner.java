@@ -87,7 +87,6 @@ public class VrfMiner extends AbstractMiner {
     private static final int VRF_BLOCK_EARLY_BROADCAST_PRIORITY = 10;
 
     private PeerServer peerServer;
-    private MessageBuilder messageBuilder;
 
     private TransactionPool transactionPool;
     // contract storage trie

@@ -64,6 +64,14 @@ public enum Code
    * <code>DISCONNECT = 6;</code>
    */
   DISCONNECT(6),
+  /**
+   * <pre>
+   * multi part
+   * </pre>
+   *
+   * <code>MULTI_PART = 7;</code>
+   */
+  MULTI_PART(7),
   UNRECOGNIZED(-1),
   ;
 
@@ -123,6 +131,14 @@ public enum Code
    * <code>DISCONNECT = 6;</code>
    */
   public static final int DISCONNECT_VALUE = 6;
+  /**
+   * <pre>
+   * multi part
+   * </pre>
+   *
+   * <code>MULTI_PART = 7;</code>
+   */
+  public static final int MULTI_PART_VALUE = 7;
 
 
   public final int getNumber() {
@@ -156,6 +172,7 @@ public enum Code
       case 4: return PEERS;
       case 5: return ANOTHER;
       case 6: return DISCONNECT;
+      case 7: return MULTI_PART;
       default: return null;
     }
   }

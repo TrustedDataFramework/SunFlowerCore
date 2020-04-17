@@ -55,4 +55,10 @@ public class PeerServerConfig {
 
     @JsonProperty(value = "discover-rate")
     private int discoverRate;
+
+    @JsonProperty(value = "max-packet-size")
+    private int maxPacketSize;
+
+    @JsonProperty(value = "cache-expired-after")
+    private int cacheExpiredAfter;
 }

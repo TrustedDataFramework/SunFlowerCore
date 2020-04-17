@@ -2,9 +2,23 @@ package org.tdf.sunflower.net;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.proto.Code;
+import org.tdf.sunflower.proto.Message;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * message filter
@@ -12,14 +26,91 @@ import org.tdf.sunflower.crypto.CryptoContext;
 @Slf4j(topic = "net")
 public class MessageFilter implements Plugin {
     private Cache<HexBytes, Boolean> cache;
+    private Map<HexBytes, Messages> multiPartCache = new HashMap<>();
+
+    @AllArgsConstructor
+    private static class Messages {
+        private Message[] multiParts;
+        private int total;
+
+        public int size() {
+            return (int) Arrays.stream(multiParts).filter(Objects::nonNull).count();
+        }
+
+        private long writeAt;
+
+        @SneakyThrows
+        public Message merge() {
+            int byteArraySize = Arrays.stream(multiParts).map(x -> x.getSerializedSize())
+                    .reduce(0, Integer::sum);
+
+            byte[] total = new byte[byteArraySize];
+
+            int current = 0;
+            for (Message part : multiParts) {
+                byte[] p = part.toByteArray();
+                System.arraycopy(p, 0, total, current, p.length);
+                current += p.length;
+            }
+
+            if (!FastByteComparisons.equal(CryptoContext.digest(total), multiParts[0].getSignature().toByteArray())) {
+                throw new RuntimeException("合并失败");
+            }
+
+            return Message.parseFrom(total);
+        }
+    }
+
+    private Lock multiPartCacheLock = new ReentrantLock();
+
 
     MessageFilter(PeerServerConfig config) {
         this.cache = CacheBuilder.newBuilder()
                 .maximumSize(config.getMaxPeers() * 8).build();
+        Executors.newSingleThreadScheduledExecutor()
+                .scheduleWithFixedDelay(() -> {
+                    multiPartCacheLock.lock();
+                    long now = System.currentTimeMillis() / 1000;
+                    try {
+                        multiPartCache.entrySet().removeIf(
+                                entry -> now - entry.getValue().writeAt > config.getCacheExpiredAfter()
+                        );
+                    } finally {
+                        multiPartCacheLock.unlock();
+                    }
+                }, config.getCacheExpiredAfter(), config.getCacheExpiredAfter(), TimeUnit.SECONDS);
     }
 
     @Override
     public void onMessage(ContextImpl context, PeerServerImpl server) {
+        // cache multi part message
+        if (context.message.getCode() == Code.MULTI_PART) {
+            multiPartCacheLock.lock();
+            long now = System.currentTimeMillis() / 1000;
+            HexBytes key = HexBytes.fromBytes(context.message.getSignature().toByteArray());
+            try {
+                Messages messages =
+                        multiPartCache.getOrDefault(
+                                key,
+                                new Messages(
+                                        new Message[(int) context.message.getTtl()],
+                                        (int) context.message.getTtl(),
+                                        now
+                                )
+                        );
+
+                messages.multiParts[(int) context.message.getNonce()] = context.message;
+
+                if (messages.size() == messages.total) {
+                    multiPartCache.remove(key);
+                    server.onMessage(messages.merge(), context.channel);
+                }
+
+            } finally {
+                multiPartCacheLock.unlock();
+            }
+        }
+
         // filter invalid signatures
         if (!CryptoContext.verifySignature(
                 context.getRemote().getID().getBytes(),
@@ -31,7 +122,7 @@ public class MessageFilter implements Plugin {
             return;
         }
         // reject blocked peer
-        if (server.getClient().peersCache.hasBlocked(context.remote)){
+        if (server.getClient().peersCache.hasBlocked(context.remote)) {
             log.error("the peer " + context.remote + " has been blocked");
             context.disconnect();
             return;

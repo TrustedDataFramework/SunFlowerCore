@@ -6,7 +6,10 @@ import lombok.Getter;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.proto.*;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -17,8 +20,11 @@ public class MessageBuilder {
     private PeerImpl self;
     private AtomicLong nonce = new AtomicLong();
 
-    public MessageBuilder(PeerImpl self) {
+    private final PeerServerConfig config;
+
+    public MessageBuilder(PeerImpl self, PeerServerConfig config) {
         this.self = self;
+        this.config = config;
     }
 
     public Message buildNothing() {
@@ -38,11 +44,11 @@ public class MessageBuilder {
     }
 
 
-    public Message buildDisconnect(String reason){
+    public Message buildDisconnect(String reason) {
         return buildMessage(Code.DISCONNECT, 1, Disconnect.newBuilder().setReason(reason == null ? "" : reason).build().toByteArray());
     }
 
-    public Message buildPeers(Collection<? extends Peer> peers){
+    public Message buildPeers(Collection<? extends Peer> peers) {
         return buildMessage(Code.PEERS, 1, Peers
                 .newBuilder().addAllPeers(
                         peers.stream().map(Peer::encodeURI).collect(Collectors.toList())
@@ -51,9 +57,33 @@ public class MessageBuilder {
         );
     }
 
-    public Message buildAnother(byte[] body, long ttl, Peer remote) {
+    public List<Message> buildAnother(byte[] body, long ttl, Peer remote) {
         byte[] encryptMessage = CryptoContext.encrypt(CryptoContext.ecdh(true, self.getPrivateKey(), remote.getID().getBytes()), body);
-        return buildMessage(Code.ANOTHER, ttl, encryptMessage);
+        Message buildResult = buildMessage(Code.ANOTHER, ttl, encryptMessage);
+        if (buildResult.getSerializedSize() <= config.getMaxPacketSize()) {
+            return Collections.singletonList(buildResult);
+        }
+        byte[] serialized = buildResult.toByteArray();
+        int remained = buildResult.getSerializedSize();
+        int current = 0;
+        List<Message> multiParts = new ArrayList<>();
+        Message.Builder builder = Message.newBuilder();
+        int i = 0;
+        int total = remained / config.getMaxPacketSize() + 1;
+        while (remained > 0) {
+            int size = Math.max(remained, config.getMaxPacketSize());
+            byte[] bodyBytes = new byte[size];
+            System.arraycopy(serialized, current, bodyBytes, 0, size);
+            builder.setBody(ByteString.copyFrom(bodyBytes));
+            builder.setNonce(i);
+            builder.setTtl(total);
+            builder.setSignature(ByteString.copyFrom(CryptoContext.digest(serialized)));
+            multiParts.add(builder.build());
+            builder.clear();
+            current += size;
+            remained -= size;
+        }
+        return multiParts;
     }
 
     public Message buildRelay(Message message) {

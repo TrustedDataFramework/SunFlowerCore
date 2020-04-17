@@ -66,6 +66,10 @@ sunflower:
     # lookup peers every 15 seconds
     discover-rate: 15
 
+    # maximum packae
+    max-packet-size: 4194304
+    cache-expired-after: 300
+
   transaction-pool:
     expired-in: '300'
     lock-timeout: '1'

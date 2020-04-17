@@ -17,6 +17,7 @@ enum Code {
     PEERS = 4; // response to peers query
     ANOTHER = 5; // used for application handlers
     DISCONNECT = 6; // disconnect message, prompt peers to delete yourself in cache
+    MULTI_PART = 7; // multi part
 }
 
 message Message {
