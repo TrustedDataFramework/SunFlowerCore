@@ -1,8 +1,10 @@
 package org.tdf.sunflower;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.TextNode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,8 +19,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.NoDeleteBatchStore;
-import org.tdf.common.store.Store;
+import org.tdf.common.serialize.Codecs;
+import org.tdf.common.store.*;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519;
@@ -49,8 +51,10 @@ import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.types.Header;
 
+import java.nio.file.Paths;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -296,7 +300,25 @@ public class Start {
         if (name.trim().toLowerCase().equals("none")) {
             return PeerServer.NONE;
         }
-        PeerServer peerServer = new PeerServerImpl(factory);
+        String persist = properties.getProperty("persist");
+        persist = (persist == null) ? "" : persist.trim().toLowerCase();
+
+        Store<String, String> store = "true".equals(persist) ? new StoreWrapper<>(
+                new JsonStore(Paths.get(factory.getDirectory(), "peers.json").toString(), MAPPER),
+                Codec.identity(),
+                new Codec<String, JsonNode>() {
+                    @Override
+                    public Function<? super String, ? extends JsonNode> getEncoder() {
+                        return TextNode::new;
+                    }
+
+                    @Override
+                    public Function<? super JsonNode, ? extends String> getDecoder() {
+                        return JsonNode::asText;
+                    }
+                }
+        ) : new MapStore<>();
+        PeerServer peerServer = new PeerServerImpl(store);
         peerServer.init(properties);
         peerServer.addListeners(engine.getPeerServerListener());
         peerServer.start();

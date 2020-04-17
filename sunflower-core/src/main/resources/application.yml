@@ -60,7 +60,7 @@ sunflower:
     # if private-key is not pre-defined, node will generate private key
     # private-key:
 
-    # persist peers to file database.directory/peers
+    # persist peers to file database.directory/peers.json
     persist: true
 
     # lookup peers every 15 seconds

@@ -21,7 +21,6 @@ import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.gm.SM2P256V1Curve;
-import sun.nio.cs.US_ASCII;
 
 import java.io.IOException;
 import java.math.BigInteger;

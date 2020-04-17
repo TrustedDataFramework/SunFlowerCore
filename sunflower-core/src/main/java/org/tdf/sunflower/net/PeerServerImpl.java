@@ -34,12 +34,11 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     private MessageBuilder builder;
     private NetLayer netLayer;
     // if non-database provided, use memory database
-    Store<String, String> peerStore;
+    final Store<String, String> peerStore;
 
-    private final DatabaseStoreFactory factory;
 
-    public PeerServerImpl(DatabaseStoreFactory factory) {
-        this.factory = factory;
+    public PeerServerImpl(Store<String, String> peerStore) {
+        this.peerStore = peerStore;
     }
 
     @Override
@@ -99,16 +98,12 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             client.trust(config.getTrusted());
         }
         // connect to stored peers when server restarts
-        Optional<String> o = Optional.ofNullable(peerStore).flatMap(x -> x.get("peers"));
-        if (!o.isPresent()) return;
-        String peers = o.get();
-        try {
-            URI[] uris = Start.MAPPER.readValue(peers, URI[].class);
-            for (URI uri : uris) {
-                client.dial(uri.getHost(), uri.getPort(), builder.buildPing());
-            }
-        } catch (JsonProcessingException ignored) {
-        }
+        peerStore.forEach((k, p) -> {
+            if("self".equals(k))
+                return;
+            PeerImpl peer = PeerImpl.parse(p).get();
+            client.dial(peer.getHost(), peer.getPort(), builder.buildPing());
+        });
     }
 
     @Override
@@ -133,9 +128,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
                     "load properties failed :" + properties.toString() + " expecting " + schema
             );
         }
-        this.peerStore = config.isPersist() ? new StoreWrapper<>(factory.create("peers"),
-                Codecs.STRING,
-                Codecs.STRING) : new MapStore<>();
+
 
         if (!config.isEnableDiscovery() &&
                 Stream.of(config.getBootstraps(), config.getTrusted())

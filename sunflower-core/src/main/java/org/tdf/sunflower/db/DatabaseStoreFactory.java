@@ -18,11 +18,15 @@ public class DatabaseStoreFactory {
 
     public DatabaseStoreFactory(DatabaseConfig config) {
 
-        if(config.getName() == null) config.setName("");
+        if (config.getName() == null) config.setName("");
         this.config = config;
     }
 
-    public DatabaseStore create(String name){
+    public String getDirectory() {
+        return config.getDirectory();
+    }
+
+    public DatabaseStore create(String name) {
         DatabaseStore store;
 
         switch (config.getName().trim().toLowerCase()) {
@@ -48,13 +52,13 @@ public class DatabaseStoreFactory {
                 .withMaxOpenFiles(config.getMaxOpenFiles())
                 .withMaxThreads(Math.max(1, Runtime.getRuntime().availableProcessors() / 2)));
         STORES_LIST.add(store);
-        if(config.isReset()){
+        if (config.isReset()) {
             store.clear();
         }
         return store;
     }
 
-    public void cleanup(){
+    public void cleanup() {
         log.info("closing database stores...");
         STORES_LIST.forEach(DatabaseStore::close);
     }
