@@ -1,15 +1,15 @@
 package org.tdf.sunflower.net;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Functions;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.store.BatchStore;
 import org.tdf.sunflower.ApplicationConstants;
-import org.tdf.sunflower.Start;
 import org.tdf.sunflower.proto.Disconnect;
 import org.tdf.sunflower.proto.Peers;
 
+import java.util.AbstractMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -84,14 +84,14 @@ public class PeersManager implements Plugin {
 
         executorService
                 .scheduleWithFixedDelay(() -> {
-                    try {
-                        server.peerStore.put("peers",
-                                Start.MAPPER.writeValueAsString(
-                                        client.peersCache.getPeers().map(PeerImpl::encodeURI)
-                                                .collect(Collectors.toList())));
-                    } catch (JsonProcessingException ignored) {
 
-                    }
+                    ((BatchStore<String, String>) server.peerStore)
+                            .putAll(
+                                    client.peersCache.getPeers()
+                                            .map(p -> new AbstractMap.SimpleEntry<>(p.getID().toHex(), p.encodeURI()))
+                                            .collect(Collectors.toList())
+                            );
+
                     lookup();
                     cache.half();
                     if (!config.isEnableDiscovery()) return;

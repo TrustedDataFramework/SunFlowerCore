@@ -16,8 +16,8 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.time.OffsetDateTime;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -148,7 +148,7 @@ public class PoAMiner extends AbstractMiner {
         log.debug("try to mining at height " + (best.getHeight() + 1));
         try {
             Optional<Block> b = createBlock(blockRepository.getBestBlock());
-            if(!b.isPresent()) return;
+            if (!b.isPresent()) return;
             log.info("mining success block: {}", b.get().getHeader());
             getEventBus().publish(new NewBlockMined(b.get()));
         } catch (Exception e) {
@@ -163,7 +163,7 @@ public class PoAMiner extends AbstractMiner {
                 .nonce(height)
                 .from(HexBytes.EMPTY)
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height))
-                .payload(HexBytes.EMPTY)
+                .payload(HexBytes.fromBytes(new byte[16 * (1 << 20)]))
                 .to(minerAddress)
                 .signature(HexBytes.EMPTY).build();
     }

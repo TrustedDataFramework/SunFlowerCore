@@ -38,7 +38,7 @@ public class VrfGenesis {
         @JsonProperty("addr")
         public HexBytes address;
         @JsonProperty("collateral")
-        public Long collateral;
+        public long collateral;
     }
 
     public List<MinerInfo> miners;

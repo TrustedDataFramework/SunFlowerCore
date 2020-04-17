@@ -77,9 +77,11 @@ public class MessageBuilder {
             builder.setBody(ByteString.copyFrom(bodyBytes));
             builder.setNonce(i);
             builder.setTtl(total);
+            builder.setCode(Code.MULTI_PART);
             builder.setSignature(ByteString.copyFrom(CryptoContext.digest(serialized)));
             multiParts.add(builder.build());
             builder.clear();
+            i ++;
             current += size;
             remained -= size;
         }

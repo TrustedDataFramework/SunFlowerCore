@@ -8,12 +8,13 @@ import lombok.SneakyThrows;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-public class JsonStore implements Store<String, JsonNode> {
+public class JsonStore implements BatchStore<String, JsonNode> {
     private final ObjectMapper mapper;
     private final String jsonFile;
 
@@ -83,6 +84,23 @@ public class JsonStore implements Store<String, JsonNode> {
             boolean cont = traverser.apply(entry.getKey(), entry.getValue());
             if (!cont)
                 return;
+        }
+    }
+
+    @Override
+    @SneakyThrows
+    public void putAll(Collection<? extends Map.Entry<? extends String, ? extends JsonNode>> rows) {
+        File f = new File(jsonFile);
+        Map<String, Object> m = new HashMap<>();
+        if (f.exists())
+            m = mapper.readValue(f, Map.class);
+        for (Map.Entry<? extends String, ? extends JsonNode> row : rows) {
+            m.put(row.getKey(), row.getValue());
+        }
+        try (
+                OutputStream os = new FileOutputStream(f)
+        ) {
+            mapper.writeValue(os, m);
         }
     }
 }

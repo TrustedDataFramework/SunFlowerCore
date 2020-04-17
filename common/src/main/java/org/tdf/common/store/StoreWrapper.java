@@ -5,8 +5,12 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 /**
  * delegate {@code Store<U, R>} as {@code Store<K, V>}
@@ -16,7 +20,7 @@ import java.util.function.BiFunction;
  */
 @AllArgsConstructor
 public class StoreWrapper<K, V, U, R>
-        implements Store<K, V> {
+        implements BatchStore<K, V> {
 
     @Getter
     private Store<U, R> store;
@@ -84,5 +88,16 @@ public class StoreWrapper<K, V, U, R>
 
     public boolean isTrap(V v) {
         return store.isTrap(valueCodec.getEncoder().apply(v));
+    }
+
+    @Override
+    public void putAll(Collection<? extends Map.Entry<? extends K, ? extends V>> rows) {
+        ((BatchStore<U, R>) store).putAll(
+                rows.stream().map(e -> new AbstractMap.SimpleEntry<>(
+                        keyCodec.getEncoder().apply(e.getKey()),
+                        valueCodec.getEncoder().apply(e.getValue())
+                ))
+                .collect(Collectors.toList())
+        );
     }
 }

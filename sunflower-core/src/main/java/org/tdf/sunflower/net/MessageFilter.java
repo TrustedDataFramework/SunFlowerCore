@@ -89,6 +89,9 @@ public class MessageFilter implements Plugin {
             long now = System.currentTimeMillis() / 1000;
             HexBytes key = HexBytes.fromBytes(context.message.getSignature().toByteArray());
             try {
+                if(multiPartCache.containsKey(key)){
+                    System.out.println("==");
+                }
                 Messages messages =
                         multiPartCache.getOrDefault(
                                 key,
@@ -98,9 +101,8 @@ public class MessageFilter implements Plugin {
                                         now
                                 )
                         );
-
                 messages.multiParts[(int) context.message.getNonce()] = context.message;
-
+                multiPartCache.put(key, messages);
                 if (messages.size() == messages.total) {
                     multiPartCache.remove(key);
                     server.onMessage(messages.merge(), context.channel);
@@ -109,6 +111,7 @@ public class MessageFilter implements Plugin {
             } finally {
                 multiPartCacheLock.unlock();
             }
+            return;
         }
 
         // filter invalid signatures
