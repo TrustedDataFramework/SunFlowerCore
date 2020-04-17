@@ -64,21 +64,23 @@ public class MessageBuilder {
             return Collections.singletonList(buildResult);
         }
         byte[] serialized = buildResult.toByteArray();
-        int remained = buildResult.getSerializedSize();
+        int remained = serialized.length;
         int current = 0;
         List<Message> multiParts = new ArrayList<>();
         Message.Builder builder = Message.newBuilder();
+        byte[] hash = CryptoContext.hash(serialized);
         int i = 0;
-        int total = remained / config.getMaxPacketSize() + 1;
+        int total = serialized.length / config.getMaxPacketSize() +
+                (serialized.length % config.getMaxPacketSize() == 0 ? 0 : 1);
         while (remained > 0) {
-            int size = Math.max(remained, config.getMaxPacketSize());
+            int size = Math.min(remained, config.getMaxPacketSize());
             byte[] bodyBytes = new byte[size];
             System.arraycopy(serialized, current, bodyBytes, 0, size);
             builder.setBody(ByteString.copyFrom(bodyBytes));
             builder.setNonce(i);
             builder.setTtl(total);
             builder.setCode(Code.MULTI_PART);
-            builder.setSignature(ByteString.copyFrom(CryptoContext.digest(serialized)));
+            builder.setSignature(ByteString.copyFrom(hash));
             multiParts.add(builder.build());
             builder.clear();
             i ++;

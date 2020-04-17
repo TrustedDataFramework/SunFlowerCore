@@ -67,7 +67,7 @@ sunflower:
     discover-rate: 15
 
     # maximum packae
-    max-packet-size: 4194304
+    max-packet-size: 2097152
     cache-expired-after: 300
 
   transaction-pool:

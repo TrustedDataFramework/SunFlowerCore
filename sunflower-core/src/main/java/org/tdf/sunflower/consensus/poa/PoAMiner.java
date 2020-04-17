@@ -163,7 +163,7 @@ public class PoAMiner extends AbstractMiner {
                 .nonce(height)
                 .from(HexBytes.EMPTY)
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height))
-                .payload(HexBytes.fromBytes(new byte[16 * (1 << 20)]))
+                .payload(HexBytes.empty())
                 .to(minerAddress)
                 .signature(HexBytes.EMPTY).build();
     }

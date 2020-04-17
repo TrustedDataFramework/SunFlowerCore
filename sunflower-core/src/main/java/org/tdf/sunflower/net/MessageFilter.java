@@ -41,19 +41,22 @@ public class MessageFilter implements Plugin {
 
         @SneakyThrows
         public Message merge() {
-            int byteArraySize = Arrays.stream(multiParts).map(x -> x.getSerializedSize())
+            int byteArraySize = Arrays.stream(multiParts).map(x -> x.getBody().size())
                     .reduce(0, Integer::sum);
 
             byte[] total = new byte[byteArraySize];
 
             int current = 0;
             for (Message part : multiParts) {
-                byte[] p = part.toByteArray();
+                byte[] p = part.getBody().toByteArray();
                 System.arraycopy(p, 0, total, current, p.length);
                 current += p.length;
             }
 
-            if (!FastByteComparisons.equal(CryptoContext.digest(total), multiParts[0].getSignature().toByteArray())) {
+            if (!FastByteComparisons.equal(
+                    CryptoContext.digest(total),
+                    multiParts[0].getSignature().toByteArray())
+            ) {
                 throw new RuntimeException("合并失败");
             }
 
@@ -89,9 +92,6 @@ public class MessageFilter implements Plugin {
             long now = System.currentTimeMillis() / 1000;
             HexBytes key = HexBytes.fromBytes(context.message.getSignature().toByteArray());
             try {
-                if(multiPartCache.containsKey(key)){
-                    System.out.println("==");
-                }
                 Messages messages =
                         multiPartCache.getOrDefault(
                                 key,
