@@ -30,6 +30,7 @@ import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoA;
+import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
@@ -251,6 +252,9 @@ public class Start {
                 // use poa as default consensus
                 // another engine: pow, pos, pow+pos, vrf
                 engine = new VrfEngine();
+                break;
+            case ApplicationConstants.CONSENSUS_POW:
+                engine = new PoW();
                 break;
             default:
                 log.error(

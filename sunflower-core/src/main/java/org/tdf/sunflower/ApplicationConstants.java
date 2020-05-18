@@ -7,6 +7,9 @@ public class ApplicationConstants {
 
     public static final String CONSENSUS_NONE = "none";
 
+    public static final String CONSENSUS_POW = "pow";
+
+
     // cache read-only trie for quick search
     public static int TRIE_CACHE_SIZE = 32;
 

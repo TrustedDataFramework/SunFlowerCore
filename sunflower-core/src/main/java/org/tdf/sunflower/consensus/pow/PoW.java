@@ -1,8 +1,11 @@
 package org.tdf.sunflower.consensus.pow;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.tdf.common.util.BigEndian;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
+import org.tdf.sunflower.util.MappingUtil;
 
 import java.util.Properties;
 
@@ -12,7 +15,9 @@ public class PoW extends AbstractConsensusEngine {
 
     @Override
     public void init(Properties properties) throws ConsensusEngineInitException {
+        PoWConfig config = MappingUtil.propertiesToPojo(properties, PoWConfig.class);
 
+        setMiner(new PoWMiner(config, getTransactionPool()));
     }
 
 }
