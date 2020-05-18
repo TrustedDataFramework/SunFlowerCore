@@ -72,7 +72,7 @@ public class BugTest {
         for (String addr : addresses) {
             alloc.put(HexBytes.fromHex(addr), new Account(HexBytes.fromHex(addr), 10000000));
         }
-        AccountUpdater updater = new AccountUpdater(alloc, contractStore, storageTrie, Collections.emptyList());
+        AccountUpdater updater = new AccountUpdater(alloc, contractStore, storageTrie, Collections.emptyList(), Collections.emptyList());
         AccountTrie accountTrie = new AccountTrie(updater, factory, contractStore, storageTrie);
 
         List<byte[]> roots = new ArrayList<>();
