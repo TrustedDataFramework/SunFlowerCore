@@ -1,17 +1,17 @@
 package org.tdf.sunflower.consensus.pow;
 
-import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
 public class PoWValidator extends AbstractValidator {
-    public PoWValidator(StateTrie<HexBytes, Account> accountTrie) {
-        super(accountTrie);
+    private final PoW poW;
+
+    public PoWValidator(PoW pow) {
+        super(pow.getAccountTrie());
+        this.poW = pow;
     }
 
     @Override
@@ -22,6 +22,9 @@ public class PoWValidator extends AbstractValidator {
         if (block.getVersion() != PoW.BLOCK_VERSION) {
             return ValidateResult.fault("version not match");
         }
+        byte[] nbits = poW.getNBits(dependency.getStateRoot().getBytes());
+        if (PoW.compare(PoW.getPoWHash(block), nbits) > 0)
+            return ValidateResult.fault("nbits");
         return ValidateResult.success();
     }
 

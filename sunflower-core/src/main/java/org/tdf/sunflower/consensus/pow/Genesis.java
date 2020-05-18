@@ -4,7 +4,6 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
@@ -20,7 +19,7 @@ public class Genesis {
 
     private Map<HexBytes, Long> alloc;
 
-    public Block get(){
+    public Block get() {
         Trie<?, ?> trie = Trie.<byte[], byte[]>builder()
                 .keyCodec(Codec.identity())
                 .valueCodec(Codec.identity())
