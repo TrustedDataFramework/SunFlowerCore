@@ -17,7 +17,6 @@ import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.poa.Proposer;
-import org.tdf.sunflower.consensus.vrf.contract.VrfBiosContractUpdater;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
 import org.tdf.sunflower.consensus.vrf.core.CommitProof;
 import org.tdf.sunflower.consensus.vrf.core.ImportResult;
@@ -35,10 +34,7 @@ import org.tdf.sunflower.events.NewBlocksReceived;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.TransactionPool;
-import org.tdf.sunflower.net.MessageBuilder;
 import org.tdf.sunflower.net.PeerServer;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -183,6 +179,11 @@ public class VrfMiner extends AbstractMiner {
         HexBytes payload = HexBytes.fromBytes(payLoadBytes);
         header.setPayload(payload);
         return header;
+    }
+
+    @Override
+    protected void finalizeBlock(Block block) {
+
     }
 
     public static class EconomicModelImpl {

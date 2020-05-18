@@ -44,6 +44,8 @@ public abstract class AbstractMiner implements Miner {
 
     protected abstract Header createHeader(Block parent);
 
+    protected abstract void finalizeBlock(Block block);
+
     protected Optional<Block> createBlock(Block parent){
         if(!minerConfig.isAllowEmptyBlock() && getTransactionPool().size() == 0)
             return Optional.empty();
@@ -103,6 +105,7 @@ public abstract class AbstractMiner implements Miner {
         b.resetTransactionsRoot();
 
         // the mined block cannot be modified any more
+        finalizeBlock(b);
         return Optional.of(b);
     }
 }

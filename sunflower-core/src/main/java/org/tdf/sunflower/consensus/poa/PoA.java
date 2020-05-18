@@ -2,18 +2,18 @@ package org.tdf.sunflower.consensus.poa;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
-import org.tdf.sunflower.facade.ConsensusEngine;
+import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.util.FileUtils;
+import org.tdf.sunflower.util.MappingUtil;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,7 +22,7 @@ import java.util.Properties;
 
 // poa is a minimal non-trivial consensus engine
 @Slf4j(topic = "poa")
-public class PoA extends ConsensusEngine {
+public class PoA extends AbstractConsensusEngine {
     private PoAConfig poAConfig;
     private Genesis genesis;
     private PoAMiner poaMiner;
@@ -34,20 +34,8 @@ public class PoA extends ConsensusEngine {
 
     @Override
     public void init(Properties properties) throws ConsensusEngineInitException {
-        JavaPropsMapper mapper = new JavaPropsMapper();
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
-        try {
-            poAConfig = mapper.readPropertiesAs(properties, PoAConfig.class);
-        } catch (Exception e) {
-            String schema = "";
-            try {
-                schema = mapper.writeValueAsProperties(new PoAConfig()).toString();
-            } catch (Exception ignored) {
-            }
-            throw new ConsensusEngineInitException(
-                    "load properties failed :" + properties.toString() + " expecting " + schema
-            );
-        }
+        poAConfig = MappingUtil.propertiesToPojo(properties, PoAConfig.class);
         poaMiner = new PoAMiner(poAConfig);
         Resource resource;
         try {
@@ -73,14 +61,19 @@ public class PoA extends ConsensusEngine {
 
         Map<HexBytes, Account> alloc = new HashMap<>();
 
-        if(genesis.alloc != null){
+        if (genesis.alloc != null) {
             genesis.alloc.forEach((k, v) -> {
                 Account a = new Account(HexBytes.fromHex(k), v);
                 alloc.put(a.getAddress(), a);
             });
         }
 
-        AccountUpdater updater = new AccountUpdater(alloc, getContractCodeStore(), getContractStorageTrie(), Collections.emptyList());
+        AccountUpdater updater = new AccountUpdater(
+                alloc, getContractCodeStore(),
+                getContractStorageTrie(),
+                Collections.emptyList(),
+                Collections.emptyList()
+        );
         AccountTrie trie = new AccountTrie(
                 updater, getDatabaseStoreFactory(),
                 getContractCodeStore(), getContractStorageTrie()

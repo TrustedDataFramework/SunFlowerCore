@@ -21,7 +21,7 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.account.Address;
-import org.tdf.sunflower.consensus.vrf.contract.VrfBiosContractUpdater;
+import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.facade.TransactionPool;
@@ -169,7 +169,7 @@ public class EntryController {
                         contractStorageTrie));
             } else {
                 return HexBytes.fromBytes(VrfUtil.getFromContractStorage(contractAddressHex, h,
-                        VrfBiosContractUpdater.TOTAL_KEY, accountTrie, contractStorageTrie));
+                        VrfPreBuiltContract.TOTAL_KEY, accountTrie, contractStorageTrie));
             }
 
         }

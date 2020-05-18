@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.vrf.VrfConfig;
-import org.tdf.sunflower.consensus.vrf.contract.VrfBiosContractUpdater;
+import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
 import org.tdf.sunflower.consensus.vrf.db.ByteArrayWrapper;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.facade.BlockRepository;
@@ -325,7 +325,7 @@ public class ValidatorManager {
     public long getDepositTotal() {
         long collateral = ByteUtil.byteArrayToLong(VrfUtil.getFromContractStorage(
                 HexBytes.fromHex(Constants.VRF_BIOS_CONTRACT_ADDR), repository.getBestHeader(),
-                VrfBiosContractUpdater.TOTAL_KEY, accountTrie, contractStorageTrie));
+                VrfPreBuiltContract.TOTAL_KEY, accountTrie, contractStorageTrie));
         return collateral;
     }
 

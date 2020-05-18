@@ -1,8 +1,6 @@
 package org.tdf.sunflower.state;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.tdf.common.store.CachedStore;
@@ -11,17 +9,16 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.sunflower.consensus.vrf.VrfGenesis.MinerInfo;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.ContractDB;
 import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -38,18 +35,23 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     @Qualifier("contractStorageTrie")
     private final Trie<byte[], byte[]> storageTrie;
 
-    private final List<BiosContractUpdater> biosContractUpdaters;
+    private final List<PreBuiltContract> preBuiltContracts;
 
-    private final Map<HexBytes, BiosContractUpdater> biosContractAddresses;
+    private final Map<HexBytes, PreBuiltContract> preBuiltContractAddresses;
+
+    private final Map<HexBytes, Bios> biosList;
 
     public AccountUpdater(Map<HexBytes, Account> genesisStates, Store<byte[], byte[]> contractStore,
-            Trie<byte[], byte[]> storageTrie, List<BiosContractUpdater> biosContractUpdaters) {
+                          Trie<byte[], byte[]> storageTrie, List<PreBuiltContract> preBuiltContracts, List<Bios> biosList) {
         this.genesisStates = genesisStates;
         this.contractStore = contractStore;
         this.storageTrie = storageTrie;
-        this.biosContractUpdaters = biosContractUpdaters;
-        biosContractAddresses = new HashMap<>();
-        for (BiosContractUpdater updater : this.biosContractUpdaters) {
+        this.preBuiltContracts = preBuiltContracts;
+        this.biosList = biosList.stream().collect(
+                Collectors.toMap(x -> x.getGenesisAccount().getAddress(), Function.identity())
+        );
+        preBuiltContractAddresses = new HashMap<>();
+        for (PreBuiltContract updater : this.preBuiltContracts) {
             Account genesisAccount = updater.getGenesisAccount();
             Trie<byte[], byte[]> trie = storageTrie.revert();
             for (Map.Entry<byte[], byte[]> entry : updater.getGenesisStorage().entrySet()) {
@@ -58,9 +60,9 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             byte[] root = trie.commit();
             trie.flush();
             genesisAccount.setStorageRoot(root);
-            biosContractAddresses.put(updater.getGenesisAccount().getAddress(), updater);
+            preBuiltContractAddresses.put(updater.getGenesisAccount().getAddress(), updater);
         }
-        for (BiosContractUpdater updater : this.biosContractUpdaters) {
+        for (PreBuiltContract updater : this.preBuiltContracts) {
             genesisStates.put(updater.getGenesisAccount().getAddress(), updater.getGenesisAccount());
         }
 
@@ -69,36 +71,39 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     @Override
     public Set<HexBytes> getRelatedKeys(Transaction transaction, Map<HexBytes, Account> store) {
         switch (Transaction.Type.TYPE_MAP.get(transaction.getType())) {
-        case COIN_BASE:
-            return Collections.singleton(transaction.getTo());
-        case TRANSFER: {
-            if (!store.containsKey(transaction.getFromAddress()))
-                throw new RuntimeException("account " + transaction.getFromAddress() + " not exists");
-            Set<HexBytes> ret = new HashSet<>();
-            ret.add(transaction.getFromAddress());
-            ret.add(transaction.getTo());
-            return ret;
-        }
-        case CONTRACT_DEPLOY: {
-            Set<HexBytes> ret = new HashSet<>();
-            ret.add(transaction.getFromAddress());
-            Account a = store.get(transaction.createContractAddress());
-            if (a != null && !a.isFresh())
-                throw new RuntimeException("contract " + transaction.createContractAddress() + " exists");
-            ret.add(transaction.createContractAddress());
-            return ret;
-        }
-        case CONTRACT_CALL: {
-            Set<HexBytes> ret = new HashSet<>();
-            if (!store.containsKey(transaction.getFromAddress()))
-                throw new RuntimeException("account " + transaction.getFromAddress() + " not exists");
-            if (!store.containsKey(transaction.getTo()))
-                throw new RuntimeException("contract " + transaction.getFromAddress() + " not exists");
-            ret.add(transaction.getFromAddress());
-            ret.add(transaction.getTo());
-            ret.add(store.get(transaction.getTo()).getCreatedBy());
-            return ret;
-        }
+            case COIN_BASE: {
+                Set<HexBytes> ret = new HashSet<>(biosList.keySet());
+                ret.add(transaction.getTo());
+                return ret;
+            }
+            case TRANSFER: {
+                if (!store.containsKey(transaction.getFromAddress()))
+                    throw new RuntimeException("account " + transaction.getFromAddress() + " not exists");
+                Set<HexBytes> ret = new HashSet<>();
+                ret.add(transaction.getFromAddress());
+                ret.add(transaction.getTo());
+                return ret;
+            }
+            case CONTRACT_DEPLOY: {
+                Set<HexBytes> ret = new HashSet<>();
+                ret.add(transaction.getFromAddress());
+                Account a = store.get(transaction.createContractAddress());
+                if (a != null && !a.isFresh())
+                    throw new RuntimeException("contract " + transaction.createContractAddress() + " exists");
+                ret.add(transaction.createContractAddress());
+                return ret;
+            }
+            case CONTRACT_CALL: {
+                Set<HexBytes> ret = new HashSet<>();
+                if (!store.containsKey(transaction.getFromAddress()))
+                    throw new RuntimeException("account " + transaction.getFromAddress() + " not exists");
+                if (!store.containsKey(transaction.getTo()))
+                    throw new RuntimeException("contract " + transaction.getFromAddress() + " not exists");
+                ret.add(transaction.getFromAddress());
+                ret.add(transaction.getTo());
+                ret.add(store.get(transaction.getTo()).getCreatedBy());
+                return ret;
+            }
         }
         throw new RuntimeException("unreachable");
     }
@@ -121,14 +126,14 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             }
         }
         switch (Transaction.Type.TYPE_MAP.get(transaction.getType())) {
-        case TRANSFER:
-            return updateTransfer(cloned, transaction);
-        case COIN_BASE:
-            return updateCoinBase(cloned, transaction);
-        case CONTRACT_DEPLOY:
-            return updateDeploy(cloned, header, transaction);
-        case CONTRACT_CALL:
-            return updateContractCall(cloned, header, transaction);
+            case TRANSFER:
+                return updateTransfer(cloned, transaction);
+            case COIN_BASE:
+                return updateCoinBase(header, cloned, transaction);
+            case CONTRACT_DEPLOY:
+                return updateDeploy(cloned, header, transaction);
+            case CONTRACT_CALL:
+                return updateContractCall(cloned, header, transaction);
         }
         throw new RuntimeException("unknown type " + transaction.getType());
     }
@@ -175,12 +180,24 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         return states;
     }
 
-    private Map<HexBytes, Account> updateCoinBase(Map<HexBytes, Account> accounts, Transaction t) {
+    private Map<HexBytes, Account> updateCoinBase(Header header, Map<HexBytes, Account> accounts, Transaction t) {
+
         for (Account account : accounts.values()) {
             if (!account.getAddress().equals(t.getTo()))
-                throw new RuntimeException("unreachable " + account + " is not coinbase of " + t.getHash());
+                continue;
             account.setBalance(account.getBalance() + t.getAmount());
         }
+
+        for (Bios bios : biosList.values()) {
+            Account a = accounts.get(bios.getGenesisAccount().getAddress());
+            Trie<byte[], byte[]> before = storageTrie.revert(a.getStorageRoot(),
+                    new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new));
+            bios.update(header, before);
+            byte[] root = before.commit();
+            before.flush();
+            a.setStorageRoot(root);
+        }
+
         return accounts;
     }
 
@@ -237,10 +254,10 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                         "unexpected address " + account.getAddress() + " not a createdBy or from or to");
         }
 
-        if (biosContractAddresses.containsKey(contractAccount.getAddress())) {
+        if (preBuiltContractAddresses.containsKey(contractAccount.getAddress())) {
             Trie<byte[], byte[]> before = storageTrie.revert(contractAccount.getStorageRoot(),
                     new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new));
-            BiosContractUpdater updater = biosContractAddresses.get(contractAccount.getAddress());
+            PreBuiltContract updater = preBuiltContractAddresses.get(contractAccount.getAddress());
             updater.update(header, t, accounts, before);
             byte[] root = before.commit();
             before.flush();

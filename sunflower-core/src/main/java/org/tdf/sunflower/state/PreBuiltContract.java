@@ -9,7 +9,7 @@ import org.tdf.sunflower.types.Transaction;
 import java.util.Collections;
 import java.util.Map;
 
-public interface BiosContractUpdater {
+public interface PreBuiltContract {
     Account getGenesisAccount();
 
     default void update(

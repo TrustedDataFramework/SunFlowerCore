@@ -5,12 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.context.ApplicationContext;
 import org.tdf.common.event.EventBus;
-import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.state.Account;
@@ -23,7 +20,7 @@ import java.util.Collections;
 import java.util.Properties;
 
 @Getter
-public abstract class ConsensusEngine implements ConsensusEngineFacade{
+public abstract class AbstractConsensusEngine implements ConsensusEngineFacade{
     protected ApplicationContext applicationContext;
 
     // contract storage trie
@@ -68,7 +65,7 @@ public abstract class ConsensusEngine implements ConsensusEngineFacade{
     // database store factory will be injected before init() called
     private DatabaseStoreFactory databaseStoreFactory;
 
-    // consortiumRepository will be injected before init() called
+    // sunflowerRepository will be injected before init() called
     private SunflowerRepository sunflowerRepository;
 
     // sub class should set confirmedBlocksProvider explicitly when init() called
@@ -79,7 +76,7 @@ public abstract class ConsensusEngine implements ConsensusEngineFacade{
     @Setter(AccessLevel.PROTECTED)
     private PeerServerListener peerServerListener;
 
-    public static final ConsensusEngine NONE = new ConsensusEngine() {
+    public static final AbstractConsensusEngine NONE = new AbstractConsensusEngine() {
         @Override
         public void init(Properties properties) throws ConsensusEngineInitException {
             if(getTransactionPool() == null)
@@ -96,6 +93,7 @@ public abstract class ConsensusEngine implements ConsensusEngineFacade{
                     Collections.emptyMap(),
                     getContractCodeStore(),
                     getContractStorageTrie(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             );
             setAccountTrie(new AccountTrie(updater, getDatabaseStoreFactory(), getContractCodeStore(), getContractStorageTrie()));

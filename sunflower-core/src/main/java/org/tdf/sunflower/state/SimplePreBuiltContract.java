@@ -2,7 +2,6 @@ package org.tdf.sunflower.state;
 import static org.tdf.sunflower.state.Constants.SIMPLE_BIOS_CONTRACT_ADDR;
 
 import org.tdf.common.store.Store;
-import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPItem;
@@ -13,7 +12,7 @@ import org.tdf.sunflower.types.Transaction;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-public class SimpleBiosContractUpdater implements BiosContractUpdater{
+public class SimplePreBuiltContract implements PreBuiltContract {
     @Override
     public Account getGenesisAccount() {
         return new Account(

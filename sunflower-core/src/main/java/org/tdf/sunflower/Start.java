@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codec;
-import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.*;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
@@ -35,7 +34,7 @@ import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.ApplicationException;
-import org.tdf.sunflower.facade.ConsensusEngine;
+import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.ConsensusEngineFacade;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.SunflowerRepository;
@@ -241,7 +240,7 @@ public class Start {
             // none consensus selected, used for unit test
             case ApplicationConstants.CONSENSUS_NONE:
                 log.warn("none consensus engine selected, please ensure you are in test mode");
-                engine = ConsensusEngine.NONE;
+                engine = AbstractConsensusEngine.NONE;
                 break;
             case ApplicationConstants.CONSENSUS_POA:
                 // use poa as default consensus
@@ -268,7 +267,7 @@ public class Start {
         repositoryService.setAccountTrie(engine.getAccountTrie());
 
         transactionPool.setEngine(engine);
-        if (engine == ConsensusEngine.NONE) return engine;
+        if (engine == AbstractConsensusEngine.NONE) return engine;
         repositoryService.saveGenesis(engine.getGenesisBlock());
         if (syncConfig.getPruneHash().length > 0) {
             repositoryService.prune(syncConfig.getPruneHash());

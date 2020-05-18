@@ -61,6 +61,11 @@ public class PoAMiner extends AbstractMiner {
                 .build();
     }
 
+    @Override
+    protected void finalizeBlock(Block block) {
+
+    }
+
     public void setGenesis(Genesis genesis) {
         this.genesis = genesis;
         this.minerAddresses =

@@ -12,7 +12,7 @@ import org.tdf.rlp.RLPItem;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.BiosContractUpdater;
+import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class VrfBiosContractUpdater implements BiosContractUpdater {
+public class VrfPreBuiltContract implements PreBuiltContract {
     private Account genesisAccount;
     private Map<byte[], byte[]> genesisStorage;
     public static final byte[] TOTAL_KEY = "total_deposits".getBytes();
@@ -38,7 +38,7 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
     @Override
     public Account getGenesisAccount() {
         if (genesisAccount == null) {
-            synchronized (VrfBiosContractUpdater.class) {
+            synchronized (VrfPreBuiltContract.class) {
                 if (genesisAccount == null) {
                     genesisAccount = new Account(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), 0, 0,
                             HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), null,
@@ -87,7 +87,7 @@ public class VrfBiosContractUpdater implements BiosContractUpdater {
     @Override
     public Map<byte[], byte[]> getGenesisStorage() {
         if (genesisStorage == null) {
-            synchronized (VrfBiosContractUpdater.class) {
+            synchronized (VrfPreBuiltContract.class) {
                 if (genesisStorage == null) {
                     genesisStorage = new HashMap<byte[], byte[]>();
                 }
