@@ -11,6 +11,7 @@ import org.tdf.common.trie.ReadOnlyTrie;
 import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.Start;
 import org.tdf.sunflower.consensus.vrf.util.ByteArraySet;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.ApplicationConstants;
@@ -42,6 +43,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     @Getter
     private HexBytes genesisRoot;
 
+    @SneakyThrows
     public AbstractStateTrie(
             StateUpdater<ID, S> updater,
             Codec<ID, byte[]> idCodec,
@@ -60,13 +62,14 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
                 .keyCodec(idCodec)
                 .valueCodec(stateCodec).build(),
                 CryptoContext.hashFunction
-        )
-        ;
+        );
 
         // sync to genesis
         Trie<ID, S> tmp = trie.revert();
         updater.getGenesisStates().forEach(tmp::put);
         genesisRoot = HexBytes.fromBytes(tmp.commit());
+        log.info("genesis states = {}", Start.MAPPER.writeValueAsString(updater.getGenesisStates()));
+        log.info("genesis state root = " + genesisRoot);
         tmp.flush();
     }
 

@@ -1,5 +1,6 @@
 package org.tdf.sunflower.consensus.pow;
 
+import lombok.Data;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
@@ -12,14 +13,19 @@ import org.tdf.sunflower.types.Transaction;
 import java.util.Collections;
 import java.util.Map;
 
+@Data
 public class Genesis {
-    public HexBytes parentHash;
+    private HexBytes parentHash;
 
-    public long timestamp;
+    private long timestamp;
 
-    private Map<HexBytes, Long> alloc;
+    private HexBytes nbits;
+
+    private Map<String, Long> alloc;
 
     public Block get() {
+        if(nbits.size() != 32)
+            throw new RuntimeException("invalid nbits size should be 32");
         Trie<?, ?> trie = Trie.<byte[], byte[]>builder()
                 .keyCodec(Codec.identity())
                 .valueCodec(Codec.identity())

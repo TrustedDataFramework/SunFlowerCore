@@ -36,7 +36,6 @@ public class PoA extends AbstractConsensusEngine {
     public void init(Properties properties) throws ConsensusEngineInitException {
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
         poAConfig = MappingUtil.propertiesToPojo(properties, PoAConfig.class);
-        poaMiner = new PoAMiner(poAConfig);
         Resource resource;
         try {
             resource = FileUtils.getResource(poAConfig.getGenesis());
@@ -48,12 +47,7 @@ public class PoA extends AbstractConsensusEngine {
         } catch (Exception e) {
             throw new ConsensusEngineInitException("failed to parse genesis");
         }
-        poaMiner.setBlockRepository(this.getSunflowerRepository());
-        poaMiner.setPoAConfig(poAConfig);
-        poaMiner.setGenesis(genesis);
-        poaMiner.setTransactionPool(getTransactionPool());
 
-        setMiner(poaMiner);
         setGenesisBlock(genesis.getBlock());
 
         setPeerServerListener(PeerServerListener.NONE);
@@ -80,8 +74,15 @@ public class PoA extends AbstractConsensusEngine {
         );
         getGenesisBlock().setStateRoot(trie.getGenesisRoot());
         setAccountTrie(trie);
-        poaMiner.setAccountTrie(trie);
-        poaMiner.setEventBus(getEventBus());
+
+        poaMiner = new PoAMiner(getAccountTrie(), getEventBus(), poAConfig);
+        poaMiner.setBlockRepository(this.getSunflowerRepository());
+        poaMiner.setPoAConfig(poAConfig);
+        poaMiner.setGenesis(genesis);
+        poaMiner.setTransactionPool(getTransactionPool());
+
+        setMiner(poaMiner);
+
         poAValidator = new PoAValidator(getAccountTrie());
         setValidator(poAValidator);
 

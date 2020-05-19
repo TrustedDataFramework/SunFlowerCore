@@ -43,15 +43,18 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
     public AccountUpdater(Map<HexBytes, Account> genesisStates, Store<byte[], byte[]> contractStore,
                           Trie<byte[], byte[]> storageTrie, List<PreBuiltContract> preBuiltContracts, List<Bios> biosList) {
-        this.genesisStates = genesisStates;
+        this.genesisStates = new HashMap<>(genesisStates);
         this.contractStore = contractStore;
         this.storageTrie = storageTrie;
         this.preBuiltContracts = preBuiltContracts;
         this.biosList = biosList.stream().collect(
                 Collectors.toMap(x -> x.getGenesisAccount().getAddress(), Function.identity())
         );
+        List<CommonUpdater> commonUpdaters = new ArrayList<>();
+        commonUpdaters.addAll(preBuiltContracts);
+        commonUpdaters.addAll(biosList);
         preBuiltContractAddresses = new HashMap<>();
-        for (PreBuiltContract updater : this.preBuiltContracts) {
+        for (CommonUpdater updater : commonUpdaters) {
             Account genesisAccount = updater.getGenesisAccount();
             Trie<byte[], byte[]> trie = storageTrie.revert();
             for (Map.Entry<byte[], byte[]> entry : updater.getGenesisStorage().entrySet()) {
@@ -60,10 +63,10 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             byte[] root = trie.commit();
             trie.flush();
             genesisAccount.setStorageRoot(root);
-            preBuiltContractAddresses.put(updater.getGenesisAccount().getAddress(), updater);
-        }
-        for (PreBuiltContract updater : this.preBuiltContracts) {
-            genesisStates.put(updater.getGenesisAccount().getAddress(), updater.getGenesisAccount());
+            if (updater instanceof PreBuiltContract) {
+                preBuiltContractAddresses.put(updater.getGenesisAccount().getAddress(), (PreBuiltContract) updater);
+            }
+            this.genesisStates.put(updater.getGenesisAccount().getAddress(), genesisAccount);
         }
 
     }

@@ -149,7 +149,6 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
     public void init(Properties properties) throws ConsensusEngineInitException {
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
         vrfConfig = MappingUtil.propertiesToPojo(properties, VrfConfig.class);
-        vrfMiner = new VrfMiner(vrfConfig);
         Resource resource;
         try {
             resource = FileUtils.getResource(vrfConfig.getGenesis());
@@ -162,11 +161,6 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
             throw new ConsensusEngineInitException("failed to parse genesis: " + e.getMessage());
         }
 
-        vrfMiner.setBlockRepository(this.getSunflowerRepository());
-        vrfMiner.setConfig(vrfConfig);
-        vrfMiner.setGenesis(genesis);
-        vrfMiner.setTransactionPool(getTransactionPool());
-        setMiner(vrfMiner);
         try {
             setGenesisBlock(genesis.getBlock(vrfConfig));
         } catch (IOException e) {
@@ -204,8 +198,13 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
         getGenesisBlock().setStateRoot(trie.getGenesisRoot());
         setAccountTrie(trie);
         setValidator(new VrfValidator(getAccountTrie()));
-        vrfMiner.setAccountTrie(getAccountTrie());
-        vrfMiner.setEventBus(getEventBus());
+
+        vrfMiner = new VrfMiner(getAccountTrie(), getEventBus(), vrfConfig);
+        vrfMiner.setBlockRepository(this.getSunflowerRepository());
+        vrfMiner.setConfig(vrfConfig);
+        vrfMiner.setGenesis(genesis);
+        vrfMiner.setTransactionPool(getTransactionPool());
+        setMiner(vrfMiner);
         vrfMiner.setContractStorageTrie(getContractStorageTrie());
 
 //        setConfirmedBlocksProvider(unconfirmed -> unconfirmed);

@@ -12,31 +12,36 @@ import org.tdf.sunflower.types.ValidateResult;
 public abstract class AbstractValidator implements Validator {
     protected final StateTrie<HexBytes, Account> accountTrie;
 
-    public AbstractValidator(StateTrie<HexBytes, Account> accountTrie){
+    public AbstractValidator(StateTrie<HexBytes, Account> accountTrie) {
         this.accountTrie = accountTrie;
     }
 
-    protected ValidateResult commonValidate(Block block, Block parent){
-        for(Transaction t: block.getBody()){
+    protected ValidateResult commonValidate(Block block, Block parent) {
+        for (Transaction t : block.getBody()) {
             ValidateResult res = t.basicValidate();
-            if(!res.isSuccess()) return res;
+            if (!res.isSuccess()) return res;
         }
-        if(!parent.isParentOf(block) || parent.getHeight() + 1 != block.getHeight()) {
+        if (!parent.isParentOf(block) || parent.getHeight() + 1 != block.getHeight()) {
             return ValidateResult.fault("dependency is not parent of block");
         }
-        if(!Transaction.getTransactionsRoot(block.getBody())
+        if (parent.getCreatedAt() >= block.getCreatedAt()) {
+            return ValidateResult.fault(
+                    String.format("invalid timestamp %d ", block.getCreatedAt())
+            );
+        }
+        if (!Transaction.getTransactionsRoot(block.getBody())
                 .equals(block.getTransactionsRoot())
-        ){
+        ) {
             return ValidateResult.fault("transactions root not match");
         }
-        try{
+        try {
             Trie<HexBytes, Account> updated =
                     accountTrie.update(parent.getStateRoot().getBytes(), block);
-            if(!HexBytes.fromBytes(updated.getRootHash()).equals(block.getStateRoot())){
+            if (!HexBytes.fromBytes(updated.getRootHash()).equals(block.getStateRoot())) {
                 return ValidateResult.fault("state root not match");
             }
             updated.flush();
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return ValidateResult.fault("contract evaluation failed or " + e.getMessage());
         }

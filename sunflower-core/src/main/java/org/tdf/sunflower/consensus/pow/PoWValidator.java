@@ -1,5 +1,6 @@
 package org.tdf.sunflower.consensus.pow;
 
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.types.Block;
@@ -24,7 +25,13 @@ public class PoWValidator extends AbstractValidator {
         }
         byte[] nbits = poW.getNBits(dependency.getStateRoot().getBytes());
         if (PoW.compare(PoW.getPoWHash(block), nbits) > 0)
-            return ValidateResult.fault("nbits");
+            return ValidateResult.fault(
+                    String.format(
+                            "nbits validate failed hash = %s, nbits = %s",
+                            HexBytes.fromBytes(PoW.getPoWHash(block)),
+                            HexBytes.fromBytes(nbits)
+                    )
+            );
         return ValidateResult.success();
     }
 

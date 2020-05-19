@@ -6,6 +6,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
+import org.tdf.sunflower.consensus.pow.PoWBios;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.abi.ContextContract;

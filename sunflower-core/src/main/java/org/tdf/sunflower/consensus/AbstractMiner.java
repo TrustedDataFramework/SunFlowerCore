@@ -2,7 +2,6 @@ package org.tdf.sunflower.consensus;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.store.CachedStore;
@@ -18,24 +17,23 @@ import org.tdf.sunflower.state.StateUpdater;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.util.*;
 
 @Slf4j(topic = "miner")
 public abstract class AbstractMiner implements Miner {
-    @Setter
     @Getter(AccessLevel.PROTECTED)
-    private StateTrie<HexBytes, Account> accountTrie;
+    private final StateTrie<HexBytes, Account> accountTrie;
 
-    @Setter
     @Getter(AccessLevel.PROTECTED)
-    private EventBus eventBus;
+    private final EventBus eventBus;
 
     private final MinerConfig minerConfig;
 
-    public AbstractMiner(MinerConfig minerConfig) {
+    public AbstractMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig) {
         this.minerConfig = minerConfig;
+        this.accountTrie = accountTrie;
+        this.eventBus = eventBus;
     }
 
     protected abstract TransactionPool getTransactionPool();
@@ -44,10 +42,10 @@ public abstract class AbstractMiner implements Miner {
 
     protected abstract Header createHeader(Block parent);
 
-    protected abstract void finalizeBlock(Block block);
+    protected abstract void finalizeBlock(Block parent, Block block);
 
-    protected Optional<Block> createBlock(Block parent){
-        if(!minerConfig.isAllowEmptyBlock() && getTransactionPool().size() == 0)
+    protected Optional<Block> createBlock(Block parent) {
+        if (!minerConfig.isAllowEmptyBlock() && getTransactionPool().size() == 0)
             return Optional.empty();
 
         Header header = createHeader(parent);
@@ -67,10 +65,10 @@ public abstract class AbstractMiner implements Miner {
                 minerConfig.getMaxBodySize()
         );
 
-        if(transactionList.isEmpty() && !minerConfig.isAllowEmptyBlock())
+        if (transactionList.isEmpty() && !minerConfig.isAllowEmptyBlock())
             return Optional.empty();
         transactionList.add(0, coinbase);
-        for (Transaction tx: transactionList) {
+        for (Transaction tx : transactionList) {
             // try to fetch transaction from pool
             try {
                 Set<HexBytes> keys = updater.getRelatedKeys(tx, tmp.asMap());
@@ -105,7 +103,7 @@ public abstract class AbstractMiner implements Miner {
         b.resetTransactionsRoot();
 
         // the mined block cannot be modified any more
-        finalizeBlock(b);
+        finalizeBlock(parent, b);
         return Optional.of(b);
     }
 }

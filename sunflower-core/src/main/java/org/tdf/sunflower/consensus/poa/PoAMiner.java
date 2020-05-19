@@ -3,6 +3,7 @@ package org.tdf.sunflower.consensus.poa;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.event.EventBus;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
@@ -11,6 +12,8 @@ import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.TransactionPool;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -47,9 +50,10 @@ public class PoAMiner extends AbstractMiner {
     @Getter
     private TransactionPool transactionPool;
 
-    public PoAMiner(MinerConfig minerConfig) {
-        super(minerConfig);
+    public PoAMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig) {
+        super(accountTrie, eventBus, minerConfig);
     }
+
 
     @Override
     protected Header createHeader(Block parent) {
@@ -62,7 +66,7 @@ public class PoAMiner extends AbstractMiner {
     }
 
     @Override
-    protected void finalizeBlock(Block block) {
+    protected void finalizeBlock(Block parent, Block block) {
 
     }
 

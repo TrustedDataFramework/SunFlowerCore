@@ -16,6 +16,7 @@ import org.tdf.sunflower.types.Header;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,7 @@ public class PoWBios implements Bios {
     static final long MAX_ADJUST_RATE = 16;
     static final BigInteger MAX_UINT_256 = new BigInteger("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
 
-    public static final HexBytes ADDRESS = HexBytes.fromBytes(new byte[ApplicationConstants.ADDRESS_SIZE]);
+    public static final HexBytes ADDRESS = HexBytes.fromHex("0000000000000000000000000000000000000001");
 
     private final byte[] genesisNbits;
 
@@ -47,7 +48,9 @@ public class PoWBios implements Bios {
 
     @Override
     public void update(Header header, Store<byte[], byte[]> contractStorage) {
-        List<Long> ts = Arrays.asList(RLPCodec.decode(contractStorage.get(TIMESTAMPS_KEY).get(), Long[].class));
+        List<Long> ts = new ArrayList<>(
+                Arrays.asList(RLPCodec.decode(contractStorage.get(TIMESTAMPS_KEY).get(), Long[].class))
+        );
         ts.add(header.getCreatedAt());
         if (ts.size() == config.getBlocksPerEra()) {
             long duration = ts.get(ts.size() - 1) - ts.get(0);

@@ -1,5 +1,6 @@
 package org.tdf.sunflower.facade;
 
+import com.google.common.base.Functions;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -70,7 +71,7 @@ public abstract class AbstractConsensusEngine implements ConsensusEngineFacade{
 
     // sub class should set confirmedBlocksProvider explicitly when init() called
     @Setter(AccessLevel.PROTECTED)
-    private ConfirmedBlocksProvider confirmedBlocksProvider;
+    private ConfirmedBlocksProvider confirmedBlocksProvider = x -> x;
 
     // sub class should set peer server listener explicitly when init() called
     @Setter(AccessLevel.PROTECTED)

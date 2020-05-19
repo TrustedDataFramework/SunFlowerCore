@@ -220,7 +220,7 @@ public class Transaction {
     }
 
     public enum Type {
-        // coinbase transaction has code 0
+        // coinbase transaction has code 0, may trigger bios
         COIN_BASE(0x00),
         // the amount is transferred from sender to recipient
         // if type is transfer, payload is null

@@ -3,20 +3,30 @@ package org.tdf.sunflower.consensus.pow;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.tdf.common.util.BigEndian;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
+import org.tdf.sunflower.Start;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
+import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.tdf.sunflower.consensus.pow.PoWBios.N_BITS_KEY;
 
+@Slf4j(topic = "pow")
 public class PoW extends AbstractConsensusEngine {
     public static final int BLOCK_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
     public static final int TRANSACTION_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
@@ -52,9 +62,36 @@ public class PoW extends AbstractConsensusEngine {
         PoWConfig config = MappingUtil.propertiesToPojo(properties, PoWConfig.class);
         Resource resource = FileUtils.getResource(config.getGenesis());
         Genesis genesis = objectMapper.readValue(resource.getInputStream(), Genesis.class);
-        setMiner(new PoWMiner(config, getTransactionPool()));
 
-        setGenesisBlock(genesis.get());
+        Map<HexBytes, Account> alloc = new HashMap<>();
+
+        if (genesis.getAlloc() != null) {
+            genesis.getAlloc().forEach((k, v) -> {
+                Account a = new Account(HexBytes.fromHex(k), v);
+                alloc.put(a.getAddress(), a);
+            });
+        }
+
+        AccountUpdater updater = new AccountUpdater(
+                alloc, getContractCodeStore(),
+                getContractStorageTrie(),
+                Collections.emptyList(),
+                Collections.singletonList(new PoWBios(genesis.getNbits().getBytes(), config))
+        );
+
+        AccountTrie trie = new AccountTrie(
+                updater, getDatabaseStoreFactory(),
+                getContractCodeStore(), getContractStorageTrie()
+        );
+        Block genesisBlock = genesis.get();
+        genesisBlock.setStateRoot(trie.getGenesisRoot());
+        setGenesisBlock(genesisBlock);
+        setAccountTrie(trie);
+        setValidator(new PoWValidator(this));
+        setPeerServerListener(PeerServerListener.NONE);
+
+        setMiner(new PoWMiner(config, getTransactionPool(), this));
+        log.info("genesis = {}", Start.MAPPER.writeValueAsString(getGenesisBlock()));
     }
 
 }

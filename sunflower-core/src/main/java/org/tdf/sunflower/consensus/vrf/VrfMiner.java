@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
+import org.tdf.common.event.EventBus;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
@@ -35,6 +36,8 @@ import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.PeerServer;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -88,9 +91,10 @@ public class VrfMiner extends AbstractMiner {
     // contract storage trie
     private Trie<byte[], byte[]> contractStorageTrie;
 
-    public VrfMiner(MinerConfig minerConfig) {
-        super(minerConfig);
+    public VrfMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig) {
+        super(accountTrie, eventBus, minerConfig);
     }
+
 
     public void setGenesis(VrfGenesis genesis) {
         this.genesis = genesis;
@@ -182,7 +186,7 @@ public class VrfMiner extends AbstractMiner {
     }
 
     @Override
-    protected void finalizeBlock(Block block) {
+    protected void finalizeBlock(Block parent, Block block) {
 
     }
 

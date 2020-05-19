@@ -267,6 +267,15 @@ public class Start {
 
         engine.init(consensusProperties);
 
+        String[] nonNullFields = new String[]{"Miner", "Validator", "AccountTrie", "GenesisBlock", "ConfirmedBlocksProvider", "PeerServerListener"};
+
+        for (String field : nonNullFields) {
+            String method = "get" + field;
+            if(engine.getClass().getMethod(method).invoke(engine) == null){
+                throw new RuntimeException("field " + field + " not injected after init");
+            }
+        }
+
         repositoryService.setProvider(engine.getConfirmedBlocksProvider());
         repositoryService.setAccountTrie(engine.getAccountTrie());
 
