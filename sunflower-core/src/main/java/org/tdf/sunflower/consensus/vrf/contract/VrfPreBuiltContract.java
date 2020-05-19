@@ -1,32 +1,28 @@
 package org.tdf.sunflower.consensus.vrf.contract;
 
-import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPItem;
 import org.tdf.sunflower.Start;
-import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.vm.abi.Context;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
-import lombok.extern.slf4j.Slf4j;
+import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 
 /**
- * 
  * @author mawenpeng Precompiled contract (i.e. bios contract) for VRF
- *         consensus. Functions: deposit(), withdraw()
+ * consensus. Functions: deposit(), withdraw()
  */
 
 @Slf4j
@@ -40,9 +36,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
         if (genesisAccount == null) {
             synchronized (VrfPreBuiltContract.class) {
                 if (genesisAccount == null) {
-                    genesisAccount = new Account(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), 0, 0,
-                            HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR), null,
-                            CryptoContext.digest(RLPItem.NULL.getEncoded()), true);
+                    genesisAccount = Account.emptyContract(Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES);
                 }
             }
         }
@@ -52,7 +46,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
 
     @Override
     public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts,
-            Store<byte[], byte[]> contractStorage) {
+                       Store<byte[], byte[]> contractStorage) {
 
         String methodName = Context.readMethod(transaction.getPayload());
         log.info("++++++>> VrfBiosContract method {}, txn hash {}, nonce {}", methodName, transaction.getHash().toHex(),
@@ -97,7 +91,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
     }
 
     private void deposit(Transaction transaction, Map<HexBytes, Account> accounts,
-            Store<byte[], byte[]> contractStorage) throws JsonParseException, JsonMappingException, IOException {
+                         Store<byte[], byte[]> contractStorage) throws JsonParseException, JsonMappingException, IOException {
 
         DepositParams depositParams = parseDepositParams(transaction);
         long amount = depositParams.getDepositAmount();
@@ -151,7 +145,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
     }
 
     private void withdraw(Transaction transaction, Map<HexBytes, Account> accounts,
-            Store<byte[], byte[]> contractStorage) throws JsonParseException, JsonMappingException, IOException {
+                          Store<byte[], byte[]> contractStorage) throws JsonParseException, JsonMappingException, IOException {
 
         WithdrawParams withdrawParams = parseWithdrawParams(transaction);
 

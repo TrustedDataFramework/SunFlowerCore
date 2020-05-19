@@ -8,12 +8,11 @@ import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.Start;
-import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Bios;
+import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.Header;
 
 import java.math.BigInteger;
@@ -30,7 +29,7 @@ public class PoWBios implements Bios {
     static final long MAX_ADJUST_RATE = 16;
     static final BigInteger MAX_UINT_256 = new BigInteger("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
 
-    public static final HexBytes ADDRESS = HexBytes.fromHex("0000000000000000000000000000000000000001");
+    public static final HexBytes ADDRESS = Constants.POW_BIOS_ADDR;
 
     private final byte[] genesisNbits;
 
@@ -43,10 +42,7 @@ public class PoWBios implements Bios {
 
     @Override
     public Account getGenesisAccount() {
-        return new Account(ADDRESS, 0, 0,
-                ADDRESS, null,
-                CryptoContext.digest(RLPItem.NULL.getEncoded()), true
-        );
+        return Account.emptyContract(ADDRESS);
     }
 
     @Override
@@ -75,7 +71,7 @@ public class PoWBios implements Bios {
             nbits = safeTyMul(nbits, rate);
             contractStorage.put(N_BITS_KEY, BigEndian.encodeUint256(nbits));
             contractStorage.put(TIMESTAMPS_KEY, RLPList.createEmpty().getEncoded());
-        }else{
+        } else {
             contractStorage.put(TIMESTAMPS_KEY, RLPCodec.encode(ts));
         }
     }
