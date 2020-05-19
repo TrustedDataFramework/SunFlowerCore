@@ -1,5 +1,7 @@
 package org.tdf.sunflower.consensus.pow;
 
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.fraction.BigFraction;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.BigEndian;
@@ -8,7 +10,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
-import org.tdf.sunflower.ApplicationConstants;
+import org.tdf.sunflower.Start;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Bios;
@@ -21,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j(topic = "pow")
 public class PoWBios implements Bios {
     static final byte[] N_BITS_KEY = "nbits".getBytes(StandardCharsets.US_ASCII);
     static final byte[] TIMESTAMPS_KEY = "ts".getBytes(StandardCharsets.US_ASCII);
@@ -47,11 +50,13 @@ public class PoWBios implements Bios {
     }
 
     @Override
+    @SneakyThrows
     public void update(Header header, Store<byte[], byte[]> contractStorage) {
         List<Long> ts = new ArrayList<>(
                 Arrays.asList(RLPCodec.decode(contractStorage.get(TIMESTAMPS_KEY).get(), Long[].class))
         );
         ts.add(header.getCreatedAt());
+        log.debug("timestamps = {}", Start.MAPPER.writeValueAsString(ts));
         if (ts.size() == config.getBlocksPerEra()) {
             long duration = ts.get(ts.size() - 1) - ts.get(0);
             BigFraction rate = new BigFraction(
@@ -70,6 +75,8 @@ public class PoWBios implements Bios {
             nbits = safeTyMul(nbits, rate);
             contractStorage.put(N_BITS_KEY, BigEndian.encodeUint256(nbits));
             contractStorage.put(TIMESTAMPS_KEY, RLPList.createEmpty().getEncoded());
+        }else{
+            contractStorage.put(TIMESTAMPS_KEY, RLPCodec.encode(ts));
         }
     }
 

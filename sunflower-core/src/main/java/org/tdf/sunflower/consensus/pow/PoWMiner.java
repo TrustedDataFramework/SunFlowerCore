@@ -11,7 +11,10 @@ import org.tdf.sunflower.types.Transaction;
 
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
 
@@ -23,6 +26,7 @@ public class PoWMiner extends AbstractMiner {
     private ScheduledExecutorService minerExecutor;
     private final ForkJoinPool threadPool = (ForkJoinPool) Executors.newWorkStealingPool();
     private volatile boolean stopped;
+    private volatile Runnable task;
 
     public PoWMiner(
             PoWConfig minerConfig,
@@ -84,7 +88,7 @@ public class PoWMiner extends AbstractMiner {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }, 0, poWConfig.getBlockInterval(), TimeUnit.SECONDS);
+        }, 0, Math.max(1, poWConfig.getBlockInterval() / 4), TimeUnit.SECONDS);
     }
 
     @Override
@@ -98,6 +102,7 @@ public class PoWMiner extends AbstractMiner {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        this.task = null;
         stopped = true;
     }
 
@@ -105,12 +110,11 @@ public class PoWMiner extends AbstractMiner {
         if (!poWConfig.isEnableMining() || stopped) {
             return;
         }
-        if (threadPool.getQueuedTaskCount() != 0)
-            return;
+        if (task != null) return;
 
         Block best = poW.getSunflowerRepository().getBestBlock();
         log.debug("try to mining at height " + (best.getHeight() + 1));
-        threadPool.submit(() -> {
+        this.task = () -> {
             try {
                 Optional<Block> b = createBlock(poW.getSunflowerRepository().getBestBlock());
                 if (!b.isPresent()) return;
@@ -119,6 +123,8 @@ public class PoWMiner extends AbstractMiner {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        });
+            this.task = null;
+        };
+        threadPool.submit(task);
     }
 }
