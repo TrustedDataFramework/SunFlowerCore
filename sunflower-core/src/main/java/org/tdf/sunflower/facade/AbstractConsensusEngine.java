@@ -90,6 +90,9 @@ public abstract class AbstractConsensusEngine implements ConsensusEngineFacade{
             if(getDatabaseStoreFactory() == null)
                 throw new ConsensusEngineInitException("database factory not injected");
             setMiner(Miner.NONE);
+            setValidator(Validator.NONE);
+            setGenesisBlock(new Block());
+            setPeerServerListener(PeerServerListener.NONE);
             AccountUpdater updater = new AccountUpdater(
                     Collections.emptyMap(),
                     getContractCodeStore(),
