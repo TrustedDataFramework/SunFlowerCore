@@ -65,11 +65,13 @@ public class PoWMiner extends AbstractMiner {
     protected void finalizeBlock(Block parent, Block block) {
         byte[] nbits = poW.getNBits(parent.getStateRoot().getBytes());
         Random rd = new Random();
+        log.info("start finish pow target = {}", HexBytes.fromBytes(nbits));
         while (PoW.compare(PoW.getPoWHash(block), nbits) > 0) {
             byte[] nonce = new byte[32];
             rd.nextBytes(nonce);
-            parent.setPayload(HexBytes.fromBytes(nonce));
+            block.setPayload(HexBytes.fromBytes(nonce));
         }
+        log.info("pow success");
     }
 
     @Override
@@ -103,7 +105,7 @@ public class PoWMiner extends AbstractMiner {
         if (!poWConfig.isEnableMining() || stopped) {
             return;
         }
-        if (threadPool.getRunningThreadCount() != 0)
+        if (threadPool.getQueuedTaskCount() != 0)
             return;
 
         Block best = poW.getSunflowerRepository().getBestBlock();
