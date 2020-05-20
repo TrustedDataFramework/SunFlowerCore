@@ -41,6 +41,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import static org.tdf.sunflower.Start.devAssert;
 
@@ -136,6 +137,20 @@ public class SyncManager implements PeerServerListener {
             this.miner.stop();
     }
 
+    private void broadcastToApproved(byte[] body) {
+        List<Peer> peers = peerServer.getPeers();
+        Optional<Set<HexBytes>> nodes = engine.getApprovedNodes();
+        if (nodes.isPresent()) {
+            peers = peers.stream()
+                    .filter(p -> nodes.get().contains(Address.fromPublicKey(p.getID())))
+                    .collect(Collectors.toList());
+        }
+
+        for (Peer p : peers) {
+            peerServer.dial(p, body);
+        }
+    }
+
     @PostConstruct
     public void init() {
         // TODO: don't send status, proposal and transaction to peer not approved
@@ -150,7 +165,7 @@ public class SyncManager implements PeerServerListener {
         );
         eventBus.subscribe(NewBlockMined.class, (e) -> propose(e.getBlock()));
         eventBus.subscribe(NewTransactionsReceived.class,
-                (e) -> peerServer.broadcast(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransactions()))
+                (e) -> broadcastToApproved(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransactions()))
         );
         eventBus.subscribe(NewBlocksReceived.class, (e) -> onBlocks(e.getBlocks()));
     }
@@ -585,12 +600,12 @@ public class SyncManager implements PeerServerListener {
                 repository.getPrunedHeight(),
                 repository.getPrunedHash()
         );
-        peerServer.broadcast(SyncMessage.encode(SyncMessage.STATUS, status));
+        broadcastToApproved(SyncMessage.encode(SyncMessage.STATUS, status));
     }
 
 
     public void propose(Block b) {
-        peerServer.broadcast(SyncMessage.encode(SyncMessage.PROPOSAL, b));
+        broadcastToApproved(SyncMessage.encode(SyncMessage.PROPOSAL, b));
     }
 
     @Override
