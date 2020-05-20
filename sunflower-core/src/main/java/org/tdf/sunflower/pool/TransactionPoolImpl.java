@@ -14,7 +14,7 @@ import org.tdf.sunflower.controller.PageSize;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewTransactionsCollected;
 import org.tdf.sunflower.events.NewTransactionsReceived;
-import org.tdf.sunflower.facade.ConsensusEngineFacade;
+import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.PendingTransactionValidator;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.facade.TransactionRepository;
@@ -91,7 +91,7 @@ public class TransactionPoolImpl implements TransactionPool {
     // dropped transactions
     private Cache<HexBytes, Transaction> dropped;
 
-    public void setEngine(ConsensusEngineFacade engine) {
+    public void setEngine(ConsensusEngine engine) {
         this.validator = engine.getValidator();
     }
 

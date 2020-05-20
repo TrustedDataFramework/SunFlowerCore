@@ -8,13 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -27,6 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class MessageFilter implements Plugin {
     private Cache<HexBytes, Boolean> cache;
     private Map<HexBytes, Messages> multiPartCache = new HashMap<>();
+    private final ConsensusEngine consensusEngine;
 
     @AllArgsConstructor
     private static class Messages {
@@ -67,7 +66,7 @@ public class MessageFilter implements Plugin {
     private Lock multiPartCacheLock = new ReentrantLock();
 
 
-    MessageFilter(PeerServerConfig config) {
+    MessageFilter(PeerServerConfig config, ConsensusEngine consensusEngine) {
         this.cache = CacheBuilder.newBuilder()
                 .maximumSize(config.getMaxPeers() * 8).build();
         Executors.newSingleThreadScheduledExecutor()
@@ -82,6 +81,7 @@ public class MessageFilter implements Plugin {
                         multiPartCacheLock.unlock();
                     }
                 }, config.getCacheExpiredAfter(), config.getCacheExpiredAfter(), TimeUnit.SECONDS);
+        this.consensusEngine = consensusEngine;
     }
 
     @Override
@@ -111,6 +111,14 @@ public class MessageFilter implements Plugin {
             } finally {
                 multiPartCacheLock.unlock();
             }
+            return;
+        }
+
+        // filter nodes not auth
+        Optional<Set<HexBytes>> nodes = consensusEngine.getApprovedNodes();
+        if (nodes.isPresent() && !nodes.get().contains(context.getRemote().getID())) {
+            context.exit();
+            log.error("invalid node " + context.getRemote().getID() + " not approved");
             return;
         }
 

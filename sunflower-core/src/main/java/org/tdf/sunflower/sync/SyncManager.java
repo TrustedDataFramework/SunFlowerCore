@@ -19,7 +19,6 @@ import org.tdf.sunflower.SyncConfig;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.events.NewBlocksReceived;
-import org.tdf.sunflower.events.NewTransactionsCollected;
 import org.tdf.sunflower.events.NewTransactionsReceived;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.Context;
@@ -51,7 +50,7 @@ import static org.tdf.sunflower.Start.devAssert;
 @Slf4j(topic = "sync")
 public class SyncManager implements PeerServerListener {
     private final PeerServer peerServer;
-    private final ConsensusEngineFacade engine;
+    private final ConsensusEngine engine;
     private final SunflowerRepository repository;
     private final TransactionPool transactionPool;
     private final TreeSet<Block> queue = new TreeSet<>(Block.FAT_COMPARATOR);
@@ -91,7 +90,7 @@ public class SyncManager implements PeerServerListener {
     private volatile Set<HexBytes> fastSyncAddresses;
 
     public SyncManager(
-            PeerServer peerServer, ConsensusEngineFacade engine,
+            PeerServer peerServer, ConsensusEngine engine,
             SunflowerRepository repository,
             TransactionPool transactionPool, SyncConfig syncConfig,
             EventBus eventBus,

@@ -12,13 +12,13 @@ import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
+import org.tdf.sunflower.state.Authentication;
+import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.stream.Collectors;
 
 // poa is a minimal non-trivial consensus engine
 @Slf4j(topic = "poa")
@@ -27,10 +27,19 @@ public class PoA extends AbstractConsensusEngine {
     private Genesis genesis;
     private PoAMiner poaMiner;
     private PoAValidator poAValidator;
+    private AccountTrie accountTrie;
 
     public PoA() {
     }
 
+    @Override
+    public Optional<Set<HexBytes>> getApprovedNodes() {
+        if (!poAConfig.isAuth())
+            return Optional.empty();
+
+        Block best = getSunflowerRepository().getBestBlock();
+        return Optional.of(new HashSet<>(Authentication.getNodes(accountTrie, best.getStateRoot().getBytes())));
+    }
 
     @Override
     public void init(Properties properties) throws ConsensusEngineInitException {
@@ -65,13 +74,17 @@ public class PoA extends AbstractConsensusEngine {
         AccountUpdater updater = new AccountUpdater(
                 alloc, getContractCodeStore(),
                 getContractStorageTrie(),
-                Collections.emptyList(),
+                poAConfig.isAuth() ? Collections.singletonList(new Authentication(
+                        genesis.alloc == null ? Collections.emptyList() :
+                                genesis.alloc.keySet().stream().map(HexBytes::fromHex).collect(Collectors.toSet())
+                )) : Collections.emptyList(),
                 Collections.emptyList()
         );
         AccountTrie trie = new AccountTrie(
                 updater, getDatabaseStoreFactory(),
                 getContractCodeStore(), getContractStorageTrie()
         );
+        this.accountTrie = trie;
         getGenesisBlock().setStateRoot(trie.getGenesisRoot());
         setAccountTrie(trie);
 

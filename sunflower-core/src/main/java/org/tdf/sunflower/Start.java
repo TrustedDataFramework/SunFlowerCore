@@ -36,7 +36,7 @@ import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
-import org.tdf.sunflower.facade.ConsensusEngineFacade;
+import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.mq.BasicMessageQueue;
@@ -202,7 +202,7 @@ public class Start {
 
     @Bean
     public Miner miner(
-            ConsensusEngineFacade engine,
+            ConsensusEngine engine,
             // this dependency asserts the peer server had been initialized
             PeerServer peerServer
     ) {
@@ -212,7 +212,7 @@ public class Start {
     }
 
     @Bean
-    public AccountTrie accountTrie(ConsensusEngineFacade consensusEngine) {
+    public AccountTrie accountTrie(ConsensusEngine consensusEngine) {
         return (AccountTrie) consensusEngine.getAccountTrie();
     }
 
@@ -222,7 +222,7 @@ public class Start {
     }
 
     @Bean
-    public ConsensusEngineFacade consensusEngine(
+    public ConsensusEngine consensusEngine(
             ConsensusProperties consensusProperties,
             SunflowerRepository repositoryService,
             TransactionPoolImpl transactionPool,
@@ -236,7 +236,7 @@ public class Start {
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
         name = name == null ? "" : name;
-        final ConsensusEngineFacade engine;
+        final ConsensusEngine engine;
         switch (name.trim().toLowerCase()) {
             // none consensus selected, used for unit test
             case ApplicationConstants.CONSENSUS_NONE:
@@ -304,7 +304,7 @@ public class Start {
     @Bean
     public PeerServer peerServer(
             PeerServerProperties properties,
-            ConsensusEngineFacade engine,
+            ConsensusEngine engine,
             DatabaseStoreFactory factory
     ) throws Exception {
         String name = properties.getProperty("name");
@@ -330,7 +330,7 @@ public class Start {
                     }
                 }
         ) : new MapStore<>();
-        PeerServer peerServer = new PeerServerImpl(store);
+        PeerServer peerServer = new PeerServerImpl(store, engine);
         peerServer.init(properties);
         peerServer.addListeners(engine.getPeerServerListener());
         peerServer.start();

@@ -7,6 +7,9 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
+import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.ByteArrayMapStore;
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.KeyPair;
@@ -199,5 +202,16 @@ public class CryptoContext {
         byte[] rsData = new byte[digest.getDigestSize()];
         digest.doFinal(rsData, 0);
         return rsData;
+    }
+
+    public static byte[] getEmptyTrieRoot() {
+        Trie<?, ?> trie = Trie.<byte[], byte[]>builder()
+                .keyCodec(Codec.identity())
+                .valueCodec(Codec.identity())
+                .store(new ByteArrayMapStore<>())
+                .hashFunction(CryptoContext::digest)
+                .build();
+
+        return trie.getNullHash();
     }
 }

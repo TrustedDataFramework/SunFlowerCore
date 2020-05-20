@@ -1,27 +1,19 @@
 package org.tdf.sunflower.net;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.common.serialize.Codecs;
-import org.tdf.common.store.MapStore;
 import org.tdf.common.store.Store;
-import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.Start;
 import org.tdf.sunflower.crypto.CryptoContext;
-import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.PeerServerInitException;
+import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,10 +27,11 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     private NetLayer netLayer;
     // if non-database provided, use memory database
     final Store<String, String> peerStore;
+    final ConsensusEngine consensusEngine;
 
-
-    public PeerServerImpl(Store<String, String> peerStore) {
+    public PeerServerImpl(Store<String, String> peerStore, ConsensusEngine consensusEngine) {
         this.peerStore = peerStore;
+        this.consensusEngine = consensusEngine;
     }
 
     @Override
@@ -156,7 +149,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         client = new Client(self, config, builder, netLayer).withListener(this);
 
         // loading plugins
-        plugins.add(new MessageFilter(config));
+        plugins.add(new MessageFilter(config, consensusEngine));
         plugins.add(new MessageLogger());
         plugins.add(new PeersManager(config));
     }

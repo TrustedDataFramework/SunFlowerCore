@@ -105,6 +105,10 @@ public final class HexBytes implements Comparable<HexBytes>, Serializable {
         return new HexBytes(Arrays.copyOfRange(bytes, start, end));
     }
 
+    public HexBytes slice(int start) {
+        return this.slice(start, bytes.length);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

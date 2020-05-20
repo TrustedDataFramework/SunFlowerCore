@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.MapStore;
 import org.tdf.sunflower.DatabaseConfig;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
+import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.util.FileUtils;
 
@@ -31,7 +32,7 @@ public class P2PDebug {
         });
 
         // port listening on
-        PeerServerImpl server = new PeerServerImpl(new MapStore<>());
+        PeerServerImpl server = new PeerServerImpl(new MapStore<>(), AbstractConsensusEngine.NONE);
         Properties properties = new Properties();
         properties.load(FileUtils.getResource("p2p/node3.properties").getInputStream());
         System.out.println(properties);

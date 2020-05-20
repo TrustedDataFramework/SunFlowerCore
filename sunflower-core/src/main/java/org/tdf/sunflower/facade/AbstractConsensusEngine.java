@@ -1,6 +1,5 @@
 package org.tdf.sunflower.facade;
 
-import com.google.common.base.Functions;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,7 +20,7 @@ import java.util.Collections;
 import java.util.Properties;
 
 @Getter
-public abstract class AbstractConsensusEngine implements ConsensusEngineFacade{
+public abstract class AbstractConsensusEngine implements ConsensusEngine {
     protected ApplicationContext applicationContext;
 
     // contract storage trie

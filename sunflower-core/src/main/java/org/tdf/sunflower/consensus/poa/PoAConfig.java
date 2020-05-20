@@ -25,4 +25,7 @@ public class PoAConfig implements MinerConfig {
     private boolean allowEmptyBlock;
     @JsonProperty("max-body-size")
     private int maxBodySize;
+
+    // use auth prebuilt contract
+    private boolean auth;
 }

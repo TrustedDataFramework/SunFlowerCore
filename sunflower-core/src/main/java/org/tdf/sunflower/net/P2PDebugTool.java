@@ -8,6 +8,8 @@ import org.tdf.common.store.MapStore;
 import org.tdf.sunflower.DatabaseConfig;
 import org.tdf.sunflower.PeerServerProperties;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
+import org.tdf.sunflower.facade.AbstractConsensusEngine;
+import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
 
 import java.nio.charset.StandardCharsets;
@@ -35,7 +37,7 @@ public class P2PDebugTool {
         });
         DatabaseStoreFactory factory = new DatabaseStoreFactory(new DatabaseConfig("memory", 1, "", false, "kv"));
         // port listening on
-        PeerServerImpl server = new PeerServerImpl(new MapStore<>());
+        PeerServerImpl server = new PeerServerImpl(new MapStore<>(), AbstractConsensusEngine.NONE);
         Properties properties = new PeerServerProperties();
         properties.setProperty("address", System.getenv("X_ADDRESS"));
         if(System.getenv("X_BOOTSTRAPS") != null){

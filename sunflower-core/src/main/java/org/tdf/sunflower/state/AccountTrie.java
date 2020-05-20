@@ -1,21 +1,21 @@
 package org.tdf.sunflower.state;
 
+import lombok.Getter;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.ReadOnlyStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.sunflower.consensus.pow.PoWBios;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.vm.abi.Context;
-import org.tdf.sunflower.vm.abi.ContextContract;
 import org.tdf.sunflower.vm.hosts.ContractDB;
 import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
 import java.util.Collections;
 
+@Getter
 public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
     private Trie<byte[], byte[]> contractStorageTrie;
     private Store<byte[], byte[]> contractCodeStore;
@@ -25,7 +25,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
             DatabaseStoreFactory factory,
             Store<byte[], byte[]> contractCodeStore,
             Trie<byte[], byte[]> contractStorageTrie
-            ) {
+    ) {
         super(updater, Codecs.newRLPCodec(HexBytes.class), Codecs.newRLPCodec(Account.class), factory);
         this.contractStorageTrie = contractStorageTrie;
         this.contractCodeStore = contractCodeStore;
