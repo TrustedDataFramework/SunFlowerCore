@@ -2,10 +2,9 @@ package org.tdf.sunflower.controller;
 
 import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -23,6 +22,7 @@ import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
+import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.Peer;
@@ -63,6 +63,8 @@ public class EntryController {
     private SunflowerRepository repository;
 
     private SyncManager syncManager;
+
+    private ConsensusEngine consensusEngine;
 
     private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func,
             Function<byte[], Optional<T>> func1) {
@@ -109,6 +111,11 @@ public class EntryController {
                 .orElse(new AccountView(addressHex, 0, 0, HexBytes.EMPTY, HexBytes.EMPTY, HexBytes.empty()));
     }
 
+    @GetMapping(value = "/approved")
+    public List<HexBytes> getApproved(){
+        return consensusEngine.getApprovedNodes().map(ArrayList::new).orElse(null);
+    }
+
     // TODO: enclose this config
     @GetMapping(value = "/config", produces = MediaType.APPLICATION_JSON_VALUE)
     public GlobalConfig config() {
@@ -138,13 +145,15 @@ public class EntryController {
     }
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Response<String> sendTransaction(@RequestBody JsonNode node) {
+    public List<HexBytes> sendTransaction(@RequestBody JsonNode node) {
+        List<Transaction> ts;
         if (node.isArray()) {
-            pool.collect(Arrays.asList(objectMapper.convertValue(node, Transaction[].class)));
-            return Response.newSuccessFul("ok");
+            ts = Arrays.asList(objectMapper.convertValue(node, Transaction[].class));
+        }else{
+            ts = Collections.singletonList(objectMapper.convertValue(node, Transaction.class));
         }
-        pool.collect(objectMapper.convertValue(node, Transaction.class));
-        return Response.newSuccessFul("ok");
+        pool.collect(ts);
+        return ts.stream().map(Transaction::getHash).collect(Collectors.toList());
     }
 
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)

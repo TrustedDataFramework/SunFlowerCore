@@ -75,8 +75,8 @@ public class PoA extends AbstractConsensusEngine {
                 alloc, getContractCodeStore(),
                 getContractStorageTrie(),
                 poAConfig.isAuth() ? Collections.singletonList(new Authentication(
-                        genesis.alloc == null ? Collections.emptyList() :
-                                genesis.alloc.keySet().stream().map(HexBytes::fromHex).collect(Collectors.toSet())
+                        genesis.miners == null ? Collections.emptyList() :
+                                genesis.miners.stream().map(Genesis.MinerInfo::getAddress).collect(Collectors.toSet())
                 )) : Collections.emptyList(),
                 Collections.emptyList()
         );

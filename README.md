@@ -59,7 +59,7 @@ our: 2515ms
             "request": "launch",
             "mainClass": "org.tdf.sunflower.Start",
             "projectName": "sunflower-core-sunflower-core",
-            "vmArgs": "-Dspring.config.location=sunflower-core/local/local.yml"
+            "vmArgs": "-Dspring.config.location=sunflower-core/local/local-0.yml"
         }
     ]
 }

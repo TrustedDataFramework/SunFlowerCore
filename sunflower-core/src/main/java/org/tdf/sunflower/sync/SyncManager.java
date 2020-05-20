@@ -16,6 +16,7 @@ import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
+import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.events.NewBlocksReceived;
@@ -88,6 +89,17 @@ public class SyncManager implements PeerServerListener {
 
     // not null when accounts transports, all accounts received when the size of this set == Accounts.getTotal()
     private volatile Set<HexBytes> fastSyncAddresses;
+
+    private boolean isNotApproved(Context context) {
+        // filter nodes not auth
+        Optional<Set<HexBytes>> nodes = engine.getApprovedNodes();
+        if (nodes.isPresent() && !nodes.get().contains(Address.fromPublicKey(context.getRemote().getID()))) {
+            context.exit();
+            log.error("invalid node " + context.getRemote().getID() + " not approved");
+            return true;
+        }
+        return false;
+    }
 
     public SyncManager(
             PeerServer peerServer, ConsensusEngine engine,
@@ -172,6 +184,8 @@ public class SyncManager implements PeerServerListener {
                 return;
             }
             case SyncMessage.GET_BLOCKS: {
+                if (isNotApproved(context))
+                    return;
                 if (limiters.getBlocks() != null && !limiters.getBlocks().tryAcquire()) {
                     log.error("receive get-blocks message too frequent");
                     return;
@@ -190,7 +204,7 @@ public class SyncManager implements PeerServerListener {
             case SyncMessage.TRANSACTION: {
                 List<Transaction> txs = Arrays.asList(msg.getBodyAs(Transaction[].class));
                 HexBytes root = Transaction.getTransactionsRoot(txs);
-                if(receivedTransactions.asMap().containsKey(root))
+                if (receivedTransactions.asMap().containsKey(root))
                     return;
                 receivedTransactions.put(root, true);
                 transactionPool.collect(txs);
@@ -225,6 +239,8 @@ public class SyncManager implements PeerServerListener {
                 return;
             }
             case SyncMessage.GET_ACCOUNTS: {
+                if (isNotApproved(context))
+                    return;
                 if (fastSyncing || this.trieTraverseLock) return;
                 this.trieTraverseLock = true;
                 CompletableFuture.runAsync(() -> {
@@ -342,7 +358,7 @@ public class SyncManager implements PeerServerListener {
     }
 
     @SneakyThrows
-    private void onBlocks(List<Block> blocks){
+    private void onBlocks(List<Block> blocks) {
         if (fastSyncing) {
             for (Block b : blocks) {
                 b.resetTransactionsRoot();
@@ -419,10 +435,10 @@ public class SyncManager implements PeerServerListener {
         Header best = repository.getBestHeader();
         List<Block> orphans = Collections.emptyList();
         // try to sync orphans
-        if(blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)){
-            try{
+        if (blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
+            try {
                 orphans = getOrphansInternal();
-            }finally {
+            } finally {
                 blockQueueLock.unlock();
             }
         }

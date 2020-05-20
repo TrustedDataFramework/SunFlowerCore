@@ -16,7 +16,7 @@ import java.util.*;
  * used for node join/exit
  */
 public class Authentication implements PreBuiltContract {
-    enum Method {
+    public enum Method {
         JOIN_NODE,
         APPROVE_JOIN,
     }
@@ -63,7 +63,7 @@ public class Authentication implements PreBuiltContract {
     @SneakyThrows
     public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
         Method m = Method.values()[Byte.toUnsignedInt(transaction.getPayload().getBytes()[0])];
-        List<HexBytes> nodes = Arrays.asList(RLPCodec.decode(contractStorage.get(NODES_KEY).get(), HexBytes[].class));
+        List<HexBytes> nodes = new ArrayList<>(Arrays.asList(RLPCodec.decode(contractStorage.get(NODES_KEY).get(), HexBytes[].class)));
         TreeMap<HexBytes, TreeSet<HexBytes>> pending =
                 (TreeMap<HexBytes, TreeSet<HexBytes>>)
                         RLPCodec.decodeContainer(

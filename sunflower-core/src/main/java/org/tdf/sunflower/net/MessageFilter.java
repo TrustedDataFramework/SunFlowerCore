@@ -7,6 +7,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.account.Address;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.proto.Code;
@@ -111,14 +112,6 @@ public class MessageFilter implements Plugin {
             } finally {
                 multiPartCacheLock.unlock();
             }
-            return;
-        }
-
-        // filter nodes not auth
-        Optional<Set<HexBytes>> nodes = consensusEngine.getApprovedNodes();
-        if (nodes.isPresent() && !nodes.get().contains(context.getRemote().getID())) {
-            context.exit();
-            log.error("invalid node " + context.getRemote().getID() + " not approved");
             return;
         }
 
