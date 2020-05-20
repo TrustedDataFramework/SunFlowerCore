@@ -202,6 +202,8 @@ public class SyncManager implements PeerServerListener {
                 return;
             }
             case SyncMessage.TRANSACTION: {
+                if (isNotApproved(context))
+                    return;
                 List<Transaction> txs = Arrays.asList(msg.getBodyAs(Transaction[].class));
                 HexBytes root = Transaction.getTransactionsRoot(txs);
                 if (receivedTransactions.asMap().containsKey(root))
@@ -212,6 +214,8 @@ public class SyncManager implements PeerServerListener {
                 return;
             }
             case SyncMessage.PROPOSAL: {
+                if (isNotApproved(context))
+                    return;
                 Block proposal = msg.getBodyAs(Block.class);
                 if (fastSyncing && !receivedProposals.asMap().containsKey(proposal.getHash())) {
                     receivedProposals.put(proposal.getHash(), true);
