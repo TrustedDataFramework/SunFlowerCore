@@ -138,6 +138,7 @@ public class SyncManager implements PeerServerListener {
 
     @PostConstruct
     public void init() {
+        // TODO: don't send status, proposal and transaction to peer not approved
         peerServer.addListeners(this);
         executorService.scheduleWithFixedDelay(
                 this::tryWrite, 0,
