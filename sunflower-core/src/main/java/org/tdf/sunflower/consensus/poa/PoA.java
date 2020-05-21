@@ -50,6 +50,38 @@ public class PoA extends AbstractConsensusEngine {
         return minerContract.getNodes(parentStateRoot);
     }
 
+    public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
+        List<HexBytes> minerAddresses = getMinerAddresses(parent.getStateRoot().getBytes());
+        if (currentEpochSeconds - parent.getCreatedAt() < poAConfig.getBlockInterval()) {
+            return Optional.empty();
+        }
+        if (parent.getHeight() == 0) {
+            return Optional.of(new Proposer(minerAddresses.get(0), 0, Long.MAX_VALUE));
+        }
+
+        HexBytes prev = parent.getBody().get(0).getTo();
+
+        int prevIndex = minerAddresses.indexOf(prev);
+
+        if (prevIndex < 0) {
+            return Optional.empty();
+        }
+
+        long step = (currentEpochSeconds - parent.getCreatedAt())
+                / poAConfig.getBlockInterval();
+
+        int currentIndex = (int) ((prevIndex + step) % minerAddresses.size());
+        long startTime = parent.getCreatedAt() + step * poAConfig.getBlockInterval();
+        long endTime = startTime + poAConfig.getBlockInterval();
+
+        return Optional.of(new Proposer(
+                minerAddresses.get(currentIndex),
+                startTime,
+                endTime
+        ));
+    }
+
+
     @Override
     public void init(Properties properties) throws ConsensusEngineInitException {
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
@@ -124,7 +156,7 @@ public class PoA extends AbstractConsensusEngine {
 
         setMiner(poaMiner);
 
-        poAValidator = new PoAValidator(getAccountTrie());
+        poAValidator = new PoAValidator(getAccountTrie(), this);
         setValidator(poAValidator);
 
         // register dummy account

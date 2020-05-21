@@ -7,7 +7,6 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
-import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
@@ -19,12 +18,10 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
 
@@ -75,38 +72,6 @@ public class PoAMiner extends AbstractMiner {
     }
 
 
-    public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
-        List<HexBytes> minerAddresses = poA.getMinerAddresses(parent.getStateRoot().getBytes());
-        if (currentEpochSeconds - parent.getCreatedAt() < poAConfig.getBlockInterval()) {
-            return Optional.empty();
-        }
-        if (parent.getHeight() == 0) {
-            return Optional.of(new Proposer(minerAddresses.get(0), 0, Long.MAX_VALUE));
-        }
-
-        HexBytes prev = parent.getBody().get(0).getTo();
-
-        int prevIndex = minerAddresses.indexOf(prev);
-
-        if (prevIndex < 0) {
-            return Optional.empty();
-        }
-
-        long step = (currentEpochSeconds - parent.getCreatedAt())
-                / poAConfig.getBlockInterval();
-
-        int currentIndex = (int) ((prevIndex + step) % minerAddresses.size());
-        long startTime = parent.getCreatedAt() + step * poAConfig.getBlockInterval();
-        long endTime = startTime + poAConfig.getBlockInterval();
-
-        return Optional.of(new Proposer(
-                minerAddresses.get(currentIndex),
-                startTime,
-                endTime
-        ));
-    }
-
-
     @Override
     public void start() {
         this.stopped = false;
@@ -140,7 +105,7 @@ public class PoAMiner extends AbstractMiner {
 
         Block best = blockRepository.getBestBlock();
         // 判断是否轮到自己出块
-        Optional<Proposer> o = getProposer(
+        Optional<Proposer> o = poA.getProposer(
                 best,
                 OffsetDateTime.now().toEpochSecond()
         ).filter(p -> p.getAddress().equals(minerAddress));
