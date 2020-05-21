@@ -52,11 +52,12 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
 
     private PeerServer peerServer;
     private VrfMiner vrfMiner;
+
+    public VrfEngine(Properties properties) {
+        super(properties);
+    }
 //    private ConsortiumRepository blockRepository;
 
-    public VrfEngine() {
-
-    }
 
     @Override
     public void onMessage(Context context, PeerServer server) {

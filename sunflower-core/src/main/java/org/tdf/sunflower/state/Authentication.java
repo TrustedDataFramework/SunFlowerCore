@@ -1,5 +1,7 @@
 package org.tdf.sunflower.state;
 
+import lombok.NonNull;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.ByteArrayMap;
@@ -23,18 +25,24 @@ public class Authentication implements PreBuiltContract {
 
     private final Collection<? extends HexBytes> nodes;
 
-    public Authentication(Collection<? extends HexBytes> nodes) {
+    private final HexBytes contractAddress;
+
+    @Setter
+    private AccountTrie accountTrie;
+
+    public Authentication(@NonNull Collection<? extends HexBytes> nodes, @NonNull HexBytes contractAddress) {
         this.nodes = nodes;
+        this.contractAddress = contractAddress;
     }
 
-    private static byte[] getValue(AccountTrie accountTrie, byte[] stateRoot, byte[] key) {
-        Account a = accountTrie.get(stateRoot, Constants.AUTHENTICATION_ADDR).get();
+    private byte[] getValue(byte[] stateRoot, byte[] key) {
+        Account a = accountTrie.get(stateRoot, this.contractAddress).get();
         Store<byte[], byte[]> db = accountTrie.getContractStorageTrie().revert(a.getStorageRoot());
         return db.get(key).get();
     }
 
-    public static List<HexBytes> getNodes(AccountTrie accountTrie, byte[] stateRoot) {
-        byte[] v = getValue(accountTrie, stateRoot, NODES_KEY);
+    public List<HexBytes> getNodes(byte[] stateRoot) {
+        byte[] v = getValue(stateRoot, NODES_KEY);
         return Arrays.asList(RLPCodec.decode(v, HexBytes[].class));
     }
 
@@ -44,8 +52,8 @@ public class Authentication implements PreBuiltContract {
     }
 
     @SneakyThrows
-    static TreeMap<HexBytes, TreeSet<HexBytes>> getPending(AccountTrie accountTrie, byte[] stateRoot) {
-        byte[] v = getValue(accountTrie, stateRoot, PENDING_NODES_KEY);
+    public TreeMap<HexBytes, TreeSet<HexBytes>> getPending(byte[] stateRoot) {
+        byte[] v = getValue(stateRoot, PENDING_NODES_KEY);
         return (TreeMap<HexBytes, TreeSet<HexBytes>>) RLPCodec.decodeContainer(v, Container.fromField(Dummy.class.getField("dummy")));
     }
 
@@ -56,7 +64,7 @@ public class Authentication implements PreBuiltContract {
 
     @Override
     public Account getGenesisAccount() {
-        return Account.emptyContract(Constants.AUTHENTICATION_ADDR);
+        return Account.emptyContract(this.contractAddress);
     }
 
     @Override

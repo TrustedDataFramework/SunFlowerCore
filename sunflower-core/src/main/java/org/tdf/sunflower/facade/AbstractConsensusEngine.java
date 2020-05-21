@@ -17,10 +17,18 @@ import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Properties;
 
 @Getter
 public abstract class AbstractConsensusEngine implements ConsensusEngine {
+    static final Properties NONE_PROPERTIES;
+
+    static {
+        NONE_PROPERTIES = new Properties();
+        NONE_PROPERTIES.put("name", "none");
+    }
+
     protected ApplicationContext applicationContext;
 
     // contract storage trie
@@ -76,7 +84,13 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     @Setter(AccessLevel.PROTECTED)
     private PeerServerListener peerServerListener;
 
-    public static final AbstractConsensusEngine NONE = new AbstractConsensusEngine() {
+    private String name;
+
+    public AbstractConsensusEngine(Properties properties){
+        this.name = Objects.requireNonNull(properties.getProperty("name"));
+    }
+
+    public static final AbstractConsensusEngine NONE = new AbstractConsensusEngine(NONE_PROPERTIES) {
         @Override
         public void init(Properties properties) throws ConsensusEngineInitException {
             if(getTransactionPool() == null)

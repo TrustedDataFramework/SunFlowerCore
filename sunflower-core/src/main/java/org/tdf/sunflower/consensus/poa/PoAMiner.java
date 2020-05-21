@@ -35,8 +35,6 @@ public class PoAMiner extends AbstractMiner {
 
     HexBytes minerAddress;
 
-    private Genesis genesis;
-
     @Setter
     private BlockRepository blockRepository;
 
@@ -44,14 +42,15 @@ public class PoAMiner extends AbstractMiner {
 
     private ScheduledExecutorService minerExecutor;
 
-    private List<HexBytes> minerAddresses;
-
     @Setter
     @Getter
     private TransactionPool transactionPool;
 
-    public PoAMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig) {
+    private final PoA poA;
+
+    public PoAMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig, PoA poA) {
         super(accountTrie, eventBus, minerConfig);
+        this.poA = poA;
     }
 
 
@@ -70,14 +69,6 @@ public class PoAMiner extends AbstractMiner {
 
     }
 
-    public void setGenesis(Genesis genesis) {
-        this.genesis = genesis;
-        this.minerAddresses =
-                genesis.miners.stream()
-                        .map(Genesis.MinerInfo::getAddress)
-                        .collect(Collectors.toList());
-    }
-
     public void setPoAConfig(PoAConfig poAConfig) throws ConsensusEngineInitException {
         this.poAConfig = poAConfig;
         this.minerAddress = poAConfig.getMinerCoinBase();
@@ -85,12 +76,12 @@ public class PoAMiner extends AbstractMiner {
 
 
     public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
-
+        List<HexBytes> minerAddresses = poA.getMinerAddresses(parent.getStateRoot().getBytes());
         if (currentEpochSeconds - parent.getCreatedAt() < poAConfig.getBlockInterval()) {
             return Optional.empty();
         }
         if (parent.getHeight() == 0) {
-            return Optional.of(new Proposer(genesis.miners.get(0).address, 0, Long.MAX_VALUE));
+            return Optional.of(new Proposer(minerAddresses.get(0), 0, Long.MAX_VALUE));
         }
 
         HexBytes prev = parent.getBody().get(0).getTo();
@@ -104,12 +95,12 @@ public class PoAMiner extends AbstractMiner {
         long step = (currentEpochSeconds - parent.getCreatedAt())
                 / poAConfig.getBlockInterval();
 
-        int currentIndex = (int) ((prevIndex + step) % genesis.miners.size());
+        int currentIndex = (int) ((prevIndex + step) % minerAddresses.size());
         long startTime = parent.getCreatedAt() + step * poAConfig.getBlockInterval();
         long endTime = startTime + poAConfig.getBlockInterval();
 
         return Optional.of(new Proposer(
-                genesis.miners.get(currentIndex).address,
+                minerAddresses.get(currentIndex),
                 startTime,
                 endTime
         ));

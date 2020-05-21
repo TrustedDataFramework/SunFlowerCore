@@ -17,7 +17,7 @@ public class PoATest {
                 0,
                 0,
                 HexBytes.fromHex("01").concat(HexBytes.fromHex("00")),
-                Constants.AUTHENTICATION_ADDR,
+                Constants.PEER_AUTHENTICATION_ADDR,
                 HexBytes.fromHex("ff")
         );
 

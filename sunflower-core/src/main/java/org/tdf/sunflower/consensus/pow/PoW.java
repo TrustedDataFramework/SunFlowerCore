@@ -31,6 +31,10 @@ public class PoW extends AbstractConsensusEngine {
     public static final int BLOCK_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
     public static final int TRANSACTION_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
 
+    public PoW(Properties properties) {
+        super(properties);
+    }
+
     public static byte[] getPoWHash(Block block) {
         byte[] d = CryptoContext.digest(RLPCodec.encode(block.getHeader()));
         return CryptoContext.digest(d);

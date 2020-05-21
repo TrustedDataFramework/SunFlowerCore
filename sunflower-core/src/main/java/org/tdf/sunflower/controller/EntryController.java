@@ -1,21 +1,12 @@
 package org.tdf.sunflower.controller;
 
-import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
-
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.GlobalConfig;
@@ -35,11 +26,11 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.PagedView;
 import org.tdf.sunflower.types.Transaction;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 
 @RestController
 @AllArgsConstructor
@@ -67,7 +58,7 @@ public class EntryController {
     private ConsensusEngine consensusEngine;
 
     private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func,
-            Function<byte[], Optional<T>> func1) {
+                                   Function<byte[], Optional<T>> func1) {
         Long height = null;
         try {
             height = Long.parseLong(hashOrHeight);
@@ -112,7 +103,7 @@ public class EntryController {
     }
 
     @GetMapping(value = "/approved")
-    public List<HexBytes> getApproved(){
+    public List<HexBytes> getApproved() {
         return consensusEngine.getApprovedNodes().map(ArrayList::new).orElse(null);
     }
 
@@ -127,6 +118,11 @@ public class EntryController {
         return new PeersInfo(peerServer.getPeers(), peerServer.getBootStraps());
     }
 
+    @GetMapping(value = "/miners", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<HexBytes> miners() {
+        return consensusEngine.getMinerAddresses();
+    }
+
     @GetMapping(value = "/orphan", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Block> orphans() {
         return syncManager.getOrphans();
@@ -135,12 +131,12 @@ public class EntryController {
     @GetMapping(value = "/pool", produces = MediaType.APPLICATION_JSON_VALUE)
     public PagedView<Transaction> getPool(@ModelAttribute PoolQuery poolQuery) {
         switch (poolQuery.getStatus()) {
-        case "pending":
-            return pool.get(poolQuery);
-        case "dropped":
-            return pool.getDropped(poolQuery);
-        default:
-            throw new RuntimeException("unknown status " + poolQuery.getStatus());
+            case "pending":
+                return pool.get(poolQuery);
+            case "dropped":
+                return pool.getDropped(poolQuery);
+            default:
+                throw new RuntimeException("unknown status " + poolQuery.getStatus());
         }
     }
 
@@ -149,7 +145,7 @@ public class EntryController {
         List<Transaction> ts;
         if (node.isArray()) {
             ts = Arrays.asList(objectMapper.convertValue(node, Transaction[].class));
-        }else{
+        } else {
             ts = Collections.singletonList(objectMapper.convertValue(node, Transaction.class));
         }
         pool.collect(ts);
@@ -158,7 +154,7 @@ public class EntryController {
 
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public HexBytes getContract(@PathVariable("address") final String address,
-            @RequestParam(value = "parameters") String arguments) throws Exception {
+                                @RequestParam(value = "parameters") String arguments) throws Exception {
         HexBytes addressHex = Address.of(address);
         HexBytes args = HexBytes.fromHex(arguments);
         Header h = sunflowerRepository.getBestHeader();
@@ -168,7 +164,7 @@ public class EntryController {
 
     @GetMapping(value = "/contract/vrf/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public HexBytes getVrfContract(@PathVariable("address") final String address,
-            String depAddr) throws Exception {
+                                   String depAddr) throws Exception {
         HexBytes contractAddressHex = Address.of(address);
         Header h = sunflowerRepository.getBestHeader();
         if (VRF_BIOS_CONTRACT_ADDR.equals(address)) {

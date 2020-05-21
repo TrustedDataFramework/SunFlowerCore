@@ -246,22 +246,22 @@ public class Start {
             case ApplicationConstants.CONSENSUS_POA:
                 // use poa as default consensus
                 // another engine: pow, pos, pow+pos, vrf
-                engine = new PoA();
+                engine = new PoA(consensusProperties);
                 break;
             case ApplicationConstants.CONSENSUS_VRF:
                 // use poa as default consensus
                 // another engine: pow, pos, pow+pos, vrf
-                engine = new VrfEngine();
+                engine = new VrfEngine(consensusProperties);
                 break;
             case ApplicationConstants.CONSENSUS_POW:
-                engine = new PoW();
+                engine = new PoW(consensusProperties);
                 break;
             default:
                 log.error(
                         "none available consensus configured by sunflower.consensus.name=" + name +
                                 " please provide available consensus engine");
                 log.error("roll back to poa consensus");
-                engine = new PoA();
+                engine = new PoA(consensusProperties);
         }
         engine.setApplicationContext(context);
 

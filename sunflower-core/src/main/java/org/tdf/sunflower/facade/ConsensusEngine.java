@@ -7,11 +7,11 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 public interface ConsensusEngine {
+
+
     // the below getters shouldn't return null after initialized
     Miner getMiner();
 
@@ -34,4 +34,10 @@ public interface ConsensusEngine {
 
     // inject configurations, throw exception if configuration is invalid
     void init(Properties properties) throws ConsensusEngineInitException;
+
+    String getName();
+
+    default List<HexBytes> getMinerAddresses(){
+        return Collections.emptyList();
+    }
 }
