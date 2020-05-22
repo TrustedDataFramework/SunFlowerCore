@@ -37,6 +37,7 @@ public class Account {
 
     // for normal address this field is null
     // for contract address this field is creator of this contract
+    // amount in contract call transaction will be transfered to this address
     private HexBytes createdBy;
 
     // hash code of contract code
