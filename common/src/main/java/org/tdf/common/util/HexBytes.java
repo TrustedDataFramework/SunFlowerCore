@@ -76,6 +76,10 @@ public final class HexBytes implements Comparable<HexBytes>, Serializable {
         return bytes;
     }
 
+    public int get(int index){
+        return Byte.toUnsignedInt(bytes[index]);
+    }
+
     public int size() {
         return bytes.length;
     }

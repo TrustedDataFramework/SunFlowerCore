@@ -10,15 +10,12 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.AccountUpdater;
-import org.tdf.sunflower.state.StateTrie;
+import org.tdf.sunflower.state.*;
 import org.tdf.sunflower.types.Block;
 
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Properties;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Getter
 public abstract class AbstractConsensusEngine implements ConsensusEngine {
@@ -88,6 +85,23 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
 
     public AbstractConsensusEngine(Properties properties){
         this.name = Objects.requireNonNull(properties.getProperty("name"));
+    }
+
+    protected void initStates(Block genesis, List<Account> alloc, List<PreBuiltContract> preBuiltContractList, List<Bios> biosList){
+        AccountUpdater updater = new AccountUpdater(
+                alloc.stream().collect(Collectors.toMap(Account::getAddress, Function.identity())),
+                getContractCodeStore(), getContractStorageTrie(),
+                preBuiltContractList, biosList
+        );
+
+        AccountTrie trie = new AccountTrie(
+                updater, getDatabaseStoreFactory(),
+                getContractCodeStore(), getContractStorageTrie()
+        );
+
+        setAccountTrie(trie);
+        genesis.setStateRoot(trie.getGenesisRoot());
+        setGenesisBlock(genesis);
     }
 
     public static final AbstractConsensusEngine NONE = new AbstractConsensusEngine(NONE_PROPERTIES) {

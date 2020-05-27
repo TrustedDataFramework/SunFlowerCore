@@ -17,7 +17,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
-import org.tdf.sunflower.consensus.poa.Proposer;
+import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
 import org.tdf.sunflower.consensus.vrf.core.CommitProof;
 import org.tdf.sunflower.consensus.vrf.core.ImportResult;
