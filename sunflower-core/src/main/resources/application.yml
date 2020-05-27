@@ -37,6 +37,7 @@ sunflower:
 #    miner-coin-base: '87b8f0b097b48b282a5c661babc8096e141bd9fb'
 #    allow-empty-block: 'true'
 #    max-body-size: '2048'
+#    max-miners: '15'
 
     
     # VRF configs
