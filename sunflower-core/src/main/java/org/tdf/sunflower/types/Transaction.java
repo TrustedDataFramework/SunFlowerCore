@@ -8,12 +8,15 @@ import lombok.*;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.util.*;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.common.util.Constants;
+import org.tdf.common.util.EpochSecondDeserializer;
+import org.tdf.common.util.EpochSecondsSerializer;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
 import org.tdf.sunflower.account.Address;
+import org.tdf.sunflower.crypto.CryptoContext;
 
 import java.util.*;
 import java.util.function.Function;
@@ -28,11 +31,26 @@ import static org.tdf.sunflower.ApplicationConstants.ADDRESS_SIZE;
 public class Transaction {
     public static final Comparator<Transaction> NONCE_COMPARATOR = (a, b) -> {
         int cmp = a.getFrom().compareTo(b.getFrom());
-        if(cmp != 0)
+        if (cmp != 0)
             return cmp;
         if (a.getNonce() != b.getNonce()) return Long.compare(a.getNonce(), b.getNonce());
         return a.getHash().compareTo(b.getHash());
     };
+
+    @JsonIgnore
+    public byte[] getSignaturePlain() {
+        return RLPCodec.encode(new Object[]{
+                version,
+                type,
+                createdAt,
+                nonce,
+                from,
+                gasPrice,
+                amount,
+                payload,
+                to
+        });
+    }
 
     @RLP(0)
     protected int version;
@@ -125,7 +143,7 @@ public class Transaction {
     private HexBytes getHash(boolean forceReHash) {
         if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
-                    CryptoContext.digest(RLPCodec.encode(this))
+                    CryptoContext.digest(getSignaturePlain())
             );
             return this.hash;
         }
@@ -282,8 +300,8 @@ public class Transaction {
     }
 
     @JsonIgnore
-    public HexBytes getFromAddress(){
-        if(getFrom().isEmpty()) throw new RuntimeException("from not found: coinbase transaction");
+    public HexBytes getFromAddress() {
+        if (getFrom().isEmpty()) throw new RuntimeException("from not found: coinbase transaction");
         return Address.fromPublicKey(getFrom());
     }
 
@@ -333,6 +351,9 @@ public class Transaction {
         if (type == Type.COIN_BASE.code || type == Type.TRANSFER.code) {
             if (!getPayload().isEmpty())
                 return ValidateResult.fault("payload of transaction " + getHash() + " should be empty");
+        }
+        if(!CryptoContext.verifySignature(from.getBytes(), getSignaturePlain(), signature.getBytes())){
+            return ValidateResult.fault("verify signature failed " + getHash());
         }
         return ValidateResult.success();
     }

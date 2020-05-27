@@ -25,7 +25,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class CryptoContext {
-
     public interface SignatureVerifier {
         boolean verify(byte[] pk, byte[] msg, byte[] sig);
     }
