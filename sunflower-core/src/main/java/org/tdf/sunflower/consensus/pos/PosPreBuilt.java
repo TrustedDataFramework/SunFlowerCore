@@ -173,6 +173,7 @@ public class PosPreBuilt implements PreBuiltContract {
         }
         nodeInfos.sort(NodeInfo::compareTo);
         voteInfos.sort(VoteInfo::compareTo);
+        Collections.reverse(nodeInfos);
         contractStorage.put(VOTEINFO_KEY, RLPCodec.encode(voteInfos));
         contractStorage.put(NODEINFO_KEY, RLPCodec.encode(nodeInfos));
     }
