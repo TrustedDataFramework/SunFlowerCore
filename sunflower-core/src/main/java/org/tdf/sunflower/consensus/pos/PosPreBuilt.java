@@ -167,6 +167,8 @@ public class PosPreBuilt implements PreBuiltContract {
                 Account fromaccount = accounts.get(transaction.getFromAddress());
                 fromaccount.setBalance(fromaccount.getBalance() + voteInfo.getAmount());
                 accounts.put(fromaccount.getAddress(), fromaccount);
+                Account thisContract = accounts.get(Constants.POS_AUTHENTICATION_ADDR);
+                thisContract.setBalance(thisContract.getBalance() - voteInfo.amount);
                 break;
         }
         nodeInfos.sort(NodeInfo::compareTo);
