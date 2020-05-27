@@ -9,6 +9,7 @@ public class ApplicationConstants {
 
     public static final String CONSENSUS_POW = "pow";
 
+    public static final String CONSENSUS_POS = "pos";
 
     // cache read-only trie for quick search
     public static int TRIE_CACHE_SIZE = 32;

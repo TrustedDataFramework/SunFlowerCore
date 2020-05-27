@@ -30,6 +30,7 @@ import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoA;
+import org.tdf.sunflower.consensus.pos.PoS;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.crypto.CryptoContext;
@@ -255,6 +256,9 @@ public class Start {
                 break;
             case ApplicationConstants.CONSENSUS_POW:
                 engine = new PoW(consensusProperties);
+                break;
+            case ApplicationConstants.CONSENSUS_POS:
+                engine = new PoS(consensusProperties);
                 break;
             default:
                 log.error(

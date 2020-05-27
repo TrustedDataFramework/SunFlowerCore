@@ -27,6 +27,17 @@ sunflower:
     allow-empty-block: 'true'
     # maximum transactions in a block
     max-body-size: '2048'
+
+    #pos
+#  consensus:
+#    name: 'pos'
+#    genesis: 'genesis/pos.jsonc'
+#    block-interval: '10'
+#    enable-mining: 'true'
+#    miner-coin-base: '87b8f0b097b48b282a5c661babc8096e141bd9fb'
+#    allow-empty-block: 'true'
+#    max-body-size: '2048'
+
     
     # VRF configs
  # consensus:
