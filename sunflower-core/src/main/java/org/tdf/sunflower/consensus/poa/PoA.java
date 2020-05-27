@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.consensus.AbstractMiner;
+import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
@@ -52,33 +54,7 @@ public class PoA extends AbstractConsensusEngine {
 
     public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
         List<HexBytes> minerAddresses = getMinerAddresses(parent.getStateRoot().getBytes());
-        if (currentEpochSeconds - parent.getCreatedAt() < poAConfig.getBlockInterval()) {
-            return Optional.empty();
-        }
-        if (parent.getHeight() == 0) {
-            return Optional.of(new Proposer(minerAddresses.get(0), 0, Long.MAX_VALUE));
-        }
-
-        HexBytes prev = parent.getBody().get(0).getTo();
-
-        int prevIndex = minerAddresses.indexOf(prev);
-
-        if (prevIndex < 0) {
-            return Optional.empty();
-        }
-
-        long step = (currentEpochSeconds - parent.getCreatedAt())
-                / poAConfig.getBlockInterval();
-
-        int currentIndex = (int) ((prevIndex + step) % minerAddresses.size());
-        long startTime = parent.getCreatedAt() + step * poAConfig.getBlockInterval();
-        long endTime = startTime + poAConfig.getBlockInterval();
-
-        return Optional.of(new Proposer(
-                minerAddresses.get(currentIndex),
-                startTime,
-                endTime
-        ));
+        return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, poAConfig.getBlockInterval());
     }
 
 

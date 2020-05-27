@@ -22,6 +22,7 @@ public class Genesis {
     public static class MinerInfo {
         @JsonProperty("addr")
         public HexBytes address;
+        public long vote;
     }
 
     public List<MinerInfo> miners;

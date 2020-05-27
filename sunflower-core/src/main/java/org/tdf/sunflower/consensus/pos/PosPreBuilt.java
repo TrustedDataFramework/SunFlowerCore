@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.Container;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.state.Account;
@@ -16,12 +15,9 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import static java.util.stream.Collectors.toMap;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Slf4j(topic = "pos")
 public class PosPreBuilt implements PreBuiltContract {
@@ -29,6 +25,15 @@ public class PosPreBuilt implements PreBuiltContract {
     public static final byte[] VOTEINFO_KEY = "trankey".getBytes(StandardCharsets.US_ASCII);
 
     private Map<HexBytes, NodeInfo> nodes;
+
+    private static <T> Map.Entry<Integer, T> findFirst(List<? extends T> c, Predicate<T> predicate) {
+        for (int i = 0; i < c.size(); i++) {
+            if (predicate.test(c.get(i))) {
+                return new AbstractMap.SimpleImmutableEntry<>(i, c.get(i));
+            }
+        }
+        return new AbstractMap.SimpleImmutableEntry<>(-1, null);
+    }
 
     public enum Type {
         Vote,
@@ -47,23 +52,25 @@ public class PosPreBuilt implements PreBuiltContract {
 
         @Override
         public int compareTo(NodeInfo o) {
-            if (this.vote < o.getVote()) {
-                return -1;
-            } else if (this.vote > o.getVote()) {
-                return 1;
-            }
-            return 0;
+            return Long.compare(vote, o.vote);
         }
+
+
     }
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class VoteInfo {
+    public static class VoteInfo implements Comparable<VoteInfo> {
         private HexBytes txhash;
         private HexBytes from;
         private HexBytes to;
         private Long amount;
+
+        @Override
+        public int compareTo(VoteInfo o) {
+            return txhash.compareTo(o.txhash);
+        }
     }
 
     public PosPreBuilt(@NonNull Map<HexBytes, NodeInfo> nodes) {
@@ -78,8 +85,9 @@ public class PosPreBuilt implements PreBuiltContract {
 
     public List<HexBytes> getNodes(byte[] stateRoot) {
         byte[] v = getValue(stateRoot, NODEINFO_KEY);
-        return Arrays.asList(RLPCodec.decode(v, HexBytes[].class));
+        return Arrays.stream(RLPCodec.decode(v, NodeInfo[].class)).map(NodeInfo::getNode).collect(Collectors.toList());
     }
+
 
     @Override
     public Account getGenesisAccount() {
@@ -89,7 +97,9 @@ public class PosPreBuilt implements PreBuiltContract {
     @Override
     public Map<byte[], byte[]> getGenesisStorage() {
         Map<byte[], byte[]> map = new ByteArrayMap<>();
-        map.put(NODEINFO_KEY, RLPCodec.encode(this.nodes));
+        List<NodeInfo> nodeInfos = new ArrayList<>(this.nodes.values());
+        nodeInfos.sort(NodeInfo::compareTo);
+        map.put(NODEINFO_KEY, RLPCodec.encode(nodeInfos));
         map.put(VOTEINFO_KEY, RLPList.createEmpty().getEncoded());
         return map;
     }
@@ -97,85 +107,73 @@ public class PosPreBuilt implements PreBuiltContract {
     @Override
     @SneakyThrows
     public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
-        Type type = Type.values()[Byte.toUnsignedInt(transaction.getPayload().getBytes()[0])];
-        HexBytes args = transaction.getPayload().slice(1, transaction.getPayload().size() - 1);
-        Map<HexBytes, NodeInfo> nodeInfoMap = (Map<HexBytes, NodeInfo>) RLPCodec.decodeContainer(
-                contractStorage.get(NODEINFO_KEY).get(),
-                Container.fromField(PosPreBuilt.class.getField("nodes")));
-        Map<HexBytes, VoteInfo> voteInfoMap = Arrays.asList(RLPCodec.decode(
+        Type type = Type.values()[transaction.getPayload().get(0)];
+        HexBytes args = transaction.getPayload().slice(1);
+        List<NodeInfo> nodeInfos = new ArrayList<>(Arrays.asList(RLPCodec.decode(
+                contractStorage.get(NODEINFO_KEY).get(), NodeInfo[].class)));
+
+        List<VoteInfo> voteInfos = new ArrayList<>(Arrays.asList(RLPCodec.decode(
                 contractStorage.get(VOTEINFO_KEY).get(),
-                VoteInfo[].class)).stream().collect(toMap(t -> t.getTxhash(), t -> t));
-        long votes = 0;
-        NodeInfo nodeInfo;
-        Map<HexBytes, NodeInfo> sortedMap = new LinkedHashMap<>();
+                VoteInfo[].class)));
+
         switch (type) {
-            case Vote:
-                if (!accounts.containsKey(transaction.getFromAddress())) {
-                    throw new RuntimeException(transaction.getFromAddress() + " insufficient balance from account");
-                }
-                Account account = accounts.get(transaction.getFromAddress());
-                long nonce = account.getNonce();
-                nonce++;
-                account.setNonce(nonce);
-                long balance = account.getBalance();
-                balance -= transaction.getAmount();
-                account.setBalance(balance);
-                accounts.put(transaction.getFromAddress(), account);
-                if (nodeInfoMap.containsKey(args)) {
-                    nodeInfo = nodeInfoMap.get(args);
-                    votes = nodeInfo.getVote();
-                    votes += transaction.getAmount();
-                    nodeInfo.setVote(votes);
-                } else {
-                    votes += transaction.getAmount();
-                    nodeInfo = new NodeInfo(args, votes);
-                }
-                voteInfoMap.put(transaction.getHash(), new VoteInfo(
+            case Vote: {
+                Map.Entry<Integer, NodeInfo> e =
+                        findFirst(nodeInfos, x -> x.node.equals(args));
+
+                NodeInfo n = e.getKey() < 0 ? new NodeInfo(args, 0) :
+                        e.getValue();
+
+                n.vote += transaction.getAmount();
+                if (e.getKey() < 0)
+                    nodeInfos.add(n);
+                else
+                    nodeInfos.set(e.getKey(), n);
+                voteInfos.add(new VoteInfo(
                         transaction.getHash(), transaction.getFromAddress(),
                         args, transaction.getAmount()
                 ));
-                nodeInfoMap.put(args, nodeInfo);
                 break;
+            }
             case CancelVote:
-                if (!voteInfoMap.containsKey(args)) {
+                Map.Entry<Integer, VoteInfo> e =
+                        findFirst(voteInfos, x -> x.txhash.equals(args));
+
+                if (e.getKey() < 0) {
                     throw new RuntimeException(args + " voting business does not exist and cannot be withdrawn");
                 }
-                VoteInfo voteInfo = voteInfoMap.get(args);
-                if (!voteInfo.getTxhash().equals(args) || !voteInfo.getFrom().equals(transaction.getFromAddress())
-                        || voteInfo.amount != transaction.getAmount()) {
-                    throw new RuntimeException(args + " it doesnot match");
-                }
-                voteInfoMap.remove(args);
-                if (!nodeInfoMap.containsKey(voteInfo.getTo())) {
-                    throw new RuntimeException(voteInfo.getTo() + " abnormal withdrawal of vote");
-                }
-                NodeInfo ninfo = nodeInfoMap.get(voteInfo.getTo());
-                votes = ninfo.getVote();
-                votes -= transaction.getAmount();
-                if (votes <= 0) {
-                    nodeInfoMap.remove(voteInfo.getTo());
-                } else {
-                    ninfo.setVote(votes);
-                    nodeInfoMap.put(voteInfo.getTo(), ninfo);
+                VoteInfo voteInfo = voteInfos.get(e.getKey());
+                if (!voteInfo.getFrom().equals(transaction.getFromAddress())) {
+                    throw new RuntimeException("vote transaction from " + voteInfo.getFrom() + " not equals to " + transaction.getFromAddress());
                 }
 
-                if (!accounts.containsKey(transaction.getFromAddress())) {
-                    throw new RuntimeException(transaction.getFromAddress() + " insufficient balance from account");
+                voteInfos.remove((int) e.getKey());
+
+                Map.Entry<Integer, NodeInfo> e2 =
+                        findFirst(nodeInfos, x -> x.node.equals(voteInfo.to));
+
+                if (e2.getKey() < 0) {
+                    throw new RuntimeException(voteInfo.getTo() + " abnormal withdrawal of vote");
                 }
+
+                NodeInfo ninfo = e2.getValue();
+                ninfo.vote -= voteInfo.amount;
+                if (ninfo.vote == 0) {
+                    nodeInfos.remove((int) e2.getKey());
+                } else {
+                    nodeInfos.set(e2.getKey(), ninfo);
+                }
+
                 Account fromaccount = accounts.get(transaction.getFromAddress());
-                long fromnonce = fromaccount.getNonce();
-                fromnonce++;
-                fromaccount.setNonce(fromnonce);
-                long frombalance = fromaccount.getBalance();
-                frombalance += transaction.getAmount();
-                fromaccount.setBalance(frombalance);
-                accounts.put(transaction.getFromAddress(), fromaccount);
+                fromaccount.setBalance(fromaccount.getBalance() + voteInfo.getAmount());
+                accounts.put(fromaccount.getAddress(), fromaccount);
+                Account thisContract = accounts.get(Constants.POS_AUTHENTICATION_ADDR);
+                thisContract.setBalance(thisContract.getBalance() - voteInfo.amount);
                 break;
         }
-        contractStorage.put(VOTEINFO_KEY, RLPCodec.encode(voteInfoMap));
-        nodeInfoMap.entrySet().stream()
-                .sorted(Map.Entry.<HexBytes, NodeInfo>comparingByValue().reversed())
-                .forEachOrdered(e -> sortedMap.put(e.getKey(), e.getValue()));
-        contractStorage.put(NODEINFO_KEY, RLPCodec.encode(sortedMap));
+        nodeInfos.sort(NodeInfo::compareTo);
+        voteInfos.sort(VoteInfo::compareTo);
+        contractStorage.put(VOTEINFO_KEY, RLPCodec.encode(voteInfos));
+        contractStorage.put(NODEINFO_KEY, RLPCodec.encode(nodeInfos));
     }
 }

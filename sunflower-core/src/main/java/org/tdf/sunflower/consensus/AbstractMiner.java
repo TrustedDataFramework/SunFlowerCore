@@ -22,6 +22,37 @@ import java.util.*;
 
 @Slf4j(topic = "miner")
 public abstract class AbstractMiner implements Miner {
+    public static Optional<Proposer> getProposer(Block parent, long currentEpochSeconds, List<HexBytes> minerAddresses, long blockInterval) {
+        if (currentEpochSeconds - parent.getCreatedAt() < blockInterval) {
+            return Optional.empty();
+        }
+        if (parent.getHeight() == 0) {
+            return Optional.of(new Proposer(minerAddresses.get(0), 0, Long.MAX_VALUE));
+        }
+
+        HexBytes prev = parent.getBody().get(0).getTo();
+
+        int prevIndex = minerAddresses.indexOf(prev);
+
+        if (prevIndex < 0) {
+            return Optional.empty();
+        }
+
+        long step = (currentEpochSeconds - parent.getCreatedAt())
+                / blockInterval;
+
+        int currentIndex = (int) ((prevIndex + step) % minerAddresses.size());
+        long startTime = parent.getCreatedAt() + step * blockInterval;
+        long endTime = startTime + blockInterval;
+
+        return Optional.of(new Proposer(
+                minerAddresses.get(currentIndex),
+                startTime,
+                endTime
+        ));
+    }
+
+
     @Getter(AccessLevel.PROTECTED)
     private final StateTrie<HexBytes, Account> accountTrie;
 

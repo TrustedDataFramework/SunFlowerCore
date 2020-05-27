@@ -7,6 +7,7 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
+import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;

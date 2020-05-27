@@ -1,4 +1,4 @@
-package org.tdf.sunflower.consensus.poa;
+package org.tdf.sunflower.consensus;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

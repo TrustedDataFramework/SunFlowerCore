@@ -7,6 +7,7 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
+import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
@@ -106,10 +107,11 @@ public class PoSMiner extends AbstractMiner {
 
         Block best = blockRepository.getBestBlock();
         // 判断是否轮到自己出块
-        Optional<HexBytes> o = getProposer(
+        Optional<Proposer> o = getProposer(
                 best,
                 OffsetDateTime.now().toEpochSecond()
-        ).filter(p -> p.equals(minerAddress));
+        ).filter(p -> p.getAddress().equals(minerAddress));
+
         if (!o.isPresent()) return;
         log.debug("try to mining at height " + (best.getHeight() + 1));
         try {
@@ -122,24 +124,9 @@ public class PoSMiner extends AbstractMiner {
         }
     }
 
-    public Optional<HexBytes> getProposer(Block parent, long currentEpochSeconds) {
-        List<HexBytes> nowminerAddress = pos.getMinerAddresses(parent.getStateRoot().getBytes());
-        if (currentEpochSeconds - parent.getCreatedAt() < posConfig.getBlockInterval()) {
-            return Optional.empty();
-        }
-        if (parent.getHeight() == 0) {
-            return Optional.of(nowminerAddress.get(0));
-        }
-        HexBytes prev = parent.getBody().get(0).getTo();
-
-        int prevIndex = nowminerAddress.indexOf(prev);
-
-        if (prevIndex < 0) {
-            return Optional.empty();
-        }
-        long step = (currentEpochSeconds - parent.getCreatedAt()) / posConfig.getBlockInterval();
-        int currentIndex = (int) ((prevIndex + step) % nowminerAddress.size());
-        return Optional.of(nowminerAddress.get(currentIndex));
+    public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
+        List<HexBytes> minerAddresses = pos.getMinerAddresses(parent.getStateRoot().getBytes());
+        return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, posConfig.getBlockInterval());
     }
 
 

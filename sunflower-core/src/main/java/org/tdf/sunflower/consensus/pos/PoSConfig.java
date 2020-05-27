@@ -25,5 +25,6 @@ public class PoSConfig implements MinerConfig {
     private boolean allowEmptyBlock;
     @JsonProperty("max-body-size")
     private int maxBodySize;
-
+    @JsonProperty("max-miners")
+    private int maxMiners;
 }

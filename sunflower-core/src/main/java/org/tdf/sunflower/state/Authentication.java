@@ -70,7 +70,7 @@ public class Authentication implements PreBuiltContract {
     @Override
     @SneakyThrows
     public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
-        Method m = Method.values()[Byte.toUnsignedInt(transaction.getPayload().getBytes()[0])];
+        Method m = Method.values()[transaction.getPayload().get(0)];
         List<HexBytes> nodes = new ArrayList<>(Arrays.asList(RLPCodec.decode(contractStorage.get(NODES_KEY).get(), HexBytes[].class)));
         TreeMap<HexBytes, TreeSet<HexBytes>> pending =
                 (TreeMap<HexBytes, TreeSet<HexBytes>>)
