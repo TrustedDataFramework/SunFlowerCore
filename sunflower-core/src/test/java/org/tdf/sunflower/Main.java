@@ -34,7 +34,7 @@ public class Main {
                 HexBytes.fromHex("ff")
         );
 
-        byte[] sig = CryptoContext.sign(HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5").getBytes(), v.getSignaturePlain());
+        byte[] sig = CryptoContext.sign(FROM_SK.getBytes(), v.getSignaturePlain());
         v.setSignature(HexBytes.fromBytes(sig));
         System.out.println(Start.MAPPER.writeValueAsString(v));
     }
