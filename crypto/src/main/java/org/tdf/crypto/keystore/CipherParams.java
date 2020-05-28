@@ -8,9 +8,6 @@ import org.tdf.common.util.HexBytes;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class Crypto {
-    private String cipher;
-    private HexBytes cipherText;
+public class CipherParams {
     private HexBytes iv;
-    private HexBytes salt;
 }

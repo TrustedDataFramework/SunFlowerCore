@@ -171,6 +171,9 @@ public class Start {
 
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(Start.class);
+        System.out.println("keystore config found, please input your password here: ");
+        String password = new String(System.console().readPassword());
+        System.out.println("password = " + password);
         app.addInitializers(applicationContext -> {
             loadCryptoContext(applicationContext.getEnvironment());
             loadConstants(applicationContext.getEnvironment());

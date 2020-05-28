@@ -42,6 +42,14 @@ sunflower:
     port: '8082'
     disabled: true
 
+  contracts:
+    rpc-auth:
+      address: ''
+      binary: ''
+      data: ''
+
+
+
   database:
     # Key value data source values: [rocksdb/leveldb]
     name: 'memory'

@@ -6,6 +6,7 @@ import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.ValidateResult;
 
 import java.util.*;
 
@@ -39,5 +40,9 @@ public interface ConsensusEngine {
 
     default List<HexBytes> getMinerAddresses(){
         return Collections.emptyList();
+    }
+
+    default ValidateResult validateHeader(String header){
+        return ValidateResult.success();
     }
 }
