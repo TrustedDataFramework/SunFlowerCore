@@ -338,7 +338,7 @@ public class Start {
                     }
                 }
         ) : new MapStore<>();
-        PeerServer peerServer = new PeerServerImpl(store, engine);
+        PeerServer peerServer = new PeerServerImpl(store, engine, Keystore.NONE);
         peerServer.init(properties);
         peerServer.addListeners(engine.getPeerServerListener());
         peerServer.start();
