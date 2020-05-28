@@ -25,6 +25,8 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.keystore.Keystore;
+import org.tdf.crypto.keystore.SMKeystore;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
@@ -51,6 +53,7 @@ import org.tdf.sunflower.service.SunflowerRepositoryService;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.util.FileUtils;
 
 import java.nio.file.Paths;
 import java.util.concurrent.Executor;
@@ -171,9 +174,6 @@ public class Start {
 
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(Start.class);
-        System.out.println("keystore config found, please input your password here: ");
-        String password = new String(System.console().readPassword());
-        System.out.println("password = " + password);
         app.addInitializers(applicationContext -> {
             loadCryptoContext(applicationContext.getEnvironment());
             loadConstants(applicationContext.getEnvironment());
@@ -235,8 +235,8 @@ public class Start {
             SyncConfig syncConfig,
             ApplicationContext context,
             @Qualifier("contractStorageTrie") Trie<byte[], byte[]> contractStorageTrie,
-            @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore
-
+            @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore,
+            Keystore keystore
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
         name = name == null ? "" : name;
@@ -312,7 +312,8 @@ public class Start {
     public PeerServer peerServer(
             PeerServerProperties properties,
             ConsensusEngine engine,
-            DatabaseStoreFactory factory
+            DatabaseStoreFactory factory,
+            Keystore keystore
     ) throws Exception {
         String name = properties.getProperty("name");
         name = name == null ? "" : name;
@@ -373,5 +374,22 @@ public class Start {
     @Bean
     public Store<byte[], byte[]> contractCodeStore(DatabaseStoreFactory factory) {
         return factory.create("contract-code");
+    }
+
+    @Bean
+    public Keystore keystore(GlobalConfig config) throws Exception {
+        String ksLocation = (String) config.get("keystore");
+        if (ksLocation == null || ksLocation.isEmpty())
+            return Keystore.NONE;
+        Keystore keystore = MAPPER.readValue(
+                FileUtils.getResource(ksLocation).getInputStream(),
+                Keystore.class);
+
+        System.out.println("please input password for keystore " + ksLocation);
+        char[] password = System.console().readPassword();
+        byte[] sk =
+                SMKeystore.decryptKeyStore(keystore, password == null ? null : new String(password));
+        keystore.setPrivateKey(HexBytes.fromBytes(sk));
+        return keystore;
     }
 }

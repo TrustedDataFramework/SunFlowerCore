@@ -4,6 +4,7 @@ import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
+import org.tdf.crypto.keystore.Keystore;
 import org.tdf.sunflower.crypto.CryptoContext;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.ConsensusEngine;
@@ -28,10 +29,12 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     // if non-database provided, use memory database
     final Store<String, String> peerStore;
     final ConsensusEngine consensusEngine;
+    final Keystore keystore;
 
-    public PeerServerImpl(Store<String, String> peerStore, ConsensusEngine consensusEngine) {
+    public PeerServerImpl(Store<String, String> peerStore, ConsensusEngine consensusEngine, Keystore keystore) {
         this.peerStore = peerStore;
         this.consensusEngine = consensusEngine;
+        this.keystore = keystore;
     }
 
     @Override
@@ -55,7 +58,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         client.peersCache.getChannels()
                 .filter(ch -> ch.getRemote().isPresent())
                 .forEach(ch ->
-                                builder.buildAnother(message, config.getMaxTTL(), ch.getRemote().get())
+                        builder.buildAnother(message, config.getMaxTTL(), ch.getRemote().get())
                                 .forEach(ch::write)
                 );
     }
@@ -94,7 +97,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         }
         // connect to stored peers when server restarts
         peerStore.forEach((k, p) -> {
-            if("self".equals(k))
+            if ("self".equals(k))
                 return;
             PeerImpl peer = PeerImpl.parse(p).get();
             client.dial(peer.getHost(), peer.getPort(), builder.buildPing());
@@ -108,6 +111,9 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             config = mapper.readPropertiesAs(properties, PeerServerConfig.class);
             if (config.getMaxTTL() <= 0) config.setMaxTTL(PeerServerConfig.DEFAULT_MAX_TTL);
             if (config.getMaxPeers() <= 0) config.setMaxPeers(PeerServerConfig.DEFAULT_MAX_PEERS);
+            if (keystore != Keystore.NONE)
+                config.setPrivateKey(keystore.getPrivateKey());
+
         } catch (Exception e) {
             String schema = "";
             try {
@@ -154,14 +160,14 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         plugins.add(new PeersManager(config));
     }
 
-    private void resolveSelf() throws Exception{
+    private void resolveSelf() throws Exception {
         // find valid private key from 1.properties 2.persist 3. generate
         byte[] sk = config.getPrivateKey() == null ? null : config.getPrivateKey().getBytes();
-        if(sk == null || sk.length == 0){
+        if (sk == null || sk.length == 0) {
             sk = peerStore.get("self").map(HexBytes::decode)
                     .orElse(null);
         }
-        if(sk == null || sk.length == 0){
+        if (sk == null || sk.length == 0) {
             sk = CryptoContext.generateKeyPair().getPrivateKey().getEncoded();
         }
 
@@ -192,9 +198,9 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
                 .builder(builder)
                 .remote(peer.get()).build();
         for (Plugin plugin : plugins) {
-            try{
+            try {
                 plugin.onMessage(context, this);
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

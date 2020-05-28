@@ -66,6 +66,8 @@ public class SMKeystore {
                 UUID.randomUUID().toString(),
                 DEFAULT_VERSION,
                 HexBytes.fromBytes(mac),
-                "sm2-kdf");
+                "sm2-kdf",
+                HexBytes.fromBytes(privateKey)
+        );
     }
 }

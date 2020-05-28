@@ -8,6 +8,7 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
+import org.tdf.crypto.keystore.Keystore;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.state.*;
@@ -34,6 +35,8 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     // a map between hash and wasm byte code
     private Store<byte[], byte[]> contractCodeStore;
 
+    private Keystore keystore;
+
     // inject dependencies before init() called
     public void setApplicationContext(ApplicationContext context){
         this.applicationContext = context;
@@ -43,6 +46,7 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
         this.sunflowerRepository = context.getBean(SunflowerRepository.class);
         this.contractStorageTrie = context.getBean("contractStorageTrie", Trie.class);
         this.contractCodeStore = context.getBean("contractCodeStore", Store.class);
+        this.keystore = context.getBean(Keystore.class);
     }
 
     // sub class should set miner explicitly when init() called

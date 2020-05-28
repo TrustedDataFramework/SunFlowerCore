@@ -36,6 +36,7 @@ public interface ConsensusEngine {
     // inject configurations, throw exception if configuration is invalid
     void init(Properties properties) throws ConsensusEngineInitException;
 
+
     String getName();
 
     default List<HexBytes> getMinerAddresses(){

@@ -1,5 +1,6 @@
 package org.tdf.crypto.keystore;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,6 +10,8 @@ import org.tdf.common.util.HexBytes;
 @Data
 @AllArgsConstructor
 public class Keystore {
+    public static final Keystore NONE = new Keystore();
+
     static final int SALT_LENGTH = 32;
     static final int IV_LENGTH = 16;
     static final String DEFAULT_VERSION = "1";
@@ -19,4 +22,7 @@ public class Keystore {
     private String version;
     private HexBytes mac;
     private String kdf;
+
+    @JsonIgnore
+    private HexBytes privateKey;
 }
