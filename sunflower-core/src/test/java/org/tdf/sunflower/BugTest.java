@@ -8,6 +8,7 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
+import org.tdf.sunflower.facade.DatabaseStoreFactory;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
@@ -22,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class BugTest {
-    private static DatabaseStoreFactoryImpl factory =
+    private static DatabaseStoreFactory factory =
             new DatabaseStoreFactoryImpl(new DatabaseConfig("leveldb-iq80", 512, "test", true, ""));
 
     @Qualifier("contractCodeStore")

@@ -10,11 +10,12 @@ import org.junit.runners.JUnit4;
 import org.tdf.common.store.DatabaseStore;
 import org.tdf.common.store.RocksDb;
 import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
+import org.tdf.sunflower.facade.DatabaseStoreFactory;
 
 @RunWith(JUnit4.class)
 public class DbSourceTest {
     private static final DatabaseConfig PROPERTIES;
-    private static DatabaseStoreFactoryImpl FACTORY;
+    private static DatabaseStoreFactory FACTORY;
 
     static {
         PROPERTIES = new DatabaseConfig();

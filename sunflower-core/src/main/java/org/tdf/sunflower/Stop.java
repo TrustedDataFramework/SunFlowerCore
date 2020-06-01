@@ -3,7 +3,7 @@ package org.tdf.sunflower;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
+import org.tdf.sunflower.facade.DatabaseStoreFactory;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.net.PeerServer;
 
@@ -21,7 +21,7 @@ public class Stop {
     private PeerServer peerServer;
 
     @Autowired
-    private DatabaseStoreFactoryImpl factory;
+    private DatabaseStoreFactory factory;
 
 
     public Stop(){

@@ -36,7 +36,6 @@ import org.tdf.sunflower.consensus.pos.PoS;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.crypto.CryptoHelpers;
-import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.mq.BasicMessageQueue;
@@ -232,7 +231,7 @@ public class Start {
             ConsensusProperties consensusProperties,
             SunflowerRepository repositoryService,
             TransactionPoolImpl transactionPool,
-            DatabaseStoreFactoryImpl databaseStoreFactory,
+            DatabaseStoreFactory databaseStoreFactory,
             EventBus eventBus,
             SyncConfig syncConfig,
             ApplicationContext context,
@@ -318,7 +317,7 @@ public class Start {
     public PeerServer peerServer(
             PeerServerProperties properties,
             ConsensusEngine engine,
-            DatabaseStoreFactoryImpl factory,
+            DatabaseStoreFactory factory,
             KeyStore keyStore
     ) throws Exception {
         String name = properties.getProperty("name");
@@ -367,7 +366,7 @@ public class Start {
 
     // storage root of contract store
     @Bean
-    public Trie<byte[], byte[]> contractStorageTrie(DatabaseStoreFactoryImpl factory) {
+    public Trie<byte[], byte[]> contractStorageTrie(DatabaseStoreFactory factory) {
         return Trie.<byte[], byte[]>builder()
                 .hashFunction(CryptoContext::hash)
                 .keyCodec(Codec.identity())
@@ -378,7 +377,7 @@ public class Start {
 
     // contract hash code -> contract binary
     @Bean
-    public Store<byte[], byte[]> contractCodeStore(DatabaseStoreFactoryImpl factory) {
+    public Store<byte[], byte[]> contractCodeStore(DatabaseStoreFactory factory) {
         return factory.create("contract-code");
     }
 
@@ -402,7 +401,7 @@ public class Start {
     private void injectApplicationContext(ApplicationContext context, AbstractConsensusEngine engine) {
         engine.setEventBus(context.getBean(EventBus.class));
         engine.setTransactionPool(context.getBean(TransactionPool.class));
-        DatabaseStoreFactoryImpl databaseStoreFactory = (context.getBean(DatabaseStoreFactoryImpl.class));
+        DatabaseStoreFactory databaseStoreFactory = (context.getBean(DatabaseStoreFactory.class));
         engine.setSunflowerRepository(context.getBean(SunflowerRepository.class));
         engine.setContractStorageTrie(context.getBean("contractStorageTrie", Trie.class));
         engine.setContractCodeStore(context.getBean("contractCodeStore", Store.class));

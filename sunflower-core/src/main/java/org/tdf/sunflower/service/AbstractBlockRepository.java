@@ -6,10 +6,10 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
 import org.tdf.sunflower.exception.GenesisConflictsException;
 import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.facade.BlockRepository;
+import org.tdf.sunflower.facade.DatabaseStoreFactory;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
@@ -26,7 +26,7 @@ public abstract class AbstractBlockRepository implements BlockRepository {
     @Setter
     protected StateTrie<HexBytes, Account> accountTrie;
 
-    protected final DatabaseStoreFactoryImpl factory;
+    protected final DatabaseStoreFactory factory;
 
     protected final Trie<byte[], byte[]> contractStorageTrie;
 
@@ -34,7 +34,7 @@ public abstract class AbstractBlockRepository implements BlockRepository {
 
     public AbstractBlockRepository(ApplicationContext context) {
         this.eventBus = context.getBean(EventBus.class);
-        this.factory = context.getBean(DatabaseStoreFactoryImpl.class);
+        this.factory = context.getBean(DatabaseStoreFactory.class);
         this.contractStorageTrie = context.getBean("contractStorageTrie", Trie.class);
         this.contractCodeStore = context.getBean("contractCodeStore", Store.class);
     }
