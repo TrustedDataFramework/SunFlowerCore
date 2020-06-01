@@ -32,8 +32,8 @@ public class PoW extends AbstractConsensusEngine {
     public static final int BLOCK_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
     public static final int TRANSACTION_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
 
-    public PoW(Properties properties) {
-        super(properties);
+    public PoW() {
+
     }
 
     public static byte[] getPoWHash(Block block) {
@@ -99,4 +99,8 @@ public class PoW extends AbstractConsensusEngine {
         log.info("genesis = {}", Start.MAPPER.writeValueAsString(getGenesisBlock()));
     }
 
+    @Override
+    public String getName() {
+        return "pow";
+    }
 }
