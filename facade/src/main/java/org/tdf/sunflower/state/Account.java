@@ -6,20 +6,21 @@ import lombok.Data;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPIgnored;
 import org.tdf.rlp.RLPItem;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.types.CryptoContext;
 
-import static org.tdf.sunflower.ApplicationConstants.ADDRESS_SIZE;
 
 @AllArgsConstructor
 @Builder
 @Data
 public class Account {
+    public static final int ADDRESS_SIZE = 20;
+
     public static Account emptyContract(HexBytes address) {
         return new Account(
                 address, 0,
                 0, address,
                 null,
-                CryptoContext.digest(RLPItem.NULL.getEncoded()),
+                CryptoContext.hash(RLPItem.NULL.getEncoded()),
                 true
         );
     }

@@ -16,8 +16,8 @@ import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
-import org.tdf.sunflower.account.Address;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.state.Address;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.events.NewBlocksReceived;
 import org.tdf.sunflower.events.NewTransactionsReceived;
@@ -28,10 +28,7 @@ import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.ValidateResult;
+import org.tdf.sunflower.types.*;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
@@ -325,7 +322,7 @@ public class SyncManager implements PeerServerListener {
                             continue;
                         // validate contract code
                         if (a.getContractHash() != null && a.getContractHash().length != 0) {
-                            byte[] key = CryptoContext.digest(sa.getContractCode());
+                            byte[] key = CryptoContext.hash(sa.getContractCode());
                             if (!FastByteComparisons.equal(key, a.getContractHash())) {
                                 log.error("contract hash not match");
                                 continue;

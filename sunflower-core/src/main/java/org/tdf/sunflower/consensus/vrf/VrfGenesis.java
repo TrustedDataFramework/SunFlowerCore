@@ -8,13 +8,14 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
@@ -50,7 +51,7 @@ public class VrfGenesis {
         long blockNum = ByteUtil.byteArrayToLong(number.getBytes());
 
         Trie<?, ?> trie = Trie.<byte[], byte[]>builder().keyCodec(Codec.identity()).valueCodec(Codec.identity())
-                .store(new ByteArrayMapStore<>()).hashFunction(CryptoContext::digest).build();
+                .store(new ByteArrayMapStore<>()).hashFunction(CryptoContext::hash).build();
 
         HexBytes emptyRoot = Transaction.getTransactionsRoot(Collections.emptyList());
 

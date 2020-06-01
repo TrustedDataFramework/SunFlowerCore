@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.GlobalConfig;
-import org.tdf.sunflower.account.Address;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.facade.ConsensusEngine;

@@ -5,8 +5,9 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
@@ -30,7 +31,7 @@ public class Genesis {
                 .keyCodec(Codec.identity())
                 .valueCodec(Codec.identity())
                 .store(new ByteArrayMapStore<>())
-                .hashFunction(CryptoContext::digest)
+                .hashFunction(CryptoContext::hash)
                 .build();
         HexBytes emptyRoot = Transaction.getTransactionsRoot(Collections.emptyList());
 

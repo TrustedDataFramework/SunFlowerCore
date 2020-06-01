@@ -20,10 +20,6 @@ public class ApplicationConstants {
     // cache proposals to avoid message flood
     public static int P2P_PROPOSAL_CACHE_SIZE = 128;
 
-    public static int PUBLIC_KEY_SIZE;
-
-    public static final int ADDRESS_SIZE = 20;
-
     public static final String CONSENSUS_VRF = "vrf";
 
     public static final int SHUTDOWN_SIGNAL = 0;

@@ -15,28 +15,18 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
-import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM2Util;
-import org.tdf.gmhelper.SM3Util;
 import org.tdf.gmhelper.SM4Util;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class CryptoContext {
-    public interface SignatureVerifier {
-        boolean verify(byte[] pk, byte[] msg, byte[] sig);
-    }
+public class CryptoHelpers {
 
     public interface Ecdh {
         byte[] exchange(boolean initiator, byte[] sk, byte[] pk);
     }
-
-    public static Function<byte[], byte[]> hashFunction = SM3Util::hash;
-
-    // (pk, msg, sig) -> true/false
-    public static SignatureVerifier signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
 
     @Data
     private static class ECDHParameters {
@@ -120,11 +110,6 @@ public class CryptoContext {
         return generateKeyPair.get();
     }
 
-    public static boolean verifySignature(byte[] pk, byte[] msg, byte[] sig) {
-        return signatureVerifier.verify(pk, msg, sig);
-    }
-
-
     private static byte[] ecdhInternal(boolean initiator, byte[] sk, byte[] pk) {
         return ecdh.exchange(initiator, sk, pk);
     }
@@ -143,11 +128,7 @@ public class CryptoContext {
 
     public static byte[] keccak256(byte[] in) {
         Digest digest = new KeccakDigest(256);
-        return CryptoContext.hash(in, digest);
-    }
-
-    public static byte[] hash(byte[] input) {
-        return digest(input);
+        return CryptoHelpers.hash(in, digest);
     }
 
     private static byte[] hash(byte[] input, Digest digest) {
@@ -159,16 +140,12 @@ public class CryptoContext {
 
     public static byte[] keccak512(byte[] in) {
         Digest digest = new KeccakDigest(512);
-        return CryptoContext.hash(in, digest);
-    }
-
-    public static byte[] digest(byte[] in) {
-        return hashFunction.apply(in);
+        return CryptoHelpers.hash(in, digest);
     }
 
     public static byte[] sha3256(byte[] in) {
         Digest digest = new SHA3Digest(256);
-        return CryptoContext.hash(in, digest);
+        return CryptoHelpers.hash(in, digest);
     }
 
     public static byte[] ripemd128(byte[] bytes) {
@@ -203,12 +180,12 @@ public class CryptoContext {
         return rsData;
     }
 
-    public static byte[] getEmptyTrieRoot() {
+    public static byte[] getEmptyTrieRoot(Function<byte[], byte[]> hashFunction) {
         Trie<?, ?> trie = Trie.<byte[], byte[]>builder()
                 .keyCodec(Codec.identity())
                 .valueCodec(Codec.identity())
                 .store(new ByteArrayMapStore<>())
-                .hashFunction(CryptoContext::digest)
+                .hashFunction(hashFunction)
                 .build();
 
         return trie.getNullHash();

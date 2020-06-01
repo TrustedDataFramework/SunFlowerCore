@@ -8,7 +8,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.LittleEndian;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.rlp.RLPCodec;
-import org.tdf.sunflower.account.Address;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.FileUtils;

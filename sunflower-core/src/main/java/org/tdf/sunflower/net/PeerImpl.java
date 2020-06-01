@@ -3,13 +3,13 @@ package org.tdf.sunflower.net;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.exception.ApplicationException;
+import org.tdf.sunflower.types.CryptoContext;
 
 import java.net.URI;
 import java.util.Optional;
 
-import static org.tdf.sunflower.ApplicationConstants.PUBLIC_KEY_SIZE;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -65,8 +65,8 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         if (u.getRawUserInfo() == null || u.getRawUserInfo().isEmpty())
             throw new ApplicationException("parse peer failed: missing public key");
         p.ID = HexBytes.fromHex(u.getRawUserInfo());
-        if (p.ID.size() != PUBLIC_KEY_SIZE) {
-            throw new ApplicationException("peer " + url + " public key size should be " + PUBLIC_KEY_SIZE);
+        if (p.ID.size() != CryptoContext.getPublicKeySize()) {
+            throw new ApplicationException("peer " + url + " public key size should be " + CryptoContext.getPublicKeySize());
         }
         return p;
     }
@@ -74,7 +74,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     // create self as peer from input
     // if private key is missing, generate key automatically
     public static PeerImpl createSelf(URI u) {
-        return createSelf(u, CryptoContext.generateKeyPair().getPrivateKey().getEncoded());
+        return createSelf(u, CryptoHelpers.generateKeyPair().getPrivateKey().getEncoded());
     }
 
 
@@ -90,7 +90,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         int port = u.getPort();
         ret.host = (u.getHost() == null || u.getHost().trim().equals("")) ? "localhost" : u.getHost();
         ret.port = port <= 0 ? PeerServerConfig.DEFAULT_PORT : port;
-        ret.ID = HexBytes.fromBytes(CryptoContext.getPkFromSk(privateKey));
+        ret.ID = HexBytes.fromBytes(CryptoHelpers.getPkFromSk(privateKey));
         ret.privateKey = privateKey;
         return ret;
     }
@@ -98,7 +98,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
 
     public int distance(PeerImpl that) {
         int res = 0;
-        byte[] bits = new byte[PUBLIC_KEY_SIZE];
+        byte[] bits = new byte[CryptoContext.getPublicKeySize()];
         for (int i = 0; i < bits.length; i++) {
             bits[i] = (byte) (ID.getBytes()[i] ^ that.ID.getBytes()[i]);
         }
@@ -111,12 +111,12 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     }
 
     int subTree(byte[] thatID) {
-        byte[] bits = new byte[PUBLIC_KEY_SIZE];
+        byte[] bits = new byte[CryptoContext.getPublicKeySize()];
         byte mask = (byte) (1 << 7);
         for (int i = 0; i < bits.length; i++) {
             bits[i] = (byte) (ID.getBytes()[i] ^ thatID[i]);
         }
-        for (int i = 0; i < PUBLIC_KEY_SIZE * 8; i++) {
+        for (int i = 0; i < CryptoContext.getPublicKeySize() * 8; i++) {
             if ((bits[i / 8] & (mask >>> (i % 8))) != 0) {
                 return i;
             }

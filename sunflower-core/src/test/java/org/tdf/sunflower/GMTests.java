@@ -13,18 +13,15 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.KeyPair;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
-import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
-import org.tdf.sunflower.account.Address;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 
 import java.util.Arrays;
 import java.util.PriorityQueue;
 
-import static org.tdf.sunflower.ApplicationConstants.ADDRESS_SIZE;
-
 @RunWith(JUnit4.class)
 public class GMTests {
+    public static final int ADDRESS_SIZE = 20;
 
     @Test
     public void test(){
@@ -63,7 +60,7 @@ public class GMTests {
         int count = 100000;
         long start = System.currentTimeMillis();
         for(int i = 0; i < count; i++){
-            byte[] s1 = CryptoContext.ecdh(true, kp1.getPrivateKey().getEncoded(), kp2.getPublicKey().getEncoded());
+            byte[] s1 = CryptoHelpers.ecdh(true, kp1.getPrivateKey().getEncoded(), kp2.getPublicKey().getEncoded());
         }
         long end = System.currentTimeMillis();
         System.out.println( (end - start) * 1.0 /(count));
@@ -84,7 +81,7 @@ public class GMTests {
 
         for(int i = 0; i < count; i++){
             HexBytes kp2pk = HexBytes.fromBytes(kp2.getPublicKey().getEncoded());
-            byte[] s1 = cache.get(kp2pk, () -> CryptoContext.ecdh(true, kp1.getPrivateKey().getEncoded(), kp2.getPublicKey().getEncoded()));
+            byte[] s1 = cache.get(kp2pk, () -> CryptoHelpers.ecdh(true, kp1.getPrivateKey().getEncoded(), kp2.getPublicKey().getEncoded()));
         }
         long end = System.currentTimeMillis();
         System.out.println( (end - start) * 1.0 /(count));

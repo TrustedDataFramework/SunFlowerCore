@@ -12,6 +12,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
@@ -62,7 +63,7 @@ public class BugTest {
                 "3b776ac5d6f414c0d841f23c7e719d6eba52f95e"};
 
         Map<String, AtomicLong> nonceCounter = new HashMap<>();
-        ApplicationConstants.PUBLIC_KEY_SIZE = 33;
+        CryptoContext.setPublicKeySize(33);
 
         for (String pk : pks) {
             nonceCounter.put(pk, new AtomicLong());

@@ -1,7 +1,5 @@
 package org.tdf.sunflower.state;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -12,18 +10,13 @@ import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.Start;
-import org.tdf.sunflower.consensus.vrf.util.ByteArraySet;
-import org.tdf.sunflower.crypto.CryptoContext;
-import org.tdf.sunflower.ApplicationConstants;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.CryptoContext;
 
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @Slf4j(topic = "trie")
 public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
@@ -57,11 +50,11 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         trieStore = new NoDeleteBatchStore<>(db);
 
         trie = new SecureTrie<>(Trie.<ID, S>builder()
-                .hashFunction(CryptoContext::digest)
+                .hashFunction(CryptoContext::hash)
                 .store(trieStore)
                 .keyCodec(idCodec)
                 .valueCodec(stateCodec).build(),
-                CryptoContext.hashFunction
+                CryptoContext::hash
         );
 
         // sync to genesis

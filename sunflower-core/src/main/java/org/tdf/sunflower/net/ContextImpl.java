@@ -1,8 +1,7 @@
 package org.tdf.sunflower.net;
 
 import lombok.Builder;
-import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 
@@ -75,8 +74,8 @@ public class ContextImpl implements Context {
         if (message.getCode() == Code.ANOTHER) {
             if(decrypted != null)
                 return decrypted;
-            decrypted = CryptoContext.decrypt(
-                    CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), remote.getID().getBytes()),
+            decrypted = CryptoHelpers.decrypt(
+                    CryptoHelpers.ecdh(false, builder.getSelf().getPrivateKey(), remote.getID().getBytes()),
                     message.getBody().toByteArray());
             return decrypted;
         }

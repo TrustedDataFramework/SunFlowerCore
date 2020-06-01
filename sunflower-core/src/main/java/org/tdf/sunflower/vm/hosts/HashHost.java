@@ -1,7 +1,7 @@
 package org.tdf.sunflower.vm.hosts;
 
 import org.tdf.gmhelper.SM3Util;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
@@ -30,7 +30,7 @@ public class HashHost extends HostFunction {
         byte[] ret;
         switch (a){
             case KECCAK256:
-                ret = CryptoContext.keccak256(data);
+                ret = CryptoHelpers.keccak256(data);
                 break;
             case SM3:
                 ret = SM3Util.hash(data);

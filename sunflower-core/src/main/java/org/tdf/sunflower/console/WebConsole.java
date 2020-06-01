@@ -4,10 +4,10 @@ import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import io.netty.util.internal.StringUtil;
-import org.springframework.stereotype.Component;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.Start;
+import org.tdf.sunflower.types.CryptoContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,11 +57,11 @@ public class WebConsole {
     }
 
     private boolean verifyToken(String token) {
-        return HexBytes.encode(CryptoContext.digest(uuid.getBytes(StandardCharsets.US_ASCII))).equals(token);
+        return HexBytes.encode(CryptoContext.hash(uuid.getBytes(StandardCharsets.US_ASCII))).equals(token);
     }
 
     private boolean verifyToken(String token, String createdAt) {
-        return HexBytes.encode(CryptoContext.digest(
+        return HexBytes.encode(CryptoContext.hash(
                 (uuid + createdAt).getBytes(StandardCharsets.US_ASCII)
         )).equals(token);
     }

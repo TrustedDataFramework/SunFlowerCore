@@ -25,6 +25,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.keystore.Crypto;
 import org.tdf.crypto.keystore.Keystore;
 import org.tdf.crypto.keystore.SMKeystore;
 import org.tdf.crypto.sm2.SM2;
@@ -35,7 +36,7 @@ import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.pos.PoS;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
@@ -52,6 +53,7 @@ import org.tdf.sunflower.service.SunflowerRepositoryKVImpl;
 import org.tdf.sunflower.service.SunflowerRepositoryService;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
+import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.FileUtils;
 
@@ -128,19 +130,19 @@ public class Start {
         hash = hash.toLowerCase();
         switch (hash) {
             case "sm3":
-                CryptoContext.hashFunction = SM3Util::hash;
+                CryptoContext.setHashFunction(SM3Util::hash);
                 break;
             case "keccak256":
             case "keccak-256":
-                CryptoContext.hashFunction = CryptoContext::keccak256;
+                CryptoContext.setHashFunction(CryptoHelpers::keccak256);
                 break;
             case "keccak512":
             case "keccak-512":
-                CryptoContext.hashFunction = CryptoContext::keccak512;
+                CryptoContext.setHashFunction(CryptoHelpers::keccak512);
                 break;
             case "sha3256":
             case "sha3-256":
-                CryptoContext.hashFunction = CryptoContext::sha3256;
+                CryptoContext.setHashFunction(CryptoHelpers::sha3256);
                 break;
             default:
                 throw new ApplicationException("unknown hash function: " + hash);
@@ -150,24 +152,25 @@ public class Start {
         ec = ec.toLowerCase();
         switch (ec) {
             case "ed25519":
-                CryptoContext.signatureVerifier = (pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig);
-                CryptoContext.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
-                CryptoContext.generateKeyPair = Ed25519::generateKeyPair;
-                CryptoContext.getPkFromSk = (sk) -> new Ed25519PrivateKey(sk).generatePublicKey().getEncoded();
+                CryptoContext.setSignatureVerifier((pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig));
+                CryptoHelpers.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
+                CryptoHelpers.generateKeyPair = Ed25519::generateKeyPair;
+                CryptoHelpers.getPkFromSk = (sk) -> new Ed25519PrivateKey(sk).generatePublicKey().getEncoded();
                 // TODO add ed25519 ecdh
                 // CryptoContext.ecdh =
                 break;
             case "sm2":
-                CryptoContext.signatureVerifier = (pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig);
-                CryptoContext.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
-                CryptoContext.generateKeyPair = SM2::generateKeyPair;
-                CryptoContext.getPkFromSk = (sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded();
-                CryptoContext.ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
+                CryptoContext.setSignatureVerifier((pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig));
+                CryptoHelpers.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
+                CryptoHelpers.generateKeyPair = SM2::generateKeyPair;
+                CryptoHelpers.getPkFromSk = (sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded();
+                CryptoHelpers.ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
                 break;
             default:
                 throw new ApplicationException("unknown ec curve " + ec);
         }
-        ApplicationConstants.PUBLIC_KEY_SIZE = CryptoContext.generateKeyPair().getPublicKey().getEncoded().length;
+        CryptoContext.setPublicKeySize(CryptoHelpers.generateKeyPair().getPublicKey().getEncoded().length);
+
         log.info("use algorithm {} as hash function", hash);
         log.info("use ec {} as signature algorithm", ec);
     }
@@ -363,7 +366,7 @@ public class Start {
     @Bean
     public Trie<byte[], byte[]> contractStorageTrie(DatabaseStoreFactory factory) {
         return Trie.<byte[], byte[]>builder()
-                .hashFunction(CryptoContext.hashFunction)
+                .hashFunction(CryptoContext::hash)
                 .keyCodec(Codec.identity())
                 .valueCodec(Codec.identity())
                 .store(new NoDeleteBatchStore<>(factory.create("contract-storage-trie")))

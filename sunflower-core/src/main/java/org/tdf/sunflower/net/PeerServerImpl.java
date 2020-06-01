@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.keystore.Keystore;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
@@ -168,7 +168,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
                     .orElse(null);
         }
         if (sk == null || sk.length == 0) {
-            sk = CryptoContext.generateKeyPair().getPrivateKey().getEncoded();
+            sk = CryptoHelpers.generateKeyPair().getPrivateKey().getEncoded();
         }
 
         this.self = PeerImpl.createSelf(config.getAddress(), sk);

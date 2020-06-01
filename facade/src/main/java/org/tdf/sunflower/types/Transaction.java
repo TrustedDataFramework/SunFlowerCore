@@ -15,15 +15,14 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
-import org.tdf.sunflower.account.Address;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.Address;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.tdf.sunflower.ApplicationConstants.ADDRESS_SIZE;
 
 @Getter
 @ToString
@@ -124,7 +123,7 @@ public class Transaction {
      */
     public static HexBytes getTransactionsRoot(List<Transaction> transactions) {
         Trie<Integer, Transaction> tmp = Trie.<Integer, Transaction>builder()
-                .hashFunction(CryptoContext::digest)
+                .hashFunction(CryptoContext::hash)
                 .keyCodec(Codec.newInstance(RLPCodec::encode, RLPCodec::decodeInt))
                 .valueCodec(Codec.newInstance(RLPCodec::encode, x -> RLPCodec.decode(x, Transaction.class)))
                 .store(new ByteArrayMapStore<>())
@@ -143,7 +142,7 @@ public class Transaction {
     private HexBytes getHash(boolean forceReHash) {
         if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
-                    CryptoContext.digest(getSignaturePlain())
+                    CryptoContext.hash(getSignaturePlain())
             );
             return this.hash;
         }
@@ -274,9 +273,9 @@ public class Transaction {
      */
     public HexBytes createContractAddress() {
         if (type != Type.CONTRACT_DEPLOY.code) throw new RuntimeException("not a contract deploy transaction");
-        byte[] bytes = CryptoContext.digest(RLPCodec.encode(new Object[]{from, nonce}));
+        byte[] bytes = CryptoContext.hash(RLPCodec.encode(new Object[]{from, nonce}));
         HexBytes ret = HexBytes.fromBytes(bytes);
-        return ret.slice(ret.size() - ADDRESS_SIZE, ret.size());
+        return ret.slice(ret.size() - Account.ADDRESS_SIZE, ret.size());
     }
 
     public int getVersion() {
@@ -352,7 +351,7 @@ public class Transaction {
             if (!getPayload().isEmpty())
                 return ValidateResult.fault("payload of transaction " + getHash() + " should be empty");
         }
-        if(!CryptoContext.verifySignature(from.getBytes(), getSignaturePlain(), signature.getBytes())){
+        if (!CryptoContext.verify(from.getBytes(), getSignaturePlain(), signature.getBytes())) {
             return ValidateResult.fault("verify signature failed " + getHash());
         }
         return ValidateResult.success();

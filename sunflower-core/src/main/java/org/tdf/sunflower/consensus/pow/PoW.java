@@ -9,13 +9,14 @@ import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.Start;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
@@ -36,8 +37,8 @@ public class PoW extends AbstractConsensusEngine {
     }
 
     public static byte[] getPoWHash(Block block) {
-        byte[] d = CryptoContext.digest(RLPCodec.encode(block.getHeader()));
-        return CryptoContext.digest(d);
+        byte[] d = CryptoContext.hash(RLPCodec.encode(block.getHeader()));
+        return CryptoContext.hash(d);
     }
 
     public byte[] getNBits(

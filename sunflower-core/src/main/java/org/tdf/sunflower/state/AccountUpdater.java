@@ -9,7 +9,8 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
+import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.abi.Context;
@@ -222,7 +223,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         ModuleInstance instance = ModuleInstance.builder().hooks(Collections.singleton(new GasLimit()))
                 .binary(t.getPayload().getBytes()).hostFunctions(hosts.getAll()).build();
 
-        byte[] contractHash = CryptoContext.digest(t.getPayload().getBytes());
+        byte[] contractHash = CryptoContext.hash(t.getPayload().getBytes());
 
         contractStore.put(contractHash, t.getPayload().getBytes());
         contractAccount.setContractHash(contractHash);

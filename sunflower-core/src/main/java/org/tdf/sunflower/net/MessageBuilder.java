@@ -3,8 +3,9 @@ package org.tdf.sunflower.net;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import lombok.Getter;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.proto.*;
+import org.tdf.sunflower.types.CryptoContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,7 +59,7 @@ public class MessageBuilder {
     }
 
     public List<Message> buildAnother(byte[] body, long ttl, Peer remote) {
-        byte[] encryptMessage = CryptoContext.encrypt(CryptoContext.ecdh(true, self.getPrivateKey(), remote.getID().getBytes()), body);
+        byte[] encryptMessage = CryptoHelpers.encrypt(CryptoHelpers.ecdh(true, self.getPrivateKey(), remote.getID().getBytes()), body);
         Message buildResult = buildMessage(Code.ANOTHER, ttl, encryptMessage);
         if (buildResult.getSerializedSize() <= config.getMaxPacketSize()) {
             return Collections.singletonList(buildResult);
@@ -98,7 +99,7 @@ public class MessageBuilder {
                 .setRemotePeer(self.encodeURI())
                 .setNonce(nonce.incrementAndGet())
                 .setTtl(message.getTtl() - 1);
-        byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
+        byte[] sig = CryptoHelpers.sign(self.getPrivateKey(), getRawForSign(builder.build()));
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }
 
@@ -110,7 +111,7 @@ public class MessageBuilder {
                 .setTtl(ttl)
                 .setNonce(nonce.incrementAndGet())
                 .setBody(ByteString.copyFrom(msg));
-        byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
+        byte[] sig = CryptoHelpers.sign(self.getPrivateKey(), getRawForSign(builder.build()));
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }
 }

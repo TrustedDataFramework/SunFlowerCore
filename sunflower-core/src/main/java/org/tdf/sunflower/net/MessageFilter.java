@@ -7,11 +7,11 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.account.Address;
-import org.tdf.sunflower.crypto.CryptoContext;
+import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
+import org.tdf.sunflower.types.CryptoContext;
 
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -54,7 +54,7 @@ public class MessageFilter implements Plugin {
             }
 
             if (!FastByteComparisons.equal(
-                    CryptoContext.digest(total),
+                    CryptoContext.hash(total),
                     multiParts[0].getSignature().toByteArray())
             ) {
                 throw new RuntimeException("合并失败");
@@ -116,7 +116,7 @@ public class MessageFilter implements Plugin {
         }
 
         // filter invalid signatures
-        if (!CryptoContext.verifySignature(
+        if (!CryptoContext.verify(
                 context.getRemote().getID().getBytes(),
                 Util.getRawForSign(context.message),
                 context.message.getSignature().toByteArray()
