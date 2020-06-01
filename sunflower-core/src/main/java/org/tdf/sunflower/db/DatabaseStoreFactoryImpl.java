@@ -6,17 +6,18 @@ import org.iq80.leveldb.impl.Iq80DBFactory;
 import org.springframework.stereotype.Component;
 import org.tdf.common.store.*;
 import org.tdf.sunflower.DatabaseConfig;
+import org.tdf.sunflower.facade.DatabaseStoreFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j(topic = "db")
 @Component
-public class DatabaseStoreFactory {
+public class DatabaseStoreFactoryImpl implements DatabaseStoreFactory {
     private DatabaseConfig config;
     private static final List<DatabaseStore> STORES_LIST = new ArrayList<>();
 
-    public DatabaseStoreFactory(DatabaseConfig config) {
+    public DatabaseStoreFactoryImpl(DatabaseConfig config) {
 
         if (config.getName() == null) config.setName("");
         this.config = config;

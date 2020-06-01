@@ -4,10 +4,10 @@ import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.keystore.Keystore;
 import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.ConsensusEngine;
+import org.tdf.sunflower.facade.KeyStore;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.proto.Message;
 
@@ -29,12 +29,12 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     // if non-database provided, use memory database
     final Store<String, String> peerStore;
     final ConsensusEngine consensusEngine;
-    final Keystore keystore;
+    final KeyStore keyStore;
 
-    public PeerServerImpl(Store<String, String> peerStore, ConsensusEngine consensusEngine, Keystore keystore) {
+    public PeerServerImpl(Store<String, String> peerStore, ConsensusEngine consensusEngine, KeyStore keyStore) {
         this.peerStore = peerStore;
         this.consensusEngine = consensusEngine;
-        this.keystore = keystore;
+        this.keyStore = keyStore;
     }
 
     @Override
@@ -111,8 +111,8 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             config = mapper.readPropertiesAs(properties, PeerServerConfig.class);
             if (config.getMaxTTL() <= 0) config.setMaxTTL(PeerServerConfig.DEFAULT_MAX_TTL);
             if (config.getMaxPeers() <= 0) config.setMaxPeers(PeerServerConfig.DEFAULT_MAX_PEERS);
-            if (keystore != Keystore.NONE)
-                config.setPrivateKey(keystore.getPrivateKey());
+            if (keyStore != KeyStore.NONE)
+                config.setPrivateKey(keyStore.getPrivateKey());
 
         } catch (Exception e) {
             String schema = "";

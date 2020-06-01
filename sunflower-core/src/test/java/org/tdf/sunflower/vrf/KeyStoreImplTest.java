@@ -40,7 +40,7 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
  * @since 2019/6/15
  */
 @Ignore("not pass")
-public class KeystoreTest {
+public class KeyStoreImplTest {
 
     /**
      * Keystore which uses temp dir instead of real user keystore dir

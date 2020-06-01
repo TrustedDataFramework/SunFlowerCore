@@ -12,6 +12,7 @@ import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
@@ -33,6 +34,8 @@ public class PoS extends AbstractConsensusEngine {
 
     private PoSMiner posMiner;
 
+    private Genesis genesis;
+
     public PoS() {
 
     }
@@ -51,23 +54,33 @@ public class PoS extends AbstractConsensusEngine {
     }
 
     @Override
+    public List<Account> getGenesisStates() {
+        return genesis.alloc == null ? Collections.emptyList() :
+                genesis.alloc.entrySet().stream()
+                        .map(e -> new Account(HexBytes.fromHex(e.getKey()), e.getValue())).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PreBuiltContract> getPreBuiltContracts() {
+        return Collections.singletonList(minerContract);
+    }
+
+    @Override
     @SneakyThrows
     public void init(Properties properties) throws ConsensusEngineInitException {
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
         posConfig = MappingUtil.propertiesToPojo(properties, PoSConfig.class);
         Resource resource = FileUtils.getResource(posConfig.getGenesis());
-        Genesis genesis = objectMapper.readValue(resource.getInputStream(), Genesis.class);
+        genesis = objectMapper.readValue(resource.getInputStream(), Genesis.class);
 
-        List<Account> alloc =
-                genesis.alloc.entrySet().stream()
-                        .map(e -> new Account(HexBytes.fromHex(e.getKey()), e.getValue())).collect(Collectors.toList());
 
         Map<HexBytes, NodeInfo> nodesMap = new TreeMap<>();
         if (genesis.miners != null) {
             genesis.miners.forEach(m -> nodesMap.put(m.getAddress(), new NodeInfo(m.getAddress(), m.vote)));
         }
+
         this.minerContract = new PosPreBuilt(nodesMap);
-        initStates(genesis.getBlock(), alloc, Collections.singletonList(this.minerContract), Collections.emptyList());
+        initStateTrie();
         this.minerContract.setAccountTrie((AccountTrie) getAccountTrie());
         setPeerServerListener(PeerServerListener.NONE);
 

@@ -1,4 +1,4 @@
-package org.tdf.sunflower.controller;
+package org.tdf.sunflower.types;
 
 public interface PageSize {
     int getPage();

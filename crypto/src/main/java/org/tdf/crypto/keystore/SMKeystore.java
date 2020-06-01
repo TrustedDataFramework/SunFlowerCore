@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.UUID;
 
-import static org.tdf.crypto.keystore.Keystore.*;
+import static org.tdf.crypto.keystore.KeyStoreImpl.*;
 
 public class SMKeystore {
 
@@ -21,7 +21,7 @@ public class SMKeystore {
     public Crypto crypto;
 
     @SneakyThrows
-    public static byte[] decryptKeyStore(Keystore ks, String password) {
+    public static byte[] decryptKeyStore(KeyStoreImpl ks, String password) {
         if (!"sm4-128-ctr".equals(ks.getCrypto().getCipher()) ||
                 !"sm2-kdf".equals(ks.getKdf())) {
             throw new RuntimeException("unsupported crypto cipher " + ks.getCrypto().getCipher());
@@ -40,7 +40,7 @@ public class SMKeystore {
     }
 
     @SneakyThrows
-    public static Keystore generateKeyStore(String password, byte[] privateKey) {
+    public static KeyStoreImpl generateKeyStore(String password, byte[] privateKey) {
         PrivateKey sm2PrivateKey = new SM2PrivateKey(privateKey);
         PublicKey publicKey = sm2PrivateKey.generatePublicKey();
         byte[] salt = new byte[SALT_LENGTH];
@@ -57,7 +57,7 @@ public class SMKeystore {
         byte[] mac = SM3Util.hash(ByteUtils.concatenate(deriveKey, cipherPrivKey));
         Crypto crypto = new Crypto("sm4-128-ctr", HexBytes.fromBytes(cipherPrivKey), HexBytes.fromBytes(iv), HexBytes.fromBytes(salt));
 
-        return new Keystore(
+        return new KeyStoreImpl(
                 HexBytes.fromBytes(publicKey.getEncoded()),
                 crypto,
                 UUID.randomUUID().toString(),

@@ -1,8 +1,6 @@
 package org.tdf.sunflower.facade;
 
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.exception.GenesisConflictsException;
-import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 
@@ -12,7 +10,7 @@ import java.util.Optional;
 public interface BlockRepository{
     Block getGenesis();
 
-    void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException;
+    void saveGenesis(Block block) ;
 
     // TODO: use guava cache
     boolean containsHeader(byte[] hash);

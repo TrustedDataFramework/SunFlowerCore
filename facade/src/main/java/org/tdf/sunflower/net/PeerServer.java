@@ -1,6 +1,5 @@
 package org.tdf.sunflower.net;
 
-import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.PeerServerListener;
 
 import java.util.Collections;
@@ -28,7 +27,7 @@ public interface PeerServer {
 
     void stop();
 
-    void init(Properties properties) throws PeerServerInitException;
+    void init(Properties properties);
 
     Peer getSelf();
 
@@ -69,7 +68,7 @@ public interface PeerServer {
         }
 
         @Override
-        public void init(Properties properties) throws PeerServerInitException {
+        public void init(Properties properties) {
 
         }
 

@@ -5,7 +5,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.keystore.Keystore;
+import org.tdf.crypto.keystore.KeyStoreImpl;
+import org.tdf.sunflower.facade.KeyStore;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
@@ -73,9 +74,9 @@ public class PoAMiner extends AbstractMiner {
     public void setPoAConfig(PoAConfig poAConfig) throws ConsensusEngineInitException {
         this.poAConfig = poAConfig;
         this.minerAddress = poAConfig.getMinerCoinBase();
-        if (poA.getKeystore() != Keystore.NONE)
+        if (poA.getKeyStore() != KeyStore.NONE)
             this.minerAddress = Address.fromPublicKey(
-                    CryptoHelpers.getPkFromSk(poA.getKeystore().getPrivateKey().getBytes())
+                    CryptoHelpers.getPkFromSk(poA.getKeyStore().getPrivateKey().getBytes())
             );
     }
 

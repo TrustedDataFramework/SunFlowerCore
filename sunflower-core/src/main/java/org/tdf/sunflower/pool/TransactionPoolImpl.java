@@ -10,7 +10,7 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.TransactionPoolConfig;
-import org.tdf.sunflower.controller.PageSize;
+import org.tdf.sunflower.types.PageSize;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewTransactionsCollected;
 import org.tdf.sunflower.events.NewTransactionsReceived;

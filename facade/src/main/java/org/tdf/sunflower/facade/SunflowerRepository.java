@@ -1,8 +1,6 @@
 package org.tdf.sunflower.facade;
 
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.exception.GenesisConflictsException;
-import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
@@ -37,7 +35,7 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
         }
 
         @Override
-        public void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
+        public void saveGenesis(Block block) {
 
         }
 

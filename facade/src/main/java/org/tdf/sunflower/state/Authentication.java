@@ -4,6 +4,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import org.tdf.common.store.Store;
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.Container;
@@ -28,7 +29,11 @@ public class Authentication implements PreBuiltContract {
     private final HexBytes contractAddress;
 
     @Setter
-    private AccountTrie accountTrie;
+    private StateTrie<HexBytes, Account> accountTrie;
+
+    @Setter
+    private Trie<byte[], byte[]> contractStorageTrie;
+
 
     public Authentication(@NonNull Collection<? extends HexBytes> nodes, @NonNull HexBytes contractAddress) {
         this.nodes = nodes;
@@ -37,7 +42,7 @@ public class Authentication implements PreBuiltContract {
 
     private byte[] getValue(byte[] stateRoot, byte[] key) {
         Account a = accountTrie.get(stateRoot, this.contractAddress).get();
-        Store<byte[], byte[]> db = accountTrie.getContractStorageTrie().revert(a.getStorageRoot());
+        Store<byte[], byte[]> db = contractStorageTrie.revert(a.getStorageRoot());
         return db.get(key).get();
     }
 

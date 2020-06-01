@@ -9,20 +9,18 @@ import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.Start;
-import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.AccountUpdater;
+import org.tdf.sunflower.state.Bios;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Properties;
 
 import static org.tdf.sunflower.consensus.pow.PoWBios.N_BITS_KEY;
@@ -31,6 +29,8 @@ import static org.tdf.sunflower.consensus.pow.PoWBios.N_BITS_KEY;
 public class PoW extends AbstractConsensusEngine {
     public static final int BLOCK_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
     public static final int TRANSACTION_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
+    private Genesis genesis;
+    private PoWConfig config;
 
     public PoW() {
 
@@ -61,37 +61,39 @@ public class PoW extends AbstractConsensusEngine {
     }
 
     @Override
-    @SneakyThrows
-    public void init(Properties properties) {
-        ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
-        PoWConfig config = MappingUtil.propertiesToPojo(properties, PoWConfig.class);
-        Resource resource = FileUtils.getResource(config.getGenesis());
-        Genesis genesis = objectMapper.readValue(resource.getInputStream(), Genesis.class);
+    public List<Account> getGenesisStates() {
+        if (genesis.getAlloc() == null)
+            return Collections.emptyList();
 
-        Map<HexBytes, Account> alloc = new HashMap<>();
+        List<Account> accounts = new ArrayList<>();
 
         if (genesis.getAlloc() != null) {
             genesis.getAlloc().forEach((k, v) -> {
                 Account a = new Account(HexBytes.fromHex(k), v);
-                alloc.put(a.getAddress(), a);
+                accounts.add(a);
             });
         }
 
-        AccountUpdater updater = new AccountUpdater(
-                alloc, getContractCodeStore(),
-                getContractStorageTrie(),
-                Collections.emptyList(),
-                Collections.singletonList(new PoWBios(genesis.getNbits().getBytes(), config))
-        );
+        return accounts;
+    }
 
-        AccountTrie trie = new AccountTrie(
-                updater, getDatabaseStoreFactory(),
-                getContractCodeStore(), getContractStorageTrie()
-        );
-        Block genesisBlock = genesis.get();
-        genesisBlock.setStateRoot(trie.getGenesisRoot());
-        setGenesisBlock(genesisBlock);
-        setAccountTrie(trie);
+    @Override
+    public List<Bios> getBios() {
+        PoWBios bios = new PoWBios(genesis.getNbits().getBytes(), config);
+        return Collections.singletonList(bios);
+    }
+
+    @Override
+    @SneakyThrows
+    public void init(Properties properties) {
+        ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
+        config = MappingUtil.propertiesToPojo(properties, PoWConfig.class);
+        Resource resource = FileUtils.getResource(config.getGenesis());
+        genesis = objectMapper.readValue(resource.getInputStream(), Genesis.class);
+
+        setGenesisBlock(genesis.get());
+        initStateTrie();
+
         setValidator(new PoWValidator(this));
         setPeerServerListener(PeerServerListener.NONE);
 

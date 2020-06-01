@@ -26,9 +26,9 @@ public class PoA extends AbstractConsensusEngine {
     private Genesis genesis;
     private PoAMiner poaMiner;
     private PoAValidator poAValidator;
-    private AccountTrie accountTrie;
     private Authentication authContract;
     private Authentication minerContract;
+    private List<PreBuiltContract> preBuiltContracts = new ArrayList<>();
 
     public PoA() {
     }
@@ -56,6 +56,17 @@ public class PoA extends AbstractConsensusEngine {
         return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, poAConfig.getBlockInterval());
     }
 
+    @Override
+    public List<Account> getGenesisStates() {
+        return genesis.alloc == null ? Collections.emptyList() :
+                genesis.alloc.entrySet().stream()
+                        .map(e -> new Account(HexBytes.fromHex(e.getKey()), e.getValue())).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PreBuiltContract> getPreBuiltContracts() {
+        return preBuiltContracts;
+    }
 
     @Override
     public void init(Properties properties) throws ConsensusEngineInitException {
@@ -78,16 +89,6 @@ public class PoA extends AbstractConsensusEngine {
         setPeerServerListener(PeerServerListener.NONE);
         // create state repository
 
-        Map<HexBytes, Account> alloc = new HashMap<>();
-
-        if (genesis.alloc != null) {
-            genesis.alloc.forEach((k, v) -> {
-                Account a = new Account(HexBytes.fromHex(k), v);
-                alloc.put(a.getAddress(), a);
-            });
-        }
-
-        List<PreBuiltContract> preBuiltContracts = new ArrayList<>();
 
         this.authContract = poAConfig.isAuth() ? new Authentication(
                 genesis.miners == null ? Collections.emptyList() :
@@ -105,24 +106,19 @@ public class PoA extends AbstractConsensusEngine {
 
         preBuiltContracts.add(this.minerContract);
 
-        AccountUpdater updater = new AccountUpdater(
-                alloc, getContractCodeStore(),
-                getContractStorageTrie(),
-                preBuiltContracts,
-                Collections.emptyList()
-        );
+        initStateTrie();
 
+        StateTrie<HexBytes, Account> trie = getAccountTrie();
 
-        AccountTrie trie = new AccountTrie(
-                updater, getDatabaseStoreFactory(),
-                getContractCodeStore(), getContractStorageTrie()
-        );
+        if (this.authContract != null) {
+            this.authContract.setAccountTrie(trie);
+            this.authContract.setContractStorageTrie(getContractStorageTrie());
+        }
 
-        this.accountTrie = trie;
-        this.authContract.setAccountTrie(trie);
-        this.minerContract.setAccountTrie(trie);
-        getGenesisBlock().setStateRoot(trie.getGenesisRoot());
-        setAccountTrie(trie);
+        if (this.minerContract != null) {
+            this.minerContract.setAccountTrie(trie);
+            this.minerContract.setContractStorageTrie(getContractStorageTrie());
+        }
 
         poaMiner = new PoAMiner(getAccountTrie(), getEventBus(), poAConfig, this);
         poaMiner.setBlockRepository(this.getSunflowerRepository());

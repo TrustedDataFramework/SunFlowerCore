@@ -9,12 +9,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.store.DatabaseStore;
 import org.tdf.common.store.RocksDb;
-import org.tdf.sunflower.db.DatabaseStoreFactory;
+import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
 
 @RunWith(JUnit4.class)
 public class DbSourceTest {
     private static final DatabaseConfig PROPERTIES;
-    private static DatabaseStoreFactory FACTORY;
+    private static DatabaseStoreFactoryImpl FACTORY;
 
     static {
         PROPERTIES = new DatabaseConfig();
@@ -22,7 +22,7 @@ public class DbSourceTest {
         PROPERTIES.setDirectory("local");
         PROPERTIES.setMaxOpenFiles(512);
         try {
-            FACTORY = new DatabaseStoreFactory(PROPERTIES);
+            FACTORY = new DatabaseStoreFactoryImpl(PROPERTIES);
         } catch (Exception e) {
             e.printStackTrace();
         }

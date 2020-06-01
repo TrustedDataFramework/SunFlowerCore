@@ -3,9 +3,10 @@ package org.tdf.sunflower.controller;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
+import org.tdf.sunflower.types.PageSize;
 
 @Data
-public class PoolQuery implements PageSize{
+public class PoolQuery implements PageSize {
     private int page;
 
     @Getter(AccessLevel.NONE)

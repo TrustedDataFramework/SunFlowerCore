@@ -25,7 +25,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
-import org.tdf.crypto.keystore.Keystore;
+import org.tdf.crypto.keystore.KeyStoreImpl;
 import org.tdf.crypto.keystore.SMKeystore;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
@@ -36,7 +36,7 @@ import org.tdf.sunflower.consensus.pos.PoS;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.crypto.CryptoHelpers;
-import org.tdf.sunflower.db.DatabaseStoreFactory;
+import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.mq.BasicMessageQueue;
@@ -47,8 +47,10 @@ import org.tdf.sunflower.pool.TransactionPoolImpl;
 import org.tdf.sunflower.service.ConcurrentSunflowerRepository;
 import org.tdf.sunflower.service.SunflowerRepositoryKVImpl;
 import org.tdf.sunflower.service.SunflowerRepositoryService;
+import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
+import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.FileUtils;
@@ -59,6 +61,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @EnableAsync
 @EnableScheduling
@@ -229,13 +232,13 @@ public class Start {
             ConsensusProperties consensusProperties,
             SunflowerRepository repositoryService,
             TransactionPoolImpl transactionPool,
-            DatabaseStoreFactory databaseStoreFactory,
+            DatabaseStoreFactoryImpl databaseStoreFactory,
             EventBus eventBus,
             SyncConfig syncConfig,
             ApplicationContext context,
             @Qualifier("contractStorageTrie") Trie<byte[], byte[]> contractStorageTrie,
             @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore,
-            Keystore keystore
+            KeyStore keyStore
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
         name = name == null ? "" : name;
@@ -263,9 +266,9 @@ public class Start {
                 engine = new PoS();
                 break;
             default:
-                try{
+                try {
                     engine = (ConsensusEngine) Class.forName(name.trim()).newInstance();
-                }catch (Exception ignored){
+                } catch (Exception ignored) {
                     log.error(
                             "none available consensus configured by sunflower.consensus.name=" + name +
                                     " please provide available consensus engine");
@@ -315,8 +318,8 @@ public class Start {
     public PeerServer peerServer(
             PeerServerProperties properties,
             ConsensusEngine engine,
-            DatabaseStoreFactory factory,
-            Keystore keystore
+            DatabaseStoreFactoryImpl factory,
+            KeyStore keyStore
     ) throws Exception {
         String name = properties.getProperty("name");
         name = name == null ? "" : name;
@@ -341,7 +344,7 @@ public class Start {
                     }
                 }
         ) : new MapStore<>();
-        PeerServer peerServer = new PeerServerImpl(store, engine, Keystore.NONE);
+        PeerServer peerServer = new PeerServerImpl(store, engine, KeyStore.NONE);
         peerServer.init(properties);
         peerServer.addListeners(engine.getPeerServerListener());
         peerServer.start();
@@ -364,7 +367,7 @@ public class Start {
 
     // storage root of contract store
     @Bean
-    public Trie<byte[], byte[]> contractStorageTrie(DatabaseStoreFactory factory) {
+    public Trie<byte[], byte[]> contractStorageTrie(DatabaseStoreFactoryImpl factory) {
         return Trie.<byte[], byte[]>builder()
                 .hashFunction(CryptoContext::hash)
                 .keyCodec(Codec.identity())
@@ -375,34 +378,53 @@ public class Start {
 
     // contract hash code -> contract binary
     @Bean
-    public Store<byte[], byte[]> contractCodeStore(DatabaseStoreFactory factory) {
+    public Store<byte[], byte[]> contractCodeStore(DatabaseStoreFactoryImpl factory) {
         return factory.create("contract-code");
     }
 
     @Bean
-    public Keystore keystore(GlobalConfig config) throws Exception {
+    public KeyStore keystore(GlobalConfig config) throws Exception {
         String ksLocation = (String) config.get("keystore");
         if (ksLocation == null || ksLocation.isEmpty())
-            return Keystore.NONE;
-        Keystore keystore = MAPPER.readValue(
+            return KeyStore.NONE;
+        KeyStoreImpl keyStoreImpl = MAPPER.readValue(
                 FileUtils.getResource(ksLocation).getInputStream(),
-                Keystore.class);
+                KeyStoreImpl.class);
 
         System.out.println("please input password for keystore " + ksLocation);
         char[] password = System.console().readPassword();
         byte[] sk =
-                SMKeystore.decryptKeyStore(keystore, password == null ? null : new String(password));
-        keystore.setPrivateKey(HexBytes.fromBytes(sk));
-        return keystore;
+                SMKeystore.decryptKeyStore(keyStoreImpl, password == null ? null : new String(password));
+        keyStoreImpl.setPrivateKey(HexBytes.fromBytes(sk));
+        return keyStoreImpl::getPrivateKey;
     }
 
     private void injectApplicationContext(ApplicationContext context, AbstractConsensusEngine engine) {
         engine.setEventBus(context.getBean(EventBus.class));
         engine.setTransactionPool(context.getBean(TransactionPool.class));
-        engine.setDatabaseStoreFactory(context.getBean(DatabaseStoreFactory.class));
+        DatabaseStoreFactoryImpl databaseStoreFactory = (context.getBean(DatabaseStoreFactoryImpl.class));
         engine.setSunflowerRepository(context.getBean(SunflowerRepository.class));
         engine.setContractStorageTrie(context.getBean("contractStorageTrie", Trie.class));
         engine.setContractCodeStore(context.getBean("contractCodeStore", Store.class));
-        engine.setKeystore(context.getBean(Keystore.class));
+        engine.setKeyStore(context.getBean(KeyStore.class));
+
+        engine.setStateTrieProvider(e -> {
+            AccountUpdater updater = new AccountUpdater(
+                    e.getGenesisStates().stream().collect(Collectors.toMap(Account::getAddress, Function.identity())),
+                    e.getContractCodeStore(), e.getContractStorageTrie(),
+                    e.getPreBuiltContracts(), e.getBios()
+            );
+
+            AccountTrie trie = new AccountTrie(
+                    updater, databaseStoreFactory,
+                    e.getContractCodeStore(), e.getContractStorageTrie()
+            );
+
+            e.setAccountTrie(trie);
+            Block b = e.getGenesisBlock();
+            b.setStateRoot(trie.getGenesisRoot());
+            e.setGenesisBlock(b);
+            return trie;
+        });
     }
 }

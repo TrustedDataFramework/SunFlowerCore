@@ -1,19 +1,17 @@
 package org.tdf.sunflower.consensus.vrf;
 
-import java.io.IOException;
-import java.util.*;
-
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
 import org.tdf.sunflower.consensus.vrf.VrfGenesis.MinerInfo;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
-import org.tdf.sunflower.consensus.vrf.core.CommitProof;
-import org.tdf.sunflower.consensus.vrf.core.PendingVrfState;
-import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
-import org.tdf.sunflower.consensus.vrf.core.ValidatorManager;
-import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
+import org.tdf.sunflower.consensus.vrf.core.*;
 import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
@@ -27,20 +25,14 @@ import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.state.PreBuiltContract;
-import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.FileUtils;
-
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import org.tdf.sunflower.util.MappingUtil;
+
+import java.io.IOException;
+import java.util.*;
 
 @Getter
 @Setter
@@ -52,6 +44,25 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
 
     private PeerServer peerServer;
     private VrfMiner vrfMiner;
+    private List<PreBuiltContract> contractList = new ArrayList<>();
+
+    @Override
+    public List<Account> getGenesisStates() {
+        List<Account> ret = new ArrayList<>();
+        if (genesis.alloc != null) {
+            genesis.alloc.forEach((k, v) -> {
+                Account a = new Account(HexBytes.fromHex(k), v);
+                ret.add(a);
+            });
+        }
+        return ret;
+    }
+
+    @Override
+    public List<PreBuiltContract> getPreBuiltContracts() {
+        return contractList;
+    }
+
 
     public VrfEngine() {
 
@@ -70,18 +81,18 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
         VrfMessageCode code = codeAndBytes.getCode();
         byte[] vrfBytes = codeAndBytes.getRlpBytes();
         switch (code) {
-        case VRF_BLOCK:
-            processVrfBlockMsg(context, vrfBytes);
-            break;
-        case VRF_PROPOSAL_PROOF:
-            processVrfProposalProofMsg(vrfBytes);
-            break;
-        case VRF_COMMIT_PROOF:
-            processCommitProofMsg(vrfBytes);
-            break;
-        case NEW_MINED_BLOCK:
-            processNewMinedBlockMsg(vrfBytes);
-            break;
+            case VRF_BLOCK:
+                processVrfBlockMsg(context, vrfBytes);
+                break;
+            case VRF_PROPOSAL_PROOF:
+                processVrfProposalProofMsg(vrfBytes);
+                break;
+            case VRF_COMMIT_PROOF:
+                processCommitProofMsg(vrfBytes);
+                break;
+            case NEW_MINED_BLOCK:
+                processNewMinedBlockMsg(vrfBytes);
+                break;
         }
     }
 
@@ -170,34 +181,16 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
 
         setPeerServerListener(this);
 
-        Map<HexBytes, Account> alloc = new HashMap<>();
-        if (genesis.alloc != null) {
-            genesis.alloc.forEach((k, v) -> {
-                Account a = new Account(HexBytes.fromHex(k), v);
-                alloc.put(a.getAddress(), a);
-            });
-        }
 
         // Precompiled contracts
         VrfPreBuiltContract vrfContract = new VrfPreBuiltContract();
 
         // Set collaterals from genesis
         setGenesisCollateral(genesis.miners, vrfContract);
-        List<PreBuiltContract> contractList = new ArrayList<>();
         contractList.add(vrfContract);
-        alloc.put(Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES, vrfContract.getGenesisAccount());
 
-        AccountUpdater updater = new AccountUpdater(
-                alloc,
-                getContractCodeStore(),
-                getContractStorageTrie(),
-                contractList,
-                Collections.emptyList()
-        );
-        AccountTrie trie = new AccountTrie(updater, getDatabaseStoreFactory(), getContractCodeStore(),
-                getContractStorageTrie());
-        getGenesisBlock().setStateRoot(trie.getGenesisRoot());
-        setAccountTrie(trie);
+        initStateTrie();
+
         setValidator(new VrfValidator(getAccountTrie()));
 
         vrfMiner = new VrfMiner(getAccountTrie(), getEventBus(), vrfConfig);
@@ -210,6 +203,7 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
 
 //        setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
         // ------- Need well implementation.
+        AccountTrie trie = (AccountTrie) getAccountTrie();
         ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository(), trie,
                 getContractStorageTrie(), vrfConfig);
 

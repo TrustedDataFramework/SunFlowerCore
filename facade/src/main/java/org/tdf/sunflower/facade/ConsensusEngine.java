@@ -1,7 +1,6 @@
 package org.tdf.sunflower.facade;
 
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
@@ -30,16 +29,16 @@ public interface ConsensusEngine {
     }
 
     // inject configurations, throw exception if configuration is invalid
-    void init(Properties properties) throws ConsensusEngineInitException;
+    void init(Properties properties);
 
 
     String getName();
 
-    default List<HexBytes> getMinerAddresses(){
+    default List<HexBytes> getMinerAddresses() {
         return Collections.emptyList();
     }
 
-    default ValidateResult validateHeader(String header){
+    default ValidateResult validateHeader(String header) {
         return ValidateResult.success();
     }
 }

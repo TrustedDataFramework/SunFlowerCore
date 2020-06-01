@@ -7,7 +7,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.gmhelper.SM3Util;
-import org.tdf.sunflower.db.DatabaseStoreFactory;
+import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
@@ -19,12 +19,11 @@ import org.tdf.sunflower.types.Transaction;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class BugTest {
-    private static DatabaseStoreFactory factory =
-            new DatabaseStoreFactory(new DatabaseConfig("leveldb-iq80", 512, "test", true, ""));
+    private static DatabaseStoreFactoryImpl factory =
+            new DatabaseStoreFactoryImpl(new DatabaseConfig("leveldb-iq80", 512, "test", true, ""));
 
     @Qualifier("contractCodeStore")
     private static Store<byte[], byte[]> contractStore = factory.create("contractCodeStore");

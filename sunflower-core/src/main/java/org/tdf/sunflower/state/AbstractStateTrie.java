@@ -10,9 +10,9 @@ import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.Start;
-import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
-import org.tdf.sunflower.db.DatabaseStoreFactory;
+import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
+import org.tdf.sunflower.facade.DatabaseStoreFactory;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
 
