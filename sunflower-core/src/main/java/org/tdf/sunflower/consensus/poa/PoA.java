@@ -30,8 +30,7 @@ public class PoA extends AbstractConsensusEngine {
     private Authentication authContract;
     private Authentication minerContract;
 
-    public PoA(Properties properties) {
-        super(properties);
+    public PoA() {
     }
 
     @Override
@@ -136,5 +135,10 @@ public class PoA extends AbstractConsensusEngine {
         setValidator(poAValidator);
 
         // register dummy account
+    }
+
+    @Override
+    public String getName() {
+        return "poa";
     }
 }

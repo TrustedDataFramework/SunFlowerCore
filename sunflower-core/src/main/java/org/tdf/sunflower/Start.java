@@ -25,7 +25,6 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
-import org.tdf.crypto.keystore.Crypto;
 import org.tdf.crypto.keystore.Keystore;
 import org.tdf.crypto.keystore.SMKeystore;
 import org.tdf.crypto.sm2.SM2;
@@ -39,10 +38,7 @@ import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.db.DatabaseStoreFactory;
 import org.tdf.sunflower.exception.ApplicationException;
-import org.tdf.sunflower.facade.AbstractConsensusEngine;
-import org.tdf.sunflower.facade.ConsensusEngine;
-import org.tdf.sunflower.facade.Miner;
-import org.tdf.sunflower.facade.SunflowerRepository;
+import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.mq.BasicMessageQueue;
 import org.tdf.sunflower.mq.SocketIOMessageQueue;
 import org.tdf.sunflower.net.PeerServer;
@@ -243,7 +239,7 @@ public class Start {
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
         name = name == null ? "" : name;
-        final ConsensusEngine engine;
+        ConsensusEngine engine;
         switch (name.trim().toLowerCase()) {
             // none consensus selected, used for unit test
             case ApplicationConstants.CONSENSUS_NONE:
@@ -253,27 +249,31 @@ public class Start {
             case ApplicationConstants.CONSENSUS_POA:
                 // use poa as default consensus
                 // another engine: pow, pos, pow+pos, vrf
-                engine = new PoA(consensusProperties);
+                engine = new PoA();
                 break;
             case ApplicationConstants.CONSENSUS_VRF:
                 // use poa as default consensus
                 // another engine: pow, pos, pow+pos, vrf
-                engine = new VrfEngine(consensusProperties);
+                engine = new VrfEngine();
                 break;
             case ApplicationConstants.CONSENSUS_POW:
-                engine = new PoW(consensusProperties);
+                engine = new PoW();
                 break;
             case ApplicationConstants.CONSENSUS_POS:
-                engine = new PoS(consensusProperties);
+                engine = new PoS();
                 break;
             default:
-                log.error(
-                        "none available consensus configured by sunflower.consensus.name=" + name +
-                                " please provide available consensus engine");
-                log.error("roll back to poa consensus");
-                engine = new PoA(consensusProperties);
+                try{
+                    engine = (ConsensusEngine) Class.forName(name.trim()).newInstance();
+                }catch (Exception ignored){
+                    log.error(
+                            "none available consensus configured by sunflower.consensus.name=" + name +
+                                    " please provide available consensus engine");
+                    log.error("roll back to poa consensus");
+                    engine = new PoA();
+                }
         }
-        engine.setApplicationContext(context);
+        injectApplicationContext(context, (AbstractConsensusEngine) engine);
 
         engine.init(consensusProperties);
 
@@ -394,5 +394,15 @@ public class Start {
                 SMKeystore.decryptKeyStore(keystore, password == null ? null : new String(password));
         keystore.setPrivateKey(HexBytes.fromBytes(sk));
         return keystore;
+    }
+
+    private void injectApplicationContext(ApplicationContext context, AbstractConsensusEngine engine) {
+        engine.setEventBus(context.getBean(EventBus.class));
+        engine.setTransactionPool(context.getBean(TransactionPool.class));
+        engine.setDatabaseStoreFactory(context.getBean(DatabaseStoreFactory.class));
+        engine.setSunflowerRepository(context.getBean(SunflowerRepository.class));
+        engine.setContractStorageTrie(context.getBean("contractStorageTrie", Trie.class));
+        engine.setContractCodeStore(context.getBean("contractCodeStore", Store.class));
+        engine.setKeystore(context.getBean(Keystore.class));
     }
 }

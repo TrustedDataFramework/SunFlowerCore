@@ -53,8 +53,8 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
     private PeerServer peerServer;
     private VrfMiner vrfMiner;
 
-    public VrfEngine(Properties properties) {
-        super(properties);
+    public VrfEngine() {
+
     }
 //    private ConsortiumRepository blockRepository;
 
@@ -257,5 +257,10 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
             repository.writeBlock(block);
         }
         return true;
+    }
+
+    @Override
+    public String getName() {
+        return "vrf";
     }
 }

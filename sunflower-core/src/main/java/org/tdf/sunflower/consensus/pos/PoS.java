@@ -33,8 +33,8 @@ public class PoS extends AbstractConsensusEngine {
 
     private PoSMiner posMiner;
 
-    public PoS(Properties properties) {
-        super(properties);
+    public PoS() {
+
     }
 
     public List<HexBytes> getMinerAddresses() {
@@ -79,5 +79,10 @@ public class PoS extends AbstractConsensusEngine {
 
         this.posValidator = new PoSValidator(getAccountTrie(), this.posMiner);
         setValidator(this.posValidator);
+    }
+
+    @Override
+    public String getName() {
+        return "pos";
     }
 }

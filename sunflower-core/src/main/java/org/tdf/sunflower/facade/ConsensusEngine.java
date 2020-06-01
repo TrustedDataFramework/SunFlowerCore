@@ -1,6 +1,5 @@
 package org.tdf.sunflower.facade;
 
-import org.springframework.context.ApplicationContext;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.state.Account;
@@ -29,9 +28,6 @@ public interface ConsensusEngine {
     default Optional<Set<HexBytes>> getApprovedNodes() {
         return Optional.empty();
     }
-
-    // the below methods are called before init() to inject dependencies
-    void setApplicationContext(ApplicationContext context);
 
     // inject configurations, throw exception if configuration is invalid
     void init(Properties properties) throws ConsensusEngineInitException;

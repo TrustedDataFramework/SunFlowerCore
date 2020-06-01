@@ -1,9 +1,7 @@
 package org.tdf.sunflower.facade;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.context.ApplicationContext;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
@@ -19,6 +17,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Getter
+@Setter
 public abstract class AbstractConsensusEngine implements ConsensusEngine {
     static final Properties NONE_PROPERTIES;
 
@@ -27,7 +26,6 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
         NONE_PROPERTIES.put("name", "none");
     }
 
-    protected ApplicationContext applicationContext;
 
     // contract storage trie
     private Trie<byte[], byte[]> contractStorageTrie;
@@ -37,32 +35,16 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
 
     private Keystore keystore;
 
-    // inject dependencies before init() called
-    public void setApplicationContext(ApplicationContext context){
-        this.applicationContext = context;
-        this.eventBus = context.getBean(EventBus.class);
-        this.transactionPool = context.getBean(TransactionPool.class);
-        this.databaseStoreFactory = context.getBean(DatabaseStoreFactory.class);
-        this.sunflowerRepository = context.getBean(SunflowerRepository.class);
-        this.contractStorageTrie = context.getBean("contractStorageTrie", Trie.class);
-        this.contractCodeStore = context.getBean("contractCodeStore", Store.class);
-        this.keystore = context.getBean(Keystore.class);
-    }
-
     // sub class should set miner explicitly when init() called
-    @Setter(AccessLevel.PROTECTED)
     private Miner miner;
 
     // sub class should set validator explicitly when init() called
-    @Setter(AccessLevel.PROTECTED)
     private Validator validator;
 
     // sub class should set account stateTrie explicitly when init() called
-    @Setter(AccessLevel.PROTECTED)
     private StateTrie<HexBytes, Account> accountTrie;
 
     // sub class should set genesis block explicitly when init() called
-    @Setter(AccessLevel.PROTECTED)
     private Block genesisBlock;
 
     // event bus will be injected before init() called
@@ -78,17 +60,14 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     private SunflowerRepository sunflowerRepository;
 
     // sub class should set confirmedBlocksProvider explicitly when init() called
-    @Setter(AccessLevel.PROTECTED)
     private ConfirmedBlocksProvider confirmedBlocksProvider = x -> x;
 
     // sub class should set peer server listener explicitly when init() called
-    @Setter(AccessLevel.PROTECTED)
     private PeerServerListener peerServerListener;
 
     private String name;
 
-    public AbstractConsensusEngine(Properties properties){
-        this.name = Objects.requireNonNull(properties.getProperty("name"));
+    public AbstractConsensusEngine(){
     }
 
     protected void initStates(Block genesis, List<Account> alloc, List<PreBuiltContract> preBuiltContractList, List<Bios> biosList){
@@ -108,7 +87,7 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
         setGenesisBlock(genesis);
     }
 
-    public static final AbstractConsensusEngine NONE = new AbstractConsensusEngine(NONE_PROPERTIES) {
+    public static final AbstractConsensusEngine NONE = new AbstractConsensusEngine() {
         @Override
         public void init(Properties properties) throws ConsensusEngineInitException {
             if(getTransactionPool() == null)
@@ -132,6 +111,11 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
                     Collections.emptyList()
             );
             setAccountTrie(new AccountTrie(updater, getDatabaseStoreFactory(), getContractCodeStore(), getContractStorageTrie()));
+        }
+
+        @Override
+        public String getName() {
+            return "none";
         }
     };
 }
