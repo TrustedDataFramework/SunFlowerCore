@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
@@ -54,7 +55,13 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -72,6 +79,8 @@ import java.util.stream.Collectors;
 public class Start {
     @Getter
     private static boolean enableAssertion;
+
+    private static ClassLoader customClassLoader = ClassUtils.getDefaultClassLoader();
 
     public static final Executor APPLICATION_THREAD_POOL = Executors.newCachedThreadPool();
 
@@ -118,6 +127,34 @@ public class Start {
         if (constant != null && constant.trim().toLowerCase().equals("true")) {
             ApplicationConstants.VALIDATE = true;
         }
+    }
+
+    @SneakyThrows
+    private static void loadLibs(Environment env) {
+        String path = env.getProperty("sunflower.libs");
+        if (path == null || path.isEmpty())
+            return;
+
+        File f = new File(path);
+        if (!f.exists())
+            throw new RuntimeException("load libs " + path + " failed");
+
+        List<URL> urls = new ArrayList<>();
+
+        if (f.isDirectory()) {
+            File[] files = f.listFiles();
+            if (files == null)
+                return;
+            for (File file : files) {
+                if (!file.getName().endsWith(".jar"))
+                    continue;
+                urls.add(file.toURI().toURL());
+            }
+        } else {
+            urls = Collections.singletonList(f.toURI().toURL());
+        }
+
+        Start.customClassLoader = new URLClassLoader(urls.toArray(new URL[0]), ClassUtils.getDefaultClassLoader());
     }
 
     public static void loadCryptoContext(Environment env) {
@@ -177,6 +214,7 @@ public class Start {
         app.addInitializers(applicationContext -> {
             loadCryptoContext(applicationContext.getEnvironment());
             loadConstants(applicationContext.getEnvironment());
+            loadLibs(applicationContext.getEnvironment());
         });
         app.run(args);
     }
@@ -265,8 +303,9 @@ public class Start {
                 break;
             default:
                 try {
-                    engine = (ConsensusEngine) Class.forName(name.trim()).newInstance();
-                } catch (Exception ignored) {
+                    engine = (ConsensusEngine) customClassLoader.loadClass(name).newInstance();
+                } catch (Exception e) {
+                    e.printStackTrace();
                     log.error(
                             "none available consensus configured by sunflower.consensus.name=" + name +
                                     " please provide available consensus engine");
