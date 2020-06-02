@@ -2,8 +2,6 @@ plugins {
     id 'java'
 }
 
-apply from: '../config/config.gradle'
-
 group 'org.tdf'
 version '1.0-SNAPSHOT'
 
