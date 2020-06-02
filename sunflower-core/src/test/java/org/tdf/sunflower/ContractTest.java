@@ -21,7 +21,7 @@ public class ContractTest {
 
 
     public void testDeployContract() throws Exception{
-        byte[] binary = ByteStreams.toByteArray(FileUtils.getResource(System.getenv("FILE_PATH")).getInputStream());
+        byte[] binary = ByteStreams.toByteArray(FileUtils.getInputStream(System.getenv("FILE_PATH")));
         HexBytes from = HexBytes.fromHex(TEST_PUBLIC_KEY);
         HexBytes to = Address.fromPublicKey(from.getBytes());
         Transaction t = Transaction.builder()

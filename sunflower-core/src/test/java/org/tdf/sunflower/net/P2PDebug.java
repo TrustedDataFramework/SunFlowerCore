@@ -3,6 +3,7 @@ package org.tdf.sunflower.net;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.ClassUtils;
 import org.tdf.common.store.MapStore;
 import org.tdf.crypto.keystore.KeyStoreImpl;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
@@ -34,7 +35,8 @@ public class P2PDebug {
         // port listening on
         PeerServerImpl server = new PeerServerImpl(new MapStore<>(), AbstractConsensusEngine.NONE, KeyStore.NONE);
         Properties properties = new Properties();
-        properties.load(FileUtils.getResource("p2p/node3.properties").getInputStream());
+        FileUtils.setClassLoader(ClassUtils.getDefaultClassLoader());
+        properties.load(FileUtils.getInputStream("p2p/node3.properties"));
         System.out.println(properties);
         server.init(properties);
         server.addListeners(new PeerServerListener() {

@@ -24,7 +24,7 @@ public class ZombieContractTest {
     private static final String TEST_PUBLIC_KEY2 = "36ddb2d6686a827e7edc751f7304d59ea749cd045a7945a028cb4d92a71db870";
     
     public void testDeployContract() throws Exception {
-        byte[] binary = ByteStreams.toByteArray(FileUtils.getResource(System.getenv("FILE_PATH")).getInputStream());
+        byte[] binary = ByteStreams.toByteArray(FileUtils.getInputStream(System.getenv("FILE_PATH")));
         HexBytes from = HexBytes.fromHex(TEST_PUBLIC_KEY);
         HexBytes to = Address.fromPublicKey(from.getBytes());
         Transaction t = Transaction.builder()
