@@ -29,7 +29,7 @@ public class FileUtils {
 
     /**
      * @param pathOrUrl path or url priority url > file system > class path
-     * @return
+     * @return input stream
      */
     @SneakyThrows
     public static InputStream getInputStream(String pathOrUrl) {

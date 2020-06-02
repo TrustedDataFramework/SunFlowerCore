@@ -40,7 +40,7 @@ public class CryptoContext {
     }
 
     public static boolean verify(byte[] pk, byte[] msg, byte[] sig) {
-        return CryptoContext.verify(pk, msg, sig);
+        return signatureVerifier.verify(pk, msg, sig);
     }
 
     private static Function<byte[], byte[]> getPkFromSk = Function.identity();

@@ -143,7 +143,7 @@ public class PoAMiner extends AbstractMiner {
                 .createdAt(System.currentTimeMillis() / 1000)
                 .nonce(height)
                 .from(HexBytes.EMPTY)
-                .amount(EconomicModelImpl.getConsensusRewardAtHeight(height))
+                .amount(poA.economicModel.getConsensusRewardAtHeight(height))
                 .payload(publicKey)
                 .to(minerAddress)
                 .signature(HexBytes.EMPTY).build();
@@ -153,21 +153,4 @@ public class PoAMiner extends AbstractMiner {
         return tx;
     }
 
-    public static class EconomicModelImpl {
-
-        private static final long INITIAL_SUPPLY = 20;
-
-        private static final long HALF_PERIOD = 10000000;
-
-
-        public static long getConsensusRewardAtHeight(long height) {
-            long era = height / HALF_PERIOD;
-            long reward = INITIAL_SUPPLY;
-            for (long i = 0; i < era; i++) {
-                reward = reward * 52218182 / 100000000;
-            }
-            return reward;
-        }
-
-    }
 }

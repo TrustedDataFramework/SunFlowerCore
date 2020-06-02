@@ -91,7 +91,6 @@ public class Authentication implements PreBuiltContract {
                 if (nodes.contains(fromAddr))
                     throw new RuntimeException(fromAddr + " has already in nodes");
 
-
                 if (pending.containsKey(fromAddr))
                     throw new RuntimeException(fromAddr + " has already in pending");
 

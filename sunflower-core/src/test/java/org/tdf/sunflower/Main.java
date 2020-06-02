@@ -4,7 +4,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
-import org.tdf.sunflower.consensus.pos.PoS;
+import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.CryptoContext;
@@ -19,19 +19,19 @@ public class Main {
         CryptoHelpers.ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
     }
 
-    private static final HexBytes FROM_SK = HexBytes.fromHex("");
+    private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
 
     public static void main(String[] args) throws Exception{
         Transaction v = new Transaction(
-                PoS.TRANSACTION_VERSION,
+                PoAConstants.TRANSACTION_VERSION,
                 Transaction.Type.CONTRACT_CALL.code,
                 System.currentTimeMillis() / 1000,
                 1,
                 HexBytes.fromBytes(CryptoContext.getPkFromSk(FROM_SK.getBytes())),
                 0,
                 0,
-                HexBytes.fromHex("00").concat(HexBytes.fromHex("9210f54ee868d4744bf1f00ea90d062e328f05962807972659443f53338c8941")),
-                Constants.POS_AUTHENTICATION_ADDR,
+                HexBytes.fromHex("01").concat(HexBytes.fromHex("bf0aba026e5a0e1a69094c8a0d19d905367d64cf")),
+                Constants.PEER_AUTHENTICATION_ADDR,
                 HexBytes.fromHex("ff")
         );
 

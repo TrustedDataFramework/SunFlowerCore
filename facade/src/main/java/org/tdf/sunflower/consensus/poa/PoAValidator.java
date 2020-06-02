@@ -57,12 +57,14 @@ public class PoAValidator extends AbstractValidator {
     }
 
     private ValidateResult validateCoinBase(Block parent, Transaction coinBase) {
-        if (Address.fromPublicKey(coinBase.getPayload()).equals(coinBase.getTo()))
+        if (!Address.fromPublicKey(coinBase.getPayload()).equals(coinBase.getTo()))
             return ValidateResult.fault("payload is not equals to public key of address " + coinBase.getTo());
 
         if (coinBase.getNonce() != parent.getHeight() + 1)
             return ValidateResult.fault("nonce of coin base should be " + parent.getHeight() + 1);
 
+        if(coinBase.getAmount() != poA.economicModel.getConsensusRewardAtHeight(parent.getHeight() + 1))
+            return ValidateResult.fault("reward of coin base transaction should be " + poA.economicModel.getConsensusRewardAtHeight(parent.getHeight() + 1));
         return ValidateResult.success();
     }
 }

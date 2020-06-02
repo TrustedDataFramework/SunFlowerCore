@@ -2,10 +2,12 @@ package org.tdf.sunflower.consensus.poa;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.consensus.AbstractMiner;
+import org.tdf.sunflower.consensus.EconomicModel;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
@@ -29,20 +31,29 @@ public class PoA extends AbstractConsensusEngine {
     private PoAValidator poAValidator;
     private Authentication authContract;
     private Authentication minerContract;
-    private List<PreBuiltContract> preBuiltContracts = new ArrayList<>();
+    private List<PreBuiltContract> preBuiltContracts;
+    EconomicModel economicModel;
 
-    static byte[] getSignaturePlain(Block b){
+
+    static byte[] getSignaturePlain(Block b) {
         Header nh = b.getHeader().clone();
         nh.setPayload(HexBytes.EMPTY);
         return RLPCodec.encode(nh);
     }
 
     public PoA() {
+        this.preBuiltContracts = new ArrayList<>();
+        this.economicModel = new PoAEconomicModel();
     }
 
     public PoA(List<PreBuiltContract> preBuiltContracts) {
+        this(preBuiltContracts, new PoAEconomicModel());
+    }
+
+    public PoA(List<PreBuiltContract> preBuiltContracts, @NonNull EconomicModel economicModel) {
         this();
         this.preBuiltContracts.addAll(preBuiltContracts);
+        this.economicModel = economicModel;
     }
 
     @Override
