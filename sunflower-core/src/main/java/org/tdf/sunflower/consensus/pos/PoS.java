@@ -16,6 +16,7 @@ import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
+import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -70,8 +71,8 @@ public class PoS extends AbstractConsensusEngine {
     public void init(Properties properties) throws ConsensusEngineInitException {
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
         posConfig = MappingUtil.propertiesToPojo(properties, PoSConfig.class);
-        Resource resource = FileUtils.getResource(posConfig.getGenesis());
-        genesis = objectMapper.readValue(resource.getInputStream(), Genesis.class);
+        InputStream  in = FileUtils.getInputStream(posConfig.getGenesis());
+        genesis = objectMapper.readValue(in, Genesis.class);
 
 
         Map<HexBytes, NodeInfo> nodesMap = new TreeMap<>();

@@ -90,7 +90,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         int port = u.getPort();
         ret.host = (u.getHost() == null || u.getHost().trim().equals("")) ? "localhost" : u.getHost();
         ret.port = port <= 0 ? PeerServerConfig.DEFAULT_PORT : port;
-        ret.ID = HexBytes.fromBytes(CryptoHelpers.getPkFromSk(privateKey));
+        ret.ID = HexBytes.fromBytes(CryptoContext.getPkFromSk(privateKey));
         ret.privateKey = privateKey;
         return ret;
     }

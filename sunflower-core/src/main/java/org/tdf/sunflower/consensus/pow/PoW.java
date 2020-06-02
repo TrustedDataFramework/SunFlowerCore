@@ -18,6 +18,7 @@ import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -88,8 +89,8 @@ public class PoW extends AbstractConsensusEngine {
     public void init(Properties properties) {
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
         config = MappingUtil.propertiesToPojo(properties, PoWConfig.class);
-        Resource resource = FileUtils.getResource(config.getGenesis());
-        genesis = objectMapper.readValue(resource.getInputStream(), Genesis.class);
+        InputStream in = FileUtils.getInputStream(config.getGenesis());
+        genesis = objectMapper.readValue(in, Genesis.class);
 
         setGenesisBlock(genesis.get());
         initStateTrie();

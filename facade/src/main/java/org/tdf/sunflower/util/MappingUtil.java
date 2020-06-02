@@ -1,15 +1,23 @@
 package org.tdf.sunflower.util;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
-import org.tdf.sunflower.Start;
 
 import java.util.Map;
 import java.util.Properties;
 
 public class MappingUtil {
+    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .enable(JsonParser.Feature.ALLOW_COMMENTS)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
     public static Map<String, Object> pojoToMap(Object pojo) {
-        return Start.MAPPER.convertValue(pojo, new TypeReference<Map<String, Object>>() {
+        return OBJECT_MAPPER.convertValue(pojo, new TypeReference<Map<String, Object>>() {
         });
     }
 
@@ -19,6 +27,7 @@ public class MappingUtil {
             return mapper.readPropertiesAs(properties, cls);
         } catch (Exception e) {
             String schema = "";
+            e.printStackTrace();
             try {
                 schema = mapper.writeValueAsProperties(cls.newInstance()).toString();
             } catch (Exception ignored) {

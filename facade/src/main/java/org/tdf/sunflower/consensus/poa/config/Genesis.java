@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
-import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
@@ -38,7 +37,7 @@ public class Genesis {
         Header h = Header.builder()
                 .version(PoAConstants.BLOCK_VERSION)
                 .hashPrev(PoAConstants.ZERO_BYTES)
-                .stateRoot(HexBytes.fromBytes(CryptoHelpers.getEmptyTrieRoot(
+                .stateRoot(HexBytes.fromBytes(CryptoContext.getEmptyTrieRoot(
                         CryptoContext::hash
                 )))
                 .transactionsRoot(emptyRoot)

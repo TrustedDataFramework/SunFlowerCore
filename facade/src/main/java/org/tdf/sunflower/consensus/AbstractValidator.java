@@ -1,5 +1,6 @@
 package org.tdf.sunflower.consensus;
 
+import lombok.NonNull;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.Validator;
@@ -16,7 +17,17 @@ public abstract class AbstractValidator implements Validator {
         this.accountTrie = accountTrie;
     }
 
-    protected ValidateResult commonValidate(Block block, Block parent) {
+    protected ValidateResult commonValidate(@NonNull Block block, @NonNull Block parent) {
+        if (block.getBody() == null || block.getBody().isEmpty())
+            return ValidateResult.fault("missing block body");
+
+        // a block should contains exactly one coin base transaction
+        if (block.getBody().get(0).getType() != Transaction.Type.COIN_BASE.code)
+            return ValidateResult.fault("the first transaction of block body should be coin base");
+
+        if (block.getBody().stream().filter(t -> t.getType() == Transaction.Type.COIN_BASE.code).count() > 1)
+            return ValidateResult.fault("the block body contains at most one coin base transaction");
+
         for (Transaction t : block.getBody()) {
             ValidateResult res = t.basicValidate();
             if (!res.isSuccess()) return res;

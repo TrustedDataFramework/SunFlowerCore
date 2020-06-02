@@ -22,6 +22,7 @@ public class Authentication implements PreBuiltContract {
     public enum Method {
         JOIN_NODE,
         APPROVE_JOIN,
+        EXIT
     }
 
     private final Collection<? extends HexBytes> nodes;
@@ -116,6 +117,17 @@ public class Authentication implements PreBuiltContract {
                     nodes.add(approved);
                 }
                 contractStorage.put(PENDING_NODES_KEY, RLPCodec.encode(pending));
+                contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
+                break;
+            }
+            case EXIT:{
+                HexBytes fromAddr = transaction.getFromAddress();
+                if (!nodes.contains(fromAddr))
+                    throw new RuntimeException(fromAddr + " not in nodes");
+                if(nodes.size() <= 1)
+                    throw new RuntimeException("cannot exit, at least one miner");
+
+                nodes.remove(fromAddr);
                 contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
                 break;
             }

@@ -347,11 +347,11 @@ public class Transaction {
             if (getPayload().isEmpty())
                 return ValidateResult.fault("missing payload of transaction " + getHash());
         }
-        if (type == Type.COIN_BASE.code || type == Type.TRANSFER.code) {
+        if (type == Type.TRANSFER.code) {
             if (!getPayload().isEmpty())
                 return ValidateResult.fault("payload of transaction " + getHash() + " should be empty");
         }
-        if (!CryptoContext.verify(from.getBytes(), getSignaturePlain(), signature.getBytes())) {
+        if (type != Type.COIN_BASE.code && !CryptoContext.verify(from.getBytes(), getSignaturePlain(), signature.getBytes())) {
             return ValidateResult.fault("verify signature failed " + getHash());
         }
         return ValidateResult.success();

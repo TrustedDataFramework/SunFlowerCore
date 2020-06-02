@@ -1,9 +1,7 @@
 package org.tdf.sunflower;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.TextNode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +15,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.*;
@@ -53,6 +52,7 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.FileUtils;
+import org.tdf.sunflower.util.MappingUtil;
 
 import java.nio.file.Paths;
 import java.util.concurrent.Executor;
@@ -90,9 +90,7 @@ public class Start {
         Assert.isTrue(predicate.test(thing), error);
     }
 
-    public static final ObjectMapper MAPPER = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .enable(JsonParser.Feature.ALLOW_COMMENTS);
+    public static final ObjectMapper MAPPER = MappingUtil.OBJECT_MAPPER;
 
     public static void loadConstants(Environment env) {
         String constant = env.getProperty("sunflower.cache.trie");
@@ -151,17 +149,17 @@ public class Start {
         switch (ec) {
             case "ed25519":
                 CryptoContext.setSignatureVerifier((pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig));
-                CryptoHelpers.signer = (sk, msg) -> new Ed25519PrivateKey(sk).sign(msg);
+                CryptoContext.setSigner((sk, msg) -> new Ed25519PrivateKey(sk).sign(msg));
                 CryptoHelpers.generateKeyPair = Ed25519::generateKeyPair;
-                CryptoHelpers.getPkFromSk = (sk) -> new Ed25519PrivateKey(sk).generatePublicKey().getEncoded();
+                CryptoContext.setGetPkFromSk((sk) -> new Ed25519PrivateKey(sk).generatePublicKey().getEncoded());
                 // TODO add ed25519 ecdh
                 // CryptoContext.ecdh =
                 break;
             case "sm2":
                 CryptoContext.setSignatureVerifier((pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig));
-                CryptoHelpers.signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
+                CryptoContext.setSigner((sk, msg) -> new SM2PrivateKey(sk).sign(msg));
                 CryptoHelpers.generateKeyPair = SM2::generateKeyPair;
-                CryptoHelpers.getPkFromSk = (sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded();
+                CryptoContext.setGetPkFromSk((sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded());
                 CryptoHelpers.ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
                 break;
             default:
@@ -174,6 +172,7 @@ public class Start {
     }
 
     public static void main(String[] args) {
+        FileUtils.setClassLoader(ClassUtils.getDefaultClassLoader());
         SpringApplication app = new SpringApplication(Start.class);
         app.addInitializers(applicationContext -> {
             loadCryptoContext(applicationContext.getEnvironment());
@@ -387,10 +386,10 @@ public class Start {
         if (ksLocation == null || ksLocation.isEmpty())
             return KeyStore.NONE;
         KeyStoreImpl keyStoreImpl = MAPPER.readValue(
-                FileUtils.getResource(ksLocation).getInputStream(),
+                FileUtils.getInputStream(ksLocation),
                 KeyStoreImpl.class);
 
-        System.out.println("please input password for keystore " + ksLocation);
+        System.out.println("===== please input password for keystore " + ksLocation + " =====");
         char[] password = System.console().readPassword();
         byte[] sk =
                 SMKeystore.decryptKeyStore(keyStoreImpl, password == null ? null : new String(password));

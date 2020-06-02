@@ -32,6 +32,7 @@ import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 @Getter
@@ -161,14 +162,14 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
     public void init(Properties properties) throws ConsensusEngineInitException {
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
         vrfConfig = MappingUtil.propertiesToPojo(properties, VrfConfig.class);
-        Resource resource;
+        InputStream in;
         try {
-            resource = FileUtils.getResource(vrfConfig.getGenesis());
+            in = FileUtils.getInputStream(vrfConfig.getGenesis());
         } catch (Exception e) {
             throw new ConsensusEngineInitException(e.getMessage());
         }
         try {
-            genesis = objectMapper.readValue(resource.getInputStream(), VrfGenesis.class);
+            genesis = objectMapper.readValue(in, VrfGenesis.class);
         } catch (Exception e) {
             throw new ConsensusEngineInitException("failed to parse genesis: " + e.getMessage());
         }

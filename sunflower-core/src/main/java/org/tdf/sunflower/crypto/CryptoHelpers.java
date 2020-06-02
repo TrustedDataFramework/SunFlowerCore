@@ -52,9 +52,6 @@ public class CryptoHelpers {
     public static Ecdh ecdh = (initiator, sk, pk) ->
             SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID);
 
-    // (sk, msg) -> signature
-    public static BiFunction<byte[], byte[], byte[]> signer = (sk, msg) -> new SM2PrivateKey(sk).sign(msg);
-
 
     // (sk, msg) -> encrypted
     public static BiFunction<byte[], byte[], byte[]> encrypt = (key, msg) -> {
@@ -98,12 +95,6 @@ public class CryptoHelpers {
     }
 
     // (sk) -> pk
-    public static Function<byte[], byte[]> getPkFromSk = (sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded();
-
-    public static byte[] getPkFromSk(byte[] sk) {
-        return getPkFromSk.apply(sk);
-    }
-
     public static Supplier<KeyPair> generateKeyPair = SM2::generateKeyPair;
 
     public static KeyPair generateKeyPair() {
@@ -113,11 +104,7 @@ public class CryptoHelpers {
     private static byte[] ecdhInternal(boolean initiator, byte[] sk, byte[] pk) {
         return ecdh.exchange(initiator, sk, pk);
     }
-
-    public static byte[] sign(byte[] sk, byte[] msg) {
-        return signer.apply(sk, msg);
-    }
-
+    
     public static byte[] encrypt(byte[] sk, byte[] msg) {
         return encrypt.apply(sk, msg);
     }
@@ -180,14 +167,4 @@ public class CryptoHelpers {
         return rsData;
     }
 
-    public static byte[] getEmptyTrieRoot(Function<byte[], byte[]> hashFunction) {
-        Trie<?, ?> trie = Trie.<byte[], byte[]>builder()
-                .keyCodec(Codec.identity())
-                .valueCodec(Codec.identity())
-                .store(new ByteArrayMapStore<>())
-                .hashFunction(hashFunction)
-                .build();
-
-        return trie.getNullHash();
-    }
 }

@@ -99,7 +99,7 @@ public class MessageBuilder {
                 .setRemotePeer(self.encodeURI())
                 .setNonce(nonce.incrementAndGet())
                 .setTtl(message.getTtl() - 1);
-        byte[] sig = CryptoHelpers.sign(self.getPrivateKey(), getRawForSign(builder.build()));
+        byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }
 
@@ -111,7 +111,7 @@ public class MessageBuilder {
                 .setTtl(ttl)
                 .setNonce(nonce.incrementAndGet())
                 .setBody(ByteString.copyFrom(msg));
-        byte[] sig = CryptoHelpers.sign(self.getPrivateKey(), getRawForSign(builder.build()));
+        byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }
 }

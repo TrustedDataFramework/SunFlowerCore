@@ -5,20 +5,18 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.keystore.KeyStoreImpl;
-import org.tdf.sunflower.facade.KeyStore;
-import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.Proposer;
-import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
+import org.tdf.sunflower.facade.KeyStore;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
@@ -28,14 +26,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
-
 
 @Slf4j(topic = "miner")
 public class PoAMiner extends AbstractMiner {
+    public static final int MAX_SHUTDOWN_WAITING = 5;
+
     private PoAConfig poAConfig;
 
     HexBytes minerAddress;
+
+    HexBytes privateKey;
+
+    HexBytes publicKey;
 
     @Setter
     private BlockRepository blockRepository;
@@ -68,16 +70,21 @@ public class PoAMiner extends AbstractMiner {
 
     @Override
     protected void finalizeBlock(Block parent, Block block) {
-
+        byte[] plain = PoA.getSignaturePlain(block);
+        byte[] sig = CryptoContext.sign(privateKey.getBytes(), plain);
+        block.setPayload(HexBytes.fromBytes(sig));
     }
 
-    public void setPoAConfig(PoAConfig poAConfig) throws ConsensusEngineInitException {
+    public void setPoAConfig(PoAConfig poAConfig) {
         this.poAConfig = poAConfig;
-        this.minerAddress = poAConfig.getMinerCoinBase();
-        if (poA.getKeyStore() != KeyStore.NONE)
-            this.minerAddress = Address.fromPublicKey(
-                    CryptoHelpers.getPkFromSk(poA.getKeyStore().getPrivateKey().getBytes())
-            );
+        this.privateKey = (poA.getKeyStore() != KeyStore.NONE) ?
+                poA.getKeyStore().getPrivateKey() :
+                HexBytes.fromHex(poAConfig.getPrivateKey());
+
+        this.publicKey = HexBytes.fromBytes(CryptoContext.getPkFromSk(privateKey.getBytes()));
+        this.minerAddress = Address.fromPublicKey(
+                CryptoContext.getPkFromSk(privateKey.getBytes())
+        );
     }
 
 
@@ -131,15 +138,19 @@ public class PoAMiner extends AbstractMiner {
     }
 
     protected Transaction createCoinBase(long height) {
-        return Transaction.builder()
+        Transaction tx = Transaction.builder()
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .nonce(height)
                 .from(HexBytes.EMPTY)
                 .amount(EconomicModelImpl.getConsensusRewardAtHeight(height))
-                .payload(HexBytes.empty())
+                .payload(publicKey)
                 .to(minerAddress)
                 .signature(HexBytes.EMPTY).build();
+
+        tx.setSignature(HexBytes.fromBytes(CryptoContext.sign(privateKey.getBytes(), tx.getSignaturePlain())));
+
+        return tx;
     }
 
     public static class EconomicModelImpl {
