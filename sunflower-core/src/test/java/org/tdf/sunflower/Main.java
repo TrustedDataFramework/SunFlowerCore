@@ -51,7 +51,7 @@ public class Main {
     public static void printSecretStore(){
         byte[] aliceSk = CryptoContext.generateSecretKey();
         byte[] alicePk = CryptoContext.getPkFromSk(aliceSk);
-        byte[] bobPk = HexBytes.decode("03a94913a52c9d8e7314d06f0dbe386789be414a187f4f337e21bc9a4d5a0e9ed0");
+        byte[] bobPk = HexBytes.decode("03cac34009c85674f46f0801d195a216030807f6aa2be337e754ae7645bf7a1106");
         byte[] key = CryptoContext.ecdh(true, aliceSk, bobPk);
         byte[] plain = HexBytes.decode("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
         byte[] cipher = CryptoContext.encrypt(key, plain);

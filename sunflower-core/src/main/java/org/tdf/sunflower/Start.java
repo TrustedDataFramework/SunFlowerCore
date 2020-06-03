@@ -424,7 +424,7 @@ public class Start {
 
     @Bean
     public SecretStore keystore(GlobalConfig config) throws Exception {
-        String ksLocation = (String) config.get("keystore");
+        String ksLocation = (String) config.get("secret-store");
         if (ksLocation == null || ksLocation.isEmpty())
             return SecretStore.NONE;
 
@@ -440,7 +440,6 @@ public class Start {
 
             }
             if (in == null) {
-                System.out.print('.');
                 TimeUnit.SECONDS.sleep(1);
                 continue;
             }
