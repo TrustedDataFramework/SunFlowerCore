@@ -4,30 +4,16 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import lombok.Data;
 import lombok.NonNull;
-import lombok.SneakyThrows;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.*;
-import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.ByteArrayMapStore;
-import org.tdf.common.trie.Trie;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.KeyPair;
-import org.tdf.crypto.sm2.SM2;
-import org.tdf.crypto.sm2.SM2PrivateKey;
-import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM4Util;
 
 import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
+
 
 public class CryptoHelpers {
-
-    public interface Ecdh {
-        byte[] exchange(boolean initiator, byte[] sk, byte[] pk);
-    }
-
     @Data
     private static class ECDHParameters {
         private boolean initiator;
@@ -43,18 +29,18 @@ public class CryptoHelpers {
 
     private static final Cache<ECDHParameters, byte[]> cache = CacheBuilder.newBuilder().maximumSize(1024)
             .build();
+//
+//    @SneakyThrows
+//    public static byte[] ecdh(boolean initiator, byte[] sk, byte[] pk) {
+//        return cache.get(new ECDHParameters(initiator, sk, pk), () -> ecdhInternal(initiator, sk, pk));
+//    }
 
-    @SneakyThrows
-    public static byte[] ecdh(boolean initiator, byte[] sk, byte[] pk) {
-        return cache.get(new ECDHParameters(initiator, sk, pk), () -> ecdhInternal(initiator, sk, pk));
-    }
-
-    public static Ecdh ecdh = (initiator, sk, pk) ->
-            SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID);
+//    public static Ecdh ecdh = (initiator, sk, pk) ->
+//            SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID);
 
 
     // (sk, msg) -> encrypted
-    public static BiFunction<byte[], byte[], byte[]> encrypt = (key, msg) -> {
+    public static final BiFunction<byte[], byte[], byte[]> ENCRYPT = (key, msg) -> {
         try {
             return SM4Util.encrypt_Ecb_NoPadding(key, fill(msg));
         } catch (Exception e) {
@@ -63,7 +49,7 @@ public class CryptoHelpers {
     };
 
     // (sk, encrypted) -> msg
-    public static BiFunction<byte[], byte[], byte[]> decrypt = (key, encryptMsg) -> {
+    public static final BiFunction<byte[], byte[], byte[]> DECRYPT = (key, encryptMsg) -> {
         try {
             return restore(SM4Util.decrypt_Ecb_NoPadding(key, encryptMsg));
         } catch (Exception e) {
@@ -94,24 +80,12 @@ public class CryptoHelpers {
         return ret;
     }
 
-    // (sk) -> pk
-    public static Supplier<KeyPair> generateKeyPair = SM2::generateKeyPair;
+//
+//    private static byte[] ecdhInternal(boolean initiator, byte[] sk, byte[] pk) {
+//        return ecdh.exchange(initiator, sk, pk);
+//    }
 
-    public static KeyPair generateKeyPair() {
-        return generateKeyPair.get();
-    }
 
-    private static byte[] ecdhInternal(boolean initiator, byte[] sk, byte[] pk) {
-        return ecdh.exchange(initiator, sk, pk);
-    }
-    
-    public static byte[] encrypt(byte[] sk, byte[] msg) {
-        return encrypt.apply(sk, msg);
-    }
-
-    public static byte[] decrypt(byte[] sk, byte[] encrypted) {
-        return decrypt.apply(sk, encrypted);
-    }
 
     public static byte[] keccak256(byte[] in) {
         Digest digest = new KeccakDigest(256);

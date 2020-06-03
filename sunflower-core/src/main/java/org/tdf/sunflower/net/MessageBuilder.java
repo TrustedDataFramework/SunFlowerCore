@@ -59,7 +59,7 @@ public class MessageBuilder {
     }
 
     public List<Message> buildAnother(byte[] body, long ttl, Peer remote) {
-        byte[] encryptMessage = CryptoHelpers.encrypt(CryptoHelpers.ecdh(true, self.getPrivateKey(), remote.getID().getBytes()), body);
+        byte[] encryptMessage = CryptoContext.encrypt(CryptoContext.ecdh(true, self.getPrivateKey(), remote.getID().getBytes()), body);
         Message buildResult = buildMessage(Code.ANOTHER, ttl, encryptMessage);
         if (buildResult.getSerializedSize() <= config.getMaxPacketSize()) {
             return Collections.singletonList(buildResult);

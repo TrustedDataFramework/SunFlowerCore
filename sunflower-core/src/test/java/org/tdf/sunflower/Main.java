@@ -1,11 +1,14 @@
 package org.tdf.sunflower;
 
+import lombok.SneakyThrows;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
+import org.tdf.gmhelper.SM2Util;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.crypto.CryptoHelpers;
+import org.tdf.sunflower.facade.SecretStoreImpl;
 import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Transaction;
@@ -14,9 +17,11 @@ public class Main {
     static {
         CryptoContext.setSignatureVerifier((pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig));
         CryptoContext.setSigner((sk, msg) -> new SM2PrivateKey(sk).sign(msg));
-        CryptoHelpers.generateKeyPair = SM2::generateKeyPair;
+        CryptoContext.setSecretKeyGenerator(() -> SM2.generateKeyPair().getPrivateKey().getEncoded());
         CryptoContext.setGetPkFromSk((sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded());
-        CryptoHelpers.ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
+        CryptoContext.setEcdh((initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID));
+        CryptoContext.setEncrypt(CryptoHelpers.ENCRYPT);
+        CryptoContext.setDecrypt(CryptoHelpers.DECRYPT);
     }
 
     private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
@@ -38,5 +43,22 @@ public class Main {
         byte[] sig = CryptoContext.sign(FROM_SK.getBytes(), v.getSignaturePlain());
         v.setSignature(HexBytes.fromBytes(sig));
         System.out.println(Start.MAPPER.writeValueAsString(v));
+
+        printSecretStore();
+    }
+
+    @SneakyThrows
+    public static void printSecretStore(){
+        byte[] aliceSk = CryptoContext.generateSecretKey();
+        byte[] alicePk = CryptoContext.getPkFromSk(aliceSk);
+        byte[] bobPk = HexBytes.decode("03a94913a52c9d8e7314d06f0dbe386789be414a187f4f337e21bc9a4d5a0e9ed0");
+        byte[] key = CryptoContext.ecdh(true, aliceSk, bobPk);
+        byte[] plain = HexBytes.decode("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
+        byte[] cipher = CryptoContext.encrypt(key, plain);
+        SecretStoreImpl s = new SecretStoreImpl(
+                HexBytes.fromBytes(alicePk),
+                HexBytes.fromBytes(cipher)
+        );
+        System.out.println(Start.MAPPER.writeValueAsString(s));
     }
 }

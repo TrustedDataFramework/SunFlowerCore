@@ -9,19 +9,35 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.KeyPair;
+import org.tdf.crypto.keystore.Crypto;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
+import org.tdf.crypto.sm2.SM2PublicKey;
+import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.crypto.CryptoHelpers;
+import org.tdf.sunflower.types.CryptoContext;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.PriorityQueue;
 
 @RunWith(JUnit4.class)
 public class GMTests {
     public static final int ADDRESS_SIZE = 20;
+
+    static {
+        CryptoContext.setSignatureVerifier((pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig));
+        CryptoContext.setSigner((sk, msg) -> new SM2PrivateKey(sk).sign(msg));
+        CryptoContext.setSecretKeyGenerator(() -> SM2.generateKeyPair().getPrivateKey().getEncoded());
+        CryptoContext.setGetPkFromSk((sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded());
+        CryptoContext.setEcdh((initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID));
+        CryptoContext.setEncrypt(CryptoHelpers.ENCRYPT);
+        CryptoContext.setDecrypt(CryptoHelpers.DECRYPT);
+    }
 
     @Test
     public void test(){
@@ -60,7 +76,7 @@ public class GMTests {
         int count = 100000;
         long start = System.currentTimeMillis();
         for(int i = 0; i < count; i++){
-            byte[] s1 = CryptoHelpers.ecdh(true, kp1.getPrivateKey().getEncoded(), kp2.getPublicKey().getEncoded());
+            byte[] s1 = CryptoContext.ecdh(true, kp1.getPrivateKey().getEncoded(), kp2.getPublicKey().getEncoded());
         }
         long end = System.currentTimeMillis();
         System.out.println( (end - start) * 1.0 /(count));
@@ -81,7 +97,7 @@ public class GMTests {
 
         for(int i = 0; i < count; i++){
             HexBytes kp2pk = HexBytes.fromBytes(kp2.getPublicKey().getEncoded());
-            byte[] s1 = cache.get(kp2pk, () -> CryptoHelpers.ecdh(true, kp1.getPrivateKey().getEncoded(), kp2.getPublicKey().getEncoded()));
+            byte[] s1 = cache.get(kp2pk, () -> CryptoContext.ecdh(true, kp1.getPrivateKey().getEncoded(), kp2.getPublicKey().getEncoded()));
         }
         long end = System.currentTimeMillis();
         System.out.println( (end - start) * 1.0 /(count));
@@ -108,5 +124,26 @@ public class GMTests {
         System.out.println("gx = " + GX);
         System.out.println("address = " + ret);
         System.out.println(HexBytes.fromBytes(SM3Util.hash(new byte[32])));
+    }
+
+    @Test
+    public void testECDH(){
+        byte[] aliceSk = CryptoContext.generateSecretKey();
+        byte[] alicePk = CryptoContext.getPkFromSk(aliceSk);
+        byte[] bobSk = CryptoContext.generateSecretKey();
+        byte[] bobPk = CryptoContext.getPkFromSk(bobSk);
+
+        byte[] k1 = CryptoContext.ecdh(true, aliceSk, bobPk);
+        byte[] k2 = CryptoContext.ecdh(false, bobSk, alicePk);
+
+        assert FastByteComparisons.equal(k1, k2);
+
+        byte[] plain = "123abc".getBytes(StandardCharsets.US_ASCII);
+        byte[] cipher = CryptoContext.encrypt(k1, plain);
+        byte[] plain2 = CryptoContext.decrypt(k1, cipher);
+
+        System.out.println(HexBytes.fromBytes(plain));
+        System.out.println(HexBytes.fromBytes(plain2));
+
     }
 }

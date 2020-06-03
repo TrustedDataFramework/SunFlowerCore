@@ -7,9 +7,10 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.ConsensusEngine;
-import org.tdf.sunflower.facade.KeyStore;
+import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.proto.Message;
+import org.tdf.sunflower.types.CryptoContext;
 
 import java.io.IOException;
 import java.net.URI;
@@ -29,12 +30,12 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     // if non-database provided, use memory database
     final Store<String, String> peerStore;
     final ConsensusEngine consensusEngine;
-    final KeyStore keyStore;
+    final SecretStore secretStore;
 
-    public PeerServerImpl(Store<String, String> peerStore, ConsensusEngine consensusEngine, KeyStore keyStore) {
+    public PeerServerImpl(Store<String, String> peerStore, ConsensusEngine consensusEngine, SecretStore secretStore) {
         this.peerStore = peerStore;
         this.consensusEngine = consensusEngine;
-        this.keyStore = keyStore;
+        this.secretStore = secretStore;
     }
 
     @Override
@@ -111,8 +112,8 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             config = mapper.readPropertiesAs(properties, PeerServerConfig.class);
             if (config.getMaxTTL() <= 0) config.setMaxTTL(PeerServerConfig.DEFAULT_MAX_TTL);
             if (config.getMaxPeers() <= 0) config.setMaxPeers(PeerServerConfig.DEFAULT_MAX_PEERS);
-            if (keyStore != KeyStore.NONE)
-                config.setPrivateKey(keyStore.getPrivateKey());
+            if (secretStore != SecretStore.NONE)
+                config.setPrivateKey(secretStore.getPrivateKey());
 
         } catch (Exception e) {
             String schema = "";
@@ -168,7 +169,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
                     .orElse(null);
         }
         if (sk == null || sk.length == 0) {
-            sk = CryptoHelpers.generateKeyPair().getPrivateKey().getEncoded();
+            sk = CryptoContext.generateSecretKey();
         }
 
         this.self = PeerImpl.createSelf(config.getAddress(), sk);

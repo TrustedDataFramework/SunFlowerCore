@@ -4,6 +4,7 @@ import lombok.Builder;
 import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
+import org.tdf.sunflower.types.CryptoContext;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -74,8 +75,8 @@ public class ContextImpl implements Context {
         if (message.getCode() == Code.ANOTHER) {
             if(decrypted != null)
                 return decrypted;
-            decrypted = CryptoHelpers.decrypt(
-                    CryptoHelpers.ecdh(false, builder.getSelf().getPrivateKey(), remote.getID().getBytes()),
+            decrypted = CryptoContext.decrypt(
+                    CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), remote.getID().getBytes()),
                     message.getBody().toByteArray());
             return decrypted;
         }

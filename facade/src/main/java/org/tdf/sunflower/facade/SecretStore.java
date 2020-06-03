@@ -2,8 +2,8 @@ package org.tdf.sunflower.facade;
 
 import org.tdf.common.util.HexBytes;
 
-public interface KeyStore {
+public interface SecretStore {
     HexBytes getPrivateKey();
 
-    KeyStore NONE = () -> HexBytes.EMPTY;
+    SecretStore NONE = () -> HexBytes.EMPTY;
 }

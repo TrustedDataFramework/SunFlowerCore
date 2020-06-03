@@ -74,7 +74,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     // create self as peer from input
     // if private key is missing, generate key automatically
     public static PeerImpl createSelf(URI u) {
-        return createSelf(u, CryptoHelpers.generateKeyPair().getPrivateKey().getEncoded());
+        return createSelf(u, CryptoContext.generateSecretKey());
     }
 
 

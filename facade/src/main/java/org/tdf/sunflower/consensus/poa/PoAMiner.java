@@ -10,7 +10,7 @@ import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.facade.KeyStore;
+import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
@@ -77,8 +77,8 @@ public class PoAMiner extends AbstractMiner {
 
     public void setPoAConfig(PoAConfig poAConfig) {
         this.poAConfig = poAConfig;
-        this.privateKey = (poA.getKeyStore() != KeyStore.NONE) ?
-                poA.getKeyStore().getPrivateKey() :
+        this.privateKey = (poA.getSecretStore() != SecretStore.NONE) ?
+                poA.getSecretStore().getPrivateKey() :
                 HexBytes.fromHex(poAConfig.getPrivateKey());
 
         this.publicKey = HexBytes.fromBytes(CryptoContext.getPkFromSk(privateKey.getBytes()));

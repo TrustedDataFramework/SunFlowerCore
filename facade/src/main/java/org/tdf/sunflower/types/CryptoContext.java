@@ -1,38 +1,50 @@
 package org.tdf.sunflower.types;
 
+import lombok.Setter;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.facade.ECDH;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class CryptoContext {
+    @Setter
     private static Function<byte[], byte[]> hashFunction
             = Function.identity();
 
+    @Setter
     private static SignatureVerifier signatureVerifier = (pk, msg, sig) -> true;
 
     // (sk, msg) -> signature
+    @Setter
     public static BiFunction<byte[], byte[], byte[]> signer = (a, b) -> HexBytes.EMPTY_BYTES;
 
-    public static void setSignatureVerifier(SignatureVerifier signatureVerifier) {
-        CryptoContext.signatureVerifier = signatureVerifier;
-    }
+    @Setter
+    private static Supplier<byte[]> secretKeyGenerator = () -> HexBytes.EMPTY_BYTES;
 
+    @Setter
     private static int publicKeySize;
 
-    public static void setPublicKeySize(int publicKeySize) {
-        CryptoContext.publicKeySize = publicKeySize;
-    }
+    @Setter
+    private static Function<byte[], byte[]> getPkFromSk = Function.identity();
+
+    // (key, plain) -> cipher
+    @Setter
+    private static BiFunction<byte[], byte[], byte[]> encrypt = (x, y) -> y;
+
+    // (key, cipher) -> plain
+    @Setter
+    private static BiFunction<byte[], byte[], byte[]> decrypt = (x, y) -> y;
+
+    @Setter
+    private static ECDH ecdh = (x, y, z) -> HexBytes.EMPTY_BYTES;
 
     public static int getPublicKeySize() {
         return publicKeySize;
-    }
-
-    public static void setHashFunction(Function<byte[], byte[]> hashFunction) {
-        CryptoContext.hashFunction = hashFunction;
     }
 
     public static byte[] hash(byte[] data) {
@@ -41,12 +53,6 @@ public class CryptoContext {
 
     public static boolean verify(byte[] pk, byte[] msg, byte[] sig) {
         return signatureVerifier.verify(pk, msg, sig);
-    }
-
-    private static Function<byte[], byte[]> getPkFromSk = Function.identity();
-
-    public static void setGetPkFromSk(Function<byte[], byte[]> getPkFromSk) {
-        CryptoContext.getPkFromSk = getPkFromSk;
     }
 
     public static byte[] getPkFromSk(byte[] sk) {
@@ -64,11 +70,28 @@ public class CryptoContext {
         return trie.getNullHash();
     }
 
-    public static  void setSigner(BiFunction<byte[], byte[], byte[]> signer){
-        CryptoContext.signer = signer;
+    public static byte[] generateSecretKey() {
+        return secretKeyGenerator.get();
     }
 
     public static byte[] sign(byte[] sk, byte[] msg) {
         return signer.apply(sk, msg);
+    }
+
+    public static byte[] encrypt(byte[] sk, byte[] msg) {
+        return encrypt.apply(sk, msg);
+    }
+
+    public static byte[] decrypt(byte[] sk, byte[] encrypted) {
+        return decrypt.apply(sk, encrypted);
+    }
+
+
+    public static byte[] ecdh(boolean initiator, byte[] sk, byte[] pk) {
+        return ecdh.exchange(initiator, sk, pk);
+    }
+
+    public static byte[] ecdh(byte[] sk, byte[] pk) {
+        return ecdh.exchange(sk, pk);
     }
 }

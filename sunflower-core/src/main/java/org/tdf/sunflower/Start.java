@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,11 +26,10 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
-import org.tdf.crypto.keystore.KeyStoreImpl;
-import org.tdf.crypto.keystore.SMKeystore;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
+import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.pos.PoS;
@@ -56,14 +56,14 @@ import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -82,7 +82,9 @@ public class Start {
 
     private static ClassLoader customClassLoader = ClassUtils.getDefaultClassLoader();
 
-    public static final Executor APPLICATION_THREAD_POOL = Executors.newCachedThreadPool();
+    public static ClassLoader getCustomClassLoader() {
+        return customClassLoader;
+    }
 
     public static void devAssert(boolean truth, String error) {
         if (!enableAssertion) return;
@@ -130,11 +132,7 @@ public class Start {
     }
 
     @SneakyThrows
-    private static void loadLibs(Environment env) {
-        String path = env.getProperty("sunflower.libs");
-        if (path == null || path.isEmpty())
-            return;
-
+    public static void loadLibs(@NonNull String path) {
         File f = new File(path);
         if (!f.exists())
             throw new RuntimeException("load libs " + path + " failed");
@@ -187,7 +185,7 @@ public class Start {
             case "ed25519":
                 CryptoContext.setSignatureVerifier((pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig));
                 CryptoContext.setSigner((sk, msg) -> new Ed25519PrivateKey(sk).sign(msg));
-                CryptoHelpers.generateKeyPair = Ed25519::generateKeyPair;
+                CryptoContext.setSecretKeyGenerator(() -> Ed25519.generateKeyPair().getPrivateKey().getEncoded());
                 CryptoContext.setGetPkFromSk((sk) -> new Ed25519PrivateKey(sk).generatePublicKey().getEncoded());
                 // TODO add ed25519 ecdh
                 // CryptoContext.ecdh =
@@ -195,14 +193,16 @@ public class Start {
             case "sm2":
                 CryptoContext.setSignatureVerifier((pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig));
                 CryptoContext.setSigner((sk, msg) -> new SM2PrivateKey(sk).sign(msg));
-                CryptoHelpers.generateKeyPair = SM2::generateKeyPair;
+                CryptoContext.setSecretKeyGenerator(() -> SM2.generateKeyPair().getPrivateKey().getEncoded());
                 CryptoContext.setGetPkFromSk((sk) -> new SM2PrivateKey(sk).generatePublicKey().getEncoded());
-                CryptoHelpers.ecdh = (initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, "userid@soie-chain.com".getBytes());
+                CryptoContext.setEcdh((initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID));
                 break;
             default:
                 throw new ApplicationException("unknown ec curve " + ec);
         }
-        CryptoContext.setPublicKeySize(CryptoHelpers.generateKeyPair().getPublicKey().getEncoded().length);
+        CryptoContext.setPublicKeySize(CryptoContext.getPkFromSk(CryptoContext.generateSecretKey()).length);
+        CryptoContext.setEncrypt(CryptoHelpers.ENCRYPT);
+        CryptoContext.setDecrypt(CryptoHelpers.DECRYPT);
 
         log.info("use algorithm {} as hash function", hash);
         log.info("use ec {} as signature algorithm", ec);
@@ -214,7 +214,10 @@ public class Start {
         app.addInitializers(applicationContext -> {
             loadCryptoContext(applicationContext.getEnvironment());
             loadConstants(applicationContext.getEnvironment());
-            loadLibs(applicationContext.getEnvironment());
+            String path = applicationContext.getEnvironment().getProperty("sunflower.libs");
+            if (path == null)
+                return;
+            loadLibs(path);
         });
         app.run(args);
     }
@@ -274,7 +277,7 @@ public class Start {
             ApplicationContext context,
             @Qualifier("contractStorageTrie") Trie<byte[], byte[]> contractStorageTrie,
             @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore,
-            KeyStore keyStore
+            SecretStore secretStore
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
         name = name == null ? "" : name;
@@ -356,7 +359,7 @@ public class Start {
             PeerServerProperties properties,
             ConsensusEngine engine,
             DatabaseStoreFactory factory,
-            KeyStore keyStore
+            SecretStore secretStore
     ) throws Exception {
         String name = properties.getProperty("name");
         name = name == null ? "" : name;
@@ -381,7 +384,7 @@ public class Start {
                     }
                 }
         ) : new MapStore<>();
-        PeerServer peerServer = new PeerServerImpl(store, engine, KeyStore.NONE);
+        PeerServer peerServer = new PeerServerImpl(store, engine, SecretStore.NONE);
         peerServer.init(properties);
         peerServer.addListeners(engine.getPeerServerListener());
         peerServer.start();
@@ -420,20 +423,42 @@ public class Start {
     }
 
     @Bean
-    public KeyStore keystore(GlobalConfig config) throws Exception {
+    public SecretStore keystore(GlobalConfig config) throws Exception {
         String ksLocation = (String) config.get("keystore");
         if (ksLocation == null || ksLocation.isEmpty())
-            return KeyStore.NONE;
-        KeyStoreImpl keyStoreImpl = MAPPER.readValue(
-                FileUtils.getInputStream(ksLocation),
-                KeyStoreImpl.class);
+            return SecretStore.NONE;
 
-        System.out.println("===== please input password for keystore " + ksLocation + " =====");
-        char[] password = System.console().readPassword();
-        byte[] sk =
-                SMKeystore.decryptKeyStore(keyStoreImpl, password == null ? null : new String(password));
-        keyStoreImpl.setPrivateKey(HexBytes.fromBytes(sk));
-        return keyStoreImpl::getPrivateKey;
+        InputStream in = null;
+        byte[] bobSk = CryptoContext.generateSecretKey();
+        byte[] bobPk = CryptoContext.getPkFromSk(bobSk);
+        log.info("please generate secret store for your private key, public key = " + HexBytes.fromBytes(bobPk));
+        log.info("waiting for load secret store...");
+        while (true) {
+            try {
+                in = FileUtils.getInputStream(ksLocation);
+            } catch (Exception ignored) {
+
+            }
+            if (in == null) {
+                System.out.print('.');
+                TimeUnit.SECONDS.sleep(1);
+                continue;
+            }
+
+            SecretStoreImpl secretStore = MAPPER.readValue(
+                    in,
+                    SecretStoreImpl.class);
+
+            try{
+                byte[] plain = secretStore.getPrivateKey(bobSk);
+                if (plain.length == bobSk.length)
+                    return () -> HexBytes.fromBytes(plain);
+            }catch (Exception ignored){
+            }
+            log.info("invalid secret store, please provide correct file " + ksLocation);
+            TimeUnit.SECONDS.sleep(1);
+        }
+
     }
 
     private void injectApplicationContext(ApplicationContext context, AbstractConsensusEngine engine) {
@@ -443,7 +468,7 @@ public class Start {
         engine.setSunflowerRepository(context.getBean(SunflowerRepository.class));
         engine.setContractStorageTrie(context.getBean("contractStorageTrie", Trie.class));
         engine.setContractCodeStore(context.getBean("contractCodeStore", Store.class));
-        engine.setKeyStore(context.getBean(KeyStore.class));
+        engine.setSecretStore(context.getBean(SecretStore.class));
 
         engine.setStateTrieProvider(e -> {
             AccountUpdater updater = new AccountUpdater(

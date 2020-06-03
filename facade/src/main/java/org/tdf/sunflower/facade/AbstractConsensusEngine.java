@@ -24,7 +24,7 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     // a map between hash and wasm byte code
     private Store<byte[], byte[]> contractCodeStore;
 
-    private KeyStore keyStore;
+    private SecretStore secretStore;
 
     // sub class should set miner explicitly when init() called
     private Miner miner;
