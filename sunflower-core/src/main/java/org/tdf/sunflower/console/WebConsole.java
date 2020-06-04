@@ -5,7 +5,6 @@ import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import io.netty.util.internal.StringUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.types.CryptoContext;
 

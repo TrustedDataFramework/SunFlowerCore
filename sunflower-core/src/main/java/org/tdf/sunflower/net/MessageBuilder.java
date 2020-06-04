@@ -3,7 +3,6 @@ package org.tdf.sunflower.net;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import lombok.Getter;
-import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.proto.*;
 import org.tdf.sunflower.types.CryptoContext;
 

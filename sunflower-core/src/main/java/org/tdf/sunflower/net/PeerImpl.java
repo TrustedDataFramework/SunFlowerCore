@@ -3,7 +3,6 @@ package org.tdf.sunflower.net;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.types.CryptoContext;
 

@@ -7,7 +7,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;

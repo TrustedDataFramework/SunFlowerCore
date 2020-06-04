@@ -35,7 +35,7 @@ import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.pos.PoS;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
-import org.tdf.sunflower.crypto.CryptoHelpers;
+import org.tdf.crypto.CryptoHelpers;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.mq.BasicMessageQueue;

@@ -1,7 +1,7 @@
 package org.tdf.sunflower.vm.hosts;
 
 import org.tdf.gmhelper.SM3Util;
-import org.tdf.sunflower.crypto.CryptoHelpers;
+import org.tdf.crypto.CryptoHelpers;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;

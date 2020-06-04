@@ -1,7 +1,6 @@
-package org.tdf.sunflower.crypto;
+package org.tdf.crypto;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+
 import lombok.Data;
 import lombok.NonNull;
 import org.bouncycastle.crypto.Digest;
@@ -27,8 +26,7 @@ public class CryptoHelpers {
         }
     }
 
-    private static final Cache<ECDHParameters, byte[]> cache = CacheBuilder.newBuilder().maximumSize(1024)
-            .build();
+
 //
 //    @SneakyThrows
 //    public static byte[] ecdh(boolean initiator, byte[] sk, byte[] pk) {

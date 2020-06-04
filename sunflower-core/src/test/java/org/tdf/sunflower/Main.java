@@ -7,7 +7,7 @@ import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM2Util;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
-import org.tdf.sunflower.crypto.CryptoHelpers;
+import org.tdf.crypto.CryptoHelpers;
 import org.tdf.sunflower.facade.SecretStoreImpl;
 import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.CryptoContext;

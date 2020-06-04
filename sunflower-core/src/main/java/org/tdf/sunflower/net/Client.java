@@ -1,7 +1,6 @@
 package org.tdf.sunflower.net;
 
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.sunflower.crypto.CryptoHelpers;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 import org.tdf.sunflower.types.CryptoContext;

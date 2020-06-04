@@ -12,13 +12,12 @@ import org.junit.runners.JUnit4;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.KeyPair;
-import org.tdf.crypto.keystore.Crypto;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
-import org.tdf.sunflower.crypto.CryptoHelpers;
+import org.tdf.crypto.CryptoHelpers;
 import org.tdf.sunflower.types.CryptoContext;
 
 import java.nio.charset.StandardCharsets;
