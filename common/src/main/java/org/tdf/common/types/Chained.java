@@ -30,9 +30,13 @@ public interface Chained extends Hashed {
 
         while (true) {
             int size = ret.size();
-            for (T t : s) {
-                if (ret.stream().anyMatch(t::isChildOf))
+            Iterator<T> it = s.iterator();
+            while (it.hasNext()) {
+                T t = it.next();
+                if (ret.stream().anyMatch(t::isChildOf)) {
                     ret.add(t.getHash());
+                    it.remove();
+                }
             }
             if (ret.size() == size)
                 break;
@@ -64,11 +68,16 @@ public interface Chained extends Hashed {
 
         o.ifPresent(ret::add);
 
+
         while (true) {
             int size = ret.size();
-            for (T t : s) {
-                if (ret.stream().anyMatch(t::isParentOf))
+            Iterator<T> it = s.iterator();
+            while (it.hasNext()) {
+                T t = it.next();
+                if (ret.stream().anyMatch(t::isParentOf)) {
                     ret.add(t);
+                    it.remove();
+                }
             }
             if (ret.size() == size)
                 break;
