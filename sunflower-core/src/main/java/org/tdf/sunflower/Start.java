@@ -444,17 +444,17 @@ public class Start {
                 continue;
             }
 
-            SecretStoreImpl secretStore = MAPPER.readValue(
-                    in,
-                    SecretStoreImpl.class);
-
             try{
+                SecretStoreImpl secretStore = MAPPER.readValue(
+                        in,
+                        SecretStoreImpl.class);
                 byte[] plain = secretStore.getPrivateKey(bobSk);
-                if (plain.length == bobSk.length)
+                if (plain.length == bobSk.length){
+                    log.info("load secret store success");
                     return () -> HexBytes.fromBytes(plain);
+                }
             }catch (Exception ignored){
             }
-            log.info("invalid secret store, please provide correct file " + ksLocation);
             TimeUnit.SECONDS.sleep(1);
         }
 
