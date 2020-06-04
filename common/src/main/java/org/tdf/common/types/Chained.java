@@ -20,6 +20,39 @@ public interface Chained extends Hashed {
         return getHashPrev().equals(hash);
     }
 
+    static <T extends Chained> List<T> getInitialsOf(Collection<T> col) {
+        Set<T> s = new TreeSet<>(Comparator.comparing(Hashed::getHash));
+        s.addAll(col);
+        s.removeIf(t -> col.stream().anyMatch(x -> x.isParentOf(t)));
+
+        return new ArrayList<>(s);
+    }
+
+    static <T extends Chained> List<T> getLeavesOf(Collection<T> col) {
+        Set<T> s = new TreeSet<>(Comparator.comparing(Hashed::getHash));
+        s.addAll(col);
+        s.removeIf(t -> col.stream().anyMatch(x -> x.isChildOf(t)));
+        return new ArrayList<>(s);
+    }
+
+    static <T extends Chained> List<T> getFork(Collection<T> col, HexBytes leaf) {
+        Map<HexBytes, T> m = new HashMap<>();
+        for (T t : col) {
+            m.put(t.getHash(), t);
+        }
+        List<T> li = new ArrayList<>();
+        T t = m.get(leaf);
+        while (t != null) {
+            li.add(t);
+            t = m.get(t.getHashPrev());
+        }
+        Collections.reverse(li);
+        return li;
+    }
+
+    static <T extends Chained> List<List<T>> getForks(Collection<T> col) {
+        return getLeavesOf(col).stream().map(c -> getFork(col, c.getHash())).collect(Collectors.toList());
+    }
 
     static <T extends Chained> List<T> getDescendentsOf(Collection<T> col, HexBytes hash) {
         Set<T> s = new TreeSet<>(Comparator.comparing(Hashed::getHash));
