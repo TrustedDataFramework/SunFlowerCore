@@ -1,15 +1,19 @@
 package org.tdf.sunflower;
 
-import org.apache.commons.codec.binary.Hex;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.springframework.core.io.ClassPathResource;
 import org.tdf.common.store.Store;
 import org.tdf.common.types.Chained;
-import org.tdf.common.util.ChainCache;
 import org.tdf.common.util.HexBytes;
 
-import java.util.*;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
@@ -59,174 +63,66 @@ public class ChainCacheTest {
         }
     }
 
-    public static ChainCache<Node> getCache(int sizeLimit) throws Exception {
-
-        Node genesis = new Node(HexBytes.fromHex("0000"), HexBytes.fromHex("ffff"), 0);
-        List<String> hashes = Arrays.asList("0001", "0002", "0003", "0004", "0005");
-        List<Node> chain0 = new ArrayList<>();
-        for (int i = 0; i < hashes.size(); i++) {
-            if (i == 0) {
-                chain0.add(new Node(
-                        HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex("0000"), Long.parseLong(hashes.get(i)))
-                );
-                continue;
-            }
-            chain0.add(new Node(
-                    HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex(hashes.get(i - 1)),
-                            Long.parseLong(hashes.get(i).substring(2))
-                    )
-            );
+    public static List<Node> getCache() throws Exception {
+        InputStream in = new ClassPathResource("nodes.jsonc").getInputStream();
+        JsonNode[][] json = Start.MAPPER.readValue(in, JsonNode[][].class);
+        List<Node> ret = new ArrayList<>();
+        for (JsonNode[] nodes : json) {
+            HexBytes hash = HexBytes.fromHex(nodes[1].asText());
+            HexBytes hashPrev = HexBytes.fromHex(nodes[2].asText());
+            long height = nodes[0].asLong();
+            ret.add(new Node(hash, hashPrev, height));
         }
-        hashes = Arrays.asList("0102", "0103", "0104", "0105");
-        List<Node> chain1 = new ArrayList<>();
-        for (int i = 0; i < hashes.size(); i++) {
-            if (i == 0) {
-                chain1.add(new Node(
-                        HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex("0001"),
-                                Long.parseLong(hashes.get(i).substring(2))
-                        )
-                );
-                continue;
-            }
-            chain1.add(new Node(
-                    HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex(hashes.get(i - 1)),
-                            Long.parseLong(hashes.get(i).substring(2))
-                    )
-            );
-        }
-        hashes = Arrays.asList("0204", "0205", "0206");
-        List<Node> chain2 = new ArrayList<>();
-        for (int i = 0; i < hashes.size(); i++) {
-            if (i == 0) {
-                chain2.add(new Node(
-                        HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex("0103"),
-                        Long.parseLong(hashes.get(i).substring(2))
-                ));
-                continue;
-            }
-            chain2.add(new Node(
-                    HexBytes.fromHex(hashes.get(i)), HexBytes.fromHex(hashes.get(i - 1)),
-                    Long.parseLong(hashes.get(i).substring(2))
-
-            ));
-        }
-        ChainCache.Builder<Node> builder = ChainCache.builder();
-        ChainCache<Node> cache = builder
-                .maximumSize(sizeLimit)
-                .comparator((x, y) -> {
-                    if(x.getHeight() != y.getHeight())
-                        return Long.compare(x.getHeight(), y.getHeight());
-                    return x.hash.compareTo(y.getHash());
-                })
-                .build();
-//        PERSISTENT.clear();
-        cache.add(genesis);
-        cache.addAll(chain0);
-        cache.addAll(chain1);
-        cache.addAll(chain2);
-        return cache;
+        return ret;
     }
 
-    @Test
-    public void testGet() throws Exception {
-        ChainCache<Node> cache = getCache(0);
-        assert cache.get(Hex.decodeHex("0000".toCharArray())).isPresent();
-        assert !cache.get(Hex.decodeHex("ffff".toCharArray())).isPresent();
-    }
 
     @Test
     public void testGetDescendants() throws Exception {
-        ChainCache<Node> cache = getCache(0);
-        int size = cache.getDescendants(HexBytes.fromHex("0000").getBytes()).size();
-        assert size == 13;
-        assert cache.getDescendants(HexBytes.fromHex("0001").getBytes()).size() == 12;
-        Set<String> nodes = cache.getDescendants(HexBytes.fromHex("0103").getBytes())
+        List<Node> cache = getCache();
+        List<Node> descendents = Chained.getDescendentsOf(cache, HexBytes.fromHex("0000"));
+        assert descendents.size() == 10;
+        assert Chained.getDescendentsOf(cache, HexBytes.fromHex("0001")).size() == 8;
+        Set<String> nodes = Chained.getDescendentsOf(cache, HexBytes.fromHex("0102"))
                 .stream().map(n -> n.hash.toString()).collect(Collectors.toSet());
-        assert nodes.size() == 6;
-        assert nodes.containsAll(Arrays.asList("0103", "0104", "0105", "0204", "0205", "0206"));
+        assert nodes.size() == 3;
+        assert nodes.containsAll(Arrays.asList("0203", "0103", "0204"));
     }
 
-    @Test
-    public void testEvict() throws Exception {
-        ChainCache<Node> cache = getCache(12);
-        int size = cache.size();
-        assert cache.size() == 12;
-        assert !cache.containsHash(Hex.decodeHex("0000".toCharArray()));
-        cache = getCache(1);
-        assert cache.size() == 1;
-        assert cache.first().hash.toString().equals("0206");
-    }
-
-    @Test
-    public void testRemove() throws Exception {
-        ChainCache<Node> cache = getCache(0);
-        cache.removeAll(new ArrayList<>(cache));
-        assert cache.isEmpty();
-        assert cache.size() == 0;
-        cache = getCache(0);
-        cache.removeByHash(HexBytes.fromHex("0000").getBytes());
-        assert cache.size() == 12;
-        assert !cache.isEmpty();
-    }
 
     @Test
     public void testGetAncestors() throws Exception {
-        ChainCache<Node> cache = getCache(0);
-        Set<String> ancestors = cache.getAncestors(
-                HexBytes.fromHex("0206").getBytes()
+        List<Node> cache = getCache();
+        Set<String> ancestors = Chained.getAncestorsOf(
+                cache, HexBytes.fromHex("0204")
         ).stream().map(n -> n.hash.toString()).collect(Collectors.toSet());
 
-        assert ancestors.size() == 7;
-        assert ancestors.containsAll(Arrays.asList("0204", "0205", "0206", "0102", "0103", "0001", "0000"));
+        assert ancestors.size() == 5;
+        assert ancestors.containsAll(Arrays.asList("0203", "0102", "0101", "0001", "0000"));
 
 
-        ancestors = cache.getAncestors(HexBytes.fromHex("0000").getBytes()).stream()
+        ancestors = Chained.getAncestorsOf(cache, HexBytes.fromHex("0000")).stream()
                 .map(n -> n.hash.toString()).collect(Collectors.toSet());
 
-        assert ancestors.size() == 1;
-        assert ancestors.contains("0000");
+        assert ancestors.size() == 0;
     }
 
+//
+//    @Test
+//    public void testGetInitials() throws Exception{
+//        List<Node> initials = getCache(0).getInitials();
+//        assert initials.size() == 1;
+//        assert initials.get(0).hash.toString().equals("0000");
+//    }
+//
+//    @Test
+//    public void testGetLeaves() throws Exception{
+//        Set<String> leaves = getCache(0).getLeaves().stream()
+//                .map(x -> x.hash.toString()).collect(Collectors.toSet());
+//
+//        assert leaves.size() == 3;
+//        assert leaves.containsAll(Arrays.asList("0206", "0105", "0005"));
+//    }
 
-    @Test
-    public void testGetInitials() throws Exception{
-        List<Node> initials = getCache(0).getInitials();
-        assert initials.size() == 1;
-        assert initials.get(0).hash.toString().equals("0000");
-    }
 
-    @Test
-    public void testGetLeaves() throws Exception{
-        Set<String> leaves = getCache(0).getLeaves().stream()
-                .map(x -> x.hash.toString()).collect(Collectors.toSet());
-
-        assert leaves.size() == 3;
-        assert leaves.containsAll(Arrays.asList("0206", "0105", "0005"));
-    }
-
-    @Test
-    public void testGetAllSorted() throws Exception{
-        List<Node> nodes = new ArrayList<>(getCache(0));
-        List<Node> sorted = nodes.stream().sorted(Comparator.comparingLong(Node::getHeight)).collect(Collectors.toList());
-        for(int i = 0; i < nodes.size(); i++){
-            assert nodes.get(i).getHeight() == sorted.get(i).getHeight();
-        }
-    }
-
-    @Test
-    public void testGetChildren() throws Exception{
-        assert getCache(0).getChildren(Hex.decodeHex("0206".toCharArray())).size() == 0;
-        Set<String> children = getCache(0).getChildren(Hex.decodeHex("0103".toCharArray())).stream()
-                .map(n -> n.hash.toString()).collect(Collectors.toSet());
-        assert children.size() == 2;
-        assert children.containsAll(Arrays.asList("0104", "0204"));
-    }
-
-    @Test
-    public void testPutEvict() throws Exception{
-        ChainCache<Node> cache = getCache(0);
-        cache.add(new Node(HexBytes.fromHex("0206"), HexBytes.fromHex("0205"), 100));
-        cache.add(new Node(HexBytes.fromHex("0206"), HexBytes.fromHex("0205"), 100));
-        assert cache.get(Hex.decodeHex("0206".toCharArray())).get().getHeight() == 100;
-    }
 }

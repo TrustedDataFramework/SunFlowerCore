@@ -7,8 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
-import org.tdf.common.event.EventBus;
-import org.tdf.common.util.ChainCache;
+import org.tdf.common.types.Chained;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.dao.HeaderDao;
 import org.tdf.sunflower.dao.Mapping;
@@ -131,8 +130,7 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
                 getHeadersBetween(
                         header.get().getHeight() - finalLimit + 1, h.getHeight(), finalLimit)
         )
-                .map(ChainCache::of)
-                .map(c -> c.getAncestors(hash))
+                .map(li -> Chained.getAncestorsOf(li, HexBytes.fromBytes(hash)))
                 .orElse(new ArrayList<>());
     }
 
