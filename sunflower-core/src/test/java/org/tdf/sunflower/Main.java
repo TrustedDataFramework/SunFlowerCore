@@ -50,6 +50,7 @@ public class Main {
     @SneakyThrows
     public static void printSecretStore(){
         byte[] aliceSk = CryptoContext.generateSecretKey();
+        System.out.print("alice sk = " + HexBytes.fromBytes(aliceSk));
         byte[] alicePk = CryptoContext.getPkFromSk(aliceSk);
         byte[] bobPk = HexBytes.decode("03cac34009c85674f46f0801d195a216030807f6aa2be337e754ae7645bf7a1106");
         byte[] key = CryptoContext.ecdh(true, aliceSk, bobPk);

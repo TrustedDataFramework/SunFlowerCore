@@ -1,5 +1,6 @@
 package org.tdf.sunflower.facade;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
@@ -31,7 +32,6 @@ public interface ConsensusEngine {
     // inject configurations, throw exception if configuration is invalid
     void init(Properties properties);
 
-
     String getName();
 
     default List<HexBytes> getMinerAddresses() {
@@ -40,5 +40,9 @@ public interface ConsensusEngine {
 
     default ValidateResult validateHeader(String header) {
         return ValidateResult.success();
+    }
+
+    default Object rpcQuery(HexBytes address, byte[] body){
+        throw new UnsupportedOperationException("unsupported yet");
     }
 }

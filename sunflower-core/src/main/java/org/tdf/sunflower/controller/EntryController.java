@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.GlobalConfig;
-import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.facade.ConsensusEngine;
@@ -20,6 +19,7 @@ import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
@@ -160,6 +160,12 @@ public class EntryController {
         Header h = sunflowerRepository.getBestHeader();
         byte[] result = accountTrie.view(h.getStateRoot().getBytes(), addressHex, args);
         return HexBytes.fromBytes(result);
+    }
+
+    @PostMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Object rpcQuery(@PathVariable("address") final String address,
+                                @RequestBody(required = false) byte[] body) throws Exception {
+        return consensusEngine.rpcQuery(HexBytes.fromHex(address), body);
     }
 
     @GetMapping(value = "/contract/vrf/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
