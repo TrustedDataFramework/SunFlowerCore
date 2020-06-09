@@ -1,10 +1,12 @@
 package org.tdf.crypto.keystore;
 
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.PublicKey;
+import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.gmhelper.SM4Util;
@@ -37,6 +39,10 @@ public class SMKeystore {
         byte[] cipherPrivKey = ks.getCrypto().getCipherText().getBytes();
         byte[] iv = ks.getCrypto().getIv().getBytes();
         return SM4Util.decrypt_Ctr_NoPadding(deriveKey, iv, cipherPrivKey);
+    }
+
+    public static KeyStoreImpl generateKeyStore(@NonNull String password) {
+        return generateKeyStore(password, SM2.generateKeyPair().getPrivateKey().getEncoded());
     }
 
     @SneakyThrows

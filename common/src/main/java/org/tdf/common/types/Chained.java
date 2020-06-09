@@ -36,18 +36,12 @@ public interface Chained extends Hashed {
     }
 
     static <T extends Chained> List<T> getFork(Collection<T> col, HexBytes leaf) {
-        Map<HexBytes, T> m = new HashMap<>();
-        for (T t : col) {
-            m.put(t.getHash(), t);
-        }
-        List<T> li = new ArrayList<>();
-        T t = m.get(leaf);
-        while (t != null) {
-            li.add(t);
-            t = m.get(t.getHashPrev());
-        }
-        Collections.reverse(li);
-        return li;
+        List<T> ret = getAncestorsOf(col, leaf);
+        col.stream()
+                .filter(x -> x.getHash().equals(leaf))
+                .findAny()
+                .ifPresent(ret::add);
+        return ret;
     }
 
     static <T extends Chained> List<List<T>> getForks(Collection<T> col) {
@@ -55,68 +49,37 @@ public interface Chained extends Hashed {
     }
 
     static <T extends Chained> List<T> getDescendentsOf(Collection<T> col, HexBytes hash) {
-        Set<T> s = new TreeSet<>(Comparator.comparing(Hashed::getHash));
-        s.addAll(col);
+        Deque<T> stack = new LinkedList<>();
+        Set<T> ret = new TreeSet<>(Comparator.comparing(Hashed::getHash));
 
-        Set<HexBytes> ret = new HashSet<>();
-        ret.add(hash);
+        col.stream()
+                .filter(x -> x.isChildOf(hash) || x.getHash().equals(hash))
+                .forEach(stack::add);
 
-        while (true) {
-            int size = ret.size();
-            Iterator<T> it = s.iterator();
-            while (it.hasNext()) {
-                T t = it.next();
-                if (ret.stream().anyMatch(t::isChildOf)) {
-                    ret.add(t.getHash());
-                    it.remove();
-                }
-            }
-            if (ret.size() == size)
-                break;
+        while (!stack.isEmpty()) {
+            T first = stack.poll();
+            ret.add(first);
+            col.stream().filter(x -> x.isChildOf(first))
+                    .forEach(stack::add);
         }
 
+        ret.removeIf(x -> x.getHash().equals(hash));
+        return new ArrayList<>(ret);
+    }
 
+    static <T extends Chained> List<T> getAncestorsOf(Collection<T> col, HexBytes hash) {
         Map<HexBytes, T> m = new HashMap<>();
         for (T t : col) {
             m.put(t.getHash(), t);
         }
-        ret.remove(hash);
-        return ret
-                .stream()
-                .map(m::get)
-                .peek(Objects::requireNonNull)
-                .collect(Collectors.toList());
-    }
-
-    static <T extends Chained> List<T> getAncestorsOf(Collection<T> col, HexBytes hash) {
-
-        Set<T> s = new TreeSet<>(Comparator.comparing(Hashed::getHash));
-        s.addAll(col);
-
-        Set<T> ret = new TreeSet<>(Comparator.comparing(Hashed::getHash));
-
-        Optional<T> o = col.stream()
-                .filter(x -> x.getHash().equals(hash))
-                .findAny();
-
-        o.ifPresent(ret::add);
-
-
-        while (true) {
-            int size = ret.size();
-            Iterator<T> it = s.iterator();
-            while (it.hasNext()) {
-                T t = it.next();
-                if (ret.stream().anyMatch(t::isParentOf)) {
-                    ret.add(t);
-                    it.remove();
-                }
-            }
-            if (ret.size() == size)
-                break;
+        List<T> li = new ArrayList<>();
+        T t = m.get(hash);
+        while (t != null) {
+            li.add(t);
+            t = m.get(t.getHashPrev());
         }
-
-        o.ifPresent(ret::remove);
-        return new ArrayList<>(ret);
+        li.removeIf(x -> x.getHash().equals(hash));
+        Collections.reverse(li);
+        return li;
     }
 }
