@@ -1,8 +1,8 @@
-package org.tdf.sunflower.mq;
+package org.tdf.sunflower.facade;
 
 import java.util.function.Consumer;
 
-public interface BasicMessageQueue extends MessageQueue<String, Message>{
+public interface BasicMessageQueue extends MessageQueue<String, Message> {
     BasicMessageQueue NONE = new BasicMessageQueue() {
         @Override
         public void publish(String event, Object msg) {

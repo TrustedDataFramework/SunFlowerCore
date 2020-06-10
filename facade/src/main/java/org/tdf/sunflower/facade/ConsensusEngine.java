@@ -1,6 +1,5 @@
 package org.tdf.sunflower.facade;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;

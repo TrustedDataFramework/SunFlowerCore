@@ -38,7 +38,7 @@ import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.crypto.CryptoHelpers;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.*;
-import org.tdf.sunflower.mq.BasicMessageQueue;
+import org.tdf.sunflower.facade.BasicMessageQueue;
 import org.tdf.sunflower.mq.SocketIOMessageQueue;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.net.PeerServerImpl;
@@ -277,7 +277,8 @@ public class Start {
             ApplicationContext context,
             @Qualifier("contractStorageTrie") Trie<byte[], byte[]> contractStorageTrie,
             @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore,
-            SecretStore secretStore
+            SecretStore secretStore,
+            BasicMessageQueue mq
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
         name = name == null ? "" : name;
@@ -468,7 +469,7 @@ public class Start {
         engine.setContractStorageTrie(context.getBean("contractStorageTrie", Trie.class));
         engine.setContractCodeStore(context.getBean("contractCodeStore", Store.class));
         engine.setSecretStore(context.getBean(SecretStore.class));
-
+        engine.setMessageQueue(context.getBean(BasicMessageQueue.class));
         engine.setStateTrieProvider(e -> {
             AccountUpdater updater = new AccountUpdater(
                     e.getGenesisStates().stream().collect(Collectors.toMap(Account::getAddress, Function.identity())),

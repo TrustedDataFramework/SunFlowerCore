@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tdf.sunflower.facade.BasicMessageQueue;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
@@ -27,7 +28,9 @@ public class ChatEventHandler {
                 .scheduleAtFixedRate(() ->
                                 messageQueue.publish(
                                         "chatevent",
-                                        new ChatMessage("Server", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))),
+                                        new ChatMessage("Server",
+                                                LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
+                                ),
                         0, 10, TimeUnit.SECONDS);
     }
 

@@ -4,10 +4,12 @@ import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.tdf.sunflower.MessageQueueConfig;
+import org.tdf.sunflower.facade.BasicMessageQueue;
+import org.tdf.sunflower.facade.Message;
 
 import java.util.function.Consumer;
 
-public class SocketIOMessageQueue implements BasicMessageQueue{
+public class SocketIOMessageQueue implements BasicMessageQueue {
     private MessageQueueConfig config;
     private SocketIOServer socketIOServer;
 

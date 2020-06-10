@@ -5,6 +5,7 @@ import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.listener.DataListener;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
+import org.tdf.sunflower.facade.Message;
 
 import java.util.function.Consumer;
 

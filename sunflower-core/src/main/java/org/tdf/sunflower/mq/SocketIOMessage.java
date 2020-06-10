@@ -3,9 +3,10 @@ package org.tdf.sunflower.mq;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.TreeNode;
 import org.tdf.sunflower.Start;
+import org.tdf.sunflower.facade.Message;
 
 // socketIO message is json-like object
-public class SocketIOMessage implements Message{
+public class SocketIOMessage implements Message {
     private TreeNode node;
 
     SocketIOMessage(TreeNode node) {

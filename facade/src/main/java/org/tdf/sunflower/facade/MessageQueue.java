@@ -1,4 +1,4 @@
-package org.tdf.sunflower.mq;
+package org.tdf.sunflower.facade;
 
 import java.util.function.Consumer;
 
