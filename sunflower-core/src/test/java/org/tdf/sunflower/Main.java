@@ -1,6 +1,7 @@
 package org.tdf.sunflower;
 
 import lombok.SneakyThrows;
+import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
@@ -10,8 +11,15 @@ import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.crypto.CryptoHelpers;
 import org.tdf.sunflower.facade.SecretStoreImpl;
 import org.tdf.sunflower.state.Constants;
+import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Transaction;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class Main {
     static {
@@ -24,28 +32,28 @@ public class Main {
         CryptoContext.setDecrypt(CryptoHelpers.DECRYPT);
     }
 
+    public static final int REVERSED_ADDRESSES_START_INDEX = 8;
+    public static final int REVERSED_ADDRESSES_END_INDEX = 8 + 65536;
+
+    public static List<HexBytes> getReversedContracts() {
+        List<HexBytes> ret = new ArrayList<>();
+        for (long i = REVERSED_ADDRESSES_START_INDEX; i < REVERSED_ADDRESSES_END_INDEX; i++) {
+            byte[] addr = BigEndian.encodeUint256(BigInteger.valueOf(i));
+            addr = Arrays.copyOfRange(addr, addr.length - 20, addr.length);
+
+            ret.add(HexBytes.fromBytes(addr));
+        }
+        return ret;
+    }
+
+
     private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
 
     public static void main(String[] args) throws Exception{
-        Transaction v = new Transaction(
-                PoAConstants.TRANSACTION_VERSION,
-                Transaction.Type.CONTRACT_CALL.code,
-                System.currentTimeMillis() / 1000,
-                1,
-                HexBytes.fromBytes(CryptoContext.getPkFromSk(FROM_SK.getBytes())),
-                0,
-                0,
-                HexBytes.fromHex("01").concat(HexBytes.fromHex("bf0aba026e5a0e1a69094c8a0d19d905367d64cf")),
-                Constants.PEER_AUTHENTICATION_ADDR,
-                HexBytes.fromHex("ff")
-        );
-
-        byte[] sig = CryptoContext.sign(FROM_SK.getBytes(), v.getSignaturePlain());
-        v.setSignature(HexBytes.fromBytes(sig));
-        System.out.println(Start.MAPPER.writeValueAsString(v));
-
-        printSecretStore();
+        getReversedContracts().forEach(System.out::println);
     }
+
+
 
     @SneakyThrows
     public static void printSecretStore(){

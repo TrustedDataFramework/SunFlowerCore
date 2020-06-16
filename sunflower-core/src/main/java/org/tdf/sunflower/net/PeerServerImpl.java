@@ -88,7 +88,6 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         resolveHost();
         log.info("peer server is listening on " +
                 self.encodeURI());
-        log.info("your p2p private key is " + HexBytes.encode(self.getPrivateKey()));
         if (config.getBootstraps() != null) {
             client.bootstrap(config.getBootstraps());
         }

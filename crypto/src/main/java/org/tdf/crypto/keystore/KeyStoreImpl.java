@@ -1,10 +1,14 @@
 package org.tdf.crypto.keystore;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.tdf.common.util.HexBytes;
+import org.tdf.gmhelper.SM3Util;
+
+import java.util.Arrays;
 
 @NoArgsConstructor
 @Data
@@ -23,4 +27,11 @@ public class KeyStoreImpl {
 
     @JsonIgnore
     private HexBytes privateKey;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public HexBytes getAddress() {
+        byte[] d = SM3Util.hash(publicKey.getBytes());
+        byte[] ret = Arrays.copyOfRange(d, d.length - 20, d.length);
+        return HexBytes.fromBytes(ret);
+    }
 }

@@ -26,6 +26,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
+import org.tdf.crypto.keystore.Crypto;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
@@ -49,6 +50,7 @@ import org.tdf.sunflower.service.SunflowerRepositoryService;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.AccountUpdater;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
@@ -424,7 +426,7 @@ public class Start {
     }
 
     @Bean
-    public SecretStore keystore(GlobalConfig config) throws Exception {
+    public SecretStore secretStore(GlobalConfig config) throws Exception {
         String ksLocation = (String) config.get("secret-store");
         if (ksLocation == null || ksLocation.isEmpty())
             return SecretStore.NONE;
@@ -451,7 +453,9 @@ public class Start {
                         SecretStoreImpl.class);
                 byte[] plain = secretStore.getPrivateKey(bobSk);
                 if (plain.length == bobSk.length){
-                    log.info("load secret store success");
+                    byte[] pk = CryptoContext.getPkFromSk(plain);
+                    HexBytes address = Address.fromPublicKey(pk);
+                    log.info("load secret store success your address = " + address);
                     return () -> HexBytes.fromBytes(plain);
                 }
             }catch (Exception ignored){
