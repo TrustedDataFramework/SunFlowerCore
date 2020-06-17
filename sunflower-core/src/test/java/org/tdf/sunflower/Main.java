@@ -7,6 +7,7 @@ import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM2Util;
+import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.crypto.CryptoHelpers;
 import org.tdf.sunflower.facade.SecretStoreImpl;
@@ -30,6 +31,8 @@ public class Main {
         CryptoContext.setEcdh((initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID));
         CryptoContext.setEncrypt(CryptoHelpers.ENCRYPT);
         CryptoContext.setDecrypt(CryptoHelpers.DECRYPT);
+        CryptoContext.setPublicKeySize(CryptoContext.getPkFromSk(CryptoContext.generateSecretKey()).length);
+        CryptoContext.setHashFunction(SM3Util::hash);
     }
 
     public static final int REVERSED_ADDRESSES_START_INDEX = 8;
@@ -50,7 +53,7 @@ public class Main {
     private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
 
     public static void main(String[] args) throws Exception{
-        getReversedContracts().forEach(System.out::println);
+        System.out.print(HexBytes.fromBytes(CryptoContext.getPkFromSk(HexBytes.decode("5669b294071363ea51d09206f0b02426a6457d3bd6fc1fa72d4f188a30821fed"))));
     }
 
 
