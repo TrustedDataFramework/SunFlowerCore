@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.crypto.tutorial.ElgamalSigner;
+import org.tdf.crypto.tutorial.SchnorrSigner;
 
 import static org.junit.Assert.assertTrue;
 
@@ -19,5 +20,17 @@ public class ElGamalTest {
         long[] sig = signer.sign(sk, x);
         System.out.println(sig[0] + "  " + sig[1]);
         assertTrue(signer.verify(sig, x, beta));
+    }
+
+    @Test
+    public void test2() {
+        SchnorrSigner signer =
+                new SchnorrSigner(7879, 101, 170);
+
+        long sk = 75;
+        long beta = signer.getBeta(sk);
+        long x = 1000;
+        long[] sig = signer.sign(sk, x);
+        assertTrue(signer.verify(sig, 1000, beta));
     }
 }
