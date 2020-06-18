@@ -53,7 +53,7 @@ public class Main {
     private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
 
     public static void main(String[] args) throws Exception{
-        System.out.print(HexBytes.fromBytes(CryptoContext.getPkFromSk(HexBytes.decode("5669b294071363ea51d09206f0b02426a6457d3bd6fc1fa72d4f188a30821fed"))));
+        System.out.print(HexBytes.fromBytes(CryptoContext.sign(FROM_SK.getBytes(), "123".getBytes())));
     }
 
 
