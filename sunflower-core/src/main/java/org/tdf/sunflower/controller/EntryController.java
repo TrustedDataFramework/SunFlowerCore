@@ -28,7 +28,6 @@ import org.tdf.sunflower.types.Transaction;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 
