@@ -164,7 +164,7 @@ public class EntryController {
 
     @PostMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Object rpcQuery(@PathVariable("address") final String address,
-                                @RequestBody(required = false) byte[] body) throws Exception {
+                                @RequestBody(required = false) JsonNode body) throws Exception {
         return consensusEngine.rpcQuery(HexBytes.fromHex(address), body);
     }
 
