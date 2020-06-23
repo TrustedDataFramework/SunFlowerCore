@@ -3,6 +3,7 @@ package org.tdf.sunflower;
 import lombok.SneakyThrows;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.LittleEndian;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
@@ -53,7 +54,7 @@ public class Main {
     private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
 
     public static void main(String[] args) throws Exception{
-        System.out.print(HexBytes.fromBytes(CryptoContext.sign(FROM_SK.getBytes(), "123".getBytes())));
+        System.out.print(LittleEndian.decodeInt32(new byte[]{0, 'p', 'o', 'a'}));
     }
 
 

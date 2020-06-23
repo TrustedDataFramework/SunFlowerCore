@@ -18,6 +18,8 @@ import java.util.function.Function;
 @Getter
 @Setter
 public abstract class AbstractConsensusEngine implements ConsensusEngine {
+    protected static final Object UNRESOLVED = new Object();
+
     // contract storage trie
     private Trie<byte[], byte[]> contractStorageTrie;
 

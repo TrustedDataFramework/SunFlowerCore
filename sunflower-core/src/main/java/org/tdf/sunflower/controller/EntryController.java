@@ -28,6 +28,7 @@ import org.tdf.sunflower.types.Transaction;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 
@@ -140,7 +141,7 @@ public class EntryController {
     }
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Response<List<String>> sendTransaction(@RequestBody JsonNode node) {
+    public Response<List<?>> sendTransaction(@RequestBody JsonNode node) {
         List<Transaction> ts;
         if (node.isArray()) {
             ts = Arrays.asList(objectMapper.convertValue(node, Transaction[].class));
@@ -148,7 +149,11 @@ public class EntryController {
             ts = Collections.singletonList(objectMapper.convertValue(node, Transaction.class));
         }
         List<String> errors = pool.collect(ts);
-        return errors.isEmpty() ? Response.newSuccessFul(Collections.emptyList())
+        return errors.isEmpty() ? Response
+                .newSuccessFul(
+                        ts.stream().map(Transaction::getHash)
+                        .collect(Collectors.toList())
+                )
                 : Response.newFailed(Response.Code.INTERNAL_ERROR, String.join("\n", errors));
     }
 

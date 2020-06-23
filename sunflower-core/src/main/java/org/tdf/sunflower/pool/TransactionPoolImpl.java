@@ -173,9 +173,12 @@ public class TransactionPoolImpl implements TransactionPool {
                     log.error(res.getReason());
                     continue;
                 }
-                if (validator.validate(transaction).isSuccess()) {
+                res = validator.validate(transaction);
+                if (res.isSuccess()) {
                     cache.add(info);
                     newCollected.add(transaction);
+                }else{
+                    errors.add(res.getReason());
                 }
             }
             eventBus.publish(new NewTransactionsCollected(newCollected));

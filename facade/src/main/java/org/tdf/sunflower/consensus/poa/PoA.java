@@ -1,6 +1,7 @@
 package org.tdf.sunflower.consensus.poa;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -146,6 +147,25 @@ public class PoA extends AbstractConsensusEngine {
         setValidator(poAValidator);
 
         // register dummy account
+    }
+
+    @Override
+    public Object rpcQuery(HexBytes address, JsonNode body) {
+        byte[] root = getSunflowerRepository().getBestBlock().getStateRoot().getBytes();
+        String method = body == null ? null : body.get("method").asText();
+        if (address.equals(Constants.POA_AUTHENTICATION_ADDR) || address.equals(Constants.PEER_AUTHENTICATION_ADDR)) {
+            Authentication auth = address.equals(Constants.POA_AUTHENTICATION_ADDR) ?
+                    minerContract : authContract;
+            switch (Objects.requireNonNull(method)) {
+                case "nodes":
+                    return auth.getNodes(root);
+                case "pending":
+                    return auth.getPending(root);
+                default:
+                    throw new RuntimeException(method + " not defined");
+            }
+        }
+        return UNRESOLVED;
     }
 
     @Override

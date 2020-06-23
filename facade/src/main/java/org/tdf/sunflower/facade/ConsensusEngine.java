@@ -11,7 +11,6 @@ import java.util.*;
 
 public interface ConsensusEngine {
 
-
     // the below getters shouldn't return null after initialized
     Miner getMiner();
 
