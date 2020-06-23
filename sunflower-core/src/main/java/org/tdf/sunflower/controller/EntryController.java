@@ -2,8 +2,10 @@ package org.tdf.sunflower.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.welltech.consensus.WellTechPoA;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -56,6 +58,8 @@ public class EntryController {
     private SyncManager syncManager;
 
     private ConsensusEngine consensusEngine;
+
+    private WellTechPoA wellTechPoA;
 
     private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func,
                                    Function<byte[], Optional<T>> func1) {
@@ -141,15 +145,16 @@ public class EntryController {
     }
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<HexBytes> sendTransaction(@RequestBody JsonNode node) {
+    public Response<List<String>> sendTransaction(@RequestBody JsonNode node) {
         List<Transaction> ts;
         if (node.isArray()) {
             ts = Arrays.asList(objectMapper.convertValue(node, Transaction[].class));
         } else {
             ts = Collections.singletonList(objectMapper.convertValue(node, Transaction.class));
         }
-        pool.collect(ts);
-        return ts.stream().map(Transaction::getHash).collect(Collectors.toList());
+        List<String> errors = pool.collect(ts);
+        return errors.isEmpty() ? Response.newSuccessFul(Collections.emptyList())
+                : Response.newFailed(Response.Code.INTERNAL_ERROR, String.join("\n", errors));
     }
 
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -164,8 +169,8 @@ public class EntryController {
 
     @PostMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Object rpcQuery(@PathVariable("address") final String address,
-                                @RequestBody(required = false) byte[] body) throws Exception {
-        return consensusEngine.rpcQuery(HexBytes.fromHex(address), body);
+                           @RequestBody(required = false) JsonNode body) throws Exception {
+        return wellTechPoA.rpcQuery(HexBytes.fromHex(address), body);
     }
 
     @GetMapping(value = "/contract/vrf/{address}", produces = MediaType.APPLICATION_JSON_VALUE)

@@ -10,6 +10,7 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.TransactionPoolConfig;
+import org.tdf.sunflower.controller.Response;
 import org.tdf.sunflower.types.PageSize;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewTransactionsCollected;
@@ -150,8 +151,9 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     @SneakyThrows
-    public void collect(Collection<? extends Transaction> transactions) {
+    public List<String> collect(Collection<? extends Transaction> transactions) {
         eventBus.publish(new NewTransactionsReceived(new ArrayList<>(transactions)));
+        List<String> errors = new ArrayList<>();
         this.cacheLock.writeLock().lock();
         try {
             List<Transaction> newCollected = new ArrayList<>(transactions.size());
@@ -162,10 +164,12 @@ public class TransactionPoolImpl implements TransactionPool {
                 ValidateResult res = transaction.basicValidate();
                 if (!res.isSuccess()) {
                     log.error(res.getReason());
+                    errors.add(res.getReason());
                     continue;
                 }
                 res = validator.validate(transaction);
                 if (!res.isSuccess()) {
+                    errors.add(res.getReason());
                     log.error(res.getReason());
                     continue;
                 }
@@ -178,6 +182,7 @@ public class TransactionPoolImpl implements TransactionPool {
         } finally {
             this.cacheLock.writeLock().unlock();
         }
+        return errors;
     }
 
     @SneakyThrows

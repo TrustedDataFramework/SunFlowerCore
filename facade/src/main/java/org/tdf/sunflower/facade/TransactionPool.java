@@ -12,7 +12,7 @@ import java.util.*;
 public interface TransactionPool{
 
     // collect transactions into transaction pool
-    void collect(Collection<? extends Transaction> transactions);
+    List<String> collect(Collection<? extends Transaction> transactions);
 
     default void collect(Transaction tx){
         collect(Collections.singleton(tx));
