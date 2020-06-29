@@ -152,7 +152,7 @@ public class EntryController {
         return errors.isEmpty() ? Response
                 .newSuccessFul(
                         ts.stream().map(Transaction::getHash)
-                        .collect(Collectors.toList())
+                                .collect(Collectors.toList())
                 )
                 : Response.newFailed(Response.Code.INTERNAL_ERROR, String.join("\n", errors));
     }
@@ -169,8 +169,11 @@ public class EntryController {
 
     @PostMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Object rpcQuery(@PathVariable("address") final String address,
-                           @RequestBody(required = false) JsonNode body) throws Exception {
-        return consensusEngine.rpcQuery(HexBytes.fromHex(address), body);
+                           @RequestBody(required = false) JsonNode body) {
+        Object o = consensusEngine.rpcQuery(HexBytes.fromHex(address), body);
+        if (o == null)
+            return Response.newSuccessFul(null);
+        return o;
     }
 
     @GetMapping(value = "/contract/vrf/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
