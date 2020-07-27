@@ -73,7 +73,7 @@ public class PoS extends AbstractConsensusEngine {
         posConfig = MappingUtil.propertiesToPojo(properties, PoSConfig.class);
         InputStream  in = FileUtils.getInputStream(posConfig.getGenesis());
         genesis = objectMapper.readValue(in, Genesis.class);
-
+        setGenesisBlock(genesis.getBlock());
 
         Map<HexBytes, NodeInfo> nodesMap = new TreeMap<>();
         if (genesis.miners != null) {
