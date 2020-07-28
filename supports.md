@@ -251,7 +251,47 @@ https://github.com/TrustedDataFramework/java-rlp
 
 ## 区块头
 
+
+| 字段名     |   类型   | 说明 |
+| ---- | ---- | ---- |
+| version | int | 区块版本号 POA=1634693120,POW=7368567,POS=7368563 |
+| hashPrev    |   bytes   | 父区块的哈希值 |
+|    transactionsRoot  |   bytes   | 事务的梅克尔根 |
+| stateRoot | bytes | 状态树树根 |
+| height | long | 区块高度 |
+| createdAt | long | 区块的构造时间，用 unix epoch 秒数表示 |
+| payload | bytes | 载荷，根据不同的共识具有不同的含义|
+| hash | bytes | 区块的哈希值 ｜
+
 ## 事务
+
+
+| 字段名     |   类型   | 说明 |
+| ---- | ---- | ---- |
+| version | int | 事务版本号 POA=1634693120,POW=7368567,POS=7368563 |
+| type    |   int   | 0=COINBASE,1=转账,2=合约部署,3=合约调用|
+|  createdAt  |   long   | 事务的构造时间，用 unix epoch 秒数表示 |
+| nonce | long | 事务的序号 |
+| from| bytes | 事务发送者的公钥 |
+| gasPrice | long | 事务的手续费价格 |
+| amount | long | 转账、后者在合约调用时的转账金额|
+| payload | bytes | 载荷 ｜
+| to | bytes |  转账的接收者或者被调用的合约|
+| signature | bytes | 签名 | 
+| hash | bytes | 事务哈希 | 
+
+
+### amount 的不同含义
+
+1. 对于 coinbase 事务，amount 是经济奖励的数量
+2. 对于转账事务，amount 是转账的数量
+3. 对于合约部署的事务，amount 必须为 0 
+4. 对于合约调用的事务，amount 的金额会被转到合约的创建者的账户下
+
+### payload 的不同含义
+
+1. 对于合约部署事务，payload 是智能合约 wasm 字节码
+2. 对于合约调用事务，payload 是调用智能合约的二进制参数，构造方法是把智能合约方法名长度放在第一个字节，后面跟方法名的 acii 编码，剩余的就是针对具体调用的方法的参数
 
 ## 普通账户
 
@@ -418,7 +458,7 @@ websocket 和 grpc 都对单个消息的大小作了限制，为了实现发送�
 | 字段名     |   类型   | 说明 |
 | ---- | ---- | ---- |
 | code | int | ACCOUNTS = 12 |
-| total   |  bytes | 目标区块的状态树树根 |
+| total   |  long | 账户总数，只有当 traversed 为 true 时，此字段才有意义 |
 | accounts | 数组 | 账户 |
 | traversed | bool | 对方是否已将所有账户传输完成 |
 

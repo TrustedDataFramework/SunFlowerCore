@@ -54,7 +54,7 @@ public class Main {
     private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
 
     public static void main(String[] args) throws Exception{
-        System.out.print(LittleEndian.decodeInt32(new byte[]{0, 'p', 'o', 'a'}));
+        System.out.print(BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 's'}));
     }
 
 
