@@ -26,6 +26,7 @@ public class MessageFilter implements Plugin {
     private Cache<HexBytes, Boolean> cache;
     private Map<HexBytes, Messages> multiPartCache = new HashMap<>();
     private final ConsensusEngine consensusEngine;
+    private PeerServerConfig config;
 
     @AllArgsConstructor
     private static class Messages {
@@ -69,6 +70,7 @@ public class MessageFilter implements Plugin {
     MessageFilter(PeerServerConfig config, ConsensusEngine consensusEngine) {
         this.cache = CacheBuilder.newBuilder()
                 .maximumSize(config.getMaxPeers() * 8).build();
+        this.config = config;
         Executors.newSingleThreadScheduledExecutor()
                 .scheduleWithFixedDelay(() -> {
                     multiPartCacheLock.lock();
@@ -124,6 +126,13 @@ public class MessageFilter implements Plugin {
             context.exit();
             return;
         }
+        // reject peer in black list and not in whitelist
+        if(config.isBlocked(context.remote.getID())){
+            log.error("the peer " + context.remote + " has been blocked");
+            context.disconnect();
+            return;
+        }
+
         // reject blocked peer
         if (server.getClient().peersCache.hasBlocked(context.remote)) {
             log.error("the peer " + context.remote + " has been blocked");

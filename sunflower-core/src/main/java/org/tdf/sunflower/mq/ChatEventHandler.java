@@ -2,6 +2,7 @@ package org.tdf.sunflower.mq;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -14,9 +15,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Component
+@RequiredArgsConstructor
 public class ChatEventHandler {
-    @Autowired
-    BasicMessageQueue messageQueue;
+    private final BasicMessageQueue messageQueue;
 
     @PostConstruct
     public void init() {

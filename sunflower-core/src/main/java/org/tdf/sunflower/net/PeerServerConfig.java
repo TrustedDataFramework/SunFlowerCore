@@ -1,5 +1,6 @@
 package org.tdf.sunflower.net;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import org.tdf.common.util.BigEndian;
@@ -61,4 +62,12 @@ public class PeerServerConfig {
 
     @JsonProperty(value = "cache-expired-after")
     private int cacheExpiredAfter;
+
+    @JsonIgnore
+    public boolean isBlocked(HexBytes id) {
+        if (whiteList != null && !whiteList.isEmpty())
+            return !whiteList.contains(id);
+
+        return blockedList != null && blockedList.contains(id);
+    }
 }

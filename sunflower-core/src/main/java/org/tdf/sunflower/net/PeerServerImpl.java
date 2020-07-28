@@ -6,8 +6,8 @@ import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.ConsensusEngine;
-import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.facade.PeerServerListener;
+import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.proto.Message;
 import org.tdf.sunflower.types.CryptoContext;
 
@@ -145,10 +145,10 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             throw new PeerServerInitException("failed to load peer server invalid address " + config.getAddress());
         }
         builder = new MessageBuilder(self, config);
-        if ("websocket".equals(config.getName().trim().toLowerCase())) {
-            netLayer = new WebSocketNetLayer(self.getPort(), builder);
-        } else {
+        if ("grpc".equals(config.getName().trim().toLowerCase())) {
             netLayer = new GRpcNetLayer(self.getPort(), builder);
+        } else {
+            netLayer = new WebSocketNetLayer(self.getPort(), builder);
         }
         netLayer.setHandler((c) -> c.addListeners(client, this));
         client = new Client(self, config, builder, netLayer).withListener(this);
