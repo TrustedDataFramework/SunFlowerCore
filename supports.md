@@ -239,7 +239,7 @@ sunflower:
     rate-limits:
       status: '16'
       get-blocks: '16'
-```      
+```
 
 ## rlp 编码
 
@@ -263,6 +263,12 @@ https://github.com/TrustedDataFramework/java-rlp
 | payload | bytes | 载荷，根据不同的共识具有不同的含义|
 | hash | bytes | 区块的哈希值 ｜
 
+
+### payload 的具体含义
+
+1. 对于 POA 共识，节点在构造区块完成后会对区块整体做一个签名，然后把签名放到区块头的 payload 字段中
+2. POS 和 POW 共识的区块头 payload 字段为空
+
 ## 事务
 
 
@@ -271,14 +277,14 @@ https://github.com/TrustedDataFramework/java-rlp
 | version | int | 事务版本号 POA=1634693120,POW=7368567,POS=7368563 |
 | type    |   int   | 0=COINBASE,1=转账,2=合约部署,3=合约调用|
 |  createdAt  |   long   | 事务的构造时间，用 unix epoch 秒数表示 |
-| nonce | long | 事务的序号 |
+| nonce | long | 事务的序号，coinbase事务的 nonce 等于区块高度 |
 | from| bytes | 事务发送者的公钥 |
 | gasPrice | long | 事务的手续费价格 |
 | amount | long | 转账、后者在合约调用时的转账金额|
-| payload | bytes | 载荷 ｜
+| payload | bytes | 载荷 |
 | to | bytes |  转账的接收者或者被调用的合约|
-| signature | bytes | 签名 | 
-| hash | bytes | 事务哈希 | 
+| signature | bytes | 签名 |
+| hash | bytes | 事务哈希 |
 
 
 ### amount 的不同含义
@@ -290,16 +296,69 @@ https://github.com/TrustedDataFramework/java-rlp
 
 ### payload 的不同含义
 
-1. 对于合约部署事务，payload 是智能合约 wasm 字节码
-2. 对于合约调用事务，payload 是调用智能合约的二进制参数，构造方法是把智能合约方法名长度放在第一个字节，后面跟方法名的 acii 编码，剩余的就是针对具体调用的方法的参数
+1. coinbase 事务和 转账事务的 payload 一般为空，特别的是 POA 共识的 payload 填写的是出块者的公钥
+2. 对于合约部署事务，payload 是智能合约 wasm 字节码
+3. 对于合约调用事务，payload 是调用智能合约的二进制参数，构造方法是把智能合约方法名长度放在第一个字节，后面跟方法名的 acii 编码，剩余的就是针对具体调用的方法的参数
 
-## 普通账户
+
+## 账户
+
+普通账户与合约账户都用以下结构表示
+
+
+| 字段名     |   类型   | 说明 |
+| ---- | ---- | ---- |
+| address | bytes | 账户地址，二十个字节 |
+| nonce |   long   | 递增序号 |
+|  balance  |   long   | 账户余额，对于合约账户此字段永远为0 |
+| createdBy | bytes | 合约的创建者，普通账户此字段为空 |
+| contractHash | bytes | 合约代码的哈希值，普通账户此字段为空 |
+| storageRoot | bytes | 合约存储树树根，普通账户此字段为空 |
+
+
+### 普通账户
+
+普通账户的地址由公钥计算得到。
+普通账号可以用椭圆曲线密钥对表示，包含公钥和私钥，默认采用的椭圆曲线是sm2。
+
+
+普通账户的地址生成是对公钥作一次哈希值计算后，取公钥的后面20个字节，伪代码如下：
+
+```python
+h = sm3(publicKey)
+address = h[len(h) - 20:]
+```
+
+nonce 用于防止重放攻击，当用普通账户构造事务时，需要保证事务的 nonce 等于当前账户的nonce 加一，用伪代码可以这样表示：
+
+```python
+nonce = getNonce(publicKey)
+transaction['type'] = 1 # 这里用的是转账事务，也可以 2或者3
+transaction['from'] = publicKey
+transaction['nonce'] = nonce + 1
+```
+
+balance 是账户的余额
+
+### 合约账户
+
+合约账户是普通账户部署合约时生成的，合约地址的生成用伪代码表示:
+
+```python
+b = sm3(rlp.encode([publicKey, nonce]))
+address = h[len(b) - 20:]
+```
+
+合约地址是把 合约部署者的公钥和部署合约事务的 nonce 作了 rlp 编码后，计算哈希值，然后取最后 20 个字节
+
+
+
+### 内置账户
 
 ## keystore
 
 ## 证书
 
-## 合约账户
 
 ## 共识机制
 
