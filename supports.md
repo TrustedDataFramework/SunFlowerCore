@@ -351,11 +351,64 @@ address = h[len(b) - 20:]
 
 合约地址是把 合约部署者的公钥和部署合约事务的 nonce 作了 rlp 编码后，计算哈希值，然后取最后 20 个字节
 
+合约账户没有对应的私钥和公钥，合约账户的 nonce 值等于部署合约事务的 nonce，而且这个nonce不会再改变
+
+每个合约账户都有自己独立的存储空间，这个存储空间实际上是一个梅克尔-帕特里夏树，合约账户的状态可以用梅克尔-帕特里夏树的树根表示，也就是 storageRoot 字段
 
 
 ### 内置账户
 
 ## keystore
+
+keystore 用于保存用户的私钥
+
+```jsonc
+{
+  "publicKey" : "02ef5b1a65b7f2afbc20ecd0f1400892ea8c4e2c86fd0491abcb8be8af7f1f6a41", // 用户的公钥
+
+  "crypto" : {
+    "cipher" : "sm4-128-ctr", // 使用的对称加密算法 
+    "cipherText" : "f078aefe661bc4498d686216e263c77a9026dcb4249d935c0b26b0b289cab098", // 加密过后的私钥
+
+    "iv" : "ce69a3f220a7d6e6eea04eb927e9f4d1", 
+    "salt" : "cfa496f673a4eeb508d301822b35b867aa05533225774fd47509908e6357e0cd"
+  },
+  "id" : "39453f15-b72d-4599-a86e-6d7459fa19d7",
+  "version" : "1",
+  "mac" : "345a86d380a043d20f36712ebb4bed37bdab412e73a290cab5aee6203c2ef83a",
+  "kdf" : "sm2-kdf",
+  "address" : "c86d486ac528ff14c17b9a9190b4d3c79a0291a8"
+}
+```
+
+keystore 的生成过程用伪代码表示:
+
+```python
+keystore = {}
+
+sk = b'********' # 私钥
+password = '********' # 用户输入的密码
+salt = randbytes(32) # 生成随机盐
+iv = randbytes(16) # 生成随机向量
+key = sm3(salt + password.encode('ascii'))[:16] # 推导出key
+keystore['salt'] = salt.hex()
+keystore['iv'] = iv.hex()
+keystore['ciphertext'] = sm4.encrypt_ctr_nopadding(key, iv, sk) # 对私钥进行加密保存
+keystore['mac'] = sm3(key + ciphertext).hex() # 生成 mac
+keystore['id'] == uuid() 
+keystore['version'] = '1'
+```
+
+keystore 的读取过程用伪代码表示：
+
+```python
+password = '********' # 用户输入的密码
+salt = bytes.fromhex(keystore['salt']) # 盐
+iv = bytes.fromhex(keystore['iv']) # iv
+key = sm3(salt + password.encode('ascii'))[:16]
+cipher = bytes.fromhex(keystore['ciphertext'])
+sk = sm4.decrypt_ctr_nopadding(key, iv, cipher) # 读取到私钥
+```
 
 ## 证书
 
