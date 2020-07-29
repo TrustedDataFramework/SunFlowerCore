@@ -83,6 +83,7 @@ public class SyncManager implements PeerServerListener {
     // when fastSyncing = true, the node is in fast-syncing mode
     private volatile boolean fastSyncing;
     private volatile Trie<HexBytes, Account> fastSyncTrie;
+    private volatile long fastSyncTotalAccounts;
 
     // not null when accounts transports, all accounts received when the size of this set == Accounts.getTotal()
     private volatile Set<HexBytes> fastSyncAddresses;
@@ -349,7 +350,10 @@ public class SyncManager implements PeerServerListener {
                         fastSyncTrie.put(a.getAddress(), a);
                     }
                     log.info("synced accounts = " + fastSyncAddresses.size());
-                    if (!accounts.isTraversed() || fastSyncAddresses.size() != accounts.getTotal()) {
+                    if(accounts.isTraversed()){
+                        fastSyncTotalAccounts = accounts.getTotal();
+                    }
+                    if (fastSyncAddresses.size() != fastSyncTotalAccounts) {
                         return;
                     }
                     HexBytes stateRoot = HexBytes.fromBytes(fastSyncTrie.commit());
