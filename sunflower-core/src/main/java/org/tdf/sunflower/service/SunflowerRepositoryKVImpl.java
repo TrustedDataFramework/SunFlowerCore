@@ -10,7 +10,6 @@ import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.util.ByteArraySet;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewBlockWritten;
 import org.tdf.sunflower.exception.ApplicationException;
@@ -83,7 +82,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
                 Codecs.newRLPCodec(Header.class)
         );
         this.canonicalIndex = new StoreWrapper<>(
-            factory.create("canonical-index"),
+                factory.create("canonical-index"),
                 Codecs.newRLPCodec(Long.class),
                 Codec.identity()
         );
@@ -185,13 +184,13 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         if (Block.BEST_COMPARATOR.compare(best, block) < 0) {
             status.put(BEST_HEADER, block.getHeader());
             byte[] hash = block.getHash().getBytes();
-            while (true){
+            while (true) {
                 Optional<Header> o = headerStore.get(hash);
-                if(!o.isPresent())
+                if (!o.isPresent())
                     break;
                 Header h = o.get();
                 Optional<byte[]> canonicalHash = canonicalIndex.get(h.getHeight());
-                if(canonicalHash.isPresent() && FastByteComparisons.equal(canonicalHash.get(), hash))
+                if (canonicalHash.isPresent() && FastByteComparisons.equal(canonicalHash.get(), hash))
                     break;
                 canonicalIndex.put(h.getHeight(), hash);
                 hash = h.getHashPrev().getBytes();
@@ -222,7 +221,31 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
     @Override
     public long getConfirms(byte[] transactionHash) {
-        return 0;
+        HexBytes[] blockHashes =
+                transactionIncludes.get(transactionHash).orElse(new HexBytes[0]);
+
+        if (blockHashes.length == 0)
+            return -1;
+        for (HexBytes hash : blockHashes) {
+            Header h = headerStore.get(hash.getBytes()).orElse(null);
+            if (h == null) continue;
+            if (isCanonical(hash.getBytes()))
+                return getBestHeader().getHeight() - h.getHeight();
+        }
+        return -1;
+    }
+
+    private boolean isCanonical(Header h) {
+        return canonicalIndex.get(h.getHeight())
+                .map(x -> FastByteComparisons.equal(x, h.getHash().getBytes()))
+                .orElse(false);
+    }
+
+    private boolean isCanonical(byte[] hash) {
+        Header h = headerStore.get(hash).orElse(null);
+        if (h == null)
+            return false;
+        return isCanonical(h);
     }
 
     @Override
@@ -340,10 +363,10 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         for (byte[] bytes : stateRootWhiteList) {
             accountTrie.getTrie(bytes).traverse(e -> {
                 Account v = e.getValue();
-                if(v.getStorageRoot() != null
+                if (v.getStorageRoot() != null
                         && v.getStorageRoot().length != 0
                         && !FastByteComparisons.equal(contractStorageTrie.getNullHash(), v.getStorageRoot())
-                ){
+                ) {
                     storageRootWhiteList.add(v.getStorageRoot());
                 }
                 return true;

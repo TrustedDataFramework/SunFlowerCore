@@ -239,7 +239,12 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
 
     @Override
     public long getConfirms(byte[] transactionHash) {
-        return 0;
+        lock.readLock().lock();
+        try {
+            return delegate.getConfirms(transactionHash);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
