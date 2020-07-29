@@ -356,10 +356,6 @@ address = h[len(b) - 20:]
 
 每个合约账户都有自己独立的存储空间，这个存储空间实际上是一个梅克尔-帕特里夏树，合约账户的状态可以用梅克尔-帕特里夏树的树根表示，也就是 storageRoot 字段
 
-## 内置合约
-
-
-
 ## 共识机制
 
 ### PoA
@@ -536,14 +532,9 @@ cipher = bytes.fromhex(keystore['ciphertext'])
 sk = sm4.decrypt_ctr_nopadding(key, iv, cipher) # 读取到私钥
 ```
 
-## 证书
 
 
-## 共识机制
-
-## 身份鉴权
-
-## p2p
+## P2P
 
 P2P网络基于 grpc 或者 websocket,两者都是二进制协议，都支持长连接。
 
@@ -699,6 +690,80 @@ websocket 和 grpc 都对单个消息的大小作了限制，为了实现发送�
 | total   |  long | 账户总数，只有当 traversed 为 true 时，此字段才有意义 |
 | accounts | 数组 | 账户 |
 | traversed | bool | 对方是否已将所有账户传输完成 |
+
+
+## 智能合约
+
+
+### 入门
+
+以下是一个智能合约 hello world 示例：
+
+```typescript
+import {DB, Result, log, RLP} from "../lib";
+
+const KEY = Uint8Array.wrap(String.UTF8.encode('key'));
+
+// every contract should had a function named by init
+// which will be called at most once when contract deployed
+export function init(): void{
+    log("contract deployed successfully by index.ts")
+}
+
+export function increment(): void {
+    let i = DB.has(KEY) ?  RLP.decodeU64(DB.get(KEY)) : 0;
+    i++;
+    log("call contract successful counter = " + i.toString());
+    DB.set(KEY, RLP.encodeU64(i));
+}
+
+export function get(): void{
+    let i = DB.has(KEY) ?  RLP.decodeU64(DB.get(KEY)) : 0;
+    Result.write(RLP.encodeU64(i))
+}
+```
+
+在这个智能合约中，第一个方法是 init 方法，这个方法只有在合约部署时会被调用。
+
+在智能合约的第一行引入了 DB 这个依赖，在智能合约中可以通过 DB 操作合约存储，例如 increament 方法在每次触发时会把 DB 中读取一个整数，再把整数加一，然后再保存到 DB 中。
+
+该合约部署成功后，如果想调用 `increment` 方法，需要构造事务，构造事务的伪代码如下:
+
+```js
+// 构造 payload 需要把方法长度作为第一个字节拼在方法名的 ascii 编码之前
+const method = Buffer.from('increment', 'ascii')
+const prefix = Buffer.of([method.length])
+const tx = {
+    "version": 1634693120,
+    "type": 3,
+    "createdAt": "2020-07-29T07:16:40Z",
+    "nonce": 1,
+    "from": "你的公钥",
+    "gasPrice": 0,
+    "amount": 0,
+    "payload": Buffer.concat([prefix, method]).toString('hex'), 
+    "to": "合约的地址",
+    "signature": "****",
+    "hash": "**",
+}
+```
+
+如果想查看这个 i 的最新数值，可以调用如下的伪代码
+
+```js
+// 构造 parameters 同样需要把方法长度作为第一个字节拼在方法名的 ascii 编码之前
+const contractAddress = '****'
+const method = Buffer.from('get', 'ascii')
+const prefix = Buffer.of([method.length])
+const parameters = Buffer.concat([prefix, method]).toString('hex')
+axios.get(`localhost:8888/rpc/contract/${contractAddress}?parameters=${parameters}`)
+  .then(r => {
+    const d = r.data.data
+    // 因为 合约中 Result.write 的是 i 的 rlp 编码，所以需要再解码一次
+    const i = rlp.decodeU64(Buffer.from(d, 'hex'))
+    console.log(`i = ${i}`)
+  })
+```
 
 
 
