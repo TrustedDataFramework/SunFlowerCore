@@ -249,6 +249,8 @@ sunflower:
 java 可以采用注解的方式进行 rlp 编码和解码：
 https://github.com/TrustedDataFramework/java-rlp
 
+javascript 或 nodejs 中使用 rlp 编码可参考 https://github.com/ethereumjs/rlp
+
 ## 区块头
 
 
@@ -700,7 +702,7 @@ websocket 和 grpc 都对单个消息的大小作了限制，为了实现发送�
 以下是一个智能合约 hello world 示例：
 
 ```typescript
-import {DB, Result, log, RLP} from "../lib";
+import {DB, Result, log, RLP, Context} from "../lib";
 
 const KEY = Uint8Array.wrap(String.UTF8.encode('key'));
 
@@ -720,6 +722,21 @@ export function increment(): void {
 export function get(): void{
     let i = DB.has(KEY) ?  RLP.decodeU64(DB.get(KEY)) : 0;
     Result.write(RLP.encodeU64(i))
+}
+
+export function getN(): void{
+    let i = DB.has(KEY) ?  RLP.decodeU64(DB.get(KEY)) : 0;
+    const args = Context.args();
+    assert(args.method === 'getN', 'method is getN');
+    const j = RLP.decodeU64(args.parameters);
+    Result.write(RLP.encodeU64(i + j))
+}
+
+export function addN(): void {
+    const args = Context.args();
+    let i = DB.has(KEY) ?  RLP.decodeU64(DB.get(KEY)) : 0;
+    i+= RLP.decodeU64(args);
+    DB.set(KEY, RLP.encodeU64(i));
 }
 ```
 
@@ -751,6 +768,9 @@ const tx = {
 如果想查看这个 i 的最新数值，可以调用如下的伪代码
 
 ```js
+const rlp = require('rlp') // https://www.npmjs.com/package/rlp
+const BigInteger = require('bigi') // https://www.npmjs.com/package/bigi
+
 // 构造 parameters 同样需要把方法长度作为第一个字节拼在方法名的 ascii 编码之前
 const contractAddress = '****'
 const method = Buffer.from('get', 'ascii')
@@ -760,10 +780,73 @@ axios.get(`localhost:8888/rpc/contract/${contractAddress}?parameters=${parameter
   .then(r => {
     const d = r.data.data
     // 因为 合约中 Result.write 的是 i 的 rlp 编码，所以需要再解码一次
-    const i = rlp.decodeU64(Buffer.from(d, 'hex'))
-    console.log(`i = ${i}`)
+    const i = BigIneger.fromBuffer(rlp.decode(Buffer.from(d, 'hex')))
+    console.log(`i = ${i.intValue()}`)
   })
 ```
+
+### 方法调用
+
+在外界与合约交互有两种方式：
+
+1. 发起请求
+
+若想在查看合约的同时加入参数，可以用二进制的方式传入，例如要调用以上合约的 ```getN``` 方法，并且把 j 作为参数传递：
+
+```js
+const contractAddress = '****' // 合约的地址
+const method = Buffer.from('getN', 'ascii')
+const prefix = Buffer.of([method.length])
+const j = rlp.encode(123456) // 使用 rlp 专成 Uint8 Array
+const parameters = Buffer.concat([prefix, method, j]).toString('hex')
+axios.get(`localhost:8888/rpc/contract/${contractAddress}?parameters=${parameters}`)
+  .then(r => {
+    const d = r.data.data
+    // 因为 合约中 Result.write 的是 i 的 rlp 编码，所以需要再解码一次
+    const i = BigIneger.fromBuffer(rlp.decode(Buffer.from(d, 'hex')))
+    console.log(`i = ${i.intValue()}`)
+  })
+```
+
+通过发起请求智能查看合约的状态，无法改变合约的存储，如果在查看合约状态时试图改写 ```DB```，接口会报错
+
+2. 构造事务
+
+只有通过构造事务采可以改变合约的存储状态，例如方法 ```addN()```，调用该方法的事务如下：
+
+```js
+const rlp = require('rlp') // https://www.npmjs.com/package/rlp
+const method = Buffer.from('addN', 'ascii')
+const prefix = Buffer.of([method.length])
+const args = rlp.encode(123456)
+
+const tx = {
+    "version": 1634693120,
+    "type": 3,
+    "createdAt": "2020-07-29T07:16:40Z",
+    "nonce": 1,
+    "from": "你的公钥",
+    "gasPrice": 0,
+    "amount": 0,
+    "payload": Buffer.concat([prefix, method, args]).toString('hex'), 
+    "to": "合约的地址",
+    "signature": "****",
+    "hash": "**",
+}
+```
+
+如果通过构造事务调用合约，可以通过在payload后面拼接上参数，其他和区块链有关的参数也可以通过 ```Context`` 类获得
+
+
+```ts
+const header = context.header(); // 获得区块头
+const tx = context.transaction(); // 获取当前的事务
+const contract = context.contract(); // 获取合约自身
+```
+
+
+
+
 
 
 

@@ -13,6 +13,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -65,6 +67,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -104,6 +107,14 @@ public class Start {
     }
 
     public static final ObjectMapper MAPPER = MappingUtil.OBJECT_MAPPER;
+
+    @SneakyThrows
+    private static Properties loadDefaultConfig(){
+        Resource r = new ClassPathResource("default.config.properties");
+        Properties p = new Properties();
+        p.load(r.getInputStream());
+        return p;
+    }
 
     public static void loadConstants(Environment env) {
         String constant = env.getProperty("sunflower.cache.trie");
@@ -213,6 +224,7 @@ public class Start {
     public static void main(String[] args) {
         FileUtils.setClassLoader(ClassUtils.getDefaultClassLoader());
         SpringApplication app = new SpringApplication(Start.class);
+        app.setDefaultProperties(loadDefaultConfig());
         app.addInitializers(applicationContext -> {
             loadCryptoContext(applicationContext.getEnvironment());
             loadConstants(applicationContext.getEnvironment());

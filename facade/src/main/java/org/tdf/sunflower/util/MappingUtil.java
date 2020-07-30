@@ -15,6 +15,9 @@ public class MappingUtil {
             .enable(SerializationFeature.INDENT_OUTPUT)
             .enable(JsonParser.Feature.ALLOW_COMMENTS)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    public static final JavaPropsMapper PROPS_MAPPER = (JavaPropsMapper)
+            new JavaPropsMapper()
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     public static Map<String, Object> pojoToMap(Object pojo) {
         return OBJECT_MAPPER.convertValue(pojo, new TypeReference<Map<String, Object>>() {
@@ -22,14 +25,14 @@ public class MappingUtil {
     }
 
     public static <T> T propertiesToPojo(Properties properties, Class<T> cls) {
-        JavaPropsMapper mapper = new JavaPropsMapper();
+
         try {
-            return mapper.readPropertiesAs(properties, cls);
+            return PROPS_MAPPER.readPropertiesAs(properties, cls);
         } catch (Exception e) {
             String schema = "";
             e.printStackTrace();
             try {
-                schema = mapper.writeValueAsProperties(cls.newInstance()).toString();
+                schema = PROPS_MAPPER.writeValueAsProperties(cls.newInstance()).toString();
             } catch (Exception ignored) {
 
             }

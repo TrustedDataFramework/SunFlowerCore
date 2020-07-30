@@ -1,32 +1,32 @@
 # use SPRING_CONFIG_LOCATION environment to locate your custom spring config
 # for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
-spring:
-  datasource:
-    url: 'jdbc:h2:mem:testdb' # SPRING_DATASOURCE_URL
-    username: 'username'
-    password: 'password'
-
-  jpa:
-    hibernate:
-      ddl-auto: create-drop # create, update
-    show-sql: false # enable jpa sql logs
+#spring:
+#  datasource:
+#    url: 'jdbc:h2:mem:testdb' # SPRING_DATASOURCE_URL
+#    username: 'username'
+#    password: 'password'
+#
+#  jpa:
+#    hibernate:
+#      ddl-auto: create-drop # create, update
+#    show-sql: false # enable jpa sql logs
 
 
 # sunflower configurations
-sunflower:
+#sunflower:
   # enable assert in development
   # call org.tdf.sunflower.Start.devAssert
-  assert: 'false'
-  validate: 'false'
-  consensus:
-    name: 'poa'
-    genesis: 'genesis/poa.jsonc'
-    block-interval: '30'
-    enable-mining: 'true'
-    miner-coin-base: '87b8f0b097b48b282a5c661babc8096e141bd9fb'
-    allow-empty-block: 'true'
+#  assert: 'false'
+#  validate: 'false'
+#  consensus:
+#    name: 'poa'
+#    genesis: 'genesis/poa.jsonc'
+#    block-interval: '30'
+#    enable-mining: 'true'
+#    miner-coin-base: '87b8f0b097b48b282a5c661babc8096e141bd9fb'
+#    allow-empty-block: 'true'
     # maximum transactions in a block
-    max-body-size: '2048'
+#    max-body-size: '2048'
 
     #pos
 #  consensus:
@@ -39,7 +39,7 @@ sunflower:
 #    max-body-size: '2048'
 #    max-miners: '15'
 
-    
+
     # VRF configs
  # consensus:
  #   name: 'vrf'
@@ -50,12 +50,12 @@ sunflower:
     # VRF keystore path of pk & sk. Relative path to /home/$USER/.sunflower
 #    vrf-data-dir: vrfdata
 
-  p2p:
-    name: 'websocket' # choose p2p protocol, gRPC is default optional: websocket
-    # name: 'websocket'
-    max-peers: '16' # maximum peers
-    address: 'node://localhost:9999'
-    enable-discovery: 'true'
+#  p2p:
+#    name: 'websocket' # choose p2p protocol, gRPC is default optional: websocket
+#     name: 'websocket'
+#    max-peers: '16' # maximum peers
+#    address: 'node://localhost:9999'
+#    enable-discovery: 'true'
     # enable-message-log: 'true' # set false to disable verbose log
     # bootstraps:
       # - 'node://localhost:9998'
@@ -73,42 +73,42 @@ sunflower:
     # private-key:
 
     # persist peers to file database.directory/peers.json
-    persist: true
+#    persist: true
 
     # lookup peers every 15 seconds
-    discover-rate: 15
+#    discover-rate: 15
 
     # maximum packae
-    max-packet-size: 2097152
-    cache-expired-after: 300
+#    max-packet-size: 2097152
+#    cache-expired-after: 300
 
-  transaction-pool:
-    expired-in: '300'
-    lock-timeout: '1'
-  sync:
+#  transaction-pool:
+#    expired-in: '300'
+#    lock-timeout: '1'
+#  sync:
   #status rate(seconds)
-    heart-rate: 5
-    block-write-rate: 1
-    max-pending-blocks: 2048
-    max-blocks-transfer: 1024
+#    heart-rate: 5
+#    block-write-rate: 1
+#    max-pending-blocks: 2048
+#    max-blocks-transfer: 1024
     # drop old header, transaction and states
-    prune-hash: ''
+#    prune-hash: ''
     # enable fast sync process
-    fast-sync-hash: ''
-    fast-sync-height: '0'
-    max-accounts-transfer: 512
-    lock-timeout: 1
+#    fast-sync-hash: ''
+#    fast-sync-height: '0'
+#    max-accounts-transfer: 512
+#    lock-timeout: 1
 
     # limit message rates
-    rate-limits:
-      status: '16'
-      get-blocks: '16'
+#    rate-limits:
+#      status: '16'
+#      get-blocks: '16'
 
-  message-queue:
-    name: 'socketIO'
-    port: '8081'
-    host: '0.0.0.0'
-    origin: ''
+#  message-queue:
+#    name: 'socketIO'
+#    port: '10004'
+#    host: '0.0.0.0'
+#    origin: ''
     #enable-message-log: 'true' # set false to disable verbose log
 
   # command line interface
@@ -117,41 +117,41 @@ sunflower:
     #port: '8082'
     #disabled: 'false'
 
-  database:
+#  database:
     # Key value data source values: [rocksdb/leveldb/memory]
-    name: 'leveldb'
-    directory: 'database/rocksdb'
-    max-open-files: '512' # defines a number of opened files by db instance
-    block-store: 'rdbms' # optional: kv
+#    name: 'leveldb'
+#    directory: 'database/rocksdb'
+#    max-open-files: '512' # defines a number of opened files by db instance
+#    block-store: 'rdbms' # optional: kv
 
   # 密码算法，包含对称加密，非对称加密和哈希计算
-  crypto:
-    hash: 'sm3' # keccak256, keccak512
-    ec: 'sm2' # ed25519
-    ae: 'sm4' # 对称加密方法
+#  crypto:
+#    hash: 'sm3' # keccak256, keccak512
+#    ec: 'sm2' # ed25519
+#    ae: 'sm4' # 对称加密方法
 
 
-  vm:
+#  vm:
     # gas limit for contract execution, any vm code or host function execution consumes one gas
-    gas-limit: '4294967296'
+#    gas-limit: '4294967296'
 
-  web:
-    disabled: false
-    password: password
+#  web:
+#    disabled: false
+#    password: password
 
   # constants for cache
-  cache:
+#  cache:
     # cache size for state trie
-    trie: '32'
+#    trie: '32'
     # cache size for avoid message flood
-    p2p:
-      transaction: '128'
+#    p2p:
+#      transaction: '128'
       # cache size for avoid message flood
-      proposal: '128'
+#      proposal: '128'
 
 
-server:
-  port: '8080'
+#server:
+#  port: '7010'
 
 #logging:
   #level:

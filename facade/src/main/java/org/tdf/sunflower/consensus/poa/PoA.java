@@ -91,7 +91,9 @@ public class PoA extends AbstractConsensusEngine {
 
     @Override
     public void init(Properties properties) {
-        ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
+        ObjectMapper objectMapper = new ObjectMapper()
+                .enable(JsonParser.Feature.ALLOW_COMMENTS)
+                ;
         poAConfig = MappingUtil.propertiesToPojo(properties, PoAConfig.class);
         InputStream in;
         try {
