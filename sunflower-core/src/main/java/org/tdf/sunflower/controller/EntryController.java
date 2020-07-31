@@ -91,7 +91,8 @@ public class EntryController {
 
     @GetMapping(value = "/transaction/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Object> getTransaction(@PathVariable String hash) throws Exception {
-        Optional<Transaction> o = repository.getTransactionByHash(HexBytes.decode(hash));
+        Optional<Transaction> o = repository
+                .getTransactionByHash(HexBytes.decode(hash));
         if(o.isPresent()){
             Map<String, Object> m = MappingUtil.pojoToMap(o.get());
             m.put("confirms", repository.getConfirms(HexBytes.decode(hash)));

@@ -267,7 +267,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         }
 
         // build Parameters here
-        Context context = new Context(header, t, contractAccount, null);
+        Context context = new Context(header, t, contractAccount, t.getPayload());
 
         ContractDB contractDB = new ContractDB(storageTrie.revert(contractAccount.getStorageRoot(),
                 new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new)));

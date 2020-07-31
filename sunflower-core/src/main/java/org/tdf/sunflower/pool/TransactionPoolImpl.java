@@ -258,7 +258,7 @@ public class TransactionPoolImpl implements TransactionPool {
     public Optional<Transaction> get(HexBytes hash) {
         this.cacheLock.readLock().lock();
         try {
-            return Optional.of(mCache.get(hash)).map(x -> x.tx);
+            return Optional.ofNullable(mCache.get(hash)).map(x -> x.tx);
         } finally {
             this.cacheLock.readLock().unlock();
         }
