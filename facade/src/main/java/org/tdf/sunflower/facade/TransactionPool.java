@@ -34,4 +34,8 @@ public interface TransactionPool{
     PagedView<Transaction> getDropped(PageSize pageSize);
 
     void drop(Transaction transaction);
+
+    default Optional<Transaction> get(HexBytes hash){
+        return Optional.empty();
+    }
 }

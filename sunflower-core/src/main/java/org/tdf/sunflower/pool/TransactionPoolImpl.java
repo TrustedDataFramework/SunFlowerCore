@@ -10,8 +10,6 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.TransactionPoolConfig;
-import org.tdf.sunflower.controller.Response;
-import org.tdf.sunflower.types.PageSize;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewTransactionsCollected;
 import org.tdf.sunflower.events.NewTransactionsReceived;
@@ -20,6 +18,7 @@ import org.tdf.sunflower.facade.PendingTransactionValidator;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.facade.TransactionRepository;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.types.PageSize;
 import org.tdf.sunflower.types.PagedView;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
@@ -30,54 +29,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Slf4j(topic = "txPool")
 @Component
 public class TransactionPoolImpl implements TransactionPool {
-    enum PendingTransactionState {
-        /**
-         * Transaction may be dropped due to:
-         * - Invalid transaction (invalid nonce, low gas price, insufficient account funds,
-         * invalid signature)
-         * - Timeout (when pending transaction is not included to any block for
-         * last [transaction.outdated.threshold] blocks
-         * This is the final state
-         */
-        DROPPED,
-
-        /**
-         * The same as PENDING when transaction is just arrived
-         * Next state can be either PENDING or INCLUDED
-         */
-        NEW_PENDING,
-
-        /**
-         * State when transaction is not included to any blocks (on the main chain), and
-         * was executed on the last best block. The repository state is reflected in the PendingState
-         * Next state can be either INCLUDED, DROPPED (due to timeout)
-         * or again PENDING when a new block (without this transaction) arrives
-         */
-        PENDING,
-
-        /**
-         * State when the transaction is included to a block.
-         * This could be the final state, however next state could also be
-         * PENDING: when a fork became the main chain but doesn't include this tx
-         * INCLUDED: when a fork became the main chain and tx is included into another
-         * block from the new main chain
-         * DROPPED: If switched to a new (long enough) main chain without this Tx
-         */
-        INCLUDED;
-
-        public boolean isPending() {
-            return this == NEW_PENDING || this == PENDING;
-        }
-    }
-
     private final EventBus eventBus;
 
     private final TreeSet<TransactionInfo> cache;
+
+    private final Map<HexBytes, TransactionInfo> mCache;
 
     private PendingTransactionValidator validator;
 
@@ -128,6 +90,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 .expireAfterWrite(config.getExpiredIn(), TimeUnit.SECONDS)
                 .build();
         this.transactionRepository = repository;
+        this.mCache = new HashMap<>();
     }
 
     @SneakyThrows
@@ -137,13 +100,16 @@ public class TransactionPoolImpl implements TransactionPool {
             return;
         }
         try {
-            cache.removeIf(info -> {
-                boolean remove = (now - info.receivedAt) / 1000 > config.getExpiredIn();
-                if (remove && !transactionRepository.containsTransaction(info.tx.getHash().getBytes())) {
-                    dropped.put(info.tx.getHash(), info.tx);
-                }
-                return remove;
-            });
+            Predicate<TransactionInfo> lambda =
+                    info -> {
+                        boolean remove = (now - info.receivedAt) / 1000 > config.getExpiredIn();
+                        if (remove && !transactionRepository.containsTransaction(info.tx.getHash().getBytes())) {
+                            dropped.put(info.tx.getHash(), info.tx);
+                        }
+                        return remove;
+                    };
+            cache.removeIf(lambda);
+            mCache.values().removeIf(lambda);
         } finally {
             this.cacheLock.writeLock().unlock();
         }
@@ -176,8 +142,9 @@ public class TransactionPoolImpl implements TransactionPool {
                 res = validator.validate(transaction);
                 if (res.isSuccess()) {
                     cache.add(info);
+                    mCache.put(info.tx.getHash(), info);
                     newCollected.add(transaction);
-                }else{
+                } else {
                     errors.add(res.getReason());
                 }
             }
@@ -207,6 +174,7 @@ public class TransactionPoolImpl implements TransactionPool {
                                         .orElse(0L);
                 if (t.getNonce() <= prevNonce) {
                     it.remove();
+                    mCache.remove(t.getHash());
                     if (!transactionRepository.containsTransaction(t.getHash().getBytes()))
                         dropped.put(t.getHash(), t);
                     continue;
@@ -265,7 +233,10 @@ public class TransactionPoolImpl implements TransactionPool {
         }
         try {
             event.getBlock().getBody().forEach(t ->
-                    cache.remove(new TransactionInfo(System.currentTimeMillis(), t))
+                    {
+                        cache.remove(new TransactionInfo(System.currentTimeMillis(), t));
+                        mCache.remove(t.getHash());
+                    }
             );
 
         } finally {
@@ -281,5 +252,15 @@ public class TransactionPoolImpl implements TransactionPool {
                 .limit(pageSize.getSize())
                 .collect(Collectors.toList());
         return new PagedView<>(pageSize.getPage(), pageSize.getSize(), dropped.asMap().size(), ret);
+    }
+
+    @Override
+    public Optional<Transaction> get(HexBytes hash) {
+        this.cacheLock.readLock().lock();
+        try {
+            return Optional.of(mCache.get(hash)).map(x -> x.tx);
+        } finally {
+            this.cacheLock.readLock().unlock();
+        }
     }
 }

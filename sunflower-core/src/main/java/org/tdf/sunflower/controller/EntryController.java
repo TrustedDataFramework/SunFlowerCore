@@ -25,6 +25,7 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.PagedView;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.util.MappingUtil;
 
 import java.util.*;
 import java.util.function.Function;
@@ -89,9 +90,20 @@ public class EntryController {
     }
 
     @GetMapping(value = "/transaction/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Transaction getTransaction(@PathVariable String hash) throws Exception {
-        return repository.getTransactionByHash(HexBytes.decode(hash))
-                .orElseThrow(() -> new RuntimeException("transaction " + hash + " not exists"));
+    public Map<String, Object> getTransaction(@PathVariable String hash) throws Exception {
+        Optional<Transaction> o = repository.getTransactionByHash(HexBytes.decode(hash));
+        if(o.isPresent()){
+            Map<String, Object> m = MappingUtil.pojoToMap(o.get());
+            m.put("confirms", repository.getConfirms(HexBytes.decode(hash)));
+            return m;
+        }
+        o = pool.get(HexBytes.fromHex(hash));
+        if(o.isPresent()) {
+            Map<String, Object> m = MappingUtil.pojoToMap(o.get());
+            m.put("confirms", -1);
+            return m;
+        }
+        throw new RuntimeException("transaction hash " + hash + " not found");
     }
 
     @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)
