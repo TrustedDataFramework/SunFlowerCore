@@ -215,6 +215,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new)));
 
         Hosts hosts = new Hosts()
+                .withTransfer(accounts, t, t.getFromAddress(), t.createContractAddress())
                 .withContext(context)
                 .withDB(contractDB);
 
