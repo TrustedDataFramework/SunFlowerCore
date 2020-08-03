@@ -32,6 +32,11 @@ public class Hosts {
     public Hosts() {
     }
 
+    public Hosts withTransfer(Transfer transfer){
+        this.transfer = transfer;
+        return this;
+    }
+
     public Hosts withTransfer(
             Map<HexBytes, Account> states,
             Transaction tx,
