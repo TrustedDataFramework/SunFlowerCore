@@ -12,6 +12,7 @@ import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.ContractDB;
 import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
+import org.tdf.sunflower.vm.hosts.UnsupportedTransfer;
 
 import java.util.Collections;
 
@@ -44,6 +45,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
                 contractStorageTrie.revert(account.getStorageRoot(), ReadOnlyStore.of(contractStorageTrie.getStore()));
 
         Hosts hosts = new Hosts()
+                .withTransfer(new UnsupportedTransfer())
                 .withContext(ctx)
                 .withDB(new ContractDB(trie));
 
