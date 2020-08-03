@@ -15,11 +15,13 @@ public class Transfer extends HostFunction {
     private final HexBytes callerAddress;
     private final Map<HexBytes, Account> states;
     private final HexBytes createdBy;
+    private final HexBytes contractAddress;
 
-    public Transfer(HexBytes callerAddress, Map<HexBytes, Account> states, HexBytes createdBy) {
+    public Transfer(HexBytes callerAddress, Map<HexBytes, Account> states, HexBytes createdBy, HexBytes contractAddress) {
         this.callerAddress = callerAddress;
         this.states = states;
         this.createdBy = createdBy;
+        this.contractAddress = contractAddress;
         setType(
                 new FunctionType(
                         Arrays.asList(
@@ -37,10 +39,10 @@ public class Transfer extends HostFunction {
     public long[] execute(long... parameters) {
         if (parameters[0] == 0) {
             long amount = parameters[1];
-            Account createdBy = states.get(this.createdBy);
-            if (createdBy.getBalance() < amount)
-                throw new RuntimeException(this.callerAddress + " balance = " + createdBy.getBalance() + " while transfer amount = " + amount);
-            createdBy.setBalance(createdBy.getBalance() - amount);
+            Account contractAccount = states.get(this.contractAddress);
+            if (contractAccount.getBalance() < amount)
+                throw new RuntimeException(this.contractAddress + " balance = " + contractAccount.getBalance() + " while transfer amount = " + amount);
+            contractAccount.setBalance(contractAccount.getBalance() - amount);
             Account caller = states.get(callerAddress);
             caller.setBalance(caller.getBalance() + amount);
             return new long[0];

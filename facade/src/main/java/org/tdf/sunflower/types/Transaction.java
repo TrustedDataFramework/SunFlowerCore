@@ -231,6 +231,16 @@ public class Transaction {
                 Objects.equals(signature, that.signature);
     }
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public long getFee(){
+        if(type == Type.COIN_BASE.code)
+            return 0;
+        if(type == Type.TRANSFER.code)
+            return 100 * getGasPrice();
+        return 0;
+    }
+
+
     @Override
     public int hashCode() {
         return Objects.hash(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
@@ -335,9 +345,6 @@ public class Transaction {
             return ValidateResult.fault("\"from\" of coinbase transaction " + getHash() + " should be empty");
         if (type == Type.CONTRACT_DEPLOY.code && !getTo().isEmpty()) {
             return ValidateResult.fault("\"to\" of contract deploy transaction " + getHash() + " should be empty");
-        }
-        if (type == Type.CONTRACT_DEPLOY.code && amount != 0) {
-            return ValidateResult.fault("\"amount\" of contract deploy transaction " + getHash() + " should be zero");
         }
         if (type == Type.CONTRACT_CALL.code || type == Type.TRANSFER.code) {
             if (getFrom().isEmpty() || getTo().isEmpty())

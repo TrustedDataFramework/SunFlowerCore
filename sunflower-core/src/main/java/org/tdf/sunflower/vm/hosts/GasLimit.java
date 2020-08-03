@@ -1,5 +1,6 @@
 package org.tdf.sunflower.vm.hosts;
 
+import lombok.Getter;
 import org.tdf.lotusvm.runtime.Hook;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.runtime.ModuleInstanceImpl;
@@ -7,6 +8,7 @@ import org.tdf.lotusvm.types.Instruction;
 import org.tdf.sunflower.ApplicationConstants;
 
 public class GasLimit implements Hook {
+    @Getter
     private long gas;
 
     @Override

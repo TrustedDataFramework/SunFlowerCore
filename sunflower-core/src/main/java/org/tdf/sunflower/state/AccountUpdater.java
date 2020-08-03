@@ -164,8 +164,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         for (Map.Entry<HexBytes, Account> entry : states.entrySet()) {
             Account state = entry.getValue();
             if (t.getFromAddress().equals(state.getAddress())) {
-                require(state.getBalance() >= t.getAmount(), "the balance of sender is not enough");
-                state.setBalance(state.getBalance() - t.getAmount());
+                require(state.getBalance() >= t.getAmount() + t.getFee(), "the balance of sender is not enough");
+                state.setBalance(state.getBalance() - t.getAmount() - t.getFee());
             }
             if (t.getTo().equals(state.getAddress())) {
                 if (state.getCreatedBy() != null && !state.getCreatedBy().isEmpty())
@@ -204,7 +204,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
     private Map<HexBytes, Account> updateDeploy(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account contractAccount = Objects.requireNonNull(accounts.get(t.createContractAddress()));
-
+        Account createdBy = accounts.get(t.getFromAddress());
         contractAccount.setCreatedBy(t.getFromAddress());
         contractAccount.setNonce(t.getNonce());
 
@@ -218,19 +218,25 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 .withContext(context)
                 .withDB(contractDB);
 
+        GasLimit gasLimit = new GasLimit();
         // every contract must has a init method
-        ModuleInstance instance = ModuleInstance.builder().hooks(Collections.singleton(new GasLimit()))
+        ModuleInstance instance = ModuleInstance.builder().hooks(Collections.singleton(gasLimit))
                 .binary(t.getPayload().getBytes()).hostFunctions(hosts.getAll()).build();
 
         byte[] contractHash = CryptoContext.hash(t.getPayload().getBytes());
-
         contractStore.put(contractHash, t.getPayload().getBytes());
         contractAccount.setContractHash(contractHash);
+        contractAccount.setBalance(t.getAmount());
+
+
 
         if (instance.containsExport("init")) {
             instance.execute("init");
         }
 
+        long fee = gasLimit.getGas() * t.getGasPrice();
+        require(createdBy.getBalance() >= t.getAmount() + fee, "the balance of from is not enough");
+        createdBy.setBalance(createdBy.getBalance() - t.getAmount() - fee);
         contractDB.getStorageTrie().commit();
         contractDB.getStorageTrie().flush();
         contractAccount.setStorageRoot(contractDB.getStorageTrie().getRootHash());
@@ -240,13 +246,9 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
     private Map<HexBytes, Account> updateContractCall(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account contractAccount = accounts.get(t.getTo());
+        Account caller = accounts.get(t.getFromAddress());
         for (Account account : accounts.values()) {
-            if (account.getAddress().equals(t.getFromAddress())) {
-                if (account.getBalance() < t.getAmount())
-                    throw new RuntimeException("the balance of account " + account.getAddress() + " is not enough");
-                account.setBalance(account.getBalance() - t.getAmount());
-            }
-            if (account.getAddress().equals(contractAccount.getCreatedBy())) {
+            if (account.getAddress().equals(contractAccount.getAddress())) {
                 account.setBalance(account.getBalance() + t.getAmount());
                 if (account.getBalance() < 0)
                     throw new RuntimeException("math overflow");
@@ -275,12 +277,13 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new)));
 
         Hosts hosts = new Hosts()
-                .withTransfer(accounts, t, contractAccount.getCreatedBy())
+                .withTransfer(accounts, t, contractAccount.getCreatedBy(), contractAccount.getAddress())
                 .withContext(context)
                 .withDB(contractDB);
 
+        GasLimit limit = new GasLimit();
         // every contract should have a init method
-        ModuleInstance instance = ModuleInstance.builder().hooks(Collections.singleton(new GasLimit()))
+        ModuleInstance instance = ModuleInstance.builder().hooks(Collections.singleton(limit))
                 .hostFunctions(hosts.getAll())
                 .binary(contractStore.get(contractAccount.getContractHash())
                         .orElseThrow(() -> new RuntimeException(
@@ -288,6 +291,9 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 .build();
 
         instance.execute(context.getMethod());
+        long fee = limit.getGas() * t.getGasPrice();
+        require(caller.getBalance() >= t.getAmount() + fee, "the balance of from is not enough");
+        caller.setBalance(caller.getBalance() - fee - t.getAmount());
         contractDB.getStorageTrie().commit();
         contractDB.getStorageTrie().flush();
         contractAccount.setStorageRoot(contractDB.getStorageTrie().getRootHash());

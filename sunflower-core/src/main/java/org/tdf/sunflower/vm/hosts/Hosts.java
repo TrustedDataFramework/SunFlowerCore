@@ -35,9 +35,10 @@ public class Hosts {
     public Hosts withTransfer(
             Map<HexBytes, Account> states,
             Transaction tx,
-            HexBytes createdBy
+            HexBytes createdBy,
+            HexBytes contractAddress
     ){
-        this.transfer = new Transfer(tx.getFromAddress(), states, createdBy);
+        this.transfer = new Transfer(tx.getFromAddress(), states, createdBy, contractAddress);
         return this;
     }
 
