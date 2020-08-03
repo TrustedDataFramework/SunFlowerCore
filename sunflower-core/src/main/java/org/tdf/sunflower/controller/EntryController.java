@@ -172,8 +172,11 @@ public class EntryController {
 
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public HexBytes getContract(@PathVariable("address") final String address,
-                                @RequestParam(value = "parameters") String arguments) throws Exception {
+                                @RequestParam(value = "parameters", required = false) String arguments, @RequestParam(value = "args", required = false) String argsStr) throws Exception {
         HexBytes addressHex = Address.of(address);
+        arguments  = arguments == null ? argsStr : arguments;
+        if(arguments == null || arguments.isEmpty())
+            throw new RuntimeException("require parameters or args");
         HexBytes args = HexBytes.fromHex(arguments);
         Header h = sunflowerRepository.getBestHeader();
         byte[] result = accountTrie.view(h.getStateRoot().getBytes(), addressHex, args);
