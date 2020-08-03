@@ -1,10 +1,14 @@
 package org.tdf.sunflower.vm.hosts;
 
+import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.abi.Context;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class Hosts {
@@ -16,13 +20,25 @@ public class Hosts {
 
     private ContractDB contractDb;
 
+    private Map<HexBytes, Account> states;
+
+    private Transfer transfer;
+
     public Hosts disableEvent(){
         this.disableEvent = true;
         return this;
     }
 
     public Hosts() {
+    }
 
+    public Hosts withTransfer(
+            Map<HexBytes, Account> states,
+            Transaction tx,
+            HexBytes createdBy
+    ){
+        this.transfer = new Transfer(tx.getFromAddress(), states, createdBy);
+        return this;
     }
 
     public Set<HostFunction> getAll() {
@@ -35,6 +51,11 @@ public class Hosts {
         if (context != null) {
             all.addAll(new ContextHelper(context).getHelpers());
         }
+
+        if(this.transfer != null){
+            all.add(this.transfer);
+        }
+
         if(contractDb != null){
             all.addAll(contractDb.getHelpers());
         }

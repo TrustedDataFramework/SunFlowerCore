@@ -16,6 +16,10 @@ public class Context {
     private ContextContract contextContract;
     private HexBytes viewParameters;
 
+    public boolean containsTransaction(){
+        return transaction != null;
+    }
+
     public Context(ContextHeader header, ContextTransaction transaction, ContextContract contextContract, HexBytes viewParameters) {
         this.header = header;
         this.transaction = transaction;

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Value;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Transaction;
 
 @Getter
@@ -33,5 +34,9 @@ public class ContextTransaction {
                 transaction.getGasPrice(), transaction.getAmount(), transaction.getPayload(),
                 transaction.getTo(), transaction.getSignature(), transaction.getHash()
         );
+    }
+
+    public HexBytes getFromAddress(){
+        return Address.fromPublicKey(getFrom());
     }
 }

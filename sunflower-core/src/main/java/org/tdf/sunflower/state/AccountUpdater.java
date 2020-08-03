@@ -214,7 +214,9 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         ContractDB contractDB = new ContractDB(storageTrie.revert(storageTrie.getNullHash(),
                 new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new)));
 
-        Hosts hosts = new Hosts().withContext(context).withDB(contractDB);
+        Hosts hosts = new Hosts()
+                .withContext(context)
+                .withDB(contractDB);
 
         // every contract must has a init method
         ModuleInstance instance = ModuleInstance.builder().hooks(Collections.singleton(new GasLimit()))
@@ -272,7 +274,10 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         ContractDB contractDB = new ContractDB(storageTrie.revert(contractAccount.getStorageRoot(),
                 new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new)));
 
-        Hosts hosts = new Hosts().withContext(context).withDB(contractDB);
+        Hosts hosts = new Hosts()
+                .withTransfer(accounts, t, contractAccount.getCreatedBy())
+                .withContext(context)
+                .withDB(contractDB);
 
         // every contract should have a init method
         ModuleInstance instance = ModuleInstance.builder().hooks(Collections.singleton(new GasLimit()))
