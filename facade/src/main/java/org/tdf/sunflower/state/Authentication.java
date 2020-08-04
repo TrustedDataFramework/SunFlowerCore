@@ -3,6 +3,9 @@ package org.tdf.sunflower.state;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import org.tdf.common.serialize.Codec;
+import org.tdf.common.serialize.Codecs;
+import org.tdf.common.store.PrefixStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
@@ -52,15 +55,23 @@ public class Authentication implements PreBuiltContract {
         return Arrays.asList(RLPCodec.decode(v, HexBytes[].class));
     }
 
-
-    public static class Dummy {
-        public TreeMap<HexBytes, TreeSet<HexBytes>> dummy;
+    public Map<HexBytes, TreeSet<HexBytes>> getPending(byte[] stateRoot){
+        Account a = accountTrie.get(stateRoot, contractAddress).get();
+        Store<byte[], byte[]> contractStorage = contractStorageTrie.revert(a.getStorageRoot());
+        return new HashMap<>(getPendingStore(contractStorage).asMap());
     }
 
     @SneakyThrows
-    public TreeMap<HexBytes, TreeSet<HexBytes>> getPending(byte[] stateRoot) {
-        byte[] v = getValue(stateRoot, PENDING_NODES_KEY);
-        return (TreeMap<HexBytes, TreeSet<HexBytes>>) RLPCodec.decodeContainer(v, Container.fromField(Dummy.class.getField("dummy")));
+    public Store<HexBytes, TreeSet<HexBytes>> getPendingStore(Store<byte[], byte[]> contractStorage) {
+        return new PrefixStore<>(
+                contractStorage,
+                PENDING_NODES_KEY,
+                Codecs.newRLPCodec(HexBytes.class),
+                Codec.newInstance(
+                        RLPCodec::encode,
+                        x -> new TreeSet<>(Arrays.asList(RLPCodec.decode(x, HexBytes[].class)))
+                )
+        );
     }
 
     static final byte[] NODES_KEY = "nodes".getBytes(StandardCharsets.US_ASCII);
@@ -78,12 +89,7 @@ public class Authentication implements PreBuiltContract {
     public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
         Method m = Method.values()[transaction.getPayload().get(0)];
         List<HexBytes> nodes = new ArrayList<>(Arrays.asList(RLPCodec.decode(contractStorage.get(NODES_KEY).get(), HexBytes[].class)));
-        TreeMap<HexBytes, TreeSet<HexBytes>> pending =
-                (TreeMap<HexBytes, TreeSet<HexBytes>>)
-                        RLPCodec.decodeContainer(
-                                contractStorage.get(PENDING_NODES_KEY).get(),
-                                Container.fromField(Dummy.class.getField("dummy"))
-                        );
+        Store<HexBytes, TreeSet<HexBytes>> pending = getPendingStore(contractStorage);
 
         switch (m) {
             case JOIN_NODE: {
@@ -95,7 +101,6 @@ public class Authentication implements PreBuiltContract {
                     throw new RuntimeException(fromAddr + " has already in pending");
 
                 pending.put(fromAddr, new TreeSet<>());
-                contractStorage.put(PENDING_NODES_KEY, RLPCodec.encode(pending));
                 break;
             }
             case APPROVE_JOIN: {
@@ -103,27 +108,28 @@ public class Authentication implements PreBuiltContract {
                     throw new RuntimeException("cannot approve " + transaction.getFromAddress() + " is not in nodes list");
                 }
                 HexBytes approved = transaction.getPayload().slice(1);
-                if (!pending.containsKey(approved))
+
+                Optional<TreeSet<HexBytes>> approves = pending.get(approved);
+                if (!approves.isPresent())
                     throw new RuntimeException("cannot approve " + approved + " not in pending");
 
-                if (pending.get(approved).contains(transaction.getFromAddress())) {
+                if (approves.get().contains(transaction.getFromAddress())) {
                     throw new RuntimeException("cannot approve " + approved + " has approved");
                 }
 
-                pending.get(approved).add(transaction.getFromAddress());
-                if (pending.get(approved).size() >= divideAndCeil(nodes.size() * 2, 3)) {
+                approves.get().add(transaction.getFromAddress());
+                if (approves.get().size() >= divideAndCeil(nodes.size() * 2, 3)) {
                     pending.remove(approved);
                     nodes.add(approved);
                 }
-                contractStorage.put(PENDING_NODES_KEY, RLPCodec.encode(pending));
                 contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
                 break;
             }
-            case EXIT:{
+            case EXIT: {
                 HexBytes fromAddr = transaction.getFromAddress();
                 if (!nodes.contains(fromAddr))
                     throw new RuntimeException(fromAddr + " not in nodes");
-                if(nodes.size() <= 1)
+                if (nodes.size() <= 1)
                     throw new RuntimeException("cannot exit, at least one miner");
 
                 nodes.remove(fromAddr);
@@ -144,7 +150,6 @@ public class Authentication implements PreBuiltContract {
     public Map<byte[], byte[]> getGenesisStorage() {
         Map<byte[], byte[]> ret = new ByteArrayMap<>();
         ret.put(NODES_KEY, RLPCodec.encode(new TreeSet<>(this.nodes)));
-        ret.put(PENDING_NODES_KEY, RLPCodec.encode(new HashMap<>()));
         return ret;
     }
 }

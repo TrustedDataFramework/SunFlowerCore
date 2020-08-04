@@ -1,18 +1,16 @@
 package org.tdf.sunflower.consensus.pos;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.PreBuiltContract;
+import org.tdf.sunflower.state.*;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
@@ -77,7 +75,7 @@ public class PoS extends AbstractConsensusEngine {
 
         Map<HexBytes, NodeInfo> nodesMap = new TreeMap<>();
         if (genesis.miners != null) {
-            genesis.miners.forEach(m -> nodesMap.put(m.getAddress(), new NodeInfo(m.getAddress(), m.vote)));
+            genesis.miners.forEach(m -> nodesMap.put(m.getAddress(), new NodeInfo(m.getAddress(), m.vote, new TreeSet<>())));
         }
 
         this.minerContract = new PosPreBuilt(nodesMap);
@@ -93,6 +91,26 @@ public class PoS extends AbstractConsensusEngine {
 
         this.posValidator = new PoSValidator(getAccountTrie(), this.posMiner);
         setValidator(this.posValidator);
+    }
+
+    @Override
+    public Object rpcQuery(HexBytes address, JsonNode body) {
+        byte[] root = getSunflowerRepository().getBestBlock().getStateRoot().getBytes();
+        String method = body == null ? null : body.get("method").asText();
+        if (address.equals(Constants.POS_CONTRACT_ADDR)) {
+
+            switch (Objects.requireNonNull(method)) {
+                case "nodeInfos":
+                    return minerContract.getNodeInfos(root);
+                case "voteInfo":{
+                    String txHash = body.get("txHash").asText();
+                    return minerContract.getVoteInfo(root, HexBytes.decode(txHash)).orElseThrow(() -> new RuntimeException("tx hash not found"));
+                }
+                default:
+                    throw new RuntimeException(method + " not defined");
+            }
+        }
+        return UNRESOLVED;
     }
 
     @Override
