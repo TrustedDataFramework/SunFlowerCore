@@ -261,6 +261,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         }
 
         if (preBuiltContractAddresses.containsKey(contractAccount.getAddress())) {
+            require(caller.getBalance() >= t.getAmount(), "the balance of from is not enough");
             Trie<byte[], byte[]> before = storageTrie.revert(contractAccount.getStorageRoot(),
                     new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new));
             PreBuiltContract updater = preBuiltContractAddresses.get(contractAccount.getAddress());

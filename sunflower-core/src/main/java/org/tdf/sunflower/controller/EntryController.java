@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -36,6 +37,7 @@ import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/rpc")
+@Slf4j(topic = "rpc")
 public class EntryController {
     private AccountTrie accountTrie;
 

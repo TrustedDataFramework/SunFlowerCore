@@ -30,6 +30,7 @@ import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
 import org.tdf.crypto.keystore.Crypto;
 import org.tdf.crypto.sm2.SM2;
+import org.tdf.crypto.sm2.SM2KeyPair;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM2Util;
@@ -444,9 +445,9 @@ public class Start {
             return SecretStore.NONE;
 
         InputStream in = null;
-        byte[] bobSk = CryptoContext.generateSecretKey();
-        byte[] bobPk = CryptoContext.getPkFromSk(bobSk);
-        log.info("please generate secret store for your private key, public key = " + HexBytes.fromBytes(bobPk));
+        SM2PrivateKey sk = new SM2PrivateKey(SM2.generateKeyPair().getPrivateKey().getEncoded());
+        SM2PublicKey pk = (SM2PublicKey) sk.generatePublicKey();
+        log.info("please generate secret store for your private key, public key = " + HexBytes.fromBytes(pk.getEncoded()));
         log.info("waiting for load secret store...");
         while (true) {
             try {
@@ -463,10 +464,9 @@ public class Start {
                 SecretStoreImpl secretStore = MAPPER.readValue(
                         in,
                         SecretStoreImpl.class);
-                byte[] plain = secretStore.getPrivateKey(bobSk);
-                if (plain.length == bobSk.length){
-                    byte[] pk = CryptoContext.getPkFromSk(plain);
-                    HexBytes address = Address.fromPublicKey(pk);
+                byte[] plain = sk.decrypt(secretStore.getCipherText().getBytes());
+                if (plain.length == sk.getEncoded().length){
+                    HexBytes address = Address.fromPublicKey(CryptoContext.getPkFromSk(plain));
                     log.info("load secret store success your address = " + address);
                     return () -> HexBytes.fromBytes(plain);
                 }

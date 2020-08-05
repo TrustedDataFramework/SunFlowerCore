@@ -33,9 +33,7 @@ public class SM2PrivateKey implements PrivateKey {
     }
 
     public byte[] decrypt(byte[] cipher) {
-        byte[] msg = null;
-        msg = SM2Util.decrypt(privateKey, cipher);
-        return msg;
+        return SM2Util.decrypt(privateKey, cipher);
     }
 
     @Override

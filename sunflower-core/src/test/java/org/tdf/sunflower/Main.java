@@ -54,7 +54,12 @@ public class Main {
     private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
 
     public static void main(String[] args) throws Exception{
-        System.out.print(BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 's'}));
+       SM2PrivateKey sk = new SM2PrivateKey(HexBytes.decode("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5"));
+       SM2PublicKey pk = (SM2PublicKey) sk.generatePublicKey();
+       byte[] msg = sk.decrypt(HexBytes.decode("44e004e48a31a6abc1cb687dee9368fa5c28e42302e7536f6a2cc5a758f1f9cc3fae860a57a0eb8071a01abbc76f40bf0a6b9a0df459febf6c681f79f27964d9306139660a16fb0c6e32fe51a26abdde95764bd888b3c9746e9989f4feef1eef83ef5b"));
+        for (byte b : msg) {
+            System.out.println(Byte.toUnsignedInt(b));
+        }
     }
 
 

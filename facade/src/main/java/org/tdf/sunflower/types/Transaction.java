@@ -236,7 +236,7 @@ public class Transaction {
         if(type == Type.COIN_BASE.code)
             return 0;
         if(type == Type.TRANSFER.code)
-            return 100 * getGasPrice();
+            return 10 * getGasPrice();
         return 0;
     }
 
