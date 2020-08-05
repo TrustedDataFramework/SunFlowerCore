@@ -263,8 +263,11 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 if (account.getBalance() < 0)
                     throw new RuntimeException("math overflow");
             }
-            if (!account.getAddress().equals(t.getFromAddress()) && !account.getAddress().equals(t.getTo())
-                    && !account.getAddress().equals(contractAccount.getCreatedBy()))
+            if (
+                    !account.getAddress().equals(t.getFromAddress())
+                            && !account.getAddress().equals(t.getTo())
+                            && !account.getAddress().equals(Constants.FEE_ACCOUNT_ADDR)
+                            && !account.getAddress().equals(contractAccount.getCreatedBy()))
                 throw new RuntimeException(
                         "unexpected address " + account.getAddress() + " not a createdBy or from or to");
         }
