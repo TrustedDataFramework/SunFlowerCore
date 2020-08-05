@@ -29,4 +29,4 @@ public class ApplicationConstants {
     public static long GAS_LIMIT = 4294967296L;
 
     public static boolean VALIDATE;
-}
+ }

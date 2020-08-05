@@ -12,6 +12,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.state.StateUpdater;
 import org.tdf.sunflower.types.Block;
@@ -106,9 +107,7 @@ public abstract class AbstractMiner implements Miner {
                 Map<HexBytes, Account> related = new HashMap<>();
 
                 // get all account related to this transaction in the trie
-                keys.forEach(k -> {
-                    related.put(k, tmp.get(k).orElse(updater.createEmpty(k)));
-                });
+                keys.forEach(k -> related.put(k, tmp.get(k).orElse(updater.createEmpty(k))));
 
                 // store updated result to the trie if update success
                 updater
@@ -123,7 +122,9 @@ public abstract class AbstractMiner implements Miner {
             }
             b.getBody().add(tx);
         }
-
+        Account feeAccount = tmp.get(Constants.FEE_ACCOUNT_ADDR).get();
+        tmp.remove(Constants.FEE_ACCOUNT_ADDR);
+        coinbase.setAmount(coinbase.getAmount() + feeAccount.getBalance());
         // calculate state root
         b.setStateRoot(
                 HexBytes.fromBytes(tmp.commit())

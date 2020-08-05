@@ -24,7 +24,10 @@ public class PoAValidator extends AbstractValidator {
     public ValidateResult validate(Block block, Block dependency) {
         ValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
-
+        long fee = (long) res.getCtx();
+        if (fee + poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1) != block.getBody().get(0).getAmount()) {
+            return ValidateResult.fault("reward of coin base transaction should be " + poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1));
+        }
         if (block.getVersion() != PoAConstants.BLOCK_VERSION) {
             return ValidateResult.fault("version not match");
         }
@@ -63,8 +66,6 @@ public class PoAValidator extends AbstractValidator {
         if (coinBase.getNonce() != parent.getHeight() + 1)
             return ValidateResult.fault("nonce of coin base should be " + parent.getHeight() + 1);
 
-        if(coinBase.getAmount() != poA.economicModel.getConsensusRewardAtHeight(parent.getHeight() + 1))
-            return ValidateResult.fault("reward of coin base transaction should be " + poA.economicModel.getConsensusRewardAtHeight(parent.getHeight() + 1));
         return ValidateResult.success();
     }
 }

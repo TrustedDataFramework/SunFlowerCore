@@ -8,6 +8,7 @@ import org.tdf.sunflower.types.Block;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * state storage
@@ -36,7 +37,13 @@ public interface StateTrie<ID, S> {
 
     // get new trie without make any modification to underlying database
     // call trie.flush() to persist modifications
-    Trie<ID, S> update(byte[] parentRoot, Block block);
+    default Trie<ID, S> update(byte[] parentRoot, Block block){
+        return this.update(parentRoot, block, x -> {});
+    }
+
+    // get new trie without make any modification to underlying database
+    // call trie.flush() to persist modifications
+    Trie<ID, S> update(byte[] parentRoot, Block block, Consumer<Map<ID, S>> callback);
 
     // collect garbage
     void prune(Collection<? extends byte[]> excludedRoots);

@@ -8,13 +8,16 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
+import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.ContractDB;
 import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
 import org.tdf.sunflower.vm.hosts.UnsupportedTransfer;
 
+import java.util.AbstractMap;
 import java.util.Collections;
+import java.util.Map;
 
 @Getter
 public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
@@ -60,6 +63,11 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
         return hosts.getResult();
     }
 
+    @Override
+    protected Trie<HexBytes, Account> commitInternal(byte[] parentRoot, Map<HexBytes, Account> data) {
+        data.remove(Constants.FEE_ACCOUNT_ADDR);
+        return super.commitInternal(parentRoot, data);
+    }
 
     @Override
     protected String getPrefix() {

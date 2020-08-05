@@ -5,6 +5,7 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.Validator;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Transaction;
@@ -45,17 +46,23 @@ public abstract class AbstractValidator implements Validator {
         ) {
             return ValidateResult.fault("transactions root not match");
         }
+        ValidateResult success = ValidateResult.success();
+
         try {
+            long[] fee = new long[1];
             Trie<HexBytes, Account> updated =
-                    accountTrie.update(parent.getStateRoot().getBytes(), block);
+                    accountTrie.update(parent.getStateRoot().getBytes(), block, (x) -> {
+                        fee[0] = x.get(Constants.FEE_ACCOUNT_ADDR).getBalance();
+                    });
             if (!HexBytes.fromBytes(updated.getRootHash()).equals(block.getStateRoot())) {
                 return ValidateResult.fault("state root not match");
             }
             updated.flush();
+            success.setCtx(fee[0]);
         } catch (Exception e) {
             e.printStackTrace();
             return ValidateResult.fault("contract evaluation failed or " + e.getMessage());
         }
-        return ValidateResult.success();
+        return success;
     }
 }

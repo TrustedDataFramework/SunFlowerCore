@@ -16,6 +16,8 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Slf4j(topic = "trie")
 public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
@@ -104,7 +106,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     }
 
 
-    public Trie<ID, S> update(byte[] parentRoot, Block block) {
+    public Trie<ID, S> update(byte[] parentRoot, Block block, Consumer<Map<ID, S>> callback) {
         if(!trieStore.containsKey(parentRoot)){
             log.error("update failed: trie root {} at height {} hash {} not found", HexBytes.fromBytes(parentRoot), block.getHeight() - 1, block.getHashPrev());
         }
@@ -116,12 +118,15 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         Map<ID, S> map = updater.createEmptyMap();
         relatedIds.forEach(k -> map.put(k, trie.get(k).orElse(updater.createEmpty(k))));
 
+        Map<ID, S> updated = getUpdater().update(
+                map,
+                block
+        );
+
+        callback.accept(updated);
         return commitInternal(
                 parentRoot,
-                getUpdater().update(
-                        map,
-                        block
-                )
+                updated
         );
     }
 

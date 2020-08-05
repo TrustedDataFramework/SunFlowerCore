@@ -73,22 +73,22 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
     @Override
     public Set<HexBytes> getRelatedKeys(Transaction transaction, Map<HexBytes, Account> store) {
+        Set<HexBytes> ret = new HashSet<>();
+        ret.add(Constants.FEE_ACCOUNT_ADDR);
         switch (Transaction.Type.TYPE_MAP.get(transaction.getType())) {
             case COIN_BASE: {
-                Set<HexBytes> ret = new HashSet<>(biosList.keySet());
+                ret.addAll(biosList.keySet());
                 ret.add(transaction.getTo());
                 return ret;
             }
             case TRANSFER: {
                 if (!store.containsKey(transaction.getFromAddress()))
                     throw new RuntimeException("account " + transaction.getFromAddress() + " not exists");
-                Set<HexBytes> ret = new HashSet<>();
                 ret.add(transaction.getFromAddress());
                 ret.add(transaction.getTo());
                 return ret;
             }
             case CONTRACT_DEPLOY: {
-                Set<HexBytes> ret = new HashSet<>();
                 ret.add(transaction.getFromAddress());
                 Account a = store.get(transaction.createContractAddress());
                 if (a != null && !a.isFresh())
@@ -97,7 +97,6 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 return ret;
             }
             case CONTRACT_CALL: {
-                Set<HexBytes> ret = new HashSet<>();
                 if (!store.containsKey(transaction.getTo()))
                     throw new RuntimeException("contract " + transaction.getFromAddress() + " not exists");
                 ret.add(transaction.getFromAddress());
@@ -174,7 +173,12 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 if (state.getBalance() < 0)
                     throw new RuntimeException("math overflow");
             }
-            if (!t.getFromAddress().equals(state.getAddress()) && !t.getTo().equals(state.getAddress()))
+            if(state.getAddress().equals(Constants.FEE_ACCOUNT_ADDR)){
+                state.setBalance(state.getBalance() + t.getFee());
+            }
+            if (!t.getFromAddress().equals(state.getAddress())
+                    && !t.getTo().equals(state.getAddress())
+                    && !state.getAddress().equals(Constants.FEE_ACCOUNT_ADDR))
                 throw new RuntimeException(
                         "unreachable: nor to or from " + t.getHash() + " equals to the account " + state.getAddress());
         }
@@ -205,6 +209,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     private Map<HexBytes, Account> updateDeploy(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account contractAccount = Objects.requireNonNull(accounts.get(t.createContractAddress()));
         Account createdBy = accounts.get(t.getFromAddress());
+        Account feeAccount = accounts.get(Constants.FEE_ACCOUNT_ADDR);
+
         contractAccount.setCreatedBy(t.getFromAddress());
         contractAccount.setNonce(t.getNonce());
 
@@ -235,12 +241,13 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             instance.execute("init");
         }
 
-        long fee = gasLimit.getGas() * t.getGasPrice();
+        long fee = ((t.getPayload().size() / 1024) + gasLimit.getGas()) * t.getGasPrice();
         require(createdBy.getBalance() >= t.getAmount() + fee, "the balance of from is not enough");
         createdBy.setBalance(createdBy.getBalance() - t.getAmount() - fee);
         contractDB.getStorageTrie().commit();
         contractDB.getStorageTrie().flush();
         contractAccount.setStorageRoot(contractDB.getStorageTrie().getRootHash());
+        feeAccount.setBalance(feeAccount.getBalance() + fee);
         log.info("deploy contract at " + contractAccount.getAddress() + " success");
         return accounts;
     }
@@ -248,6 +255,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     private Map<HexBytes, Account> updateContractCall(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account contractAccount = accounts.get(t.getTo());
         Account caller = accounts.get(t.getFromAddress());
+        Account feeAccount = accounts.get(Constants.FEE_ACCOUNT_ADDR);
+
         for (Account account : accounts.values()) {
             if (account.getAddress().equals(contractAccount.getAddress())) {
                 account.setBalance(account.getBalance() + t.getAmount());
@@ -261,8 +270,9 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         }
 
         if (preBuiltContractAddresses.containsKey(contractAccount.getAddress())) {
-            require(caller.getBalance() >= t.getAmount(), "the balance of from is not enough");
-            caller.setBalance(caller.getBalance() - t.getAmount());
+            long fee = 10 * t.getGasPrice();
+            require(caller.getBalance() >= t.getAmount() + fee, "the balance of from is not enough");
+            caller.setBalance(caller.getBalance() - t.getAmount() - fee);
             Trie<byte[], byte[]> before = storageTrie.revert(contractAccount.getStorageRoot(),
                     new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new));
             PreBuiltContract updater = preBuiltContractAddresses.get(contractAccount.getAddress());
@@ -270,6 +280,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             byte[] root = before.commit();
             before.flush();
             contractAccount.setStorageRoot(root);
+            feeAccount.setBalance(feeAccount.getBalance() + fee);
             return accounts;
         }
 
@@ -300,6 +311,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         contractDB.getStorageTrie().commit();
         contractDB.getStorageTrie().flush();
         contractAccount.setStorageRoot(contractDB.getStorageTrie().getRootHash());
+        feeAccount.setBalance(feeAccount.getBalance() + fee);
         return accounts;
     }
 

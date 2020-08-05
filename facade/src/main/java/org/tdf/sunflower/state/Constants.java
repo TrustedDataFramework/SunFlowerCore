@@ -4,6 +4,7 @@ import org.tdf.common.util.HexBytes;
 
 public class Constants {
     public static final HexBytes SIMPLE_BIOS_CONTRACT_ADDR = HexBytes.fromHex("0000000000000000000000000000000000000000");
+    public static final HexBytes FEE_ACCOUNT_ADDR = SIMPLE_BIOS_CONTRACT_ADDR;
     public static final String VRF_BIOS_CONTRACT_ADDR = "0000000000000000000000000000000000000001";
     public static final HexBytes POW_BIOS_ADDR = HexBytes.fromHex("0000000000000000000000000000000000000002");
     public static final HexBytes PEER_AUTHENTICATION_ADDR = HexBytes.fromHex("0000000000000000000000000000000000000003");

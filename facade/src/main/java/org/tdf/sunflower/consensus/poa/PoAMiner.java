@@ -138,7 +138,7 @@ public class PoAMiner extends AbstractMiner {
     }
 
     protected Transaction createCoinBase(long height) {
-        Transaction tx = Transaction.builder()
+        return Transaction.builder()
                 .version(PoAConstants.TRANSACTION_VERSION)
                 .createdAt(System.currentTimeMillis() / 1000)
                 .nonce(height)
@@ -147,10 +147,6 @@ public class PoAMiner extends AbstractMiner {
                 .payload(publicKey)
                 .to(minerAddress)
                 .signature(HexBytes.EMPTY).build();
-
-        tx.setSignature(HexBytes.fromBytes(CryptoContext.sign(privateKey.getBytes(), tx.getSignaturePlain())));
-
-        return tx;
     }
 
 }
