@@ -141,6 +141,8 @@ public class PosPreBuilt implements PreBuiltContract {
 
         switch (type) {
             case VOTE: {
+                if(transaction.getAmount() == 0)
+                    throw new RuntimeException("amount of vote cannot be 0 ");
                 Map.Entry<Integer, NodeInfo> e =
                         findFirst(nodeInfos, x -> x.address.equals(args));
 
