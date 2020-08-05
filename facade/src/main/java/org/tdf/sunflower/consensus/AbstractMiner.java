@@ -123,7 +123,7 @@ public abstract class AbstractMiner implements Miner {
             b.getBody().add(tx);
         }
 
-        if(b.getBody().size() == 1)
+        if(b.getBody().size() == 1 && !minerConfig.isAllowEmptyBlock())
             return Optional.empty();
         Account feeAccount = tmp.get(Constants.FEE_ACCOUNT_ADDR).get();
         tmp.remove(Constants.FEE_ACCOUNT_ADDR);
