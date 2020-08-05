@@ -106,7 +106,8 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     }
 
 
-    public Trie<ID, S> update(byte[] parentRoot, Block block, Consumer<Map<ID, S>> callback) {
+    @Override
+    public Map<ID, S> tryUpdate(byte[] parentRoot, Block block) {
         if(!trieStore.containsKey(parentRoot)){
             log.error("update failed: trie root {} at height {} hash {} not found", HexBytes.fromBytes(parentRoot), block.getHeight() - 1, block.getHashPrev());
         }
@@ -118,16 +119,15 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         Map<ID, S> map = updater.createEmptyMap();
         relatedIds.forEach(k -> map.put(k, trie.get(k).orElse(updater.createEmpty(k))));
 
-        Map<ID, S> updated = getUpdater().update(
+        return getUpdater().update(
                 map,
                 block
         );
+    }
 
-        callback.accept(updated);
-        return commitInternal(
-                parentRoot,
-                updated
-        );
+    @Override
+    public Trie<ID, S> commit(byte[] parent, Map<ID, S> states) {
+        return commitInternal(parent, states);
     }
 
     @Override

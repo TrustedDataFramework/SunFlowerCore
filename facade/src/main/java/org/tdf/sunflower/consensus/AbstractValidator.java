@@ -11,6 +11,8 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
+import java.util.Map;
+
 public abstract class AbstractValidator implements Validator {
     protected final StateTrie<HexBytes, Account> accountTrie;
 
@@ -49,16 +51,16 @@ public abstract class AbstractValidator implements Validator {
         ValidateResult success = ValidateResult.success();
 
         try {
-            long[] fee = new long[1];
-            Trie<HexBytes, Account> updated =
-                    accountTrie.update(parent.getStateRoot().getBytes(), block, (x) -> {
-                        fee[0] = x.get(Constants.FEE_ACCOUNT_ADDR).getBalance();
-                    });
+            Map<HexBytes, Account> accounts =
+                    accountTrie.tryUpdate(parent.getStateRoot().getBytes(), block);
+            Account feeAccount =
+                    accounts.remove(Constants.FEE_ACCOUNT_ADDR);
+            Trie<HexBytes, Account>  updated = accountTrie.commit(parent.getStateRoot().getBytes(), accounts);
             if (!HexBytes.fromBytes(updated.getRootHash()).equals(block.getStateRoot())) {
                 return ValidateResult.fault("state root not match");
             }
             updated.flush();
-            success.setCtx(fee[0]);
+            success.setCtx(feeAccount.getBalance());
         } catch (Exception e) {
             e.printStackTrace();
             return ValidateResult.fault("contract evaluation failed or " + e.getMessage());
