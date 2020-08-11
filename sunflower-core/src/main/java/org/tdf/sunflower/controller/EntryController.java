@@ -254,7 +254,7 @@ public class EntryController {
                 .averageGasPrice(totalTransactions == 0 ? 0 : totalGasPrice * 1.0 / totalTransactions)
                 .averageBlockInterval(avgInterval)
                 .height(best.getHeight())
-                .isMining(blocks.stream().anyMatch(x -> x.getBody().size() > 0 && x.getBody().get(0).getTo().equals(miner.getMinerAddress())))
+                .mining(blocks.stream().anyMatch(x -> x.getBody().size() > 0 && x.getBody().get(0).getTo().equals(miner.getMinerAddress())))
                 .currentDifficulty(diff)
                 .transactionPoolSize(pool.size())
                 .blocksPerDay(o.map(h -> best.getHeight() - h.getHeight() + 1).orElse(0L))
