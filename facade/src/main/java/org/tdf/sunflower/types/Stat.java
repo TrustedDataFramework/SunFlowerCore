@@ -34,7 +34,7 @@ public class Stat {
     private String currentDifficulty;
 
     // if is mining, the coin base exists in last 10 blocks
-    private boolean isMining;
+    private boolean mining;
 
     // blocks per day =
     private long blocksPerDay;
