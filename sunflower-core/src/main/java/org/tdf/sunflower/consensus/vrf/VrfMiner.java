@@ -57,7 +57,7 @@ public class VrfMiner extends AbstractMiner {
 
     private VrfConfig vrfConfig;
 
-    HexBytes minerAddress;
+    public HexBytes minerAddress;
 
     private VrfGenesis genesis;
 

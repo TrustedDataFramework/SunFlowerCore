@@ -33,7 +33,8 @@ public class PoSMiner extends AbstractMiner {
 
     private PoSConfig posConfig;
 
-    HexBytes minerAddress;
+    @Getter
+    public HexBytes minerAddress;
 
     @Setter
     private BlockRepository blockRepository;

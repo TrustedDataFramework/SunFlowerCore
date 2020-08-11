@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.*;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.GlobalConfig;
+import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.facade.ConsensusEngine;
+import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.Peer;
@@ -22,12 +24,11 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.sync.SyncManager;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.PagedView;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.util.MappingUtil;
 
+import java.lang.management.ManagementFactory;
+import com.sun.management.OperatingSystemMXBean;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -59,6 +60,8 @@ public class EntryController {
     private SyncManager syncManager;
 
     private ConsensusEngine consensusEngine;
+
+    private Miner miner;
 
     private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func,
                                    Function<byte[], Optional<T>> func1) {
@@ -174,7 +177,9 @@ public class EntryController {
 
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public HexBytes getContract(@PathVariable("address") final String address,
-                                @RequestParam(value = "parameters", required = false) String arguments, @RequestParam(value = "args", required = false) String argsStr) throws Exception {
+                                @RequestParam(value = "parameters", required = false) String arguments,
+                                @RequestParam(value = "args", required = false) String argsStr
+    ) throws Exception {
         HexBytes addressHex = Address.of(address);
         arguments  = arguments == null ? argsStr : arguments;
         if(arguments == null || arguments.isEmpty())
@@ -211,6 +216,45 @@ public class EntryController {
 
         }
         return HexBytes.fromBytes("NOT_VRF_CONTRACT_ADDRESS".getBytes());
+    }
+
+    @GetMapping(value = "/stat", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Stat stat() {
+        Stat.StatBuilder builder = Stat.builder();
+        OperatingSystemMXBean osMxBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+        Block best = repository.getBestBlock();
+        List<Block> blocks = repository.getBlocksBetween(Math.max(0, best.getHeight() - 10), best.getHeight());
+        List<Block> blocksWithoutGenesis = blocks.stream().filter(b -> b.getHeight() != 0).collect(Collectors.toList());
+
+        long totalGasPrice = 0;
+        long totalTransactions = 0;
+        long avgInterval = blocksWithoutGenesis.size() > 1 ?
+                (blocksWithoutGenesis.get(blocksWithoutGenesis.size() - 1).getCreatedAt() - blocksWithoutGenesis.get(0).getCreatedAt()) / (blocksWithoutGenesis.size() - 1)
+                : 0;
+
+        for (Block b : blocks) {
+            for (Transaction t : b.getBody()) {
+                if(t.getType() == Transaction.Type.COIN_BASE.code)
+                    continue;
+                totalGasPrice += t.getGasPrice();
+                totalTransactions ++;
+            }
+        }
+
+        String diff = consensusEngine.getName().equals("pow") ?
+                HexBytes.encode(
+                        ((PoW) consensusEngine).getNBits(best.getStateRoot().getBytes())) : "";
+        return builder.cpu(osMxBean.getSystemLoadAverage())
+                .memoryUsed(osMxBean.getTotalPhysicalMemorySize() - osMxBean.getFreePhysicalMemorySize())
+                .totalMemory(osMxBean.getTotalPhysicalMemorySize())
+                .averageGasPrice(totalTransactions == 0 ? 0 : totalGasPrice * 1.0 / totalTransactions)
+                .averageBlockInterval(avgInterval)
+                .height(best.getHeight())
+                .isMining(blocks.stream().anyMatch(x -> x.getBody().size() > 0 && x.getBody().get(0).getTo().equals(miner.getMinerAddress())))
+                .currentDifficulty(diff)
+                .transactionPoolSize(pool.size())
+                .consensus(consensusEngine.getName())
+                .build();
     }
 
     @AllArgsConstructor

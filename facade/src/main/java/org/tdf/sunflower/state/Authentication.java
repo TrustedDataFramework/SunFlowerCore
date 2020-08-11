@@ -107,20 +107,22 @@ public class Authentication implements PreBuiltContract {
                 if (!nodes.contains(transaction.getFromAddress())) {
                     throw new RuntimeException("cannot approve " + transaction.getFromAddress() + " is not in nodes list");
                 }
-                HexBytes approved = transaction.getPayload().slice(1);
+                HexBytes toApprove = transaction.getPayload().slice(1);
 
-                Optional<TreeSet<HexBytes>> approves = pending.get(approved);
+                Optional<TreeSet<HexBytes>> approves = pending.get(toApprove);
                 if (!approves.isPresent())
-                    throw new RuntimeException("cannot approve " + approved + " not in pending");
+                    throw new RuntimeException("cannot approve " + toApprove + " not in pending");
 
                 if (approves.get().contains(transaction.getFromAddress())) {
-                    throw new RuntimeException("cannot approve " + approved + " has approved");
+                    throw new RuntimeException("cannot approve " + toApprove + " has approved");
                 }
 
                 approves.get().add(transaction.getFromAddress());
                 if (approves.get().size() >= divideAndCeil(nodes.size() * 2, 3)) {
-                    pending.remove(approved);
-                    nodes.add(approved);
+                    pending.remove(toApprove);
+                    nodes.add(toApprove);
+                }else{
+                    pending.put(toApprove, approves.get());
                 }
                 contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
                 break;

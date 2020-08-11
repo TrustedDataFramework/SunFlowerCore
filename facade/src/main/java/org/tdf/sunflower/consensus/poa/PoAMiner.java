@@ -33,7 +33,8 @@ public class PoAMiner extends AbstractMiner {
 
     private PoAConfig poAConfig;
 
-    HexBytes minerAddress;
+    @Getter
+    public HexBytes minerAddress;
 
     HexBytes privateKey;
 

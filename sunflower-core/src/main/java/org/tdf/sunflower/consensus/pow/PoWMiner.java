@@ -106,6 +106,11 @@ public class PoWMiner extends AbstractMiner {
         stopped = true;
     }
 
+    @Override
+    public HexBytes getMinerAddress() {
+        return poWConfig.getMinerCoinBase();
+    }
+
     public void tryMine() {
         if (!poWConfig.isEnableMining() || stopped) {
             return;
