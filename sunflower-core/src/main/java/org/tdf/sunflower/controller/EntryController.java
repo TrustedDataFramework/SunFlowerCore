@@ -2,6 +2,7 @@ package org.tdf.sunflower.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.management.OperatingSystemMXBean;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +29,6 @@ import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.util.MappingUtil;
 
 import java.lang.management.ManagementFactory;
-import com.sun.management.OperatingSystemMXBean;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -98,13 +98,13 @@ public class EntryController {
     public Map<String, Object> getTransaction(@PathVariable String hash) throws Exception {
         Optional<Transaction> o = repository
                 .getTransactionByHash(HexBytes.decode(hash));
-        if(o.isPresent()){
+        if (o.isPresent()) {
             Map<String, Object> m = MappingUtil.pojoToMap(o.get());
             m.put("confirms", repository.getConfirms(HexBytes.decode(hash)));
             return m;
         }
         o = pool.get(HexBytes.fromHex(hash));
-        if(o.isPresent()) {
+        if (o.isPresent()) {
             Map<String, Object> m = MappingUtil.pojoToMap(o.get());
             m.put("confirms", -1);
             return m;
@@ -181,8 +181,8 @@ public class EntryController {
                                 @RequestParam(value = "args", required = false) String argsStr
     ) throws Exception {
         HexBytes addressHex = Address.of(address);
-        arguments  = arguments == null ? argsStr : arguments;
-        if(arguments == null || arguments.isEmpty())
+        arguments = arguments == null ? argsStr : arguments;
+        if (arguments == null || arguments.isEmpty())
             throw new RuntimeException("require parameters or args");
         HexBytes args = HexBytes.fromHex(arguments);
         Header h = sunflowerRepository.getBestHeader();
@@ -234,12 +234,16 @@ public class EntryController {
 
         for (Block b : blocks) {
             for (Transaction t : b.getBody()) {
-                if(t.getType() == Transaction.Type.COIN_BASE.code)
+                if (t.getType() == Transaction.Type.COIN_BASE.code)
                     continue;
                 totalGasPrice += t.getGasPrice();
-                totalTransactions ++;
+                totalTransactions++;
             }
         }
+
+        long yesterday = System.currentTimeMillis() / 1000 - (24 * 60 * 60);
+        Optional<Header> o = binarySearch(yesterday, 0, best.getHeight());
+
 
         String diff = consensusEngine.getName().equals("pow") ?
                 HexBytes.encode(
@@ -253,6 +257,7 @@ public class EntryController {
                 .isMining(blocks.stream().anyMatch(x -> x.getBody().size() > 0 && x.getBody().get(0).getTo().equals(miner.getMinerAddress())))
                 .currentDifficulty(diff)
                 .transactionPoolSize(pool.size())
+                .blocksPerDay(o.map(h -> best.getHeight() - h.getHeight() + 1).orElse(0L))
                 .consensus(consensusEngine.getName())
                 .build();
     }
@@ -294,5 +299,36 @@ public class EntryController {
                     account.getCreatedBy(), HexBytes.fromBytes(account.getContractHash()),
                     HexBytes.fromBytes(account.getStorageRoot()));
         }
+    }
+
+    // get the nearest block after or equals to the timestamp
+    private Optional<Header> binarySearch(long timestamp, long low, long high) {
+        Header x = repository.getCanonicalHeader(low).get();
+        if (low == high) {
+            if (x.getCreatedAt() < timestamp)
+                return Optional.empty();
+            return Optional.of(x);
+        }
+        Header m = repository.getCanonicalHeader((low + high) / 2).get();
+        if (m.getCreatedAt() == timestamp)
+            return Optional.of(m);
+        if (m.getCreatedAt() < timestamp) {
+            if(m.getHeight() == high)
+                return Optional.empty();
+
+            Header m1 = repository.getCanonicalHeader(m.getHeight() + 1).get();
+            if(m1.getCreatedAt() >= timestamp)
+                return Optional.of(m1);
+            return binarySearch(timestamp, Math.min(m.getHeight() + 1, high), high);
+        }
+        if(m.getHeight() == low){
+            return Optional.of(m);
+        }
+        Header m1 = repository.getCanonicalHeader(m.getHeight() - 1).get();
+        if(m1.getCreatedAt() < timestamp)
+            return Optional.of(m);
+        if(m1.getCreatedAt() == timestamp)
+            return Optional.of(m1);
+        return binarySearch(timestamp, low, m.getHeight() - 1);
     }
 }

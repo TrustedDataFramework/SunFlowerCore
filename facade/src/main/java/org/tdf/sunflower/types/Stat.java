@@ -37,9 +37,7 @@ public class Stat {
     private boolean isMining;
 
     // blocks per day =
-    public long getBlocksPerDay(){
-        return (long) (24 * 60 * 60 / averageBlockInterval);
-    }
+    private long blocksPerDay;
 
     // tds version
     @Builder.Default
