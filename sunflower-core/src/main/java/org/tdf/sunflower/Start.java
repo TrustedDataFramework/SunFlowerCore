@@ -496,7 +496,8 @@ public class Start {
 
             AccountTrie trie = new AccountTrie(
                     updater, databaseStoreFactory,
-                    e.getContractCodeStore(), e.getContractStorageTrie()
+                    e.getContractCodeStore(), e.getContractStorageTrie(),
+                    context.getBean(BasicMessageQueue.class)
             );
 
             e.setAccountTrie(trie);

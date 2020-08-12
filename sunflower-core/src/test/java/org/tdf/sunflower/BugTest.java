@@ -8,6 +8,7 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
+import org.tdf.sunflower.facade.BasicMessageQueue;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
@@ -73,8 +74,8 @@ public class BugTest {
         for (String addr : addresses) {
             alloc.put(HexBytes.fromHex(addr), new Account(HexBytes.fromHex(addr), 10000000));
         }
-        AccountUpdater updater = new AccountUpdater(alloc, contractStore, storageTrie, Collections.emptyList(), Collections.emptyList());
-        AccountTrie accountTrie = new AccountTrie(updater, factory, contractStore, storageTrie);
+        AccountUpdater updater = new AccountUpdater(alloc, contractStore, storageTrie, Collections.emptyList(), Collections.emptyList(), BasicMessageQueue.NONE);
+        AccountTrie accountTrie = new AccountTrie(updater, factory, contractStore, storageTrie, BasicMessageQueue.NONE);
 
         List<byte[]> roots = new ArrayList<>();
         for (String s : addresses) {
