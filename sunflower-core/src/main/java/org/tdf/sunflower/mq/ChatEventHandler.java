@@ -19,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 public class ChatEventHandler {
     private final BasicMessageQueue messageQueue;
 
-    @PostConstruct
     public void init() {
         messageQueue.subscribe("chatevent", (msg) -> {
             System.out.println(msg.as(ChatMessage.class));

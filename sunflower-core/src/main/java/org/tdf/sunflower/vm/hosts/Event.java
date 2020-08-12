@@ -27,7 +27,7 @@ public class Event extends HostFunction {
                                         ValueType.I64, ValueType.I64,
                                         ValueType.I64, ValueType.I64
                                 ),
-                        Collections.emptyList()
+                        Collections.singletonList(ValueType.I64)
                 )
         );
     }
@@ -39,6 +39,6 @@ public class Event extends HostFunction {
         Map<String, String> m = new HashMap<>();
         m.put("data", HexBytes.encode(y));
         mq.publish(address + ":" + x, m);
-        return new long[0];
+        return new long[]{0};
     }
 }
