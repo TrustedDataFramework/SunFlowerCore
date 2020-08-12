@@ -2,6 +2,8 @@ package org.tdf.sunflower.vm.hosts;
 
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
+import org.tdf.sunflower.facade.Message;
+import org.tdf.sunflower.facade.MessageQueue;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.abi.Context;
@@ -24,12 +26,19 @@ public class Hosts {
 
     private Transfer transfer;
 
+    private Event event;
+
     public Hosts disableEvent(){
         this.disableEvent = true;
         return this;
     }
 
     public Hosts() {
+    }
+
+    public Hosts withEvent(MessageQueue<String, Message> mq, HexBytes address){
+        this.event = new Event(mq, address);
+        return this;
     }
 
     public Hosts withTransfer(Transfer transfer){
@@ -53,6 +62,9 @@ public class Hosts {
         all.addAll(new Decimal().getHelpers());
         all.addAll(new JSONHelper().getHelpers());
         all.add(new Log());
+
+        if(event != null)
+            all.add(this.event);
 
         if (context != null) {
             all.addAll(new ContextHelper(context).getHelpers());

@@ -490,7 +490,8 @@ public class Start {
             AccountUpdater updater = new AccountUpdater(
                     e.getGenesisStates().stream().collect(Collectors.toMap(Account::getAddress, Function.identity())),
                     e.getContractCodeStore(), e.getContractStorageTrie(),
-                    e.getPreBuiltContracts(), e.getBios()
+                    e.getPreBuiltContracts(), e.getBios(),
+                    context.getBean(BasicMessageQueue.class)
             );
 
             AccountTrie trie = new AccountTrie(

@@ -7,6 +7,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
+import org.tdf.sunflower.facade.BasicMessageQueue;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.vm.abi.Context;
@@ -23,16 +24,19 @@ import java.util.Map;
 public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
     private Trie<byte[], byte[]> contractStorageTrie;
     private Store<byte[], byte[]> contractCodeStore;
+    private BasicMessageQueue messageQueue;
 
     public AccountTrie(
             StateUpdater<HexBytes, Account> updater,
             DatabaseStoreFactory factory,
             Store<byte[], byte[]> contractCodeStore,
-            Trie<byte[], byte[]> contractStorageTrie
+            Trie<byte[], byte[]> contractStorageTrie,
+            BasicMessageQueue messageQueue
     ) {
         super(updater, Codecs.newRLPCodec(HexBytes.class), Codecs.newRLPCodec(Account.class), factory);
         this.contractStorageTrie = contractStorageTrie;
         this.contractCodeStore = contractCodeStore;
+        this.messageQueue = messageQueue;
     }
 
     public byte[] view(byte[] stateRoot, HexBytes address, HexBytes args) {
@@ -50,7 +54,9 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
         Hosts hosts = new Hosts()
                 .withTransfer(new UnsupportedTransfer())
                 .withContext(ctx)
-                .withDB(new ContractDB(trie));
+                .withDB(new ContractDB(trie))
+                .withEvent(messageQueue, address)
+                ;
 
         ModuleInstance instance = ModuleInstance.builder()
                 .hooks(Collections.singleton(new GasLimit()))

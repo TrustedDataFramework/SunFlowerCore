@@ -9,6 +9,7 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
+import org.tdf.sunflower.facade.BasicMessageQueue;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -41,8 +42,12 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
     private final Map<HexBytes, Bios> biosList;
 
+    private final BasicMessageQueue messageQueue;
+
     public AccountUpdater(Map<HexBytes, Account> genesisStates, Store<byte[], byte[]> contractStore,
-                          Trie<byte[], byte[]> storageTrie, List<PreBuiltContract> preBuiltContracts, List<Bios> biosList) {
+                          Trie<byte[], byte[]> storageTrie, List<PreBuiltContract> preBuiltContracts,
+                          List<Bios> biosList, BasicMessageQueue messageQueue
+    ) {
         this.genesisStates = new HashMap<>(genesisStates);
         this.contractStore = contractStore;
         this.storageTrie = storageTrie;
@@ -50,6 +55,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         this.biosList = biosList.stream().collect(
                 Collectors.toMap(x -> x.getGenesisAccount().getAddress(), Function.identity())
         );
+        this.messageQueue = messageQueue;
         List<CommonUpdater> commonUpdaters = new ArrayList<>();
         commonUpdaters.addAll(preBuiltContracts);
         commonUpdaters.addAll(biosList);
@@ -223,7 +229,9 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         Hosts hosts = new Hosts()
                 .withTransfer(accounts, t, t.getFromAddress(), t.createContractAddress())
                 .withContext(context)
-                .withDB(contractDB);
+                .withDB(contractDB)
+                .withEvent(messageQueue, t.createContractAddress())
+                ;
 
         GasLimit gasLimit = new GasLimit();
         // every contract must has a init method
@@ -296,7 +304,9 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         Hosts hosts = new Hosts()
                 .withTransfer(accounts, t, contractAccount.getCreatedBy(), contractAccount.getAddress())
                 .withContext(context)
-                .withDB(contractDB);
+                .withDB(contractDB)
+                .withEvent(messageQueue, contractAccount.getAddress())
+                ;
 
         GasLimit limit = new GasLimit();
         // every contract should have a init method
