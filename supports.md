@@ -1395,6 +1395,48 @@ export function init(): void{
 }
 ```
 
+5. Event 类
+
+Event 用于从合约内部向外界异步通知，区块链节点在启动时会创建一个 socketio 服务，默认的端口是 10004，外部程序可以在连接 socketio 服务后监听智能合约的事件。
+
+例如以下合约部署后，在前端可以监听 emit 函数触发时发送的 ```event-name``` 事件
+
+```typescript
+import  from './lib'
+
+export function init(): void{
+
+}
+
+export function emit(): void{
+  const arr = new Uint8Array(1);
+  arr[0] = 255;
+  Event.emit('event-name', arr);
+}
+```
+
+前端代码：
+
+```js
+function connectSocket() {
+    let socket = window.socket
+    if(socket != null){
+        socket.disconnect()
+    }
+    window.socket = io.connect('http://localhost:10004')
+    socket = window.socket
+    socket.on('***合约地址***:event-name', console.log)
+}
+connectSocket()
+```
+
+因为 [255] 的十六进制编码是 "ff" 当 emit 被触发时，前端将会打印出对象:
+
+```json
+{
+  "data": "ff"
+}
+```
 
 ### RLP 编码/解码
 
