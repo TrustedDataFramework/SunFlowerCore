@@ -714,6 +714,9 @@ websocket 和 grpc 都对单个消息的大小作了限制，为了实现发送�
 
 ## 智能合约
 
+WebAssembly是由W3C开发的一个标准组的有效率,轻量级的指令集。这意味着我们可以编译不同类型的编程语言,从C++, Rust 到 go 等,可以在浏览器中运行几乎代替JavaScript。WebAssembly，简称WASM，是内存安全的、平台独立的，并且可以有效地映射到所有类型的CPU架构。
+
+TDS 内部实现了一个 WebAssembly 执行引擎，不同编程语言编写的智能合约代码在经过编译后，都可以部署到 TDS 链上。下面以 AssemblyScript 为例，简单介绍下智能合约的编写、部署和调用。
 
 ### 入门
 
@@ -863,6 +866,99 @@ const contract = context.contract(); // 获取合约自身
 ```
 
 
+## Assembly Script
+
+Assemblyscript 是 Typescript 的一个更严格的子集，它的语法较为简单，可以用 [Assemblyscript](https://github.com/AssemblyScript/assemblyscript) 编译器编译成符合 web assembly 标准的二进制字节码。
+
+Assembluscript 的语法可以参考[官方文档](https://www.assemblyscript.org/)。
+
+
+###  下载 assembly script 智能合约编写模版
+
+```sh
+git clone https://github.com/TrustedDataFramework/assembly-script-template
+npm install
+cd assembly-script-template
+```
+
+在 ```package.json``` 中有两个重要的依赖项：
+
+```json
+{
+  "@salaku/js-sdk": "^0.2.10",
+  "@salaku/sm-crypto": "^0.1.8"
+}
+```
+
+其中 [```@salaku/sm-crypto```](https://github.com/TrustedDataFramework/sm-crypto) 包含了国密 sm2、sm3 和 sm4 的 javascript 实现，我们需要它来作哈希值计算和事务的签名等，[```@salaku/js-sdk```](https://github.com/TrustedDataFramework/js-sdk) 封装了事务构造和rpc调用的方法，可以简化智能合约的开发。
+
+### 编译合约
+
+1. 新建 local 目录
+```sh
+mkdir local # local 文件夹在 git 中被忽略了
+```
+
+2. 编写合约源代码
+
+然后新建一个 hello-world.ts 文件，复制以下内容到 hello-world.ts 中
+
+```sh
+touch local/hello-world.ts
+```
+
+```typescript
+import {log} from "../lib";
+
+
+// every contract should contains a function named 'init'
+// which will be called when contract deployed
+export function init(): void{
+  log('hello world');
+}
+
+export function invoke(): void{
+    log("hello world");
+}
+```
+
+3. 编写配置文件 
+
+再新建 config.json 文件，复制以下内容到 config.json
+
+```sh
+touch local/config.json
+```
+
+```json
+{
+  "version": "1634693120",
+  "host": "192.168.1.171",
+  "port": "7010",
+  "source": "local/hello-world.ts",
+  "private-key": "**",
+  "asc-path": "node_modules/.bin/asc",
+  "gas-price": 0
+}
+```
+
+  - 各个字段说明如下：
+    - version 表示事务的版本
+    - host 表示合约部署的节点的主机
+    - port 表示节点的 rpc 端口号
+    - source 表示合约的源代码文件
+    - private-key 需要填写私钥，用于对事务作签名
+    - asc-path 是编译器的路径，对于 linux 和 mac 一般是 ```node_modules/.bin/asc```，对于 windows 一般是 ```node_modules/.bin/asc.cmd```
+    - gas-price 表示手续费的单价，对于私链或者联盟链一般填0即可
+
+
+4. 编译
+
+```sh
+CONFIG=local/config.json node deploy.js
+```
+
+此条命令会读取配置文件，并且根据配置编译并且构造一条部署合约的事务到指定的节点上。
 
 
 
