@@ -1417,17 +1417,23 @@ export function emit(): void{
 
 前端代码：
 
-```js
-function connectSocket() {
-    let socket = window.socket
-    if(socket != null){
-        socket.disconnect()
-    }
-    window.socket = io.connect('http://localhost:10004')
-    socket = window.socket
-    socket.on('***合约地址***:event-name', console.log)
-}
-connectSocket()
+```html
+<html>
+  <body>
+    <script type="text/javascript">
+      function connectSocket() {
+          let socket = window.socket
+          if(socket != null){
+              socket.disconnect()
+          }
+          window.socket = io.connect('http://localhost:10004')
+          socket = window.socket
+          socket.on('***合约地址***:event-name', console.log)
+      }
+      connectSocket()          
+    </script>
+  </body>
+</html>
 ```
 
 因为 [255] 的十六进制编码是 "ff" 当 emit 被触发时，前端将会打印出对象:
@@ -1435,6 +1441,38 @@ connectSocket()
 ```json
 {
   "data": "ff"
+}
+```
+
+6. Hex 类
+
+Hex 包含了十六进制编码和解码
+
+```typescript
+import {Hex} from './lib'
+
+export function init(): void{
+  // 十六进制编码转二进制数组
+  const arr = Hex.decode('ff');
+
+  // 二进制数组转十六进制编码
+  log(Hex.encode(arr));
+}
+```
+
+7. Hash 类
+
+Hash 包含了常用的哈希值算法
+
+```typescript
+import {Hash} from './lib'
+
+export function init(): void{
+  // keccak256
+  let digest = Hash.keccak256(Hex.decode('ff'));
+
+  // sm3
+  digest = Hash.sm3(Hex.decode('ff'));
 }
 ```
 
