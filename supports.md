@@ -843,8 +843,8 @@ Assemblyscript 的语法可以参考[官方文档](https://www.assemblyscript.or
 
 ``` sh
 git clone https://github.com/TrustedDataFramework/assembly-script-template
-npm install
 cd assembly-script-template
+npm install
 ```
 
 在 ```package.json``` 中有两个重要的依赖项：
@@ -1144,9 +1144,100 @@ export function init(): void{
 }
 ```
 
+4. 迭代器 DBIterator
 
+使用迭代器可以遍历整个合约状态存储
+
+```typescript
+import {DB, DBIterator, log} from './lib'
+
+// 在保存字符串键值对前，要先把字符串转成二进制数据
+function str2bin(str: string): Uint8Array{
+  return Uint8Array.wrap(String.UTF8.encode(str));
+}
+
+// 把从 DB 中读取的二进制数据转成字符串
+function bin2str(bin: Uint8Array): string{
+  return String.UTF8.encode(bin.buffer);
+}
+
+export function iterate(): void{
+  DBIterator.reset();
+  while(DBIterator.hasNext()){
+    const entry = DBIterator.next();
+    log('key = ' + bin2str(entry.key) + ' value = ' + bin2str(entry.value));
+  }
+}
+```
 
 ### 触发
+
+触发合约中的方法有两种方式，一种是通过 rpc 触发，另一种是通过事务触发。
+
+1. rpc 触发
+
+通过 rpc 触发的限制在于，触发的方法对合约状态存储必须是只读的，例如以下合约中
+
+```typescript
+import {DB, DBIterator, log, Result} from './lib'
+
+// 在保存字符串键值对前，要先把字符串转成二进制数据
+function str2bin(str: string): Uint8Array{
+  return Uint8Array.wrap(String.UTF8.encode(str));
+}
+
+// 把从 DB 中读取的二进制数据转成字符串
+function bin2str(bin: Uint8Array): string{
+  return String.UTF8.encode(bin.buffer);
+}
+
+// 把 key 设置为 0
+export function init(): void{
+  DB.set(str2bin('key'), str2bin('0'));
+}
+
+// 把 key 自增
+export function inc(): void{
+  const val = DB.get(str2bin('key'));
+  const v = parseInt(bin2str(val));
+  v++;
+  DB.set(str2bin('key'), str2bin(v.toString()));
+}
+
+// 打印 key
+export function logKey(): void{
+  const val = DB.get(str2bin('key'));
+  log(bin2str(val));
+}
+```
+
+在这份合约中，```inc``` 函数对合约状态作了修改，因为无法通过 rpc 触发 ```inc``` 函数，而 ```logKey``` 函数没有对合约状态作修改，属于只读函数，所以可以用 rpc 触发 ```logKey``` 函数。
+
+我们可以通过 rpc 触发合约中的只读函数来获取合约状态，而内置对象 ```Result``` 是 rpc 的返回值与合约函数传递接口，我们需要通过 ```Result``` 提供的 ```write``` api 来获取合约中的数据。例如我们在上文的合约的基础上增加一个函数 ```getKey```。
+
+```typescript
+export function getKey(): void{
+  const val = DB.get(str2bin('key'));
+  Result.write(val);
+}
+```
+
+```Result.write``` 接受二进制格式的数据，并在外部应用中以十六进制编码的方式呈现，在外部展示合约中的值还需要转码，
+
+```js
+const tool = require('@salaku/js-sdk')
+const rpc = new tool.RPC(conf.host, conf.port)
+async function main(){
+  const data = await rpc.viewContract('***合约地址***', 'getKey')
+  const val = Buffer.from(data, 'hex').toString('utf8')
+  console.log(`val = ${val}`)
+}
+
+main()
+```
+
+2. rpc 触发时传参
+
 
 ### 内置对象
 
