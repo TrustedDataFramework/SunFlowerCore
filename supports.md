@@ -952,7 +952,7 @@ touch local/config.json
     - gas-price 表示手续费的单价，对于私链或者联盟链一般填0即可
 
 
-5. 读取配置文件
+4. 读取配置文件
 
 利用 nodejs 提供的 require 函数可以轻松地读取 json 文件，因为我们新建的文件 ```config.json``` 位于 local 目录下，所以我们需要通过环境变量的方式将配置文件的路径传递过去
 
@@ -978,7 +978,7 @@ function getConfigPath() {
 const conf = require(getConfigPath());
 ```
 
-6. 编译 
+5. 编译 
 
 可以使用 ```@salaku/js-sdk``` 提供的方法编译合约：
 
@@ -993,7 +993,7 @@ async function main(){
 }
 ```
 
-7. 构造事务
+6. 构造事务
 
 ```js
 // 事务构造工具
@@ -1006,7 +1006,7 @@ const builder = new tool.TransactionBuilder(conf.version, conf['private-key'], c
 const tx = builder.buildDeploy(wasm, 0)
 ```
 
-8. 创建 rpc 工具，签发事务
+7. 创建 rpc 工具，签发事务
 
 ```js
 const rpc = new tool.RPC(conf.host, conf.port)
@@ -1021,7 +1021,7 @@ builder.sign(tx) // 对事务作签名
 const resp = await rpc.sendTransaction(tx) // 发送事务得到节点的返回值
 ```
 
-9. 完整代码(deploy.js):
+8. 完整代码(deploy.js):
 
 ```js
 /**
