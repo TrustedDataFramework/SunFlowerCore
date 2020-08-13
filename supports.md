@@ -847,7 +847,7 @@ npm install
 cd assembly-script-template
 ```
 
-在 `` `package.json` `` 中有两个重要的依赖项：
+在 ```package.json``` 中有两个重要的依赖项：
 
 ``` json
 {
@@ -856,7 +856,7 @@ cd assembly-script-template
 }
 ```
 
-其中 [`` `@salaku/sm-crypto` ` `](https://github.com/TrustedDataFramework/sm-crypto) 包含了国密 sm2、sm3 和 sm4 的 javascript 实现，我们需要它来作哈希值计算和事务的签名等，[` ` `@salaku/js-sdk` ``](https://github.com/TrustedDataFramework/js-sdk) 封装了事务构造和rpc调用的方法，可以简化智能合约的开发。
+其中 [```@salaku/sm-crypto```](https://github.com/TrustedDataFramework/sm-crypto) 包含了国密 sm2、sm3 和 sm4 的 javascript 实现，我们需要它来作哈希值计算和事务的签名等，[` ` `@salaku/js-sdk` ``](https://github.com/TrustedDataFramework/js-sdk) 封装了事务构造和rpc调用的方法，可以简化智能合约的开发。
 
 ### 编译和部署合约
 
