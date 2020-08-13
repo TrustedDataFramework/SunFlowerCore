@@ -1149,7 +1149,7 @@ export function init(): void{
 使用迭代器可以遍历整个合约状态存储
 
 ```typescript
-import {DB, DBIterator, log} from './lib'
+import {DB, DBIterator, log, Context} from './lib'
 
 // 在保存字符串键值对前，要先把字符串转成二进制数据
 function str2bin(str: string): Uint8Array{
@@ -1176,7 +1176,7 @@ export function iterate(): void{
 
 1. rpc 触发
 
-通过 rpc 触发的限制在于，触发的方法对合约状态存储必须是只读的，例如以下合约中
+通过 rpc 触发的限制在于，触发的方法对合约状态存储必须是只读的，而且无法获得区块链的上下文对象，例如当前的事务、父区块的哈希值，在以下合约中：
 
 ```typescript
 import {DB, DBIterator, log, Result} from './lib'
@@ -1238,8 +1238,100 @@ main()
 
 2. rpc 触发时传参
 
+rpc 触发合约中的函数时，可以用内置对象 ```Context``` 获取参数，例如我把 ```getKey``` 稍作修改，改成 ```getKeyAddN``` 函数
+
+```typescript
+export function getKeyAddN(): void{
+  // 读取额外参数
+  const p = Context.args().parameters;
+  // 转码为 int 类型
+  const j = parseInt(bin2str(p));
+  // 读取 db 中的数值
+  const val = parseInt(bin2str(DB.get(str2bin('key'))));
+  // 作加法后返回
+  Result.write(str2bin((j + val).toString()));
+}
+```
+
+rpc 触发代码：
+
+```js
+const tool = require('@salaku/js-sdk')
+const rpc = new tool.RPC(conf.host, conf.port)
+async function main(){
+  const data = await rpc.viewContract('***合约地址***', 'getKeyAddN', Buffer.from('128', 'ascii'))
+  const val = Buffer.from(data, 'hex').toString('utf8')
+  console.log(`val = ${val}`)
+}
+
+main()
+```
+
+3. 事务触发
+
+通过事务触发可以对合约状态作写入、删改等操作，也可以在触发的函数中获取到区块链的上下文对象。
+
+
+例如要通过事务触发以上合约中的 ```inc``` 函数可以执行 nodejs 代码：
+
+```js
+const tool = require('@salaku/js-sdk')
+const rpc = new tool.RPC(conf.host, conf.port)
+const builder = new tool.TransactionBuilder(conf.version, conf['private-key'], conf['gas-price'] || 0)
+const pk = tool.privateKey2PublicKey(conf['private-key']) // 把私钥转公钥
+
+async function main(){
+  const tx = builder.buildContractCall('**合约地址**', tool.buildPayload('inc'), 0)
+  tx.nonce = (await rpc.getNonce(pk)) + 1
+
+  builder.sign(tx)
+  rpc.sendTransaction(tx)
+}
+
+main()
+```
+
+4. 事务触发时带参
+
+事务触发合约中的函数时，也可以用内置对象 ```Context``` 获取参数，例如我把 ```inc``` 稍作修改，改成 ```incN``` 函数
+
+```typescript
+export function incN(): void{
+  // 读取额外参数
+  const p = Context.args().parameters;
+  // 转码为 int 类型
+  const j = parseInt(bin2str(p));
+  // 读取 db 中的数值
+  const val = parseInt(bin2str(DB.get(str2bin('key'))));
+  // 作加法后存储
+  DB.set(str2bin('key'), str2bin((p + j).toString()));
+}
+```
+
+例如要通过事务触发以上合约中的 ```incN``` 函数，把 ```key``` 对应的值加上 128 可以执行 nodejs 代码：
+
+```js
+const tool = require('@salaku/js-sdk')
+const rpc = new tool.RPC(conf.host, conf.port)
+const builder = new tool.TransactionBuilder(conf.version, conf['private-key'], conf['gas-price'] || 0)
+const pk = tool.privateKey2PublicKey(conf['private-key']) // 把私钥转公钥
+
+async function main(){
+  const payload = tool.buildPayload('incN', Buffer.from('128', 'ascii'))
+  const tx = builder.buildContractCall('**合约地址**', payload, 0)
+  tx.nonce = (await rpc.getNonce(pk)) + 1
+  builder.sign(tx)
+  rpc.sendTransaction(tx)
+}
+
+main()
+```
 
 ### 内置对象
+
+我们利用了 Assemblyscript 丰富的扩展性，内建了一些对象和类，使得智能合约的编写更加简单
+
+1. 
 
 ### 安全设计
 
