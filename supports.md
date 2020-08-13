@@ -873,7 +873,7 @@ const contract = context.contract(); // 获取合约自身
 Assemblyscript 的语法可以参考[官方文档](https://www.assemblyscript.org/)。
 
 
-###  下载 assembly script 智能合约编写模版
+###  下载智能合约编写模版
 
 ```sh
 git clone https://github.com/TrustedDataFramework/assembly-script-template
@@ -892,7 +892,7 @@ cd assembly-script-template
 
 其中 [```@salaku/sm-crypto```](https://github.com/TrustedDataFramework/sm-crypto) 包含了国密 sm2、sm3 和 sm4 的 javascript 实现，我们需要它来作哈希值计算和事务的签名等，[```@salaku/js-sdk```](https://github.com/TrustedDataFramework/js-sdk) 封装了事务构造和rpc调用的方法，可以简化智能合约的开发。
 
-### 编译合约
+### 编译和部署合约
 
 1. 新建 local 目录
 ```sh
@@ -952,13 +952,130 @@ touch local/config.json
     - gas-price 表示手续费的单价，对于私链或者联盟链一般填0即可
 
 
-4. 编译
+5. 读取配置文件
 
+利用 nodejs 提供的 require 函数可以轻松地读取 json 文件，因为我们新建的文件 ```config.json``` 位于 local 目录下，所以我们需要通过环境变量的方式将配置文件的路径传递过去
+
+```js
+const path = require('path')
+
+
+function getConfigPath() {
+  // 如果环境变量CONFIG=没有值，则选择当前目录下的 config.json 文件
+    if (!process.env['CONFIG'])
+        return path.join(process.cwd(), 'config.json')
+      
+    const c = process.env['CONFIG']
+    // 判断环境变量的CONFIG=的值是否是绝对路径，如果是绝对路径直接 return 
+    if (path.isAbsolute(c))
+        return c
+    // 如果是相对路径就把工作目录和这个相对路径拼接得到绝对路径    
+    return path.join(process.cwd(), c)
+}
+
+// 读取配置
+// 现在我们可以通过环境变量 CONFIG 传递配置文件的路径
+const conf = require(getConfigPath());
+```
+
+6. 编译 
+
+可以使用 ```@salaku/js-sdk``` 提供的方法编译合约：
+
+```js
+const tool = require('@salaku/js-sdk')
+// getConfigPath 的代码参考 5.配置
+const conf = require(getConfigPath());
+
+async function main(){
+    // 编译合约源代码得到wasm二进制字节码，注意 wasm 的类型是 buffer
+    const wasm = await tool.compileContract(conf['asc-path'], conf.source)
+}
+```
+
+7. 构造事务
+
+```js
+// 事务构造工具
+const builder = new tool.TransactionBuilder(conf.version, conf['private-key'], conf['gas-price'] || 0)
+```
+
+有了事务构造工具和wasm字节码，就可以构造合约部署的事务了
+
+```js
+const tx = builder.buildDeploy(wasm, 0)
+```
+
+8. 创建 rpc 工具，签发事务
+
+```js
+const rpc = new tool.RPC(conf.host, conf.port)
+```
+
+有了 rpc 工具后，可以获取实时的 nonce，新的事务需要填充 nonce 后再作签名
+
+```js
+const pk = tool.privateKey2PublicKey(conf['private-key']) // 把私钥转公钥
+tx.nonce = (await rpc.getNonce(pk)) + 1 // 用公钥获取 nonce
+builder.sign(tx) // 对事务作签名
+const resp = await rpc.sendTransaction(tx) // 发送事务得到节点的返回值
+```
+
+9. 完整代码(deploy.js):
+
+```js
+/**
+ * 智能合约部署示例
+ */
+
+function getConfigPath() {
+    if (!process.env['CONFIG'])
+        return path.join(process.cwd(), 'config.json')
+    const c = process.env['CONFIG']
+    if (path.isAbsolute(c))
+        return c
+    return path.join(process.cwd(), c)
+}
+
+
+const tool = require('@salaku/js-sdk')
+const path = require('path')
+
+// 读取配置
+const conf = require(getConfigPath());
+const sk = conf['private-key']
+const pk = tool.privateKey2PublicKey(sk)
+
+// 事务构造工具
+const builder = new tool.TransactionBuilder(conf.version, sk, conf['gas-price'] || 0)
+// rpc 工具
+const rpc = new tool.RPC(conf.host, conf.port)
+
+async function main() {
+    // 编译合约得到二进制内容
+    const o = await tool.compileContract(conf['asc-path'], conf.source)
+    // 构造合约部署的事务
+    const tx = builder.buildDeploy(o, 0)
+
+    if (!tx.nonce) {
+        tx.nonce = (await rpc.getNonce(pk)) + 1
+    }
+
+    tool.sign(tx, sk)
+    console.log(`contract address = ${tool.getContractAddress(pk, tx.nonce)}`)
+    const resp = await tool.sendTransaction(conf.host, conf.port, tx)
+    console.log(resp)
+}
+
+main().catch(console.error)
+```
+
+调用方式 
 ```sh
 CONFIG=local/config.json node deploy.js
 ```
 
-此条命令会读取配置文件，并且根据配置编译并且构造一条部署合约的事务到指定的节点上。
+
 
 
 
