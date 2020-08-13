@@ -868,9 +868,9 @@ const contract = context.contract(); // 获取合约自身
 
 ## Assembly Script
 
-Assemblyscript 是 Typescript 的一个更严格的子集，它的语法较为简单，可以用 [Assemblyscript](https://github.com/AssemblyScript/assemblyscript) 编译器编译成符合 web assembly 标准的二进制字节码。
+[Assemblyscript](https://www.assemblyscript.org/) 是 Typescript 的一个更严格的子集，它的语法较为简单，可以用 [Assemblyscript编译器](https://github.com/AssemblyScript/assemblyscript) 编译成符合 web assembly 标准的二进制字节码。
 
-Assembluscript 的语法可以参考[官方文档](https://www.assemblyscript.org/)。
+Assemblyscript 的语法可以参考[官方文档](https://www.assemblyscript.org/)。
 
 
 ###  下载 assembly script 智能合约编写模版
