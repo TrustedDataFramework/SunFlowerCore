@@ -1085,7 +1085,7 @@ export function main(): void{ //  缺少 init 函数
 }
 ```
 
-### 状态存储
+### 状态存储 <span id="anchor1"></span>
 
 1. 临时存储
 
@@ -1170,7 +1170,7 @@ export function iterate(): void{
 }
 ```
 
-### 触发
+### 触发 <span id="anchor0"></span>
 
 触发合约中的方法有两种方式，一种是通过 rpc 触发，另一种是通过事务触发。
 
@@ -1331,7 +1331,72 @@ main()
 
 我们利用了 Assemblyscript 丰富的扩展性，内建了一些对象和类，使得智能合约的编写更加简单，以下列举了内置对象的使用示例
 
-1. 
+1. log 函数
+
+区块链节点在执行 log 函数时，会把 log 的参数打印到标准输出，可以用于调试智能合约
+
+```typescript
+import {log} from './lib'
+
+export function init(): void{
+  log('hello world');
+}
+```
+
+2. Context 类
+
+对于 rpc 触发的函数，可以通过 Context 拿到 rpc 调用的参数，对于事务触发的函数，可以通过 Context 拿到事务中payload 的参数，具体可以参考 [触发](#anchor0) 章节。
+
+除此之外，事务触发的函数或者 init 函数可以通过 Context 拿到区块链上下文对象，示例如下：
+
+```typescript
+import {Context} from './lib'
+
+export function init(): void{
+  // 获得事务所在的区块的区块头
+  // 包含了父区块的哈希，区块的创建时间和区块的高度
+  const header = Context.header();
+
+  // 获得当前的事务，包含了事务的所有字段
+  const tx = Context.transaction();
+
+  // 当前的合约的地址，部署时的nonce和合约的创建者的地址
+  const contract = Context.contract();
+}
+```
+
+3. DB 
+
+DB 的使用可以参考[状态存储](#anchor1) 章节。
+
+4. Decimal
+
+Decimal 类用于实现精确的十进制有限小数的四则运算
+
+
+```typescript
+import {Decimal} from './lib'
+
+export function init(): void{
+  // 加法
+  let d = Decimal.add('0.01', '0.02');
+
+  // 减法
+  d = Decimal.sub(d, '0.02');
+
+  // 乘法
+  d = Decimal.mul(d, 10);
+
+  // 除法，限制小数点后10位，如果除不尽则抛出异常
+  d = Decimal.div(d, 2, 10);
+
+  // 比较
+  let c = Decimal.compare('0.01', '0.02');
+}
+```
+
+
+### RLP 编码/解码
 
 ### 安全设计
 
