@@ -35,9 +35,8 @@ public abstract class AbstractMiner implements Miner {
 
         int prevIndex = minerAddresses.indexOf(prev);
 
-        if (prevIndex < 0) {
-            return Optional.empty();
-        }
+        if(prevIndex < 0)
+            prevIndex += minerAddresses.size();
 
         long step = (currentEpochSeconds - parent.getCreatedAt())
                 / blockInterval;
