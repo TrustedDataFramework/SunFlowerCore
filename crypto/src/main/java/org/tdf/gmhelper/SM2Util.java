@@ -1,20 +1,14 @@
 package org.tdf.gmhelper;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.ParametersWithID;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.digests.SM3Digest;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.crypto.signers.SM2Signer;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
@@ -25,13 +19,10 @@ import org.bouncycastle.math.ec.custom.gm.SM2P256V1Curve;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.spec.ECFieldFp;
 import java.security.spec.EllipticCurve;
+import java.util.Arrays;
 
 public class SM2Util extends GMBaseUtil {
     //////////////////////////////////////////////////////////////////////////////////////
@@ -45,25 +36,33 @@ public class SM2Util extends GMBaseUtil {
     public final static BigInteger SM2_ECC_N = CURVE.getOrder();
     public final static BigInteger SM2_ECC_H = CURVE.getCofactor();
     public final static BigInteger SM2_ECC_GX = new BigInteger(
-        "32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7", 16);
+            "32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7", 16);
     public final static BigInteger SM2_ECC_GY = new BigInteger(
-        "BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0", 16);
+            "BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0", 16);
     public static final ECPoint G_POINT = CURVE.createPoint(SM2_ECC_GX, SM2_ECC_GY);
     public static final ECDomainParameters DOMAIN_PARAMS = new ECDomainParameters(CURVE, G_POINT,
-        SM2_ECC_N, SM2_ECC_H);
+            SM2_ECC_N, SM2_ECC_H);
     public static final int CURVE_LEN = BCECUtil.getCurveLength(DOMAIN_PARAMS);
     //////////////////////////////////////////////////////////////////////////////////////
 
     public static final EllipticCurve JDK_CURVE = new EllipticCurve(new ECFieldFp(SM2_ECC_P), SM2_ECC_A, SM2_ECC_B);
     public static final java.security.spec.ECPoint JDK_G_POINT = new java.security.spec.ECPoint(
-        G_POINT.getAffineXCoord().toBigInteger(), G_POINT.getAffineYCoord().toBigInteger());
+            G_POINT.getAffineXCoord().toBigInteger(), G_POINT.getAffineYCoord().toBigInteger());
     public static final java.security.spec.ECParameterSpec JDK_EC_SPEC = new java.security.spec.ECParameterSpec(
-        JDK_CURVE, JDK_G_POINT, SM2_ECC_N, SM2_ECC_H.intValue());
+            JDK_CURVE, JDK_G_POINT, SM2_ECC_N, SM2_ECC_H.intValue());
 
     //////////////////////////////////////////////////////////////////////////////////////
 
     public static final int SM3_DIGEST_LENGTH = 32;
     public static final byte[] WITH_ID = "userid@soie-chain.com".getBytes(StandardCharsets.US_ASCII);
+    public static final byte[] DEFAULT_USER_ID = {0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38};
+    public static final ECKeyPairGenerator KEY_PAIR_GENERATOR = new ECKeyPairGenerator();
+    public static final ECKeyGenerationParameters EC_KEY_GENERATION_PARAMETERS =
+            new ECKeyGenerationParameters(new ECDomainParameters(CURVE, G_POINT, SM2_ECC_N), new SecureRandom());
+
+    static {
+        KEY_PAIR_GENERATOR.init(EC_KEY_GENERATION_PARAMETERS);
+    }
 
     /**
      * 生成ECC密钥对
@@ -76,13 +75,14 @@ public class SM2Util extends GMBaseUtil {
     }
 
     public static KeyPair generateKeyPair() throws NoSuchProviderException, NoSuchAlgorithmException,
-        InvalidAlgorithmParameterException {
+            InvalidAlgorithmParameterException {
         SecureRandom random = new SecureRandom();
         return BCECUtil.generateKeyPair(DOMAIN_PARAMS, random);
     }
 
     /**
      * 通过字节数组格式的私钥创建私钥对象
+     *
      * @param priv private key
      * @return private key object
      */
@@ -95,6 +95,7 @@ public class SM2Util extends GMBaseUtil {
 
     /**
      * 通过字节数组格式的私钥创建公钥对象
+     *
      * @param priv
      * @return
      */
@@ -106,6 +107,7 @@ public class SM2Util extends GMBaseUtil {
 
     /**
      * 通过字节数组格式的公钥创建公钥对象
+     *
      * @param pub
      * @return
      */
@@ -114,6 +116,7 @@ public class SM2Util extends GMBaseUtil {
         BCECPublicKey bcecPublicKey = new BCECPublicKey("sm2", ecPublicKeyParameters, JDK_EC_SPEC, BouncyCastleProvider.CONFIGURATION);
         return bcecPublicKey;
     }
+
     /**
      * 只获取私钥里的d，32字节
      *
@@ -194,14 +197,14 @@ public class SM2Util extends GMBaseUtil {
      * @return
      */
     public static SM2Cipher parseSM2Cipher(int curveLength, int digestLength,
-        byte[] cipherText) {
+                                           byte[] cipherText) {
         byte[] c1 = new byte[curveLength * 2 + 1];
         System.arraycopy(cipherText, 0, c1, 0, c1.length);
         byte[] c3 = new byte[digestLength];
         System.arraycopy(cipherText, c1.length, c3, 0, c3.length);
         byte[] c2 = new byte[cipherText.length - c1.length - digestLength];
-        System.arraycopy(cipherText, c1.length+c3.length, c2, 0, c2.length);
-                SM2Cipher result = new SM2Cipher();
+        System.arraycopy(cipherText, c1.length + c3.length, c2, 0, c2.length);
+        SM2Cipher result = new SM2Cipher();
         result.setC1(c1);
         result.setC2(c2);
         result.setC3(c3);
@@ -231,7 +234,7 @@ public class SM2Util extends GMBaseUtil {
      * @throws IOException
      */
     public static byte[] encodeSM2CipherToDER(int curveLength, int digestLength, byte[] cipher)
-        throws IOException {
+            throws IOException {
         int startPos = 1;
 
         byte[] c1x = new byte[curveLength];
@@ -325,7 +328,7 @@ public class SM2Util extends GMBaseUtil {
      * @throws CryptoException
      */
     public static byte[] sign(ECPrivateKeyParameters priKeyParameters, byte[] withId, byte[] srcData)
-        throws CryptoException {
+            throws CryptoException {
         SM2Signer signer = new SM2Signer();
         CipherParameters param = null;
         ParametersWithRandom pwr = new ParametersWithRandom(priKeyParameters, new SecureRandom());
@@ -439,4 +442,210 @@ public class SM2Util extends GMBaseUtil {
         }
         return result;
     }
+
+
+    /**
+     * Returns the values from each provided array combined into a single array. For example, {@code
+     * concat(new byte[] {a, b}, new byte[] {}, new byte[] {c}} returns the array {@code {a, b, c}}.
+     *
+     * @param arrays zero or more {@code byte} arrays
+     * @return a single array containing all the values from the source arrays, in order
+     */
+    public static byte[] concat(byte[]... arrays) {
+        int length = 0;
+        for (byte[] array : arrays) {
+            length += array.length;
+        }
+        byte[] result = new byte[length];
+        int pos = 0;
+        for (byte[] array : arrays) {
+            System.arraycopy(array, 0, result, pos, array.length);
+            pos += array.length;
+        }
+        return result;
+    }
+
+    /**
+     * 加密（采用新版本的分组方式C1 | C2 | C3）
+     *
+     * @param denData 待加密字符串
+     * @return
+     */
+    public static byte[] encrypt(@NonNull byte[] publicKey, @NonNull byte[] msg) {
+        if (msg.length == 0)
+            throw new RuntimeException("sm2 encrypt failed: empty msg");
+        byte[] source = new byte[msg.length];
+        System.arraycopy(msg, 0, source, 0, msg.length);
+
+
+        ECPoint userKey = CURVE.decodePoint(publicKey);
+        Cipher cipher = new Cipher();
+        ECPoint c1 = cipher.initEncrypt(userKey);
+        cipher.encrypt(source);
+        byte[] c3 = new byte[32];
+        cipher.doFinal(c3);
+        byte[] c1Encoded = c1.getEncoded(false);
+        if (c1Encoded.length > 64)
+            c1Encoded = Arrays.copyOfRange(c1Encoded, c1Encoded.length - 64, c1Encoded.length);
+        // C1 | C2 | C3
+        return concat(
+                c1Encoded,
+                source,
+                c3);
+    }
+
+    @RequiredArgsConstructor
+    static class BytesReader {
+        private final byte[] bytes;
+        private int current;
+
+        public byte[] readN(int n) {
+            byte[] ret = Arrays.copyOfRange(bytes, current, current + n);
+            current += n;
+            return ret;
+        }
+
+        public int available() {
+            return bytes.length - current;
+        }
+
+        public byte read() {
+            return bytes[current++];
+        }
+
+        public byte peek() {
+            return bytes[current];
+        }
+
+        public BytesReader skip(int n) {
+            this.current += n;
+            return this;
+        }
+    }
+
+    /**
+     * 解密（采用新版本的分组方式C1 | C2 | C3）
+     *
+     * @param encryptedData 待解密字符串
+     * @return
+     */
+    public static byte[] decrypt(@NonNull byte[] sk, @NonNull byte[] encrypted) {
+
+
+        /** 分组方式
+         *  分解加密字串 C1 | C2 | C3
+         * （C1 = C1标志位2位 + C1实体部分128位 = 130）
+         * （C3 = C3实体部分64位  = 64）
+         * （C2 = encryptedData.length * 2 - C1长度  - C2长度）*/
+        BytesReader r = new BytesReader(encrypted);
+        byte[] c1Bytes = r.peek() == 0x04 ?
+                r.skip(1).readN(64) :
+                r.readN(64);
+
+        byte[] c1x = Arrays.copyOfRange(c1Bytes, 0, 32);
+        byte[] c1y = Arrays.copyOfRange(c1Bytes, 32, c1Bytes.length);
+
+        int c2Len = r.available() - 32;
+        byte[] c2 = r.readN(c2Len);
+        byte[] c3 = r.readN(32);
+
+
+        BigInteger userD = new BigInteger(1, sk);
+
+        //通过C1实体字节来生成ECPoint
+        ECPoint c1 = CURVE.createPoint(new BigInteger(c1x), new BigInteger(c1y));
+
+        Cipher cipher = new Cipher();
+        cipher.initDecrypt(userD, c1);
+        cipher.decrypt(c2);
+        cipher.doFinal(c3);
+        return c2;
+    }
+
+    public static class Cipher {
+
+        private int ct;
+        private ECPoint p2;
+        private SM3Digest sm3KeyBase;
+        private SM3Digest sm3c3;
+        private byte key[];
+        private byte keyOff;
+
+        public Cipher() {
+            this.ct = 1;
+            this.key = new byte[32];
+            this.keyOff = 0;
+        }
+
+        private void reset() {
+            this.sm3KeyBase = new SM3Digest();
+            this.sm3c3 = new SM3Digest();
+
+            byte p[] = p2.getXCoord().getEncoded();
+            this.sm3KeyBase.update(p, 0, p.length);
+            this.sm3c3.update(p, 0, p.length);
+
+            p = p2.getYCoord().getEncoded();
+            this.sm3KeyBase.update(p, 0, p.length);
+            this.ct = 1;
+            nextKey();
+        }
+
+        private void nextKey() {
+            SM3Digest sm3KeyCur = new SM3Digest(this.sm3KeyBase);
+            sm3KeyCur.update((byte) (ct >> 24 & 0xff));
+            sm3KeyCur.update((byte) (ct >> 16 & 0xff));
+            sm3KeyCur.update((byte) (ct >> 8 & 0xff));
+            sm3KeyCur.update((byte) (ct & 0xff));
+            sm3KeyCur.doFinal(key, 0);
+            this.keyOff = 0;
+            this.ct++;
+        }
+
+        public void encrypt(byte[] data) {
+            this.sm3c3.update(data, 0, data.length);
+            for (int i = 0; i < data.length; i++) {
+                if (keyOff == key.length) {
+                    nextKey();
+                }
+                data[i] ^= key[keyOff++];
+            }
+        }
+
+        public ECPoint initEncrypt(ECPoint userKey) {
+            AsymmetricCipherKeyPair key = KEY_PAIR_GENERATOR.generateKeyPair();
+            ECPrivateKeyParameters ecpriv = (ECPrivateKeyParameters) key.getPrivate();
+            ECPublicKeyParameters ecpub = (ECPublicKeyParameters) key.getPublic();
+            ECPoint c1 = ecpub.getQ();
+
+            BigInteger k = ecpriv.getD();
+            this.p2 = userKey.multiply(k).normalize();
+            reset();
+            return c1.normalize();
+        }
+
+        public void initDecrypt(BigInteger userD, ECPoint c1) {
+            this.p2 = c1.multiply(userD).normalize();
+            reset();
+        }
+
+        public void decrypt(byte[] data) {
+            for (int i = 0; i < data.length; i++) {
+                if (keyOff == key.length) {
+                    nextKey();
+                }
+                data[i] ^= key[keyOff++];
+            }
+
+            this.sm3c3.update(data, 0, data.length);
+        }
+
+        public void doFinal(byte[] c3) {
+            byte[] p = p2.getYCoord().getEncoded();
+            this.sm3c3.update(p, 0, p.length);
+            this.sm3c3.doFinal(c3, 0);
+            reset();
+        }
+    }
+
 }

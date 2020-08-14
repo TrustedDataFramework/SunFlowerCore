@@ -1,10 +1,9 @@
 package org.tdf.crypto.sm2;
 
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.crypto.CryptoException;
-import org.tdf.gmhelper.SM2Util;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.tdf.crypto.PrivateKey;
-import org.tdf.crypto.PublicKey;
+import org.tdf.gmhelper.SM2Util;
 
 
 public class SM2PrivateKey implements PrivateKey {
@@ -13,7 +12,7 @@ public class SM2PrivateKey implements PrivateKey {
     }
 
     public SM2PrivateKey(byte[] encoded) {
-         this.privateKey = SM2Util.createBCECPrivateKey(encoded);
+        this.privateKey = SM2Util.createBCECPrivateKey(encoded);
     }
 
     public BCECPrivateKey getPrivateKey() {
@@ -33,11 +32,11 @@ public class SM2PrivateKey implements PrivateKey {
     }
 
     public byte[] decrypt(byte[] cipher) {
-        return SM2Util.decrypt(privateKey, cipher);
+        return SM2Util.decrypt(getEncoded(), cipher);
     }
 
     @Override
-    public PublicKey generatePublicKey() {
+    public SM2PublicKey generatePublicKey() {
         return new SM2PublicKey(SM2Util.getBCECPublicKeyFromPrivateKey(getEncoded()));
     }
 

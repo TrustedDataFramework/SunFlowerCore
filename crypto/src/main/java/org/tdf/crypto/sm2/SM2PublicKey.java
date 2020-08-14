@@ -36,7 +36,7 @@ public class SM2PublicKey implements PublicKey {
     }
 
     public byte[] encrypt(byte[] msg) {
-        return SM2Util.encrypt(bcecPublicKey, msg);
+        return SM2Util.encrypt(getEncoded(), msg);
     }
 
     @Override

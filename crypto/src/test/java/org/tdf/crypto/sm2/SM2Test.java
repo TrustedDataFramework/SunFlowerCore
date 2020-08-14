@@ -3,6 +3,7 @@ package org.tdf.crypto.sm2;
 
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.tdf.crypto.KeyPair;
@@ -69,6 +70,7 @@ public class SM2Test {
     }
 
     @Test
+    @Ignore
     public void testEncryptDecrypt() {
         String msg = "sm2 test";
         KeyPair keyPair = SM2.generateKeyPair();

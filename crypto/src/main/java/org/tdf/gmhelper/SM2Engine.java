@@ -89,7 +89,9 @@ public class SM2Engine
             // A2
             ECPoint C1 = createBasePointMultiplier().multiply(ecParams.getG(), k).normalize();
             C1Buffer = C1.getEncoded(false);
-
+            if(C1Buffer.length > 64){
+                C1Buffer = Arrays.copyOfRange(C1Buffer, C1Buffer.length - 64, C1Buffer.length);
+            }
             // A3
             BigInteger h = ecParams.getH();
             if (h != null) {
@@ -128,7 +130,6 @@ public class SM2Engine
         System.arraycopy(C1Buffer, 0, encryptResult, 0, C1Buffer.length);
         System.arraycopy(C2, 0, encryptResult, C1Buffer.length + C3.length, C2.length);
         System.arraycopy(C3, 0, encryptResult, C1Buffer.length, C3.length);
-        System.out.println(ByteUtils.toHexString(C3));
         return encryptResult;
     }
 
