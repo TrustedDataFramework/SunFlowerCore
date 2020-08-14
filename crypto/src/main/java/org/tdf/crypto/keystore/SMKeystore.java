@@ -24,8 +24,7 @@ public class SMKeystore {
 
     @SneakyThrows
     public static byte[] decryptKeyStore(KeyStoreImpl ks, String password) {
-        if (!"sm4-128-ctr".equals(ks.getCrypto().getCipher()) ||
-                !"sm2-kdf".equals(ks.getKdf())) {
+        if (!"sm4-128-ecb".equals(ks.getCrypto().getCipher())) {
             throw new RuntimeException("unsupported crypto cipher " + ks.getCrypto().getCipher());
         }
         HexBytes passwordBytes = HexBytes.fromBytes(password.getBytes(StandardCharsets.US_ASCII));
@@ -38,7 +37,7 @@ public class SMKeystore {
         );
         byte[] cipherPrivKey = ks.getCrypto().getCipherText().getBytes();
         byte[] iv = ks.getCrypto().getIv().getBytes();
-        return SM4Util.decrypt_Ctr_NoPadding(deriveKey, iv, cipherPrivKey);
+        return SM4Util.decrypt_Ecb_NoPadding(deriveKey, cipherPrivKey);
     }
 
     public static KeyStoreImpl generateKeyStore(@NonNull String password) {
@@ -57,11 +56,14 @@ public class SMKeystore {
         sr.nextBytes(iv);
 
         byte[] deriveKey = ByteUtils.subArray(
-                SM3Util.hash(ByteUtils.concatenate(salt, password.getBytes())), 0, 16);
-        byte[] cipherPrivKey = SM4Util.encrypt_Ctr_NoPadding(deriveKey, iv, sm2PrivateKey.getEncoded());
+                SM3Util.hash(
+                        ByteUtils.concatenate(salt, password.getBytes(StandardCharsets.US_ASCII))), 0, 16);
+
+        // sm2 的私钥是 32 个字节，正好是 16的倍数，所以不需要填充
+        byte[] cipherPrivKey = SM4Util.encrypt_Ecb_NoPadding(deriveKey, sm2PrivateKey.getEncoded());
 
         byte[] mac = SM3Util.hash(ByteUtils.concatenate(deriveKey, cipherPrivKey));
-        Crypto crypto = new Crypto("sm4-128-ctr", HexBytes.fromBytes(cipherPrivKey), HexBytes.fromBytes(iv), HexBytes.fromBytes(salt));
+        Crypto crypto = new Crypto("sm4-128-ecb", HexBytes.fromBytes(cipherPrivKey), HexBytes.fromBytes(iv), HexBytes.fromBytes(salt));
 
         return new KeyStoreImpl(
                 HexBytes.fromBytes(publicKey.getEncoded()),
