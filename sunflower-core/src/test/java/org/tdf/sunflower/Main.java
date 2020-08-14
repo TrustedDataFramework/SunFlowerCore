@@ -56,13 +56,6 @@ public class Main {
     private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
 
     public static void main(String[] args) throws Exception{
-        String pkHex = "041a6b8a4942f7b3920b58b63b8f2027f3b2c4f05e56f9341810aea397a996ca7e71d3b73e4b77d3831341c9ef7ae9bc045f0ce2f08391a371b7485903c0374cc1";
-        byte[] enc = SM2Util.encrypt(HexBytes.decode(pkHex), "123".getBytes());
-        System.out.println(HexBytes.encode(enc));
-
-        String skHex = "0d332ed4ef2c25cdba54057f5dbf706a56216664f944eaa95474e8f950344c52";
-        byte[] decrypted = SM2Util.decrypt(HexBytes.decode(skHex), HexBytes.decode("6226f131912c25d6a1d0c8d20f19f87f27225633cbfe325d2998b77d02ad7e013a9afd3c6e55120eec91e14eeaacd86d9eba514b9c5abbd02d0ce1b1225e48e3e9bff6894304651da5bd55f10913120481677f8477a725c2fdfafe8f4d0ffa60b132c467c96fc0"));
-        System.out.println(new String(decrypted, StandardCharsets.US_ASCII));
     }
 
 
