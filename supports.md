@@ -450,10 +450,10 @@ please generate secret store for your private key, public key = 035db35c97cfa7b6
 ```035db35c97cfa7b691e3d171b5e93bc3660c47f5912122aed008d2a99b457830af```
 加密后的数据，而我们要加密的内容则是长度为 32 字节的数组。
 
-下面以 nodejs 为例，展示如何对节点的认证请求作出正确响应，当节点成功加载私钥后，认证服务应当停止。注意要引入依赖 @salaku/sm-crypto 
+下面以 nodejs 为例，展示如何对节点的认证请求作出正确响应，当节点成功加载私钥后，认证服务应当停止。注意要引入依赖 @salaku/sm-crypto 和 @salaku/js-sdk
 
 ```js
-const tool = require('../index')
+const tool = require('@salaku/js-sdk')
 const sm2 = require('@salaku/sm-crypto').sm2
 
 const sk = 'f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5'
