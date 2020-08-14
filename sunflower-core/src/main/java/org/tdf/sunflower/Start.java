@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -25,12 +26,11 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.*;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
+import org.tdf.crypto.CryptoHelpers;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PublicKey;
-import org.tdf.crypto.keystore.Crypto;
 import org.tdf.crypto.sm2.SM2;
-import org.tdf.crypto.sm2.SM2KeyPair;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM2Util;
@@ -39,15 +39,14 @@ import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.pos.PoS;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
-import org.tdf.crypto.CryptoHelpers;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.*;
-import org.tdf.sunflower.facade.BasicMessageQueue;
 import org.tdf.sunflower.mq.SocketIOMessageQueue;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.net.PeerServerImpl;
 import org.tdf.sunflower.pool.TransactionPoolImpl;
 import org.tdf.sunflower.service.ConcurrentSunflowerRepository;
+import org.tdf.sunflower.service.HttpService;
 import org.tdf.sunflower.service.SunflowerRepositoryKVImpl;
 import org.tdf.sunflower.service.SunflowerRepositoryService;
 import org.tdf.sunflower.state.Account;
@@ -61,14 +60,10 @@ import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
 import java.io.File;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -110,7 +105,7 @@ public class Start {
     public static final ObjectMapper MAPPER = MappingUtil.OBJECT_MAPPER;
 
     @SneakyThrows
-    private static Properties loadDefaultConfig(){
+    private static Properties loadDefaultConfig() {
         Resource r = new ClassPathResource("default.config.properties");
         Properties p = new Properties();
         p.load(r.getInputStream());
@@ -439,39 +434,47 @@ public class Start {
     }
 
     @Bean
-    public SecretStore secretStore(GlobalConfig config) throws Exception {
+    public SecretStore secretStore(GlobalConfig config, HttpService httpService) throws Exception {
         String ksLocation = (String) config.get("secret-store");
         if (ksLocation == null || ksLocation.isEmpty())
             return SecretStore.NONE;
 
-        InputStream in = null;
         SM2PrivateKey sk = new SM2PrivateKey(SM2.generateKeyPair().getPrivateKey().getEncoded());
-        SM2PublicKey pk = (SM2PublicKey) sk.generatePublicKey();
+        SM2PublicKey pk = sk.generatePublicKey();
         log.info("please generate secret store for your private key, public key = " + HexBytes.fromBytes(pk.getEncoded()));
         log.info("waiting for load secret store...");
+
         while (true) {
+            Map<String, String> query = new HashMap<>();
+            query.put("publicKey", HexBytes.encode(pk.getEncoded()));
+
+            String resp = null;
             try {
-                in = FileUtils.getInputStream(ksLocation);
-            } catch (Exception ignored) {
+                resp = httpService.get(
+                        HttpHeaders.EMPTY,
+                        ksLocation,
+                        query
+                );
 
-            }
-            if (in == null) {
-                TimeUnit.SECONDS.sleep(1);
-                continue;
-            }
-
-            try{
                 SecretStoreImpl secretStore = MAPPER.readValue(
-                        in,
+                        resp,
                         SecretStoreImpl.class);
                 byte[] plain = sk.decrypt(secretStore.getCipherText().getBytes());
-                if (plain.length == sk.getEncoded().length){
+                if (plain.length == sk.getEncoded().length) {
                     HexBytes address = Address.fromPublicKey(CryptoContext.getPkFromSk(plain));
                     log.info("load secret store success your address = " + address);
                     return () -> HexBytes.fromBytes(plain);
                 }
-            }catch (Exception ignored){
+            } catch (Exception ignored) {
+
             }
+            if (resp == null) {
+                TimeUnit.SECONDS.sleep(1);
+                continue;
+            }
+
+            log.error("invalid response from {}", ksLocation);
+            resp = null;
             TimeUnit.SECONDS.sleep(1);
         }
 
