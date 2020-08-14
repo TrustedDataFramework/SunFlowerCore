@@ -32,7 +32,7 @@ sunflower:
     assert: 'false' # 是否开启断言，默认是 false
     validate: 'false' # 启动时是否校验本地数据，如果设置为true，启动时会校验账本数据
     libs: 'local/jar' # jar包路径，用于加载外部的共识插件
-    secret-store: "" # 证书的路径，若填写，节点启动后会打印出一个公钥并且进入阻塞，用户通过工具生成证书文件保存到这个路径后，节点会成功加载证书
+    secret-store: "" # http 认证的路径，若填写，节点启动后会打印出一个公钥并且进入阻塞，认证成功后，节点会成功加载路径
 ```
 
 ### 共识参数 (PoA)
@@ -418,6 +418,80 @@ poa 共识对应的创世区块中，miners 包含了所有被授权节点的公
 }
 ```
 
+5. 私钥加载
+
+由于 poa 需要在节点中填写私钥，我们建议通过 http 认证的方式加载私钥，而不是将私钥以明文的形式保存在节点上。
+
+例如我现在想把私钥 ```f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5```，传递给节点，我可以先在节点上配置一个 http 认证路径
+
+```yml
+sunflower:
+  secret-store: http://localhost:3000
+```
+
+等待节点启动后，节点会打印出如下的日志
+
+please generate secret store for your private key, public key = 035db35c97cfa7b691e3d171b5e93bc3660c47f5912122aed008d2a99b457830af，这个 public key 是用来进行非对称加密的，我们可以把敏感信息用这个公钥加密后发给节点，节点再解密，实现安全可信的通信。
+
+接下来节点会尝试每秒钟发送一次 get 请求到 
+
+```http://localhost:3000?publicKey=035db35c97cfa7b691e3d171b5e93bc3660c47f5912122aed008d2a99b457830af```
+
+我们需要启动一个服务，并对这个请求作出正确的响应，响应的格式为
+
+```json
+{
+  "publicKey": "",
+  "cipherText": ""
+}
+```
+
+其中 cipherText 是用公钥 
+```035db35c97cfa7b691e3d171b5e93bc3660c47f5912122aed008d2a99b457830af```
+加密后的数据，而我们要加密的内容则是长度为 32 字节的数组。
+
+下面以 nodejs 为例，展示如何对节点的认证请求作出正确响应，当节点成功加载私钥后，认证服务应当停止。注意要引入依赖 @salaku/sm-crypto 
+
+```js
+const tool = require('../index')
+const sm2 = require('@salaku/sm-crypto').sm2
+
+const sk = 'f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5'
+const URL  = require('url');
+
+var http = require('http')
+
+var server = http.createServer()
+
+server.on('request', function (request, response) {
+query)
+    let otherPublicKey = URL.parse(request.url,true).query['publicKey']
+    if(otherPublicKey !== '035db35c97cfa7b691e3d171b5e93bc3660c47f5912122aed008d2a99b457830af')
+      response.end() // 如果不是正确的公钥，拒绝认证请求
+
+    // 对公钥进行解压缩  
+    if(otherPublicKey.substr(0, 2) !== '04'){
+        otherPublicKey = sm2.deCompress(otherPublicKey)
+    }
+
+    // 生成密文
+    const ret = {
+        publicKey: tool.privateKey2PublicKey(sk),
+        cipherText: sm2.doEncrypt(Buffer.from(sk, 'hex'), otherPublicKey, sm2.C1C2C3)
+    }
+    // response 对象有一个方法：write 可以用来给客户端发送响应数据
+    // write 可以使用多次，但是最后一定要使用 end 来结束响应，否则客户端会一直等待
+    response.write(JSON.stringify(ret))
+    response.end()
+    // 认证成功，拒绝后续的认证请求
+})
+
+server.listen(3000, function () {
+    console.log('服务器启动成功了，可以通过 http://127.0.0.1:3000/ 来进行访问')
+})
+
+```
+
 ### PoS
 
 PoS 即 Proof of Stake。在 PoS 共识中，股权较大的节点拥有区块打包权。这里的 PoS 使用内置合约保存每个账号收到的投票数量，地址是 ```0000000000000000000000000000000000000005```。
@@ -521,7 +595,7 @@ iv = randbytes(16) # 生成随机向量
 key = sm3(salt + password.encode('ascii'))[:16] # 推导出key
 keystore['salt'] = salt.hex()
 keystore['iv'] = iv.hex()
-keystore['ciphertext'] = sm4.encrypt_ctr_nopadding(key, iv, sk) # 对私钥进行加密保存
+keystore['ciphertext'] = sm4.encrypt_ecb_nopadding(key,sk) # 对私钥进行加密保存
 keystore['mac'] = sm3(key + ciphertext).hex() # 生成 mac
 keystore['id'] == uuid() 
 keystore['version'] = '1'
@@ -535,8 +609,10 @@ salt = bytes.fromhex(keystore['salt']) # 盐
 iv = bytes.fromhex(keystore['iv']) # iv
 key = sm3(salt + password.encode('ascii'))[:16]
 cipher = bytes.fromhex(keystore['ciphertext'])
-sk = sm4.decrypt_ctr_nopadding(key, iv, cipher) # 读取到私钥
+sk = sm4.decrypt_ecb_nopadding(key,cipher) # 读取到私钥
 ```
+
+nodejs keystore 生成可解析可以使用 sdk ```https://github.com/TrustedDataFramework/js-sdk```
 
 ## P2P
 
