@@ -464,13 +464,13 @@ var http = require('http')
 var server = http.createServer()
 
 server.on('request', function (request, response) {
-query)
-    let otherPublicKey = URL.parse(request.url,true).query['publicKey']
-    if(otherPublicKey !== '035db35c97cfa7b691e3d171b5e93bc3660c47f5912122aed008d2a99b457830af')
-      response.end() // 如果不是正确的公钥，拒绝认证请求
+
+    let otherPublicKey = URL.parse(request.url, true).query['publicKey']
+    if (otherPublicKey !== '035db35c97cfa7b691e3d171b5e93bc3660c47f5912122aed008d2a99b457830af')
+        response.end() // 如果不是正确的公钥，拒绝认证请求
 
     // 对公钥进行解压缩  
-    if(otherPublicKey.substr(0, 2) !== '04'){
+    if (otherPublicKey.substr(0, 2) !== '04') {
         otherPublicKey = sm2.deCompress(otherPublicKey)
     }
 
