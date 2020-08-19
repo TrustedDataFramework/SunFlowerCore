@@ -489,6 +489,7 @@ public class SM2Util extends GMBaseUtil {
             c1Encoded = Arrays.copyOfRange(c1Encoded, c1Encoded.length - 64, c1Encoded.length);
         // C1 | C2 | C3
         return concat(
+                new byte[]{0x04},
                 c1Encoded,
                 source,
                 c3);
