@@ -95,9 +95,7 @@ public abstract class AbstractMiner implements Miner {
                 getAccountTrie().getTrie(parent.getStateRoot().getBytes()),
                 minerConfig.getMaxBodySize()
         );
-
-        if (transactionList.isEmpty() && !minerConfig.isAllowEmptyBlock())
-            return Optional.empty();
+        
         transactionList.add(0, coinbase);
         for (Transaction tx : transactionList) {
             // try to fetch transaction from pool
@@ -121,6 +119,10 @@ public abstract class AbstractMiner implements Miner {
             }
             b.getBody().add(tx);
         }
+
+        // transactions may failed to execute
+        if (transactionList.size() == 1 && !minerConfig.isAllowEmptyBlock())
+            return Optional.empty();
 
         // add fee to miners account
         Account feeAccount = tmp.get(Constants.FEE_ACCOUNT_ADDR).get();
