@@ -122,6 +122,7 @@ public abstract class AbstractMiner implements Miner {
             b.getBody().add(tx);
         }
 
+        // add fee to miners account
         Account feeAccount = tmp.get(Constants.FEE_ACCOUNT_ADDR).get();
         tmp.remove(Constants.FEE_ACCOUNT_ADDR);
         Account minerAccount = tmp.get(coinbase.getTo())
