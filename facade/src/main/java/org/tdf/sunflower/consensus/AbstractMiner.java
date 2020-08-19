@@ -95,7 +95,7 @@ public abstract class AbstractMiner implements Miner {
                 getAccountTrie().getTrie(parent.getStateRoot().getBytes()),
                 minerConfig.getMaxBodySize()
         );
-        
+
         transactionList.add(0, coinbase);
         for (Transaction tx : transactionList) {
             // try to fetch transaction from pool
