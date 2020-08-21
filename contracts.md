@@ -232,7 +232,10 @@ for(let i = 0; i < arr.length; i++){
 | shift | 方法| 0| - | T | ```arr.shift()`` | 弹出数组的第一个元素|
 | slice | 方法| 1或2| ```(start?: i32, end?: i32)``` | ```Array<T>``` | ```arr.slice(0, arr.length)``` | 从数组的```start```（包含）截取到```end```（不包含）|
 | some | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | bool | ```arr.some(fn)``` | 判断数组中是否存在至少一个元素满足 ```fn```|
-| sort | 方法 | 0 或 1 | ```fn?: (a: T, b: T) => i32``` |
+| sort | 方法 | 0 或 1 | ```fn?: (a: T, b: T) => i32``` | 返回自身 | ```arr.sort(fn)``` | 对数组进行排序，可以传入比较函数 ```fn``` |
+| splice | 方法 | 1 或 2 | ```(start: i32, deleteCount?: i32)``` | ```Array<T>``` | ```arr.splice(1, 2)``` | 从数组中见截断一部分，start 表示开始截断的位置，deleteCount 表示截断掉多少个|
+| unshift | 方法 | 1 | ```value: T``` | i32` | ```arr.unshift(1)``` | 在数组左端添加一个元素|
+
 
 
 
