@@ -174,12 +174,12 @@ function addOne(a: i32): i32{
 
 2. 全局函数
 
-| 函数名     | 参数个数 | 参数列表               | 返回值类型 | 描述                                                                |
-|------------|----------|------------------------|------------|---------------------------------------------------------------------|
-| isNaN      | 1        | (f32 或 f64)           | bool       | 判断一个浮点数是否无效                                              |
-| isFinite   | 1        | (f32 或 f64)           | bool       | 判断一个浮点数满足：1. 不是无穷大 2. 不是无穷小 3. 有效             |
+| 函数名     | 参数个数 | 参数列表               | 返回值类型 | 描述                                                         |
+| ---------- | -------- | ---------------------- | ---------- | ------------------------------------------------------------ |
+| isNaN      | 1        | f32 或 f64 | bool       | 判断一个浮点数是否无效                                       |
+| isFinite   | 1        | f32 或 f64 | bool       | 判断一个浮点数满足：1. 不是无穷大 2. 不是无穷小 3. 有效      |
 | parseInt   | 1 或者 2 | (string, radisx?: i32) | i64        | 从字符串解析成一个整数，radix等于10则使用 10 进制，默认 radix 是 10 |
-| parseFloat | 1        | (string)               | f64        | 从字符串解析成一个浮点数，使用10进制                                |
+| parseFloat | 1        | (string)               | f64        | 从字符串解析成一个浮点数，使用10进制                         |
 
 3. 数组（Array）
 
@@ -206,14 +206,43 @@ for(let i = 0; i < arr.length; i++){
 ```
 
 
-- Array 类的函数和方法
+- Array 类常用的成员：
+
+| 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
+|------|--------|----------|----------|------------|------|------|
+| new  | 构造器 | 0或者1   | i32      |      ```Array<T>```     |  ```new Array<i32>(1);```    |  构造器    |
+|  isArray    | 静态函数       |  1        |     任意    |  bool          |  ```Array.isArray(arr)```   |   判断一个变量是否是数组   |
+|    length  |   字段     |    -      |    -      |     i32     | ```arr.length``` | 数组的长度 |
+| concat | 方法 | 1 | ```Array<T>``` | ```Array<T>``` | ```arr0.concat(arr1)``` |  |
+| every | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | bool | ```arr.every(fn)``` | 判断数组的每个元素是否都满足```fn``` |
+| fill | 方法| 1、2或者3 | ```(value: T, start?: i32, end?: i32)``` | 返回自身 | ```arr.fill(0, 0, arr.length)``` | 对数组用```value```进行填充，```start```和```end```分别是填充的起始索引（包含）和结束索引（不包含） |
+| filter | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | ```Array<T>``` | ```arr.filter(fn)``` | 过滤掉数组中不符合```fn```的元素 |
+| findIndex | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | i32 | ```arr.findIndex(fn)``` | 获取到第一个满足```fn```的元素所在的索引或者```-1``` |
+| forEach | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => void``` | ```void``` | ```arr.forEach(fn)``` | 用```fn```遍历数组 |
+| includes | 方法| 1或2 | ```(value: T, fromIndex?: i32)``` | bool | ```arr.includes(1,0)``` | 判断数组是否包含```value``` |
+| indexOf | 方法| 1或2 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | bool | - | 数组的每个元素是否都满足```fn``` |
+| join | 方法| 1 | ```(sep: string)``` | string | ```arr.join(',')``` | 对数组中每个字符串用字符```sep``` 连接|
+| lastIndexOf | 方法| 1或2 | ```(value: T, fromIndex?: i32)``` | i32 | ```arr.lastIndexOf('.')``` | 获取到最后等于```value```的元素所在的索引或者```-1``` |
+| map | 方法| 1 | ```(fn: (value: T, index: i32, array: Array<T>) => U)``` | ```Array<U>``` | ```arr.map(fn)``` | 把数组```arr``` 的元素作为函数 ```fn``` 的参数映射出新数组 |
+| pop | 方法| 0 | - | T | ```arr.pop()``` | 弹出数组的最后一个元素 |
+| push | 方法| 1 | ```(value: T)``` | i32 | ```arr.push(1)``` | 向数组尾部增加一个元素，返回数组长度|
+| reduce | 方法| 1或者2| ```(fn: (acc: U, cur: T, idx: i32, src: Array) => U, initialValue: U)``` | U | ```arr.reduce(fn, 0)``` | 从左端开始对数组进行累加操作，经常和 ```map``` 配合使用|
+| reduceRight | 方法| 1或者2| ```(fn: (acc: U, cur: T, idx: i32, src: Array) => U, initialValue: U)``` | U | ```arr.reduceRight(fn, 0)``` | 从右端开始对数组进行累加操作|
+| reverse | 方法| 0| - | 返回自身 | ```arr.reverse()`` | 把数组倒过来|
+| shift | 方法| 0| - | T | ```arr.shift()`` | 弹出数组的第一个元素|
+| slice | 方法| 1或2| ```(start?: i32, end?: i32)``` | ```Array<T>``` | ```arr.slice(0, arr.length)``` | 从数组的```start```（包含）截取到```end```（不包含）|
+| some | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | bool | ```arr.some(fn)``` | 判断数组中是否存在至少一个元素满足 ```fn```|
+| sort | 方法 | 0 或 1 | ```fn?: (a: T, b: T) => i32``` |
 
 
 
 
 
 
-   
+
+
+
+
 
 
 

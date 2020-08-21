@@ -88,35 +88,34 @@ parse_commandline()
 parse_commandline "$@"
 
 # directory of this file
-CUR=$(dirname $0)
-CUR=`cd $CUR; pwd`
+CUR=$(dirname "$0")
+pushd "$CUR" > /dev/null || exit 1
+CUR=$(pwd)
+popd > /dev/null || exit 1
 
-rm -rf $CUR/build
-mkdir $CUR/build
-
+rm -rf "$CUR"/build
+mkdir "$CUR"/build
 
 # project root path
-PROJECT_ROOT=$CUR/../
-PROJECT_ROOT=`cd $PROJECT_ROOT; pwd`
-GRADLE_WRAPPER="bash $PROJECT_ROOT/../gradlew"
+GRADLE_WRAPPER="./gradlew"
 
-cd $PROJECT_ROOT
 
-if [[ "$(expr substr $(uname -s) 1 5)" == "MINGW" ]]; then
-  GRADLE_WRAPPER=$PROJECT_ROOT/../gradlew.bat
+if [[ $(uname) == "*MINGW*" ]]; then
+  GRADLE_WRAPPER="./gradlew.bat"
 fi
 
-cd $PROJECT_ROOT/..
+pushd "$CUR"/../.. > /dev/null || exit
+
 $GRADLE_WRAPPER clean
 $GRADLE_WRAPPER bootjar
 
-cp $PROJECT_ROOT/build/libs/sunflower*.jar $CUR/build
+popd > /dev/null || exit
+
+cp "$CUR"/../build/libs/*.jar "$CUR"/build
+
+docker build -f "$CUR"/Dockerfile -t "$_arg_image" "$CUR"
 
 
-docker build -f $CUR/Dockerfile -t $_arg_image $CUR
-
-rm -rf $CUR/build/*
-
-if [[ $_arg_push == 'on' ]]; then
-  docker push $_arg_image
+if [[ "$_arg_push" == 'on' ]]; then
+  docker push "$_arg_image"
 fi
