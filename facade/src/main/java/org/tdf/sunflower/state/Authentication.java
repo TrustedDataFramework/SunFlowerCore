@@ -151,7 +151,7 @@ public class Authentication implements PreBuiltContract {
     @Override
     public Map<byte[], byte[]> getGenesisStorage() {
         Map<byte[], byte[]> ret = new ByteArrayMap<>();
-        ret.put(NODES_KEY, RLPCodec.encode(new TreeSet<>(this.nodes)));
+        ret.put(NODES_KEY, RLPCodec.encode(this.nodes));
         return ret;
     }
 }

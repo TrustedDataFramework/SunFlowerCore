@@ -236,6 +236,39 @@ for(let i = 0; i < arr.length; i++){
 | splice | 方法 | 1 或 2 | ```(start: i32, deleteCount?: i32)``` | ```Array<T>``` | ```arr.splice(1, 2)``` | 从数组中见截断一部分，start 表示开始截断的位置，deleteCount 表示截断掉多少个|
 | unshift | 方法 | 1 | ```value: T``` | i32` | ```arr.unshift(1)``` | 在数组左端添加一个元素|
 
+4. ArrayBuffer
+
+ArrayBuffer 用于表示一段二进制字节串
+
+- ArrayBuffer 成员如下：
+
+
+| 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
+|------|--------|----------|----------|------------|------|------|
+| new  | 构造器 | 1   | i32      |      ```ArrayBuffer```     |  ```new ArrayBuffer(1)```    |  构造器    |
+|  isView    | 静态函数       |  1        |     任意    |  bool          |  ```ArrayBuffer.isView```   |   判断一个值是否是 TypedArray 或者 DataView   |
+|    byteLength  |   字段     |    -      |    -      |     i32     | ```buf.byteLength``` | 字节串的长度 |
+| slice | 方法 | 0, 1 或者 2| ```(begin?: i32, end?: i32)`` | ```ArrayBuffer``` | ```buf.slice(0, buf.byteLength)``` |  从字节串中切片，begin 包含，end 不包含|
+
+5. DataView 
+
+DataView 提供了对二进制字节串操作的接口
+
+- DataView 成员如下：
+
+| 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
+|------|--------|----------|----------|------------|------|------|
+| new  | 构造器 | 1、2或者3  | ```(buffer: ArrayBuffer, byteOffset?: i32, byteLength?: i32)```      |      ```DataView```     |  ```new DataView(buf, 0, buf.byteLength)```    |  构造器    |
+| buffer   | 字段      |  -       |     -    |  ```ArrayBuffer```         |  ```ArrayBuffer.isView```   |   判断一个值是否是 TypedArray 或者 DataView   |
+|  byteLength  |   字段     |    -      |    -      |     i32     | ```buf.byteLength``` | 字节串的长度 |
+| byteOffset | 字段 | - | - | i32 |```buf.byteOffset```|当前偏移量|
+| getFloat32 | 方法 | 1 或者 2 | ```(byteOffset: i32, littleEndian?: bool)``` | f32 |```view.getFloat32(0)```|从二进制字节串读取一个单精度浮点数|
+| getFloat64 | 方法 | 1 或者 2 | ```(byteOffset: i32, littleEndian?: bool)``` | f64 |```view.getFloat64(0)```|从二进制字节串读取一个双精度浮点数|
+|  |  |  |  |  |||
+|  |  |  |  |  |||
+|  |  |  |  |  |||
+
+
 
 
 
