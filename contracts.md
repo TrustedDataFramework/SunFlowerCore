@@ -247,7 +247,7 @@ ArrayBuffer 成员如下：
 | new  | 构造器 | 1   | i32      |      ```ArrayBuffer```     |  ```new ArrayBuffer(1)```    |  构造器    |
 |  isView    | 静态函数       |  1        |     任意    |  bool          |  ```ArrayBuffer.isView```   |   判断一个值是否是 TypedArray 或者 DataView   |
 |    byteLength  |   字段     |    -      |    -      |     i32     | ```buf.byteLength``` | 字节串的长度 |
-| slice | 方法 | 0, 1 或者 2| ```(begin?: i32, end?: i32)`` | ```ArrayBuffer``` | ```buf.slice(0, buf.byteLength)``` |  从字节串中切片，begin 包含，end 不包含|
+| slice | 方法 | 0, 1 或者 2 | ```(begin?: i32, end?: i32)``` | ```ArrayBuffer``` | ```buf.slice(0, buf.byteLength)``` |  从字节串中切片，begin 包含，end 不包含|
 
 ### DataView 
 
@@ -257,22 +257,30 @@ DataView 成员如下：
 
 | 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
 |------|--------|----------|----------|------------|------|------|
-| new  | 构造器 | 1、2或者3  | ```(buffer: ArrayBuffer, byteOffset?: i32, byteLength?: i32)```      |      ```DataView```     |  ```new DataView(buf, 0, buf.byteLength)```    |  构造器    |
+| new  | 构造器 | 1、2或3 | ```(buffer: ArrayBuffer, byteOffset?: i32, byteLength?: i32)```      |      ```DataView```     |  ```new DataView(buf, 0, buf.byteLength)```    |  构造器    |
 | buffer   | 字段      |  -       |     -    |  ```ArrayBuffer```         |  ```ArrayBuffer.isView```   |   判断一个值是否是 TypedArray 或者 DataView   |
 |  byteLength  |   字段     |    -      |    -      |     i32     | ```buf.byteLength``` | 字节串的长度 |
 | byteOffset | 字段 | - | - | i32 |```buf.byteOffset```|当前偏移量|
-| getFloat32 | 方法 | 1 或者 2 | ```(byteOffset: i32, littleEndian?: bool)``` | f32 |```view.getFloat32(0)```|从二进制字节串读取一个单精度浮点数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| getFloat64 | 方法 | 1 或者 2 | ```(byteOffset: i32, littleEndian?: bool)``` | f64 |```view.getFloat64(0)```|从二进制字节串读取一个双精度浮点数|
+| getFloat32 | 方法 | 1 或 2 | ```(byteOffset: i32, littleEndian?: bool)``` | f32 |```view.getFloat32(0)```|从二进制字节串读取一个单精度浮点数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getFloat64 | 方法 | 1 或 2 | ```(byteOffset: i32, littleEndian?: bool)``` | f64 |```view.getFloat64(0)```|从二进制字节串读取一个双精度浮点数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
 | getInt8 | 方法 | 1 | ```byteOffset: i32``` | i8 |```view.getInt8(0)```|从二进制字节串读取一个8bi t有符号整数|
-| getInt16 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | i16 |```view.getInt16(0)```|从二进制字节串读取一个16bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| getInt32 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | i32 |```view.getInt32(0)```|从二进制字节串读取一个32bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| getInt64 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | i64 |```view.getInt64(0)```|从二进制字节串读取一个64bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| getUint8 | 方法 | 1 | byteOffset: i32 | u8 |```view.getUint8(0)```|从二进制字节串读取一个8bit无符号整|
-| getUint16 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | i16 |```view.getUint16(0)```|从二进制字节串读取一个16bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| getUint32 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | u32 |```view.getUint32(0)```|从二进制字节串读取一个32bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| getUint64 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | u64 |```view.getUint64(0)```|从二进制字节串读取一个64bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| getInt16 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | i16 |```view.getInt16(0)```|从二进制字节串读取一个16bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-
+| getInt16 | 方法 | 1或2 | ```(byteOffset: i32, littleEndian?: bool)``` | i16 |```view.getInt16(0)```|从二进制字节串读取一个16bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getInt32 | 方法 | 1或2 | ```(byteOffset: i32, littleEndian?: bool)``` | i32 |```view.getInt32(0)```|从二进制字节串读取一个32bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getInt64 | 方法 | 1或2 | ```(byteOffset: i32, littleEndian?: bool)``` | i64 |```view.getInt64(0)```|从二进制字节串读取一个64bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getUint8 | 方法 | 1 | ```byteOffset: i32``` | u8 |```view.getUint8(0)```|从二进制字节串读取一个8bit无符号整|
+| getUint16 | 方法 | 1或2 | ```(byteOffset: i32, littleEndian?: bool)``` | i16 |```view.getUint16(0)```|从二进制字节串读取一个16bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getUint32 | 方法 | 1或2 | ```(byteOffset: i32, littleEndian?: bool)``` | u32 |```view.getUint32(0)```|从二进制字节串读取一个32bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getUint64 | 方法 | 1或2 | ```(byteOffset: i32, littleEndian?: bool)``` | u64 |```view.getUint64(0)```|从二进制字节串读取一个64bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| setFloat32 | 方法 | 2或3 | ```(byteOffset: i32, value: f32, littleEndian?: bool)``` | void |```view.setFloat32(0,1.0)```|向二进制字符串放入一个单精度浮点数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| setFloat64 | 方法 | 2或3 | ```(byteOffset: i32, value: f64, littleEndian?: bool)``` | void |```view.setFloat64(0,1.0)```|向二进制字符串放入一个双精度浮点数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| setInt8 | 方法 | 2 | ```(byteOffset: i32, value: i8)``` | void |```view.setInt8(0,8)```|向二进制字符串放入一个8bit有符号整数|
+| setInt16 | 方法 | 2 | ```(byteOffset: i32, value: i16,littleEndian?: bool)``` | void |```view.setInt16(0,8)```|向二进制字符串放入一个16bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| setInt32 | 方法 | 2 | ```(byteOffset: i32, value: i32,littleEndian?: bool)``` | void |```view.setInt32(0,8)```|向二进制字符串放入一个32bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| setInt64 | 方法 | 2 | ```(byteOffset: i32, value: i64,littleEndian?: bool)``` | void |```view.setInt64(0,8)```|向二进制字符串放入一64bit有符号整数|
+| setUint8 | 方法 | 2 | ```(byteOffset: i32, value: u8)``` | void |```view.setUint8(0,8)```|向二进制字符串放入一个8bit无符号整数|
+| setUint16 | 方法 | 2 | ```(byteOffset: i32, value: u16,littleEndian?: bool)``` | void |```view.setUint16(0,8)```|向二进制字符串放入一个16bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| setUint32 | 方法 | 2 | ```(byteOffset: i32, value: u32,littleEndian?: bool)``` | void |```view.setUint32(0,8)```|向二进制字符串放入一个32bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| setUint64 | 方法 | 2 | ```(byteOffset: i32, value: u64,littleEndian?: bool)``` | void |```view.setUint64(0,8)```|向二进制字符串放入一个64bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
 
 
 
