@@ -13,7 +13,7 @@ AssemblyScript 是 TypeScript 的一个变种，和 TypeScript 不同，Assembly
 
 ### AssemblyScript 基础类型
 
-1. AssemblyScript 的基本类型和对应的 WebAssembly 类型
+1. AssemblyScript 每个变量的类型是不可变的。AssembyScript 中的类型分为两种，一种是基本类型，另一种是引用类型。AssemblyScript 的所有基本类型列举如下：
 
 | AssemblyScript 类型 | WebAssembly 类型 | 描述              |
 |---------------------|------------------|-------------------|
@@ -27,6 +27,9 @@ AssemblyScript 是 TypeScript 的一个变种，和 TypeScript 不同，Assembly
 | u8                  | i32              | 8 bit 无符号整数  |
 | i16                 | i32              | 16 bit 有符号整数 |
 | bool                | i32              | 布尔型            |
+
+
+除了以上表中的基本类型以外的其他类型都是引用类型。
 
 
 2. 类型转换
@@ -137,6 +140,88 @@ export class Bar {
 indext.ts
 foo.ts
 ```
+
+在 foo.ts 文件中包含了以下内容：
+
+```typescript
+export function add(a: i32, b: i32): i32{
+    return a + b;
+}
+```
+
+
+在 index.ts 中导入 ```add``` 函数：
+
+
+```typescript
+import {add} from './foo.ts'
+
+function addOne(a: i32): i32{
+    return add(a, 1);
+}
+```
+
+### 标准库
+
+
+1. 全局变量
+
+| 变量名   | 类型         | 描述                                   |
+|----------|--------------|----------------------------------------|
+| NaN      | f32 或者 f64 | not a number，表示不是一个有效的浮点数 |
+| Infinity | f32 或者 f64 | 表示无穷大   -Infinity 表示无穷小      |
+
+
+2. 全局函数
+
+| 函数名     | 参数个数 | 参数列表               | 返回值类型 | 描述                                                                |
+|------------|----------|------------------------|------------|---------------------------------------------------------------------|
+| isNaN      | 1        | (f32 或 f64)           | bool       | 判断一个浮点数是否无效                                              |
+| isFinite   | 1        | (f32 或 f64)           | bool       | 判断一个浮点数满足：1. 不是无穷大 2. 不是无穷小 3. 有效             |
+| parseInt   | 1 或者 2 | (string, radisx?: i32) | i64        | 从字符串解析成一个整数，radix等于10则使用 10 进制，默认 radix 是 10 |
+| parseFloat | 1        | (string)               | f64        | 从字符串解析成一个浮点数，使用10进制                                |
+
+3. 数组（Array）
+
+AssemblyScript 中的 ```Array<T>``` 与 JavaScript 中的 Array 非常相似。区别在于除了基本类型以外的数组初始化后，数组中的元素必须显示初始化后才可以访问。例如：
+
+
+- 使用基本类型初始化：
+
+```typescript
+const arr = new Array<u64>(10); // 使用基本类型 u64 创建数组
+const zero = arr[0]; // zero 的值是 0，类型是 u64
+```
+
+- 使用引用类型初始化：
+
+```typescript
+const arr = new Array<string>(10); // 使用基本类型 u64 创建数组
+const zero = arr[0]; // 因为 TDS 合约不允许 null 值，所以这里会报错，因为 arr[0] 没有被初始化
+
+// 正确的做法是进行初始化
+for(let i = 0; i < arr.length; i++){
+    arr[i] = "";
+}
+```
+
+
+- Array 类的函数和方法
+
+
+
+
+
+
+   
+
+
+
+
+
+
+
+
 
 
 
