@@ -2,18 +2,17 @@
 
 [TOC]
 
-## AssemblyScript 教程
 
 
-### AssemblyScript 简介
+## AssemblyScript 简介
 
 
 AssemblyScript 是 TypeScript 的一个变种，和 TypeScript 不同，AssemblyScript 使用严格类型。
 
 
-### AssemblyScript 基础类型
+## AssemblyScript 基础类型
 
-1. AssemblyScript 每个变量的类型是不可变的。AssembyScript 中的类型分为两种，一种是基本类型，另一种是引用类型。AssemblyScript 的所有基本类型列举如下：
+### AssemblyScript 每个变量的类型是不可变的。AssembyScript 中的类型分为两种，一种是基本类型，另一种是引用类型。AssemblyScript 的所有基本类型列举如下：
 
 | AssemblyScript 类型 | WebAssembly 类型 | 描述              |
 |---------------------|------------------|-------------------|
@@ -32,7 +31,7 @@ AssemblyScript 是 TypeScript 的一个变种，和 TypeScript 不同，Assembly
 除了以上表中的基本类型以外的其他类型都是引用类型。
 
 
-2. 类型转换
+### 类型转换
 
 当 AssemblyScript 编译器检查到存在可能不兼容的隐式类型转换时，编译会以异常结果终止。如果需要进行可能不兼容的类型转换，请使用强制类型转换。
 
@@ -43,7 +42,7 @@ const i: u64 = 123456789;
 const j = u64(i);
 ```
 
-3. 类型声明
+### 类型声明
 
 AssemblyScript编译器必须在编译时知道每个表达式的类型。这意味着变量和参数在声明时必须同时声明其类型。如果没有声明类型，编译器将首先假定类型为i32，在数值过大时再考虑 i64，如果是浮点数就是用 f64。如果变量是其他函数的返回值，则变量的类型是函数返回值的类型。此外，所有函数的返回值类型都必须事先声明，以帮助编译器类型推断。
 
@@ -64,12 +63,12 @@ function sayHello(): {
 }
 ```
 
-4. 空值
+### 空值
 
 许多编程语言具有一个特殊的 null 类型表示空值，例如 javascript 和 java 的 null, go 语言和 python 的 nil。事实上 null 类型的引入给程序带来了许多不可预知性，空值检查的遗漏会给智能合约带来安全隐患，因此 TDS 智能合约的编写没有引入 null 类型。
 
 
-5. 类型转换兼容性
+### 类型转换兼容性
 
 在下表中，列出了所有基本类型的转换兼容性，打勾向表示从左右到右可以进行隐式的类型转换。
 
@@ -88,24 +87,24 @@ function sayHello(): {
 | f64     |      |       |         |         |         |     | ✓   |
 
 
-6. 数值比较
+### 数值比较
 
 当使用比较运算符 ```!=``` 和 ```==``` 时，如果两个数值在类型转换时是兼容的，则不需要强制类型转换就可以进行比较。
 
 操作符 ```>```，```<```，```>=```，```<=``` 对无符号整数和有符号整数有不同的比较方式，被比较的两个数值要么都是有符号整数，要么都是无符号整数，且具有转换兼容性。
 
 
-7. 移位操作
+### 移位操作
 
 移位操作符 ```<<```，```>>``` 的结果类型是操作符左端的类型，右端类型会被隐式转换成左端的类型。如果左端类型是有符号整数，执行算术移位，如果左端是无符号整数，则执行逻辑移位。
 
 无符号右移操作符 ```>>>``` 类似，但始终执行逻辑移位。
 
-### 模块化
+## 模块化
 
 一个 AssemblyScript 智能合约项目可能由多个文件组成，文件与文件之间可以存在互相引用的关系，互相使用对方导出的内容。。AssemblyScript 项目编译成 wasm 字节码时，需要指定一个入口文件，只有这个入口文件中被导出的函数才可以在将来被调用到。
 
-1. 函数导出
+### 函数导出
 
 
 ```typescript
@@ -115,7 +114,7 @@ export function add(a: i32, b: i32): i32 {
 ```
 
 
-2. 全局变量导出
+### 全局变量导出
 
 ```typescript
 export const foo = 1
@@ -123,7 +122,7 @@ export var bar = 2
 ```
 
 
-3. 类导出
+### 类导出
 
 ```typescript
 export class Bar {
@@ -132,7 +131,7 @@ export class Bar {
 }
 ```
 
-4. 导入
+### 导入
 
 若建立以下多文件项目，指定 ```index.ts``` 为编译时的入口文件
 
@@ -161,10 +160,10 @@ function addOne(a: i32): i32{
 }
 ```
 
-### 标准库
+## 标准库
 
 
-1. 全局变量
+### 全局变量
 
 | 变量名   | 类型         | 描述                                   |
 |----------|--------------|----------------------------------------|
@@ -172,7 +171,7 @@ function addOne(a: i32): i32{
 | Infinity | f32 或者 f64 | 表示无穷大   -Infinity 表示无穷小      |
 
 
-2. 全局函数
+### 全局函数
 
 | 函数名     | 参数个数 | 参数列表               | 返回值类型 | 描述                                                         |
 | ---------- | -------- | ---------------------- | ---------- | ------------------------------------------------------------ |
@@ -181,19 +180,19 @@ function addOne(a: i32): i32{
 | parseInt   | 1 或者 2 | (string, radisx?: i32) | i64        | 从字符串解析成一个整数，radix等于10则使用 10 进制，默认 radix 是 10 |
 | parseFloat | 1        | (string)               | f64        | 从字符串解析成一个浮点数，使用10进制                         |
 
-3. 数组（Array）
+### 数组（Array）
 
 AssemblyScript 中的 ```Array<T>``` 与 JavaScript 中的 Array 非常相似。区别在于除了基本类型以外的数组初始化后，数组中的元素必须显示初始化后才可以访问。例如：
 
 
-- 使用基本类型初始化：
+1. 使用基本类型初始化：
 
 ```typescript
 const arr = new Array<u64>(10); // 使用基本类型 u64 创建数组
 const zero = arr[0]; // zero 的值是 0，类型是 u64
 ```
 
-- 使用引用类型初始化：
+2. 使用引用类型初始化：
 
 ```typescript
 const arr = new Array<string>(10); // 使用基本类型 u64 创建数组
@@ -206,7 +205,7 @@ for(let i = 0; i < arr.length; i++){
 ```
 
 
-- Array 类常用的成员：
+3. Array 类常用的成员：
 
 | 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
 |------|--------|----------|----------|------------|------|------|
@@ -236,11 +235,11 @@ for(let i = 0; i < arr.length; i++){
 | splice | 方法 | 1 或 2 | ```(start: i32, deleteCount?: i32)``` | ```Array<T>``` | ```arr.splice(1, 2)``` | 从数组中见截断一部分，start 表示开始截断的位置，deleteCount 表示截断掉多少个|
 | unshift | 方法 | 1 | ```value: T``` | i32` | ```arr.unshift(1)``` | 在数组左端添加一个元素|
 
-4. ArrayBuffer
+### ArrayBuffer
 
 ArrayBuffer 用于表示一段二进制字节串
 
-- ArrayBuffer 成员如下：
+ArrayBuffer 成员如下：
 
 
 | 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
@@ -250,11 +249,11 @@ ArrayBuffer 用于表示一段二进制字节串
 |    byteLength  |   字段     |    -      |    -      |     i32     | ```buf.byteLength``` | 字节串的长度 |
 | slice | 方法 | 0, 1 或者 2| ```(begin?: i32, end?: i32)`` | ```ArrayBuffer``` | ```buf.slice(0, buf.byteLength)``` |  从字节串中切片，begin 包含，end 不包含|
 
-5. DataView 
+### DataView 
 
 DataView 提供了对二进制字节串操作的接口
 
-- DataView 成员如下：
+DataView 成员如下：
 
 | 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
 |------|--------|----------|----------|------------|------|------|
@@ -262,11 +261,18 @@ DataView 提供了对二进制字节串操作的接口
 | buffer   | 字段      |  -       |     -    |  ```ArrayBuffer```         |  ```ArrayBuffer.isView```   |   判断一个值是否是 TypedArray 或者 DataView   |
 |  byteLength  |   字段     |    -      |    -      |     i32     | ```buf.byteLength``` | 字节串的长度 |
 | byteOffset | 字段 | - | - | i32 |```buf.byteOffset```|当前偏移量|
-| getFloat32 | 方法 | 1 或者 2 | ```(byteOffset: i32, littleEndian?: bool)``` | f32 |```view.getFloat32(0)```|从二进制字节串读取一个单精度浮点数|
+| getFloat32 | 方法 | 1 或者 2 | ```(byteOffset: i32, littleEndian?: bool)``` | f32 |```view.getFloat32(0)```|从二进制字节串读取一个单精度浮点数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
 | getFloat64 | 方法 | 1 或者 2 | ```(byteOffset: i32, littleEndian?: bool)``` | f64 |```view.getFloat64(0)```|从二进制字节串读取一个双精度浮点数|
-|  |  |  |  |  |||
-|  |  |  |  |  |||
-|  |  |  |  |  |||
+| getInt8 | 方法 | 1 | ```byteOffset: i32``` | i8 |```view.getInt8(0)```|从二进制字节串读取一个8bi t有符号整数|
+| getInt16 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | i16 |```view.getInt16(0)```|从二进制字节串读取一个16bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getInt32 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | i32 |```view.getInt32(0)```|从二进制字节串读取一个32bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getInt64 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | i64 |```view.getInt64(0)```|从二进制字节串读取一个64bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getUint8 | 方法 | 1 | byteOffset: i32 | u8 |```view.getUint8(0)```|从二进制字节串读取一个8bit无符号整|
+| getUint16 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | i16 |```view.getUint16(0)```|从二进制字节串读取一个16bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getUint32 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | u32 |```view.getUint32(0)```|从二进制字节串读取一个32bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getUint64 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | u64 |```view.getUint64(0)```|从二进制字节串读取一个64bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| getInt16 | 方法 | 2 | (byteOffset: i32, littleEndian?: bool) | i16 |```view.getInt16(0)```|从二进制字节串读取一个16bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+
 
 
 
