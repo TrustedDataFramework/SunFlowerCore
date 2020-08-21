@@ -15,17 +15,18 @@ AssemblyScript 是 TypeScript 的一个变种，和 TypeScript 不同，Assembly
 ### AssemblyScript 每个变量的类型是不可变的。AssembyScript 中的类型分为两种，一种是基本类型，另一种是引用类型。AssemblyScript 的所有基本类型列举如下：
 
 | AssemblyScript 类型 | WebAssembly 类型 | 描述              |
-|---------------------|------------------|-------------------|
-| i32                 | i32              | 32 bit 有符号整数 |
-| u32                 | u32              | 32 bit 无符号整数 |
-| i64                 | i64              | 64 bit 有符号整数 |
-| u64                 | u64              | 64 bit 无符号整数 |
-| f32                 | f32              | 单精度浮点数      |
-| f64                 | f64              | 双精度浮点数      |
-| i8                  | i32              | 8 bit 有符号整数  |
-| u8                  | i32              | 8 bit 无符号整数  |
-| i16                 | i32              | 16 bit 有符号整数 |
-| bool                | i32              | 布尔型            |
+| ------------------- | ---------------- | ----------------- |
+| ```i32```           | ```i32```        | 32 bit 有符号整数 |
+| ```u32```           | ```i32```        | 32 bit 无符号整数 |
+| ```i64```           | ```i64```        | 64 bit 有符号整数 |
+| ```u64```           | ```i64```        | 64 bit 无符号整数 |
+| ```f32```           | ```f32```        | 单精度浮点数      |
+| ```f64```           | ```f64```        | 双精度浮点数      |
+| ```i8```            | ```i32```        | 8 bit 有符号整数  |
+| ```u8```            | ```i32```        | 8 bit 无符号整数  |
+| ```i16```           | ```i32```        | 16 bit 有符号整数 |
+| ```u16```          | ```i32```        | 16 bit 无符号整数            |
+| ```bool```          | ```i32```        | 布尔型            |
 
 
 除了以上表中的基本类型以外的其他类型都是引用类型。
@@ -44,7 +45,7 @@ const j = u64(i);
 
 ### 类型声明
 
-AssemblyScript编译器必须在编译时知道每个表达式的类型。这意味着变量和参数在声明时必须同时声明其类型。如果没有声明类型，编译器将首先假定类型为i32，在数值过大时再考虑 i64，如果是浮点数就是用 f64。如果变量是其他函数的返回值，则变量的类型是函数返回值的类型。此外，所有函数的返回值类型都必须事先声明，以帮助编译器类型推断。
+AssemblyScript编译器必须在编译时知道每个表达式的类型。这意味着变量和参数在声明时必须同时声明其类型。如果没有声明类型，编译器将首先假定类型为```i32```，在数值过大时再考虑 ```i64```，如果是浮点数就是用 ```f64```。如果变量是其他函数的返回值，则变量的类型是函数返回值的类型。此外，所有函数的返回值类型都必须事先声明，以帮助编译器类型推断。
 
 合法的函数：
 
@@ -58,14 +59,14 @@ function sayHello(): void{
 
 
 ```typescript
-function sayHello(): {
+function sayHello(): { // 缺少类型声明 sayHello(): void
     log("hello world");
 }
 ```
 
 ### 空值
 
-许多编程语言具有一个特殊的 null 类型表示空值，例如 javascript 和 java 的 null, go 语言和 python 的 nil。事实上 null 类型的引入给程序带来了许多不可预知性，空值检查的遗漏会给智能合约带来安全隐患，因此 TDS 智能合约的编写没有引入 null 类型。
+许多编程语言具有一个特殊的 ```null``` 类型表示空值，例如 javascript 和 java 的 ```null```, go 语言和 python 的 ```nil```。事实上 ```null``` 类型的引入给程序带来了许多不可预知性，空值检查的遗漏会给智能合约带来安全隐患，因此 TDS 智能合约的编写没有引入 ```null``` 类型。
 
 
 ### 类型转换兼容性
@@ -76,15 +77,15 @@ function sayHello(): {
 
 
 
-| ↱       | bool | i8/u8 | i16/u16 | i32/u32 | i64/u64 | f32 | f64 |
-|---------|------|-------|---------|---------|---------|-----|-----|
-| bool    | ✓    | ✓     | ✓       | ✓       | ✓       | ✓   | ✓   |
-| i8/u8   |      | ✓     | ✓       | ✓       | ✓       | ✓   | ✓   |
-| i16/u16 |      |       | ✓       | ✓       | ✓       | ✓   | ✓   |
-| i32/u32 |      |       |         | ✓       | ✓       |     | ✓   |
-| i64/u64 |      |       |         |         | ✓       |     |     |
-| f32     |      |       |         |         |         | ✓   | ✓   |
-| f64     |      |       |         |         |         |     | ✓   |
+| ↱                   | ```bool``` | ```i8```/```u8``` | ```i16```/```u16``` | ```i32```/```u32``` | ```i64```/```u64``` | ```f32``` | ```f64``` |
+| ------------------- | ---------- | ----------------- | ------------------- | ------------------- | ------------------- | --------- | --------- |
+| ```bool```          | ✓          | ✓                 | ✓                   | ✓                   | ✓                   | ✓         | ✓         |
+| ```i8```/```u8```   |            | ✓                 | ✓                   | ✓                   | ✓                   | ✓         | ✓         |
+| ```i16```/```u16``` |            |                   | ✓                   | ✓                   | ✓                   | ✓         | ✓         |
+| ```i32```/```u32``` |            |                   |                     | ✓                   | ✓                   |           | ✓         |
+| ```i64```/```u64``` |            |                   |                     |                     | ✓                   |           |           |
+| ```f32```           |            |                   |                     |                     |                     | ✓         | ✓         |
+| ```f64```           |            |                   |                     |                     |                     |           | ✓         |
 
 
 ### 数值比较
@@ -165,20 +166,20 @@ function addOne(a: i32): i32{
 
 ### 全局变量
 
-| 变量名   | 类型         | 描述                                   |
-|----------|--------------|----------------------------------------|
-| NaN      | f32 或者 f64 | not a number，表示不是一个有效的浮点数 |
-| Infinity | f32 或者 f64 | 表示无穷大   -Infinity 表示无穷小      |
+| 变量名         | 类型                     | 描述                                    |
+| -------------- | ------------------------ | --------------------------------------- |
+| ```NaN```      | ```f32``` 或者 ```f64``` | not a number，表示不是一个有效的浮点数  |
+| ```Infinity``` | ```f32``` 或者 ```f64``` | 表示无穷大   ```-Infinity``` 表示无穷小 |
 
 
 ### 全局函数
 
 | 函数名     | 参数个数 | 参数列表               | 返回值类型 | 描述                                                         |
 | ---------- | -------- | ---------------------- | ---------- | ------------------------------------------------------------ |
-| isNaN      | 1        | f32 或 f64 | bool       | 判断一个浮点数是否无效                                       |
-| isFinite   | 1        | f32 或 f64 | bool       | 判断一个浮点数满足：1. 不是无穷大 2. 不是无穷小 3. 有效      |
-| parseInt   | 1 或者 2 | (string, radisx?: i32) | i64        | 从字符串解析成一个整数，radix等于10则使用 10 进制，默认 radix 是 10 |
-| parseFloat | 1        | (string)               | f64        | 从字符串解析成一个浮点数，使用10进制                         |
+| ```isNaN``` | 1        | ```f32``` 或 ```f64``` | ```bool``` | 判断一个浮点数是否无效                                       |
+| ```isFinite``` | 1        | ```f32``` 或```f64``` | ```bool``` | 判断一个浮点数满足：1. 不是无穷大 2. 不是无穷小 3. 有效      |
+| ```parseInt``` | 1 或 2 | ```(string, radisx?: i32)``` | ```i64```  | 从字符串解析成一个整数，```radix```等于10则使用 10 进制，默认 ```radix``` 是 10 |
+| ```parseFloat``` | 1        | ```(string)```         | ```f64```  | 从字符串解析成一个浮点数，使用10进制                         |
 
 ### 数组（Array）
 
@@ -205,49 +206,49 @@ for(let i = 0; i < arr.length; i++){
 ```
 
 
-3. Array 类常用的成员：
+3. ```Array<T>``` 类常用的成员：
 
 | 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
 |------|--------|----------|----------|------------|------|------|
-| new  | 构造器 | 0或者1   | i32      |      ```Array<T>```     |  ```new Array<i32>(1);```    |  构造器    |
-|  isArray    | 静态函数       |  1        |     任意    |  bool          |  ```Array.isArray(arr)```   |   判断一个变量是否是数组   |
-|    length  |   字段     |    -      |    -      |     i32     | ```arr.length``` | 数组的长度 |
-| concat | 方法 | 1 | ```Array<T>``` | ```Array<T>``` | ```arr0.concat(arr1)``` |  |
-| every | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | bool | ```arr.every(fn)``` | 判断数组的每个元素是否都满足```fn``` |
-| fill | 方法| 1、2或者3 | ```(value: T, start?: i32, end?: i32)``` | 返回自身 | ```arr.fill(0, 0, arr.length)``` | 对数组用```value```进行填充，```start```和```end```分别是填充的起始索引（包含）和结束索引（不包含） |
-| filter | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | ```Array<T>``` | ```arr.filter(fn)``` | 过滤掉数组中不符合```fn```的元素 |
-| findIndex | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | i32 | ```arr.findIndex(fn)``` | 获取到第一个满足```fn```的元素所在的索引或者```-1``` |
-| forEach | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => void``` | ```void``` | ```arr.forEach(fn)``` | 用```fn```遍历数组 |
-| includes | 方法| 1或2 | ```(value: T, fromIndex?: i32)``` | bool | ```arr.includes(1,0)``` | 判断数组是否包含```value``` |
-| indexOf | 方法| 1或2 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | bool | - | 数组的每个元素是否都满足```fn``` |
-| join | 方法| 1 | ```(sep: string)``` | string | ```arr.join(',')``` | 对数组中每个字符串用字符```sep``` 连接|
-| lastIndexOf | 方法| 1或2 | ```(value: T, fromIndex?: i32)``` | i32 | ```arr.lastIndexOf('.')``` | 获取到最后等于```value```的元素所在的索引或者```-1``` |
-| map | 方法| 1 | ```(fn: (value: T, index: i32, array: Array<T>) => U)``` | ```Array<U>``` | ```arr.map(fn)``` | 把数组```arr``` 的元素作为函数 ```fn``` 的参数映射出新数组 |
-| pop | 方法| 0 | - | T | ```arr.pop()``` | 弹出数组的最后一个元素 |
-| push | 方法| 1 | ```(value: T)``` | i32 | ```arr.push(1)``` | 向数组尾部增加一个元素，返回数组长度|
-| reduce | 方法| 1或者2| ```(fn: (acc: U, cur: T, idx: i32, src: Array) => U, initialValue: U)``` | U | ```arr.reduce(fn, 0)``` | 从左端开始对数组进行累加操作，经常和 ```map``` 配合使用|
-| reduceRight | 方法| 1或者2| ```(fn: (acc: U, cur: T, idx: i32, src: Array) => U, initialValue: U)``` | U | ```arr.reduceRight(fn, 0)``` | 从右端开始对数组进行累加操作|
-| reverse | 方法| 0| - | 返回自身 | ```arr.reverse()`` | 把数组倒过来|
-| shift | 方法| 0| - | T | ```arr.shift()`` | 弹出数组的第一个元素|
-| slice | 方法| 1或2| ```(start?: i32, end?: i32)``` | ```Array<T>``` | ```arr.slice(0, arr.length)``` | 从数组的```start```（包含）截取到```end```（不包含）|
-| some | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | bool | ```arr.some(fn)``` | 判断数组中是否存在至少一个元素满足 ```fn```|
-| sort | 方法 | 0 或 1 | ```fn?: (a: T, b: T) => i32``` | 返回自身 | ```arr.sort(fn)``` | 对数组进行排序，可以传入比较函数 ```fn``` |
-| splice | 方法 | 1 或 2 | ```(start: i32, deleteCount?: i32)``` | ```Array<T>``` | ```arr.splice(1, 2)``` | 从数组中见截断一部分，start 表示开始截断的位置，deleteCount 表示截断掉多少个|
-| unshift | 方法 | 1 | ```value: T``` | i32` | ```arr.unshift(1)``` | 在数组左端添加一个元素|
+| ```new``` | 构造器 | 0或1  | ```i32``` |      ```Array<T>```     |  ```new Array<i32>(1)```    |  构造器    |
+|  ```isArray```  | 静态函数       |  1        |     任意    |  ```bool```    |  ```Array.isArray(arr)```   |   判断一个变量是否是数组   |
+|  ```length```  |   字段     |    -      |    -      |     ```i32```     | ```arr.length``` | 数组的长度 |
+| ```concat``` | 方法 | 1 | ```Array<T>``` | ```Array<T>``` | ```arr0.concat(arr1)``` | 把两个数组拼接成一个数组 |
+| ```every``` | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | ```bool``` | ```arr.every(fn)``` | 判断数组的每个元素是否都满足```fn``` |
+| ```fill``` | 方法| 1、2或3 | ```(value: T, start?: i32, end?: i32)``` | 返回自身 | ```arr.fill(0, 0, arr.length)``` | 对数组用```value```进行填充，```start```和```end```分别是填充的起始索引（包含）和结束索引（不包含） |
+| ```filter``` | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | ```Array<T>``` | ```arr.filter(fn)``` | 过滤掉数组中不符合```fn```的元素 |
+| ```findIndex``` | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | ```i32``` | ```arr.findIndex(fn)``` | 获取到第一个满足```fn```的元素所在的索引或者```-1``` |
+| ```forEach``` | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => void``` | ```void``` | ```arr.forEach(fn)``` | 用```fn```遍历数组 |
+| ```includes``` | 方法| 1或2 | ```(value: T, fromIndex?: i32)``` | ```bool``` | ```arr.includes(1,0)``` | 判断数组是否包含```value``` |
+| ```indexOf``` | 方法| 1或2 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | ```bool``` | - | 数组的每个元素是否都满足```fn``` |
+| ```join``` | 方法| 1 | ```(sep: string)``` | ```string``` | ```arr.join(',')``` | 对数组中每个字符串用字符```sep``` 连接|
+| ```lastIndexOf``` | 方法| 1或2 | ```(value: T, fromIndex?: i32)``` | ```i32``` | ```arr.lastIndexOf('.')``` | 获取到最后等于```value```的元素所在的索引或者```-1``` |
+| ```map``` | 方法| 1 | ```(fn: (value: T, index: i32, array: Array<T>) => U)``` | ```Array<U>``` | ```arr.map(fn)``` | 把数组```arr``` 的元素作为函数 ```fn``` 的参数映射出新数组 |
+| ```pop``` | 方法| 0 | - | ```T``` | ```arr.pop()``` | 弹出数组的最后一个元素 |
+| ```push``` | 方法| 1 | ```(value: T)``` | ```i32``` | ```arr.push(1)``` | 向数组尾部增加一个元素，返回数组长度|
+| ```reduce``` | 方法| 1或者2| ```(fn: (acc: U, cur: T, idx: i32, src: Array) => U, initialValue: U)``` | ```U``` | ```arr.reduce(fn, 0)``` | 从左端开始对数组进行累加操作，经常和 ```map``` 配合使用|
+| ```reduceRight``` | 方法| 1或者2| ```(fn: (acc: U, cur: T, idx: i32, src: Array) => U, initialValue: U)``` | ```U``` | ```arr.reduceRight(fn, 0)``` | 从右端开始对数组进行累加操作|
+| ```reverse``` | 方法| 0| - | 返回自身 | ``arr.reverse()`` | 把数组倒过来|
+| ```shift``` | 方法| 0| - | ```T``` | ```arr.shift()``` | 弹出数组的第一个元素|
+| ```slice``` | 方法| 0、1或2 | ```(start?: i32, end?: i32)``` | ```Array<T>``` | ```arr.slice(0, arr.length)``` | 从数组的```start```（包含）截取到```end```（不包含）|
+| ```some``` | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | ```bool``` | ```arr.some(fn)``` | 判断数组中是否存在至少一个元素满足 ```fn```|
+| ```sort``` | 方法 | 0 或 1 | ```fn?: (a: T, b: T) => i32``` | 返回自身 | ```arr.sort(fn)``` | 对数组进行排序，可以传入比较函数 ```fn``` |
+| ```splice``` | 方法 | 1 或 2 | ```(start: i32, deleteCount?: i32)``` | ```Array<T>``` | ```arr.splice(1, 2)``` | 从数组中见截断一部分，```start``` 表示开始截断的位置，```deleteCount``` 表示截断掉多少个 |
+| ```unshift``` | 方法 | 1 | ```(value: T)``` | ```i32``` | ```arr.unshift(el)``` | 在数组左端添加一个元素|
 
 ### ArrayBuffer
 
-ArrayBuffer 用于表示一段二进制字节串
+ArrayBuffer 用于表示一段二进制字节串，对二进制字节串的操作通常使用 DataView 接口
 
 ArrayBuffer 成员如下：
 
 
 | 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
 |------|--------|----------|----------|------------|------|------|
-| new  | 构造器 | 1   | i32      |      ```ArrayBuffer```     |  ```new ArrayBuffer(1)```    |  构造器    |
-|  isView    | 静态函数       |  1        |     任意    |  bool          |  ```ArrayBuffer.isView```   |   判断一个值是否是 TypedArray 或者 DataView   |
-|    byteLength  |   字段     |    -      |    -      |     i32     | ```buf.byteLength``` | 字节串的长度 |
-| slice | 方法 | 0, 1 或者 2 | ```(begin?: i32, end?: i32)``` | ```ArrayBuffer``` | ```buf.slice(0, buf.byteLength)``` |  从字节串中切片，begin 包含，end 不包含|
+| ```new``` | 构造器 | 1   | ```i32``` |      ```ArrayBuffer```     |  ```new ArrayBuffer(1)```    |  构造器    |
+|  ```isView```  | 静态函数       |  1        |     任意    |  ```bool```    |  ```ArrayBuffer.isView```   |   判断一个值是否是 TypedArray 或者 DataView   |
+|  ```byteLength```  |   字段     |    -      |    -      |     ```i32```     | ```buf.byteLength``` | 字节串的长度 |
+| ```slice``` | 方法 | 0、1 或2 | ```(begin?: i32, end?: i32)``` | ```ArrayBuffer``` | ```buf.slice(0, buf.byteLength)``` | 对字节串作切片操作，```begin``` 包含，```end``` 不包含 |
 
 ### DataView 
 
@@ -257,10 +258,10 @@ DataView 成员如下：
 
 | 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
 |------|--------|----------|----------|------------|------|------|
-| new  | 构造器 | 1、2或3 | ```(buffer: ArrayBuffer, byteOffset?: i32, byteLength?: i32)```      |      ```DataView```     |  ```new DataView(buf, 0, buf.byteLength)```    |  构造器    |
-| buffer   | 字段      |  -       |     -    |  ```ArrayBuffer```         |  ```ArrayBuffer.isView```   |   判断一个值是否是 TypedArray 或者 DataView   |
-|  byteLength  |   字段     |    -      |    -      |     i32     | ```buf.byteLength``` | 字节串的长度 |
-| byteOffset | 字段 | - | - | i32 |```buf.byteOffset```|当前偏移量|
+| ```new``` | 构造器 | 1、2或3 | ```(buffer: ArrayBuffer, byteOffset?: i32, byteLength?: i32)```      |      ```DataView```     |  ```new DataView(buf, 0, buf.byteLength)```    |  构造器    |
+| ```buffer``` | 字段      |  -       |     -    |  ```ArrayBuffer```         |  ```view.buffer```  |   二进制字节串   |
+|  ```byteLength```  |   字段     |    -      |    -      |     ```i32```     | ```buf.byteLength``` | 字节串的长度 |
+| ```byteOffset``` | 字段 | - | - | ```i32``` |```buf.byteOffset```|当前偏移量|
 | getFloat32 | 方法 | 1 或 2 | ```(byteOffset: i32, littleEndian?: bool)``` | f32 |```view.getFloat32(0)```|从二进制字节串读取一个单精度浮点数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
 | getFloat64 | 方法 | 1 或 2 | ```(byteOffset: i32, littleEndian?: bool)``` | f64 |```view.getFloat64(0)```|从二进制字节串读取一个双精度浮点数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
 | getInt8 | 方法 | 1 | ```byteOffset: i32``` | i8 |```view.getInt8(0)```|从二进制字节串读取一个8bi t有符号整数|
@@ -270,17 +271,42 @@ DataView 成员如下：
 | getUint8 | 方法 | 1 | ```byteOffset: i32``` | u8 |```view.getUint8(0)```|从二进制字节串读取一个8bit无符号整|
 | getUint16 | 方法 | 1或2 | ```(byteOffset: i32, littleEndian?: bool)``` | i16 |```view.getUint16(0)```|从二进制字节串读取一个16bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
 | getUint32 | 方法 | 1或2 | ```(byteOffset: i32, littleEndian?: bool)``` | u32 |```view.getUint32(0)```|从二进制字节串读取一个32bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| getUint64 | 方法 | 1或2 | ```(byteOffset: i32, littleEndian?: bool)``` | u64 |```view.getUint64(0)```|从二进制字节串读取一个64bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| setFloat32 | 方法 | 2或3 | ```(byteOffset: i32, value: f32, littleEndian?: bool)``` | void |```view.setFloat32(0,1.0)```|向二进制字符串放入一个单精度浮点数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| setFloat64 | 方法 | 2或3 | ```(byteOffset: i32, value: f64, littleEndian?: bool)``` | void |```view.setFloat64(0,1.0)```|向二进制字符串放入一个双精度浮点数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| setInt8 | 方法 | 2 | ```(byteOffset: i32, value: i8)``` | void |```view.setInt8(0,8)```|向二进制字符串放入一个8bit有符号整数|
-| setInt16 | 方法 | 2 | ```(byteOffset: i32, value: i16,littleEndian?: bool)``` | void |```view.setInt16(0,8)```|向二进制字符串放入一个16bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| setInt32 | 方法 | 2 | ```(byteOffset: i32, value: i32,littleEndian?: bool)``` | void |```view.setInt32(0,8)```|向二进制字符串放入一个32bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| setInt64 | 方法 | 2 | ```(byteOffset: i32, value: i64,littleEndian?: bool)``` | void |```view.setInt64(0,8)```|向二进制字符串放入一64bit有符号整数|
-| setUint8 | 方法 | 2 | ```(byteOffset: i32, value: u8)``` | void |```view.setUint8(0,8)```|向二进制字符串放入一个8bit无符号整数|
-| setUint16 | 方法 | 2 | ```(byteOffset: i32, value: u16,littleEndian?: bool)``` | void |```view.setUint16(0,8)```|向二进制字符串放入一个16bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| setUint32 | 方法 | 2 | ```(byteOffset: i32, value: u32,littleEndian?: bool)``` | void |```view.setUint32(0,8)```|向二进制字符串放入一个32bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
-| setUint64 | 方法 | 2 | ```(byteOffset: i32, value: u64,littleEndian?: bool)``` | void |```view.setUint64(0,8)```|向二进制字符串放入一个64bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为true使用小端编码|
+| ```getUint64``` | 方法 | 1或2 | ```(byteOffset: i32, littleEndian?: bool)``` | ```u64``` |```view.getUint64(0)```|从二进制字节串读取一个64bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为```true```使用小端编码|
+| ```setFloat32``` | 方法 | 2或3 | ```(byteOffset: i32, value: f32, littleEndian?: bool)``` | ```void``` |```view.setFloat32(0,1.0)```|向二进制字符串放入一个单精度浮点数，默认使用大端编码，也可以指定```littelEndian```为```true```使用小端编码|
+| ```setFloat64``` | 方法 | 2或3 | ```(byteOffset: i32, value: f64, littleEndian?: bool)``` | ```void``` |```view.setFloat64(0,1.0)```|向二进制字符串放入一个双精度浮点数，默认使用大端编码，也可以指定```littelEndian```为```true```使用小端编码|
+| ```setInt8``` | 方法 | 2 | ```(byteOffset: i32, value: i8)``` | ```void``` |```view.setInt8(0,8)```|向二进制字符串放入一个8bit有符号整数|
+| ```setInt16``` | 方法 | 2 | ```(byteOffset: i32, value: i16,littleEndian?: bool)``` | ```void``` |```view.setInt16(0,8)```|向二进制字符串放入一个16bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为```true```使用小端编码|
+| ```setInt32``` | 方法 | 2 | ```(byteOffset: i32, value: i32,littleEndian?: bool)``` | ```void``` |```view.setInt32(0,8)```|向二进制字符串放入一个32bit有符号整数，默认使用大端编码，也可以指定```littelEndian```为```true```使用小端编码|
+| ```setInt64``` | 方法 | 2 | ```(byteOffset: i32, value: i64,littleEndian?: bool)``` | ```void``` |```view.setInt64(0,8)```|向二进制字符串放入一64bit有符号整数|
+| ```setUint8``` | 方法 | 2 | ```(byteOffset: i32, value: u8)``` | ```void``` |```view.setUint8(0,8)```|向二进制字符串放入一个8bit无符号整数|
+| ```setUint16``` | 方法 | 2 | ```(byteOffset: i32, value: u16,littleEndian?: bool)``` | ```void``` |```view.setUint16(0,8)```|向二进制字符串放入一个16bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为```true```使用小端编码|
+| ```setUint32``` | 方法 | 2 | ```(byteOffset: i32, value: u32,littleEndian?: bool)``` | ```void``` |```view.setUint32(0,8)```|向二进制字符串放入一个32bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为```true```使用小端编码|
+| ```setUint64``` | 方法 | 2 | ```(byteOffset: i32, value: u64,littleEndian?: bool)``` | ```void``` |```view.setUint64(0,8)```|向二进制字符串放入一个64bit无符号整数，默认使用大端编码，也可以指定```littelEndian```为```true```使用小端编码|
+
+### Map<K,V>
+
+1. Map<K,V> 表示通用键到通用值的映射。因为 TDS 智能合约不支持 ```null``` 类型，所以查询不存在的键的会导致错误。
+
+```typescript
+const map = new Map<i32,string>();
+
+const str = map.get(1); // 这里会报错，因为键 1 没有对应的值
+
+const str1 = map.has(1) ? map.get(1) : ""; // 通过检查值是否存在规避异常
+```
+
+2. Map<K,V> 的成员如下：
+
+
+| 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
+|------|--------|----------|----------|------------|------|------|
+| ```new``` | 构造器 | 0   | -     |      ```Map<K, V>```     |  ```new Map<u32, string>();```    |  构造器    |
+|  ```size```  | 字段       |  -        |    -    |  ```i32```    |  -   |   Map 中键值对的数量   |
+|  ```clear```  |   方法    |    0      |    -      |     ```void```     | ```map.clear();``` | 清空一个 map |
+| ```delete``` | 方法 | 1 | ```(key: K)``` | ```bool``` | ```map.delete(1);``` |  从 map 中删除一个键值对，如果要删除的 key 确实存在，返回 ```true```|
+| ```get``` | 方法| 1 | ```(key: K)``` | ```V``` | ```map.get(1);``` | 从 map 中读取 ```key``` 对应的值，如果不存在则抛出异常 |
+| ```keys``` | 方法| 0 | - | ```Array<K>``` | ```map.keys()``` | map包含的所有键 |
+| ```values``` | 方法| 0 | -                                                            | ```Array<V>``` | ```map.values()``` | map包含的所有哦值 |
 
 
 
