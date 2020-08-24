@@ -236,6 +236,42 @@ for(let i = 0; i < arr.length; i++){
 | ```splice``` | 方法 | 1 或 2 | ```(start: i32, deleteCount?: i32)``` | ```Array<T>``` | ```arr.splice(1, 2)``` | 从数组中见截断一部分，```start``` 表示开始截断的位置，```deleteCount``` 表示截断掉多少个 |
 | ```unshift``` | 方法 | 1 | ```(value: T)``` | ```i32``` | ```arr.unshift(el)``` | 在数组左端添加一个元素|
 
+
+### string
+
+string 内部是固定长度的UTF-16编码的字节串。AssemblyScript 中 string 的工作原理与JavaScript 中的 string 非常相似。
+
+1. ```string``` 类常用的成员：
+
+| 名称 | 分类   | 参数个数 | 参数类型 | 返回值类型 | 示例 | 描述 |
+|------|--------|----------|----------|------------|------|------|
+| ```charAt``` | 方法 | 1  | ```i32``` |      ```(pos: i32)```     |  ```str.charAt(0)```  |  根据索引查找第 ```pos``` 个 utf16 单元   |
+|  ```charCodeAt```  | 方法       |  1        |     任意    |  ```i32```  |  ```str.charCodeAt(0)```  |   根据索引查找第 ```pos``` 个 utf16 单元   |
+|  ```length```  |   字段     |    -      |    -      |     ```i32```     | ```str.length``` | 字符串的长度 |
+| ```concat``` | 方法 | 1 | ```string``` | ```string``` | ```str0.concat(str1)``` | 拼接字符串，也可以用加号拼接 |
+| ```endsWith``` | 方法| 1或2 | ```(search: string, end?: i32)``` | ```bool``` | ```str.endsWith('suffix')``` | 判断字符串是否以```search```结尾，可以用```end```指定搜索的停止位置 |
+| ```includes``` | 方法| 1或2 | ```(search: string, start?: i32)``` | ```bool``` | ```str.includes('some')``` | 判断字符串是否包含```search```,可以用```start```指定搜索的起始位置 |
+| ```indexOf``` | 方法| 1或2 | ```(search: string, start?: i32)``` | ```i32``` | ```arr.indexOf('s')``` | 从左向右搜索```search```所在的索引或者```-1``` |
+| ```lastIndexOf``` | 方法| 1或2 | ```(search: string, start?: i32)``` | ```i32``` | ```arr.lastIndexOf('s')``` | 从右向左搜索```search```所在的位置或者```-1``` |
+| ```padStart``` | 方法| 2 | ```(length: i32, pad:string)``` | ```string``` | ```str.padStart(2, '0')``` | 在字符串左端用```pad```补齐，使字符串长度等于```length``` |
+| ```padEnd``` | 方法| 2 | ```(length: i32, pad:string)```                              | ```string``` | ```str.padEnd(2,'0')``` | 在字符串右端用```pad```补齐。使字符串长度等于```length``` |
+| ```repeat``` | 方法| 0或1 | ```(count?:i32)``` | ```string``` | ```str.repeat(2)``` | 得到字符串重复```count```次拼接的结果 |
+| ```replace``` | 方法| 2 | ```(search: string, replacement: string)``` | ```string``` | ```str.replace('a','b')``` | 把字符串中的第一个找到的```search```替换成```replacement``` |
+| ```replaceAll``` | 方法| 2 | ```(search: string, replacement: string)```                  | ```string``` | ```str.replaceAll('a','b')``` | 把字符串中所有的```search```替换成```replacement``` |
+| ```slice``` | 方法| 1或2 | ```(start: i32, end?: i32)``` | ```string``` | ```str.slice(1)``` | 字符串切片，```start```起始位（包含），```end```表示结束位（不包含） |
+| ```split``` | 方法| 0、1或2 | ```(sep?: string, limit?: i32)``` | ```Array<string>``` | ```str.split(',')``` | 把字符串用分割符```sep```分割，```limit```用于指定最多分割的数量 |
+| ```startsWith``` | 方法| 1 | ```(search: string, start?: i32)``` | ```i32``` | ```str.startsWith()``` | 判断字符串是否以```search```开头，可以用```start```指定搜索的起始位置 |
+| ```reduce``` | 方法| 1或者2| ```(fn: (acc: U, cur: T, idx: i32, src: Array) => U, initialValue: U)``` | ```U``` | ```arr.reduce(fn, 0)``` | 从左端开始对数组进行累加操作，经常和 ```map``` 配合使用|
+| ```reduceRight``` | 方法| 1或者2| ```(fn: (acc: U, cur: T, idx: i32, src: Array) => U, initialValue: U)``` | ```U``` | ```arr.reduceRight(fn, 0)``` | 从右端开始对数组进行累加操作|
+| ```reverse``` | 方法| 0| - | 返回自身 | ``arr.reverse()`` | 把数组倒过来|
+| ```shift``` | 方法| 0| - | ```T``` | ```arr.shift()``` | 弹出数组的第一个元素|
+| ```slice``` | 方法| 0、1或2 | ```(start?: i32, end?: i32)``` | ```Array<T>``` | ```arr.slice(0, arr.length)``` | 从数组的```start```（包含）截取到```end```（不包含）|
+| ```some``` | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | ```bool``` | ```arr.some(fn)``` | 判断数组中是否存在至少一个元素满足 ```fn```|
+| ```sort``` | 方法 | 0 或 1 | ```fn?: (a: T, b: T) => i32``` | 返回自身 | ```arr.sort(fn)``` | 对数组进行排序，可以传入比较函数 ```fn``` |
+| ```splice``` | 方法 | 1 或 2 | ```(start: i32, deleteCount?: i32)``` | ```Array<T>``` | ```arr.splice(1, 2)``` | 从数组中见截断一部分，```start``` 表示开始截断的位置，```deleteCount``` 表示截断掉多少个 |
+| ```unshift``` | 方法 | 1 | ```(value: T)``` | ```i32``` | ```arr.unshift(el)``` | 在数组左端添加一个元素|
+
+
 ### ArrayBuffer
 
 ArrayBuffer 用于表示一段二进制字节串，对二进制字节串的操作通常使用 DataView 接口
