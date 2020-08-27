@@ -227,7 +227,7 @@ public class EntryController {
                 String publicKey = node.get("publicKey").asText();
                 HexBytes pk = HexBytes.fromHex(publicKey);
                 HexBytes address = Address.fromPublicKey(pk);
-                sunflowerRepository.traverse((h, t) -> {
+                sunflowerRepository.traverseTransactions((h, t) -> {
                     if (t.getFrom().equals(pk) || t.getTo().equals(address)) {
                         li.add(t);
                     }

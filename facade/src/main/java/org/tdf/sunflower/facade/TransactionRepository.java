@@ -41,7 +41,7 @@ public interface TransactionRepository {
 
     long getConfirms(byte[] transactionHash);
 
-    default void traverse(BiFunction<byte[], Transaction, Boolean> traverser){
+    default void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser){
 
     }
 }

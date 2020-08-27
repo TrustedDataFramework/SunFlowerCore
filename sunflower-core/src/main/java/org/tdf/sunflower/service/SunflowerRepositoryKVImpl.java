@@ -394,7 +394,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     }
 
     @Override
-    public void traverse(BiFunction<byte[], Transaction, Boolean> traverser) {
+    public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
         transactionsStore.traverse(traverser);
     }
 }
