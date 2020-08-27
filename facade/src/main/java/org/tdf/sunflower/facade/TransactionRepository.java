@@ -3,8 +3,10 @@ package org.tdf.sunflower.facade;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 public interface TransactionRepository {
     boolean containsTransaction(byte[] hash);
@@ -38,4 +40,8 @@ public interface TransactionRepository {
     };
 
     long getConfirms(byte[] transactionHash);
+
+    default void traverse(BiFunction<byte[], Transaction, Boolean> traverser){
+
+    }
 }

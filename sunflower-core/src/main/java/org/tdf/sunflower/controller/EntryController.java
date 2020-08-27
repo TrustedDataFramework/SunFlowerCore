@@ -218,6 +218,27 @@ public class EntryController {
         return HexBytes.fromBytes("NOT_VRF_CONTRACT_ADDRESS".getBytes());
     }
 
+    @PostMapping(value = "/operations", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Object operations(@RequestBody JsonNode node) {
+        String m = node.get("method").asText();
+        switch (m) {
+            case "export": {
+                List<Transaction> li = new ArrayList<>();
+                String publicKey = node.get("publicKey").asText();
+                HexBytes pk = HexBytes.fromHex(publicKey);
+                HexBytes address = Address.fromPublicKey(pk);
+                sunflowerRepository.traverse((h, t) -> {
+                    if (t.getFrom().equals(pk) || t.getTo().equals(address)) {
+                        li.add(t);
+                    }
+                    return true;
+                });
+                return li;
+            }
+        }
+        throw new RuntimeException("invalid payload " + node.toString());
+    }
+
     @GetMapping(value = "/stat", produces = MediaType.APPLICATION_JSON_VALUE)
     public Stat stat() {
         Stat.StatBuilder builder = Stat.builder();
@@ -313,21 +334,21 @@ public class EntryController {
         if (m.getCreatedAt() == timestamp)
             return Optional.of(m);
         if (m.getCreatedAt() < timestamp) {
-            if(m.getHeight() == high)
+            if (m.getHeight() == high)
                 return Optional.empty();
 
             Header m1 = repository.getCanonicalHeader(m.getHeight() + 1).get();
-            if(m1.getCreatedAt() >= timestamp)
+            if (m1.getCreatedAt() >= timestamp)
                 return Optional.of(m1);
             return binarySearch(timestamp, Math.min(m.getHeight() + 1, high), high);
         }
-        if(m.getHeight() == low){
+        if (m.getHeight() == low) {
             return Optional.of(m);
         }
         Header m1 = repository.getCanonicalHeader(m.getHeight() - 1).get();
-        if(m1.getCreatedAt() < timestamp)
+        if (m1.getCreatedAt() < timestamp)
             return Optional.of(m);
-        if(m1.getCreatedAt() == timestamp)
+        if (m1.getCreatedAt() == timestamp)
             return Optional.of(m1);
         return binarySearch(timestamp, low, m.getHeight() - 1);
     }

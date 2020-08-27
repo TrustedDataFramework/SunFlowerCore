@@ -261,15 +261,6 @@ string 内部是固定长度的UTF-16编码的字节串。AssemblyScript 中 str
 | ```slice``` | 方法| 1或2 | ```(start: i32, end?: i32)``` | ```string``` | ```str.slice(1)``` | 字符串切片，```start```起始位（包含），```end```表示结束位（不包含） |
 | ```split``` | 方法| 0、1或2 | ```(sep?: string, limit?: i32)``` | ```Array<string>``` | ```str.split(',')``` | 把字符串用分割符```sep```分割，```limit```用于指定最多分割的数量 |
 | ```startsWith``` | 方法| 1 | ```(search: string, start?: i32)``` | ```i32``` | ```str.startsWith()``` | 判断字符串是否以```search```开头，可以用```start```指定搜索的起始位置 |
-| ```reduce``` | 方法| 1或者2| ```(fn: (acc: U, cur: T, idx: i32, src: Array) => U, initialValue: U)``` | ```U``` | ```arr.reduce(fn, 0)``` | 从左端开始对数组进行累加操作，经常和 ```map``` 配合使用|
-| ```reduceRight``` | 方法| 1或者2| ```(fn: (acc: U, cur: T, idx: i32, src: Array) => U, initialValue: U)``` | ```U``` | ```arr.reduceRight(fn, 0)``` | 从右端开始对数组进行累加操作|
-| ```reverse``` | 方法| 0| - | 返回自身 | ``arr.reverse()`` | 把数组倒过来|
-| ```shift``` | 方法| 0| - | ```T``` | ```arr.shift()``` | 弹出数组的第一个元素|
-| ```slice``` | 方法| 0、1或2 | ```(start?: i32, end?: i32)``` | ```Array<T>``` | ```arr.slice(0, arr.length)``` | 从数组的```start```（包含）截取到```end```（不包含）|
-| ```some``` | 方法| 1 | ```fn: (value: T, index: i32, array: Array<T>) => bool``` | ```bool``` | ```arr.some(fn)``` | 判断数组中是否存在至少一个元素满足 ```fn```|
-| ```sort``` | 方法 | 0 或 1 | ```fn?: (a: T, b: T) => i32``` | 返回自身 | ```arr.sort(fn)``` | 对数组进行排序，可以传入比较函数 ```fn``` |
-| ```splice``` | 方法 | 1 或 2 | ```(start: i32, deleteCount?: i32)``` | ```Array<T>``` | ```arr.splice(1, 2)``` | 从数组中见截断一部分，```start``` 表示开始截断的位置，```deleteCount``` 表示截断掉多少个 |
-| ```unshift``` | 方法 | 1 | ```(value: T)``` | ```i32``` | ```arr.unshift(el)``` | 在数组左端添加一个元素|
 
 
 ### ArrayBuffer
@@ -371,6 +362,703 @@ const str1 = map.has(1) ? map.get(1) : ""; // 通过检查值是否存在规避�
 | ```floor``` | 静态方法 | 1 | ```(x: T)``` | ```T``` | ```Math.floor(2.1)``` | 向下取整 |
 | ```round``` | 静态方法 | 1 | ```(x: T)``` | ```T``` | ```Math.round(2.1)``` | 4舍5入取整 |
 
+## 智能合约开发
+
+###  下载智能合约编写模版
+
+``` sh
+git clone https://github.com/TrustedDataFramework/assembly-script-template
+cd assembly-script-template
+npm install
+```
+
+在 ```package.json``` 中有两个重要的依赖项：
+
+``` json
+{
+  "@salaku/js-sdk": "^0.2.10",
+  "@salaku/sm-crypto": "^0.1.8"
+}
+```
+
+其中 [```@salaku/sm-crypto```](https://github.com/TrustedDataFramework/sm-crypto) 包含了国密 sm2、sm3 和 sm4 的 javascript 实现，我们需要它来作哈希值计算和事务的签名等，[` ` `@salaku/js-sdk` ``](https://github.com/TrustedDataFramework/js-sdk) 封装了事务构造和rpc调用的方法，可以简化智能合约的开发。
+
+### 编译和部署合约
+
+1. 新建 local 目录
+
+``` sh
+mkdir local # local 文件夹在 git 中被忽略了
+```
+
+2. 编写合约源代码
+
+然后新建一个 hello-world.ts 文件，复制以下内容到 hello-world.ts 中
+
+``` sh
+touch local/hello-world.ts
+```
+
+``` typescript
+import {log} from "../lib";
+
+// every contract should contains a function named 'init'
+// which will be called when contract deployed
+export function init(): void{
+  log('hello world');
+}
+
+export function invoke(): void{
+    log("hello world");
+}
+```
+
+3. 编写配置文件 
+
+再新建 config.json 文件，复制以下内容到 config.json
+
+``` sh
+touch local/config.json
+```
+
+``` json
+{
+  "version": "1634693120",
+  "host": "192.168.1.171",
+  "port": "7010",
+  "source": "local/hello-world.ts",
+  "private-key": "**",
+  "asc-path": "node_modules/.bin/asc",
+  "gas-price": 0
+}
+```
+
+  + 各个字段说明如下：
+
+    - version 表示事务的版本
+    - host 表示合约部署的节点的主机
+    - port 表示节点的 rpc 端口号
+    - source 表示合约的源代码文件
+    - private-key 需要填写私钥，用于对事务作签名
+    - asc-path 是编译器的路径，对于 linux 和 mac 一般是 ```node_modules/.bin/asc```，对于 windows 一般是 ```node_modules/.bin/asc.cmd```
+    - gas-price 表示手续费的单价，对于私链或者联盟链一般填0即可
+
+4. 读取配置文件
+
+利用 nodejs 提供的 require 函数可以轻松地读取 json 文件，因为我们新建的文件 ```config.json``` 位于 local 目录下，所以我们需要通过环境变量的方式将配置文件的路径传递过去
+
+```js
+const path = require('path')
+
+function getConfigPath() {
+  // 如果环境变量CONFIG=没有值，则选择当前目录下的 config.json 文件
+    if (!process.env['CONFIG'])
+        return path.join(process.cwd(), 'config.json')
+      
+    const c = process.env['CONFIG']
+    // 判断环境变量的CONFIG=的值是否是绝对路径，如果是绝对路径直接 return 
+    if (path.isAbsolute(c))
+        return c
+    // 如果是相对路径就把工作目录和这个相对路径拼接得到绝对路径    
+    return path.join(process.cwd(), c)
+}
+
+// 读取配置
+// 现在我们可以通过环境变量 CONFIG 传递配置文件的路径
+const conf = require(getConfigPath());
+```
+
+5. 编译 
+
+可以使用 ```@salaku/js-sdk``` 提供的方法编译合约：
+
+``` js
+const tool = require('@salaku/js-sdk')
+// getConfigPath 的代码参考 5.配置
+const conf = require(getConfigPath());
+
+async function main() {
+    // 编译合约源代码得到wasm二进制字节码，注意 wasm 的类型是 buffer
+    const wasm = await tool.compileContract(conf['asc-path'], conf.source)
+}
+```
+
+6. 构造事务
+
+``` js
+// 事务构造工具
+const builder = new tool.TransactionBuilder(conf.version, conf['private-key'], conf['gas-price'] || 0)
+```
+
+有了事务构造工具和wasm字节码，就可以构造合约部署的事务了
+
+``` js
+const tx = builder.buildDeploy(wasm, 0)
+```
+
+7. 创建 rpc 工具，签发事务
+
+``` js
+const rpc = new tool.RPC(conf.host, conf.port)
+```
+
+有了 rpc 工具后，可以获取实时的 nonce，新的事务需要填充 nonce 后再作签名
+
+``` js
+const pk = tool.privateKey2PublicKey(conf['private-key']) // 把私钥转公钥
+tx.nonce = (await rpc.getNonce(pk)) + 1 // 用公钥获取 nonce
+builder.sign(tx) // 对事务作签名
+const resp = await rpc.sendTransaction(tx) // 发送事务得到节点的返回值
+```
+
+8. 完整代码(deploy.js):
+
+``` js
+/**
+ * 智能合约部署示例
+ */
+
+function getConfigPath() {
+    if (!process.env['CONFIG'])
+        return path.join(process.cwd(), 'config.json')
+    const c = process.env['CONFIG']
+    if (path.isAbsolute(c))
+        return c
+    return path.join(process.cwd(), c)
+}
+
+const tool = require('@salaku/js-sdk')
+const path = require('path')
+
+// 读取配置
+const conf = require(getConfigPath());
+const sk = conf['private-key']
+const pk = tool.privateKey2PublicKey(sk)
+
+// 事务构造工具
+const builder = new tool.TransactionBuilder(conf.version, sk, conf['gas-price'] || 0)
+// rpc 工具
+const rpc = new tool.RPC(conf.host, conf.port)
+
+async function main() {
+    // 编译合约得到二进制内容
+    const o = await tool.compileContract(conf['asc-path'], conf.source)
+    // 构造合约部署的事务
+    const tx = builder.buildDeploy(o, 0)
+
+    if (!tx.nonce) {
+        tx.nonce = (await rpc.getNonce(pk)) + 1
+    }
+
+    tool.sign(tx, sk)
+    console.log( `contract address = ${tool.getContractAddress(pk, tx.nonce)}` )
+    const resp = await tool.sendTransaction(conf.host, conf.port, tx)
+    console.log(resp)
+}
+
+main().catch(console.error)
+```
+
+调用方式 
+
+``` sh
+CONFIG=local/config.json node deploy.js
+```
+
+### 合约代码结构
+
+1. 函数声明
+
+一份智能合约代码可以由一个或者多个源代码文件组成，只有合约中被声明为 export 的函数才可以被触发
+
+``` typescript
+import {log} from "../lib";
+export function init(): void{ 
+  log('hello world');
+}
+
+export function invoke(): void{ 
+  execute();
+}
+
+function execute(): void{ // init 没有被 export
+  log('hello world');
+}
+```
+
+在这份合约中，invoke 函数可以通过构造事务或者通过rpc触发，而 execute 则不能被触发。
+
+2. init 函数
+
+每份合约都至少要包含一个名为 init 的函数，而且这个函数必须要被导出，这个 init 函数中的代码会在合约被部署时调用。
+
+错误的合约(init 没有被 export)：
+
+``` typescript
+import {log} from "../lib";
+function init(): void{ // init 没有被 export
+  log('hello world');
+}
+```
+
+错误的合约(缺少 init 函数)
+
+``` typescript
+import {log} from "../lib";
+export function main(): void{ //  缺少 init 函数
+  log('hello world');
+}
+```
+
+### 状态存储 <span id="anchor1"></span>
+
+1. 临时存储
+
+和 solidity 不同，TDS 合约代码不通过声明全局变量的方式实现持久化存储，例如在以下代码中：
+
+``` typescript
+let c: u64;
+
+export function init(): void{
+  c = 0;
+}
+
+export function inc(): void{
+  c++;
+}
+```
+
+在这份合约中，c 被声明为全局变量，而且在外部可以通过构造事务触发 inc 函数实现 c 的自增，看似只要每次调用 inc 函数 c 都会加一。实际上在这里 c 存储的位置是 wasm 引擎的内存，而 wasm 引擎的内存不会被持久化到区块链中去，c本质上是一个临时存储。因此 inc 函数无论触发了多少次，c 的数值依然都是 0。
+
+2. 永久存储
+
+TDS 智能合约提供了实现永久存储的方法，由内置对象 ```DB``` 实现，```DB``` 本质上是一个 key value 存储，存储的 key 和 value 都是二进制格式，Assemblyscript 使用 Uint8Array 表示二进制的数据。
+
+3. DB 类基本操作
+
+```typescript
+import {DB, DBIterator} from './lib'
+
+// 在保存字符串键值对前，要先把字符串转成二进制数据
+function str2bin(str: string): Uint8Array{
+  return Uint8Array.wrap(String.UTF8.encode(str));
+}
+
+// 把从 DB 中读取的二进制数据转成字符串
+function bin2str(bin: Uint8Array): string{
+  return String.UTF8.encode(bin.buffer);
+}
+
+export function init(): void{
+  // 保存一个字符串键值对 （增、改）
+  DB.set(str2bin('key'), str2bin('value'));
+
+  // 删除一个字符串键值对 （删）
+  DB.remove(str2bin('key'));
+
+  // 判断 key 是否存在 （查）
+  const exists = DB.has(str2bin('key'));
+
+  if(!exists){
+    DB.set(str2bin('key'), str2bin('value'));
+  } else{
+      // 打印 value 的值 （查）
+      // 因为 Assemblyscript 没有 null 类型，如果 exists 为 false 的情况下调用 DB.get(str2bin('key')) 会报异常，合约执行会终止
+    log(bin2str(DB.get(str2bin('key')));
+  }
+}
+```
+
+4. 迭代器 DBIterator
+
+使用迭代器可以遍历整个合约状态存储
+
+```typescript
+import {DB, DBIterator, log, Context} from './lib'
+
+// 在保存字符串键值对前，要先把字符串转成二进制数据
+function str2bin(str: string): Uint8Array{
+  return Uint8Array.wrap(String.UTF8.encode(str));
+}
+
+// 把从 DB 中读取的二进制数据转成字符串
+function bin2str(bin: Uint8Array): string{
+  return String.UTF8.encode(bin.buffer);
+}
+
+export function iterate(): void{
+  DBIterator.reset();
+  while(DBIterator.hasNext()){
+    const entry = DBIterator.next();
+    log('key = ' + bin2str(entry.key) + ' value = ' + bin2str(entry.value));
+  }
+}
+```
+
+### 触发 <span id="anchor0"></span>
+
+触发合约中的方法有两种方式，一种是通过 rpc 触发，另一种是通过事务触发。
+
+1. rpc 触发
+
+通过 rpc 触发的限制在于，触发的方法对合约状态存储必须是只读的，而且无法获得区块链的上下文对象，例如当前的事务、父区块的哈希值，在以下合约中：
+
+```typescript
+import {DB, DBIterator, log, Result} from './lib'
+
+// 在保存字符串键值对前，要先把字符串转成二进制数据
+function str2bin(str: string): Uint8Array{
+  return Uint8Array.wrap(String.UTF8.encode(str));
+}
+
+// 把从 DB 中读取的二进制数据转成字符串
+function bin2str(bin: Uint8Array): string{
+  return String.UTF8.encode(bin.buffer);
+}
+
+// 把 key 设置为 0
+export function init(): void{
+  DB.set(str2bin('key'), str2bin('0'));
+}
+
+// 把 key 自增
+export function inc(): void{
+  const val = DB.get(str2bin('key'));
+  const v = parseInt(bin2str(val));
+  v++;
+  DB.set(str2bin('key'), str2bin(v.toString()));
+}
+
+// 打印 key
+export function logKey(): void{
+  const val = DB.get(str2bin('key'));
+  log(bin2str(val));
+}
+```
+
+在这份合约中，```inc``` 函数对合约状态作了修改，因为无法通过 rpc 触发 ```inc``` 函数，而 ```logKey``` 函数没有对合约状态作修改，属于只读函数，所以可以用 rpc 触发 ```logKey``` 函数。
+
+我们可以通过 rpc 触发合约中的只读函数来获取合约状态，而内置对象 ```Result``` 是 rpc 的返回值与合约函数传递接口，我们需要通过 ```Result``` 提供的 ```write``` api 来获取合约中的数据。例如我们在上文的合约的基础上增加一个函数 ```getKey```。
+
+```typescript
+export function getKey(): void{
+  const val = DB.get(str2bin('key'));
+  Result.write(val);
+}
+```
+
+```Result.write``` 接受二进制格式的数据，并在外部应用中以十六进制编码的方式呈现，在外部展示合约中的值还需要转码，
+
+```js
+const tool = require('@salaku/js-sdk')
+const rpc = new tool.RPC(conf.host, conf.port)
+async function main(){
+  const data = await rpc.viewContract('***合约地址***', 'getKey')
+  const val = Buffer.from(data, 'hex').toString('utf8')
+  console.log(`val = ${val}`)
+}
+
+main()
+```
+
+2. rpc 触发时传参
+
+rpc 触发合约中的函数时，可以用内置对象 ```Context``` 获取参数，例如我把 ```getKey``` 稍作修改，改成 ```getKeyAddN``` 函数
+
+```typescript
+export function getKeyAddN(): void{
+  // 读取额外参数
+  const p = Context.args().parameters;
+  // 转码为 int 类型
+  const j = parseInt(bin2str(p));
+  // 读取 db 中的数值
+  const val = parseInt(bin2str(DB.get(str2bin('key'))));
+  // 作加法后返回
+  Result.write(str2bin((j + val).toString()));
+}
+```
+
+rpc 触发代码：
+
+```js
+const tool = require('@salaku/js-sdk')
+const rpc = new tool.RPC(conf.host, conf.port)
+async function main(){
+  const data = await rpc.viewContract('***合约地址***', 'getKeyAddN', Buffer.from('128', 'ascii'))
+  const val = Buffer.from(data, 'hex').toString('utf8')
+  console.log(`val = ${val}`)
+}
+
+main()
+```
+
+3. 事务触发
+
+通过事务触发可以对合约状态作写入、删改等操作，也可以在触发的函数中获取到区块链的上下文对象。
+
+
+例如要通过事务触发以上合约中的 ```inc``` 函数可以执行 nodejs 代码：
+
+```js
+const tool = require('@salaku/js-sdk')
+const rpc = new tool.RPC(conf.host, conf.port)
+const builder = new tool.TransactionBuilder(conf.version, conf['private-key'], conf['gas-price'] || 0)
+const pk = tool.privateKey2PublicKey(conf['private-key']) // 把私钥转公钥
+
+async function main(){
+  const tx = builder.buildContractCall('**合约地址**', tool.buildPayload('inc'), 0)
+  tx.nonce = (await rpc.getNonce(pk)) + 1
+
+  builder.sign(tx)
+  rpc.sendTransaction(tx)
+}
+
+main()
+```
+
+4. 事务触发时带参
+
+事务触发合约中的函数时，也可以用内置对象 ```Context``` 获取参数，例如我把 ```inc``` 稍作修改，改成 ```incN``` 函数
+
+```typescript
+export function incN(): void{
+  // 读取额外参数
+  const p = Context.args().parameters;
+  // 转码为 int 类型
+  const j = parseInt(bin2str(p));
+  // 读取 db 中的数值
+  const val = parseInt(bin2str(DB.get(str2bin('key'))));
+  // 作加法后存储
+  DB.set(str2bin('key'), str2bin((p + j).toString()));
+}
+```
+
+例如要通过事务触发以上合约中的 ```incN``` 函数，把 ```key``` 对应的值加上 128 可以执行 nodejs 代码：
+
+```js
+const tool = require('@salaku/js-sdk')
+const rpc = new tool.RPC(conf.host, conf.port)
+const builder = new tool.TransactionBuilder(conf.version, conf['private-key'], conf['gas-price'] || 0)
+const pk = tool.privateKey2PublicKey(conf['private-key']) // 把私钥转公钥
+
+async function main(){
+  const payload = tool.buildPayload('incN', Buffer.from('128', 'ascii'))
+  const tx = builder.buildContractCall('**合约地址**', payload, 0)
+  tx.nonce = (await rpc.getNonce(pk)) + 1
+  builder.sign(tx)
+  rpc.sendTransaction(tx)
+}
+
+main()
+```
+
+### 内置对象
+
+我们利用了 Assemblyscript 丰富的扩展性，内建了一些对象和类，使得智能合约的编写更加简单，以下列举了内置对象的使用示例
+
+1. log 函数
+
+区块链节点在执行 log 函数时，会把 log 的参数打印到标准输出，可以用于调试智能合约
+
+```typescript
+import {log} from './lib'
+
+export function init(): void{
+  log('hello world');
+}
+```
+
+2. Context 类
+
+对于 rpc 触发的函数，可以通过 Context 拿到 rpc 调用的参数，对于事务触发的函数，可以通过 Context 拿到事务中payload 的参数，具体可以参考 [触发](#anchor0) 章节。
+
+除此之外，事务触发的函数或者 init 函数可以通过 Context 拿到区块链上下文对象，示例如下：
+
+```typescript
+import {Context} from './lib'
+
+export function init(): void{
+  // 获得事务所在的区块的区块头
+  // 包含了父区块的哈希，区块的创建时间和区块的高度
+  const header = Context.header();
+
+  // 获得当前的事务，包含了事务的所有字段
+  const tx = Context.transaction();
+
+  // 当前的合约的地址，部署时的nonce和合约的创建者的地址
+  const contract = Context.contract();
+}
+```
+
+3. DB 
+
+DB 的使用可以参考[状态存储](#anchor1) 章节。
+
+4. Decimal
+
+Decimal 类用于实现精确的十进制有限小数的四则运算
+
+
+```typescript
+import {Decimal} from './lib'
+
+export function init(): void{
+  // 加法
+  let d = Decimal.add('0.01', '0.02');
+
+  // 减法
+  d = Decimal.sub(d, '0.02');
+
+  // 乘法
+  d = Decimal.mul(d, 10);
+
+  // 除法，限制小数点后10位，如果除不尽则抛出异常
+  d = Decimal.div(d, 2, 10);
+
+  // 比较
+  let c = Decimal.compare('0.01', '0.02');
+}
+```
+
+5. Event 类
+
+Event 用于从合约内部向外界异步通知，区块链节点在启动时会创建一个 socketio 服务，默认的端口是 10004，外部程序可以在连接 socketio 服务后监听智能合约的事件。
+
+例如以下合约部署后，在前端可以监听 emit 函数触发时发送的 ```event-name``` 事件
+
+```typescript
+import  from './lib'
+
+export function init(): void{
+
+}
+
+export function emit(): void{
+  const arr = new Uint8Array(1);
+  arr[0] = 255;
+  Event.emit('event-name', arr);
+}
+```
+
+前端代码：
+
+```html
+<html>
+  <body>
+    <script type="text/javascript">
+      function connectSocket() {
+          let socket = window.socket
+          if(socket != null){
+              socket.disconnect()
+          }
+          window.socket = io.connect('http://localhost:10004')
+          socket = window.socket
+          socket.on('***合约地址***:event-name', console.log)
+      }
+      connectSocket()          
+    </script>
+  </body>
+</html>
+```
+
+因为 [255] 的十六进制编码是 "ff" 当 emit 被触发时，前端将会打印出对象:
+
+```json
+{
+  "data": "ff"
+}
+```
+
+6. Hex 类
+
+Hex 包含了十六进制编码和解码
+
+```typescript
+import {Hex} from './lib'
+
+export function init(): void{
+  // 十六进制编码转二进制数组
+  const arr = Hex.decode('ff');
+
+  // 二进制数组转十六进制编码
+  log(Hex.encode(arr));
+}
+```
+
+7. Hash 类
+
+Hash 包含了常用的哈希值算法
+
+```typescript
+import {Hash} from './lib'
+
+export function init(): void{
+  // keccak256
+  let digest = Hash.keccak256(Hex.decode('ff'));
+
+  // sm3
+  digest = Hash.sm3(Hex.decode('ff'));
+}
+```
+
+### RLP 编码/解码
+
+
+TDS 智能合约至提供了二进制 key-value 的存储的接口，但是在合约中的对象不一定是二进制型式的，所以需要在存储和读取时进行相应的类型转换。
+
+
+对象编码的方式是将对象中的字段用递归的方式转成树形结构，以下是对一个寄件人进行 rlp 编码和反编码的参考
+
+```typescript
+// 寄件人
+class Sender {
+    constructor(
+        // 地址
+        public address: Uint8Array,
+        // 邮寄物品
+        public type: string,
+        // 真实姓名
+        public name: string,
+        // 身份证号
+        public id: string,
+        // 电话号码
+        public phone: string,
+        // 简单说明
+        public description: string,
+        // 上链高度
+        public height: u64,
+        // 上链的事务哈希
+        public hash: Uint8Array,
+    ) {
+    }
+
+    // 从 rlp 解码
+    static fromEncoded(data: Uint8Array): Sender {
+        const li = RLPList.fromEncoded(data);
+        const r = new RLPListReader(li);
+        return new Sender(
+            r.bytes(), r.string(), r.string(),
+            r.string(), r.string(), r.string(),
+            r.u64(), r.bytes()
+        )
+    }
+
+    // rlp 编码
+    getEncoded(): Uint8Array {
+        const elements = [
+            RLP.encodeBytes(this.address),
+            RLP.encodeString(this.type),
+            RLP.encodeString(this.name),
+            RLP.encodeString(this.id),
+            RLP.encodeString(this.phone),
+            RLP.encodeString(this.description),
+            RLP.encodeU64(this.height),
+            RLP.encodeBytes(this.hash)
+        ];
+        return RLP.encodeElements(elements);
+    }
+}
+```
 
 
 

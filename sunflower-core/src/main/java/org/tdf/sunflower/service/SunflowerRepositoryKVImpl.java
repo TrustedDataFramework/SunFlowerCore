@@ -24,6 +24,7 @@ import org.tdf.sunflower.types.Transaction;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Slf4j(topic = "db")
@@ -390,5 +391,10 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     public Optional<Header> getCanonicalHeader(long height) {
         return canonicalIndex.get(height)
                 .flatMap(this::getHeader);
+    }
+
+    @Override
+    public void traverse(BiFunction<byte[], Transaction, Boolean> traverser) {
+        transactionsStore.traverse(traverser);
     }
 }
