@@ -22,6 +22,7 @@ import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 
@@ -203,5 +204,10 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
     @Override
     public void prune(byte[] hash) {
 
+    }
+
+    @Override
+    public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
+        throw new UnsupportedOperationException();
     }
 }

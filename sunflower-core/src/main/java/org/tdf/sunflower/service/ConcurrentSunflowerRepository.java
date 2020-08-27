@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiFunction;
 
 @RequiredArgsConstructor
 public class ConcurrentSunflowerRepository implements SunflowerRepository {
@@ -270,5 +271,15 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
     @Override
     public HexBytes getPrunedHash() {
         return delegate.getPrunedHash();
+    }
+
+    @Override
+    public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
+        lock.readLock().lock();
+        try {
+            delegate.traverseTransactions(traverser);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 }

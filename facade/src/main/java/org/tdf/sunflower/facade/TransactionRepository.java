@@ -37,11 +37,14 @@ public interface TransactionRepository {
         public long getConfirms(byte[] transactionHash) {
             return 0;
         }
+
+        @Override
+        public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
+
+        }
     };
 
     long getConfirms(byte[] transactionHash);
 
-    default void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser){
-
-    }
+    void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser);
 }
