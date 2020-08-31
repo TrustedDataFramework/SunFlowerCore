@@ -2,6 +2,7 @@ package org.tdf.sunflower.state;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.ReadOnlyStore;
@@ -35,9 +36,10 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
             DatabaseStoreFactory factory,
             Store<byte[], byte[]> contractCodeStore,
             Trie<byte[], byte[]> contractStorageTrie,
-            BasicMessageQueue messageQueue
+            BasicMessageQueue messageQueue,
+            boolean secure
     ) {
-        super(updater, Codecs.newRLPCodec(HexBytes.class), Codecs.newRLPCodec(Account.class), factory);
+        super(updater, Codecs.newRLPCodec(HexBytes.class), Codecs.newRLPCodec(Account.class), factory, secure);
         this.contractStorageTrie = contractStorageTrie;
         this.contractCodeStore = contractCodeStore;
         this.messageQueue = messageQueue;

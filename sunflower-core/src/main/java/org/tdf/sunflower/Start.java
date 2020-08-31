@@ -500,7 +500,8 @@ public class Start {
             AccountTrie trie = new AccountTrie(
                     updater, databaseStoreFactory,
                     e.getContractCodeStore(), e.getContractStorageTrie(),
-                    context.getBean(BasicMessageQueue.class)
+                    context.getBean(BasicMessageQueue.class),
+                    context.getEnvironment().getProperty("sunflower.trie.secure", Boolean.class)
             );
 
             e.setAccountTrie(trie);

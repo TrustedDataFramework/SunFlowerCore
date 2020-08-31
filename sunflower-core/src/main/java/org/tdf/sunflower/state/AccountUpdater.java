@@ -84,30 +84,38 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         if (tx.getType() == Transaction.Type.COIN_BASE.code && header.getHeight() != tx.getNonce()) {
             throw new RuntimeException("nonce of coinbase transaction should be " + header.getHeight());
         }
+        createEmptyAccounts(states, Collections.singleton(Constants.FEE_ACCOUNT_ADDR));
         switch (Transaction.Type.TYPE_MAP.get(tx.getType())) {
             case TRANSFER: {
                 createEmptyAccounts(states, Collections.singletonList(tx.getTo()));
                 increaseNonce(states, tx);
                 updateTransfer(
-                        states.get(tx.getFromAddress()),
-                        states.get(tx.getTo()),
+                        states,
+                        tx.getFromAddress(),
+                        tx.getTo(),
                         tx.getAmount(),
                         tx.getFee()
                 );
-                updateFeeAccount(states, tx.getFee());
                 return;
             }
             case COIN_BASE: {
                 createEmptyAccounts(states, Collections.singletonList(tx.getTo()));
-                increaseNonce(states, tx);
                 updateCoinBase(states, header, tx);
                 return;
             }
             case CONTRACT_DEPLOY:
+                createEmptyAccounts(
+                        states,
+                        Arrays.asList(tx.getFromAddress(), tx.createContractAddress())
+                );
                 increaseNonce(states, tx);
                 updateDeploy(states, header, tx);
                 return;
             case CONTRACT_CALL:
+                createEmptyAccounts(
+                        states,
+                        Collections.singletonList(tx.getFromAddress())
+                );
                 increaseNonce(states, tx);
                 updateContractCall(states, header, tx);
                 return;
@@ -118,6 +126,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     public static void updateFeeAccount(Map<HexBytes, Account> states, long fee) {
         Account feeAccount = states.get(Constants.FEE_ACCOUNT_ADDR);
         feeAccount.setBalance(SafeMath.add(feeAccount.getBalance(), fee));
+        states.put(feeAccount.getAddress(), feeAccount);
     }
 
     public void createEmptyAccounts(Map<HexBytes, Account> states, Collection<? extends HexBytes> addresses) {
@@ -132,6 +141,7 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             throw new RuntimeException("the nonce of transaction should be " + (state.getNonce() + 1)
                     + " while " + tx.getNonce() + " received");
         state.setNonce(state.getNonce() + 1);
+        states.put(state.getAddress(), state);
     }
 
     /**
@@ -146,22 +156,27 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     }
 
 
-    public static void updateTransfer(Account from, Account to, long amount, long fee) {
+    public static void updateTransfer(Map<HexBytes, Account> states, HexBytes fromAddr, HexBytes toAddr, long amount, long fee) {
         if (amount == 0)
             throw new RuntimeException("transfer amount = 0");
 
+        Account from = states.get(fromAddr);
         from.setBalance(SafeMath.sub(from.getBalance(), SafeMath.add(amount, fee)));
 
+        Account to = states.get(toAddr);
         if (to.getCreatedBy() != null && !to.getCreatedBy().isEmpty())
             throw new RuntimeException("transfer to contract address is not allowed");
 
         to.setBalance(SafeMath.add(to.getBalance(), amount));
+        states.put(fromAddr, from);
+        states.put(toAddr, to);
+        updateFeeAccount(states, fee);
     }
 
     private void updateCoinBase(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account to = accounts.get(t.getTo());
         to.setBalance(SafeMath.add(to.getBalance(), t.getAmount()));
-
+        accounts.put(to.getAddress(), to);
 
         for (Bios bios : biosList.values()) {
             Account a = accounts.get(bios.getGenesisAccount().getAddress());
@@ -171,13 +186,13 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             byte[] root = before.commit();
             before.flush();
             a.setStorageRoot(root);
+            accounts.put(a.getAddress(), a);
         }
     }
 
     private void updateDeploy(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account contractAccount = Objects.requireNonNull(accounts.get(t.createContractAddress()));
         Account createdBy = accounts.get(t.getFromAddress());
-        Account feeAccount = accounts.get(Constants.FEE_ACCOUNT_ADDR);
 
         contractAccount.setCreatedBy(t.getFromAddress());
         contractAccount.setNonce(t.getNonce());
@@ -210,39 +225,26 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         }
 
         long fee = ((t.getPayload().size() / 1024) + gasLimit.getGas()) * t.getGasPrice();
-        require(createdBy.getBalance() >= t.getAmount() + fee, "the balance of from is not enough");
-        createdBy.setBalance(createdBy.getBalance() - t.getAmount() - fee);
+        createdBy.setBalance(SafeMath.sub(createdBy.getBalance(), SafeMath.add(t.getAmount(), fee)));
         contractDB.getStorageTrie().commit();
         contractDB.getStorageTrie().flush();
         contractAccount.setStorageRoot(contractDB.getStorageTrie().getRootHash());
-        feeAccount.setBalance(feeAccount.getBalance() + fee);
+
+        accounts.put(contractAccount.getAddress(), contractAccount);
+        accounts.put(createdBy.getAddress(), createdBy);
+        updateFeeAccount(accounts, fee);
         log.info("deploy contract at " + contractAccount.getAddress() + " success");
     }
 
-    private Map<HexBytes, Account> updateContractCall(Map<HexBytes, Account> accounts, Header header, Transaction t) {
+    private void updateContractCall(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account contractAccount = accounts.get(t.getTo());
         Account caller = accounts.get(t.getFromAddress());
-        Account feeAccount = accounts.get(Constants.FEE_ACCOUNT_ADDR);
 
-        for (Account account : accounts.values()) {
-            if (account.getAddress().equals(contractAccount.getAddress())) {
-                account.setBalance(account.getBalance() + t.getAmount());
-                if (account.getBalance() < 0)
-                    throw new RuntimeException("math overflow");
-            }
-            if (
-                    !account.getAddress().equals(t.getFromAddress())
-                            && !account.getAddress().equals(t.getTo())
-                            && !account.getAddress().equals(Constants.FEE_ACCOUNT_ADDR)
-                            && !account.getAddress().equals(contractAccount.getCreatedBy()))
-                throw new RuntimeException(
-                        "unexpected address " + account.getAddress() + " not a createdBy or from or to");
-        }
+        contractAccount.setBalance(SafeMath.add(contractAccount.getBalance(), t.getAmount()));
 
         if (preBuiltContractAddresses.containsKey(contractAccount.getAddress())) {
             long fee = 10 * t.getGasPrice();
-            require(caller.getBalance() >= t.getAmount() + fee, "the balance of from is not enough");
-            caller.setBalance(caller.getBalance() - t.getAmount() - fee);
+            caller.setBalance(SafeMath.sub(caller.getBalance(), SafeMath.add(fee, t.getAmount())));
             Trie<byte[], byte[]> before = storageTrie.revert(contractAccount.getStorageRoot(),
                     new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new));
             PreBuiltContract updater = preBuiltContractAddresses.get(contractAccount.getAddress());
@@ -250,8 +252,8 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
             byte[] root = before.commit();
             before.flush();
             contractAccount.setStorageRoot(root);
-            feeAccount.setBalance(feeAccount.getBalance() + fee);
-            return accounts;
+            updateFeeAccount(accounts, fee);
+            return;
         }
 
         // build Parameters here
@@ -277,13 +279,14 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
 
         instance.execute(context.getMethod());
         long fee = limit.getGas() * t.getGasPrice();
-        require(caller.getBalance() >= t.getAmount() + fee, "the balance of from is not enough");
-        caller.setBalance(caller.getBalance() - fee - t.getAmount());
+        caller.setBalance(SafeMath.sub(caller.getBalance(), SafeMath.add(fee, t.getAmount())));
         contractDB.getStorageTrie().commit();
         contractDB.getStorageTrie().flush();
         contractAccount.setStorageRoot(contractDB.getStorageTrie().getRootHash());
-        feeAccount.setBalance(feeAccount.getBalance() + fee);
-        return accounts;
+
+        accounts.put(contractAccount.getAddress(), contractAccount);
+        accounts.put(caller.getAddress(), caller);
+        updateFeeAccount(accounts, fee);
     }
 
     private static void require(boolean b, String msg) throws RuntimeException {

@@ -3,21 +3,26 @@ package org.tdf.sunflower.state;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.*;
+import org.tdf.common.store.CachedStore;
+import org.tdf.common.store.DatabaseStore;
+import org.tdf.common.store.NoDeleteBatchStore;
+import org.tdf.common.store.Store;
 import org.tdf.common.trie.ReadOnlyTrie;
 import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
+import org.tdf.crypto.keystore.Crypto;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
 
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j(topic = "trie")
 public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
@@ -43,20 +48,22 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
             Codec<ID, byte[]> idCodec,
             Codec<S, byte[]> stateCodec,
             // TODO: verify genesis state roots
-            DatabaseStoreFactory factory
+            DatabaseStoreFactory factory,
+            boolean secure
     ) {
         name = getPrefix() + "-trie";
         this.updater = updater;
         this.db = factory.create(name);
         trieStore = new NoDeleteBatchStore<>(db);
 
-        trie = new SecureTrie<>(Trie.<ID, S>builder()
+        trie = Trie.<ID, S>builder()
                 .hashFunction(CryptoContext::hash)
                 .store(trieStore)
                 .keyCodec(idCodec)
-                .valueCodec(stateCodec).build(),
-                CryptoContext::hash
-        );
+                .valueCodec(stateCodec).build();
+
+        if(secure)
+            trie = new SecureTrie<>(trie, CryptoContext::hash);
 
         // sync to genesis
         Trie<ID, S> tmp = trie.revert();
@@ -108,7 +115,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
 
     @Override
     public Trie<ID, S> tryUpdate(byte[] parentRoot, Block block) {
-        if(!getTrieStore().containsKey(parentRoot)){
+        if (!getTrieStore().containsKey(parentRoot)) {
             log.error("update failed: trie root {} at height {} hash {} not found", HexBytes.fromBytes(parentRoot), block.getHeight() - 1, block.getHashPrev());
         }
 
