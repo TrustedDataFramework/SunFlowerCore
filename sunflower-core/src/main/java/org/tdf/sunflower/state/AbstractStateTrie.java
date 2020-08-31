@@ -101,28 +101,28 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     }
 
     @SneakyThrows
-    private Trie<ID, S> getTrieForReadOnly(byte[] rootHash) {
+    protected Trie<ID, S> getTrieForReadOnly(byte[] rootHash) {
         return ReadOnlyTrie.of(getTrie(rootHash));
     }
 
 
     @Override
-    public Map<ID, S> tryUpdate(byte[] parentRoot, Block block) {
-        if(!trieStore.containsKey(parentRoot)){
+    public Trie<ID, S> tryUpdate(byte[] parentRoot, Block block) {
+        if(!getTrieStore().containsKey(parentRoot)){
             log.error("update failed: trie root {} at height {} hash {} not found", HexBytes.fromBytes(parentRoot), block.getHeight() - 1, block.getHashPrev());
         }
-        Trie<ID, S> trie = getTrieForReadOnly(parentRoot);
-        Set<ID> relatedIds = getUpdater().getRelatedKeys(
-                block,
-                trie.asMap()
-        );
-        Map<ID, S> map = updater.createEmptyMap();
-        relatedIds.forEach(k -> map.put(k, trie.get(k).orElse(updater.createEmpty(k))));
 
-        return getUpdater().update(
-                map,
-                block
-        );
+        Store<byte[], byte[]> cache = new CachedStore<>(getTrieStore(), org.tdf.common.util.ByteArrayMap::new);
+
+
+        // get a trie at parent block's state
+        // modifications to the trie will not persisted until flush() called
+        Trie<ID, S> tmp =
+                getTrie()
+                        .revert(parentRoot, cache);
+
+        getUpdater().update(tmp.asMap(), block);
+        return tmp;
     }
 
     @Override
@@ -134,4 +134,6 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
     public void prune(Collection<? extends byte[]> excludedRoots) {
         getTrie().prune(excludedRoots, db);
     }
+
+
 }

@@ -8,8 +8,6 @@ import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
 import static org.tdf.common.trie.TrieKey.EMPTY;

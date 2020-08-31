@@ -37,11 +37,13 @@ public interface StateTrie<ID, S> {
     // get new trie without make any modification to underlying database
     // call trie.flush() to persist modifications
     default Trie<ID, S> update(byte[] parentRoot, Block block) {
-        return this.commit(parentRoot, tryUpdate(parentRoot, block));
+        Trie<ID, S> trie = tryUpdate(parentRoot, block);
+        trie.commit();
+        return trie;
     }
 
-    // get update result
-    Map<ID, S> tryUpdate(byte[] parentRoot, Block block);
+    // get update result,
+    Trie<ID, S> tryUpdate(byte[] parentRoot, Block block);
 
     // get new trie without make any modification to underlying database
     // call trie.flush() to persist modifications

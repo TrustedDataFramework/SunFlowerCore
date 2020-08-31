@@ -100,16 +100,12 @@ public abstract class AbstractMiner implements Miner {
         for (Transaction tx : transactionList) {
             // try to fetch transaction from pool
             try {
-                Set<HexBytes> keys = updater.getRelatedKeys(tx, tmp.asMap());
-                Map<HexBytes, Account> related = new HashMap<>();
 
                 // get all account related to this transaction in the trie
-                keys.forEach(k -> related.put(k, tmp.get(k).orElse(updater.createEmpty(k))));
 
                 // store updated result to the trie if update success
                 updater
-                        .update(related, header, tx)
-                        .forEach(tmp::put);
+                        .update(tmp.asMap(), header, tx);
             } catch (Exception e) {
                 // prompt reason for failed updates
                 e.printStackTrace();
@@ -121,7 +117,7 @@ public abstract class AbstractMiner implements Miner {
         }
 
         // transactions may failed to execute
-        if (transactionList.size() == 1 && !minerConfig.isAllowEmptyBlock())
+        if (b.getBody().size() == 1 && !minerConfig.isAllowEmptyBlock())
             return Optional.empty();
 
         // add fee to miners account

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.tdf.common.event.EventBus;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.GlobalConfig;
@@ -40,6 +41,8 @@ import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 @RequestMapping("/rpc")
 @Slf4j(topic = "rpc")
 public class EntryController {
+    private static final int MAX_HTTP_TIMEOUT = 30;
+
     private AccountTrie accountTrie;
 
     @Qualifier("contractStorageTrie")
@@ -62,6 +65,9 @@ public class EntryController {
     private ConsensusEngine consensusEngine;
 
     private Miner miner;
+
+    private EventBus eventBus;
+
 
     private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func,
                                    Function<byte[], Optional<T>> func1) {
@@ -159,7 +165,9 @@ public class EntryController {
     }
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Response<List<?>> sendTransaction(@RequestBody JsonNode node) {
+    public Response<List<?>> sendTransaction(
+            @RequestBody JsonNode node,
+            @RequestParam(value = "sync", defaultValue = "false") boolean sync) {
         List<Transaction> ts;
         if (node.isArray()) {
             ts = Arrays.asList(objectMapper.convertValue(node, Transaction[].class));
@@ -167,12 +175,20 @@ public class EntryController {
             ts = Collections.singletonList(objectMapper.convertValue(node, Transaction.class));
         }
         List<String> errors = pool.collect(ts);
-        return errors.isEmpty() ? Response
+        Response<List<?>> errResp = Response.newFailed(Response.Code.INTERNAL_ERROR, String.join("\n", errors));
+        if(!sync)
+            return errors.isEmpty() ? Response
                 .newSuccessFul(
                         ts.stream().map(Transaction::getHash)
                                 .collect(Collectors.toList())
                 )
-                : Response.newFailed(Response.Code.INTERNAL_ERROR, String.join("\n", errors));
+                : errResp;
+
+
+        if(!errors.isEmpty())
+            return errResp;
+
+        return Response.newFailed(Response.Code.INTERNAL_ERROR);
     }
 
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)

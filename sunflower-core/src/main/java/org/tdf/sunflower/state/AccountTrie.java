@@ -1,10 +1,13 @@
 package org.tdf.sunflower.state;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.serialize.Codecs;
+import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.ReadOnlyStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.facade.BasicMessageQueue;
@@ -21,6 +24,7 @@ import java.util.Collections;
 import java.util.Map;
 
 @Getter
+@Slf4j(topic = "trie")
 public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
     private Trie<byte[], byte[]> contractStorageTrie;
     private Store<byte[], byte[]> contractCodeStore;
@@ -79,4 +83,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
     protected String getPrefix() {
         return "account";
     }
+
+
 }

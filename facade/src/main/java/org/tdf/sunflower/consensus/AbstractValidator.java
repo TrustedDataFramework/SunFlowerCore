@@ -51,15 +51,15 @@ public abstract class AbstractValidator implements Validator {
         ValidateResult success = ValidateResult.success();
 
         try {
-            Map<HexBytes, Account> accounts =
+            Trie<HexBytes, Account> tmp =
                     accountTrie.tryUpdate(parent.getStateRoot().getBytes(), block);
             Account feeAccount =
-                    accounts.remove(Constants.FEE_ACCOUNT_ADDR);
-            Trie<HexBytes, Account>  updated = accountTrie.commit(parent.getStateRoot().getBytes(), accounts);
-            if (!HexBytes.fromBytes(updated.getRootHash()).equals(block.getStateRoot())) {
+                    tmp.asMap().remove(Constants.FEE_ACCOUNT_ADDR);
+            tmp.commit();
+            if (!HexBytes.fromBytes(tmp.getRootHash()).equals(block.getStateRoot())) {
                 return ValidateResult.fault("state root not match");
             }
-            updated.flush();
+            tmp.flush();
             success.setCtx(feeAccount.getBalance());
         } catch (Exception e) {
             e.printStackTrace();

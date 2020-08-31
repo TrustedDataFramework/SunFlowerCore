@@ -1,6 +1,5 @@
 package org.tdf.common.store;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 
