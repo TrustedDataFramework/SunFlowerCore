@@ -26,7 +26,11 @@ public class ApplicationConstants {
 
     public static final long MAX_SHUTDOWN_WAITING = 5;
 
-    public static long GAS_LIMIT = 4294967296L;
+    public static long VM_STEP_LIMIT = 0;
+
+    public static long MAX_FRAMES = 0;
+
+    public static long MAX_CONTRACT_CALL_DEPTH = 0;
 
     public static boolean VALIDATE;
  }

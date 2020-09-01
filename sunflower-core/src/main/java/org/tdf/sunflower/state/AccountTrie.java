@@ -2,25 +2,20 @@ package org.tdf.sunflower.state;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.tdf.common.serialize.Codecs;
-import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.ReadOnlyStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.facade.BasicMessageQueue;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
-import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.ContractDB;
-import org.tdf.sunflower.vm.hosts.GasLimit;
 import org.tdf.sunflower.vm.hosts.Hosts;
+import org.tdf.sunflower.vm.hosts.Limit;
 import org.tdf.sunflower.vm.hosts.UnsupportedTransfer;
 
-import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.Map;
 
@@ -61,11 +56,10 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
                 .withTransfer(new UnsupportedTransfer())
                 .withContext(ctx)
                 .withDB(new ContractDB(trie))
-                .withEvent(messageQueue, address)
-                ;
+                .withEvent(messageQueue, address);
 
         ModuleInstance instance = ModuleInstance.builder()
-                .hooks(Collections.singleton(new GasLimit()))
+                .hooks(Collections.singleton(new Limit()))
                 .binary(contractCodeStore.get(account.getContractHash()).get())
                 .hostFunctions(hosts.getAll())
                 .build();

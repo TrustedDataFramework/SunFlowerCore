@@ -3,7 +3,6 @@ package org.tdf.sunflower.state;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.DatabaseStore;
@@ -13,7 +12,6 @@ import org.tdf.common.trie.ReadOnlyTrie;
 import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.keystore.Crypto;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
@@ -62,7 +60,7 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
                 .keyCodec(idCodec)
                 .valueCodec(stateCodec).build();
 
-        if(secure)
+        if (secure)
             trie = new SecureTrie<>(trie, CryptoContext::hash);
 
         // sync to genesis

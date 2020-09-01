@@ -17,20 +17,7 @@ repositories {
     }
     mavenLocal()
     maven {
-        name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/TrustedDataFramework/LotusVM")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
-            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
-    maven {
-        name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/TrustedDataFramework/java-rlp")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
-            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-        }
+        url 'http://120.76.101.153:8081/repository/maven-public'
     }
     mavenCentral()
 }

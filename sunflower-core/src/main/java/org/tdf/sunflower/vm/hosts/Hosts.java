@@ -16,22 +16,15 @@ import java.util.Set;
 public class Hosts {
     private Result result = new Result();
 
-    private boolean disableEvent;
-
     private Context context;
 
     private ContractDB contractDb;
-
-    private Map<HexBytes, Account> states;
 
     private Transfer transfer;
 
     private Event event;
 
-    public Hosts disableEvent(){
-        this.disableEvent = true;
-        return this;
-    }
+    private Call call;
 
     public Hosts() {
     }
@@ -43,6 +36,11 @@ public class Hosts {
 
     public Hosts withTransfer(Transfer transfer){
         this.transfer = transfer;
+        return this;
+    }
+
+    public Hosts withCall(Call call){
+        this.call = call;
         return this;
     }
 

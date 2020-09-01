@@ -130,14 +130,21 @@ public class Start {
             if (!constant.toLowerCase().matches("true|false")) throw new IllegalArgumentException("sunflower.assert");
             enableAssertion = constant.equals("true");
         }
-        constant = env.getProperty("sunflower.vm.gas-limit");
+        constant = env.getProperty("sunflower.vm.step-limit");
         if (constant != null && !constant.isEmpty())
-            ApplicationConstants.GAS_LIMIT = Long.parseLong(constant);
+            ApplicationConstants.VM_STEP_LIMIT = Long.parseLong(constant);
 
         constant = env.getProperty("sunflower.validate");
         if (constant != null && constant.trim().toLowerCase().equals("true")) {
             ApplicationConstants.VALIDATE = true;
         }
+        constant = env.getProperty("sunflower.vm.max-frames");
+        if (constant != null && !constant.isEmpty())
+            ApplicationConstants.MAX_FRAMES = Long.parseLong(constant);
+
+        constant = env.getProperty("sunflower.vm.max-contract-call-depth");
+        if (constant != null && !constant.isEmpty())
+            ApplicationConstants.MAX_CONTRACT_CALL_DEPTH = Long.parseLong(constant);
     }
 
     @SneakyThrows
