@@ -22,7 +22,6 @@ public class Transfer extends HostFunction {
         setType(
                 new FunctionType(
                         Arrays.asList(
-                                ValueType.I32, ValueType.I64,
                                 ValueType.I64, ValueType.I64,
                                 ValueType.I64, ValueType.I64
                         ),
