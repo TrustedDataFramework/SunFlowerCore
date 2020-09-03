@@ -2,7 +2,7 @@ package org.tdf.sunflower.vm.hosts;
 
 public class UnsupportedTransfer extends Transfer {
     public UnsupportedTransfer() {
-        super(null, null, null, null);
+        super(null, null);
     }
 
     @Override

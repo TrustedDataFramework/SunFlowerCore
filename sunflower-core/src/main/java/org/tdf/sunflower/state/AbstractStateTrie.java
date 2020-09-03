@@ -78,15 +78,6 @@ public abstract class AbstractStateTrie<ID, S> implements StateTrie<ID, S> {
         return getTrieForReadOnly(rootHash).get(id);
     }
 
-    public Map<ID, S> batchGet(byte[] rootHash, Collection<? extends ID> ids) {
-        Trie<ID, S> trie = getTrieForReadOnly(rootHash);
-        Map<ID, S> map = updater.createEmptyMap();
-        ids.forEach(
-                k -> map.put(k, trie.get(k).orElse(updater.createEmpty(k)))
-        );
-        return map;
-    }
-
     @Override
     public Map<byte[], byte[]> getProof(byte[] rootHash, Collection<? extends ID> ids) {
         return getTrieForReadOnly(rootHash)

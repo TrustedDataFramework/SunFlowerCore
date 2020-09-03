@@ -11,10 +11,7 @@ import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.facade.BasicMessageQueue;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
 import org.tdf.sunflower.vm.abi.Context;
-import org.tdf.sunflower.vm.hosts.ContractDB;
-import org.tdf.sunflower.vm.hosts.Hosts;
-import org.tdf.sunflower.vm.hosts.Limit;
-import org.tdf.sunflower.vm.hosts.UnsupportedTransfer;
+import org.tdf.sunflower.vm.hosts.*;
 
 import java.util.Collections;
 import java.util.Map;
@@ -47,15 +44,21 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
                 .orElseThrow(() -> new RuntimeException(address + " not exists or not a contract address"));
 
         Context ctx =
-                new Context(null, null, account, args);
+                new Context(null, null, account, args, null, 0);
 
         Trie<byte[], byte[]> trie =
                 contractStorageTrie.revert(account.getStorageRoot(), ReadOnlyStore.of(contractStorageTrie.getStore()));
 
         Hosts hosts = new Hosts()
                 .withTransfer(new UnsupportedTransfer())
-                .withContext(ctx)
-                .withDB(new ContractDB(trie))
+                .withContext(
+                        new ContextHost(
+                                ctx,
+                                getTrie().revert(stateRoot).asMap(),
+                                Store.getNop()
+                        )
+                )
+                .withDB(new DBFunctions(trie, true))
                 .withEvent(messageQueue, address);
 
         ModuleInstance instance = ModuleInstance.builder()

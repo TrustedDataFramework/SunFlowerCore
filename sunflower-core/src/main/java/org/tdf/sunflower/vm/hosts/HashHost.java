@@ -17,7 +17,7 @@ public class HashHost extends HostFunction {
     public HashHost() {
         setType(new FunctionType(
                 // offset, length, offset
-                Arrays.asList(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I64),
+                Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),
                 Collections.singletonList(ValueType.I64)
         ));
         setName("_hash");

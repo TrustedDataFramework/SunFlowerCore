@@ -195,7 +195,7 @@ public class EntryController {
     public HexBytes getContract(@PathVariable("address") final String address,
                                 @RequestParam(value = "parameters", required = false) String arguments,
                                 @RequestParam(value = "args", required = false) String argsStr
-    ) throws Exception {
+    ) {
         HexBytes addressHex = Address.of(address);
         arguments = arguments == null ? argsStr : arguments;
         if (arguments == null || arguments.isEmpty())

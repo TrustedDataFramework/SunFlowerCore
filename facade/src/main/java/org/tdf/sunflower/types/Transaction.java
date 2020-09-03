@@ -283,7 +283,16 @@ public class Transaction {
      */
     public HexBytes createContractAddress() {
         if (type != Type.CONTRACT_DEPLOY.code) throw new RuntimeException("not a contract deploy transaction");
-        byte[] bytes = CryptoContext.hash(RLPCodec.encode(new Object[]{from, nonce}));
+        return createContractAddress(getFromAddress(), nonce);
+    }
+
+    /**
+     * get contract address, contract address = hash(rlp(from, nonce))
+     *
+     * @return contact address
+     */
+    public static HexBytes createContractAddress(HexBytes address, long nonce) {
+        byte[] bytes = CryptoContext.hash(RLPCodec.encode(new Object[]{address, nonce}));
         HexBytes ret = HexBytes.fromBytes(bytes);
         return ret.slice(ret.size() - Account.ADDRESS_SIZE, ret.size());
     }

@@ -19,9 +19,6 @@ public interface StateTrie<ID, S> {
     // get an optional state at a root hash
     Optional<S> get(byte[] rootHash, ID id);
 
-    // get values batched
-    Map<ID, S> batchGet(byte[] rootHash, Collection<? extends ID> ids);
-
     HexBytes getGenesisRoot();
 
     Map<byte[], byte[]> getProof(byte[] rootHash, Collection<? extends ID> ids);

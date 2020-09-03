@@ -124,7 +124,7 @@ public abstract class AbstractMiner implements Miner {
         Account feeAccount = tmp.get(Constants.FEE_ACCOUNT_ADDR).get();
         tmp.remove(Constants.FEE_ACCOUNT_ADDR);
         Account minerAccount = tmp.get(coinbase.getTo())
-                .orElse(updater.createEmpty(coinbase.getTo()));
+                .orElse(Account.emptyAccount(coinbase.getTo()));
         minerAccount.setBalance(minerAccount.getBalance() + feeAccount.getBalance());
         coinbase.setAmount(coinbase.getAmount() + feeAccount.getBalance());
         tmp.put(minerAccount.getAddress(), minerAccount);

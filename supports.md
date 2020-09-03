@@ -833,7 +833,7 @@ export function init(): void{
 export function increment(): void {
     let i = DB.has(KEY) ?  RLP.decodeU64(DB.get(KEY)) : 0;
     i++;
-    log("call contract successful counter = " + i.toString());
+    log("reflect contract successful counter = " + i.toString());
     DB.set(KEY, RLP.encodeU64(i));
 }
 

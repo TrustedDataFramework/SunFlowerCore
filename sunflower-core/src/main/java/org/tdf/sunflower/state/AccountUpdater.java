@@ -6,21 +6,20 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
-import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.lotusvm.types.Module;
 import org.tdf.sunflower.facade.BasicMessageQueue;
-import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.abi.ContractCall;
-import org.tdf.sunflower.vm.hosts.ContractDB;
-import org.tdf.sunflower.vm.hosts.Hosts;
 import org.tdf.sunflower.vm.hosts.Limit;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -29,8 +28,6 @@ import java.util.stream.Collectors;
  */
 @Slf4j(topic = "account")
 public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
-
-
     @Getter
     private final Map<HexBytes, Account> genesisStates;
 
@@ -124,10 +121,10 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         if (tx.getType() == Transaction.Type.COIN_BASE.code && header.getHeight() != tx.getNonce()) {
             throw new RuntimeException("nonce of coinbase transaction should be " + header.getHeight());
         }
-        createEmptyAccounts(states, Collections.singleton(Constants.FEE_ACCOUNT_ADDR));
+        states.putIfAbsent(Constants.FEE_ACCOUNT_ADDR, Account.emptyAccount(Constants.FEE_ACCOUNT_ADDR));
         switch (Transaction.Type.TYPE_MAP.get(tx.getType())) {
             case TRANSFER: {
-                createEmptyAccounts(states, Collections.singletonList(tx.getTo()));
+                states.putIfAbsent(tx.getTo(), Account.emptyAccount(tx.getTo()));
                 increaseNonce(states, tx);
                 updateTransfer(
                         states,
@@ -139,45 +136,20 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
                 return;
             }
             case COIN_BASE: {
-                createEmptyAccounts(states, Collections.singletonList(tx.getTo()));
+                states.putIfAbsent(tx.getTo(), Account.emptyAccount(tx.getTo()));
                 updateCoinBase(states, header, tx);
                 return;
             }
             case CONTRACT_DEPLOY:
-                createEmptyAccounts(
-                        states,
-                        Arrays.asList(tx.getFromAddress(), tx.createContractAddress())
-                );
-                increaseNonce(states, tx);
                 updateDeploy(states, header, tx);
                 return;
             case CONTRACT_CALL:
-                createEmptyAccounts(
-                        states,
-                        Collections.singletonList(tx.getFromAddress())
-                );
+                states.putIfAbsent(tx.getFromAddress(), Account.emptyAccount(tx.getFromAddress()));
                 increaseNonce(states, tx);
                 updateContractCall(states, header, tx);
                 return;
         }
         throw new RuntimeException("unknown type " + tx.getType());
-    }
-
-    public void createEmptyAccounts(Map<HexBytes, Account> states, Collection<? extends HexBytes> addresses) {
-        for (HexBytes addr : addresses) {
-            states.putIfAbsent(addr, createEmpty(addr));
-        }
-    }
-
-    /**
-     * create a fresh new account by address
-     *
-     * @param address address
-     * @return a fresh new account
-     */
-    @Override
-    public Account createEmpty(HexBytes address) {
-        return new Account(address, 0, 0, HexBytes.EMPTY, null, null, true);
     }
 
     private void updateCoinBase(Map<HexBytes, Account> accounts, Header header, Transaction t) {
@@ -198,69 +170,48 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
     }
 
     private void updateDeploy(Map<HexBytes, Account> accounts, Header header, Transaction t) {
-        Account contractAccount = accounts.get(t.createContractAddress());
-        Account createdBy = accounts.get(t.getFromAddress());
 
-        // transfer from creator to contract account
-        createdBy.setBalance(SafeMath.sub(createdBy.getBalance(), t.getAmount()));
-        accounts.put(createdBy.getAddress(), createdBy);
 
-        // initialize contract account
-        contractAccount.setCreatedBy(t.getFromAddress());
-        contractAccount.setNonce(t.getNonce());
-        contractAccount.setBalance(t.getAmount());
-        contractAccount.setStorageRoot(storageTrie.getRootHash());
-        byte[] contractHash = CryptoContext.hash(t.getPayload().getBytes());
-        contractStore.put(contractHash, t.getPayload().getBytes());
-        contractAccount.setContractHash(contractHash);
-        accounts.put(contractAccount.getAddress(), contractAccount);
+        int binaryLen = BigEndian.decodeInt32(t.getPayload().slice(0, 4).getBytes());
+        byte[] binary = t.getPayload().slice(4, 4 + binaryLen).getBytes();
+        byte[] parameters = t.getPayload().slice(4 + binaryLen).getBytes();
+
 
         Limit limit = new Limit();
 
-        Module m = new Module(t.getPayload().getBytes());
 
         // execute constructor of contract
-        if (m.getExportSection().getExports().stream().anyMatch(x -> x.getName().equals("init"))) {
-            ContractCall contractCall = new ContractCall(
-                    new HashSet<>(), accounts, header,
-                    t, storageTrie, null,
-                    messageQueue, contractStore,
-                    limit, 0
-            );
+        ContractCall contractCall = new ContractCall(
+                accounts, header,
+                t, storageTrie,
+                messageQueue, contractStore,
+                limit, 0, t.getFromAddress()
+        );
 
-            contractCall.call(
-                    contractAccount.getAddress(),
-                    "init",
-                    new byte[0]
-            );
-        }
+        contractCall.call(
+                HexBytes.fromBytes(binary),
+                "init",
+                parameters,
+                t.getAmount()
+        );
+
 
         // restore from map
-        createdBy = accounts.get(t.getFromAddress());
-        contractAccount = accounts.get(t.createContractAddress());
+        Account createdBy = accounts.get(t.getFromAddress());
+        Account contractAccount = accounts.get(t.createContractAddress());
 
         // estimate gas
         long gas = SafeMath.add(t.getPayload().size() / 1024, limit.getGas());
         long fee = SafeMath.mul(gas, t.getGasPrice());
 
-        createdBy.setBalance(SafeMath.sub(createdBy.getBalance(), fee));
-        accounts.put(createdBy.getAddress(), createdBy);
-
-        accounts.put(contractAccount.getAddress(), contractAccount);
         accounts.put(createdBy.getAddress(), createdBy);
         updateFeeAccount(accounts, fee);
         log.info("deploy contract at " + contractAccount.getAddress() + " success");
     }
 
+
     private void updateContractCall(Map<HexBytes, Account> accounts, Header header, Transaction t) {
         Account contractAccount = accounts.get(t.getTo());
-        Account caller = accounts.get(t.getFromAddress());
-
-        // transfer from caller to contract account
-        contractAccount.setBalance(SafeMath.add(contractAccount.getBalance(), t.getAmount()));
-        caller.setBalance(SafeMath.sub(caller.getBalance(), t.getAmount()));
-        accounts.put(contractAccount.getAddress(), contractAccount);
-        accounts.put(caller.getAddress(), caller);
 
         if (preBuiltContractAddresses.containsKey(contractAccount.getAddress())) {
             long fee = SafeMath.mul(10, t.getGasPrice());
@@ -278,20 +229,21 @@ public class AccountUpdater extends AbstractStateUpdater<HexBytes, Account> {
         // execute method
         Limit limit = new Limit();
         ContractCall contractCall = new ContractCall(
-                new HashSet<>(), accounts, header,
-                t, storageTrie, null,
+                accounts, header,
+                t, storageTrie,
                 messageQueue, contractStore,
-                limit, 0
+                limit, 0, t.getFromAddress()
         );
 
         contractCall.call(
                 contractAccount.getAddress(),
                 Context.readMethod(t.getPayload()),
-                Context.readParameters(t.getPayload())
+                Context.readParameters(t.getPayload()),
+                t.getAmount()
         );
 
         contractAccount = accounts.get(t.getTo());
-        caller = accounts.get(t.getFromAddress());
+        Account caller = accounts.get(t.getFromAddress());
 
         long fee = SafeMath.mul(limit.getGas(), t.getGasPrice());
         caller.setBalance(SafeMath.sub(caller.getBalance(), fee));

@@ -29,12 +29,6 @@ public interface StateUpdater<ID, S> {
      */
     void update(Map<ID, S> beforeUpdate, Header header, Transaction transaction);
 
-    /**
-     * generate an empty state
-     * @param id key of state
-     * @return a empty state
-     */
-    S createEmpty(ID id);
 
     /**
      * batch update

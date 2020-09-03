@@ -75,4 +75,14 @@ public class Account {
     public Account clone() {
         return new Account(address, nonce, balance, createdBy, contractHash, storageRoot, fresh);
     }
+
+    /**
+     * create a fresh new account by address
+     *
+     * @param address address
+     * @return a fresh new account
+     */
+    public static Account emptyAccount(HexBytes address) {
+        return new Account(address, 0, 0, HexBytes.EMPTY, null, null, true);
+    }
 }

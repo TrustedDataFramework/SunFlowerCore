@@ -5,6 +5,7 @@ import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.SafeMath;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,15 +13,11 @@ import java.util.Map;
 
 
 public class Transfer extends HostFunction {
-    private final HexBytes callerAddress;
     private final Map<HexBytes, Account> states;
-    private final HexBytes createdBy;
     private final HexBytes contractAddress;
 
-    public Transfer(HexBytes callerAddress, Map<HexBytes, Account> states, HexBytes createdBy, HexBytes contractAddress) {
-        this.callerAddress = callerAddress;
+    public Transfer(Map<HexBytes, Account> states, HexBytes contractAddress) {
         this.states = states;
-        this.createdBy = createdBy;
         this.contractAddress = contractAddress;
         setType(
                 new FunctionType(
@@ -37,16 +34,18 @@ public class Transfer extends HostFunction {
 
     @Override
     public long[] execute(long... parameters) {
-        if (parameters[0] == 0) {
-            long amount = parameters[1];
-            Account contractAccount = states.get(this.contractAddress);
-            if (contractAccount.getBalance() < amount)
-                throw new RuntimeException(this.contractAddress + " balance = " + contractAccount.getBalance() + " while transfer amount = " + amount);
-            contractAccount.setBalance(contractAccount.getBalance() - amount);
-            Account caller = states.get(callerAddress);
-            caller.setBalance(caller.getBalance() + amount);
-            return new long[0];
+        if (parameters[0] != 0) {
+            throw new RuntimeException("unexpected");
         }
-        throw new RuntimeException("unexpected");
+        long amount = parameters[1];
+        Account contractAccount = states.get(this.contractAddress);
+        HexBytes toAddr = HexBytes.fromBytes(loadMemory((int) parameters[2], (int) parameters[3]));
+        contractAccount.setBalance(SafeMath.sub(contractAccount.getBalance(), amount));
+        states.putIfAbsent(toAddr, Account.emptyAccount(toAddr));
+        Account to = states.get(toAddr);
+        to.setBalance(SafeMath.add(to.getBalance(), amount));
+        states.put(contractAddress, contractAccount);
+        states.put(to.getAddress(), to);
+        return new long[0];
     }
 }
