@@ -58,6 +58,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
                                 Store.getNop()
                         )
                 )
+                .withRelect(new NopReflect())
                 .withDB(new DBFunctions(trie, true))
                 .withEvent(messageQueue, address);
 

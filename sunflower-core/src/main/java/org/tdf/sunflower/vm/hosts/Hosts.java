@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class Hosts {
+
     private Result result = new Result();
 
     private ContextHost contextHost;
@@ -37,7 +38,7 @@ public class Hosts {
         return this;
     }
 
-    public Hosts withCall(Reflect reflect) {
+    public Hosts withRelect(Reflect reflect) {
         this.reflect = reflect;
         return this;
     }
@@ -58,6 +59,9 @@ public class Hosts {
                         new Util()
                 )
         );
+
+        if(reflect != null)
+            all.add(this.reflect);
 
         if (event != null)
             all.add(this.event);

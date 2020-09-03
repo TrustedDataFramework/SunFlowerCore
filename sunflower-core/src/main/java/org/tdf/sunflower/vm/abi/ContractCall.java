@@ -1,6 +1,7 @@
 package org.tdf.sunflower.vm.abi;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
@@ -60,8 +61,8 @@ public class ContractCall {
         throw new RuntimeException("cannot call reversed address " + address);
     }
 
-    public ContractCall fork(){
-        if(depth > ApplicationConstants.MAX_CONTRACT_CALL_DEPTH)
+    public ContractCall fork() {
+        if (depth + 1 == ApplicationConstants.MAX_CONTRACT_CALL_DEPTH)
             throw new RuntimeException("exceed call max depth");
         return new ContractCall(
                 states,
@@ -71,7 +72,7 @@ public class ContractCall {
                 messageQueue,
                 contractStore,
                 this.limit.fork(),
-                depth,
+                this.depth + 1,
                 this.recipient
         );
     }
@@ -84,7 +85,7 @@ public class ContractCall {
         Module m = null;
         HexBytes contractAddress;
 
-        if(isDeploy){
+        if (isDeploy) {
             m = new Module(binaryOrAddress.getBytes());
             byte[] hash = CryptoContext.hash(binaryOrAddress.getBytes());
             originAccount.setNonce(SafeMath.add(originAccount.getNonce(), 1));
@@ -95,7 +96,7 @@ public class ContractCall {
             contractAccount.setContractHash(hash);
             contractAccount.setCreatedBy(this.transaction.getFromAddress());
             contractAccount.setNonce(originAccount.getNonce());
-        } else{
+        } else {
             contractAddress = binaryOrAddress;
             contractAccount = states.get(contractAddress);
         }
@@ -131,7 +132,7 @@ public class ContractCall {
                         states,
                         this.recipient
                 )
-                .withCall(new Reflect(this))
+                .withRelect(new Reflect(this))
                 .withContext(new ContextHost(ctx, states, contractStore))
                 .withDB(DBFunctions)
                 .withEvent(messageQueue, contractAccount.getAddress());
@@ -147,8 +148,7 @@ public class ContractCall {
                 .build();
 
 
-
-        if(!isDeploy || instance.containsExport("init"))
+        if (!isDeploy || instance.containsExport("init"))
             instance.execute(method);
 
         DBFunctions.getStorageTrie().commit();

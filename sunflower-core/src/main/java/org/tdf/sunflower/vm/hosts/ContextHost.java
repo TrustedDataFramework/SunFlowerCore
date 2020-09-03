@@ -59,8 +59,9 @@ public class ContextHost extends HostFunction {
     public long[] execute(long... parameters) {
         Type type = Type.values()[(int) parameters[0]];
         long ret = 0;
-        boolean isPut = true;
+        boolean isPut = parameters[2] != 0;
         byte[] data = null;
+        long offset = parameters[1];
         switch (type) {
             case HEADER_PARENT_HASH:{
                 data = context.getHeader().getHashPrev().getBytes();
@@ -178,14 +179,16 @@ public class ContextHost extends HostFunction {
                     throw new RuntimeException(HexBytes.fromBytes(addr) + " is not a contract account");
                 data = this.contractCodeStore.get(a.getContractHash()).get();
                 ret = data.length;
+                isPut = parameters[4] != 0;
+                offset = parameters[3];
                 break;
             }
             default:
                 throw new RuntimeException("unexpected type " + type);
         }
 
-        if(isPut && parameters[2] != 0){
-            putMemory((int) parameters[1], data);
+        if(isPut){
+            putMemory((int) offset, data);
         }
         return new long[]{ret};
     }

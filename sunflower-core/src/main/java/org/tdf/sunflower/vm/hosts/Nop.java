@@ -6,14 +6,14 @@ import org.tdf.lotusvm.types.FunctionType;
 import java.util.ArrayList;
 
 // sizeof host function
-public class Noop extends HostFunction {
-    public Noop() {
+public class Nop extends HostFunction {
+    public Nop(String name) {
         setType(new FunctionType(new ArrayList<>(), new ArrayList<>()));
-        setName("_noop");
+        setName(name);
     }
 
     @Override
     public long[] execute(long... parameters) {
-        return new long[0];
+        throw new UnsupportedOperationException();
     }
 }
