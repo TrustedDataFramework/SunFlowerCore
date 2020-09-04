@@ -6,6 +6,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.Validator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Constants;
+import org.tdf.sunflower.state.ForkedStateTrie;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Transaction;
@@ -51,12 +52,17 @@ public abstract class AbstractValidator implements Validator {
         ValidateResult success = ValidateResult.success();
 
         try {
-            Trie<HexBytes, Account> tmp =
-                    accountTrie.tryUpdate(parent.getStateRoot().getBytes(), block);
+            ForkedStateTrie<HexBytes, Account> tmp = accountTrie.fork(parent.getStateRoot().getBytes());
+
+            for (Transaction tx : block.getBody()) {
+                tmp.update(block.getHeader(), tx);
+            }
+
             Account feeAccount =
-                    tmp.asMap().remove(Constants.FEE_ACCOUNT_ADDR);
-            tmp.commit();
-            if (!HexBytes.fromBytes(tmp.getRootHash()).equals(block.getStateRoot())) {
+                    tmp.remove(Constants.FEE_ACCOUNT_ADDR);
+            byte[] rootHash = tmp.commit();
+
+            if (!HexBytes.fromBytes(rootHash).equals(block.getStateRoot())) {
                 return ValidateResult.fault("state root not match");
             }
             tmp.flush();

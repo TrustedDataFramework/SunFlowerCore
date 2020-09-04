@@ -11,10 +11,7 @@ import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.TransactionPool;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Constants;
-import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.state.StateUpdater;
+import org.tdf.sunflower.state.*;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -85,11 +82,9 @@ public abstract class AbstractMiner implements Miner {
 
         // get a trie at parent block's state
         // modifications to the trie will not persisted until flush() called
-        Trie<HexBytes, Account> tmp = accountTrie
-                .getTrie()
-                .revert(parent.getStateRoot().getBytes(), cache);
+        ForkedStateTrie<HexBytes, Account> tmp = accountTrie.fork(parent.getStateRoot().getBytes());
 
-        StateUpdater<HexBytes, Account> updater = accountTrie.getUpdater();
+
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
         List<Transaction> transactionList = getTransactionPool().popPackable(
                 getAccountTrie().getTrie(parent.getStateRoot().getBytes()),
@@ -104,8 +99,7 @@ public abstract class AbstractMiner implements Miner {
                 // get all account related to this transaction in the trie
 
                 // store updated result to the trie if update success
-                updater
-                        .update(tmp.asMap(), header, tx);
+                tmp.update(header, tx);
             } catch (Exception e) {
                 // prompt reason for failed updates
                 e.printStackTrace();

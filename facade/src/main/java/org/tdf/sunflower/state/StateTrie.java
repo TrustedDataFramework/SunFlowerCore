@@ -4,6 +4,8 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
 
 import java.util.Collection;
 import java.util.Map;
@@ -27,25 +29,10 @@ public interface StateTrie<ID, S> {
 
     Trie<ID, S> getTrie(byte[] rootHash);
 
-    StateUpdater<ID, S> getUpdater();
-
     Store<byte[], byte[]> getTrieStore();
-
-    // get new trie without make any modification to underlying database
-    // call trie.flush() to persist modifications
-    default Trie<ID, S> update(byte[] parentRoot, Block block) {
-        Trie<ID, S> trie = tryUpdate(parentRoot, block);
-        trie.commit();
-        return trie;
-    }
-
-    // get update result,
-    Trie<ID, S> tryUpdate(byte[] parentRoot, Block block);
-
-    // get new trie without make any modification to underlying database
-    // call trie.flush() to persist modifications
-    Trie<ID, S> commit(byte[] parent, Map<ID, S> states);
 
     // collect garbage
     void prune(Collection<? extends byte[]> excludedRoots);
+
+    ForkedStateTrie<ID, S> fork(byte[] parentRoot);
 }

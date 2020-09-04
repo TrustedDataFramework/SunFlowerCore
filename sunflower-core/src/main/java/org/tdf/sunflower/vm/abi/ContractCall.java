@@ -2,10 +2,8 @@ package org.tdf.sunflower.vm.abi;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.Module;
@@ -20,6 +18,7 @@ import org.tdf.sunflower.vm.hosts.*;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 
 @RequiredArgsConstructor
 @Getter
@@ -29,7 +28,7 @@ public class ContractCall {
     private final Header header;
     private final Transaction transaction;
 
-    private final Trie<byte[], byte[]> storageTrie;
+    private final Function<byte[], Trie<byte[], byte[]>> storageTrieSupplier;
 
     // message queue
     private final BasicMessageQueue messageQueue;
@@ -45,6 +44,8 @@ public class ContractCall {
 
     // msg.sender
     private final HexBytes sender;
+
+    private final boolean readonly;
 
     // contract address called currently
     private HexBytes recipient;
@@ -68,12 +69,13 @@ public class ContractCall {
                 states,
                 header,
                 transaction,
-                storageTrie,
+                storageTrieSupplier,
                 messageQueue,
                 contractStore,
                 this.limit.fork(),
                 this.depth + 1,
-                this.recipient
+                this.recipient,
+                this.readonly
         );
     }
 
@@ -122,9 +124,8 @@ public class ContractCall {
         );
 
         DBFunctions DBFunctions = new DBFunctions(
-                storageTrie.revert(contractAccount.getStorageRoot(),
-                        new CachedStore<>(storageTrie.getStore(), ByteArrayMap::new)),
-                false
+                storageTrieSupplier.apply(contractAccount.getStorageRoot()),
+                this.readonly
         );
 
         Hosts hosts = new Hosts()
@@ -152,7 +153,6 @@ public class ContractCall {
             instance.execute(method);
 
         DBFunctions.getStorageTrie().commit();
-        DBFunctions.getStorageTrie().flush();
 
         contractAccount = states.get(this.recipient);
         contractAccount.setStorageRoot(DBFunctions.getStorageTrie().getRootHash());

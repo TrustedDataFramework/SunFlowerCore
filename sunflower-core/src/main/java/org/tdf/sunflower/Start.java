@@ -51,7 +51,6 @@ import org.tdf.sunflower.service.SunflowerRepositoryKVImpl;
 import org.tdf.sunflower.service.SunflowerRepositoryService;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.AccountUpdater;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
@@ -279,11 +278,6 @@ public class Start {
     }
 
     @Bean
-    public AccountUpdater accountUpdater(AccountTrie accountTrie) {
-        return (AccountUpdater) accountTrie.getUpdater();
-    }
-
-    @Bean
     public ConsensusEngine consensusEngine(
             ConsensusProperties consensusProperties,
             SunflowerRepository repositoryService,
@@ -497,17 +491,14 @@ public class Start {
         engine.setSecretStore(context.getBean(SecretStore.class));
         engine.setMessageQueue(context.getBean(BasicMessageQueue.class));
         engine.setStateTrieProvider(e -> {
-            AccountUpdater updater = new AccountUpdater(
-                    e.getGenesisStates().stream().collect(Collectors.toMap(Account::getAddress, Function.identity())),
-                    e.getContractCodeStore(), e.getContractStorageTrie(),
-                    e.getPreBuiltContracts(), e.getBios(),
-                    context.getBean(BasicMessageQueue.class)
-            );
 
             AccountTrie trie = new AccountTrie(
-                    updater, databaseStoreFactory,
-                    e.getContractCodeStore(), e.getContractStorageTrie(),
+                    databaseStoreFactory.create("account-trie"),
+                    e.getContractCodeStore(),
+                    e.getContractStorageTrie(),
                     context.getBean(BasicMessageQueue.class),
+                    e.getGenesisStates().stream().collect(Collectors.toMap(Account::getAddress, Function.identity())),
+                    e.getPreBuiltContracts(), e.getBios(),
                     context.getEnvironment().getProperty("sunflower.trie.secure", Boolean.class)
             );
 

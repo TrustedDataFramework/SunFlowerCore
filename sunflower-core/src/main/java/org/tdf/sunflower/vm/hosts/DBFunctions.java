@@ -37,13 +37,23 @@ public class DBFunctions extends HostFunction {
         this.readonly = readonly;
     }
 
+    private void assertReadOnly(Type t){
+        switch (t){
+            case SET:
+            case REMOVE:
+                if (readonly)
+                    throw new RuntimeException("readonly");
+                break;
+        }
+
+    }
+
     @Override
     public long[] execute(long... longs) {
         Type t = Type.values()[(int) longs[0]];
+        assertReadOnly(t);
         switch (t) {
             case SET: {
-                if (readonly)
-                    throw new RuntimeException("readonly");
                 byte[] key = loadMemory((int) longs[1], (int) longs[2]);
                 byte[] value = loadMemory((int) longs[3], (int) longs[4]);
                 this.storageTrie.put(key, value);

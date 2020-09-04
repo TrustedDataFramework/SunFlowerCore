@@ -202,7 +202,9 @@ public class EntryController {
             throw new RuntimeException("require parameters or args");
         HexBytes args = HexBytes.fromHex(arguments);
         Header h = sunflowerRepository.getBestHeader();
-        byte[] result = accountTrie.view(h.getStateRoot().getBytes(), addressHex, args);
+        byte[] result = accountTrie.fork(h.getStateRoot().getBytes())
+                .call(addressHex, args);
+
         return HexBytes.fromBytes(result);
     }
 
