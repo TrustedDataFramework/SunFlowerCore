@@ -7,6 +7,7 @@ import org.tdf.lotusvm.types.ValueType;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPList;
+import org.tdf.sunflower.util.ByteUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,13 +19,12 @@ public class RLPHost extends HostFunction {
         ENCODE_U64,
         ENCODE_BYTES,
         DECODE_BYTES,
-        BYTES_TO_U64,
         RLP_LIST_SET, // add rlp list to global env
         RLP_LIST_CLEAR,
         RLP_LIST_LEN,
         RLP_LIST_GET,
         RLP_LIST_PUSH,
-        RLP_LIST_BUILD
+        RLP_LIST_BUILD // build
     }
 
     private RLPList list;
@@ -62,14 +62,6 @@ public class RLPHost extends HostFunction {
                 byte[] encoded = loadMemory((int) longs[1], (int) longs[2]);
                 data = RLPElement.fromEncoded(encoded).asBytes();
                 ret = data.length;
-                break;
-            }
-            case BYTES_TO_U64:{
-                put = false;
-                byte[] bytes = loadMemory((int) longs[1], (int) longs[2]);
-                byte[] padded = new byte[8];
-                System.arraycopy(bytes, 0, padded, padded.length - bytes.length, bytes.length);
-                ret = BigEndian.decodeInt64(padded);
                 break;
             }
             case RLP_LIST_SET:{

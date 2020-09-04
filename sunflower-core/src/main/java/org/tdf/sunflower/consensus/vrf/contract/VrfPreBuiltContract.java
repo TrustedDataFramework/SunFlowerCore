@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.Store;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.state.Account;
@@ -105,7 +106,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
         Account fromAccount = accounts.get(HexBytes.fromBytes(fromAddr));
         Account contractAccount = accounts.get(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR));
 
-        if (fromAccount.getBalance() < amount) {
+        if (fromAccount.getBalance().compareTo(Uint256.of(amount)) < 0) {
             log.error("Deposit amount {} is less than account {} balance {}", amount, fromAddr,
                     fromAccount.getBalance());
             return;
@@ -135,8 +136,8 @@ public class VrfPreBuiltContract implements PreBuiltContract {
         }
 
         // Update account balance
-        fromAccount.setBalance(fromAccount.getBalance() - amount);
-        contractAccount.setBalance(contractAccount.getBalance() + amount);
+        fromAccount.setBalance(fromAccount.getBalance().safeSub(Uint256.of(amount)));
+        contractAccount.setBalance(contractAccount.getBalance().safeAdd(Uint256.of(amount)));
 
         // Update contract storage
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
@@ -178,8 +179,8 @@ public class VrfPreBuiltContract implements PreBuiltContract {
         total -= amount;
 
         // Update account balance
-        fromAccount.setBalance(fromAccount.getBalance() + amount);
-        contractAccount.setBalance(contractAccount.getBalance() - amount);
+        fromAccount.setBalance(fromAccount.getBalance().safeAdd(Uint256.of(amount)));
+        contractAccount.setBalance(contractAccount.getBalance().safeSub(Uint256.of(amount)));
 
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
         contractStorage.put(TOTAL_KEY, ByteUtil.longToBytes(total));

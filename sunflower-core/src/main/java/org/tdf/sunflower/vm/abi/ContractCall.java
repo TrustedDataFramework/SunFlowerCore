@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.Module;
@@ -80,14 +81,16 @@ public class ContractCall {
     }
 
 
-    public byte[] call(HexBytes binaryOrAddress, String method, byte[] parameters, long amount) {
+    public byte[] call(HexBytes binaryOrAddress, String method, byte[] parameters, Uint256 amount) {
         boolean isDeploy = "init".equals(method);
         Account contractAccount;
-        Account originAccount = states.get(this.transaction.getFromAddress());
+        Account originAccount = readonly ? null : states.get(this.transaction.getFromAddress());
         Module m = null;
         HexBytes contractAddress;
 
         if (isDeploy) {
+            if(this.readonly)
+                throw new RuntimeException("cannot deploy contract here");
             m = new Module(binaryOrAddress.getBytes());
             byte[] hash = CryptoContext.hash(binaryOrAddress.getBytes());
             originAccount.setNonce(SafeMath.add(originAccount.getNonce(), 1));
@@ -104,14 +107,17 @@ public class ContractCall {
         }
 
         // transfer amount from origin account to contract account
-        originAccount.setBalance(SafeMath.sub(originAccount.getBalance(), amount));
-        contractAccount.setBalance(SafeMath.add(contractAccount.getBalance(), amount));
+        if(!readonly){
+            originAccount.setBalance(originAccount.getBalance().safeSub(amount));
+            contractAccount.setBalance(contractAccount.getBalance().safeAdd(amount));
+            states.put(contractAccount.getAddress(), contractAccount);
+            states.put(originAccount.getAddress(), originAccount);
+        }
+
 
         this.recipient = contractAddress;
         assertContractAddress(contractAddress);
 
-        states.put(contractAccount.getAddress(), contractAccount);
-        states.put(originAccount.getAddress(), originAccount);
 
         // build Parameters here
         Context ctx = new Context(
@@ -133,8 +139,8 @@ public class ContractCall {
                         states,
                         this.recipient
                 )
-                .withRelect(new Reflect(this))
-                .withContext(new ContextHost(ctx, states, contractStore))
+                .withRelect(new Reflect(this, readonly))
+                .withContext(new ContextHost(ctx, states, contractStore, readonly))
                 .withDB(DBFunctions)
                 .withEvent(messageQueue, contractAccount.getAddress());
 
@@ -152,11 +158,13 @@ public class ContractCall {
         if (!isDeploy || instance.containsExport("init"))
             instance.execute(method);
 
-        DBFunctions.getStorageTrie().commit();
+        if(!readonly){
+            DBFunctions.getStorageTrie().commit();
+            contractAccount = states.get(this.recipient);
+            contractAccount.setStorageRoot(DBFunctions.getStorageTrie().getRootHash());
+            states.put(contractAccount.getAddress(), contractAccount);
+        }
 
-        contractAccount = states.get(this.recipient);
-        contractAccount.setStorageRoot(DBFunctions.getStorageTrie().getRootHash());
-        states.put(contractAccount.getAddress(), contractAccount);
         return isDeploy ? contractAddress.getBytes() : hosts.getResult();
     }
 }

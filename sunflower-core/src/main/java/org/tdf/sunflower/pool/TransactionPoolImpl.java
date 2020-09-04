@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.TransactionPoolConfig;
 import org.tdf.sunflower.events.NewBestBlock;
@@ -69,7 +70,7 @@ public class TransactionPoolImpl implements TransactionPool {
             if (cmp != 0) return cmp;
             cmp = Long.compare(tx.getNonce(), o.tx.getNonce());
             if (cmp != 0) return cmp;
-            cmp = -Long.compare(tx.getGasPrice(), o.tx.getGasPrice());
+            cmp = -tx.getGasPrice().compareTo(o.tx.getGasPrice());
             if (cmp != 0) return cmp;
             return tx.getHash().compareTo(o.tx.getHash());
         }
@@ -124,6 +125,11 @@ public class TransactionPoolImpl implements TransactionPool {
         try {
             List<Transaction> newCollected = new ArrayList<>(transactions.size());
             for (Transaction transaction : transactions) {
+                if(transaction.getAmount() == null)
+                    transaction.setAmount(Uint256.ZERO);
+                if(transaction.getGasPrice() == null)
+                    transaction.setGasPrice(Uint256.ZERO);
+
                 TransactionInfo info = new TransactionInfo(System.currentTimeMillis(), transaction);
                 if (cache.contains(info) || dropped.asMap().containsKey(transaction.getHash()))
                     continue;

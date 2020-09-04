@@ -1,6 +1,7 @@
 package org.tdf.sunflower.consensus.pow;
 
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.events.NewBlockMined;
@@ -49,8 +50,8 @@ public class PoWMiner extends AbstractMiner {
         return new Transaction(
                 PoW.TRANSACTION_VERSION, Transaction.Type.COIN_BASE.code,
                 System.currentTimeMillis() / 1000, height,
-                HexBytes.EMPTY, 0,
-                20, HexBytes.EMPTY, poWConfig.getMinerCoinBase(),
+                HexBytes.EMPTY, Uint256.ZERO,
+                Uint256.of(20), HexBytes.EMPTY, poWConfig.getMinerCoinBase(),
                 HexBytes.EMPTY
         );
     }

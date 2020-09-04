@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.consensus.pow.PoW;
@@ -123,7 +124,7 @@ public class EntryController {
         HexBytes addressHex = Address.of(addressOrPublicKey);
         return accountTrie.get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex)
                 .map(AccountView::fromAccount)
-                .orElse(new AccountView(addressHex, 0, 0, HexBytes.EMPTY, HexBytes.EMPTY, HexBytes.empty()));
+                .orElse(new AccountView(addressHex, 0, Uint256.ZERO, HexBytes.EMPTY, HexBytes.EMPTY, HexBytes.empty()));
     }
 
     @GetMapping(value = "/approved")
@@ -265,7 +266,7 @@ public class EntryController {
         List<Block> blocks = repository.getBlocksBetween(Math.max(0, best.getHeight() - 10), best.getHeight());
         List<Block> blocksWithoutGenesis = blocks.stream().filter(b -> b.getHeight() != 0).collect(Collectors.toList());
 
-        long totalGasPrice = 0;
+        Uint256 totalGasPrice = Uint256.ZERO;
         long totalTransactions = 0;
         long avgInterval = blocksWithoutGenesis.size() > 1 ?
                 (blocksWithoutGenesis.get(blocksWithoutGenesis.size() - 1).getCreatedAt() - blocksWithoutGenesis.get(0).getCreatedAt()) / (blocksWithoutGenesis.size() - 1)
@@ -275,7 +276,7 @@ public class EntryController {
             for (Transaction t : b.getBody()) {
                 if (t.getType() == Transaction.Type.COIN_BASE.code)
                     continue;
-                totalGasPrice += t.getGasPrice();
+                totalGasPrice = totalGasPrice.safeAdd(t.getGasPrice());
                 totalTransactions++;
             }
         }
@@ -290,7 +291,7 @@ public class EntryController {
         return builder.cpu(osMxBean.getSystemLoadAverage())
                 .memoryUsed(osMxBean.getTotalPhysicalMemorySize() - osMxBean.getFreePhysicalMemorySize())
                 .totalMemory(osMxBean.getTotalPhysicalMemorySize())
-                .averageGasPrice(totalTransactions == 0 ? 0 : totalGasPrice * 1.0 / totalTransactions)
+                .averageGasPrice(totalTransactions == 0 ? Uint256.ZERO : totalGasPrice.div(Uint256.of(totalTransactions)))
                 .averageBlockInterval(avgInterval)
                 .height(best.getHeight())
                 .mining(blocks.stream().anyMatch(x -> x.getBody().size() > 0 && x.getBody().get(0).getTo().equals(miner.getMinerAddress())))
@@ -319,7 +320,7 @@ public class EntryController {
 
         // the balance of account
         // for contract account, this field is zero
-        private long balance;
+        private Uint256 balance;
 
         // for normal address this field is null
         // for contract address this field is creator of this contract

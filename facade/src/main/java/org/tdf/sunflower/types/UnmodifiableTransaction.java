@@ -1,6 +1,7 @@
 package org.tdf.sunflower.types;
 
 import lombok.NonNull;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.*;
 
@@ -27,8 +28,8 @@ public class UnmodifiableTransaction extends Transaction {
 
     public UnmodifiableTransaction(
             int version, int type, long createdAt,
-            long nonce, HexBytes from, long gasPrice,
-            long amount, HexBytes payload, HexBytes to,
+            long nonce, HexBytes from, Uint256 gasPrice,
+            Uint256 amount, HexBytes payload, HexBytes to,
             HexBytes signature
     ) {
         super(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
@@ -66,12 +67,12 @@ public class UnmodifiableTransaction extends Transaction {
     }
 
     @Override
-    public void setGasPrice(long gasPrice) {
+    public void setGasPrice(Uint256 gasPrice) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setAmount(long amount) {
+    public void setAmount(Uint256 amount) {
         throw new UnsupportedOperationException();
     }
 

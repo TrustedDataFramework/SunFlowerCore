@@ -1,5 +1,7 @@
 package org.tdf.sunflower.consensus;
 
+import org.tdf.common.types.Uint256;
+
 public interface EconomicModel {
-    long getConsensusRewardAtHeight(long height);
+    Uint256 getConsensusRewardAtHeight(long height);
 }

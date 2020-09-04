@@ -2,6 +2,7 @@ package org.tdf.sunflower.vm.abi;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.types.Header;
@@ -18,7 +19,7 @@ public class Context {
     private Account contractAccount;
     private HexBytes arguments;
     private HexBytes msgSender;
-    private long amount;
+    private Uint256 amount;
 
     public boolean containsTransaction() {
         return transaction != null;

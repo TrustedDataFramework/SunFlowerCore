@@ -3,6 +3,7 @@ package org.tdf.sunflower.state;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPIgnored;
 import org.tdf.rlp.RLPItem;
@@ -18,7 +19,7 @@ public class Account {
     public static Account emptyContract(HexBytes address) {
         return new Account(
                 address, 0,
-                0, address,
+                Uint256.ZERO, address,
                 null,
                 CryptoContext.hash(RLPItem.NULL.getEncoded()),
                 true
@@ -33,7 +34,7 @@ public class Account {
 
     // the balance of account
     // for contract account, this field is zero
-    private long balance;
+    private Uint256 balance;
 
 
     // for normal address this field is null
@@ -61,7 +62,7 @@ public class Account {
 
     }
 
-    public Account(HexBytes address, long balance) {
+    public Account(HexBytes address, Uint256 balance) {
         if (address.size() != ADDRESS_SIZE) throw new RuntimeException("address size should be " + ADDRESS_SIZE);
         this.address = address;
         this.balance = balance;
@@ -83,6 +84,6 @@ public class Account {
      * @return a fresh new account
      */
     public static Account emptyAccount(HexBytes address) {
-        return new Account(address, 0, 0, HexBytes.EMPTY, null, null, true);
+        return new Account(address, 0, Uint256.ZERO, HexBytes.EMPTY, null, null, true);
     }
 }

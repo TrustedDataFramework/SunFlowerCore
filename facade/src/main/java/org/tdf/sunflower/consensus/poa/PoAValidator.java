@@ -1,6 +1,7 @@
 package org.tdf.sunflower.consensus.poa;
 
 import lombok.Setter;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.state.Account;
@@ -24,8 +25,8 @@ public class PoAValidator extends AbstractValidator {
     public ValidateResult validate(Block block, Block dependency) {
         ValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
-        long fee = (long) res.getCtx();
-        if (fee + poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1) != block.getBody().get(0).getAmount()) {
+        Uint256 fee = (Uint256) res.getCtx();
+        if (!fee.safeAdd(poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1)).equals(block.getBody().get(0).getAmount())) {
             return ValidateResult.fault("reward of coin base transaction should be " + poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1));
         }
         if (block.getVersion() != PoAConstants.BLOCK_VERSION) {

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
@@ -52,7 +53,7 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
         List<Account> ret = new ArrayList<>();
         if (genesis.alloc != null) {
             genesis.alloc.forEach((k, v) -> {
-                Account a = new Account(HexBytes.fromHex(k), v);
+                Account a = new Account(HexBytes.fromHex(k), Uint256.of(v));
                 ret.add(a);
             });
         }
@@ -225,7 +226,7 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
         for (MinerInfo miner : miners) {
             storage.put(miner.address.getBytes(), ByteUtil.longToBytes(miner.collateral));
             total += miner.collateral;
-            contractAccount.setBalance(contractAccount.getBalance() + miner.collateral);
+            contractAccount.setBalance(contractAccount.getBalance().safeAdd(Uint256.of(miner.collateral)));
         }
         storage.put(VrfPreBuiltContract.TOTAL_KEY, ByteUtil.longToBytes(total));
     }

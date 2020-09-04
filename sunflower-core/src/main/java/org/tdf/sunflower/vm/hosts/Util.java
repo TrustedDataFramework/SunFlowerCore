@@ -1,10 +1,13 @@
 package org.tdf.sunflower.vm.hosts;
 
 import com.google.common.primitives.Bytes;
+import org.tdf.common.types.Uint256;
+import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
+import org.tdf.sunflower.util.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -15,7 +18,8 @@ public class Util extends HostFunction {
         CONCAT_BYTES,
         DECODE_HEX,
         ENCODE_HEX,
-        COMPARE_BYTES
+        BYTES_TO_U64,
+        U64_TO_BYTES
     }
 
     public Util() {
@@ -58,6 +62,23 @@ public class Util extends HostFunction {
                 byte[] a = loadMemory((int) longs[1], (int) longs[2]);
                 String str = HexBytes.encode(a);
                 data = str.getBytes(StandardCharsets.US_ASCII);
+                ret = data.length;
+                break;
+            }
+            case BYTES_TO_U64:{
+                put = false;
+                byte[] bytes = loadMemory((int) longs[1], (int) longs[2]);
+                byte[] padded = new byte[8];
+                System.arraycopy(bytes, 0, padded, padded.length - bytes.length, bytes.length);
+                ret = BigEndian.decodeInt64(padded);
+                break;
+            }
+            case U64_TO_BYTES:{
+                long u = longs[1];
+                data = Uint256.getNoLeadZeroesData(BigEndian.encodeInt64(u));
+                if(data.length > 0 && data[0] == 0){
+                    System.out.println("===");
+                }
                 ret = data.length;
                 break;
             }

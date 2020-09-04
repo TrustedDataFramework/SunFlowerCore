@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.tdf.common.types.Uint256;
 
 @Data
 @Builder
@@ -26,7 +27,7 @@ public class Stat {
     private double averageBlockInterval;
 
     // average transaction fee (last
-    private double averageGasPrice;
+    private Uint256 averageGasPrice;
 
     private long transactionPoolSize;
 

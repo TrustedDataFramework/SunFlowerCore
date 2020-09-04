@@ -1,5 +1,6 @@
 package org.tdf.sunflower.dao;
 
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.entity.HeaderEntity;
 import org.tdf.sunflower.entity.TransactionEntity;
@@ -33,7 +34,8 @@ public class Mapping {
                 .version(transaction.getVersion())
                 .type(transaction.getType()).createdAt(transaction.getCreatedAt())
                 .nonce(transaction.getNonce()).from(HexBytes.fromBytes(transaction.getFrom()))
-                .gasPrice(transaction.getGasPrice()).amount(transaction.getAmount())
+                .gasPrice(Uint256.of(transaction.getGasPrice()))
+                .amount(Uint256.of(transaction.getAmount()))
                 .payload(HexBytes.fromBytes(transaction.getPayload())).to(HexBytes.fromBytes(transaction.getTo()))
                 .signature(HexBytes.fromBytes(transaction.getSignature()))
                 .build();
@@ -76,8 +78,8 @@ public class Mapping {
                 .createdAt(tx.getCreatedAt())
                 .nonce(tx.getNonce())
                 .from(tx.getFrom().getBytes())
-                .gasPrice(tx.getGasPrice())
-                .amount(tx.getAmount())
+                .gasPrice(tx.getGasPrice().value().longValue())
+                .amount(tx.getAmount().value().longValue())
                 .payload(tx.getPayload().getBytes())
                 .to(tx.getTo().getBytes())
                 .signature(tx.getSignature().getBytes())

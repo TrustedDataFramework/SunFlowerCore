@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
@@ -70,7 +71,7 @@ public class PoW extends AbstractConsensusEngine {
 
         if (genesis.getAlloc() != null) {
             genesis.getAlloc().forEach((k, v) -> {
-                Account a = new Account(HexBytes.fromHex(k), v);
+                Account a = new Account(HexBytes.fromHex(k), Uint256.of(v));
                 accounts.add(a);
             });
         }

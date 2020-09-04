@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
@@ -56,7 +57,8 @@ public class PoS extends AbstractConsensusEngine {
     public List<Account> getGenesisStates() {
         return genesis.alloc == null ? Collections.emptyList() :
                 genesis.alloc.entrySet().stream()
-                        .map(e -> new Account(HexBytes.fromHex(e.getKey()), e.getValue())).collect(Collectors.toList());
+                        .map(e -> new Account(HexBytes.fromHex(e.getKey()), Uint256.of(e.getValue())))
+                        .collect(Collectors.toList());
     }
 
     @Override
@@ -75,7 +77,9 @@ public class PoS extends AbstractConsensusEngine {
 
         Map<HexBytes, NodeInfo> nodesMap = new TreeMap<>();
         if (genesis.miners != null) {
-            genesis.miners.forEach(m -> nodesMap.put(m.getAddress(), new NodeInfo(m.getAddress(), m.vote, new TreeSet<>())));
+            genesis.miners.forEach(
+                    m -> nodesMap.put(m.getAddress(), new NodeInfo(m.getAddress(), Uint256.of(m.vote),
+                            new TreeSet<>())));
         }
 
         this.minerContract = new PosPreBuilt(nodesMap);

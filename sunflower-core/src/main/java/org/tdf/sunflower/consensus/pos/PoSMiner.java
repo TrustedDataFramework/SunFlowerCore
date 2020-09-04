@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
@@ -137,9 +138,10 @@ public class PoSMiner extends AbstractMiner {
                 .createdAt(System.currentTimeMillis() / 1000)
                 .nonce(height)
                 .from(HexBytes.EMPTY)
-                .amount(0)
+                .amount(Uint256.ZERO)
                 .payload(HexBytes.empty())
                 .to(this.minerAddress)
+                .gasPrice(Uint256.ZERO)
                 .signature(HexBytes.EMPTY).build();
     }
 }

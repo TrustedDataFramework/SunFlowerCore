@@ -1,5 +1,6 @@
 package org.tdf.sunflower.vm.hosts;
 
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
@@ -12,6 +13,7 @@ import java.util.Collections;
 public class Reflect extends HostFunction {
     private final ContractCall parent;
     private byte[] result;
+    private boolean readonly;
 
     enum Type {
         CALL_WITHOUT_PUT, // call without put into memory
@@ -19,18 +21,19 @@ public class Reflect extends HostFunction {
         CREATE // create
     }
 
-    public Reflect(ContractCall parent) {
+    public Reflect(ContractCall parent, boolean readonly) {
         this.parent = parent;
         setType(new FunctionType(
                 // offset, length, offset
                 Arrays.asList(
                         ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64,
                         ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64,
-                        ValueType.I64
+                        ValueType.I64, ValueType.I64
                 ),
                 Collections.singletonList(ValueType.I64)
         ));
         setName("_reflect");
+        this.readonly = readonly;
     }
 
     @Override
@@ -39,7 +42,7 @@ public class Reflect extends HostFunction {
         byte[] data = null;
         long ret = 0;
         boolean put = false;
-        long offset = longs[8];
+        long offset = longs[9];
         switch (t) {
             case CALL_WITHOUT_PUT:
             case CALL_WITH_PUT: {
@@ -55,16 +58,18 @@ public class Reflect extends HostFunction {
                 if ("init".equals(method))
                     throw new RuntimeException("cannot call constructor");
                 byte[] parameters = loadMemory((int) longs[5], (int) longs[6]);
-                long amount = longs[7];
+                Uint256 amount = Uint256.of(loadMemory((int) longs[7], (int) longs[8]));
                 ContractCall forked = parent.fork();
                 this.result = forked.call(HexBytes.fromBytes(addr), method, parameters, amount);
                 ret = this.result.length;
                 break;
             }
             case CREATE:
+                if(this.readonly)
+                    throw new RuntimeException("cannot create contract here");
                 byte[] binary = loadMemory((int) longs[1], (int) longs[2]);
                 byte[] parameters = loadMemory((int) longs[3], (int) longs[4]);
-                long amount = longs[7];
+                Uint256 amount = Uint256.of(loadMemory((int) longs[7], (int) longs[8]));
                 ContractCall forked = parent.fork();
                 data = forked.call(HexBytes.fromBytes(binary), "init", parameters, amount);
                 ret = data.length;

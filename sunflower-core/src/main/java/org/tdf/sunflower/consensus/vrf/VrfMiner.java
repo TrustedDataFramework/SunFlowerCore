@@ -13,6 +13,7 @@ import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
@@ -196,13 +197,13 @@ public class VrfMiner extends AbstractMiner {
 
         private static final long HALF_PERIOD = 10000000;
 
-        public static long getConsensusRewardAtHeight(long height) {
+        public static Uint256 getConsensusRewardAtHeight(long height) {
             long era = height / HALF_PERIOD;
             long reward = INITIAL_SUPPLY;
             for (long i = 0; i < era; i++) {
                 reward = reward * 52218182 / 100000000;
             }
-            return reward;
+            return Uint256.of(reward);
         }
 
     }

@@ -6,6 +6,7 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.PrefixStore;
 import org.tdf.common.store.Store;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
@@ -51,12 +52,12 @@ public class PosPreBuilt implements PreBuiltContract {
     @AllArgsConstructor
     public static class NodeInfo implements Comparable<NodeInfo> {
         private HexBytes address;
-        private long vote;
+        private Uint256 vote;
         private TreeSet<HexBytes> txHash;
 
         @Override
         public int compareTo(NodeInfo o) {
-            return Long.compare(vote, o.vote);
+            return vote.compareTo(o.vote);
         }
     }
 
@@ -67,7 +68,7 @@ public class PosPreBuilt implements PreBuiltContract {
         private HexBytes txHash;
         private HexBytes from;
         private HexBytes to;
-        private Long amount;
+        private Uint256 amount;
 
         @Override
         public int compareTo(VoteInfo o) {
@@ -141,15 +142,15 @@ public class PosPreBuilt implements PreBuiltContract {
 
         switch (type) {
             case VOTE: {
-                if(transaction.getAmount() == 0)
+                if(transaction.getAmount().compareTo(Uint256.ZERO) == 0)
                     throw new RuntimeException("amount of vote cannot be 0 ");
                 Map.Entry<Integer, NodeInfo> e =
                         findFirst(nodeInfos, x -> x.address.equals(args));
 
-                NodeInfo n = e.getKey() < 0 ? new NodeInfo(args, 0, new TreeSet<>()) :
+                NodeInfo n = e.getKey() < 0 ? new NodeInfo(args, Uint256.ZERO, new TreeSet<>()) :
                         e.getValue();
 
-                n.vote += transaction.getAmount();
+                n.vote = n.vote.safeAdd(transaction.getAmount());
                 n.txHash.add(transaction.getHash());
                 if (e.getKey() < 0)
                     nodeInfos.add(n);
@@ -162,7 +163,7 @@ public class PosPreBuilt implements PreBuiltContract {
                 break;
             }
             case CANCEL_VOTE:
-                if(transaction.getAmount() != 0)
+                if(transaction.getAmount().compareTo(Uint256.ZERO) != 0)
                     throw new RuntimeException("amount of cancel vote should be 0");
                 Optional<VoteInfo> o = voteInfos.get(args.getBytes());
 
@@ -182,20 +183,20 @@ public class PosPreBuilt implements PreBuiltContract {
                 }
 
                 NodeInfo ninfo = e2.getValue();
-                ninfo.vote -= voteInfo.amount;
+                ninfo.vote = ninfo.vote.safeSub(voteInfo.amount);
                 ninfo.txHash.remove(args);
 
-                if (ninfo.vote == 0) {
+                if (ninfo.vote.compareTo(Uint256.ZERO) == 0) {
                     nodeInfos.remove((int) e2.getKey());
                 } else {
                     nodeInfos.set(e2.getKey(), ninfo);
                 }
 
                 Account fromaccount = accounts.get(transaction.getFromAddress());
-                fromaccount.setBalance(fromaccount.getBalance() + voteInfo.getAmount());
+                fromaccount.setBalance(fromaccount.getBalance().safeAdd(voteInfo.getAmount()));
                 accounts.put(fromaccount.getAddress(), fromaccount);
                 Account thisContract = accounts.get(Constants.POS_CONTRACT_ADDR);
-                thisContract.setBalance(thisContract.getBalance() - voteInfo.amount);
+                thisContract.setBalance(thisContract.getBalance().safeSub(voteInfo.amount));
                 accounts.put(thisContract.getAddress(), thisContract);
                 break;
         }

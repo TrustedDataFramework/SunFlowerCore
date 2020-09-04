@@ -8,6 +8,7 @@ import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.*;
 import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
@@ -41,9 +42,9 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
     private HexBytes genesisRoot;
 
     // memory cached
-    private Map<byte[], byte[]> trieCache;
-    private Map<byte[], byte[]> contractStorageCache;
-    private Map<byte[], byte[]> contractCodeCache;
+    private CachedStore<byte[], byte[]> trieCache;
+    private NoDeleteCachedStore<byte[], byte[]> contractStorageCache;
+    private CachedStore<byte[], byte[]> contractCodeCache;
     private Trie<HexBytes, Account> dirtyTrie;
 
     @SneakyThrows
@@ -101,7 +102,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
 
         // sync to genesis
         Trie<HexBytes, Account> tmp = this.trie.revert();
-        genesisStates.forEach(tmp::put);
+        this.genesisStates.forEach(tmp::put);
         this.genesisRoot = HexBytes.fromBytes(tmp.commit());
         log.info("genesis states = {}", Start.MAPPER.writeValueAsString(genesisStates));
         log.info("genesis state root = " + genesisRoot);
@@ -117,10 +118,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
     private Trie<byte[], byte[]> getDirtyContractStorageTrie(byte[] storageRoot) {
         return contractStorageTrie.revert(
                 storageRoot,
-                new NoDeleteCachedStore<>(
-                        contractStorageTrie.getStore(),
-                        () -> this.contractStorageCache
-                )
+                this.contractStorageCache
         );
     }
 
@@ -132,10 +130,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
 //        ContractCall call = new ContractCall();
 //        return hosts.getResult();
 //    }
-
-    private Store<byte[], byte[]> getDirtyContractCodeStore() {
-        return new CachedStore<>(this.contractCodeStore, () -> this.contractCodeCache);
-    }
 
     @Override
     DatabaseStore getDB() {
@@ -151,8 +145,12 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
     @Override
     public ForkedStateTrie<HexBytes, Account> fork(byte[] parentRoot) {
         Map<byte[], byte[]> trieCache = new ByteArrayMap<>();
-        Store<byte[], byte[]> cachedTrieStore = new CachedStore<>(trie.getStore(), () -> trieCache);
-        Map<byte[], byte[]> contractStorageCache = new ByteArrayMap<>();
+        Map<byte[], byte[]> contractStorageCacheMap = new ByteArrayMap<>();
+        CachedStore<byte[], byte[]> cachedTrieStore = new CachedStore<>(trie.getStore(), () -> trieCache);
+        NoDeleteCachedStore<byte[], byte[]> contractStorageCache = new NoDeleteCachedStore<>(
+                this.contractStorageTrie.getStore(),
+                () -> contractStorageCacheMap
+        );
         Map<byte[], byte[]> contractCodeCache = new ByteArrayMap<>();
         return new AccountTrie(
                 trie,
@@ -166,17 +164,17 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
                 db,
                 this.trieStore,
                 genesisRoot,
-                trieCache,
+                cachedTrieStore,
                 contractStorageCache,
-                contractCodeCache,
+                new CachedStore<>(contractCodeStore, () -> contractCodeCache),
                 trie.revert(parentRoot, cachedTrieStore)
         );
     }
 
-    public void updateFeeAccount(long fee) {
+    public void updateFeeAccount(Uint256 fee) {
         Map<HexBytes, Account> states = this.dirtyTrie.asMap();
         Account feeAccount = states.get(Constants.FEE_ACCOUNT_ADDR);
-        feeAccount.setBalance(SafeMath.add(feeAccount.getBalance(), fee));
+        feeAccount.setBalance(feeAccount.getBalance().safeAdd(fee));
         states.put(feeAccount.getAddress(), feeAccount);
     }
 
@@ -190,20 +188,20 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         states.put(state.getAddress(), state);
     }
 
-    public void updateTransfer(HexBytes fromAddr, HexBytes toAddr, long amount, long fee) {
+    public void updateTransfer(HexBytes fromAddr, HexBytes toAddr, Uint256 amount, Uint256 fee) {
         Map<HexBytes, Account> states = this.dirtyTrie.asMap();
 
-        if (amount == 0)
+        if (amount.compareTo(Uint256.ZERO) == 0)
             throw new RuntimeException("transfer amount = 0");
 
         Account from = states.get(fromAddr);
-        from.setBalance(SafeMath.sub(from.getBalance(), SafeMath.add(amount, fee)));
+        from.setBalance(from.getBalance().safeSub(amount.safeAdd(fee)));
 
         Account to = states.get(toAddr);
         if (to.getCreatedBy() != null && !to.getCreatedBy().isEmpty())
             throw new RuntimeException("transfer to contract address is not allowed");
 
-        to.setBalance(SafeMath.add(to.getBalance(), amount));
+        to.setBalance(to.getBalance().safeAdd(amount));
         states.put(fromAddr, from);
         states.put(toAddr, to);
         updateFeeAccount(fee);
@@ -249,7 +247,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         Map<HexBytes, Account> accounts = this.dirtyTrie.asMap();
 
         Account to = accounts.get(t.getTo());
-        to.setBalance(SafeMath.add(to.getBalance(), t.getAmount()));
+        to.setBalance(to.getBalance().safeAdd(t.getAmount()));
         accounts.put(to.getAddress(), to);
 
         for (Bios bios : biosList.values()) {
@@ -278,7 +276,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         ContractCall contractCall = new ContractCall(
                 accounts, header,
                 t, this::getDirtyContractStorageTrie,
-                messageQueue, getDirtyContractCodeStore(),
+                messageQueue, this.contractCodeCache,
                 limit, 0, t.getFromAddress(),
                 false
         );
@@ -297,7 +295,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
 
         // estimate gas
         long gas = SafeMath.add(t.getPayload().size() / 1024, limit.getGas());
-        long fee = SafeMath.mul(gas, t.getGasPrice());
+        Uint256 fee = Uint256.of(gas).safeMul(t.getGasPrice());
 
         accounts.put(createdBy.getAddress(), createdBy);
         updateFeeAccount(fee);
@@ -310,7 +308,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         Account contractAccount = accounts.get(t.getTo());
 
         if (preBuiltContractAddresses.containsKey(contractAccount.getAddress())) {
-            long fee = SafeMath.mul(10, t.getGasPrice());
+            Uint256 fee = Uint256.of(10).safeMul(t.getGasPrice());
             Trie<byte[], byte[]> before =
                     getDirtyContractStorageTrie(contractAccount.getStorageRoot());
             PreBuiltContract updater = preBuiltContractAddresses.get(contractAccount.getAddress());
@@ -327,7 +325,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
                 accounts, header,
                 t, this::getDirtyContractStorageTrie,
                 messageQueue,
-                this.getDirtyContractCodeStore(),
+                this.contractCodeCache,
                 limit, 0, t.getFromAddress(),
                 false
         );
@@ -342,8 +340,8 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         contractAccount = accounts.get(t.getTo());
         Account caller = accounts.get(t.getFromAddress());
 
-        long fee = SafeMath.mul(limit.getGas(), t.getGasPrice());
-        caller.setBalance(SafeMath.sub(caller.getBalance(), fee));
+        Uint256 fee = Uint256.of(limit.getGas()).safeMul(t.getGasPrice());
+        caller.setBalance(caller.getBalance().safeSub(fee));
         accounts.put(contractAccount.getAddress(), contractAccount);
         accounts.put(caller.getAddress(), caller);
         updateFeeAccount(fee);
@@ -369,9 +367,9 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
 
     @Override
     public void flush() {
-        getDirtyTrie().flush();
-        getDirtyContractCodeStore().flush();
-        getDirtyContractCodeStore().flush();
+        this.trieCache.flush();
+        this.contractStorageCache.flush();
+        this.contractCodeCache.flush();
     }
 
     @Override
@@ -386,7 +384,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
                 this.dirtyTrie.asMap(), null,
                 null, this::getDirtyContractStorageTrie,
                 messageQueue,
-                this.getDirtyContractCodeStore(),
+                this.contractCodeCache,
                 limit, 0, null,
                 true
         );
@@ -396,7 +394,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         return contractCall.call(
                 address,
                 method,
-                parameters, 0
+                parameters, Uint256.ZERO
         );
     }
 }

@@ -8,6 +8,7 @@ import lombok.*;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.Constants;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
@@ -68,9 +69,9 @@ public class Transaction {
     @RLP(4)
     protected HexBytes from;
     @RLP(5)
-    protected long gasPrice;
+    protected Uint256 gasPrice;
     @RLP(6)
-    protected long amount;
+    protected Uint256 amount;
 
     /**
      * for coinbase and transfer, this field is null or empty bytes
@@ -98,7 +99,7 @@ public class Transaction {
     public Transaction(
             int version,
             int type, long createdAt, long nonce, HexBytes from,
-            long gasPrice, long amount, HexBytes payload,
+            Uint256 gasPrice, Uint256 amount, HexBytes payload,
             HexBytes to, HexBytes signature
     ) {
         this.version = version;
@@ -158,7 +159,8 @@ public class Transaction {
     public int size() {
         return Constants.sizeOf(version) + Constants.sizeOf(type)
                 + Constants.sizeOf(createdAt) + Constants.sizeOf(nonce)
-                + Constants.sizeOf(gasPrice) + Constants.sizeOf(amount) +
+                + this.gasPrice.getNoLeadZeroesData().length +
+                this.amount.getNoLeadZeroesData().length +
                 Stream.of(from, payload, to, signature)
                         .map(Constants::sizeOf)
                         .reduce(0, Integer::sum);
@@ -189,12 +191,12 @@ public class Transaction {
         getHash(true);
     }
 
-    public void setGasPrice(long gasPrice) {
+    public void setGasPrice(Uint256 gasPrice) {
         this.gasPrice = gasPrice;
         getHash(true);
     }
 
-    public void setAmount(long amount) {
+    public void setAmount(Uint256 amount) {
         this.amount = amount;
         getHash(true);
     }
@@ -232,12 +234,12 @@ public class Transaction {
     }
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    public long getFee(){
+    public Uint256 getFee(){
         if(type == Type.COIN_BASE.code)
-            return 0;
+            return Uint256.ZERO;
         if(type == Type.TRANSFER.code)
-            return 10 * getGasPrice();
-        return 0;
+            return  Uint256.of(10L).mul(getGasPrice());
+        return Uint256.ZERO;
     }
 
 
@@ -323,11 +325,11 @@ public class Transaction {
         return Address.fromPublicKey(getFrom());
     }
 
-    public long getGasPrice() {
+    public Uint256 getGasPrice() {
         return gasPrice;
     }
 
-    public long getAmount() {
+    public Uint256 getAmount() {
         return amount;
     }
 
@@ -344,8 +346,8 @@ public class Transaction {
     }
 
     public ValidateResult basicValidate() {
-        if (amount < 0 || gasPrice < 0)
-            return ValidateResult.fault("integer overflow: amount of transaction " + getHash());
+        if (amount == null || gasPrice == null)
+            return ValidateResult.fault("missing amount or gas price");
         if (!Type.TYPE_MAP.containsKey(type))
             return ValidateResult.fault("unknown transaction type " + type + " of " + getHash());
         if (type != Type.COIN_BASE.code && (signature == null || signature.isEmpty()))

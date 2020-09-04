@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
@@ -147,6 +148,7 @@ public class PoAMiner extends AbstractMiner {
                 .amount(poA.economicModel.getConsensusRewardAtHeight(height))
                 .payload(publicKey)
                 .to(minerAddress)
+                .gasPrice(Uint256.ZERO)
                 .signature(HexBytes.EMPTY).build();
     }
 

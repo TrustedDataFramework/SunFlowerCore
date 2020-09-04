@@ -56,7 +56,7 @@ public class Hosts {
                 Arrays.asList(
                         new Abort(), new HashHost(), result,
                         new Log(), new RLPHost(),
-                        new Util()
+                        new Util(), new Uint256Host()
                 )
         );
 
