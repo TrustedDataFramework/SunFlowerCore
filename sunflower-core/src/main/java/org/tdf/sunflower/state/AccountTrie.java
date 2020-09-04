@@ -99,12 +99,10 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
             this.genesisStates.put(updater.getGenesisAccount().getAddress(), genesisAccount);
         }
 
-        this.genesisStates = genesisStates;
-
         // sync to genesis
         Trie<HexBytes, Account> tmp = this.trie.revert();
         genesisStates.forEach(tmp::put);
-        genesisRoot = HexBytes.fromBytes(tmp.commit());
+        this.genesisRoot = HexBytes.fromBytes(tmp.commit());
         log.info("genesis states = {}", Start.MAPPER.writeValueAsString(genesisStates));
         log.info("genesis state root = " + genesisRoot);
         tmp.flush();

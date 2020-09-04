@@ -44,7 +44,11 @@ public class ContextHost extends HostFunction {
     private Store<byte[], byte[]> contractCodeStore;
 
 
-    public ContextHost(Context context, Map<HexBytes, Account> states, Store<byte[], byte[]> contractCodeStore) {
+    public ContextHost(
+            Context context,
+            Map<HexBytes, Account> states,
+            Store<byte[], byte[]> contractCodeStore
+    ) {
         setName("_context");
         setType(
                 new FunctionType(Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),

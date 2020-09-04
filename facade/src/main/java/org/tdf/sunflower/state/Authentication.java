@@ -39,7 +39,10 @@ public class Authentication implements PreBuiltContract {
     private Trie<byte[], byte[]> contractStorageTrie;
 
 
-    public Authentication(@NonNull Collection<? extends HexBytes> nodes, @NonNull HexBytes contractAddress) {
+    public Authentication(
+            @NonNull Collection<? extends HexBytes> nodes,
+            @NonNull HexBytes contractAddress
+    ) {
         this.nodes = nodes;
         this.contractAddress = contractAddress;
     }
