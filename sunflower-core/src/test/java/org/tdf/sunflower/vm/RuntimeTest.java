@@ -4,6 +4,7 @@ import com.google.common.primitives.Bytes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.TestUtils;
@@ -22,20 +23,7 @@ public class RuntimeTest {
     @Test
     public void testGetString() throws Exception {
 // C:\Users\Sal\Documents\GitHub\sunflower\wasmer\as-example\build
-        String filename = System.getenv("FILE_PATH");
-        if (filename == null || "".equals(filename.trim())) return;
-        byte[] data = Bytes.concat("hello world!!!!".getBytes(StandardCharsets.UTF_8), new byte[]{0});
-        Hosts hosts = new Hosts().withContext(
-            new Context((Header) null, null, null, HexBytes.fromBytes(data))
-        );
-        ModuleInstance instance =
-                ModuleInstance.builder()
-                        .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
-                        .hostFunctions(hosts.getAll())
-                        .build()
-        ;
-        instance.execute("getString");
-        System.out.println(new String(hosts.getResult(), StandardCharsets.UTF_8));
+
     }
 
     @Test

@@ -50,7 +50,7 @@ public class PoWMiner extends AbstractMiner {
         return new Transaction(
                 PoW.TRANSACTION_VERSION, Transaction.Type.COIN_BASE.code,
                 System.currentTimeMillis() / 1000, height,
-                HexBytes.EMPTY, Uint256.ZERO,
+                HexBytes.EMPTY, 0, Uint256.ZERO,
                 Uint256.of(20), HexBytes.EMPTY, poWConfig.getMinerCoinBase(),
                 HexBytes.EMPTY
         );

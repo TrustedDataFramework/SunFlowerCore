@@ -11,9 +11,8 @@ import org.tdf.common.store.Store;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.TransactionPoolConfig;
-import org.tdf.sunflower.events.NewBestBlock;
-import org.tdf.sunflower.events.NewTransactionsCollected;
-import org.tdf.sunflower.events.NewTransactionsReceived;
+import org.tdf.sunflower.controller.WebSocket;
+import org.tdf.sunflower.events.*;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.PendingTransactionValidator;
 import org.tdf.sunflower.facade.TransactionPool;
@@ -24,6 +23,7 @@ import org.tdf.sunflower.types.PagedView;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -92,6 +92,17 @@ public class TransactionPoolImpl implements TransactionPool {
                 .build();
         this.transactionRepository = repository;
         this.mCache = new HashMap<>();
+        this.eventBus.subscribe(TransactionIncluded.class, (e) -> {
+            WebSocket.broadcastTransaction(e.getTransaction().getHash().getBytes(), Transaction.INCLUDED, e.getBlock().getHash().getBytes());
+        });
+
+        this.eventBus.subscribe(TransactionFailed.class, (e) -> {
+            WebSocket.broadcastTransaction(e.getTx().getHash().getBytes(), Transaction.INCLUDED, e.getReason().getBytes(StandardCharsets.UTF_8));
+        });
+
+        this.eventBus.subscribe(TransactionConfirmed.class, (e) -> {
+            WebSocket.broadcastTransaction(e.getTx().getHash().getBytes(), Transaction.CONFIRMED, null);
+        });
     }
 
     @SneakyThrows
@@ -125,9 +136,9 @@ public class TransactionPoolImpl implements TransactionPool {
         try {
             List<Transaction> newCollected = new ArrayList<>(transactions.size());
             for (Transaction transaction : transactions) {
-                if(transaction.getAmount() == null)
+                if (transaction.getAmount() == null)
                     transaction.setAmount(Uint256.ZERO);
-                if(transaction.getGasPrice() == null)
+                if (transaction.getGasPrice() == null)
                     transaction.setGasPrice(Uint256.ZERO);
 
                 TransactionInfo info = new TransactionInfo(System.currentTimeMillis(), transaction);
@@ -137,12 +148,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 if (!res.isSuccess()) {
                     log.error(res.getReason());
                     errors.add(res.getReason());
-                    continue;
-                }
-                res = validator.validate(transaction);
-                if (!res.isSuccess()) {
-                    errors.add(res.getReason());
-                    log.error(res.getReason());
+                    WebSocket.broadcastTransaction(transaction.getHash().getBytes(), Transaction.DROPPED, res.getReason().getBytes(StandardCharsets.UTF_8));
                     continue;
                 }
                 res = validator.validate(transaction);
@@ -151,10 +157,20 @@ public class TransactionPoolImpl implements TransactionPool {
                     mCache.put(info.tx.getHash(), info);
                     newCollected.add(transaction);
                 } else {
+                    WebSocket.broadcastTransaction(transaction.getHash().getBytes(), Transaction.DROPPED, res.getReason().getBytes(StandardCharsets.UTF_8));
+                    log.error(res.getReason());
                     errors.add(res.getReason());
                 }
             }
-            eventBus.publish(new NewTransactionsCollected(newCollected));
+            if (!errors.isEmpty())
+                newCollected = Collections.emptyList();
+
+            for (Transaction tx : newCollected) {
+                WebSocket.broadcastTransaction(tx.getHash().getBytes(), Transaction.PENDING, null);
+            }
+
+            if (!newCollected.isEmpty())
+                eventBus.publish(new NewTransactionsCollected(newCollected));
         } finally {
             this.cacheLock.writeLock().unlock();
         }

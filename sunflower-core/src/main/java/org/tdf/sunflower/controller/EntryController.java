@@ -2,6 +2,8 @@ package org.tdf.sunflower.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.sun.management.OperatingSystemMXBean;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -167,8 +169,7 @@ public class EntryController {
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
     public Response<List<?>> sendTransaction(
-            @RequestBody JsonNode node,
-            @RequestParam(value = "sync", defaultValue = "false") boolean sync) {
+            @RequestBody JsonNode node) {
         List<Transaction> ts;
         if (node.isArray()) {
             ts = Arrays.asList(objectMapper.convertValue(node, Transaction[].class));
@@ -177,19 +178,10 @@ public class EntryController {
         }
         List<String> errors = pool.collect(ts);
         Response<List<?>> errResp = Response.newFailed(Response.Code.INTERNAL_ERROR, String.join("\n", errors));
-        if(!sync)
-            return errors.isEmpty() ? Response
-                .newSuccessFul(
-                        ts.stream().map(Transaction::getHash)
-                                .collect(Collectors.toList())
-                )
-                : errResp;
-
-
         if(!errors.isEmpty())
             return errResp;
 
-        return Response.newFailed(Response.Code.INTERNAL_ERROR);
+        return Response.newSuccessFul(ts.stream().map(Transaction::getHash).collect(Collectors.toList()));
     }
 
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -316,6 +308,7 @@ public class EntryController {
 
         // for normal account this field is continuous integer
         // for contract account this field is nonce of deploy transaction
+        @JsonSerialize(using = ToStringSerializer.class)
         private long nonce;
 
         // the balance of account

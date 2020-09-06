@@ -9,12 +9,18 @@ import org.tdf.lotusvm.runtime.ModuleInstanceImpl;
 import org.tdf.lotusvm.types.Instruction;
 import org.tdf.sunflower.ApplicationConstants;
 
+@AllArgsConstructor
+@NoArgsConstructor
 public class Limit implements Hook {
     private long steps;
 
     private int frameDepth;
 
-    public Limit fork(){
+    private long gasLimit;
+
+    private long initialGas;
+
+    public Limit fork() {
         this.frameDepth = 0;
         return this;
     }
@@ -24,6 +30,8 @@ public class Limit implements Hook {
         steps++;
         if (ApplicationConstants.VM_STEP_LIMIT != 0 && steps > ApplicationConstants.VM_STEP_LIMIT)
             throw new RuntimeException("steps overflow");
+        if (gasLimit > 0 && getGas() > gasLimit)
+            throw new RuntimeException("gas overflow");
     }
 
     @Override
@@ -31,16 +39,18 @@ public class Limit implements Hook {
         steps++;
         if (ApplicationConstants.VM_STEP_LIMIT != 0 && steps > ApplicationConstants.VM_STEP_LIMIT)
             throw new RuntimeException("steps overflow");
+        if (gasLimit > 0 && getGas() > gasLimit)
+            throw new RuntimeException("gas overflow");
     }
 
     public long getGas() {
-        return steps / 1024;
+        return initialGas + steps / 1024;
     }
 
     @Override
     public void onNewFrame(Frame frame) {
         this.frameDepth++;
-        if(ApplicationConstants.MAX_FRAMES != 0 && this.frameDepth > ApplicationConstants.MAX_FRAMES)
+        if (ApplicationConstants.MAX_FRAMES != 0 && this.frameDepth > ApplicationConstants.MAX_FRAMES)
             throw new RuntimeException("frames overflow");
     }
 

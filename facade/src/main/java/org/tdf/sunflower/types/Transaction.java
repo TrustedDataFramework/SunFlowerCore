@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.*;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
@@ -24,11 +25,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
-@Getter
 @ToString
 @NoArgsConstructor
 public class Transaction {
+    public static final int PENDING = 0;
+    public static final int INCLUDED = 1;
+    public static final int CONFIRMED = 2;
+    public static final int DROPPED = 3;
     public static final Comparator<Transaction> NONCE_COMPARATOR = (a, b) -> {
         int cmp = a.getFrom().compareTo(b.getFrom());
         if (cmp != 0)
@@ -36,6 +39,11 @@ public class Transaction {
         if (a.getNonce() != b.getNonce()) return Long.compare(a.getNonce(), b.getNonce());
         return a.getHash().compareTo(b.getHash());
     };
+
+    public long getGasLimit() {
+        return gasLimit;
+    }
+
 
     @JsonIgnore
     public byte[] getSignaturePlain() {
@@ -45,6 +53,7 @@ public class Transaction {
                 createdAt,
                 nonce,
                 from,
+                gasLimit,
                 gasPrice,
                 amount,
                 payload,
@@ -61,6 +70,7 @@ public class Transaction {
     @RLP(2)
     protected long createdAt;
     @RLP(3)
+    @JsonSerialize(using = ToStringSerializer.class)
     protected long nonce;
 
     /**
@@ -68,27 +78,33 @@ public class Transaction {
      */
     @RLP(4)
     protected HexBytes from;
+
     @RLP(5)
-    protected Uint256 gasPrice;
+    @JsonSerialize(using = ToStringSerializer.class)
+    protected long gasLimit;
+
     @RLP(6)
+    protected Uint256 gasPrice;
+
+    @RLP(7)
     protected Uint256 amount;
 
     /**
      * for coinbase and transfer, this field is null or empty bytes
      */
-    @RLP(7)
+    @RLP(8)
     protected HexBytes payload;
 
     /**
      * for contract deploy, this field is null or empty bytes
      */
-    @RLP(8)
+    @RLP(9)
     protected HexBytes to;
 
     /**
      * not null
      */
-    @RLP(9)
+    @RLP(10)
     protected HexBytes signature;
     // generated value, no need to encode into rlp
     @Getter(AccessLevel.NONE)
@@ -99,6 +115,7 @@ public class Transaction {
     public Transaction(
             int version,
             int type, long createdAt, long nonce, HexBytes from,
+            long gasLimit,
             Uint256 gasPrice, Uint256 amount, HexBytes payload,
             HexBytes to, HexBytes signature
     ) {
@@ -112,6 +129,7 @@ public class Transaction {
         this.payload = payload;
         this.to = to;
         this.signature = signature;
+        this.gasLimit = gasLimit;
     }
 
     /**
@@ -152,7 +170,7 @@ public class Transaction {
 
     @Override
     public Transaction clone() {
-        return new Transaction(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
+        return new Transaction(version, type, createdAt, nonce, from, gasLimit, gasPrice, amount, payload, to, signature);
     }
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -188,6 +206,11 @@ public class Transaction {
 
     public void setFrom(HexBytes from) {
         this.from = from;
+        getHash(true);
+    }
+
+    public void setGasLimit(long gasLimit){
+        this.gasLimit = gasLimit;
         getHash(true);
     }
 
@@ -346,6 +369,8 @@ public class Transaction {
     }
 
     public ValidateResult basicValidate() {
+        if(gasLimit < 0)
+            throw new RuntimeException("negative gas limit");
         if (amount == null || gasPrice == null)
             return ValidateResult.fault("missing amount or gas price");
         if (!Type.TYPE_MAP.containsKey(type))

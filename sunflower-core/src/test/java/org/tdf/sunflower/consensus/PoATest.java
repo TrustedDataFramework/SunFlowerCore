@@ -1,5 +1,6 @@
 package org.tdf.sunflower.consensus;
 
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
@@ -15,7 +16,8 @@ public class PoATest {
                 1,
                 HexBytes.fromHex("00"),
                 0,
-                0,
+                Uint256.ZERO,
+                Uint256.ZERO,
                 HexBytes.fromHex("01").concat(HexBytes.fromHex("00")),
                 Constants.PEER_AUTHENTICATION_ADDR,
                 HexBytes.fromHex("ff")

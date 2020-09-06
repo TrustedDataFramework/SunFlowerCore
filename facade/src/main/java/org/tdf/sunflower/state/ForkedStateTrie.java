@@ -7,7 +7,7 @@ import org.tdf.sunflower.types.Transaction;
 import java.util.Optional;
 
 public interface ForkedStateTrie<ID, S> {
-    void update(Header header, Transaction tx);
+    byte[] update(Header header, Transaction tx);
     S remove(ID key);
     Optional<S> get(ID id);
     byte[] commit();

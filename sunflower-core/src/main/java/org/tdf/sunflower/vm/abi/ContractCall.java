@@ -142,7 +142,7 @@ public class ContractCall {
                 .withRelect(new Reflect(this, readonly))
                 .withContext(new ContextHost(ctx, states, contractStore, readonly))
                 .withDB(DBFunctions)
-                .withEvent(messageQueue, contractAccount.getAddress());
+                .withEvent(contractAccount.getAddress(), readonly);
 
         // every contract should have a init method
         ModuleInstance instance = ModuleInstance

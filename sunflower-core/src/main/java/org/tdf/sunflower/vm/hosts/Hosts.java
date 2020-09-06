@@ -28,8 +28,8 @@ public class Hosts {
     public Hosts() {
     }
 
-    public Hosts withEvent(MessageQueue<String, Message> mq, HexBytes address) {
-        this.event = new Event(mq, address);
+    public Hosts withEvent(HexBytes address, boolean readonly) {
+        this.event = new Event(address, readonly);
         return this;
     }
 

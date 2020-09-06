@@ -33,4 +33,6 @@ public class ApplicationConstants {
     public static long MAX_CONTRACT_CALL_DEPTH = 0;
 
     public static boolean VALIDATE;
+
+    public static long TRANSACTION_CONFIRMS = 0;
  }

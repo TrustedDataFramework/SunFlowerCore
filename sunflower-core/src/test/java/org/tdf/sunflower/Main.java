@@ -12,6 +12,8 @@ import org.tdf.gmhelper.SM3Util;
 import org.tdf.gmhelper.SM4Util;
 import org.tdf.sunflower.facade.SecretStoreImpl;
 import org.tdf.sunflower.types.CryptoContext;
+import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.vrf.crypto.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -45,6 +47,10 @@ public class Main {
         return ret;
     }
 
+    public static void main(String[] args) {
+        Transaction t = Transaction.builder().build();
+        System.out.println(HexBytes.encode(t.getSignaturePlain()));
+    }
 
     private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
 

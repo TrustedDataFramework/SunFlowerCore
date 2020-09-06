@@ -15,25 +15,25 @@ public class UnmodifiableTransaction extends Transaction {
     ) {
         super(
                 tx.version, tx.type, tx.createdAt,
-                tx.nonce, tx.from, tx.gasPrice,
+                tx.nonce, tx.from, tx.gasLimit, tx.gasPrice,
                 tx.amount, tx.payload, tx.to, tx.signature
         );
         this.modifiable =
                 new Transaction(
                         version, type, createdAt,
-                        nonce, from, gasPrice,
+                        nonce, from, gasLimit, gasPrice,
                         amount, payload, to, signature
                 );
     }
 
     public UnmodifiableTransaction(
             int version, int type, long createdAt,
-            long nonce, HexBytes from, Uint256 gasPrice,
+            long nonce, HexBytes from, long gasLimit, Uint256 gasPrice,
             Uint256 amount, HexBytes payload, HexBytes to,
             HexBytes signature
     ) {
-        super(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
-        this.modifiable = new Transaction(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
+        super(version, type, createdAt, nonce, from, gasLimit, gasPrice, amount, payload, to, signature);
+        this.modifiable = new Transaction(version, type, createdAt, nonce, from, gasLimit, gasPrice, amount, payload, to, signature);
     }
 
     public static UnmodifiableTransaction of(Transaction tx) {

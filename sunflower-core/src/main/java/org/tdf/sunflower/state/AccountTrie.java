@@ -207,7 +207,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         updateFeeAccount(fee);
     }
 
-    public void update(Header header, Transaction tx) {
+    public byte[] update(Header header, Transaction tx) {
         Map<HexBytes, Account> states = this.dirtyTrie.asMap();
         if (tx.getType() == Transaction.Type.COIN_BASE.code && header.getHeight() != tx.getNonce()) {
             throw new RuntimeException("nonce of coinbase transaction should be " + header.getHeight());
@@ -223,21 +223,20 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
                         tx.getAmount(),
                         tx.getFee()
                 );
-                return;
+                return HexBytes.EMPTY_BYTES;
             }
             case COIN_BASE: {
                 states.putIfAbsent(tx.getTo(), Account.emptyAccount(tx.getTo()));
                 updateCoinBase(header, tx);
-                return;
+                return HexBytes.EMPTY_BYTES;
             }
             case CONTRACT_DEPLOY:
                 updateDeploy(states, header, tx);
-                return;
+                return HexBytes.EMPTY_BYTES;
             case CONTRACT_CALL:
                 states.putIfAbsent(tx.getFromAddress(), Account.emptyAccount(tx.getFromAddress()));
                 increaseNonce(tx);
-                updateContractCall(header, tx);
-                return;
+                return updateContractCall(header, tx);
         }
         throw new RuntimeException("unknown type " + tx.getType());
     }
@@ -269,8 +268,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         byte[] parameters = t.getPayload().slice(4 + binaryLen).getBytes();
 
 
-        Limit limit = new Limit();
-
+        Limit limit = new Limit(0, 0, t.getGasLimit(), t.getPayload().size() / 1024);
 
         // execute constructor of contract
         ContractCall contractCall = new ContractCall(
@@ -294,8 +292,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         Account contractAccount = accounts.get(t.createContractAddress());
 
         // estimate gas
-        long gas = SafeMath.add(t.getPayload().size() / 1024, limit.getGas());
-        Uint256 fee = Uint256.of(gas).safeMul(t.getGasPrice());
+        Uint256 fee = Uint256.of(limit.getGas()).safeMul(t.getGasPrice());
 
         accounts.put(createdBy.getAddress(), createdBy);
         updateFeeAccount(fee);
@@ -303,7 +300,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
     }
 
 
-    private void updateContractCall(Header header, Transaction t) {
+    private byte[] updateContractCall(Header header, Transaction t) {
         Map<HexBytes, Account> accounts = getDirtyTrie().asMap();
         Account contractAccount = accounts.get(t.getTo());
 
@@ -316,7 +313,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
             byte[] root = before.commit();
             contractAccount.setStorageRoot(root);
             updateFeeAccount(fee);
-            return;
+            return HexBytes.EMPTY_BYTES;
         }
 
         // execute method
@@ -330,7 +327,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
                 false
         );
 
-        contractCall.call(
+        byte[] result = contractCall.call(
                 contractAccount.getAddress(),
                 Context.readMethod(t.getPayload()),
                 Context.readParameters(t.getPayload()),
@@ -345,6 +342,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         accounts.put(contractAccount.getAddress(), contractAccount);
         accounts.put(caller.getAddress(), caller);
         updateFeeAccount(fee);
+        return result;
     }
 
     @Override

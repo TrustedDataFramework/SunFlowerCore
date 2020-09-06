@@ -6,17 +6,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.Store;
-import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.events.TransactionFailed;
+import org.tdf.sunflower.events.TransactionIncluded;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.TransactionPool;
-import org.tdf.sunflower.state.*;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.Constants;
+import org.tdf.sunflower.state.ForkedStateTrie;
+import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j(topic = "miner")
 public abstract class AbstractMiner implements Miner {
@@ -32,7 +37,7 @@ public abstract class AbstractMiner implements Miner {
 
         int prevIndex = minerAddresses.indexOf(prev);
 
-        if(prevIndex < 0)
+        if (prevIndex < 0)
             prevIndex += minerAddresses.size();
 
         long step = (currentEpochSeconds - parent.getCreatedAt())
@@ -99,12 +104,14 @@ public abstract class AbstractMiner implements Miner {
                 // get all account related to this transaction in the trie
 
                 // store updated result to the trie if update success
-                tmp.update(header, tx);
+                byte[] res = tmp.update(header, tx);
+
             } catch (Exception e) {
                 // prompt reason for failed updates
                 e.printStackTrace();
                 log.error("execute transaction " + tx.getHash() + " failed, reason = " + e.getMessage());
                 getTransactionPool().drop(tx);
+                eventBus.publish(new TransactionFailed(tx, e.getMessage()));
                 continue;
             }
             b.getBody().add(tx);
@@ -133,6 +140,10 @@ public abstract class AbstractMiner implements Miner {
 
         // the mined block cannot be modified any more
         finalizeBlock(parent, b);
+
+        b.getBody().stream().skip(1)
+                .forEach(tx -> {
+                    eventBus.publish(new TransactionIncluded(tx, b)); });
         return Optional.of(b);
     }
 }

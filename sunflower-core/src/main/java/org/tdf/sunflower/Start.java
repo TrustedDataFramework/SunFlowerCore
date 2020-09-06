@@ -21,6 +21,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.*;
@@ -508,5 +509,10 @@ public class Start {
             e.setGenesisBlock(b);
             return trie;
         });
+    }
+
+    @Bean
+    public ServerEndpointExporter serverEndpointExporter() {
+        return new ServerEndpointExporter();
     }
 }
