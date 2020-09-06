@@ -1,23 +1,28 @@
 package org.tdf.sunflower.controller;
 
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 import org.tdf.rlp.RLPCodec;
+import org.tdf.sunflower.types.Transaction;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 @ServerEndpoint(value = "/websocket")
 @Component
 public class WebSocket {
     private static final Set<WebSocket> webSocketSet = new CopyOnWriteArraySet<>();
+    private static final Executor EXECUTOR = Executors.newCachedThreadPool();
     private Session session;
+    private final Boolean lock = true;
 
-    public void init(){
+    public void init() {
 
     }
 
@@ -50,18 +55,37 @@ public class WebSocket {
     }
 
     @SneakyThrows
-    public static void broadcast(byte[] data){
-        for (WebSocket socket : webSocketSet) {
-            socket.session.getBasicRemote().sendBinary(ByteBuffer.wrap(data, 0, data.length));
+    public void sendBinary(byte[] binary){
+        if(this.session == null)
+            return;
+        synchronized (this.lock){
+            this.session.getBasicRemote().sendBinary(ByteBuffer.wrap(binary,0, binary.length));
         }
     }
 
-    // broadcast transaction success
-    public static void broadcastTransaction(byte[] hash, int code, byte[] data){
-        broadcast(RLPCodec.encode(new Object[]{0, hash, code, data}));
+    @SneakyThrows
+    public static void broadcastAsync(byte[] data) {
+        for (WebSocket socket : webSocketSet) {
+            EXECUTOR.execute(() -> {
+                try {
+                    socket.sendBinary(data);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
     }
 
-    public static void broadcastEvent(byte[] address, String event, byte[] parameters){
-        broadcast(RLPCodec.encode(new Object[]{1, address, event, parameters}));
+    public static void broadcastDrop(Transaction tx, String reason){
+        broadcastTransaction(tx.getHash().getBytes(), Transaction.DROPPED, reason.getBytes(StandardCharsets.UTF_8));
+    }
+
+    // broadcast transaction success
+    public static void broadcastTransaction(byte[] hash, int code, byte[] data) {
+        broadcastAsync(RLPCodec.encode(new Object[]{0, hash, code, data}));
+    }
+
+    public static void broadcastEvent(byte[] address, String event, byte[] parameters) {
+        broadcastAsync(RLPCodec.encode(new Object[]{1, address, event, parameters}));
     }
 }

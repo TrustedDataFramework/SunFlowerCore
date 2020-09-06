@@ -55,8 +55,6 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     // sub class should set peer server listener explicitly when init() called
     private PeerServerListener peerServerListener;
 
-    private MessageQueue<String, Message> messageQueue;
-
     // set before init()
     private Function<AbstractConsensusEngine, StateTrie<HexBytes, Account>> stateTrieProvider;
 

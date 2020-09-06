@@ -97,7 +97,7 @@ public class TransactionPoolImpl implements TransactionPool {
         });
 
         this.eventBus.subscribe(TransactionFailed.class, (e) -> {
-            WebSocket.broadcastTransaction(e.getTx().getHash().getBytes(), Transaction.INCLUDED, e.getReason().getBytes(StandardCharsets.UTF_8));
+            WebSocket.broadcastDrop(e.getTx(), e.getReason());
         });
 
         this.eventBus.subscribe(TransactionConfirmed.class, (e) -> {
@@ -116,6 +116,7 @@ public class TransactionPoolImpl implements TransactionPool {
                     info -> {
                         boolean remove = (now - info.receivedAt) / 1000 > config.getExpiredIn();
                         if (remove && !transactionRepository.containsTransaction(info.tx.getHash().getBytes())) {
+                            WebSocket.broadcastDrop(info.tx, "invalid nonce");
                             dropped.put(info.tx.getHash(), info.tx);
                         }
                         return remove;
@@ -148,7 +149,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 if (!res.isSuccess()) {
                     log.error(res.getReason());
                     errors.add(res.getReason());
-                    WebSocket.broadcastTransaction(transaction.getHash().getBytes(), Transaction.DROPPED, res.getReason().getBytes(StandardCharsets.UTF_8));
+                    WebSocket.broadcastDrop(transaction, res.getReason());
                     continue;
                 }
                 res = validator.validate(transaction);
@@ -157,7 +158,7 @@ public class TransactionPoolImpl implements TransactionPool {
                     mCache.put(info.tx.getHash(), info);
                     newCollected.add(transaction);
                 } else {
-                    WebSocket.broadcastTransaction(transaction.getHash().getBytes(), Transaction.DROPPED, res.getReason().getBytes(StandardCharsets.UTF_8));
+                    WebSocket.broadcastDrop(transaction, res.getReason());
                     log.error(res.getReason());
                     errors.add(res.getReason());
                 }
@@ -199,6 +200,7 @@ public class TransactionPoolImpl implements TransactionPool {
                     mCache.remove(t.getHash());
                     if (!transactionRepository.containsTransaction(t.getHash().getBytes()))
                         dropped.put(t.getHash(), t);
+                    WebSocket.broadcastDrop(t, "invalid nonce");
                     continue;
                 }
                 if (t.getNonce() != prevNonce + 1) {

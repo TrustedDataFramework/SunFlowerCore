@@ -289,8 +289,7 @@ public class Start {
             ApplicationContext context,
             @Qualifier("contractStorageTrie") Trie<byte[], byte[]> contractStorageTrie,
             @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore,
-            SecretStore secretStore,
-            BasicMessageQueue mq
+            SecretStore secretStore
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
         name = name == null ? "" : name;
@@ -404,14 +403,6 @@ public class Start {
         return peerServer;
     }
 
-    // create message queue service
-    @Bean
-    public BasicMessageQueue messageQueue(MessageQueueConfig config) {
-        String name = config.getName();
-        name = name == null ? "" : name.toLowerCase().trim();
-        if (name.equals("none")) return BasicMessageQueue.NONE;
-        return new SocketIOMessageQueue(config);
-    }
 
     @Bean
     public EventBus eventBus() {
@@ -490,14 +481,12 @@ public class Start {
         engine.setContractStorageTrie(context.getBean("contractStorageTrie", Trie.class));
         engine.setContractCodeStore(context.getBean("contractCodeStore", Store.class));
         engine.setSecretStore(context.getBean(SecretStore.class));
-        engine.setMessageQueue(context.getBean(BasicMessageQueue.class));
         engine.setStateTrieProvider(e -> {
 
             AccountTrie trie = new AccountTrie(
                     databaseStoreFactory.create("account-trie"),
                     e.getContractCodeStore(),
                     e.getContractStorageTrie(),
-                    context.getBean(BasicMessageQueue.class),
                     e.getGenesisStates().stream().collect(Collectors.toMap(Account::getAddress, Function.identity())),
                     e.getPreBuiltContracts(), e.getBios(),
                     context.getEnvironment().getProperty("sunflower.trie.secure", Boolean.class)

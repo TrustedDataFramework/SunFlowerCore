@@ -31,9 +31,6 @@ public class ContractCall {
 
     private final Function<byte[], Trie<byte[], byte[]>> storageTrieSupplier;
 
-    // message queue
-    private final BasicMessageQueue messageQueue;
-
     // contract code store
     private final Store<byte[], byte[]> contractStore;
 
@@ -71,7 +68,6 @@ public class ContractCall {
                 header,
                 transaction,
                 storageTrieSupplier,
-                messageQueue,
                 contractStore,
                 this.limit.fork(),
                 this.depth + 1,

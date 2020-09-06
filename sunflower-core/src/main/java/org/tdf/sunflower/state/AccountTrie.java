@@ -13,7 +13,6 @@ import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.Start;
-import org.tdf.sunflower.facade.BasicMessageQueue;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -32,7 +31,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
     private Trie<HexBytes, Account> trie;
     private Trie<byte[], byte[]> contractStorageTrie;
     private Store<byte[], byte[]> contractCodeStore;
-    private BasicMessageQueue messageQueue;
     private List<PreBuiltContract> preBuiltContracts;
     private Map<HexBytes, Bios> biosList;
     private Map<HexBytes, Account> genesisStates;
@@ -52,7 +50,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
             DatabaseStore db,
             Store<byte[], byte[]> contractCodeStore,
             Trie<byte[], byte[]> contractStorageTrie,
-            BasicMessageQueue messageQueue,
             Map<HexBytes, Account> genesisStates,
             List<PreBuiltContract> preBuiltContracts,
             List<Bios> biosList,
@@ -73,7 +70,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
 
         this.contractStorageTrie = contractStorageTrie;
         this.contractCodeStore = contractCodeStore;
-        this.messageQueue = messageQueue;
         this.preBuiltContracts = preBuiltContracts;
         this.biosList = biosList.stream().collect(
                 Collectors.toMap(x -> x.getGenesisAccount().getAddress(), Function.identity())
@@ -156,7 +152,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
                 trie,
                 contractStorageTrie,
                 this.contractCodeStore,
-                messageQueue,
                 preBuiltContracts,
                 biosList,
                 genesisStates,
@@ -273,8 +268,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         // execute constructor of contract
         ContractCall contractCall = new ContractCall(
                 accounts, header,
-                t, this::getDirtyContractStorageTrie,
-                messageQueue, this.contractCodeCache,
+                t, this::getDirtyContractStorageTrie, this.contractCodeCache,
                 limit, 0, t.getFromAddress(),
                 false
         );
@@ -321,7 +315,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         ContractCall contractCall = new ContractCall(
                 accounts, header,
                 t, this::getDirtyContractStorageTrie,
-                messageQueue,
                 this.contractCodeCache,
                 limit, 0, t.getFromAddress(),
                 false
@@ -381,7 +374,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         ContractCall contractCall = new ContractCall(
                 this.dirtyTrie.asMap(), null,
                 null, this::getDirtyContractStorageTrie,
-                messageQueue,
                 this.contractCodeCache,
                 limit, 0, null,
                 true
