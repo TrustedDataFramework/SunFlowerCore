@@ -76,9 +76,6 @@ public class Util extends HostFunction {
             case U64_TO_BYTES:{
                 long u = longs[1];
                 data = Uint256.getNoLeadZeroesData(BigEndian.encodeInt64(u));
-                if(data.length > 0 && data[0] == 0){
-                    System.out.println("===");
-                }
                 ret = data.length;
                 break;
             }

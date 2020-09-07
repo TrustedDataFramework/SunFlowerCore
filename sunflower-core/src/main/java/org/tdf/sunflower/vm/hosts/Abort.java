@@ -1,5 +1,7 @@
 package org.tdf.sunflower.vm.hosts;
 
+import org.tdf.common.util.BigEndian;
+import org.tdf.common.util.LittleEndian;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
@@ -34,14 +36,13 @@ public class Abort extends HostFunction {
     }
 
     private String loadString(int offset){
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        byte[] mem = getInstance()
-                .getMemory();
-        for (int i = offset; i < mem.length; i++) {
-            if(mem[i] == 0 && mem[i+1] == 0) break;
-            if(mem[i] == 0) continue;
-            os.write(mem[i] & 0xff);
+        int size = LittleEndian.decodeInt32(loadMemory(offset - 4, 4));
+        byte[] mem = loadMemory(offset, size);
+        byte[] be = new byte[mem.length];
+        for(int i = 0; i < be.length / 2; i++){
+            be[i * 2] = mem[i * 2 + 1];
+            be[i * 2 + 1] = mem[i * 2];
         }
-        return new String(os.toByteArray(), StandardCharsets.UTF_8);
+        return new String(be, StandardCharsets.UTF_16);
     }
 }
