@@ -12,12 +12,12 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
+import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.vm.abi.Context;
-import org.tdf.sunflower.vm.abi.ContractCall;
+import org.tdf.sunflower.vm.abi.*;
 import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.util.*;
@@ -256,12 +256,8 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
     }
 
     private void updateDeploy(Map<HexBytes, Account> accounts, Header header, Transaction t) {
-
-
-        int binaryLen = BigEndian.decodeInt32(t.getPayload().slice(0, 4).getBytes());
-        byte[] binary = t.getPayload().slice(4, 4 + binaryLen).getBytes();
-        byte[] parameters = t.getPayload().slice(4 + binaryLen).getBytes();
-
+        ContractDeployPayload contractDeployPayload =
+                RLPCodec.decode(t.getPayload().getBytes(), ContractDeployPayload.class);
 
         Limit limit = new Limit(0, 0, t.getGasLimit(), t.getPayload().size() / 1024);
 
@@ -273,11 +269,13 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
                 false
         );
 
-        contractCall.call(
-                HexBytes.fromBytes(binary),
+        byte[] ret = contractCall.call(
+                HexBytes.fromBytes(contractDeployPayload.getBinary()),
                 "init",
-                parameters,
-                t.getAmount()
+                contractDeployPayload.getParameters(),
+                t.getAmount(),
+                false,
+                contractDeployPayload.getContractABIs()
         );
 
 
@@ -295,6 +293,8 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
 
 
     private byte[] updateContractCall(Header header, Transaction t) {
+        ContractCallPayload callPayload = RLPCodec.decode(t.getPayload().getBytes(), ContractCallPayload.class);
+
         Map<HexBytes, Account> accounts = getDirtyTrie().asMap();
         Account contractAccount = accounts.get(t.getTo());
 
@@ -322,9 +322,11 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
 
         byte[] result = contractCall.call(
                 contractAccount.getAddress(),
-                Context.readMethod(t.getPayload()),
-                Context.readParameters(t.getPayload()),
-                t.getAmount()
+                callPayload.getMethod(),
+                callPayload.getParameters(),
+                t.getAmount(),
+                false,
+                null
         );
 
         contractAccount = accounts.get(t.getTo());
@@ -371,6 +373,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
     public byte[] call(HexBytes address, HexBytes args) {
         // execute method
         Limit limit = new Limit();
+        ContractCallPayload callPayload = RLPCodec.decode(args.getBytes(), ContractCallPayload.class);
         ContractCall contractCall = new ContractCall(
                 this.dirtyTrie.asMap(), null,
                 null, this::getDirtyContractStorageTrie,
@@ -379,12 +382,11 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
                 true
         );
 
-        String method = Context.readMethod(args);
-        byte[] parameters = Context.readParameters(args);
         return contractCall.call(
                 address,
-                method,
-                parameters, Uint256.ZERO
+                callPayload.getMethod(),
+                callPayload.getParameters(), Uint256.ZERO,
+                false, null
         );
     }
 }

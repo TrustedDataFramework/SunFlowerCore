@@ -1,19 +1,18 @@
 package org.tdf.sunflower;
 
+import com.google.common.primitives.Bytes;
 import lombok.SneakyThrows;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.LittleEndian;
 import org.tdf.crypto.CryptoHelpers;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
 import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
-import org.tdf.gmhelper.SM4Util;
 import org.tdf.sunflower.facade.SecretStoreImpl;
 import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.vrf.crypto.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -48,8 +47,9 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        Transaction t = Transaction.builder().build();
-        System.out.println(HexBytes.encode(t.getSignaturePlain()));
+        String h = "0000000000000040";
+        String be ="4000000000000000";
+        System.out.println(Double.longBitsToDouble(BigEndian.decodeInt64(HexBytes.decode(be))));
     }
 
     private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");

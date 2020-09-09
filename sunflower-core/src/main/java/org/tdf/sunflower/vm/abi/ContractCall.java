@@ -6,10 +6,12 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.LittleEndian;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.Module;
+import org.tdf.rlp.RLPCodec;
+import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.ApplicationConstants;
-import org.tdf.sunflower.facade.BasicMessageQueue;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.SafeMath;
 import org.tdf.sunflower.types.CryptoContext;
@@ -17,13 +19,16 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.hosts.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 @RequiredArgsConstructor
 @Getter
 public class ContractCall {
+
     // contract address already called
     private final Map<HexBytes, Account> states;
     private final Header header;
@@ -76,8 +81,104 @@ public class ContractCall {
         );
     }
 
+    public static int allocString(ModuleInstance moduleInstance, String s) {
+        byte[] data = s.getBytes(StandardCharsets.UTF_16LE);
+        long id = (int) moduleInstance.execute("__idof", AbiDataType.STRING.ordinal())[0];
+        long offset = moduleInstance.execute("__alloc", data.length, id)[0];
+        moduleInstance.getMemory().put((int) offset, data);
+        moduleInstance.execute("__retain", offset);
+        return (int) offset;
+    }
 
-    public byte[] call(HexBytes binaryOrAddress, String method, byte[] parameters, Uint256 amount) {
+    public static int allocBytes(ModuleInstance moduleInstance, byte[] buf) {
+        long id = (int) moduleInstance.execute("__idof", AbiDataType.BYTES.ordinal())[0];
+        int offset = (int) moduleInstance.execute("__alloc", buf.length, id)[0];
+        moduleInstance.getMemory().put(offset, buf);
+        moduleInstance.execute("__retain", offset);
+        return offset;
+    }
+
+    public static int allocAddress(ModuleInstance moduleInstance, byte[] addr) {
+        long id = (int) moduleInstance.execute("__idof", AbiDataType.ADDRESS.ordinal())[0];
+        int offset = (int) moduleInstance.execute("__alloc", 4L, id)[0];
+        int ptr = allocBytes(moduleInstance, addr);
+        moduleInstance.getMemory().put(offset, LittleEndian.encodeInt32(ptr));
+        moduleInstance.execute("__retain", offset);
+        return offset;
+    }
+
+    public static int allocU256(ModuleInstance moduleInstance, Uint256 u) {
+        long id = (int) moduleInstance.execute("__idof", AbiDataType.U256.ordinal())[0];
+        int offset = (int) moduleInstance.execute("__alloc", 4L, id)[0];
+        int ptr = allocBytes(moduleInstance, u.getNoLeadZeroesData());
+        moduleInstance.getMemory().put(offset, LittleEndian.encodeInt32(ptr));
+        moduleInstance.execute("__retain", offset);
+        return offset;
+    }
+
+
+    static byte[] getResult(ModuleInstance module, long offset, AbiDataType type) {
+        switch (type) {
+            case I64:
+            case U64:
+            case F64:
+            case BOOL: {
+                return RLPCodec.encode(new long[]{offset});
+            }
+            case BYTES: {
+                int len = module.getMemory().load32((int) offset - 4);
+                return RLPCodec.encode(Collections.singletonList(module.getMemory().loadN((int) offset, len)));
+            }
+            case STRING: {
+                int len = module.getMemory().load32((int) offset - 4);
+                return RLPCodec.encode(Collections.singletonList(new String(module.getMemory().loadN((int) offset, len), StandardCharsets.UTF_16LE)));
+            }
+            case U256:
+            case ADDRESS: {
+                int ptr = module.getMemory().load32((int) offset);
+                return getResult(module, ptr, AbiDataType.BYTES);
+            }
+            default:
+                throw new UnsupportedOperationException();
+        }
+    }
+
+    private long[] putParameters(ModuleInstance module, Parameters params) {
+        long[] ret = new long[params.getTypes().length];
+        for (int i = 0; i < ret.length; i++) {
+            AbiDataType t = AbiDataType.values()[(int) params.getTypes()[i]];
+            switch (t) {
+                case I64:
+                case U64:
+                case F64:
+                case BOOL: {
+                    ret[i] = params.getLi().get(i).asLong();
+                    break;
+                }
+                case BYTES: {
+                    ret[i] = allocBytes(module, params.getLi().get(i).asBytes());
+                    break;
+                }
+                case STRING: {
+                    ret[i] = allocString(module, params.getLi().get(i).asString());
+                    break;
+                }
+                case U256: {
+                    ret[i] = allocU256(module, Uint256.of(params.getLi().get(i).asBytes()));
+                    break;
+                }
+                case ADDRESS: {
+                    ret[i] = allocAddress(module, params.getLi().get(i).asBytes());
+                    break;
+                }
+                default:
+                    throw new UnsupportedOperationException();
+            }
+        }
+        return ret;
+    }
+
+    public byte[] call(HexBytes binaryOrAddress, String method, Parameters parameters, Uint256 amount, boolean returnAddress, List<ContractABI> contractABIs) {
         boolean isDeploy = "init".equals(method);
         Account contractAccount;
         Account originAccount = readonly ? null : states.get(this.transaction.getFromAddress());
@@ -85,7 +186,7 @@ public class ContractCall {
         HexBytes contractAddress;
 
         if (isDeploy) {
-            if(this.readonly)
+            if (this.readonly)
                 throw new RuntimeException("cannot deploy contract here");
             m = new Module(binaryOrAddress.getBytes());
             byte[] hash = CryptoContext.hash(binaryOrAddress.getBytes());
@@ -103,7 +204,7 @@ public class ContractCall {
         }
 
         // transfer amount from origin account to contract account
-        if(!readonly){
+        if (!readonly) {
             originAccount.setBalance(originAccount.getBalance().safeSub(amount));
             contractAccount.setBalance(contractAccount.getBalance().safeAdd(amount));
             states.put(contractAccount.getAddress(), contractAccount);
@@ -120,7 +221,6 @@ public class ContractCall {
                 header,
                 transaction,
                 contractAccount,
-                Context.buildArguments(method, parameters),
                 sender,
                 amount
         );
@@ -130,13 +230,19 @@ public class ContractCall {
                 this.readonly
         );
 
+        if(isDeploy && contractABIs != null){
+            DBFunctions.getStorageTrie().put("__abi".getBytes(StandardCharsets.UTF_8), RLPCodec.encode(contractABIs));
+            contractAccount.setStorageRoot(DBFunctions.getStorageTrie().commit());
+            states.put(contractAddress, contractAccount);
+        }
+
         Hosts hosts = new Hosts()
                 .withTransfer(
                         states,
                         this.recipient
                 )
                 .withRelect(new Reflect(this, readonly))
-                .withContext(new ContextHost(ctx, states, contractStore, readonly))
+                .withContext(new ContextHost(ctx, states, contractStore, storageTrieSupplier, readonly))
                 .withDB(DBFunctions)
                 .withEvent(contractAccount.getAddress(), readonly);
 
@@ -151,16 +257,25 @@ public class ContractCall {
                 .build();
 
 
-        if (!isDeploy || instance.containsExport("init"))
-            instance.execute(method);
+        byte[] ret = RLPList.createEmpty().getEncoded();
+        if (!isDeploy || instance.containsExport("init")) {
+            long steps = limit.getSteps();
+            long[] offsets = putParameters(instance, parameters);
+            limit.setSteps(steps);
 
-        if(!readonly){
+            long[] rets = instance.execute(method, offsets);
+            if (parameters.getReturnType().length > 0) {
+                ret = getResult(instance, rets[0], AbiDataType.values()[parameters.getReturnType()[0]]);
+            }
+        }
+
+        if (!readonly) {
             DBFunctions.getStorageTrie().commit();
             contractAccount = states.get(this.recipient);
             contractAccount.setStorageRoot(DBFunctions.getStorageTrie().getRootHash());
             states.put(contractAccount.getAddress(), contractAccount);
         }
 
-        return isDeploy ? contractAddress.getBytes() : hosts.getResult();
+        return returnAddress ? contractAddress.getBytes() : ret;
     }
 }

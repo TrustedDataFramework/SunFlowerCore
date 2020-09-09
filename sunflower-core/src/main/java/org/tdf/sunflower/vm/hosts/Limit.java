@@ -1,7 +1,9 @@
 package org.tdf.sunflower.vm.hosts;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.tdf.lotusvm.runtime.Frame;
 import org.tdf.lotusvm.runtime.Hook;
 import org.tdf.lotusvm.runtime.HostFunction;
@@ -12,6 +14,8 @@ import org.tdf.sunflower.ApplicationConstants;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Limit implements Hook {
+    @Getter
+    @Setter
     private long steps;
 
     private int frameDepth;

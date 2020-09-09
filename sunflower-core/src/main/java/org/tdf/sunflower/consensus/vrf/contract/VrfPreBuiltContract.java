@@ -49,7 +49,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
     public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts,
                        Store<byte[], byte[]> contractStorage) {
 
-        String methodName = Context.readMethod(transaction.getPayload());
+        String methodName = "";
         log.info("++++++>> VrfBiosContract method {}, txn hash {}, nonce {}", methodName, transaction.getHash().toHex(),
                 transaction.getNonce());
 

@@ -1,6 +1,7 @@
 package org.tdf.sunflower.vm.hosts;
 
 import org.tdf.common.store.Store;
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
@@ -12,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 
 public class ContextHost extends HostFunction {
     public enum Type {
@@ -30,24 +32,25 @@ public class ContextHost extends HostFunction {
         CONTRACT_ADDRESS,
         CONTRACT_NONCE,
         CONTRACT_CREATED_BY,
-        ARGUMENTS_METHOD,
-        ARGUMENTS_PARAMETERS,
         ACCOUNT_NONCE,
         ACCOUNT_BALANCE,
         MSG_SENDER,
         MSG_AMOUNT,
-        CONTRACT_CODE
+        CONTRACT_CODE,
+        CONTRACT_ABI
     }
 
     private Context context;
     private Map<HexBytes, Account> states;
     private Store<byte[], byte[]> contractCodeStore;
+    private Function<byte[], Trie<byte[], byte[]>> storageTrieSupplier;
     private boolean readonly;
 
     public ContextHost(
             Context context,
             Map<HexBytes, Account> states,
             Store<byte[], byte[]> contractCodeStore,
+            Function<byte[], Trie<byte[], byte[]>> storageTrieSupplier,
             boolean readonly
     ) {
         setName("_context");
@@ -58,6 +61,7 @@ public class ContextHost extends HostFunction {
         this.context = context;
         this.states = states;
         this.contractCodeStore = contractCodeStore;
+        this.storageTrieSupplier = storageTrieSupplier;
         this.readonly = readonly;
     }
 
@@ -71,11 +75,10 @@ public class ContextHost extends HostFunction {
         if ((type != Type.CONTRACT_ADDRESS
                 && type != Type.CONTRACT_NONCE
                 && type != Type.CONTRACT_CREATED_BY
-                && type != Type.ARGUMENTS_METHOD
-                && type != Type.ARGUMENTS_PARAMETERS
                 && type != Type.ACCOUNT_NONCE
                 && type != Type.ACCOUNT_BALANCE
                 && type != Type.CONTRACT_CODE
+                && type != Type.CONTRACT_ABI
         ) && readonly) {
             throw new RuntimeException("not available here");
         }
@@ -155,16 +158,6 @@ public class ContextHost extends HostFunction {
                 ret = data.length;
                 break;
             }
-            case ARGUMENTS_METHOD: {
-                data = context.getMethod().getBytes(StandardCharsets.US_ASCII);
-                ret = data.length;
-                break;
-            }
-            case ARGUMENTS_PARAMETERS: {
-                data = context.getParameters();
-                ret = data.length;
-                break;
-            }
             case ACCOUNT_NONCE: {
                 isPut = false;
                 byte[] addr = loadMemory((int) parameters[1], (int) parameters[2]);
@@ -197,6 +190,17 @@ public class ContextHost extends HostFunction {
                 if (a.getContractHash() == null || a.getContractHash().length == 0)
                     throw new RuntimeException(HexBytes.fromBytes(addr) + " is not a contract account");
                 data = this.contractCodeStore.get(a.getContractHash()).get();
+                ret = data.length;
+                isPut = parameters[4] != 0;
+                offset = parameters[3];
+                break;
+            }
+            case CONTRACT_ABI:{
+                byte[] addr = loadMemory((int) parameters[1], (int) parameters[2]);
+                Account a = states.get(HexBytes.fromBytes(addr));
+                if (a.getContractHash() == null || a.getContractHash().length == 0)
+                    throw new RuntimeException(HexBytes.fromBytes(addr) + " is not a contract account");
+                data = this.storageTrieSupplier.apply(a.getStorageRoot()).get("__abi".getBytes(StandardCharsets.UTF_8)).get();
                 ret = data.length;
                 isPut = parameters[4] != 0;
                 offset = parameters[3];

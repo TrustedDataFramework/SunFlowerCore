@@ -5,7 +5,10 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
+import org.tdf.rlp.RLPCodec;
+import org.tdf.sunflower.vm.abi.ContractABI;
 import org.tdf.sunflower.vm.abi.ContractCall;
+import org.tdf.sunflower.vm.abi.Parameters;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,18 +63,19 @@ public class Reflect extends HostFunction {
                 byte[] parameters = loadMemory((int) longs[5], (int) longs[6]);
                 Uint256 amount = Uint256.of(loadMemory((int) longs[7], (int) longs[8]));
                 ContractCall forked = parent.fork();
-                this.result = forked.call(HexBytes.fromBytes(addr), method, parameters, amount);
+                this.result = forked.call(HexBytes.fromBytes(addr), method, RLPCodec.decode(parameters, Parameters.class), amount, false, null);
                 ret = this.result.length;
                 break;
             }
             case CREATE:
-                if(this.readonly)
+                if (this.readonly)
                     throw new RuntimeException("cannot create contract here");
                 byte[] binary = loadMemory((int) longs[1], (int) longs[2]);
                 byte[] parameters = loadMemory((int) longs[3], (int) longs[4]);
+                byte[] abi = loadMemory((int) longs[5], (int) longs[6]);
                 Uint256 amount = Uint256.of(loadMemory((int) longs[7], (int) longs[8]));
                 ContractCall forked = parent.fork();
-                data = forked.call(HexBytes.fromBytes(binary), "init", parameters, amount);
+                data = forked.call(HexBytes.fromBytes(binary), "init", RLPCodec.decode(parameters, Parameters.class), amount, true, Arrays.asList(RLPCodec.decode(abi, ContractABI[].class)));
                 ret = data.length;
                 put = true;
                 break;

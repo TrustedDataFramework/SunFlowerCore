@@ -21,11 +21,8 @@ public class Event extends HostFunction {
         setType(
                 new FunctionType(
                         Arrays.asList
-                                (ValueType.I64,
-                                        ValueType.I64, ValueType.I64,
-                                        ValueType.I64, ValueType.I64
-                                ),
-                        Collections.singletonList(ValueType.I64)
+                                (ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),
+                        Collections.emptyList()
                 )
         );
         this.readonly = readonly;
@@ -35,9 +32,9 @@ public class Event extends HostFunction {
     public long[] execute(long... parameters) {
         if(readonly)
             throw new RuntimeException("cannot call event here");
-        String x = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
-        byte[] y = loadMemory((int) parameters[3], (int) parameters[4]);
+        String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
+        byte[] y = loadMemory((int) parameters[2], (int) parameters[3]);
         WebSocket.broadcastEvent(address.getBytes(), x, y);
-        return new long[]{0};
+        return new long[0];
     }
 }
