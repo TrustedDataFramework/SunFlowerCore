@@ -32,6 +32,9 @@ public class Transaction {
     public static final int INCLUDED = 1;
     public static final int CONFIRMED = 2;
     public static final int DROPPED = 3;
+    public static final long TRANSFER_GAS = 10;
+    public static final long BUILTIN_CALL_GAS = 10;
+
     public static final Comparator<Transaction> NONCE_COMPARATOR = (a, b) -> {
         int cmp = a.getFrom().compareTo(b.getFrom());
         if (cmp != 0)
@@ -261,7 +264,7 @@ public class Transaction {
         if(type == Type.COIN_BASE.code)
             return Uint256.ZERO;
         if(type == Type.TRANSFER.code)
-            return  Uint256.of(10L).mul(getGasPrice());
+            return  Uint256.of(TRANSFER_GAS).mul(getGasPrice());
         return Uint256.ZERO;
     }
 

@@ -1,10 +1,19 @@
 package org.tdf.sunflower.types;
 
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.tdf.rlp.RLPList;
 
-import java.util.Map;
+import java.util.Collections;
+import java.util.List;
 
-@Value
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class TransactionResult {
-    private Map<String, byte[]> events;
+    long gasUsed;
+    RLPList returns;
+    List<Event> events;
+    public static final TransactionResult EMPTY = new TransactionResult(0, RLPList.createEmpty(), Collections.emptyList());
 }

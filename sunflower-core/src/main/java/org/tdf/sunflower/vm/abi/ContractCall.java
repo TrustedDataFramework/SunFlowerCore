@@ -10,13 +10,13 @@ import org.tdf.common.util.LittleEndian;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.Module;
 import org.tdf.rlp.RLPCodec;
+import org.tdf.rlp.RLPElement;
+import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.SafeMath;
-import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.hosts.*;
 
 import java.nio.charset.StandardCharsets;
@@ -117,21 +117,21 @@ public class ContractCall {
     }
 
 
-    static byte[] getResult(ModuleInstance module, long offset, AbiDataType type) {
+    static Object getResult(ModuleInstance module, long offset, AbiDataType type) {
         switch (type) {
             case I64:
             case U64:
             case F64:
             case BOOL: {
-                return RLPCodec.encode(new long[]{offset});
+                return offset;
             }
             case BYTES: {
                 int len = module.getMemory().load32((int) offset - 4);
-                return RLPCodec.encode(Collections.singletonList(module.getMemory().loadN((int) offset, len)));
+                return module.getMemory().loadN((int) offset, len);
             }
             case STRING: {
                 int len = module.getMemory().load32((int) offset - 4);
-                return RLPCodec.encode(Collections.singletonList(new String(module.getMemory().loadN((int) offset, len), StandardCharsets.UTF_16LE)));
+                return new String(module.getMemory().loadN((int) offset, len), StandardCharsets.UTF_16LE);
             }
             case U256:
             case ADDRESS: {
@@ -178,7 +178,7 @@ public class ContractCall {
         return ret;
     }
 
-    public byte[] call(HexBytes binaryOrAddress, String method, Parameters parameters, Uint256 amount, boolean returnAddress, List<ContractABI> contractABIs) {
+    public TransactionResult call(HexBytes binaryOrAddress, String method, Parameters parameters, Uint256 amount, boolean returnAddress, List<ContractABI> contractABIs) {
         boolean isDeploy = "init".equals(method);
         Account contractAccount;
         Account originAccount = readonly ? null : states.get(this.transaction.getFromAddress());
@@ -239,9 +239,10 @@ public class ContractCall {
         Hosts hosts = new Hosts()
                 .withTransfer(
                         states,
-                        this.recipient
+                        this.recipient,
+                        readonly
                 )
-                .withRelect(new Reflect(this, readonly))
+                .withReflect(new Reflect(this, readonly))
                 .withContext(new ContextHost(ctx, states, contractStore, storageTrieSupplier, readonly))
                 .withDB(DBFunctions)
                 .withEvent(contractAccount.getAddress(), readonly);
@@ -257,7 +258,7 @@ public class ContractCall {
                 .build();
 
 
-        byte[] ret = RLPList.createEmpty().getEncoded();
+        RLPList ret = RLPList.createEmpty();
         if (!isDeploy || instance.containsExport("init")) {
             long steps = limit.getSteps();
             long[] offsets = putParameters(instance, parameters);
@@ -265,7 +266,9 @@ public class ContractCall {
 
             long[] rets = instance.execute(method, offsets);
             if (parameters.getReturnType().length > 0) {
-                ret = getResult(instance, rets[0], AbiDataType.values()[parameters.getReturnType()[0]]);
+                ret.add(
+                       RLPElement.readRLPTree(getResult(instance, rets[0], AbiDataType.values()[parameters.getReturnType()[0]]))
+                );
             }
         }
 
@@ -276,6 +279,8 @@ public class ContractCall {
             states.put(contractAccount.getAddress(), contractAccount);
         }
 
-        return returnAddress ? contractAddress.getBytes() : ret;
+        List<Event> events = hosts.getEventHost().getEvents();
+        RLPList returns = returnAddress ? RLPList.fromElements(Collections.singleton(RLPItem.fromBytes(contractAddress.getBytes()))) : ret;
+        return new TransactionResult(limit.getGas(), returns, events);
     }
 }

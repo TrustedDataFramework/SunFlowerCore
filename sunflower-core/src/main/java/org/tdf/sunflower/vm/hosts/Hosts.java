@@ -1,9 +1,8 @@
 package org.tdf.sunflower.vm.hosts;
 
+import lombok.Getter;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
-import org.tdf.sunflower.facade.Message;
-import org.tdf.sunflower.facade.MessageQueue;
 import org.tdf.sunflower.state.Account;
 
 import java.util.Arrays;
@@ -12,16 +11,14 @@ import java.util.Map;
 import java.util.Set;
 
 public class Hosts {
-
-    private Result result = new Result();
-
     private ContextHost contextHost;
 
     private DBFunctions dbFunctions;
 
     private Transfer transfer;
 
-    private Event event;
+    @Getter
+    private EventHost eventHost;
 
     private Reflect reflect;
 
@@ -29,32 +26,28 @@ public class Hosts {
     }
 
     public Hosts withEvent(HexBytes address, boolean readonly) {
-        this.event = new Event(address, readonly);
+        this.eventHost = new EventHost(address, readonly);
         return this;
     }
 
-    public Hosts withTransfer(Transfer transfer) {
-        this.transfer = transfer;
-        return this;
-    }
-
-    public Hosts withRelect(Reflect reflect) {
+    public Hosts withReflect(Reflect reflect) {
         this.reflect = reflect;
         return this;
     }
 
     public Hosts withTransfer(
             Map<HexBytes, Account> states,
-            HexBytes contractAddress
+            HexBytes contractAddress,
+            boolean readonly
     ) {
-        this.transfer = new Transfer(states, contractAddress);
+        this.transfer = new Transfer(states, contractAddress, readonly);
         return this;
     }
 
     public Set<HostFunction> getAll() {
         Set<HostFunction> all = new HashSet<>(
                 Arrays.asList(
-                        new Abort(), new HashHost(), result,
+                        new Abort(), new HashHost(),
                         new Log(), new RLPHost(),
                         new Util(), new Uint256Host()
                 )
@@ -63,8 +56,8 @@ public class Hosts {
         if(reflect != null)
             all.add(this.reflect);
 
-        if (event != null)
-            all.add(this.event);
+        if (eventHost != null)
+            all.add(this.eventHost);
 
         if (contextHost != null) {
             all.add(contextHost);
@@ -88,9 +81,5 @@ public class Hosts {
     public Hosts withDB(DBFunctions dbFunctions) {
         this.dbFunctions = dbFunctions;
         return this;
-    }
-
-    public byte[] getResult() {
-        return result.getData();
     }
 }

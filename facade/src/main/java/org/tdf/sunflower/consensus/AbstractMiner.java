@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.Store;
+import org.tdf.sunflower.types.TransactionResult;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.events.TransactionFailed;
@@ -20,7 +21,9 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j(topic = "miner")
@@ -97,6 +100,7 @@ public abstract class AbstractMiner implements Miner {
         );
 
         transactionList.add(0, coinbase);
+        Map<HexBytes, TransactionResult> m = new HashMap<>();
         for (Transaction tx : transactionList) {
             // try to fetch transaction from pool
             try {
@@ -104,8 +108,8 @@ public abstract class AbstractMiner implements Miner {
                 // get all account related to this transaction in the trie
 
                 // store updated result to the trie if update success
-                byte[] res = tmp.update(header, tx);
-
+                TransactionResult res = tmp.update(header, tx);
+                m.put(tx.getHash(), res);
             } catch (Exception e) {
                 // prompt reason for failed updates
                 e.printStackTrace();
@@ -143,7 +147,8 @@ public abstract class AbstractMiner implements Miner {
 
         b.getBody().stream().skip(1)
                 .forEach(tx -> {
-                    eventBus.publish(new TransactionIncluded(tx, b)); });
+                    TransactionResult res = m.get(tx.getHash());
+                    eventBus.publish(new TransactionIncluded(tx, b, res.getGasUsed(), res.getReturns(), res.getEvents())); });
         return Optional.of(b);
     }
 }

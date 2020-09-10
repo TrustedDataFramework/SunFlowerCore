@@ -63,7 +63,7 @@ public class Reflect extends HostFunction {
                 byte[] parameters = loadMemory((int) longs[5], (int) longs[6]);
                 Uint256 amount = Uint256.of(loadMemory((int) longs[7], (int) longs[8]));
                 ContractCall forked = parent.fork();
-                this.result = forked.call(HexBytes.fromBytes(addr), method, RLPCodec.decode(parameters, Parameters.class), amount, false, null);
+                this.result = forked.call(HexBytes.fromBytes(addr), method, RLPCodec.decode(parameters, Parameters.class), amount, false, null).getReturns().getEncoded();
                 ret = this.result.length;
                 break;
             }
@@ -75,7 +75,15 @@ public class Reflect extends HostFunction {
                 byte[] abi = loadMemory((int) longs[5], (int) longs[6]);
                 Uint256 amount = Uint256.of(loadMemory((int) longs[7], (int) longs[8]));
                 ContractCall forked = parent.fork();
-                data = forked.call(HexBytes.fromBytes(binary), "init", RLPCodec.decode(parameters, Parameters.class), amount, true, Arrays.asList(RLPCodec.decode(abi, ContractABI[].class)));
+                data = forked
+                        .call(HexBytes.fromBytes(binary),
+                                "init",
+                                RLPCodec.decode(parameters, Parameters.class),
+                                amount,
+                                true,
+                                Arrays.asList(RLPCodec.decode(abi, ContractABI[].class))
+                        )
+                        .getReturns().get(0).asBytes();
                 ret = data.length;
                 put = true;
                 break;

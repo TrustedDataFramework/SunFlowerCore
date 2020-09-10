@@ -23,7 +23,6 @@ import org.tdf.sunflower.types.PagedView;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -93,7 +92,11 @@ public class TransactionPoolImpl implements TransactionPool {
         this.transactionRepository = repository;
         this.mCache = new HashMap<>();
         this.eventBus.subscribe(TransactionIncluded.class, (e) -> {
-            WebSocket.broadcastTransaction(e.getTransaction().getHash().getBytes(), Transaction.INCLUDED, e.getBlock().getHash().getBytes());
+            WebSocket.broadcastTransaction(
+                    e.getTransaction().getHash().getBytes(),
+                    Transaction.INCLUDED,
+                    new Object[]{e.getBlock().getHeight(), e.getBlock().getHash(), e.getGasUsed(), e.getReturns(), e.getEvents()
+                    });
         });
 
         this.eventBus.subscribe(TransactionFailed.class, (e) -> {

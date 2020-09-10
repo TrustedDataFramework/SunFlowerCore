@@ -1,13 +1,11 @@
 package org.tdf.sunflower.vm.hosts;
 
-import org.tdf.common.util.BigEndian;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPList;
-import org.tdf.sunflower.util.ByteUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,43 +62,43 @@ public class RLPHost extends HostFunction {
                 ret = data.length;
                 break;
             }
-            case RLP_LIST_SET:{
+            case RLP_LIST_SET: {
                 put = false;
                 this.list = RLPElement
                         .fromEncoded(loadMemory((int) longs[1], (int) longs[2]))
                         .asRLPList();
                 break;
             }
-            case RLP_LIST_CLEAR:{
+            case RLP_LIST_CLEAR: {
                 put = false;
                 this.list = null;
                 break;
             }
-            case RLP_LIST_LEN:{
+            case RLP_LIST_LEN: {
                 put = false;
                 ret = this.list.size();
                 break;
             }
-            case RLP_LIST_GET:{
+            case RLP_LIST_GET: {
                 data = list.get((int) longs[1]).getEncoded();
                 ret = data.length;
                 break;
             }
-            case RLP_LIST_PUSH:{
+            case RLP_LIST_PUSH: {
                 put = false;
-                if(elements == null)
+                if (elements == null)
                     elements = new ArrayList<>();
                 this.elementsEncoded = null;
                 byte[] bytes = loadMemory((int) longs[1], (int) longs[2]);
                 this.elements.add(bytes);
                 break;
             }
-            case RLP_LIST_BUILD:{
-                if(this.elementsEncoded == null)
+            case RLP_LIST_BUILD: {
+                if (this.elementsEncoded == null)
                     this.elementsEncoded = RLPCodec.encodeElements(this.elements);
                 data = this.elementsEncoded;
                 ret = data.length;
-                if(longs[4] != 0){
+                if (longs[4] != 0) {
                     this.elementsEncoded = null;
                     this.elements = null;
                 }

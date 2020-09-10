@@ -15,10 +15,12 @@ import java.util.Map;
 public class Transfer extends HostFunction {
     private final Map<HexBytes, Account> states;
     private final HexBytes contractAddress;
+    private final boolean readonly;
 
-    public Transfer(Map<HexBytes, Account> states, HexBytes contractAddress) {
+    public Transfer(Map<HexBytes, Account> states, HexBytes contractAddress, boolean readonly) {
         this.states = states;
         this.contractAddress = contractAddress;
+        this.readonly = readonly;
         setType(
                 new FunctionType(
                         Arrays.asList(
@@ -34,6 +36,8 @@ public class Transfer extends HostFunction {
 
     @Override
     public long[] execute(long... parameters) {
+        if(readonly)
+            throw new RuntimeException("transfer is not allowed here");
         if (parameters[0] != 0) {
             throw new RuntimeException("unexpected");
         }
