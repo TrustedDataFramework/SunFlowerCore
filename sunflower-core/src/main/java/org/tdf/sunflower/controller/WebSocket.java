@@ -5,18 +5,24 @@ import org.springframework.stereotype.Component;
 import org.tdf.common.util.CopyOnWriteMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.rlp.RLPElement;
+import org.tdf.rlp.RLPItem;
+import org.tdf.rlp.RLPList;
+import org.tdf.sunflower.types.*;
 
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 @ServerEndpoint(value = "/websocket/{id}")
 @Component
@@ -61,14 +67,18 @@ public class WebSocket {
      */
     @OnMessage
     public void onMessage(byte[] messages, Session session) {
-        SubscribeMessage m = RLPCodec.decode(messages, SubscribeMessage.class);
-        switch (m.getCode()){
-            case 0:{
-                this.transactions.put(m.getData(), true);
+        WebSocketMessage msg = RLPCodec.decode(messages, WebSocketMessage.class);
+        switch (msg.getCodeEnum()){
+            // 事务监听
+            case TRANSACTION_SUBSCRIBE:{
+                this.transactions.put(HexBytes.fromBytes(msg.getBody().asBytes()), true);
+                sendNull(msg.getNonce());
                 break;
             }
-            case 1:{
-                this.addresses.add(m.getData());
+            // 合约监听
+            case EVENT_SUBSCRIBE:{
+                this.addresses.add(HexBytes.fromBytes(msg.getBody().asBytes()));
+                sendNull(msg.getNonce());
                 break;
             }
         }
@@ -83,29 +93,25 @@ public class WebSocket {
         }
     }
 
+    public void sendNull(long nonce){
+        sendBinary(RLPCodec.encode(new WebSocketMessage(nonce, 0, null)));
+    }
+
+    public void sendResponse(int nonce, Object data){
+        sendBinary(RLPCodec.encode(new Object[]{2, nonce, data}));
+    }
+
     @SneakyThrows
-    public static void broadcastAsync(byte[] data, int code, HexBytes key, boolean remove) {
+    public static void broadcastAsync(WebSocketMessage msg, Predicate<WebSocket> when, Consumer<WebSocket> after) {
+        byte[] bin = RLPCodec.encode(msg);
         for (Map.Entry<String, WebSocket> entry : clients.entrySet()) {
             EXECUTOR.execute(() -> {
                 WebSocket socket = entry.getValue();
                 try {
-                    boolean send = false;
-                    switch (code){
-                        case 0:{
-                            send = socket.transactions.containsKey(key);
-                            if(remove)
-                                    socket.transactions.remove(key);
-                            break;
-                        }
-                        case 1:{
-                            send = socket.addresses.contains(key);
-                            if(remove)
-                                socket.addresses.remove(key);
-                            break;
-                        }
+                    if (when.test(socket)) {
+                        socket.sendBinary(bin);
+                        after.accept(socket);
                     }
-                    if(send)
-                        socket.sendBinary(data);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -113,16 +119,48 @@ public class WebSocket {
         }
     }
 
+
+    public static void broadcastTransaction(Transaction tx, RLPElement body, boolean delete) {
+        WebSocketMessage msg = new WebSocketMessage(
+                0,
+                WebSocketMessage.Code.TRANSACTION_EMIT.ordinal(),
+                body
+        );
+        broadcastAsync(msg,
+                ws -> ws.transactions.containsKey(tx.getHash()),
+                ws -> { if(delete) ws.transactions.remove(tx.getHash());}
+        );
+    }
+
+    public static void broadcastPendingOrConfirm(Transaction tx, Transaction.Status status) {
+        RLPElement body = RLPElement.readRLPTree(new WebSocketTransactionBody(tx.getHash(), status.ordinal(), null));
+        broadcastTransaction(tx, body, status == Transaction.Status.CONFIRMED);
+    }
+
     public static void broadcastDrop(Transaction tx, String reason) {
-        broadcastTransaction(tx.getHash().getBytes(), Transaction.DROPPED, reason);
+        RLPElement body = RLPElement.readRLPTree(new WebSocketTransactionBody(tx.getHash(), Transaction.Status.DROPPED.ordinal(), reason));
+        broadcastTransaction(tx, body.asRLPList(), true);
     }
 
-    // broadcast transaction success
-    public static void broadcastTransaction(byte[] hash, int code, Object data) {
-        broadcastAsync(RLPCodec.encode(new Object[]{0, hash, code, data}), 0, HexBytes.fromBytes(hash), code == 2 || code == 3);
+    public static void broadCastIncluded(Transaction tx, long height, HexBytes blockHash, long gasUsed, RLPList returns, List<Event> events){
+        WebSocketTransactionBody bd =
+                new WebSocketTransactionBody(
+                        tx.getHash(),
+                        Transaction.Status.INCLUDED.ordinal(),
+                        new Object[]{height, blockHash, gasUsed, returns, events}
+                        );
+
+        RLPElement body = RLPElement.readRLPTree(bd);
+        broadcastTransaction(tx, body.asRLPList(), false);
     }
 
-    public static void broadcastEvent(byte[] address, String event, Object params) {
-        broadcastAsync(RLPCodec.encode(new Object[]{1, address, event, params}), 1, HexBytes.fromBytes(address), false);
+    public static void broadcastEvent(byte[] address, String event, RLPList outputs) {
+        RLPElement bd = RLPElement.readRLPTree(new WebSocketEventBody(address, event, outputs)).asRLPList();
+        HexBytes addr = HexBytes.fromBytes(address);
+        broadcastAsync(
+                new WebSocketMessage(0, WebSocketMessage.Code.EVENT_EMIT.ordinal(), bd),
+                ws -> ws.addresses.contains(addr),
+                ws -> {}
+        );
     }
 }

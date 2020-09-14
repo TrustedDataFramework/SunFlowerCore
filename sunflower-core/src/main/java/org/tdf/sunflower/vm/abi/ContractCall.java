@@ -20,15 +20,13 @@ import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.hosts.*;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 @RequiredArgsConstructor
 @Getter
 public class ContractCall {
-
+    public static final Set<String> RESERVED_FUNCTIONS = new HashSet<>(Arrays.asList("__alloc", "__retain", "__setArgumentsLength", "__collect", "__release", "__idof"));
     // contract address already called
     private final Map<HexBytes, Account> states;
     private final Header header;
@@ -179,6 +177,8 @@ public class ContractCall {
     }
 
     public TransactionResult call(HexBytes binaryOrAddress, String method, Parameters parameters, Uint256 amount, boolean returnAddress, List<ContractABI> contractABIs) {
+        if(RESERVED_FUNCTIONS.contains(method))
+            throw new RuntimeException(method + " is reserved");
         boolean isDeploy = "init".equals(method);
         Account contractAccount;
         Account originAccount = readonly ? null : states.get(this.transaction.getFromAddress());

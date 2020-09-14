@@ -91,12 +91,9 @@ public class TransactionPoolImpl implements TransactionPool {
                 .build();
         this.transactionRepository = repository;
         this.mCache = new HashMap<>();
+
         this.eventBus.subscribe(TransactionIncluded.class, (e) -> {
-            WebSocket.broadcastTransaction(
-                    e.getTransaction().getHash().getBytes(),
-                    Transaction.INCLUDED,
-                    new Object[]{e.getBlock().getHeight(), e.getBlock().getHash(), e.getGasUsed(), e.getReturns(), e.getEvents()
-                    });
+            WebSocket.broadCastIncluded(e.getTransaction(), e.getBlock().getHeight(), e.getBlock().getHash(), e.getGasUsed(), e.getReturns(), e.getEvents());
         });
 
         this.eventBus.subscribe(TransactionFailed.class, (e) -> {
@@ -104,7 +101,7 @@ public class TransactionPoolImpl implements TransactionPool {
         });
 
         this.eventBus.subscribe(TransactionConfirmed.class, (e) -> {
-            WebSocket.broadcastTransaction(e.getTx().getHash().getBytes(), Transaction.CONFIRMED, null);
+            WebSocket.broadcastPendingOrConfirm(e.getTx(), Transaction.Status.CONFIRMED);
         });
     }
 
@@ -170,7 +167,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 newCollected = Collections.emptyList();
 
             for (Transaction tx : newCollected) {
-                WebSocket.broadcastTransaction(tx.getHash().getBytes(), Transaction.PENDING, null);
+                WebSocket.broadcastPendingOrConfirm(tx, Transaction.Status.PENDING);
             }
 
             if (!newCollected.isEmpty())

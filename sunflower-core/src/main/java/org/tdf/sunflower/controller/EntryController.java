@@ -12,9 +12,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.tdf.common.event.EventBus;
+import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
+import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
@@ -31,8 +33,10 @@ import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.util.MappingUtil;
+import org.tdf.sunflower.vm.abi.ContractABI;
 
 import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -208,6 +212,18 @@ public class EntryController {
         if (o == null)
             return Response.newSuccessFul(null);
         return o;
+    }
+
+    @GetMapping(value = "/contract/{address}/abi", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Object getABI(@PathVariable("address") final String address) {
+        HexBytes addressHex = Address.of(address);
+        Header h = sunflowerRepository.getBestHeader();
+        Account a = accountTrie.get(h.getStateRoot().getBytes(), addressHex).get();
+        Store<byte[], byte[]> store = contractStorageTrie.revert(a.getStorageRoot());
+        byte[] abiEncoded = store.get("__abi".getBytes(StandardCharsets.UTF_8)).get();
+       return Arrays.stream(RLPCodec.decode(abiEncoded, ContractABI[].class))
+                .map(ContractABI::toJSON)
+               .collect(Collectors.toList());
     }
 
     @GetMapping(value = "/contract/vrf/{address}", produces = MediaType.APPLICATION_JSON_VALUE)

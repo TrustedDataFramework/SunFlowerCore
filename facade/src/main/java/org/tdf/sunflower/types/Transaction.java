@@ -28,10 +28,13 @@ import java.util.stream.Stream;
 @ToString
 @NoArgsConstructor
 public class Transaction {
-    public static final int PENDING = 0;
-    public static final int INCLUDED = 1;
-    public static final int CONFIRMED = 2;
-    public static final int DROPPED = 3;
+    public enum Status{
+        PENDING,
+        INCLUDED,
+        CONFIRMED,
+        DROPPED
+    }
+    
     public static final long TRANSFER_GAS = 10;
     public static final long BUILTIN_CALL_GAS = 10;
 
