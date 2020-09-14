@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.types.Parameters;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.LittleEndian;

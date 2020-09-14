@@ -34,6 +34,7 @@ import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.util.MappingUtil;
 import org.tdf.sunflower.vm.abi.ContractABI;
+import org.tdf.sunflower.vm.abi.ContractCallPayload;
 
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
@@ -199,8 +200,10 @@ public class EntryController {
             throw new RuntimeException("require parameters or args");
         HexBytes args = HexBytes.fromHex(arguments);
         Header h = sunflowerRepository.getBestHeader();
+
+        ContractCallPayload callPayload = RLPCodec.decode(args.getBytes(), ContractCallPayload.class);
         byte[] result = accountTrie.fork(h.getStateRoot().getBytes())
-                .call(addressHex, args);
+                .call(addressHex, callPayload.getMethod(), callPayload.getParameters());
 
         return HexBytes.fromBytes(result);
     }

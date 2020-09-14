@@ -15,6 +15,9 @@ public class WebSocketMessage {
         EVENT_SUBSCRIBE,
         TRANSACTION_EMIT,
         TRANSACTION_SUBSCRIBE,
+        TRANSACTION_SEND,
+        ACCOUNT_QUERY,
+        CONTRACT_QUERY
     }
 
     private long nonce;

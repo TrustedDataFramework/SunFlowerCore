@@ -8,6 +8,7 @@ import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.*;
 import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.types.Parameters;
 import org.tdf.sunflower.types.TransactionResult;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteArrayMap;
@@ -376,10 +377,9 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         getDirtyTrie().put(key, value);
     }
 
-    public byte[] call(HexBytes address, HexBytes args) {
+    public byte[] call(HexBytes address, String method, Parameters parameters) {
         // execute method
         Limit limit = new Limit();
-        ContractCallPayload callPayload = RLPCodec.decode(args.getBytes(), ContractCallPayload.class);
         ContractCall contractCall = new ContractCall(
                 this.dirtyTrie.asMap(), null,
                 null, this::getDirtyContractStorageTrie,
@@ -390,8 +390,8 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
 
         return contractCall.call(
                 address,
-                callPayload.getMethod(),
-                callPayload.getParameters(), Uint256.ZERO,
+                method,
+                parameters, Uint256.ZERO,
                 false, null
         ).getReturns().getEncoded();
     }

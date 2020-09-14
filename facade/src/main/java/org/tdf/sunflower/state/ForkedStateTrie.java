@@ -1,5 +1,6 @@
 package org.tdf.sunflower.state;
 
+import org.tdf.common.types.Parameters;
 import org.tdf.sunflower.types.TransactionResult;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.Header;
@@ -14,5 +15,5 @@ public interface ForkedStateTrie<ID, S> {
     byte[] commit();
     void flush();
     void put(ID key, S value);
-    byte[] call(HexBytes address, HexBytes args);
+    byte[] call(HexBytes address, String method, Parameters parameters);
 }

@@ -1,4 +1,4 @@
-package org.tdf.sunflower.vm.abi;
+package org.tdf.common.types;
 
 import lombok.Data;
 import org.tdf.rlp.RLPElement;

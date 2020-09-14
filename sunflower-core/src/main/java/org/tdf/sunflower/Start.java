@@ -21,6 +21,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codec;
@@ -40,6 +41,7 @@ import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.pos.PoS;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
+import org.tdf.sunflower.controller.WebSocket;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.mq.SocketIOMessageQueue;
@@ -59,6 +61,7 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
+import javax.websocket.server.ServerEndpointConfig;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -75,9 +78,10 @@ import java.util.stream.Collectors;
 @SpringBootApplication
 @EnableTransactionManagement
 @Slf4j(topic = "init")
+@EnableWebSocket
 // use SPRING_CONFIG_LOCATION environment to locate spring config
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
-public class Start {
+public class Start{
     @Getter
     private static boolean enableAssertion;
 
@@ -501,7 +505,8 @@ public class Start {
     }
 
     @Bean
-    public ServerEndpointExporter serverEndpointExporter() {
+    public ServerEndpointExporter serverEndpointExporter(ApplicationContext ctx) {
+        WebSocket.ctx = ctx;
         return new ServerEndpointExporter();
     }
 }

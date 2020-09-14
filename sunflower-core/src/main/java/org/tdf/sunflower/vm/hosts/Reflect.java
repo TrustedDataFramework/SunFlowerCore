@@ -8,7 +8,7 @@ import org.tdf.lotusvm.types.ValueType;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.vm.abi.ContractABI;
 import org.tdf.sunflower.vm.abi.ContractCall;
-import org.tdf.sunflower.vm.abi.Parameters;
+import org.tdf.common.types.Parameters;
 
 import java.util.Arrays;
 import java.util.Collections;
