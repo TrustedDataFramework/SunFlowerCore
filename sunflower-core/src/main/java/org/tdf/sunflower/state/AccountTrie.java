@@ -171,7 +171,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
     public void updateFeeAccount(Uint256 fee) {
         Map<HexBytes, Account> states = this.dirtyTrie.asMap();
         Account feeAccount = states.get(Constants.FEE_ACCOUNT_ADDR);
-        feeAccount.setBalance(feeAccount.getBalance().safeAdd(fee));
+        feeAccount.addBalance(fee);
         states.put(feeAccount.getAddress(), feeAccount);
     }
 
@@ -192,13 +192,14 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
             throw new RuntimeException("transfer amount = 0");
 
         Account from = states.get(fromAddr);
-        from.setBalance(from.getBalance().safeSub(amount.safeAdd(fee)));
+        from.subBalance(amount);
+        from.subBalance(fee);
 
         Account to = states.get(toAddr);
         if (to.getCreatedBy() != null && !to.getCreatedBy().isEmpty())
             throw new RuntimeException("transfer to contract address is not allowed");
 
-        to.setBalance(to.getBalance().safeAdd(amount));
+        to.addBalance(amount);
         states.put(fromAddr, from);
         states.put(toAddr, to);
         updateFeeAccount(fee);
@@ -242,7 +243,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         Map<HexBytes, Account> accounts = this.dirtyTrie.asMap();
 
         Account to = accounts.get(t.getTo());
-        to.setBalance(to.getBalance().safeAdd(t.getAmount()));
+        to.addBalance(t.getAmount());
         accounts.put(to.getAddress(), to);
 
         for (Bios bios : biosList.values()) {
@@ -295,9 +296,9 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
 
 
     private TransactionResult updateContractCall(Header header, Transaction t) {
-        ContractCallPayload callPayload = RLPCodec.decode(t.getPayload().getBytes(), ContractCallPayload.class);
 
         Map<HexBytes, Account> accounts = getDirtyTrie().asMap();
+        Account originAccount = accounts.get(t.getFromAddress());
         Account contractAccount = accounts.get(t.getTo());
         if(contractAccount == null){
             throw new RuntimeException("contract " + t.getTo() + " not found");
@@ -307,15 +308,23 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
             Uint256 fee = Uint256.of(Transaction.BUILTIN_CALL_GAS).safeMul(t.getGasPrice());
             Trie<byte[], byte[]> before =
                     getDirtyContractStorageTrie(contractAccount.getStorageRoot());
+
+            contractAccount.addBalance(t.getAmount());
+            originAccount.subBalance(t.getAmount());
+            originAccount.subBalance(fee);
+            accounts.put(contractAccount.getAddress(), contractAccount);
+            accounts.put(originAccount.getAddress(), originAccount);
+
             PreBuiltContract updater = preBuiltContractAddresses.get(contractAccount.getAddress());
             updater.update(header, t, accounts, before);
             byte[] root = before.commit();
             contractAccount.setStorageRoot(root);
             updateFeeAccount(fee);
+            accounts.put(contractAccount.getAddress(), contractAccount);
             return new TransactionResult(Transaction.BUILTIN_CALL_GAS, RLPList.createEmpty(), Collections.emptyList());
         }
 
-
+        ContractCallPayload callPayload = RLPCodec.decode(t.getPayload().getBytes(), ContractCallPayload.class);
 
         // execute method
         Limit limit = new Limit(0, 0, t.getGasLimit(), t.getPayload().size() / 1024);
@@ -340,7 +349,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         Account caller = accounts.get(t.getFromAddress());
 
         Uint256 fee = Uint256.of(limit.getGas()).safeMul(t.getGasPrice());
-        caller.setBalance(caller.getBalance().safeSub(fee));
+        caller.subBalance(fee);
         accounts.put(contractAccount.getAddress(), contractAccount);
         accounts.put(caller.getAddress(), caller);
         updateFeeAccount(fee);

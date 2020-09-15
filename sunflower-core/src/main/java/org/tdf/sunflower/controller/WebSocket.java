@@ -115,7 +115,8 @@ public class WebSocket {
                 Account a = accountTrie.get(
                         repository.getBestHeader().getStateRoot().getBytes(),
                         HexBytes.fromBytes(address)
-                ).get();
+                ).orElse(Account.emptyAccount(HexBytes.fromBytes(address)));
+
                 sendResponse(msg.getNonce(), WebSocketMessage.Code.ACCOUNT_QUERY, a);
                 break;
             }

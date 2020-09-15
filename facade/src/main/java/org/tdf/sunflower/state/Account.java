@@ -86,4 +86,12 @@ public class Account {
     public static Account emptyAccount(HexBytes address) {
         return new Account(address, 0, Uint256.ZERO, HexBytes.EMPTY, null, null, true);
     }
+
+    public void addBalance(Uint256 amount){
+        this.balance = this.balance.safeAdd(amount);
+    }
+
+    public void subBalance(Uint256 amount){
+        this.balance = this.balance.safeSub(amount);
+    }
 }

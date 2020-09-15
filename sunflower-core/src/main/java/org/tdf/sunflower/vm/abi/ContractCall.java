@@ -206,8 +206,8 @@ public class ContractCall {
 
         // transfer amount from origin account to contract account
         if (!readonly) {
-            originAccount.setBalance(originAccount.getBalance().safeSub(amount));
-            contractAccount.setBalance(contractAccount.getBalance().safeAdd(amount));
+            originAccount.subBalance(amount);
+            contractAccount.addBalance(amount);
             states.put(contractAccount.getAddress(), contractAccount);
             states.put(originAccount.getAddress(), originAccount);
         }

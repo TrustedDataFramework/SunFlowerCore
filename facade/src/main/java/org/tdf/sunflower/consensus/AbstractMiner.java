@@ -130,7 +130,7 @@ public abstract class AbstractMiner implements Miner {
         tmp.remove(Constants.FEE_ACCOUNT_ADDR);
         Account minerAccount = tmp.get(coinbase.getTo())
                 .orElse(Account.emptyAccount(coinbase.getTo()));
-        minerAccount.setBalance(minerAccount.getBalance().safeAdd(feeAccount.getBalance()));
+        minerAccount.addBalance(feeAccount.getBalance());
         coinbase.setAmount(coinbase.getAmount().safeAdd(feeAccount.getBalance()));
         tmp.put(minerAccount.getAddress(), minerAccount);
         // calculate state root

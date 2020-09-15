@@ -44,10 +44,10 @@ public class Transfer extends HostFunction {
         Uint256 amount = Uint256.of(loadMemory((int) parameters[3], (int) parameters[4]));
         Account contractAccount = states.get(this.contractAddress);
         HexBytes toAddr = HexBytes.fromBytes(loadMemory((int) parameters[1], (int) parameters[2]));
-        contractAccount.setBalance(contractAccount.getBalance().safeSub(amount));
+        contractAccount.subBalance(amount);
         states.putIfAbsent(toAddr, Account.emptyAccount(toAddr));
         Account to = states.get(toAddr);
-        to.setBalance(to.getBalance().safeAdd(amount));
+        to.addBalance(amount);
         states.put(contractAddress, contractAccount);
         states.put(to.getAddress(), to);
         return new long[0];

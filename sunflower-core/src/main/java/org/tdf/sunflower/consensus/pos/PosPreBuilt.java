@@ -193,10 +193,10 @@ public class PosPreBuilt implements PreBuiltContract {
                 }
 
                 Account fromaccount = accounts.get(transaction.getFromAddress());
-                fromaccount.setBalance(fromaccount.getBalance().safeAdd(voteInfo.getAmount()));
+                fromaccount.addBalance(voteInfo.getAmount());
                 accounts.put(fromaccount.getAddress(), fromaccount);
                 Account thisContract = accounts.get(Constants.POS_CONTRACT_ADDR);
-                thisContract.setBalance(thisContract.getBalance().safeSub(voteInfo.amount));
+                thisContract.subBalance(voteInfo.amount);
                 accounts.put(thisContract.getAddress(), thisContract);
                 break;
         }
