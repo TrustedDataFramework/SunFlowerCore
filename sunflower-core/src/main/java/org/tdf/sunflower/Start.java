@@ -487,13 +487,15 @@ public class Start{
         engine.setSecretStore(context.getBean(SecretStore.class));
         engine.setStateTrieProvider(e -> {
 
+            Boolean bool = context.getEnvironment().getProperty("sunflower.trie.secure", Boolean.class);
+
             AccountTrie trie = new AccountTrie(
                     databaseStoreFactory.create("account-trie"),
                     e.getContractCodeStore(),
                     e.getContractStorageTrie(),
                     e.getGenesisStates().stream().collect(Collectors.toMap(Account::getAddress, Function.identity())),
                     e.getPreBuiltContracts(), e.getBios(),
-                    context.getEnvironment().getProperty("sunflower.trie.secure", Boolean.class)
+                    bool != null && bool
             );
 
             e.setAccountTrie(trie);

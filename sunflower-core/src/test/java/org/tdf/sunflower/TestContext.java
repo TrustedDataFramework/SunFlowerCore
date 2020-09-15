@@ -15,6 +15,7 @@ import org.springframework.shell.jline.JLineShellAutoConfiguration;
 import org.springframework.shell.legacy.LegacyAdapterAutoConfiguration;
 import org.springframework.shell.standard.StandardAPIAutoConfiguration;
 import org.springframework.shell.standard.commands.StandardCommandsAutoConfiguration;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
 
 import javax.annotation.PostConstruct;
 
@@ -33,6 +34,7 @@ import javax.annotation.PostConstruct;
         // Allows ${} support
         PropertyPlaceholderAutoConfiguration.class,
 })
+@EnableWebSocket
 @ComponentScan(excludeFilters = { @ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
         @ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })
 public class TestContext {
