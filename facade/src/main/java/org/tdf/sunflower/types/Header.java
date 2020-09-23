@@ -12,6 +12,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
+import org.tdf.sunflower.util.IntSerializer;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -44,6 +45,7 @@ public class Header implements Chained {
      * height of current header
      */
     @RLP(4)
+    @JsonSerialize(using = IntSerializer.class)
     protected long height;
     /**
      * unix epoch when the block mined

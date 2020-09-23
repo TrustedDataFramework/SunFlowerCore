@@ -19,6 +19,7 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
+import org.tdf.sunflower.util.IntSerializer;
 
 import java.util.*;
 import java.util.function.Function;
@@ -76,7 +77,7 @@ public class Transaction {
     @RLP(2)
     protected long createdAt;
     @RLP(3)
-    @JsonSerialize(using = ToStringSerializer.class)
+    @JsonSerialize(using = IntSerializer.class)
     protected long nonce;
 
     /**
@@ -86,13 +87,15 @@ public class Transaction {
     protected HexBytes from;
 
     @RLP(5)
-    @JsonSerialize(using = ToStringSerializer.class)
+    @JsonSerialize(using = IntSerializer.class)
     protected long gasLimit;
 
     @RLP(6)
+    @JsonSerialize(using = IntSerializer.class)
     protected Uint256 gasPrice;
 
     @RLP(7)
+    @JsonSerialize(using = IntSerializer.class)
     protected Uint256 amount;
 
     /**

@@ -22,10 +22,29 @@ import static org.tdf.common.types.ByteUtil.*;
 
 
 @JsonDeserialize(using = Uint256.Uint256Deserializer.class)
-@JsonSerialize(using = Uint256.Uint256Serializer.class)
 @RLPEncoding(Uint256.Uint256EncoderDecoder.class)
 @RLPDecoding(Uint256.Uint256EncoderDecoder.class)
-public class Uint256 {
+public class Uint256 extends Number{
+    @Override
+    public int intValue() {
+        return value().intValueExact();
+    }
+
+    @Override
+    public long longValue() {
+        return value().longValueExact();
+    }
+
+    @Override
+    public float floatValue() {
+        return value().floatValue();
+    }
+
+    @Override
+    public double doubleValue() {
+        return value().doubleValue();
+    }
+
     public static class Uint256Deserializer extends StdDeserializer<Uint256> {
         public Uint256Deserializer() {
             super(Uint256.class);

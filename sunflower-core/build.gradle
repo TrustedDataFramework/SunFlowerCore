@@ -70,15 +70,6 @@ dependencies {
     compile 'com.h2database:h2'
 }
 
-task runTestCommunicationTool(type: JavaExec){
-    main = "org.wisdom.consortium.util.vm.wasm.TestCommunicationTool"
-    classpath = sourceSets.main.runtimeClasspath
-    standardInput = System.in
-    if (project.hasProperty("appArgs")) {
-        args appArgs.split(" ")
-    }
-}
-
 task copyDependencies(type: Copy) {
     from configurations.runtime
     destinationDir = file('build/libs/lib')
