@@ -12,7 +12,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
-import org.tdf.sunflower.util.IntSerializer;
+import org.tdf.common.util.IntSerializer;
 
 import java.util.Objects;
 import java.util.stream.Stream;

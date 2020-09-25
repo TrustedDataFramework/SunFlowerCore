@@ -23,10 +23,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -34,7 +33,6 @@ import java.util.function.Predicate;
 @Component
 public class WebSocket {
     private static final Map<String, WebSocket> clients = new CopyOnWriteMap<>();
-    private static final Executor EXECUTOR = Executors.newCachedThreadPool();
     public static ApplicationContext ctx;
 
     private TransactionPool transactionPool;
@@ -154,7 +152,7 @@ public class WebSocket {
     public static void broadcastAsync(WebSocketMessage msg, Predicate<WebSocket> when, Consumer<WebSocket> after) {
         byte[] bin = RLPCodec.encode(msg);
         for (Map.Entry<String, WebSocket> entry : clients.entrySet()) {
-            EXECUTOR.execute(() -> {
+            CompletableFuture.runAsync(() -> {
                 WebSocket socket = entry.getValue();
                 try {
                     if (when.test(socket)) {

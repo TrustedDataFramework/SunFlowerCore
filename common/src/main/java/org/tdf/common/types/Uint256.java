@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import lombok.NonNull;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.IntSerializer;
 import org.tdf.rlp.*;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ import static org.tdf.common.types.ByteUtil.*;
 
 
 @JsonDeserialize(using = Uint256.Uint256Deserializer.class)
+@JsonSerialize(using = IntSerializer.class)
 @RLPEncoding(Uint256.Uint256EncoderDecoder.class)
 @RLPDecoding(Uint256.Uint256EncoderDecoder.class)
 public class Uint256 extends Number{

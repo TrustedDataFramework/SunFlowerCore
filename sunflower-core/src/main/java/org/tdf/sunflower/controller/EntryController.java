@@ -3,7 +3,6 @@ package org.tdf.sunflower.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.sun.management.OperatingSystemMXBean;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
@@ -32,6 +30,7 @@ import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
+import org.tdf.common.util.IntSerializer;
 import org.tdf.sunflower.util.MappingUtil;
 import org.tdf.sunflower.vm.abi.ContractABI;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
@@ -49,8 +48,6 @@ import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 @RequestMapping("/rpc")
 @Slf4j(topic = "rpc")
 public class EntryController {
-    private static final int MAX_HTTP_TIMEOUT = 30;
-
     private AccountTrie accountTrie;
 
     @Qualifier("contractStorageTrie")
@@ -74,11 +71,8 @@ public class EntryController {
 
     private Miner miner;
 
-    private EventBus eventBus;
-
-
     private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func,
-                                   Function<byte[], Optional<T>> func1) {
+            Function<byte[], Optional<T>> func1) {
         Long height = null;
         try {
             height = Long.parseLong(hashOrHeight);
@@ -110,8 +104,7 @@ public class EntryController {
 
     @GetMapping(value = "/transaction/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Object> getTransaction(@PathVariable String hash) throws Exception {
-        Optional<Transaction> o = repository
-                .getTransactionByHash(HexBytes.decode(hash));
+        Optional<Transaction> o = repository.getTransactionByHash(HexBytes.decode(hash));
         if (o.isPresent()) {
             Map<String, Object> m = MappingUtil.pojoToMap(o.get());
             m.put("confirms", repository.getConfirms(HexBytes.decode(hash)));
@@ -173,8 +166,7 @@ public class EntryController {
     }
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Response<List<?>> sendTransaction(
-            @RequestBody JsonNode node) {
+    public Response<List<?>> sendTransaction(@RequestBody JsonNode node) {
         List<Transaction> ts;
         if (node.isArray()) {
             ts = Arrays.asList(objectMapper.convertValue(node, Transaction[].class));
@@ -183,7 +175,7 @@ public class EntryController {
         }
         List<String> errors = pool.collect(ts);
         Response<List<?>> errResp = Response.newFailed(Response.Code.INTERNAL_ERROR, String.join("\n", errors));
-        if(!errors.isEmpty())
+        if (!errors.isEmpty())
             return errResp;
 
         return Response.newSuccessFul(ts.stream().map(Transaction::getHash).collect(Collectors.toList()));
@@ -191,9 +183,8 @@ public class EntryController {
 
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public HexBytes getContract(@PathVariable("address") final String address,
-                                @RequestParam(value = "parameters", required = false) String arguments,
-                                @RequestParam(value = "args", required = false) String argsStr
-    ) {
+            @RequestParam(value = "parameters", required = false) String arguments,
+            @RequestParam(value = "args", required = false) String argsStr) {
         HexBytes addressHex = Address.of(address);
         arguments = arguments == null ? argsStr : arguments;
         if (arguments == null || arguments.isEmpty())
@@ -202,15 +193,15 @@ public class EntryController {
         Header h = sunflowerRepository.getBestHeader();
 
         ContractCallPayload callPayload = RLPCodec.decode(args.getBytes(), ContractCallPayload.class);
-        byte[] result = accountTrie.fork(h.getStateRoot().getBytes())
-                .call(addressHex, callPayload.getMethod(), callPayload.getParameters());
+        byte[] result = accountTrie.fork(h.getStateRoot().getBytes()).call(addressHex, callPayload.getMethod(),
+                callPayload.getParameters());
 
         return HexBytes.fromBytes(result);
     }
 
     @PostMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Object rpcQuery(@PathVariable("address") final String address,
-                           @RequestBody(required = false) JsonNode body) {
+            @RequestBody(required = false) JsonNode body) {
         Object o = consensusEngine.rpcQuery(HexBytes.fromHex(address), body);
         if (o == null)
             return Response.newSuccessFul(null);
@@ -224,21 +215,19 @@ public class EntryController {
         Account a = accountTrie.get(h.getStateRoot().getBytes(), addressHex).get();
         Store<byte[], byte[]> store = contractStorageTrie.revert(a.getStorageRoot());
         byte[] abiEncoded = store.get("__abi".getBytes(StandardCharsets.UTF_8)).get();
-       return Arrays.stream(RLPCodec.decode(abiEncoded, ContractABI[].class))
-                .map(ContractABI::toJSON)
-               .collect(Collectors.toList());
+        return Arrays.stream(RLPCodec.decode(abiEncoded, ContractABI[].class)).map(ContractABI::toJSON)
+                .collect(Collectors.toList());
     }
 
     @GetMapping(value = "/contract/vrf/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public HexBytes getVrfContract(@PathVariable("address") final String address,
-                                   String depAddr) throws Exception {
+    public HexBytes getVrfContract(@PathVariable("address") final String address, String depAddr) throws Exception {
         HexBytes contractAddressHex = Address.of(address);
         Header h = sunflowerRepository.getBestHeader();
         if (VRF_BIOS_CONTRACT_ADDR.equals(address)) {
             if (depAddr != null && !depAddr.equals("")) {
                 HexBytes depositAddress = HexBytes.fromHex(depAddr);
-                return HexBytes.fromBytes(VrfUtil.getFromContractStorage(contractAddressHex, h, depositAddress.getBytes(), accountTrie,
-                        contractStorageTrie));
+                return HexBytes.fromBytes(VrfUtil.getFromContractStorage(contractAddressHex, h,
+                        depositAddress.getBytes(), accountTrie, contractStorageTrie));
             } else {
                 return HexBytes.fromBytes(VrfUtil.getFromContractStorage(contractAddressHex, h,
                         VrfPreBuiltContract.TOTAL_KEY, accountTrie, contractStorageTrie));
@@ -279,8 +268,9 @@ public class EntryController {
 
         Uint256 totalGasPrice = Uint256.ZERO;
         long totalTransactions = 0;
-        long avgInterval = blocksWithoutGenesis.size() > 1 ?
-                (blocksWithoutGenesis.get(blocksWithoutGenesis.size() - 1).getCreatedAt() - blocksWithoutGenesis.get(0).getCreatedAt()) / (blocksWithoutGenesis.size() - 1)
+        long avgInterval = blocksWithoutGenesis.size() > 1
+                ? (blocksWithoutGenesis.get(blocksWithoutGenesis.size() - 1).getCreatedAt()
+                        - blocksWithoutGenesis.get(0).getCreatedAt()) / (blocksWithoutGenesis.size() - 1)
                 : 0;
 
         for (Block b : blocks) {
@@ -295,22 +285,20 @@ public class EntryController {
         long yesterday = System.currentTimeMillis() / 1000 - (24 * 60 * 60);
         Optional<Header> o = binarySearch(yesterday, 0, best.getHeight());
 
-
-        String diff = consensusEngine.getName().equals("pow") ?
-                HexBytes.encode(
-                        ((PoW) consensusEngine).getNBits(best.getStateRoot().getBytes())) : "";
+        String diff = consensusEngine.getName().equals("pow")
+                ? HexBytes.encode(((PoW) consensusEngine).getNBits(best.getStateRoot().getBytes()))
+                : "";
         return builder.cpu(osMxBean.getSystemLoadAverage())
                 .memoryUsed(osMxBean.getTotalPhysicalMemorySize() - osMxBean.getFreePhysicalMemorySize())
                 .totalMemory(osMxBean.getTotalPhysicalMemorySize())
-                .averageGasPrice(totalTransactions == 0 ? Uint256.ZERO : totalGasPrice.div(Uint256.of(totalTransactions)))
-                .averageBlockInterval(avgInterval)
-                .height(best.getHeight())
-                .mining(blocks.stream().anyMatch(x -> x.getBody().size() > 0 && x.getBody().get(0).getTo().equals(miner.getMinerAddress())))
-                .currentDifficulty(diff)
-                .transactionPoolSize(pool.size())
+                .averageGasPrice(
+                        totalTransactions == 0 ? Uint256.ZERO : totalGasPrice.div(Uint256.of(totalTransactions)))
+                .averageBlockInterval(avgInterval).height(best.getHeight())
+                .mining(blocks.stream().anyMatch(
+                        x -> x.getBody().size() > 0 && x.getBody().get(0).getTo().equals(miner.getMinerAddress())))
+                .currentDifficulty(diff).transactionPoolSize(pool.size())
                 .blocksPerDay(o.map(h -> best.getHeight() - h.getHeight() + 1).orElse(0L))
-                .consensus(consensusEngine.getName())
-                .build();
+                .consensus(consensusEngine.getName()).build();
     }
 
     @AllArgsConstructor
@@ -327,11 +315,12 @@ public class EntryController {
 
         // for normal account this field is continuous integer
         // for contract account this field is nonce of deploy transaction
-        @JsonSerialize(using = ToStringSerializer.class)
+        @JsonSerialize(using = IntSerializer.class)
         private long nonce;
 
         // the balance of account
         // for contract account, this field is zero
+        @JsonSerialize(using = IntSerializer.class)
         private Uint256 balance;
 
         // for normal address this field is null

@@ -53,11 +53,13 @@ public abstract class AbstractValidator implements Validator {
 
         try {
             ForkedStateTrie<HexBytes, Account> tmp = accountTrie.fork(parent.getStateRoot().getBytes());
+            Transaction coinbase = block.getBody().get(0);
 
-            for (Transaction tx : block.getBody()) {
+            for (Transaction tx : block.getBody().subList(1, block.getBody().size())) {
                 tmp.update(block.getHeader(), tx);
             }
 
+            tmp.update(block.getHeader(), coinbase);
             Account feeAccount =
                     tmp.remove(Constants.FEE_ACCOUNT_ADDR);
             byte[] rootHash = tmp.commit();

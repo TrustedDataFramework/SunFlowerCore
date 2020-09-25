@@ -1,7 +1,5 @@
 package org.tdf.sunflower.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jdk.nashorn.internal.ir.annotations.Reference;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -23,7 +21,6 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class HttpService {
-    private final ObjectMapper objectMapper;
     private RestTemplate restTemplate = new RestTemplate(Collections.singletonList(
             new StringHttpMessageConverter(StandardCharsets.UTF_8)
     ));

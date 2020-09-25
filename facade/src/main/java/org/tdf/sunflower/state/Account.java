@@ -1,5 +1,6 @@
 package org.tdf.sunflower.state;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +9,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPIgnored;
 import org.tdf.rlp.RLPItem;
 import org.tdf.sunflower.types.CryptoContext;
+import org.tdf.common.util.IntSerializer;
 
 
 @AllArgsConstructor
@@ -34,6 +36,7 @@ public class Account {
 
     // the balance of account
     // for contract account, this field is zero
+    @JsonSerialize(using = IntSerializer.class)
     private Uint256 balance;
 
 

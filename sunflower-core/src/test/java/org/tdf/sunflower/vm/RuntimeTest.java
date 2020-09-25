@@ -1,18 +1,12 @@
 package org.tdf.sunflower.vm;
 
-import com.google.common.primitives.Bytes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.types.Uint256;
-import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.TestUtils;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.vm.abi.Context;
 import org.tdf.sunflower.vm.hosts.Hosts;
 
-import java.nio.charset.StandardCharsets;
 
 @RunWith(JUnit4.class)
 public class RuntimeTest {

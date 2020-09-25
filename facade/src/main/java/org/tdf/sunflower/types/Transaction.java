@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.*;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
@@ -19,7 +18,7 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
-import org.tdf.sunflower.util.IntSerializer;
+import org.tdf.common.util.IntSerializer;
 
 import java.util.*;
 import java.util.function.Function;

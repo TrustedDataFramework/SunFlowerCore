@@ -57,6 +57,10 @@ public class CachedStore<K, V> implements Store<K, V> {
         cache.put(k, v);
     }
 
+    /**
+     * when remove key, mark the key is removed in
+     * @param k key of key-value mapping
+     */
     @Override
     public void remove(@NonNull K k) {
         cache.put(k, getTrap());

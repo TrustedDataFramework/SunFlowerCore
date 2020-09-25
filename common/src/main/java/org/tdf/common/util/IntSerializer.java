@@ -1,4 +1,4 @@
-package org.tdf.sunflower.util;
+package org.tdf.common.util;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
