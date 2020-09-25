@@ -79,7 +79,7 @@ public class PoS extends AbstractConsensusEngine {
         if (genesis.miners != null) {
             genesis.miners.forEach(
                     m -> nodesMap.put(m.getAddress(), new NodeInfo(m.getAddress(), Uint256.of(m.vote),
-                            new TreeSet<>())));
+                            new ArrayList<>())));
         }
 
         this.minerContract = new PosPreBuilt(nodesMap);
