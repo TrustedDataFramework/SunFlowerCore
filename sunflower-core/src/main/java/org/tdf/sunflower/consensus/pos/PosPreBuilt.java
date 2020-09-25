@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
 
 @Slf4j(topic = "pos")
 public class PosPreBuilt implements PreBuiltContract {
-    public static final byte[] NODE_INFO_KEY = "nodekey".getBytes(StandardCharsets.US_ASCII);
-    public static final byte[] VOTE_INFO_KEY = "trankey".getBytes(StandardCharsets.US_ASCII);
+    public static final byte[] NODE_INFO_KEY = "nodes".getBytes(StandardCharsets.US_ASCII);
+    public static final byte[] VOTE_INFO_KEY = "votes".getBytes(StandardCharsets.US_ASCII);
 
     private Map<HexBytes, NodeInfo> nodes;
 
@@ -53,7 +53,7 @@ public class PosPreBuilt implements PreBuiltContract {
     public static class NodeInfo implements Comparable<NodeInfo> {
         private HexBytes address;
         private Uint256 vote;
-        private TreeSet<HexBytes> txHash;
+        private List<HexBytes> txHash;
 
         @Override
         public int compareTo(NodeInfo o) {
@@ -147,7 +147,7 @@ public class PosPreBuilt implements PreBuiltContract {
                 Map.Entry<Integer, NodeInfo> e =
                         findFirst(nodeInfos, x -> x.address.equals(args));
 
-                NodeInfo n = e.getKey() < 0 ? new NodeInfo(args, Uint256.ZERO, new TreeSet<>()) :
+                NodeInfo n = e.getKey() < 0 ? new NodeInfo(args, Uint256.ZERO, new ArrayList<>()) :
                         e.getValue();
 
                 n.vote = n.vote.safeAdd(transaction.getAmount());
@@ -166,6 +166,7 @@ public class PosPreBuilt implements PreBuiltContract {
                 if(transaction.getAmount().compareTo(Uint256.ZERO) != 0)
                     throw new RuntimeException("amount of cancel vote should be 0");
                 Optional<VoteInfo> o = voteInfos.get(args.getBytes());
+                voteInfos.remove(args.getBytes());
 
                 if (!o.isPresent()) {
                     throw new RuntimeException(args + " voting business does not exist and cannot be withdrawn");
@@ -183,6 +184,9 @@ public class PosPreBuilt implements PreBuiltContract {
                 }
 
                 NodeInfo ninfo = e2.getValue();
+
+                if(!ninfo.txHash.contains(args))
+                    throw new RuntimeException("vote " + args + " not exists");
                 ninfo.vote = ninfo.vote.safeSub(voteInfo.amount);
                 ninfo.txHash.remove(args);
 
