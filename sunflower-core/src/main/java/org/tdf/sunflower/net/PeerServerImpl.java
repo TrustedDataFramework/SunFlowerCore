@@ -159,7 +159,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         plugins.add(new PeersManager(config));
     }
 
-    private void resolveSelf() throws Exception {
+    private void resolveSelf() {
         // find valid private key from 1.properties 2.persist 3. generate
         byte[] sk = config.getPrivateKey() == null ? null : config.getPrivateKey().getBytes();
         if (sk == null || sk.length == 0) {

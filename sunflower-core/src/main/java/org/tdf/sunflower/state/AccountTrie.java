@@ -386,7 +386,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         getDirtyTrie().put(key, value);
     }
 
-    public byte[] call(HexBytes address, String method, Parameters parameters) {
+    public RLPList call(HexBytes address, String method, Parameters parameters) {
         // execute method
         Limit limit = new Limit();
         ContractCall contractCall = new ContractCall(
@@ -402,6 +402,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
                 method,
                 parameters, Uint256.ZERO,
                 false, null
-        ).getReturns().getEncoded();
+        ).getReturns();
     }
 }

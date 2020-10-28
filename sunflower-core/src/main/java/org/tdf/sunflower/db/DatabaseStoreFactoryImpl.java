@@ -23,6 +23,8 @@ public class DatabaseStoreFactoryImpl implements DatabaseStoreFactory {
         this.config = config;
     }
 
+
+
     public String getDirectory() {
         return config.getDirectory();
     }
@@ -62,5 +64,10 @@ public class DatabaseStoreFactoryImpl implements DatabaseStoreFactory {
     public void cleanup() {
         log.info("closing database stores...");
         STORES_LIST.forEach(DatabaseStore::close);
+    }
+
+    @Override
+    public String getName() {
+        return config.getName();
     }
 }

@@ -8,4 +8,6 @@ public interface DatabaseStoreFactory {
     DatabaseStore create(String name);
 
     void cleanup();
+
+    String getName();
 }

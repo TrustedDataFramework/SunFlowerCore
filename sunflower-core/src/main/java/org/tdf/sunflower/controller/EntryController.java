@@ -15,6 +15,7 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
+import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
@@ -193,10 +194,10 @@ public class EntryController {
         Header h = sunflowerRepository.getBestHeader();
 
         ContractCallPayload callPayload = RLPCodec.decode(args.getBytes(), ContractCallPayload.class);
-        byte[] result = accountTrie.fork(h.getStateRoot().getBytes()).call(addressHex, callPayload.getMethod(),
+        RLPList result = accountTrie.fork(h.getStateRoot().getBytes()).call(addressHex, callPayload.getMethod(),
                 callPayload.getParameters());
 
-        return HexBytes.fromBytes(result);
+        return HexBytes.fromBytes(result.getEncoded());
     }
 
     @PostMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)

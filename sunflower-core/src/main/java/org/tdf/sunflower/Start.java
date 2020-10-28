@@ -385,7 +385,7 @@ public class Start{
         String persist = properties.getProperty("persist");
         persist = (persist == null) ? "" : persist.trim().toLowerCase();
 
-        Store<String, String> store = "true".equals(persist) ? new StoreWrapper<>(
+        Store<String, String> store = "true".equals(persist) && !"memory".equals(factory.getName()) ? new StoreWrapper<>(
                 new JsonStore(Paths.get(factory.getDirectory(), "peers.json").toString(), MAPPER),
                 Codec.identity(),
                 new Codec<String, JsonNode>() {

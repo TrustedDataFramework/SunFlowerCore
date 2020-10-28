@@ -124,7 +124,7 @@ public class WebSocket {
                 Parameters parameters = msg.getBody().get(2)
                         .as(Parameters.class);
                 byte[] root = repository.getBestHeader().getStateRoot().getBytes();
-                byte[] result = accountTrie.fork(root).call(HexBytes.fromBytes(address), method, parameters);
+                RLPList result = accountTrie.fork(root).call(HexBytes.fromBytes(address), method, parameters);
                 sendResponse(msg.getNonce(), WebSocketMessage.Code.CONTRACT_QUERY, result);
                 break;
             }

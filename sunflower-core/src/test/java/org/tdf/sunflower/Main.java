@@ -13,6 +13,7 @@ import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.facade.SecretStoreImpl;
 import org.tdf.sunflower.types.CryptoContext;
+import org.tdf.sunflower.types.Transaction;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -46,10 +47,9 @@ public class Main {
         return ret;
     }
 
-    public static void main(String[] args) {
-        String h = "0000000000000040";
-        String be ="4000000000000000";
-        System.out.println(Double.longBitsToDouble(BigEndian.decodeInt64(HexBytes.decode(be))));
+    public static void main(String[] args) throws Exception{
+        long bits = Double.doubleToLongBits(1);
+        System.out.println(HexBytes.encode(BigEndian.encodeInt64(bits)));
     }
 
     private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
