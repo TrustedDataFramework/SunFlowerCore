@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 @RunWith(JUnit4.class)
@@ -17,7 +18,7 @@ public class EventBusTests {
     }
 
     @Test
-    public void testPublishEvent() {
+    public void testPublishEvent() throws Exception{
         SuccessEvent event = new SuccessEvent();
         SuccessCounter counter = new SuccessCounter();
         FailedCounter failedCounter = new FailedCounter();
@@ -25,6 +26,7 @@ public class EventBusTests {
         bus.subscribe(FailedEvent.class, failedCounter);
         bus.publish(event);
         bus.publish(event);
+        Thread.sleep(1000);
         assert counter.getCounter() == 2;
         assert failedCounter.counter == 0;
     }
@@ -46,15 +48,15 @@ public class EventBusTests {
     }
 
     static class SuccessCounter implements Consumer<SuccessEvent> {
-        private int counter;
+        private AtomicInteger counter = new AtomicInteger(0);
 
         @Override
         public void accept(SuccessEvent successEvent) {
-            this.counter++;
+            this.counter.getAndIncrement();
         }
 
         public int getCounter() {
-            return counter;
+            return counter.get();
         }
     }
 
