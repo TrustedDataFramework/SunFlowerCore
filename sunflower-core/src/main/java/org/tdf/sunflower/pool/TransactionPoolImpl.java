@@ -10,6 +10,7 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.TransactionPoolConfig;
 import org.tdf.sunflower.controller.WebSocket;
 import org.tdf.sunflower.events.*;
@@ -137,6 +138,8 @@ public class TransactionPoolImpl implements TransactionPool {
         try {
             List<Transaction> newCollected = new ArrayList<>(transactions.size());
             for (Transaction transaction : transactions) {
+                if(transaction.getGasPrice().compareTo(Uint256.of(ApplicationConstants.VM_GAS_PRICE)) < 0)
+                    throw new RuntimeException("transaction pool: gas price of tx less than vm gas price " + ApplicationConstants.VM_GAS_PRICE);
                 if (transaction.getAmount() == null)
                     transaction.setAmount(Uint256.ZERO);
                 if (transaction.getGasPrice() == null)

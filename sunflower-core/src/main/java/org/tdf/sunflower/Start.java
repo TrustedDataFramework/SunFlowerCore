@@ -149,6 +149,10 @@ public class Start{
         constant = env.getProperty("sunflower.vm.max-contract-call-depth");
         if (constant != null && !constant.isEmpty())
             ApplicationConstants.MAX_CONTRACT_CALL_DEPTH = Long.parseLong(constant);
+
+        constant = env.getProperty("sunflower.vm.gas-price");
+        if (constant != null && !constant.isEmpty())
+            ApplicationConstants.VM_GAS_PRICE = Long.parseLong(constant);
     }
 
     @SneakyThrows

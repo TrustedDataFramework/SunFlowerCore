@@ -3,84 +3,97 @@ package org.tdf.common.store;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.SneakyThrows;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.*;
 import java.util.function.BiFunction;
+
+import static java.nio.file.StandardOpenOption.*;
 
 public class JsonStore implements BatchStore<String, JsonNode> {
     private final ObjectMapper mapper;
     private final String jsonFile;
+    private Map<String, JsonNode> node;
+
+    static Set<PosixFilePermission> defaultPosixPermissions = null;
+
+    static {
+        defaultPosixPermissions = new HashSet<>();
+        defaultPosixPermissions.add(PosixFilePermission.OWNER_READ);
+        defaultPosixPermissions.add(PosixFilePermission.OWNER_WRITE);
+    }
+
 
     public JsonStore(String jsonFile, ObjectMapper mapper) {
         this.mapper = mapper;
         this.jsonFile = jsonFile;
+        load();
     }
 
-    @Override
     @SneakyThrows
-    public Optional<JsonNode> get(String s) {
-        File f = new File(jsonFile);
-        if (!f.exists())
-            return Optional.empty();
-        JsonNode n = mapper.readValue(f, JsonNode.class);
-        return Optional.ofNullable(n.get(s));
+    private void sync() {
+        byte[] bin = mapper.writeValueAsBytes(node);
+        Files.write(Paths.get(this.jsonFile), bin, CREATE, TRUNCATE_EXISTING, WRITE);
+        Files.setPosixFilePermissions(Paths.get(this.jsonFile), defaultPosixPermissions);
     }
 
-    @Override
     @SneakyThrows
-    public void put(String s, JsonNode jsonNode) {
+    private void load() {
         File f = new File(jsonFile);
-        Map<String, Object> m = new HashMap<>();
-        if (f.exists())
-            m = mapper.readValue(f, Map.class);
-        m.put(s, jsonNode);
-        try (
-                OutputStream os = new FileOutputStream(f)
-        ) {
-            mapper.writeValue(os, m);
+        if (!f.exists()) {
+            node = new HashMap<>();
+            return;
+        }
+        ObjectNode tmp = (ObjectNode) mapper.readValue(f, JsonNode.class);
+        Iterator<Map.Entry<String, JsonNode>> it = tmp.fields();
+        while (it.hasNext()) {
+            Map.Entry<String, JsonNode> e = it.next();
+            this.node.put(e.getKey(), e.getValue());
         }
     }
 
     @Override
     @SneakyThrows
-    public void remove(String s) {
-        File f = new File(jsonFile);
-        Map<String, Object> m = new HashMap<>();
-        if (f.exists())
-            m = mapper.readValue(f, Map.class);
+    public Optional<JsonNode> get(String s) {
+        return Optional.ofNullable(node.get(s));
+    }
 
-        m.remove(s);
-        mapper.writeValue(f, m);
+    @Override
+    @SneakyThrows
+    public void put(String s, JsonNode jsonNode) {
+        node.put(s, jsonNode);
+        sync();
+    }
+
+    @Override
+    @SneakyThrows
+    public void remove(String s) {
+        node.remove(s);
+        sync();
     }
 
     @Override
     public void flush() {
-
+        sync();
     }
 
     @Override
     public void clear() {
-        File f = new File(jsonFile);
-        if (f.exists())
-            f.delete();
+        node = new HashMap<>();
+        sync();
     }
 
     @Override
     @SneakyThrows
     public void traverse(BiFunction<? super String, ? super JsonNode, Boolean> traverser) {
-        File f = new File(jsonFile);
-        Map<String, JsonNode> m = new HashMap<>();
-        if (f.exists())
-            m = mapper.readValue(f, new TypeReference<Map<String, JsonNode>>() {
-            });
-        for (Map.Entry<String, JsonNode> entry : m.entrySet()) {
+        for (Map.Entry<String, JsonNode> entry : node.entrySet()) {
             boolean cont = traverser.apply(entry.getKey(), entry.getValue());
             if (!cont)
                 return;
@@ -90,17 +103,9 @@ public class JsonStore implements BatchStore<String, JsonNode> {
     @Override
     @SneakyThrows
     public void putAll(Collection<? extends Map.Entry<? extends String, ? extends JsonNode>> rows) {
-        File f = new File(jsonFile);
-        Map<String, Object> m = new HashMap<>();
-        if (f.exists())
-            m = mapper.readValue(f, Map.class);
         for (Map.Entry<? extends String, ? extends JsonNode> row : rows) {
-            m.put(row.getKey(), row.getValue());
+            node.put(row.getKey(), row.getValue());
         }
-        try (
-                OutputStream os = new FileOutputStream(f)
-        ) {
-            mapper.writeValue(os, m);
-        }
+        sync();
     }
 }
