@@ -1,11 +1,7 @@
 package org.tdf.sunflower.net;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
 import lombok.Value;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.types.CryptoContext;
 
 import java.util.*;
@@ -17,27 +13,11 @@ import java.util.stream.Stream;
 class PeersCache {
     private static final int PEER_SCORE = 32;
     private static final int EVIL_SCORE = -(1 << 31);
-    private PeerServerConfig config;
-
-    // helper to avoid generic array
-    // kademlia k-bucket
-    static class Bucket extends ConcurrentHashMap<HexBytes, PeerChannel>{}
-
-    // helper for store peer and channel in a single value in Bucket
-    @Value
-    static class PeerChannel{
-        PeerImpl peer;
-        Channel channel;
-    }
-
-    private Bucket[] peers = new Bucket[CryptoContext.getPublicKeySize() * 8];
-
     Map<PeerImpl, Boolean> bootstraps = new ConcurrentHashMap<>();
-
     Map<PeerImpl, Boolean> blocked = new ConcurrentHashMap<>();
-
     Map<PeerImpl, Boolean> trusted = new ConcurrentHashMap<>();
-
+    private PeerServerConfig config;
+    private Bucket[] peers = new Bucket[CryptoContext.getPublicKeySize() * 8];
     private PeerImpl self;
 
     PeersCache(
@@ -73,7 +53,7 @@ class PeersCache {
         // if the peer already had been put
         Optional<PeerImpl> o =
                 Optional.ofNullable(peers[idx])
-                .map(x -> x.get(peer.getID())).map(x -> x.peer);
+                        .map(x -> x.get(peer.getID())).map(x -> x.peer);
 
         // increase its score
         if (o.isPresent()) {
@@ -174,13 +154,13 @@ class PeersCache {
         if (peers[idx] == null) return;
         Optional.ofNullable(
                 peers[idx]
-                .get(peer.getID())
+                        .get(peer.getID())
         ).map(b -> b.peer).filter(p -> {
             p.score -= p.score < 8 ? p.score : 8;
             p.score /= 2;
             return p.score == 0;
         })
-        .ifPresent(x -> remove(x.getID(), " the score of " + x + " is 0"));
+                .ifPresent(x -> remove(x.getID(), " the score of " + x + " is 0"));
     }
 
     // decrease score of all peer
@@ -213,7 +193,7 @@ class PeersCache {
         return Arrays.stream(peers).filter(Objects::nonNull)
                 .flatMap(x ->
                         x.values()
-                        .stream()
+                                .stream()
                 ).map(bucket -> bucket.channel)
                 .filter(Channel::isAlive)
                 ;
@@ -236,5 +216,17 @@ class PeersCache {
 
     boolean hasBlocked(PeerImpl peer) {
         return blocked.containsKey(peer);
+    }
+
+    // helper to avoid generic array
+    // kademlia k-bucket
+    static class Bucket extends ConcurrentHashMap<HexBytes, PeerChannel> {
+    }
+
+    // helper for store peer and channel in a single value in Bucket
+    @Value
+    static class PeerChannel {
+        PeerImpl peer;
+        Channel channel;
     }
 }

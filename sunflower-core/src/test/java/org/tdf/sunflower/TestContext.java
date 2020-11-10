@@ -35,14 +35,14 @@ import javax.annotation.PostConstruct;
         PropertyPlaceholderAutoConfiguration.class,
 })
 @EnableWebSocket
-@ComponentScan(excludeFilters = { @ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
-        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })
+@ComponentScan(excludeFilters = {@ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
+        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)})
 public class TestContext {
     @Autowired
     private ApplicationContext context;
 
     @PostConstruct
-    public void init(){
+    public void init() {
         Start.loadCryptoContext(context.getEnvironment());
     }
 }

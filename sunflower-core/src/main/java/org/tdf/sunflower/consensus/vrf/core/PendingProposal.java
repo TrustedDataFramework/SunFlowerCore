@@ -1,16 +1,16 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
-import static org.junit.Assert.assertTrue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
+import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
-import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author James Hu
@@ -34,12 +34,21 @@ public class PendingProposal {
      */
     private final HashMapDB<ProposalProof> proposalProofs = new HashMapDB<>();
 
-	private ProposalProof bestProposalProof;
-	private int bestProposerPriority;
+    private ProposalProof bestProposalProof;
+    private int bestProposerPriority;
 
     public PendingProposal(ValidatorManager validatorManager) {
         this.validatorManager = validatorManager;
         vrfRound = new VrfRound(this);
+    }
+
+    /**
+     * Get VRF block number for managing pending proofs who is proposing new block.
+     *
+     * @return The VRF block number of new block.
+     */
+    public VrfRound getVrfRound() {
+        return this.vrfRound;
     }
 
     /**
@@ -76,21 +85,11 @@ public class PendingProposal {
     }
 
     /**
-     * Get VRF block number for managing pending proofs who is proposing new block.
-     *
-     * @return The VRF block number of new block.
-     */
-    public VrfRound getVrfRound() {
-        return this.vrfRound;
-    }
-
-    /**
      * Adds NEW proposer proof to the queue
      *
      * @param proposalProof New proposer proof received from peer node.
-     *
      * @return It return true if new proposer proof was added to the queue,
-     *         otherwise it returns false if new proof was not added to the queue.
+     * otherwise it returns false if new proof was not added to the queue.
      */
     public synchronized boolean addProposalProof(ProposalProof proposalProof) {
         if (proposalProof == null) {
@@ -203,28 +202,28 @@ public class PendingProposal {
 
         return keys.size();
     }
-    
+
     public ProposalProof getBestProposalProof() {
-		return bestProposalProof;
-	}
+        return bestProposalProof;
+    }
 
-	public void setBestProposalProof(ProposalProof bestProposalProof) {
-		this.bestProposalProof = bestProposalProof;
-	}
-	
-	public int getBestProposerPriority() {
-		return bestProposerPriority;
-	}
+    public void setBestProposalProof(ProposalProof bestProposalProof) {
+        this.bestProposalProof = bestProposalProof;
+    }
 
-	public void setBestProposerPriority(int bestProposerPriority) {
-		this.bestProposerPriority = bestProposerPriority;
-	}
-	
+    public int getBestProposerPriority() {
+        return bestProposerPriority;
+    }
+
+    public void setBestProposerPriority(int bestProposerPriority) {
+        this.bestProposerPriority = bestProposerPriority;
+    }
+
     public HashMapDB<ProposalProof> getProposalProofs() {
-		return proposalProofs;
-	}
+        return proposalProofs;
+    }
 
-	public synchronized int getValidPriority(ProposalProof proposalProof) {
+    public synchronized int getValidPriority(ProposalProof proposalProof) {
         int priority = validatorManager.getPriority(proposalProof, ValidatorManager.EXPECTED_PROPOSER_THRESHOLD);
 
         logger.info("getValidPriority, Get Priority {}, weight {} / {}", priority, validatorManager.getWeight(proposalProof), validatorManager.getTotalWeight());

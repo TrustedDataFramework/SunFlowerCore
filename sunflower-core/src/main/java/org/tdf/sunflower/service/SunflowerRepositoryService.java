@@ -32,7 +32,7 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
     private final TransactionDao transactionDao;
 
     public SunflowerRepositoryService(
-        ApplicationContext context
+            ApplicationContext context
     ) {
         super(context);
         this.headerDao = context.getBean(HeaderDao.class);

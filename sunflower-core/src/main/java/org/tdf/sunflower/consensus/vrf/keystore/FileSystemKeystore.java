@@ -18,6 +18,11 @@
 package org.tdf.sunflower.consensus.vrf.keystore;
 
 
+import org.spongycastle.util.encoders.Hex;
+import org.springframework.util.StringUtils;
+import org.tdf.crypto.PrivateKey;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,21 +30,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import org.spongycastle.util.encoders.Hex;
-import org.springframework.util.StringUtils;
-import org.tdf.crypto.PrivateKey;
-import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 
 /**
  * VRF key store manager working in user file system.
- *
+ * <p>
  * Comply to go-ethereum key store format.
  * https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
  *
@@ -47,9 +43,8 @@ import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
  * @since 2019/6/15
  */
 public class FileSystemKeystore implements Keystore {
-    private final String keystoreDir;
-
     private static final KeystoreFormat keystoreFormat = new KeystoreFormat();
+    private final String keystoreDir;
 
     public FileSystemKeystore(String keystoreDir) {
         this.keystoreDir = keystoreDir;

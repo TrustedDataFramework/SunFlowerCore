@@ -1,10 +1,8 @@
 package org.tdf.sunflower;
 
-import com.google.common.primitives.Bytes;
 import lombok.SneakyThrows;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
-import org.tdf.common.util.LittleEndian;
 import org.tdf.crypto.CryptoHelpers;
 import org.tdf.crypto.sm2.SM2;
 import org.tdf.crypto.sm2.SM2PrivateKey;
@@ -13,7 +11,6 @@ import org.tdf.gmhelper.SM2Util;
 import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.facade.SecretStoreImpl;
 import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.types.Transaction;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -21,6 +18,10 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Main {
+    public static final int REVERSED_ADDRESSES_START_INDEX = 8;
+    public static final int REVERSED_ADDRESSES_END_INDEX = 8 + 65536;
+    private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
+
     static {
         CryptoContext.setSignatureVerifier((pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig));
         CryptoContext.setSigner((sk, msg) -> new SM2PrivateKey(sk).sign(msg));
@@ -33,9 +34,6 @@ public class Main {
         CryptoContext.setHashFunction(SM3Util::hash);
     }
 
-    public static final int REVERSED_ADDRESSES_START_INDEX = 8;
-    public static final int REVERSED_ADDRESSES_END_INDEX = 8 + 65536;
-
     public static List<HexBytes> getReversedContracts() {
         List<HexBytes> ret = new ArrayList<>();
         for (long i = REVERSED_ADDRESSES_START_INDEX; i < REVERSED_ADDRESSES_END_INDEX; i++) {
@@ -47,12 +45,10 @@ public class Main {
         return ret;
     }
 
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
         long bits = Double.doubleToLongBits(1);
         System.out.println(HexBytes.encode(BigEndian.encodeInt64(bits)));
     }
-
-    private static final HexBytes FROM_SK = HexBytes.fromHex("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
 
     @SneakyThrows
     public static void printSecretStore() {

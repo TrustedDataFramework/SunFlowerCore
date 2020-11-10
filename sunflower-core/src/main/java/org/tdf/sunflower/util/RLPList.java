@@ -12,11 +12,6 @@ public class RLPList extends ArrayList<RLPElement> implements RLPElement {
 
     byte[] rlpData;
 
-    public void setRLPData(byte[] rlpData) {
-        this.rlpData = rlpData;
-    }
-
-
     public static void recursivePrint(RLPElement element) {
 
         if (element == null)
@@ -32,6 +27,10 @@ public class RLPList extends ArrayList<RLPElement> implements RLPElement {
             String hex = Hex.encodeHexString(element.getRLPBytes());
             System.out.print(hex + ", ");
         }
+    }
+
+    public void setRLPData(byte[] rlpData) {
+        this.rlpData = rlpData;
     }
 
     @Override

@@ -1,10 +1,9 @@
 package org.tdf.sunflower.net;
 
 import com.google.common.primitives.Bytes;
+import lombok.SneakyThrows;
 import org.tdf.common.util.BigEndian;
 import org.tdf.sunflower.proto.Message;
-
-import lombok.SneakyThrows;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,8 +24,8 @@ public class Util {
     }
 
     @SneakyThrows
-    public static boolean ping(String host, int port){
-        try (Socket s = new Socket()){
+    public static boolean ping(String host, int port) {
+        try (Socket s = new Socket()) {
             SocketAddress add = new InetSocketAddress(host, port);
             s.connect(add, 1000);// 1 second timeout
             return true;
@@ -34,10 +33,11 @@ public class Util {
             return false;
         }
     }
+
     /**
      * This can be a blocking call with long timeout (thus no ValidateMe)
      */
-    public static String bindIp() throws Exception{
+    public static String bindIp() throws Exception {
         Socket s = new Socket("www.baidu.com", 80);
         return s.getLocalAddress().getHostAddress();
     }

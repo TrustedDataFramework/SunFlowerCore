@@ -13,22 +13,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class RLPHost extends HostFunction {
-    enum Type {
-        ENCODE_U64,
-        ENCODE_BYTES,
-        DECODE_BYTES,
-        RLP_LIST_SET, // add rlp list to global env
-        RLP_LIST_CLEAR,
-        RLP_LIST_LEN,
-        RLP_LIST_GET,
-        RLP_LIST_PUSH,
-        RLP_LIST_BUILD // build
-    }
-
     private RLPList list;
     private List<byte[]> elements;
     private byte[] elementsEncoded;
-
     public RLPHost() {
         setType(new FunctionType(
                 // offset, length, offset
@@ -111,5 +98,17 @@ public class RLPHost extends HostFunction {
             putMemory((int) longs[3], data);
         }
         return new long[]{ret};
+    }
+
+    enum Type {
+        ENCODE_U64,
+        ENCODE_BYTES,
+        DECODE_BYTES,
+        RLP_LIST_SET, // add rlp list to global env
+        RLP_LIST_CLEAR,
+        RLP_LIST_LEN,
+        RLP_LIST_GET,
+        RLP_LIST_PUSH,
+        RLP_LIST_BUILD // build
     }
 }

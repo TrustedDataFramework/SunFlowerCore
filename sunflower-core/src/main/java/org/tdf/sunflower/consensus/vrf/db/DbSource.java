@@ -10,15 +10,15 @@ import java.util.Set;
 public interface DbSource<V> extends BatchSource<byte[], V> {
 
     /**
+     * @return DB name
+     */
+    String getName();
+
+    /**
      * Sets the DB name.
      * This could be the underlying DB table/dir name
      */
     void setName(String name);
-
-    /**
-     * @return DB name
-     */
-    String getName();
 
     /**
      * Initializes DB (open table, connection, etc)
@@ -28,7 +28,8 @@ public interface DbSource<V> extends BatchSource<byte[], V> {
 
     /**
      * Initializes DB (open table, connection, etc)
-     * @param settings  DB settings
+     *
+     * @param settings DB settings
      */
     void init(DBSettings settings);
 
@@ -57,7 +58,7 @@ public interface DbSource<V> extends BatchSource<byte[], V> {
      * If supported, retrieves a value using a key prefix.
      * Prefix extraction is meant to be done on the implementing side.<br>
      *
-     * @param key a key for the lookup
+     * @param key         a key for the lookup
      * @param prefixBytes prefix length in bytes
      * @return first value picked by prefix lookup over DB or null if there is no match
      * @throws RuntimeException if operation is not supported

@@ -18,13 +18,10 @@ import java.util.function.Consumer;
 
 @Slf4j(topic = "net")
 public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
-    private Consumer<Channel> handler;
-
     private final int port;
-
-    private Server server;
-
     private final MessageBuilder builder;
+    private Consumer<Channel> handler;
+    private Server server;
 
     GRpcNetLayer(int port, MessageBuilder builder) {
         this.port = port;
@@ -70,6 +67,18 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
         return new ChannelWrapper(ch);
     }
 
+    @Override
+    public void close() throws IOException {
+        if (server.isShutdown()) return;
+        try {
+            server.shutdown();
+            server.awaitTermination(ApplicationConstants.MAX_SHUTDOWN_WAITING, TimeUnit.SECONDS);
+            log.info("gRPC server closed normally");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     @AllArgsConstructor
     private static class ChannelWrapper implements StreamObserver<Message> {
         private Channel channel;
@@ -102,18 +111,6 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
         @Override
         public void close() {
             out.onCompleted();
-        }
-    }
-
-    @Override
-    public void close() throws IOException {
-        if(server.isShutdown()) return;
-        try {
-            server.shutdown();
-            server.awaitTermination(ApplicationConstants.MAX_SHUTDOWN_WAITING, TimeUnit.SECONDS);
-            log.info("gRPC server closed normally");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 }

@@ -10,16 +10,16 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 /**
  * Global rest response body json formatter
  * e.g.
- *
+ * <p>
  * {"user": "name"}
- *  ->  {
- *      "code": 200,
- *      "message": "success",
- *      "data": {
- *          "user": "name"
- *      }
- *  }
- *
+ * ->  {
+ * "code": 200,
+ * "message": "success",
+ * "data": {
+ * "user": "name"
+ * }
+ * }
+ * <p>
  * byte[] or String will be ignored
  */
 @RestControllerAdvice
@@ -34,12 +34,12 @@ public class CommonAdvice implements ResponseBodyAdvice {
         if (body instanceof byte[] ||
                 body instanceof CharSequence ||
                 body instanceof Response
-        ){
+        ) {
             return body;
         }
-        try{
+        try {
             return Response.newSuccessFul(body);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return Response.Code.INTERNAL_ERROR.message;
         }

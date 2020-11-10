@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.Store;
+import org.tdf.common.types.Uint256;
 import org.tdf.sunflower.types.TransactionResult;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
@@ -101,7 +102,8 @@ public abstract class AbstractMiner implements Miner {
 
         transactionList.add(0, coinbase);
         Map<HexBytes, TransactionResult> m = new HashMap<>();
-        for (Transaction tx : transactionList) {
+        Uint256 totalFee = Uint256.ZERO;
+        for (Transaction tx : transactionList.subList(1, transactionList.size())) {
             // try to fetch transaction from pool
             try {
 
@@ -109,6 +111,7 @@ public abstract class AbstractMiner implements Miner {
 
                 // store updated result to the trie if update success
                 TransactionResult res = tmp.update(header, tx);
+                totalFee = totalFee.safeAdd(res.getFee());
                 m.put(tx.getHash(), res);
             } catch (Exception e) {
                 // prompt reason for failed updates
@@ -121,15 +124,13 @@ public abstract class AbstractMiner implements Miner {
             b.getBody().add(tx);
         }
 
+        b.getBody().add(0, coinbase);
         // transactions may failed to execute
         if (b.getBody().size() == 1 && !minerConfig.isAllowEmptyBlock())
             return Optional.empty();
 
         // add fee to miners account
-        Account feeAccount = tmp.get(Constants.FEE_ACCOUNT_ADDR).get();
-        tmp.remove(Constants.FEE_ACCOUNT_ADDR);
-
-        coinbase.setAmount(coinbase.getAmount().safeAdd(feeAccount.getBalance()));
+        coinbase.setAmount(coinbase.getAmount().safeAdd(totalFee));
         tmp.update(header, coinbase);
 
         // calculate state root

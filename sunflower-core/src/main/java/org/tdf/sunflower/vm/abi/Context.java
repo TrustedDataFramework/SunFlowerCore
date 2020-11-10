@@ -9,7 +9,6 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 
-
 @Getter
 @AllArgsConstructor
 public class Context {

@@ -17,10 +17,6 @@ import java.util.*;
  * Standard built-in json library for smart contract development
  */
 public class JSONHelper {
-    private enum Type {
-        JSON, STRING, I64, U64, BOOL, F64;
-    }
-
     private static final Gson GSON = new Gson();
     // singleton builder target
     private JsonElement element;
@@ -54,6 +50,10 @@ public class JSONHelper {
         while (element.getAsJsonArray().size() <= size) {
             element.getAsJsonArray().add(JsonNull.INSTANCE);
         }
+    }
+
+    private enum Type {
+        JSON, STRING, I64, U64, BOOL, F64;
     }
 
     private static class JSONBuilderPut extends HostFunction {
@@ -243,12 +243,12 @@ public class JSONHelper {
                 case JSON: {
                     int ptr = (int) parameters[5];
                     String ret = GSON.toJson(element);
-                    if(parameters[6] != 0) putStringIntoMemory(ptr, ret);
+                    if (parameters[6] != 0) putStringIntoMemory(ptr, ret);
                     return new long[]{ret.length()};
                 }
                 case STRING: {
                     int ptr = (int) parameters[5];
-                    if(parameters[6] != 0) putStringIntoMemory(ptr, element.getAsString());
+                    if (parameters[6] != 0) putStringIntoMemory(ptr, element.getAsString());
                     return new long[]{element.getAsString().length()};
                 }
                 case BOOL: {
@@ -295,21 +295,21 @@ public class JSONHelper {
             switch (t) {
                 case JSON: {
                     String ret = GSON.toJson(element);
-                    if(parameters[5] != 0) putStringIntoMemory(ptr, ret);
+                    if (parameters[5] != 0) putStringIntoMemory(ptr, ret);
                     return new long[]{ret.length()};
                 }
                 case STRING: {
-                    if(parameters[5] != 0) putStringIntoMemory(ptr, element.getAsString());
+                    if (parameters[5] != 0) putStringIntoMemory(ptr, element.getAsString());
                     return new long[]{element.getAsString().length()};
                 }
                 case BOOL: {
                     return new long[]{element.getAsBoolean() ? 1 : 0};
                 }
                 case U64:
-                case I64:{
+                case I64: {
                     return new long[]{element.getAsLong()};
                 }
-                case F64:{
+                case F64: {
                     return new long[]{Double.doubleToLongBits(element.getAsDouble())};
                 }
                 default:

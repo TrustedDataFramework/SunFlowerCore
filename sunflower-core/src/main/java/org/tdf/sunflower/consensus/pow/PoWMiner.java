@@ -6,7 +6,6 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.facade.TransactionPool;
-import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -26,8 +25,8 @@ public class PoWMiner extends AbstractMiner {
     private final TransactionPool transactionPool;
     private final PoWConfig poWConfig;
     private final PoW poW;
-    private ScheduledExecutorService minerExecutor;
     private final ForkJoinPool threadPool = (ForkJoinPool) Executors.newWorkStealingPool();
+    private ScheduledExecutorService minerExecutor;
     private volatile boolean stopped;
     private volatile Runnable task;
 
@@ -118,7 +117,7 @@ public class PoWMiner extends AbstractMiner {
         if (!poWConfig.isEnableMining() || stopped) {
             return;
         }
-        if(poWConfig.getMinerCoinBase() == null || poWConfig.getMinerCoinBase().size() != ADDRESS_SIZE){
+        if (poWConfig.getMinerCoinBase() == null || poWConfig.getMinerCoinBase().size() != ADDRESS_SIZE) {
             log.warn("pow miner: invalid coinbase address {}", poWConfig.getMinerCoinBase());
             return;
         }

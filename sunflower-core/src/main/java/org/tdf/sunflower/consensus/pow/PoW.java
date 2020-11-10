@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
@@ -43,13 +42,6 @@ public class PoW extends AbstractConsensusEngine {
         return CryptoContext.hash(d);
     }
 
-    public byte[] getNBits(
-            byte[] stateRoot) {
-        Account a = getAccountTrie().get(stateRoot, PoWBios.ADDRESS).get();
-        return getContractStorageTrie().revert(a.getStorageRoot())
-                .get(N_BITS_KEY).get();
-    }
-
     public static int compare(byte[] x, byte[] y) {
         if (x.length != y.length)
             throw new RuntimeException("x y length");
@@ -60,6 +52,13 @@ public class PoW extends AbstractConsensusEngine {
             if (ret != 0) return ret;
         }
         return 0;
+    }
+
+    public byte[] getNBits(
+            byte[] stateRoot) {
+        Account a = getAccountTrie().get(stateRoot, PoWBios.ADDRESS).get();
+        return getContractStorageTrie().revert(a.getStorageRoot())
+                .get(N_BITS_KEY).get();
     }
 
     @Override

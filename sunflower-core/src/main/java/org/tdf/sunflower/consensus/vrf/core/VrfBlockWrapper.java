@@ -1,9 +1,9 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
 import org.spongycastle.util.encoders.Hex;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 
 /**
  * @author James Hu
@@ -11,59 +11,59 @@ import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
  */
 public class VrfBlockWrapper {
 
-	private final Block block;
-	// If nodeId is empty, it tell a self mined block
-	private final byte[] nodeId;
+    private final Block block;
+    // If nodeId is empty, it tell a self mined block
+    private final byte[] nodeId;
 
-	public VrfBlockWrapper(Block block, byte[] nodeId) {
-		this.block = block;
-		this.nodeId = nodeId;
-	}
+    public VrfBlockWrapper(Block block, byte[] nodeId) {
+        this.block = block;
+        this.nodeId = nodeId;
+    }
 
-	public Block getBlock() {
-		return this.block;
-	}
+    public Block getBlock() {
+        return this.block;
+    }
 
-	public byte[] getNodeId() {
-		return this.nodeId;
-	}
+    public byte[] getNodeId() {
+        return this.nodeId;
+    }
 
-	public Header getHeader() {
-		return this.block.getHeader();
-	}
+    public Header getHeader() {
+        return this.block.getHeader();
+    }
 
-	public long getNumber() {
-		return this.block.getHeight();
-	}
+    public long getNumber() {
+        return this.block.getHeight();
+    }
 
-	public byte[] getCoinbase() {
-		return VrfUtil.getMiner(block);
-	}
+    public byte[] getCoinbase() {
+        return VrfUtil.getMiner(block);
+    }
 
-	public byte[] getVdrPubkey() {
-		ProposalProof proposalProof = VrfUtil.getProposalProof(block);
+    public byte[] getVdrPubkey() {
+        ProposalProof proposalProof = VrfUtil.getProposalProof(block);
 
-		if (proposalProof == null)
-			return null;
+        if (proposalProof == null)
+            return null;
 
-		return proposalProof.getVrfPk();
-	}
+        return proposalProof.getVrfPk();
+    }
 
-	public byte[] getHash() {
-		return this.block.getHash().getBytes();
-	}
+    public byte[] getHash() {
+        return this.block.getHash().getBytes();
+    }
 
-	public String toString() {
-		StringBuilder toStringBuff = new StringBuilder();
-		toStringBuff.append("VrfBlkWrap {");
-		toStringBuff.append("block hash=").append(Hex.toHexString(block.getHash().getBytes(), 0, 3));
-		if (nodeId != null) {
-			toStringBuff.append(", node id=").append(Hex.toHexString(nodeId, 0, 3));
-		} else {
-			toStringBuff.append(", node id=self");
-		}
-		toStringBuff.append("}");
+    public String toString() {
+        StringBuilder toStringBuff = new StringBuilder();
+        toStringBuff.append("VrfBlkWrap {");
+        toStringBuff.append("block hash=").append(Hex.toHexString(block.getHash().getBytes(), 0, 3));
+        if (nodeId != null) {
+            toStringBuff.append(", node id=").append(Hex.toHexString(nodeId, 0, 3));
+        } else {
+            toStringBuff.append(", node id=self");
+        }
+        toStringBuff.append("}");
 
-		return toStringBuff.toString();
-	}
+        return toStringBuff.toString();
+    }
 }

@@ -1,19 +1,19 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
+import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
+import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.util.RLPList;
+import org.tdf.sunflower.util.RLPUtils;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
-import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
-import org.tdf.sunflower.util.RLPList;
-import org.tdf.sunflower.util.RLPUtils;
 
 /**
  * @author James Hu
@@ -25,22 +25,10 @@ public class PendingCommit {
     // private static final Logger logger =
     // LoggerFactory.getLogger("PendingCommit");
     private final Logger logger;
-
-    /* Commit Weights is to add up all voted priority */
-    private class CommitWeights {
-        long weights;
-
-        public CommitWeights(long weights) {
-            this.weights = weights;
-        }
-    }
-
     private final ValidatorManager validatorManager;
     private final PendingProposal pendingProposal;
-
     /* VRF Round to tell block numer and round in VRF consensus protocol */
     private VrfRound vrfRound;
-
     /**
      * A Hash Map to store committed Reduction/Final Proof Objects with committer's
      * coinbase. NOTE: Coinbase is set as key of HashMap, because new VRF keys is
@@ -55,7 +43,6 @@ public class PendingCommit {
      * committed weights in priority>E
      */
     private HashMapDB<CommitWeights> commitWeights = new HashMapDB<>();
-
     public PendingCommit(ValidatorManager validatorManager, PendingProposal pendingProposal, String tagName) {
         this.validatorManager = validatorManager;
         this.pendingProposal = pendingProposal;
@@ -67,6 +54,15 @@ public class PendingCommit {
         } else {
             logger = LoggerFactory.getLogger(tagName);
         }
+    }
+
+    /**
+     * Get VRF block number for managing pending proofs who is proposing new block.
+     *
+     * @return The VRF block number of new block.
+     */
+    public VrfRound getVrfRound() {
+        return this.vrfRound;
     }
 
     /**
@@ -106,21 +102,11 @@ public class PendingCommit {
     }
 
     /**
-     * Get VRF block number for managing pending proofs who is proposing new block.
-     *
-     * @return The VRF block number of new block.
-     */
-    public VrfRound getVrfRound() {
-        return this.vrfRound;
-    }
-
-    /**
      * Adds NEW commit proof to the queue
      *
      * @param commitProof New commit proof received from pear node.
-     *
      * @return It return true if new commit proof was added to the queue, otherwise
-     *         it returns false if new proof was not added to the queue.
+     * it returns false if new proof was not added to the queue.
      */
     public synchronized boolean addCommitProof(CommitProof commitProof) {
         if (commitProof == null)
@@ -325,5 +311,14 @@ public class PendingCommit {
 
     public synchronized int getValidPriority(CommitProof commitProof) {
         return validatorManager.getPriority(commitProof, ValidatorManager.EXPECTED_PROPOSER_THRESHOLD);
+    }
+
+    /* Commit Weights is to add up all voted priority */
+    private class CommitWeights {
+        long weights;
+
+        public CommitWeights(long weights) {
+            this.weights = weights;
+        }
     }
 }

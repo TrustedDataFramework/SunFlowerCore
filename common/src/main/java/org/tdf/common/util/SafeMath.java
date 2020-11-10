@@ -1,4 +1,4 @@
-package org.tdf.sunflower.state;
+package org.tdf.common.util;
 
 public class SafeMath {
     public static long add(long x, long y) {

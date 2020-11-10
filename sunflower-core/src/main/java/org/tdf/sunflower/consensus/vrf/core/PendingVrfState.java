@@ -1,12 +1,12 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
-import java.util.Arrays;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
 import org.tdf.sunflower.types.Header;
+
+import java.util.Arrays;
 
 /**
  * During consensus protocol, we have two period: # proposal period block
@@ -49,6 +49,15 @@ public class PendingVrfState {
     }
 
     /**
+     * Get VRF round for managing pending proofs who is proposing new block.
+     *
+     * @return The VRF block number of new block.
+     */
+    public VrfRound getVrfRound() {
+        return this.vrfRound;
+    }
+
+    /**
      * Set VRF Round for managing pending proofs who is proposing new block.
      *
      * @param newVrfRound The VRF Round of new block.
@@ -59,15 +68,6 @@ public class PendingVrfState {
         pendingProposal.setVrfRound(newVrfRound);
         pendingReductionCommit.setVrfRound(newVrfRound);
         pendingFinalCommit.setVrfRound(newVrfRound);
-    }
-
-    /**
-     * Get VRF round for managing pending proofs who is proposing new block.
-     *
-     * @return The VRF block number of new block.
-     */
-    public VrfRound getVrfRound() {
-        return this.vrfRound;
     }
 
     public synchronized int getValidPriority(ProposalProof proposalProof) {
@@ -100,9 +100,8 @@ public class PendingVrfState {
      * Adds NEW proposer proof to the queue
      *
      * @param proposalProof New proposer proof received from pear node.
-     *
      * @return It return true if new proposer proof was added to the queue,
-     *         otherwise it returns false if new proof was not added to the queue.
+     * otherwise it returns false if new proof was not added to the queue.
      */
     public synchronized boolean addProposalProof(ProposalProof proposalProof) {
         VrfProof vrfProof = proposalProof.getVrfProof();
@@ -138,9 +137,8 @@ public class PendingVrfState {
      * Adds NEW commit proof to the queue
      *
      * @param commitProof New commit proof received from pear node.
-     *
      * @return It return true if new commit proof was added to the queue, otherwise
-     *         it returns false if new proof was not added to the queue.
+     * it returns false if new proof was not added to the queue.
      */
     public synchronized boolean addCommitProof(CommitProof commitProof) {
         VrfProof vrfProof = commitProof.getVrfProof();
@@ -151,14 +149,14 @@ public class PendingVrfState {
 
         int role = commitProof.getVrfProof().getRole();
         switch (role) {
-        case VrfProof.ROLE_CODES_REDUCTION_COMMIT:
-            return pendingReductionCommit.addCommitProof(commitProof);
-        case VrfProof.ROLE_CODES_FINAL_COMMIT:
-            return pendingFinalCommit.addCommitProof(commitProof);
-        default: {
-            logger.error("Unknown Role of Commit Proof: {}", role);
-            return false;
-        }
+            case VrfProof.ROLE_CODES_REDUCTION_COMMIT:
+                return pendingReductionCommit.addCommitProof(commitProof);
+            case VrfProof.ROLE_CODES_FINAL_COMMIT:
+                return pendingFinalCommit.addCommitProof(commitProof);
+            default: {
+                logger.error("Unknown Role of Commit Proof: {}", role);
+                return false;
+            }
         }
     }
 
@@ -194,7 +192,7 @@ public class PendingVrfState {
     /**
      * Check if new block is committed as best proposal with highest weights in
      * ROLE_CODES_REDUCTION_COMMIT stage
-     * 
+     *
      * @param header Header of new block to check
      * @return true if it is the best reduction committed as highest weights
      */
@@ -205,7 +203,7 @@ public class PendingVrfState {
     /**
      * Check if new block is committed as final block with highest weights in
      * ROLE_CODES_FINAL_COMMIT stage
-     * 
+     *
      * @param header Header of new block to check
      * @return true if it is the final block committed as highest weights
      */

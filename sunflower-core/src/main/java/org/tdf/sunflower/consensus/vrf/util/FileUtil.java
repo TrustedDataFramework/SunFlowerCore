@@ -1,20 +1,13 @@
 package org.tdf.sunflower.consensus.vrf.util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.util.Properties;
 
 /**
  * Created by mawenpeng on 2016/10/24.
  */
 public class FileUtil {
-//    private static final Logger logger = LoggerFactory.getLogger(FileUtil.class);
+    //    private static final Logger logger = LoggerFactory.getLogger(FileUtil.class);
     public static String readTxtFile(String filePath) throws IOException {
         return readTxtFile(filePath, "UTF-8");
     }

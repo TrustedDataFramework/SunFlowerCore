@@ -10,13 +10,16 @@ import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.controller.WebSocket;
 import org.tdf.sunflower.types.Event;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class EventHost extends HostFunction {
-    private HexBytes address;
-    private boolean readonly;
     @Getter
     private final List<Event> events;
+    private HexBytes address;
+    private boolean readonly;
 
     public EventHost(HexBytes address, boolean readonly) {
         this.address = address;

@@ -17,24 +17,7 @@
  */
 package org.tdf.sunflower.consensus.vrf.keystore;
 
-import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.UUID;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.spongycastle.crypto.generators.SCrypt;
 import org.spongycastle.jcajce.provider.digest.Keccak;
 import org.spongycastle.util.encoders.Hex;
@@ -42,7 +25,13 @@ import org.tdf.crypto.PrivateKey;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.*;
+import java.util.Arrays;
+import java.util.UUID;
 
 /**
  * Converts private key and password to json content and vise versa.

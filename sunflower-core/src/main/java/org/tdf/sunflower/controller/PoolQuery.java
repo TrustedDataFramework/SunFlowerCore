@@ -11,13 +11,12 @@ public class PoolQuery implements PageSize {
 
     @Getter(AccessLevel.NONE)
     private int size;
+    @Getter(AccessLevel.NONE)
+    private String status;
 
     public int getSize() {
         return size == 0 ? Integer.MAX_VALUE : size;
     }
-
-    @Getter(AccessLevel.NONE)
-    private String status;
 
     public String getStatus() {
         return status == null ? "pending" : status;

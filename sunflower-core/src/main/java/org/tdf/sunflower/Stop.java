@@ -24,11 +24,11 @@ public class Stop {
     private DatabaseStoreFactory factory;
 
 
-    public Stop(){
+    public Stop() {
     }
 
     @PreDestroy
-    public void onDestroy() throws Exception{
+    public void onDestroy() throws Exception {
         log.info("clean resources before exit program...");
         miner.stop();
         peerServer.stop();

@@ -1,43 +1,42 @@
 {
-    "seed": "0x00",
-    "timestamp": "0x5cbec7bf",
-    "extraData": "0x0000000000000000000000000000000000000000000000000000000000000000",
-    "gasLimit": "0x895440",
-    "difficulty": "0x8000",
-    "coinbase": "0xac9019a3c01be5056af55b43c510c3203bb9fc62",
-    "number": "0x00",
-    "gasUsed": "0x00",
-    "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-    "hashBlock": "0x0000000000000000000000000000000000000000000000000000000000000000",
-    "miners": [
-        {
-            "addr": "4b984384d03782ce6c1f53eb974d8f1dfc53eee9",
-            "collateral": 500000
-        },
-        {
-            "addr": "4e48bf86c3cc844b7b6489fa323a9db8f96d4144",
-            "collateral": 100000
-        }
-    ],
-    "alloc": {
-        /* Balances of precompiled contracts are ignored*/
-        "4b984384d03782ce6c1f53eb974d8f1dfc53eee9": 1000000000,
-        "4e48bf86c3cc844b7b6489fa323a9db8f96d4144": 1000000000,
-        "ac9019a3c01be5056af55b43c510c3203bb9fc62": 1000000000
+  "seed": "0x00",
+  "timestamp": "0x5cbec7bf",
+  "extraData": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "gasLimit": "0x895440",
+  "difficulty": "0x8000",
+  "coinbase": "0xac9019a3c01be5056af55b43c510c3203bb9fc62",
+  "number": "0x00",
+  "gasUsed": "0x00",
+  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "hashBlock": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "miners": [
+    {
+      "addr": "4b984384d03782ce6c1f53eb974d8f1dfc53eee9",
+      "collateral": 500000
+    },
+    {
+      "addr": "4e48bf86c3cc844b7b6489fa323a9db8f96d4144",
+      "collateral": 100000
     }
-/*
-# SM2
-#private key = 99dd95572f9def13de61f27f11f4557d96017cd264595566945f9fa2466752ed
-#public key = 03f5058c783199b83259b11d44a30255faaada47270baa6aa132efd2366ea4b304
-#address = 4b984384d03782ce6c1f53eb974d8f1dfc53eee9
+  ],
+  "alloc": {
+    /* Balances of precompiled contracts are ignored*/
+    "4b984384d03782ce6c1f53eb974d8f1dfc53eee9": 1000000000,
+    "4e48bf86c3cc844b7b6489fa323a9db8f96d4144": 1000000000,
+    "ac9019a3c01be5056af55b43c510c3203bb9fc62": 1000000000
+  }
+  /*
+  # SM2
+  #private key = 99dd95572f9def13de61f27f11f4557d96017cd264595566945f9fa2466752ed
+  #public key = 03f5058c783199b83259b11d44a30255faaada47270baa6aa132efd2366ea4b304
+  #address = 4b984384d03782ce6c1f53eb974d8f1dfc53eee9
 
-#private key = 10d6e8dfa3bf2b1d748f8bf7466c3313c45f19552b4b2529ac35a7dcb785a217
-#public key = 03810d30823bfaa055064424763bda38ef767f3ad81a259728b5c86719bcf86bf4
-#address = 4e48bf86c3cc844b7b6489fa323a9db8f96d4144
+  #private key = 10d6e8dfa3bf2b1d748f8bf7466c3313c45f19552b4b2529ac35a7dcb785a217
+  #public key = 03810d30823bfaa055064424763bda38ef767f3ad81a259728b5c86719bcf86bf4
+  #address = 4e48bf86c3cc844b7b6489fa323a9db8f96d4144
 
-#private key = c6079cffc5e8dd49ad12182e961184c2b5c75c5aebd43e31cc736f4138074f7c
-#public key = 03db73ea4b9eb3f0f9d46034f194ba098229841133467a209070207b75a202db8b
-#address = ac9019a3c01be5056af55b43c510c3203bb9fc62
-*/
-
+  #private key = c6079cffc5e8dd49ad12182e961184c2b5c75c5aebd43e31cc736f4138074f7c
+  #public key = 03db73ea4b9eb3f0f9d46034f194ba098229841133467a209070207b75a202db8b
+  #address = ac9019a3c01be5056af55b43c510c3203bb9fc62
+  */
 }

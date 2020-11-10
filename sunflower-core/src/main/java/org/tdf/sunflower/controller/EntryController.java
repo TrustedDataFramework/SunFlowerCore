@@ -14,6 +14,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.IntSerializer;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.GlobalConfig;
@@ -31,7 +32,6 @@ import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
-import org.tdf.common.util.IntSerializer;
 import org.tdf.sunflower.util.MappingUtil;
 import org.tdf.sunflower.vm.abi.ContractABI;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
@@ -73,7 +73,7 @@ public class EntryController {
     private Miner miner;
 
     private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func,
-            Function<byte[], Optional<T>> func1) {
+                                   Function<byte[], Optional<T>> func1) {
         Long height = null;
         try {
             height = Long.parseLong(hashOrHeight);
@@ -184,8 +184,8 @@ public class EntryController {
 
     @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public HexBytes getContract(@PathVariable("address") final String address,
-            @RequestParam(value = "parameters", required = false) String arguments,
-            @RequestParam(value = "args", required = false) String argsStr) {
+                                @RequestParam(value = "parameters", required = false) String arguments,
+                                @RequestParam(value = "args", required = false) String argsStr) {
         HexBytes addressHex = Address.of(address);
         arguments = arguments == null ? argsStr : arguments;
         if (arguments == null || arguments.isEmpty())
@@ -202,7 +202,7 @@ public class EntryController {
 
     @PostMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Object rpcQuery(@PathVariable("address") final String address,
-            @RequestBody(required = false) JsonNode body) {
+                           @RequestBody(required = false) JsonNode body) {
         Object o = consensusEngine.rpcQuery(HexBytes.fromHex(address), body);
         if (o == null)
             return Response.newSuccessFul(null);
@@ -271,7 +271,7 @@ public class EntryController {
         long totalTransactions = 0;
         long avgInterval = blocksWithoutGenesis.size() > 1
                 ? (blocksWithoutGenesis.get(blocksWithoutGenesis.size() - 1).getCreatedAt()
-                        - blocksWithoutGenesis.get(0).getCreatedAt()) / (blocksWithoutGenesis.size() - 1)
+                - blocksWithoutGenesis.get(0).getCreatedAt()) / (blocksWithoutGenesis.size() - 1)
                 : 0;
 
         for (Block b : blocks) {
@@ -300,6 +300,37 @@ public class EntryController {
                 .currentDifficulty(diff).transactionPoolSize(pool.size())
                 .blocksPerDay(o.map(h -> best.getHeight() - h.getHeight() + 1).orElse(0L))
                 .consensus(consensusEngine.getName()).build();
+    }
+
+    // get the nearest block after or equals to the timestamp
+    private Optional<Header> binarySearch(long timestamp, long low, long high) {
+        Header x = repository.getCanonicalHeader(low).get();
+        if (low == high) {
+            if (x.getCreatedAt() < timestamp)
+                return Optional.empty();
+            return Optional.of(x);
+        }
+        Header m = repository.getCanonicalHeader((low + high) / 2).get();
+        if (m.getCreatedAt() == timestamp)
+            return Optional.of(m);
+        if (m.getCreatedAt() < timestamp) {
+            if (m.getHeight() == high)
+                return Optional.empty();
+
+            Header m1 = repository.getCanonicalHeader(m.getHeight() + 1).get();
+            if (m1.getCreatedAt() >= timestamp)
+                return Optional.of(m1);
+            return binarySearch(timestamp, Math.min(m.getHeight() + 1, high), high);
+        }
+        if (m.getHeight() == low) {
+            return Optional.of(m);
+        }
+        Header m1 = repository.getCanonicalHeader(m.getHeight() - 1).get();
+        if (m1.getCreatedAt() < timestamp)
+            return Optional.of(m);
+        if (m1.getCreatedAt() == timestamp)
+            return Optional.of(m1);
+        return binarySearch(timestamp, low, m.getHeight() - 1);
     }
 
     @AllArgsConstructor
@@ -341,36 +372,5 @@ public class EntryController {
                     account.getCreatedBy(), HexBytes.fromBytes(account.getContractHash()),
                     HexBytes.fromBytes(account.getStorageRoot()));
         }
-    }
-
-    // get the nearest block after or equals to the timestamp
-    private Optional<Header> binarySearch(long timestamp, long low, long high) {
-        Header x = repository.getCanonicalHeader(low).get();
-        if (low == high) {
-            if (x.getCreatedAt() < timestamp)
-                return Optional.empty();
-            return Optional.of(x);
-        }
-        Header m = repository.getCanonicalHeader((low + high) / 2).get();
-        if (m.getCreatedAt() == timestamp)
-            return Optional.of(m);
-        if (m.getCreatedAt() < timestamp) {
-            if (m.getHeight() == high)
-                return Optional.empty();
-
-            Header m1 = repository.getCanonicalHeader(m.getHeight() + 1).get();
-            if (m1.getCreatedAt() >= timestamp)
-                return Optional.of(m1);
-            return binarySearch(timestamp, Math.min(m.getHeight() + 1, high), high);
-        }
-        if (m.getHeight() == low) {
-            return Optional.of(m);
-        }
-        Header m1 = repository.getCanonicalHeader(m.getHeight() - 1).get();
-        if (m1.getCreatedAt() < timestamp)
-            return Optional.of(m);
-        if (m1.getCreatedAt() == timestamp)
-            return Optional.of(m1);
-        return binarySearch(timestamp, low, m.getHeight() - 1);
     }
 }

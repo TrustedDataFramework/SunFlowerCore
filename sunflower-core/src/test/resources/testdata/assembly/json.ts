@@ -155,7 +155,7 @@ export class JSONBuilder {
     }
 
     static setBool(idx: i32, value: bool): void {
-        _json_builder_set_bool(idx, value? 1: 0)
+        _json_builder_set_bool(idx, value ? 1 : 0)
     }
 
     static putI64(name: string, value: i64): void {

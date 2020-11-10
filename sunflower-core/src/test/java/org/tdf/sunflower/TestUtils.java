@@ -39,18 +39,6 @@ public class TestUtils {
         print(new ISUB());
     }
 
-    public static interface IN {
-    }
-
-    public static interface INIM extends IN {
-    }
-
-    public static class I implements IN {
-    }
-
-    public static class ISUB implements INIM {
-    }
-
     static void print(IN in) {
         System.out.println("in");
     }
@@ -65,5 +53,17 @@ public class TestUtils {
 
     public static byte[] readClassPathFileAsByteArray(String name) throws IOException {
         return ByteStreams.toByteArray(new FileInputStream(readClassPathFile(name)));
+    }
+
+    public static interface IN {
+    }
+
+    public static interface INIM extends IN {
+    }
+
+    public static class I implements IN {
+    }
+
+    public static class ISUB implements INIM {
     }
 }

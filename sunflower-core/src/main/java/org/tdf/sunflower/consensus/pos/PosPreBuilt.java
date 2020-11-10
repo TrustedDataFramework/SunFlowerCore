@@ -29,6 +29,12 @@ public class PosPreBuilt implements PreBuiltContract {
     public static final byte[] VOTE_INFO_KEY = "votes".getBytes(StandardCharsets.US_ASCII);
 
     private Map<HexBytes, NodeInfo> nodes;
+    @Setter
+    private AccountTrie accountTrie;
+
+    public PosPreBuilt(@NonNull Map<HexBytes, NodeInfo> nodes) {
+        this.nodes = nodes;
+    }
 
     private static <T> Map.Entry<Integer, T> findFirst(List<? extends T> c, Predicate<T> predicate) {
         for (int i = 0; i < c.size(); i++) {
@@ -37,47 +43,6 @@ public class PosPreBuilt implements PreBuiltContract {
             }
         }
         return new AbstractMap.SimpleImmutableEntry<>(-1, null);
-    }
-
-    public enum Type {
-        VOTE,
-        CANCEL_VOTE
-    }
-
-    @Setter
-    private AccountTrie accountTrie;
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class NodeInfo implements Comparable<NodeInfo> {
-        private HexBytes address;
-        private Uint256 vote;
-        private List<HexBytes> txHash;
-
-        @Override
-        public int compareTo(NodeInfo o) {
-            return vote.compareTo(o.vote);
-        }
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class VoteInfo implements Comparable<VoteInfo> {
-        private HexBytes txHash;
-        private HexBytes from;
-        private HexBytes to;
-        private Uint256 amount;
-
-        @Override
-        public int compareTo(VoteInfo o) {
-            return txHash.compareTo(o.txHash);
-        }
-    }
-
-    public PosPreBuilt(@NonNull Map<HexBytes, NodeInfo> nodes) {
-        this.nodes = nodes;
     }
 
     private byte[] getValue(byte[] stateRoot, byte[] key) {
@@ -91,19 +56,20 @@ public class PosPreBuilt implements PreBuiltContract {
         return Arrays.stream(RLPCodec.decode(v, NodeInfo[].class)).map(NodeInfo::getAddress).collect(Collectors.toList());
     }
 
-    public List<NodeInfo> getNodeInfos(byte[] stateRoot){
+    public List<NodeInfo> getNodeInfos(byte[] stateRoot) {
         byte[] v = getValue(stateRoot, NODE_INFO_KEY);
         return Arrays.asList(RLPCodec.decode(
                 v, NodeInfo[].class));
     }
 
-    public Optional<VoteInfo> getVoteInfo(byte[] stateRoot, byte[] txHash){
+    public Optional<VoteInfo> getVoteInfo(byte[] stateRoot, byte[] txHash) {
         Account a = accountTrie.get(stateRoot, Constants.POS_CONTRACT_ADDR).get();
         Store<byte[], byte[]> db = accountTrie.getContractStorageTrie().revert(a.getStorageRoot());
         PrefixStore<byte[], VoteInfo> store = getVoteInfoStore(db);
         return store.get(txHash);
     }
-    public PrefixStore<byte[], VoteInfo> getVoteInfoStore(Store<byte[], byte[]> contractStore){
+
+    public PrefixStore<byte[], VoteInfo> getVoteInfoStore(Store<byte[], byte[]> contractStore) {
         return new PrefixStore<>(
                 contractStore,
                 VOTE_INFO_KEY,
@@ -142,7 +108,7 @@ public class PosPreBuilt implements PreBuiltContract {
 
         switch (type) {
             case VOTE: {
-                if(transaction.getAmount().compareTo(Uint256.ZERO) == 0)
+                if (transaction.getAmount().compareTo(Uint256.ZERO) == 0)
                     throw new RuntimeException("amount of vote cannot be 0 ");
                 Map.Entry<Integer, NodeInfo> e =
                         findFirst(nodeInfos, x -> x.address.equals(args));
@@ -163,7 +129,7 @@ public class PosPreBuilt implements PreBuiltContract {
                 break;
             }
             case CANCEL_VOTE:
-                if(transaction.getAmount().compareTo(Uint256.ZERO) != 0)
+                if (transaction.getAmount().compareTo(Uint256.ZERO) != 0)
                     throw new RuntimeException("amount of cancel vote should be 0");
                 Optional<VoteInfo> o = voteInfos.get(args.getBytes());
                 voteInfos.remove(args.getBytes());
@@ -185,7 +151,7 @@ public class PosPreBuilt implements PreBuiltContract {
 
                 NodeInfo ninfo = e2.getValue();
 
-                if(!ninfo.txHash.contains(args))
+                if (!ninfo.txHash.contains(args))
                     throw new RuntimeException("vote " + args + " not exists");
                 ninfo.vote = ninfo.vote.safeSub(voteInfo.amount);
                 ninfo.txHash.remove(args);
@@ -207,5 +173,39 @@ public class PosPreBuilt implements PreBuiltContract {
         nodeInfos.sort(NodeInfo::compareTo);
         Collections.reverse(nodeInfos);
         contractStorage.put(NODE_INFO_KEY, RLPCodec.encode(nodeInfos));
+    }
+
+    public enum Type {
+        VOTE,
+        CANCEL_VOTE
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class NodeInfo implements Comparable<NodeInfo> {
+        private HexBytes address;
+        private Uint256 vote;
+        private List<HexBytes> txHash;
+
+        @Override
+        public int compareTo(NodeInfo o) {
+            return vote.compareTo(o.vote);
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class VoteInfo implements Comparable<VoteInfo> {
+        private HexBytes txHash;
+        private HexBytes from;
+        private HexBytes to;
+        private Uint256 amount;
+
+        @Override
+        public int compareTo(VoteInfo o) {
+            return txHash.compareTo(o.txHash);
+        }
     }
 }

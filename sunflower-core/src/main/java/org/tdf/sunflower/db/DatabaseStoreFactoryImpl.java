@@ -14,15 +14,14 @@ import java.util.List;
 @Slf4j(topic = "db")
 @Component
 public class DatabaseStoreFactoryImpl implements DatabaseStoreFactory {
-    private DatabaseConfig config;
     private static final List<DatabaseStore> STORES_LIST = new ArrayList<>();
+    private DatabaseConfig config;
 
     public DatabaseStoreFactoryImpl(DatabaseConfig config) {
 
         if (config.getName() == null) config.setName("");
         this.config = config;
     }
-
 
 
     public String getDirectory() {

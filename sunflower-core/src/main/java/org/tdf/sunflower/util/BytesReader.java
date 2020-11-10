@@ -6,6 +6,10 @@ public class BytesReader {
     private byte[] data;
     private int pc;
 
+    public BytesReader(byte[] data) {
+        this.data = data;
+    }
+
     public byte read() {
         byte b = data[pc];
         pc++;
@@ -24,9 +28,5 @@ public class BytesReader {
         byte[] res = Arrays.copyOfRange(data, pc, data.length);
         pc = data.length;
         return res;
-    }
-
-    public BytesReader(byte[] data) {
-        this.data = data;
     }
 }

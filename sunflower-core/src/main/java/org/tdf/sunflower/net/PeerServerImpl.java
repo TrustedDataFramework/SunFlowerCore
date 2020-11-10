@@ -3,7 +3,6 @@ package org.tdf.sunflower.net;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.Store;
-import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
@@ -20,16 +19,16 @@ import java.util.stream.Stream;
 
 @Slf4j(topic = "net")
 public class PeerServerImpl implements ChannelListener, PeerServer {
+    // if non-database provided, use memory database
+    final Store<String, String> peerStore;
+    final ConsensusEngine consensusEngine;
+    final SecretStore secretStore;
     private PeerServerConfig config;
     private List<Plugin> plugins = new CopyOnWriteArrayList<>();
     private Client client;
     private PeerImpl self;
     private MessageBuilder builder;
     private NetLayer netLayer;
-    // if non-database provided, use memory database
-    final Store<String, String> peerStore;
-    final ConsensusEngine consensusEngine;
-    final SecretStore secretStore;
 
     public PeerServerImpl(Store<String, String> peerStore, ConsensusEngine consensusEngine, SecretStore secretStore) {
         this.peerStore = peerStore;
@@ -190,7 +189,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
                 .builder(builder)
                 .remote(peer.get()).build();
         for (Plugin plugin : plugins) {
-            if(context.exited)
+            if (context.exited)
                 break;
             try {
                 plugin.onMessage(context, this);

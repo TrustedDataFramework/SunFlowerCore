@@ -12,7 +12,10 @@ import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 import org.tdf.sunflower.types.CryptoContext;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -23,49 +26,11 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @Slf4j(topic = "net")
 public class MessageFilter implements Plugin {
+    private final ConsensusEngine consensusEngine;
     private Cache<HexBytes, Boolean> cache;
     private Map<HexBytes, Messages> multiPartCache = new HashMap<>();
-    private final ConsensusEngine consensusEngine;
     private PeerServerConfig config;
-
-    @AllArgsConstructor
-    private static class Messages {
-        private Message[] multiParts;
-        private int total;
-
-        public int size() {
-            return (int) Arrays.stream(multiParts).filter(Objects::nonNull).count();
-        }
-
-        private long writeAt;
-
-        @SneakyThrows
-        public Message merge() {
-            int byteArraySize = Arrays.stream(multiParts).map(x -> x.getBody().size())
-                    .reduce(0, Integer::sum);
-
-            byte[] total = new byte[byteArraySize];
-
-            int current = 0;
-            for (Message part : multiParts) {
-                byte[] p = part.getBody().toByteArray();
-                System.arraycopy(p, 0, total, current, p.length);
-                current += p.length;
-            }
-
-            if (!FastByteComparisons.equal(
-                    CryptoContext.hash(total),
-                    multiParts[0].getSignature().toByteArray())
-            ) {
-                throw new RuntimeException("合并失败");
-            }
-
-            return Message.parseFrom(total);
-        }
-    }
-
     private Lock multiPartCacheLock = new ReentrantLock();
-
 
     MessageFilter(PeerServerConfig config, ConsensusEngine consensusEngine) {
         this.cache = CacheBuilder.newBuilder()
@@ -127,7 +92,7 @@ public class MessageFilter implements Plugin {
             return;
         }
         // reject peer in black list and not in whitelist
-        if(config.isBlocked(context.remote.getID())){
+        if (config.isBlocked(context.remote.getID())) {
             log.error("the peer " + context.remote + " has been blocked");
             context.disconnect();
             return;
@@ -181,5 +146,40 @@ public class MessageFilter implements Plugin {
     @Override
     public void onStop(PeerServerImpl server) {
 
+    }
+
+    @AllArgsConstructor
+    private static class Messages {
+        private Message[] multiParts;
+        private int total;
+        private long writeAt;
+
+        public int size() {
+            return (int) Arrays.stream(multiParts).filter(Objects::nonNull).count();
+        }
+
+        @SneakyThrows
+        public Message merge() {
+            int byteArraySize = Arrays.stream(multiParts).map(x -> x.getBody().size())
+                    .reduce(0, Integer::sum);
+
+            byte[] total = new byte[byteArraySize];
+
+            int current = 0;
+            for (Message part : multiParts) {
+                byte[] p = part.getBody().toByteArray();
+                System.arraycopy(p, 0, total, current, p.length);
+                current += p.length;
+            }
+
+            if (!FastByteComparisons.equal(
+                    CryptoContext.hash(total),
+                    multiParts[0].getSignature().toByteArray())
+            ) {
+                throw new RuntimeException("合并失败");
+            }
+
+            return Message.parseFrom(total);
+        }
     }
 }

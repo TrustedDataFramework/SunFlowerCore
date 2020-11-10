@@ -8,6 +8,7 @@ import org.tdf.common.types.Parameters;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.LittleEndian;
+import org.tdf.common.util.SafeMath;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.Module;
 import org.tdf.rlp.RLPCodec;
@@ -16,7 +17,6 @@ import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.SafeMath;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.hosts.*;
 
@@ -64,22 +64,6 @@ public class ContractCall {
         throw new RuntimeException("cannot call reversed address " + address);
     }
 
-    public ContractCall fork() {
-        if (depth + 1 == ApplicationConstants.MAX_CONTRACT_CALL_DEPTH)
-            throw new RuntimeException("exceed call max depth");
-        return new ContractCall(
-                states,
-                header,
-                transaction,
-                storageTrieSupplier,
-                contractStore,
-                this.limit.fork(),
-                this.depth + 1,
-                this.recipient,
-                this.readonly
-        );
-    }
-
     public static int allocString(ModuleInstance moduleInstance, String s) {
         byte[] data = s.getBytes(StandardCharsets.UTF_16LE);
         long id = (int) moduleInstance.execute("__idof", AbiDataType.STRING.ordinal())[0];
@@ -115,7 +99,6 @@ public class ContractCall {
         return offset;
     }
 
-
     static Object getResult(ModuleInstance module, long offset, AbiDataType type) {
         switch (type) {
             case I64:
@@ -140,6 +123,22 @@ public class ContractCall {
             default:
                 throw new UnsupportedOperationException();
         }
+    }
+
+    public ContractCall fork() {
+        if (depth + 1 == ApplicationConstants.MAX_CONTRACT_CALL_DEPTH)
+            throw new RuntimeException("exceed call max depth");
+        return new ContractCall(
+                states,
+                header,
+                transaction,
+                storageTrieSupplier,
+                contractStore,
+                this.limit.fork(),
+                this.depth + 1,
+                this.recipient,
+                this.readonly
+        );
     }
 
     private long[] putParameters(ModuleInstance module, Parameters params) {
@@ -178,7 +177,7 @@ public class ContractCall {
     }
 
     public TransactionResult call(HexBytes binaryOrAddress, String method, Parameters parameters, Uint256 amount, boolean returnAddress, List<ContractABI> contractABIs) {
-        if(RESERVED_FUNCTIONS.contains(method))
+        if (RESERVED_FUNCTIONS.contains(method))
             throw new RuntimeException(method + " is reserved");
         boolean isDeploy = "init".equals(method);
         Account contractAccount;
@@ -231,7 +230,7 @@ public class ContractCall {
                 this.readonly
         );
 
-        if(isDeploy && contractABIs != null){
+        if (isDeploy && contractABIs != null) {
             DBFunctions.getStorageTrie().put("__abi".getBytes(StandardCharsets.UTF_8), RLPCodec.encode(contractABIs));
             contractAccount.setStorageRoot(DBFunctions.getStorageTrie().commit());
             states.put(contractAddress, contractAccount);
@@ -268,7 +267,7 @@ public class ContractCall {
             long[] rets = instance.execute(method, offsets);
             if (parameters.getReturnType().length > 0) {
                 ret.add(
-                       RLPElement.readRLPTree(getResult(instance, rets[0], AbiDataType.values()[parameters.getReturnType()[0]]))
+                        RLPElement.readRLPTree(getResult(instance, rets[0], AbiDataType.values()[parameters.getReturnType()[0]]))
                 );
             }
         }
@@ -282,6 +281,6 @@ public class ContractCall {
 
         List<Event> events = hosts.getEventHost().getEvents();
         RLPList returns = returnAddress ? RLPList.fromElements(Collections.singleton(RLPItem.fromBytes(contractAddress.getBytes()))) : ret;
-        return new TransactionResult(limit.getGas(), returns, events);
+        return new TransactionResult(limit.getGas(), returns, events, Uint256.ZERO);
     }
 }

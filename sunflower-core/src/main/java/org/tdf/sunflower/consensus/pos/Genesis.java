@@ -17,16 +17,7 @@ public class Genesis {
     public HexBytes parentHash;
 
     public long timestamp;
-
-    @Getter
-    public static class MinerInfo {
-        @JsonProperty("addr")
-        public HexBytes address;
-        public long vote;
-    }
-
     public List<MinerInfo> miners;
-
     public Map<String, Long> alloc;
 
     @JsonIgnore
@@ -44,5 +35,12 @@ public class Genesis {
                 .createdAt(timestamp)
                 .build();
         return new Block(h);
+    }
+
+    @Getter
+    public static class MinerInfo {
+        @JsonProperty("addr")
+        public HexBytes address;
+        public long vote;
     }
 }

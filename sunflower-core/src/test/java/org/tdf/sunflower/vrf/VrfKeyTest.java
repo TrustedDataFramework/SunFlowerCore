@@ -8,10 +8,9 @@ public class VrfKeyTest {
     public VrfKeyTest() {
 
     }
-    
+
     @Test
-    public void testVrfSkKeyStore()
-    {
+    public void testVrfSkKeyStore() {
         VrfUtil.getVrfPrivateKey("vrf-data1");
     }
 }

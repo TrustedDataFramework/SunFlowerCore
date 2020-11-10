@@ -1,16 +1,14 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
-import static org.tdf.sunflower.util.ByteUtil.byteArrayToLong;
-import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
-import static org.tdf.sunflower.util.ByteUtil.toHexString;
-
-import java.math.BigInteger;
-import java.security.InvalidParameterException;
-
 import org.tdf.rlp.RLP;
 import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
 import org.tdf.sunflower.util.RLPList;
 import org.tdf.sunflower.util.RLPUtils;
+
+import java.math.BigInteger;
+import java.security.InvalidParameterException;
+
+import static org.tdf.sunflower.util.ByteUtil.*;
 
 /**
  * Block identifier holds block hash and number <br>

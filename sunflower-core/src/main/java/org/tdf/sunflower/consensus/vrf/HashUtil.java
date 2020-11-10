@@ -1,7 +1,11 @@
 package org.tdf.sunflower.consensus.vrf;
 
-import static java.util.Arrays.copyOfRange;
-import static org.tdf.sunflower.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spongycastle.crypto.Digest;
+import org.spongycastle.crypto.digests.RIPEMD160Digest;
+import org.spongycastle.util.encoders.Hex;
+import org.tdf.sunflower.util.RLPUtils;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -10,21 +14,15 @@ import java.security.Provider;
 import java.security.Security;
 import java.util.Random;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.spongycastle.crypto.Digest;
-import org.spongycastle.crypto.digests.RIPEMD160Digest;
-import org.spongycastle.util.encoders.Hex;
-import org.tdf.sunflower.util.RLPUtils;
+import static java.util.Arrays.copyOfRange;
+import static org.tdf.sunflower.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class HashUtil {
-
-    private static final Logger LOG = LoggerFactory.getLogger(HashUtil.class);
 
     public static final byte[] EMPTY_DATA_HASH;
     public static final byte[] EMPTY_LIST_HASH;
     public static final byte[] EMPTY_TRIE_HASH;
-
+    private static final Logger LOG = LoggerFactory.getLogger(HashUtil.class);
     private static final Provider CRYPTO_PROVIDER;
 
     private static final String HASH_256_ALGORITHM_NAME;
@@ -42,8 +40,7 @@ public class HashUtil {
     }
 
     /**
-     * @param input
-     *            - data for hashing
+     * @param input - data for hashing
      * @return - sha256 hash of the data
      */
     public static byte[] sha256(byte[] input) {
@@ -84,13 +81,10 @@ public class HashUtil {
 
     /**
      * hashing chunk of the data
-     * 
-     * @param input
-     *            - data for hash
-     * @param start
-     *            - start of hashing chunk
-     * @param length
-     *            - length of hashing chunk
+     *
+     * @param input  - data for hash
+     * @param start  - start of hashing chunk
+     * @param length - length of hashing chunk
      * @return - keccak hash of the chunk
      */
     public static byte[] sha3(byte[] input, int start, int length) {
@@ -118,8 +112,7 @@ public class HashUtil {
     }
 
     /**
-     * @param data
-     *            - message to hash
+     * @param data - message to hash
      * @return - reipmd160 hash of the message
      */
     public static byte[] ripemd160(byte[] data) {
@@ -136,9 +129,8 @@ public class HashUtil {
     /**
      * Calculates RIGTMOST160(SHA3(input)). This is used in address
      * calculations. *
-     * 
-     * @param input
-     *            - data
+     *
+     * @param input - data
      * @return - 20 right bytes of the hash keccak of the data
      */
     public static byte[] sha3omit12(byte[] input) {
@@ -149,10 +141,8 @@ public class HashUtil {
     /**
      * The way to calculate new address inside ethereum
      *
-     * @param addr
-     *            - creating address
-     * @param nonce
-     *            - nonce of creating address
+     * @param addr  - creating address
+     * @param nonce - nonce of creating address
      * @return new address
      */
     public static byte[] calcNewAddr(byte[] addr, byte[] nonce) {
@@ -168,8 +158,8 @@ public class HashUtil {
      * sha3(0xff ++ msg.sender ++ salt ++ sha3(init_code)))[12:]
      *
      * @param senderAddr - creating address
-     * @param initCode - contract init code
-     * @param salt - salt to make different result addresses
+     * @param initCode   - contract init code
+     * @param salt       - salt to make different result addresses
      * @return new address
      */
     public static byte[] calcSaltAddr(byte[] senderAddr, byte[] initCode, byte[] salt) {
@@ -188,11 +178,9 @@ public class HashUtil {
     }
 
     /**
-     * @see #doubleDigest(byte[], int, int)
-     *
-     * @param input
-     *            -
+     * @param input -
      * @return -
+     * @see #doubleDigest(byte[], int, int)
      */
     public static byte[] doubleDigest(byte[] input) {
         return doubleDigest(input, 0, input.length);
@@ -203,12 +191,9 @@ public class HashUtil {
      * resulting hash again. This is standard procedure in Bitcoin. The
      * resulting hash is in big endian form.
      *
-     * @param input
-     *            -
-     * @param offset
-     *            -
-     * @param length
-     *            -
+     * @param input  -
+     * @param offset -
+     * @param length -
      * @return -
      */
     public static byte[] doubleDigest(byte[] input, int offset, int length) {

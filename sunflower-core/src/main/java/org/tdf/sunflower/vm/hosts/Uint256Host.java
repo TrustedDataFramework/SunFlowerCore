@@ -1,25 +1,15 @@
 package org.tdf.sunflower.vm.hosts;
 
+import org.tdf.common.types.Uint256;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
-import org.tdf.common.types.Uint256;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 
 public class Uint256Host extends HostFunction {
-    enum Type {
-        PARSE,
-        TOSTRING,
-        ADD,
-        SUB,
-        MUL,
-        DIV,
-        MOD
-    }
-
     public Uint256Host() {
         setType(
                 new FunctionType(
@@ -75,12 +65,11 @@ public class Uint256Host extends HostFunction {
                 break;
         }
 
-        if (put){
+        if (put) {
             putMemory((int) offset, data);
         }
         return new long[]{ret};
     }
-
 
     private Uint256 getX(long... longs) {
         return Uint256.of(loadMemory((int) longs[1], (int) longs[2]));
@@ -88,5 +77,15 @@ public class Uint256Host extends HostFunction {
 
     private Uint256 getY(long... longs) {
         return Uint256.of(loadMemory((int) longs[3], (int) longs[4]));
+    }
+
+    enum Type {
+        PARSE,
+        TOSTRING,
+        ADD,
+        SUB,
+        MUL,
+        DIV,
+        MOD
     }
 }

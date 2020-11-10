@@ -8,7 +8,7 @@ import org.tdf.sunflower.consensus.vrf.HashUtil;
 public class VrfPrivateKey {
     private PrivateKey signer;
 
-    public VrfPrivateKey(String algorithm) throws CryptoException{
+    public VrfPrivateKey(String algorithm) throws CryptoException {
         if (algorithm.equals(Ed25519.getAlgorithm())) {
             this.signer = Ed25519.generateKeyPair().getPrivateKey();
             return;
@@ -22,8 +22,11 @@ public class VrfPrivateKey {
         throw new CryptoException("unsupported signature policy");
     }
 
+    public VrfPrivateKey(PrivateKey signer) {
+        this.signer = signer;
+    }
+
     /**
-     *
      * @param seed random seed
      * @return verifiable random function result,
      * consists of a random variable, the seed and a proof for verifying
@@ -39,13 +42,11 @@ public class VrfPrivateKey {
         return new VrfResult(random, sign);
     }
 
-    public VrfPrivateKey(PrivateKey signer) {
-        this.signer = signer;
-    }
-    public byte[] getEncoded(){
+    public byte[] getEncoded() {
         return this.signer.getEncoded();
     }
-    public VrfPublicKey generatePublicKey(){
+
+    public VrfPublicKey generatePublicKey() {
         return new VrfPublicKey(this.signer.generatePublicKey());
     }
 

@@ -5,19 +5,19 @@ import org.tdf.sunflower.proto.Message;
 import java.util.Optional;
 
 // channel for message transports
-interface Channel{
+interface Channel {
     // write message to channel
     void write(Message message);
 
     // close the channel
-    default void close(){
+    default void close() {
         close("");
     }
 
     // close the channel
     void close(String reason);
 
-    default boolean isAlive(){
+    default boolean isAlive() {
         return !isClosed();
     }
 

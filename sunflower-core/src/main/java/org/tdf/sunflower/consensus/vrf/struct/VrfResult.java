@@ -46,6 +46,6 @@ public class VrfResult {
     }
 
     public byte[] getEncoded() {
-        return Arrays.concatenate(new byte[] { (byte) this.r.length }, this.r, this.proof);
+        return Arrays.concatenate(new byte[]{(byte) this.r.length}, this.r, this.proof);
     }
 }

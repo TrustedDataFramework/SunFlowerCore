@@ -5,10 +5,11 @@ public class ExceptionUtil {
         return new RuntimeException("key " + key + " not found");
     }
 
-    public static RuntimeException noArgumentConstructorNotFound(Class clazz){
+    public static RuntimeException noArgumentConstructorNotFound(Class clazz) {
         return new RuntimeException(clazz.getName() + " not has a non-argument constructor");
     }
-    public static void require(boolean b, String msg){
-        if(!b) throw new RuntimeException(msg);
+
+    public static void require(boolean b, String msg) {
+        if (!b) throw new RuntimeException(msg);
     }
 }

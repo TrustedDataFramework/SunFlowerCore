@@ -52,7 +52,7 @@ public class RLPItem implements RLPElement {
 
     @Override
     public long getRLPLong() {
-        if(rlpData.length == 0){
+        if (rlpData.length == 0) {
             return -1;
         }
         return ByteUtil.byteArrayToLong(rlpData);

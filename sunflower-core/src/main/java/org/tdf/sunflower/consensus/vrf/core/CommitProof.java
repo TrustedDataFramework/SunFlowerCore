@@ -1,10 +1,5 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
-import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
-import static org.tdf.sunflower.util.ByteUtil.toHexString;
-
-import java.util.Arrays;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tdf.crypto.CryptoException;
@@ -15,6 +10,11 @@ import org.tdf.rlp.RLP;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.util.RLPList;
 import org.tdf.sunflower.util.RLPUtils;
+
+import java.util.Arrays;
+
+import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
+import static org.tdf.sunflower.util.ByteUtil.toHexString;
 
 /**
  * @author James Hu
@@ -68,6 +68,12 @@ public class CommitProof {
         this.parsed = true;
     }
 
+    public CommitProof(byte[] rlpRawData) {
+        logger.debug("new from [" + toHexString(rlpRawData) + "]");
+
+        this.rlpEncoded = rlpRawData;
+    }
+
     public boolean verify() {
         byte[] vrfPk = this.vrfProof.getVrfPk();
         if (isNullOrZeroArray(vrfPk) || isNullOrZeroArray(signature)) {
@@ -85,12 +91,6 @@ public class CommitProof {
         }
 
         return verified;
-    }
-
-    public CommitProof(byte[] rlpRawData) {
-        logger.debug("new from [" + toHexString(rlpRawData) + "]");
-
-        this.rlpEncoded = rlpRawData;
     }
 
     private synchronized void parseRLP() {

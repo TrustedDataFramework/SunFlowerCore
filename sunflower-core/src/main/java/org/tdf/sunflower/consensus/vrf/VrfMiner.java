@@ -1,14 +1,10 @@
 package org.tdf.sunflower.consensus.vrf;
 
-import static org.junit.Assert.assertTrue;
-import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.tdf.common.event.EventBus;
@@ -17,16 +13,9 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
-import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.Proposer;
-import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
-import org.tdf.sunflower.consensus.vrf.core.CommitProof;
-import org.tdf.sunflower.consensus.vrf.core.ImportResult;
-import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
-import org.tdf.sunflower.consensus.vrf.core.StateMachineListener;
-import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
-import org.tdf.sunflower.consensus.vrf.core.VrfProof;
-import org.tdf.sunflower.consensus.vrf.core.VrfRound;
+import org.tdf.sunflower.consensus.poa.PoAConstants;
+import org.tdf.sunflower.consensus.vrf.core.*;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
@@ -44,35 +33,30 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import static org.junit.Assert.assertTrue;
+import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
 
 @Slf4j
 @Getter
 @Setter
 public class VrfMiner extends AbstractMiner {
 
-    private VrfConfig vrfConfig;
-
+    private static final int VRF_BLOCK_EARLY_BROADCAST_PRIORITY = 10;
     public HexBytes minerAddress;
-
+    private VrfConfig vrfConfig;
     private VrfGenesis genesis;
-
     private BlockRepository blockRepository;
-
     private boolean stopped;
-
     private Thread thread;
-
     private VrfStateMachine vrfStateMachine;
-
     private boolean vrfStarted = false;
     private boolean blockBroadcast;
-
     private VrfPrivateKey vrfSk;
     private byte[] minerCoinbase;
     private byte[] vrfSeed;
@@ -84,8 +68,6 @@ public class VrfMiner extends AbstractMiner {
     // VrfRound.
     // So let it setup new VrfRound from latest block number.
     private boolean blockSyncing;
-    private static final int VRF_BLOCK_EARLY_BROADCAST_PRIORITY = 10;
-
     private PeerServer peerServer;
 
     private TransactionPool transactionPool;
@@ -188,23 +170,6 @@ public class VrfMiner extends AbstractMiner {
 
     @Override
     protected void finalizeBlock(Block parent, Block block) {
-
-    }
-
-    public static class EconomicModelImpl {
-
-        private static final long INITIAL_SUPPLY = 20;
-
-        private static final long HALF_PERIOD = 10000000;
-
-        public static Uint256 getConsensusRewardAtHeight(long height) {
-            long era = height / HALF_PERIOD;
-            long reward = INITIAL_SUPPLY;
-            for (long i = 0; i < era; i++) {
-                reward = reward * 52218182 / 100000000;
-            }
-            return Uint256.of(reward);
-        }
 
     }
 
@@ -313,7 +278,7 @@ public class VrfMiner extends AbstractMiner {
                         clearMagic(finalBlock.getBlock());
 
                         ImportResult importResult = tryToConnect(finalBlock.getBlock());// ((BlockchainImpl)
-                                                                                        // ethereum.getBlockchain()).tryToConnect(finalBlock.getBlock());
+                        // ethereum.getBlockchain()).tryToConnect(finalBlock.getBlock());
                         if (importResult.isSuccessful()) {
                             log.info("Final Block is Imported as {} one, hash 0x{}",
                                     importResult == ImportResult.IMPORTED_BEST ? "BEST" : "NOT best",
@@ -349,48 +314,6 @@ public class VrfMiner extends AbstractMiner {
         vrfStateMachine.addListener(listener);
 
         return true;
-    }
-
-    /**
-     * New added VRF miner logic for VRF consensus protocol.
-     *
-     * @author James Hu, silk chain
-     * @since 2019/06/27
-     */
-    private class VrfMined {
-        private Block vrfBlock;
-        private byte[] vrfSeed;
-
-        public VrfMined(Block vrfBlock, byte[] vrfSeed) {
-            this.vrfBlock = vrfBlock;
-            this.vrfSeed = vrfSeed;
-        }
-
-        public Block getVrfBlock() {
-            return vrfBlock;
-        }
-
-        public byte[] getVrfSeed() {
-            return vrfSeed;
-        }
-    }
-
-    private class VrfBlockProof {
-        private ProposalProof proof;
-        private int priority;
-
-        public VrfBlockProof(ProposalProof proof, int priority) {
-            this.proof = proof;
-            this.priority = priority;
-        }
-
-        public ProposalProof getProof() {
-            return proof;
-        }
-
-        public int getPriority() {
-            return priority;
-        }
     }
 
     private VrfMined getNewVrfMined() throws DecoderException, IOException {
@@ -792,5 +715,64 @@ public class VrfMiner extends AbstractMiner {
         // Notify listeners.
         getEventBus().publish(new NewBlocksReceived(Collections.singletonList(block)));
         return ImportResult.IMPORTED_BEST;
+    }
+
+    public static class EconomicModelImpl {
+
+        private static final long INITIAL_SUPPLY = 20;
+
+        private static final long HALF_PERIOD = 10000000;
+
+        public static Uint256 getConsensusRewardAtHeight(long height) {
+            long era = height / HALF_PERIOD;
+            long reward = INITIAL_SUPPLY;
+            for (long i = 0; i < era; i++) {
+                reward = reward * 52218182 / 100000000;
+            }
+            return Uint256.of(reward);
+        }
+
+    }
+
+    /**
+     * New added VRF miner logic for VRF consensus protocol.
+     *
+     * @author James Hu, silk chain
+     * @since 2019/06/27
+     */
+    private class VrfMined {
+        private Block vrfBlock;
+        private byte[] vrfSeed;
+
+        public VrfMined(Block vrfBlock, byte[] vrfSeed) {
+            this.vrfBlock = vrfBlock;
+            this.vrfSeed = vrfSeed;
+        }
+
+        public Block getVrfBlock() {
+            return vrfBlock;
+        }
+
+        public byte[] getVrfSeed() {
+            return vrfSeed;
+        }
+    }
+
+    private class VrfBlockProof {
+        private ProposalProof proof;
+        private int priority;
+
+        public VrfBlockProof(ProposalProof proof, int priority) {
+            this.proof = proof;
+            this.priority = priority;
+        }
+
+        public ProposalProof getProof() {
+            return proof;
+        }
+
+        public int getPriority() {
+            return priority;
+        }
     }
 }

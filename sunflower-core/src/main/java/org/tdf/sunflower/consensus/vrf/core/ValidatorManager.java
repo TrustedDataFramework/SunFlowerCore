@@ -1,11 +1,5 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
-import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tdf.common.trie.Trie;
@@ -19,33 +13,35 @@ import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.util.ByteUtil;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
+
 /**
  * @author James Hu
  * @since 2019/5/14
- *
- *        Weight is not only validator deposit value, we will add reputation
- *        factor in the future.
- *
- *        Reputation is calculated using the total amount of valid work a miner
- *        or committee has contributed to the system, over the regularity of
- *        that work over the entire period of time during which the system has
- *        been active.
+ * <p>
+ * Weight is not only validator deposit value, we will add reputation
+ * factor in the future.
+ * <p>
+ * Reputation is calculated using the total amount of valid work a miner
+ * or committee has contributed to the system, over the regularity of
+ * that work over the entire period of time during which the system has
+ * been active.
  */
 public class ValidatorManager {
 
-    private static final Logger logger = LoggerFactory.getLogger("ValidatorManager");
-
     public static final int EXPECTED_PROPOSER_THRESHOLD = 10;
     public static final int EXPECTED_BFT_THRESHOLD = EXPECTED_PROPOSER_THRESHOLD * 2 / 3;
-
     /*
      * Make sure DEPOSIT_MIN_VALUE / WEIGHT_UNIT_OF_DEPOSIT >
      * EXPECTED_PROPOSER_THRESHOLD
      */
     public static final long WEIGHT_UNIT_OF_DEPOSIT = Validator.DEPOSIT_UNIT_VALUE / 100;
-
     public static final long WEIGHT_MIN_VALUE = Validator.DEPOSIT_MIN_VALUE / WEIGHT_UNIT_OF_DEPOSIT;
-
+    private static final Logger logger = LoggerFactory.getLogger("ValidatorManager");
     private BlockRepository repository;
     private AccountTrie accountTrie;
     private Trie<byte[], byte[]> contractStorageTrie;
@@ -58,7 +54,7 @@ public class ValidatorManager {
 //	private final VrfContracts.ValidatorRegistration validatorRegistration;
 
     public ValidatorManager(BlockRepository repository, AccountTrie accountTrie,
-            Trie<byte[], byte[]> contractStorageTrie, VrfConfig vrfConfig) {
+                            Trie<byte[], byte[]> contractStorageTrie, VrfConfig vrfConfig) {
 //		validatorRegistration = new VrfContracts.ValidatorRegistration(DEPOSIT_CONTRACT_ADDR, repository);
         this.repository = repository;
         this.accountTrie = accountTrie;
@@ -118,7 +114,7 @@ public class ValidatorManager {
 
     /**
      * Return priority of proposer proof
-     * 
+     *
      * @param proof - The proposer proof sent by node
      */
     public synchronized int getPriority(ProposalProof proof, int expected) {
@@ -165,7 +161,7 @@ public class ValidatorManager {
 
     /**
      * Return priority of commit Proof
-     * 
+     *
      * @param proof The commit Proof sent by node
      */
     public synchronized int getPriority(CommitProof proof, int expected) {
@@ -212,7 +208,7 @@ public class ValidatorManager {
 
     /**
      * Return weight of proposer Proof
-     * 
+     *
      * @param Proof The proposer Proof sent by node
      */
     public synchronized long getWeight(ProposalProof Proof) {
@@ -228,7 +224,7 @@ public class ValidatorManager {
 
     /**
      * Return weight of commit Proof
-     * 
+     *
      * @param proof The commit Proof sent by node
      */
     public synchronized long getWeight(CommitProof proof) {
@@ -334,10 +330,10 @@ public class ValidatorManager {
         // ---------------->
         /*
          * if (isNullOrZeroArray(coinbase) || isNullOrZeroArray(vrfPk)) return false;
-         * 
+         *
          * Validator validator = getValidator(coinbase); if (validator != null) { if
          * (Arrays.equals(validator.getVrfPk(), vrfPk)) return true; }
-         * 
+         *
          * return false;
          */
     }

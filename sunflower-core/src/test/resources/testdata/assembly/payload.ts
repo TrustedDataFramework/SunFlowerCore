@@ -90,7 +90,7 @@ export class Parameters {
         return v;
     }
 
-    u32(): u32{
+    u32(): u32 {
         const v = this.view.getUint32(this.offset, true);
         this.offset += 4;
         return v;

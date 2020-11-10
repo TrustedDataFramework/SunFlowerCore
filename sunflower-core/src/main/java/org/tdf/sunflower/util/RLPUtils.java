@@ -13,11 +13,16 @@ import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
 import static org.tdf.sunflower.util.ByteUtil.*;
 
 public class RLPUtils {
+    /**
+     * [0xc0]
+     * If the total payload of a list (i.e. the combined length of all its
+     * items) is 0-55 bytes long, the RLP encoding consists of a single byte
+     * with value 0xc0 plus the length of the list followed by the concatenation
+     * of the RLP encodings of the items. The range of the first byte is thus
+     * [0xc0, 0xf7].
+     */
+    static final int OFFSET_SHORT_LIST = 0xc0;
     private static final Logger logger = LoggerFactory.getLogger("rlp");
-
-
-    public static final byte[] EMPTY_ELEMENT_RLP = encodeElement(new byte[0]);
-
     private static final int MAX_DEPTH = 16;
 
     /**
@@ -61,17 +66,7 @@ public class RLPUtils {
      * [0xb8, 0xbf].
      */
     private static final int OFFSET_LONG_ITEM = 0xb7;
-
-    /**
-     * [0xc0]
-     * If the total payload of a list (i.e. the combined length of all its
-     * items) is 0-55 bytes long, the RLP encoding consists of a single byte
-     * with value 0xc0 plus the length of the list followed by the concatenation
-     * of the RLP encodings of the items. The range of the first byte is thus
-     * [0xc0, 0xf7].
-     */
-     static final int OFFSET_SHORT_LIST = 0xc0;
-
+    public static final byte[] EMPTY_ELEMENT_RLP = encodeElement(new byte[0]);
     /**
      * [0xf7]
      * If the total payload of a list is more than 55 bytes long, the RLP
@@ -348,9 +343,8 @@ public class RLPUtils {
      * or {@link Integer#MAX_VALUE} in case if encoded length is greater
      *
      * @param lengthOfLength length of length in bytes
-     * @param msgData message
-     * @param pos position to parse from
-     *
+     * @param msgData        message
+     * @param pos            position to parse from
      * @return calculated length
      */
     private static int calcLength(int lengthOfLength, byte[] msgData, int pos) {
@@ -390,7 +384,7 @@ public class RLPUtils {
     /**
      * Parse wire byte[] message into RLP elements
      *
-     * @param msgData - raw RLP data
+     * @param msgData    - raw RLP data
      * @param depthLimit - limits depth of decoding
      * @return rlpList
      * - outcome of recursive RLP structure
@@ -420,10 +414,11 @@ public class RLPUtils {
     /**
      * Decodes RLP with list without going deep after 1st level list
      * (actually, 2nd as 1st level is wrap only)
-     *
+     * <p>
      * So assuming you've packed several byte[] with {@link #encodeList(byte[]...)},
      * you could use this method to unpack them,
      * getting RLPList with RLPItem's holding byte[] inside
+     *
      * @param msgData rlp data
      * @return list of RLPItems
      */
@@ -436,6 +431,7 @@ public class RLPUtils {
         fullTraverse(msgData, 0, startPos, startPos + 1, rlpList, Integer.MAX_VALUE);
         return rlpList.get(0);
     }
+
     /**
      * Get exactly one message payload
      */
@@ -474,7 +470,7 @@ public class RLPUtils {
                     System.arraycopy(msgData, pos, rlpData, 0, lengthOfLength
                             + length + 1);
 
-                    if(level + 1 < depth) {
+                    if (level + 1 < depth) {
                         RLPList newLevelList = new RLPList();
                         newLevelList.setRLPData(rlpData);
 
@@ -497,7 +493,7 @@ public class RLPUtils {
                     byte[] rlpData = new byte[length + 1];
                     System.arraycopy(msgData, pos, rlpData, 0, length + 1);
 
-                    if(level + 1 < depth) {
+                    if (level + 1 < depth) {
                         RLPList newLevelList = new RLPList();
                         newLevelList.setRLPData(rlpData);
 
@@ -585,8 +581,9 @@ public class RLPUtils {
 
     /**
      * Compares supplied length information with maximum possible
-     * @param suppliedLength    Length info from header
-     * @param availableLength   Length of remaining object
+     *
+     * @param suppliedLength  Length info from header
+     * @param availableLength Length of remaining object
      * @throws RuntimeException if supplied length is bigger than available
      */
     private static void verifyLength(int suppliedLength, int availableLength) {
@@ -595,57 +592,6 @@ public class RLPUtils {
                     "than possible size of data (%s bytes)", suppliedLength, availableLength));
         }
     }
-
-    public static final class LList {
-        private final byte[] rlp;
-        private final int[] offsets = new int[32];
-        private final int[] lens = new int[32];
-        private int cnt;
-
-        public LList(byte[] rlp) {
-            this.rlp = rlp;
-        }
-
-        public byte[] getEncoded() {
-            byte encoded[][] = new byte[cnt][];
-            for (int i = 0; i < cnt; i++) {
-                encoded[i] = encodeElement(getBytes(i));
-            }
-            return encodeList(encoded);
-        }
-
-        public void add(int off, int len, boolean isList) {
-            offsets[cnt] = off;
-            lens[cnt] = isList ? (-1 - len) : len;
-            cnt++;
-        }
-
-        public byte[] getBytes(int idx) {
-            int len = lens[idx];
-            len = len < 0 ? (-len - 1) : len;
-            byte[] ret = new byte[len];
-            System.arraycopy(rlp, offsets[idx], ret, 0, len);
-            return ret;
-        }
-
-        public LList getList(int idx) {
-            return decodeLazyList(rlp, offsets[idx], -lens[idx] - 1);
-        }
-
-        public boolean isList(int idx) {
-            return lens[idx] < 0;
-        }
-
-        public int size() {
-            return cnt;
-        }
-    }
-
-
-    /* ******************************************************
-     *                      ENCODING                        *
-     * ******************************************************/
-
 
     public static byte[] encodeByte(byte singleByte) {
         if ((singleByte & 0xFF) == 0) {
@@ -656,6 +602,11 @@ public class RLPUtils {
             return new byte[]{(byte) (OFFSET_SHORT_ITEM + 1), singleByte};
         }
     }
+
+
+    /* ******************************************************
+     *                      ENCODING                        *
+     * ******************************************************/
 
     public static byte[] encodeShort(short singleShort) {
 
@@ -693,7 +644,8 @@ public class RLPUtils {
     }
 
     public static byte[] encodeBigInteger(BigInteger srcBigInteger) {
-        if (srcBigInteger.compareTo(BigInteger.ZERO) < 0) throw new RuntimeException("negative numbers are not allowed");
+        if (srcBigInteger.compareTo(BigInteger.ZERO) < 0)
+            throw new RuntimeException("negative numbers are not allowed");
 
         if (srcBigInteger.equals(BigInteger.ZERO))
             return encodeByte((byte) 0);
@@ -777,7 +729,6 @@ public class RLPUtils {
         }
     }
 
-
     public static byte[] encodeListHeader(int size) {
 
         if (size == 0) {
@@ -815,7 +766,6 @@ public class RLPUtils {
 
         return header;
     }
-
 
     public static byte[] encodeLongElementHeader(int length) {
 
@@ -856,7 +806,7 @@ public class RLPUtils {
      * <p>
      * Encodes each data element and wraps them all into a list.
      */
-    public static byte[] wrapList(byte[] ... data) {
+    public static byte[] wrapList(byte[]... data) {
         byte[][] elements = new byte[data.length][];
         for (int i = 0; i < data.length; i++) {
             elements[i] = encodeElement(data[i]);
@@ -910,7 +860,6 @@ public class RLPUtils {
         return data;
     }
 
-
     private static byte[] decodeItemBytes(byte[] data, int index) {
 
         final int length = calculateItemLength(data, index);
@@ -930,7 +879,7 @@ public class RLPUtils {
         } else if ((data[index] & 0xFF) <= OFFSET_LONG_ITEM) {
 
             byte[] valueBytes = new byte[length];
-            System.arraycopy(data, index+1, valueBytes, 0, length);
+            System.arraycopy(data, index + 1, valueBytes, 0, length);
             return valueBytes;
 
             // [0xb8, 0xbf] - 56+ bytes item
@@ -946,8 +895,6 @@ public class RLPUtils {
         }
     }
 
-
-
     public static LList decodeLazyList(byte[] data) {
         return decodeLazyList(data, 0, data.length).getList(0);
     }
@@ -959,7 +906,7 @@ public class RLPUtils {
         LList ret = new LList(data);
         int end = pos + length;
 
-        while(pos < end) {
+        while (pos < end) {
             int prefix = data[pos] & 0xFF;
             if (prefix == OFFSET_SHORT_ITEM) {  // 0x80
                 ret.add(pos, 0, false); // means no length or 0
@@ -1023,6 +970,51 @@ public class RLPUtils {
 
         } else {
             throw new RuntimeException("wrong decode attempt");
+        }
+    }
+
+    public static final class LList {
+        private final byte[] rlp;
+        private final int[] offsets = new int[32];
+        private final int[] lens = new int[32];
+        private int cnt;
+
+        public LList(byte[] rlp) {
+            this.rlp = rlp;
+        }
+
+        public byte[] getEncoded() {
+            byte encoded[][] = new byte[cnt][];
+            for (int i = 0; i < cnt; i++) {
+                encoded[i] = encodeElement(getBytes(i));
+            }
+            return encodeList(encoded);
+        }
+
+        public void add(int off, int len, boolean isList) {
+            offsets[cnt] = off;
+            lens[cnt] = isList ? (-1 - len) : len;
+            cnt++;
+        }
+
+        public byte[] getBytes(int idx) {
+            int len = lens[idx];
+            len = len < 0 ? (-len - 1) : len;
+            byte[] ret = new byte[len];
+            System.arraycopy(rlp, offsets[idx], ret, 0, len);
+            return ret;
+        }
+
+        public LList getList(int idx) {
+            return decodeLazyList(rlp, offsets[idx], -lens[idx] - 1);
+        }
+
+        public boolean isList(int idx) {
+            return lens[idx] < 0;
+        }
+
+        public int size() {
+            return cnt;
         }
     }
 }

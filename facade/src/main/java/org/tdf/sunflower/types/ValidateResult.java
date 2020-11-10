@@ -11,8 +11,6 @@ public class ValidateResult {
     @NonNull
     private String reason;
 
-    @Setter
-    private Object ctx;
 
     public static ValidateResult success() {
         return SUCCESS;

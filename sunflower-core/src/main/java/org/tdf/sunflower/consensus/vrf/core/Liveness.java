@@ -57,6 +57,22 @@ public class Liveness {
         this.misses = 0;
     }
 
+    public static long getActiveCycle(long weight, long totalWeight) {
+        if (weight < ValidatorManager.WEIGHT_MIN_VALUE || totalWeight < weight) {
+            throw new RuntimeException("Invalid weight or total to calculate hit cycle");
+        }
+
+        // VRF algorithm promise every sub user to be selected at least once in the count of all sub users.
+        //long vrfSubUserCount = (totalWeight + ValidatorManager.DEPOSIT_THRESHOLD_AS_VALIDATOR - 1) / ValidatorManager.DEPOSIT_THRESHOLD_AS_VALIDATOR;
+        // Selected rate with priority is in direct proportion of weight,
+        // so we get the the hit cycle as that user always got 1 priority as selected one.
+        // In such hit cycle, user should be selected at least one time.
+        //long hitCycle = vrfSubUserCount * ValidatorManager.DEPOSIT_THRESHOLD_AS_VALIDATOR / weight;
+        long hitCycle = (totalWeight + weight - 1) / weight;
+
+        return hitCycle;
+    }
+
     public void reset(long start, long priority) {
         if (start < 0 || priority <= 0) {
             throw new RuntimeException("Invalid index/priority to activate Liveness");
@@ -74,6 +90,7 @@ public class Liveness {
 
     /**
      * Return hit index of latest one which a validator proposed or voted
+     *
      * @return The latest hit index
      */
     public long getIndex() {
@@ -82,6 +99,7 @@ public class Liveness {
 
     /**
      * Return missed times of latest one which a validator missed to propose or vote
+     *
      * @return The latest missed times
      */
     public int getMisses() {
@@ -128,6 +146,7 @@ public class Liveness {
 
     /**
      * Return span of hit index between liveness setup index and current index
+     *
      * @return The total hit count
      */
     public long getLiveSpan(long index) {
@@ -140,22 +159,6 @@ public class Liveness {
         }
 
         return hitSpan;
-    }
-
-    public static long getActiveCycle(long weight, long totalWeight) {
-        if (weight < ValidatorManager.WEIGHT_MIN_VALUE || totalWeight < weight) {
-            throw new RuntimeException("Invalid weight or total to calculate hit cycle");
-        }
-
-        // VRF algorithm promise every sub user to be selected at least once in the count of all sub users.
-        //long vrfSubUserCount = (totalWeight + ValidatorManager.DEPOSIT_THRESHOLD_AS_VALIDATOR - 1) / ValidatorManager.DEPOSIT_THRESHOLD_AS_VALIDATOR;
-        // Selected rate with priority is in direct proportion of weight,
-        // so we get the the hit cycle as that user always got 1 priority as selected one.
-        // In such hit cycle, user should be selected at least one time.
-        //long hitCycle = vrfSubUserCount * ValidatorManager.DEPOSIT_THRESHOLD_AS_VALIDATOR / weight;
-        long hitCycle = (totalWeight + weight - 1) / weight;
-
-        return hitCycle;
     }
 
     public String toString() {

@@ -17,9 +17,6 @@
  */
 package org.tdf.sunflower.vrf.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -32,6 +29,9 @@ import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
 import org.tdf.sunflower.consensus.vrf.core.VrfProof;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ProposalProofTest {
 

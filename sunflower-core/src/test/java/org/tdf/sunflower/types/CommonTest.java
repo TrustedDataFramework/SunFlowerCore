@@ -12,7 +12,7 @@ import org.tdf.rlp.RLPCodec;
 
 @RunWith(JUnit4.class)
 public class CommonTest {
-    public static ObjectMapper getObjectMapper(){
+    public static ObjectMapper getObjectMapper() {
         ObjectMapper mapper = new ObjectMapper()
                 .enable(JsonParser.Feature.ALLOW_COMMENTS);
         SimpleModule module = new SimpleModule();
@@ -34,16 +34,16 @@ public class CommonTest {
         assert block.getBody().get(0).getType() == 100;
         System.out.println(mapper.writeValueAsString(header));
 
-        RLPCodec.encode( UnmodifiableHeader.of(header));
-    }
-
-    private static class N{
-        private HexBytes m;
+        RLPCodec.encode(UnmodifiableHeader.of(header));
     }
 
     @Test
-    public void test1(){
+    public void test1() {
         byte[] b = RLPCodec.encode(new N());
         assert RLPCodec.decode(b, N.class).m != null;
+    }
+
+    private static class N {
+        private HexBytes m;
     }
 }

@@ -1,15 +1,15 @@
 package org.tdf.sunflower.consensus.vrf.vm;
 
 
-import java.math.BigInteger;
-import java.util.Arrays;
-
-import org.spongycastle.util.encoders.Hex;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.spongycastle.util.encoders.Hex;
 import org.tdf.sunflower.consensus.vrf.db.ByteArrayWrapper;
 import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
 import org.tdf.sunflower.util.ByteUtil;
+
+import java.math.BigInteger;
+import java.util.Arrays;
 
 import static org.tdf.sunflower.util.ByteUtil.*;
 
@@ -38,15 +38,17 @@ public final class DataWord implements Comparable<DataWord> {
      * Unsafe private constructor
      * Doesn't guarantee immutability if byte[] contents are changed later
      * Use one of factory methods instead:
-     *  - {@link #of(byte[])}
-     *  - {@link #of(ByteArrayWrapper)}
-     *  - {@link #of(String)}
-     *  - {@link #of(long)}
-     *  - {@link #of(int)}
+     * - {@link #of(byte[])}
+     * - {@link #of(ByteArrayWrapper)}
+     * - {@link #of(String)}
+     * - {@link #of(long)}
+     * - {@link #of(int)}
+     *
      * @param data Byte Array[32] which is guaranteed to be immutable
      */
     private DataWord(byte[] data) {
-        if (data == null || data.length != 32) throw new RuntimeException("Input byte array should have 32 bytes in it!");
+        if (data == null || data.length != 32)
+            throw new RuntimeException("Input byte array should have 32 bytes in it!");
         this.data = data;
     }
 
@@ -101,6 +103,7 @@ public final class DataWord implements Comparable<DataWord> {
      * Returns instance data
      * Actually copy of internal byte array is provided
      * in order to protect DataWord immutability
+     *
      * @return instance data
      */
     public byte[] getData() {
@@ -109,6 +112,7 @@ public final class DataWord implements Comparable<DataWord> {
 
     /**
      * Returns copy of instance data
+     *
      * @return copy of instance data
      */
     private byte[] copyData() {
@@ -346,6 +350,7 @@ public final class DataWord implements Comparable<DataWord> {
 
     /**
      * Shift left, both this and input arg are treated as unsigned
+     *
      * @param arg
      * @return this << arg
      */
@@ -353,13 +358,14 @@ public final class DataWord implements Comparable<DataWord> {
         if (arg.value().compareTo(BigInteger.valueOf(MAX_POW)) >= 0) {
             return DataWord.ZERO;
         }
-        
+
         BigInteger result = value().shiftLeft(arg.intValueSafe());
         return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)));
     }
 
     /**
      * Shift right, both this and input arg are treated as unsigned
+     *
      * @param arg
      * @return this >> arg
      */
@@ -374,6 +380,7 @@ public final class DataWord implements Comparable<DataWord> {
 
     /**
      * Shift right, this is signed, while input arg is treated as unsigned
+     *
      * @param arg
      * @return this >> arg
      */

@@ -41,40 +41,14 @@ public class TransactionPoolImpl implements TransactionPool {
     private final TreeSet<TransactionInfo> cache;
 
     private final Map<HexBytes, TransactionInfo> mCache;
-
-    private PendingTransactionValidator validator;
-
     private final ScheduledExecutorService poolExecutor;
-
     private final TransactionPoolConfig config;
-
     private final TransactionRepository transactionRepository;
-
+    private PendingTransactionValidator validator;
     private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
 
     // dropped transactions
     private Cache<HexBytes, Transaction> dropped;
-
-    public void setEngine(ConsensusEngine engine) {
-        this.validator = engine.getValidator();
-    }
-
-    @AllArgsConstructor
-    static class TransactionInfo implements Comparable<TransactionInfo> {
-        private long receivedAt;
-        private Transaction tx;
-
-        @Override
-        public int compareTo(TransactionInfo o) {
-            int cmp = tx.getFrom().compareTo(o.tx.getFrom());
-            if (cmp != 0) return cmp;
-            cmp = Long.compare(tx.getNonce(), o.tx.getNonce());
-            if (cmp != 0) return cmp;
-            cmp = -tx.getGasPrice().compareTo(o.tx.getGasPrice());
-            if (cmp != 0) return cmp;
-            return tx.getHash().compareTo(o.tx.getHash());
-        }
-    }
 
     public TransactionPoolImpl(
             EventBus eventBus,
@@ -104,6 +78,10 @@ public class TransactionPoolImpl implements TransactionPool {
         this.eventBus.subscribe(TransactionConfirmed.class, (e) -> {
             WebSocket.broadcastPendingOrConfirm(e.getTx(), Transaction.Status.CONFIRMED);
         });
+    }
+
+    public void setEngine(ConsensusEngine engine) {
+        this.validator = engine.getValidator();
     }
 
     @SneakyThrows
@@ -138,7 +116,7 @@ public class TransactionPoolImpl implements TransactionPool {
         try {
             List<Transaction> newCollected = new ArrayList<>(transactions.size());
             for (Transaction transaction : transactions) {
-                if(transaction.getGasPrice().compareTo(Uint256.of(ApplicationConstants.VM_GAS_PRICE)) < 0)
+                if (transaction.getGasPrice().compareTo(Uint256.of(ApplicationConstants.VM_GAS_PRICE)) < 0)
                     throw new RuntimeException("transaction pool: gas price of tx less than vm gas price " + ApplicationConstants.VM_GAS_PRICE);
                 if (transaction.getAmount() == null)
                     transaction.setAmount(Uint256.ZERO);
@@ -288,6 +266,23 @@ public class TransactionPoolImpl implements TransactionPool {
             return Optional.ofNullable(mCache.get(hash)).map(x -> x.tx);
         } finally {
             this.cacheLock.readLock().unlock();
+        }
+    }
+
+    @AllArgsConstructor
+    static class TransactionInfo implements Comparable<TransactionInfo> {
+        private long receivedAt;
+        private Transaction tx;
+
+        @Override
+        public int compareTo(TransactionInfo o) {
+            int cmp = tx.getFrom().compareTo(o.tx.getFrom());
+            if (cmp != 0) return cmp;
+            cmp = Long.compare(tx.getNonce(), o.tx.getNonce());
+            if (cmp != 0) return cmp;
+            cmp = -tx.getGasPrice().compareTo(o.tx.getGasPrice());
+            if (cmp != 0) return cmp;
+            return tx.getHash().compareTo(o.tx.getHash());
         }
     }
 }

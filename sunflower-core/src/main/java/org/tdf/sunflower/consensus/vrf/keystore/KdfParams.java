@@ -32,16 +32,16 @@ public class KdfParams {
         return n;
     }
 
+    public void setN(Integer n) {
+        this.n = n;
+    }
+
     public Integer getR() {
         return r;
     }
 
     public void setR(Integer r) {
         this.r = r;
-    }
-
-    public void setN(Integer n) {
-        this.n = n;
     }
 
     public Integer getP() {

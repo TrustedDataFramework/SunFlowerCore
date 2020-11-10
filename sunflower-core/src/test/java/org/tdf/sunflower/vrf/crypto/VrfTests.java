@@ -1,12 +1,5 @@
 package org.tdf.sunflower.vrf.crypto;
 
-import static org.junit.Assert.assertTrue;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Random;
-
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.fraction.BigFraction;
 import org.bouncycastle.util.encoders.Hex;
@@ -16,6 +9,13 @@ import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPublicKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
+
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.Random;
+
+import static org.junit.Assert.assertTrue;
 
 public class VrfTests {
     private static final byte[] seed = "hello world safkfkfa;fkas;f".getBytes();

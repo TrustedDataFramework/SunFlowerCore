@@ -85,10 +85,10 @@ public class WebConsole {
     }
 
     private boolean closeUnauthorized(SocketIOClient client, Payload payload) {
-        if(payload == null
+        if (payload == null
                 || Math.abs(Long.parseLong(payload.getCreatedAt()) - System.currentTimeMillis()) > 30 * 1000
                 || !verifyToken(payload.getToken(), payload.getCreatedAt())
-        ){
+        ) {
             sendError(client, "authentication failed, disconnect");
             client.disconnect();
             return true;

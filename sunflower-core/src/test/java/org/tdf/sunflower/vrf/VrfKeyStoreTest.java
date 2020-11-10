@@ -10,12 +10,11 @@ public class VrfKeyStoreTest {
     public VrfKeyStoreTest() {
 
     }
-    
+
     @Test
-    public void testVrfSk()
-    {
+    public void testVrfSk() {
         VrfPrivateKey sk = VrfUtil.getVrfPrivateKeyDummy();
-        assert(ByteUtil.toHexString(sk.generatePublicKey().getEncoded()).equals(VrfUtil.VRF_PK));
-        assert(ByteUtil.toHexString(sk.getEncoded()).equals(VrfUtil.VRF_SK));
+        assert (ByteUtil.toHexString(sk.generatePublicKey().getEncoded()).equals(VrfUtil.VRF_PK));
+        assert (ByteUtil.toHexString(sk.getEncoded()).equals(VrfUtil.VRF_SK));
     }
 }

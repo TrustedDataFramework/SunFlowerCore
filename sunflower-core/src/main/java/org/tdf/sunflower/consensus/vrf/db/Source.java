@@ -2,7 +2,7 @@ package org.tdf.sunflower.consensus.vrf.db;
 
 /**
  * Base interface for all data source classes
- *
+ * <p>
  * Created by Anton Nashatyrev on 05.10.2016.
  */
 public interface Source<K, V> {
@@ -14,6 +14,7 @@ public interface Source<K, V> {
 
     /**
      * Gets a value by its key
+     *
      * @return value or <null/> if no such key in the source
      */
     V get(K key);
@@ -29,6 +30,7 @@ public interface Source<K, V> {
      * underlying source.
      * The implementation may do 'cascading' flush, i.e. call
      * flush() on the underlying Source
+     *
      * @return true if any changes we flushed, false if the underlying
      * Source didn't change
      */

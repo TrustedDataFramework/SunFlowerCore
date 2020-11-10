@@ -1,10 +1,9 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
-import java.io.IOException;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.codec.DecoderException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 
 /**
  * @author James Hu

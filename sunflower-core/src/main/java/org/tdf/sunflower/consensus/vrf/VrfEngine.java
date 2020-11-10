@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
@@ -48,6 +47,10 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
     private VrfMiner vrfMiner;
     private List<PreBuiltContract> contractList = new ArrayList<>();
 
+    public VrfEngine() {
+
+    }
+
     @Override
     public List<Account> getGenesisStates() {
         List<Account> ret = new ArrayList<>();
@@ -64,13 +67,7 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
     public List<PreBuiltContract> getPreBuiltContracts() {
         return contractList;
     }
-
-
-    public VrfEngine() {
-
-    }
 //    private ConsortiumRepository blockRepository;
-
 
     @Override
     public void onMessage(Context context, PeerServer server) {

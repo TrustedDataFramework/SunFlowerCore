@@ -4,7 +4,7 @@ import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.proto.Code;
 
 // wrap listener as plugin
-public class PluginWrapper implements Plugin{
+public class PluginWrapper implements Plugin {
     private PeerServerListener listener;
 
     PluginWrapper(PeerServerListener listener) {
@@ -13,7 +13,7 @@ public class PluginWrapper implements Plugin{
 
     @Override
     public void onMessage(ContextImpl context, PeerServerImpl server) {
-        if(context.message.getCode().equals(Code.ANOTHER)){
+        if (context.message.getCode().equals(Code.ANOTHER)) {
             listener.onMessage(context, server);
         }
     }

@@ -8,7 +8,7 @@ import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.Transaction;
 
 public class PoATest {
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
         Transaction t = new Transaction(
                 PoAConstants.TRANSACTION_VERSION,
                 Transaction.Type.CONTRACT_CALL.code,

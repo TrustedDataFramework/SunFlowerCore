@@ -16,36 +16,11 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class ContextHost extends HostFunction {
-    public enum Type {
-        HEADER_PARENT_HASH,
-        HEADER_CREATED_AT,
-        HEADER_HEIGHT,
-        TX_TYPE,
-        TX_CREATED_AT,
-        TX_NONCE,
-        TX_ORIGIN,
-        TX_GAS_PRICE,
-        TX_AMOUNT,
-        TX_TO,
-        TX_SIGNATURE,
-        TX_HASH,
-        CONTRACT_ADDRESS,
-        CONTRACT_NONCE,
-        CONTRACT_CREATED_BY,
-        ACCOUNT_NONCE,
-        ACCOUNT_BALANCE,
-        MSG_SENDER,
-        MSG_AMOUNT,
-        CONTRACT_CODE,
-        CONTRACT_ABI
-    }
-
     private Context context;
     private Map<HexBytes, Account> states;
     private Store<byte[], byte[]> contractCodeStore;
     private Function<byte[], Trie<byte[], byte[]>> storageTrieSupplier;
     private boolean readonly;
-
     public ContextHost(
             Context context,
             Map<HexBytes, Account> states,
@@ -195,7 +170,7 @@ public class ContextHost extends HostFunction {
                 offset = parameters[3];
                 break;
             }
-            case CONTRACT_ABI:{
+            case CONTRACT_ABI: {
                 byte[] addr = loadMemory((int) parameters[1], (int) parameters[2]);
                 Account a = states.get(HexBytes.fromBytes(addr));
                 if (a.getContractHash() == null || a.getContractHash().length == 0)
@@ -214,6 +189,30 @@ public class ContextHost extends HostFunction {
             putMemory((int) offset, data);
         }
         return new long[]{ret};
+    }
+
+    public enum Type {
+        HEADER_PARENT_HASH,
+        HEADER_CREATED_AT,
+        HEADER_HEIGHT,
+        TX_TYPE,
+        TX_CREATED_AT,
+        TX_NONCE,
+        TX_ORIGIN,
+        TX_GAS_PRICE,
+        TX_AMOUNT,
+        TX_TO,
+        TX_SIGNATURE,
+        TX_HASH,
+        CONTRACT_ADDRESS,
+        CONTRACT_NONCE,
+        CONTRACT_CREATED_BY,
+        ACCOUNT_NONCE,
+        ACCOUNT_BALANCE,
+        MSG_SENDER,
+        MSG_AMOUNT,
+        CONTRACT_CODE,
+        CONTRACT_ABI
     }
 
 }

@@ -17,14 +17,14 @@
  */
 package org.tdf.sunflower.consensus.vrf.keystore;
 
-import java.nio.file.Path;
-
 import org.tdf.crypto.PrivateKey;
+
+import java.nio.file.Path;
 
 
 /**
  * Keystore interface definition
- *
+ * <p>
  * Each method could throw {RuntimeException}, because of access to IO and crypto functions.
  *
  * @author James Hu
@@ -44,6 +44,7 @@ public interface Keystore {
 
     /**
      * Check if keystore has file with key for passed pubkey.
+     *
      * @param pubkey - 64 chars
      * @return
      */

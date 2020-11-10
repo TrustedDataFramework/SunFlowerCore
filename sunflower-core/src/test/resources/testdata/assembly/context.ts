@@ -63,9 +63,32 @@ declare function _context_parent_block_hash(offset: usize): void;
 declare function _context_parent_block_hash_len(): usize;
 
 
+export class Context {
+    // 9. parent block hash
+    constructor(readonly transactionHash: Uint8Array,
+                readonly method: string,
+                readonly sender: Uint8Array,
+                readonly recipient: Uint8Array,
+                readonly amount: u64,
+                readonly gasPrice: u64,
+                readonly gasLimit: u64,
+                readonly blockTimestamp: u64,
+                readonly transactionTimestamp: u64,
+                readonly blockHeight: u64,
+                readonly parentBlockHash: Uint8Array) {
+    }
 
-export class Context{
-    static load(): Context{
+    // TODO: parse block chain context
+    // 1. transaction_hash
+    // 2. sender
+    // 3. recipient
+    // 4. amount, in contract call transaction, amount will seem as bonus to contract address
+    // 5. gas price, if gas * gas_price > sender's account balance, program will aborted
+    // 6. gas limit, if gas > gas limit, program will aborted too
+    // 7. block timestamp
+    // 8. transaction timestamp
+
+    static load(): Context {
         const transactionHash_len: usize = _context_transaction_hash_len();
         const transactionHash_buf: ArrayBuffer = new ArrayBuffer(transactionHash_len);
         _context_transaction_hash(changetype<usize>(transactionHash_buf));
@@ -84,13 +107,13 @@ export class Context{
         const recipient_len: usize = _context_recipient_len();
         const recipient_buf: ArrayBuffer = new ArrayBuffer(recipient_len);
         _context_recipient(changetype<usize>(recipient_buf));
-        const recipient: Uint8Array =  Uint8Array.wrap(recipient_buf);
+        const recipient: Uint8Array = Uint8Array.wrap(recipient_buf);
 
 
         const parentBlockHash_len: usize = _context_parent_block_hash_len();
         const parentBlockHash_buf: ArrayBuffer = new ArrayBuffer(parentBlockHash_len);
         _context_parent_block_hash(changetype<usize>(parentBlockHash_buf));
-        const parentBlockHash: Uint8Array =  Uint8Array.wrap(parentBlockHash_buf);
+        const parentBlockHash: Uint8Array = Uint8Array.wrap(parentBlockHash_buf);
         return new Context(
             transactionHash,
             method,
@@ -104,27 +127,5 @@ export class Context{
             _context_block_height(),
             parentBlockHash
         );
-    }
-    // TODO: parse block chain context
-    // 1. transaction_hash
-    // 2. sender
-    // 3. recipient
-    // 4. amount, in contract call transaction, amount will seem as bonus to contract address
-    // 5. gas price, if gas * gas_price > sender's account balance, program will aborted
-    // 6. gas limit, if gas > gas limit, program will aborted too
-    // 7. block timestamp
-    // 8. transaction timestamp
-    // 9. parent block hash
-    constructor(readonly transactionHash: Uint8Array,
-                readonly method: string,
-                readonly sender: Uint8Array,
-                readonly recipient: Uint8Array,
-                readonly amount: u64,
-                readonly gasPrice: u64,
-                readonly gasLimit: u64,
-                readonly blockTimestamp: u64,
-                readonly transactionTimestamp: u64,
-                readonly blockHeight: u64,
-                readonly parentBlockHash: Uint8Array) {
     }
 }

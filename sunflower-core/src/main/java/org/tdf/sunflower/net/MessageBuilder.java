@@ -16,11 +16,10 @@ import java.util.stream.Collectors;
 import static org.tdf.sunflower.net.Util.getRawForSign;
 
 public class MessageBuilder {
+    private final PeerServerConfig config;
     @Getter
     private PeerImpl self;
     private AtomicLong nonce = new AtomicLong();
-
-    private final PeerServerConfig config;
 
     public MessageBuilder(PeerImpl self, PeerServerConfig config) {
         this.self = self;
@@ -83,7 +82,7 @@ public class MessageBuilder {
             builder.setSignature(ByteString.copyFrom(hash));
             multiParts.add(builder.build());
             builder.clear();
-            i ++;
+            i++;
             current += size;
             remained -= size;
         }

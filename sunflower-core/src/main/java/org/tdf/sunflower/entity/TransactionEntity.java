@@ -37,41 +37,29 @@ public class TransactionEntity {
     static final String COLUMN_TX_TO = "tx_to";
     static final String COLUMN_TX_SIGNATURE = "tx_signature";
     static final String COLUMN_TX_POSITION = "tx_position";
-
+    @Column(name = COLUMN_TX_PAYLOAD, nullable = false, length = Short.MAX_VALUE)
+    public byte[] payload;
     @Column(name = COLUMN_BLOCK_HASH, nullable = false)
     private byte[] blockHash;
-
     @Column(name = COLUMN_BLOCK_HEIGHT, nullable = false)
     private long height;
-
     @Id
     @Column(name = COLUMN_TX_HASH, nullable = false)
     private byte[] hash;
-
     @Column(name = COLUMN_TX_VERSION, nullable = false)
     private int version;
-
     @Column(name = COLUMN_TX_TYPE, nullable = false)
     private int type;
-
     @Column(name = COLUMN_TX_CREATED_AT, nullable = false)
     private long createdAt;
-
     @Column(name = COLUMN_TX_NONCE, nullable = false)
     private long nonce;
-
     @Column(name = COLUMN_TX_FROM, nullable = false)
     private byte[] from;
-
     @Column(name = COLUMN_TX_GAS_PRICE, nullable = false)
     private long gasPrice;
-
     @Column(name = COLUMN_TX_AMOUNT, nullable = false)
     private long amount;
-
-    @Column(name = COLUMN_TX_PAYLOAD, nullable = false, length = Short.MAX_VALUE)
-    public byte[] payload;
-
     @Column(name = COLUMN_TX_TO, nullable = false)
     private byte[] to;
 

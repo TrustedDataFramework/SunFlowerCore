@@ -22,7 +22,7 @@ public class Log extends HostFunction {
     @Override
     public long[] execute(long... parameters) {
         log.info(
-                loadStringFromMemory((int)parameters[0], (int)parameters[1])
+                loadStringFromMemory((int) parameters[0], (int) parameters[1])
         );
         return new long[0];
     }

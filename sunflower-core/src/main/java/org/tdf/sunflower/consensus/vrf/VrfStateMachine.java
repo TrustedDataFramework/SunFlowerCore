@@ -1,40 +1,22 @@
 package org.tdf.sunflower.consensus.vrf;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.collections4.map.LRUMap;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
-import org.tdf.sunflower.consensus.vrf.core.CommitProof;
-import org.tdf.sunflower.consensus.vrf.core.LivenessAnalyzer;
-import org.tdf.sunflower.consensus.vrf.core.PendingVrfState;
-import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
-import org.tdf.sunflower.consensus.vrf.core.StateMachineListener;
-import org.tdf.sunflower.consensus.vrf.core.StateTransitTimerTask;
-import org.tdf.sunflower.consensus.vrf.core.ValidatorManager;
-import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
-import org.tdf.sunflower.consensus.vrf.core.VrfProof;
-import org.tdf.sunflower.consensus.vrf.core.VrfRound;
+import org.tdf.sunflower.consensus.vrf.core.*;
 import org.tdf.sunflower.consensus.vrf.db.ByteArrayWrapper;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
+import org.tdf.sunflower.facade.BlockRepository;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * @author James Hu
@@ -42,17 +24,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  */
 public class VrfStateMachine {
 
-    private static final Logger logger = LoggerFactory.getLogger("VrfStateMachine");
-
-    private static final boolean DEBUG = false;
-
-    // public static final int VALIDATOR_ACTIVATE_BLOCK_COUNT = 5;
-
     public static final int VRF_STATE_INIT = 0;
     public static final int VRF_STATE_PROPOSAL = 1;
+
+    // public static final int VALIDATOR_ACTIVATE_BLOCK_COUNT = 5;
     public static final int VRF_STATE_REDUCTION = 2;
     public static final int VRF_STATE_FINAL = 3;
-
     /**
      * Let us calculate the p2p forwarding points in a new block transfer.
      * <p>
@@ -75,18 +52,10 @@ public class VrfStateMachine {
     public static final int PROPOSAL_TIMEOUT = 1000;
     public static final int REDUCTION_TIMEOUT = 4000;
     public static final int FINAL_TIMEOUT = 1000;
-
-    // Block header validator
-    private VrfValidator headerValidator;
-
-    // Current state of the VRF state machine
-    private int state;
+    private static final Logger logger = LoggerFactory.getLogger("VrfStateMachine");
+    private static final boolean DEBUG = false;
     // Current VRF round of the VRF state machine
     private final VrfRound vrfRound;
-
-    private VrfConfig vrfConfig;
-
-    private BlockRepository blockRepository;
     /**
      * To filter out the blocks and proofs we have already received. Block or Proof
      * could be sent by peers even if it was already processed by Vrf consensus.
@@ -105,16 +74,19 @@ public class VrfStateMachine {
     private final int LRU_MAX_SIZE = ValidatorManager.EXPECTED_PROPOSER_THRESHOLD * 5;
     private final Map<ByteArrayWrapper, Object> receivedBlockProofs = new LRUMap<>(LRU_MAX_SIZE);
     private final Object dummyObject = new Object();
-
     private final ValidatorManager validatorManager;
     private final PendingVrfState pendingVrfState;
     private final LivenessAnalyzer lvnAnalyzer;
-
     private final java.util.Timer timer;
-    private TimerTask timerTask;
-
     private final List<StateMachineListener> listeners = new ArrayList<>();
     private final BlockingQueue<StateChanged> notifyStateQueue = new LinkedBlockingQueue<>();
+    // Block header validator
+    private VrfValidator headerValidator;
+    // Current state of the VRF state machine
+    private int state;
+    private VrfConfig vrfConfig;
+    private BlockRepository blockRepository;
+    private TimerTask timerTask;
     private Thread notifyStateThread;
 
     // Save winner block of this VRF round
@@ -122,7 +94,7 @@ public class VrfStateMachine {
     private VrfBlockWrapper finalBlock;
 
     public VrfStateMachine(ValidatorManager validatorManager, PendingVrfState pendingVrfState,
-            VrfValidator headerValidator) {
+                           VrfValidator headerValidator) {
         this.validatorManager = validatorManager;
         this.pendingVrfState = pendingVrfState;
         this.headerValidator = headerValidator;
@@ -134,6 +106,33 @@ public class VrfStateMachine {
         timer = new Timer();
 
         state = VRF_STATE_INIT;
+    }
+
+    public static String getStateName(int state) {
+        String name;
+        switch (state) {
+            case VRF_STATE_INIT: {
+                name = "INIT state";
+                break;
+            }
+            case VRF_STATE_PROPOSAL: {
+                name = "PROPOSAL state";
+                break;
+            }
+            case VRF_STATE_REDUCTION: {
+                name = "REDUCTION state";
+                break;
+            }
+            case VRF_STATE_FINAL: {
+                name = "FINAL state";
+                break;
+            }
+            default:
+                name = "UNKNOWN State";
+                break;
+        }
+
+        return name;
     }
 
     public synchronized int transit(int expect, java.util.Timer timer) {
@@ -156,33 +155,6 @@ public class VrfStateMachine {
 
     public VrfRound getVrfRound() {
         return vrfRound;
-    }
-
-    public static String getStateName(int state) {
-        String name;
-        switch (state) {
-        case VRF_STATE_INIT: {
-            name = "INIT state";
-            break;
-        }
-        case VRF_STATE_PROPOSAL: {
-            name = "PROPOSAL state";
-            break;
-        }
-        case VRF_STATE_REDUCTION: {
-            name = "REDUCTION state";
-            break;
-        }
-        case VRF_STATE_FINAL: {
-            name = "FINAL state";
-            break;
-        }
-        default:
-            name = "UNKNOWN State";
-            break;
-        }
-
-        return name;
     }
 
     public synchronized int start(long blockNum) {
@@ -507,105 +479,105 @@ public class VrfStateMachine {
 
     private int transit() {
         switch (state) {
-        case VRF_STATE_INIT: {
-            state = VRF_STATE_PROPOSAL;
+            case VRF_STATE_INIT: {
+                state = VRF_STATE_PROPOSAL;
 
-            // Setup auto transit time task from new state
-            cancelTimerTask();
-            triggerTimeoutTransit(PROPOSAL_TIMEOUT, VRF_STATE_PROPOSAL, timer);
+                // Setup auto transit time task from new state
+                cancelTimerTask();
+                triggerTimeoutTransit(PROPOSAL_TIMEOUT, VRF_STATE_PROPOSAL, timer);
 
-            addStateChanged(VRF_STATE_INIT, VRF_STATE_PROPOSAL);
+                addStateChanged(VRF_STATE_INIT, VRF_STATE_PROPOSAL);
 
-            break;
-        }
-        case VRF_STATE_PROPOSAL: {
-            state = VRF_STATE_REDUCTION;
+                break;
+            }
+            case VRF_STATE_PROPOSAL: {
+                state = VRF_STATE_REDUCTION;
 
-            // Setup auto transit time task from new state
-            cancelTimerTask();
-            triggerTimeoutTransit(REDUCTION_TIMEOUT, VRF_STATE_REDUCTION, timer);
+                // Setup auto transit time task from new state
+                cancelTimerTask();
+                triggerTimeoutTransit(REDUCTION_TIMEOUT, VRF_STATE_REDUCTION, timer);
 
-            addStateChanged(VRF_STATE_PROPOSAL, VRF_STATE_REDUCTION);
+                addStateChanged(VRF_STATE_PROPOSAL, VRF_STATE_REDUCTION);
 
-            break;
-        }
-        case VRF_STATE_REDUCTION: {
-            state = VRF_STATE_FINAL;
+                break;
+            }
+            case VRF_STATE_REDUCTION: {
+                state = VRF_STATE_FINAL;
 
-            // Setup auto transit time task from new state
-            cancelTimerTask();
-            triggerTimeoutTransit(FINAL_TIMEOUT, VRF_STATE_FINAL, timer);
+                // Setup auto transit time task from new state
+                cancelTimerTask();
+                triggerTimeoutTransit(FINAL_TIMEOUT, VRF_STATE_FINAL, timer);
 
-            addStateChanged(VRF_STATE_REDUCTION, VRF_STATE_FINAL);
+                addStateChanged(VRF_STATE_REDUCTION, VRF_STATE_FINAL);
 
-            break;
-        }
-        case VRF_STATE_FINAL: {
-            state = VRF_STATE_PROPOSAL;
+                break;
+            }
+            case VRF_STATE_FINAL: {
+                state = VRF_STATE_PROPOSAL;
 
-            // Setup auto transit time task from new state
-            cancelTimerTask();
-            triggerTimeoutTransit(PROPOSAL_TIMEOUT, VRF_STATE_PROPOSAL, timer);
+                // Setup auto transit time task from new state
+                cancelTimerTask();
+                triggerTimeoutTransit(PROPOSAL_TIMEOUT, VRF_STATE_PROPOSAL, timer);
 
-            // To check if all nodes reach an agreement on a final block, then update VRF
-            // round
-            BlockIdentifier blockIdentifier = pendingVrfState.reachFinalBlockIdentifier();
-            if (blockIdentifier != null) {
-                // Check if winner is the final block, and reset winner for next round
-                if (winnerBlock != null) {
-                    // -----------> Need to fix this.
-                    if (true/* Arrays.equals(winnerBlock.getHash(), blockIdentifier.getHash()) */) {
-                        finalBlock = winnerBlock;
+                // To check if all nodes reach an agreement on a final block, then update VRF
+                // round
+                BlockIdentifier blockIdentifier = pendingVrfState.reachFinalBlockIdentifier();
+                if (blockIdentifier != null) {
+                    // Check if winner is the final block, and reset winner for next round
+                    if (winnerBlock != null) {
+                        // -----------> Need to fix this.
+                        if (true/* Arrays.equals(winnerBlock.getHash(), blockIdentifier.getHash()) */) {
+                            finalBlock = winnerBlock;
 
-                        // Try to finalize the new block, protected by try/catch
-                        try {
-                            if (!finalizeNewBlock(vrfRound, finalBlock)) {
+                            // Try to finalize the new block, protected by try/catch
+                            try {
+                                if (!finalizeNewBlock(vrfRound, finalBlock)) {
+                                    logger.error("Fail to finalize new block, Vrf Round {}, hash 0x{}", vrfRound,
+                                            Hex.toHexString(finalBlock.getHash(), 0, 3));
+                                    finalBlock = null;
+                                }
+                            } catch (Exception ex) {
+                                logger.error("Unexpected Exception: {}", ex);
                                 logger.error("Fail to finalize new block, Vrf Round {}, hash 0x{}", vrfRound,
                                         Hex.toHexString(finalBlock.getHash(), 0, 3));
                                 finalBlock = null;
                             }
-                        } catch (Exception ex) {
-                            logger.error("Unexpected Exception: {}", ex);
-                            logger.error("Fail to finalize new block, Vrf Round {}, hash 0x{}", vrfRound,
-                                    Hex.toHexString(finalBlock.getHash(), 0, 3));
+                        } else {
+                            logger.error(
+                                    "!!! Does NOT receive the Final Block, Winner Block is NOT the final committed identifier, reach {} <- winner {}, Empty the Final Block",
+                                    Hex.toHexString(blockIdentifier.getHash(), 0, 3),
+                                    Hex.toHexString(winnerBlock.getHash(), 0, 3));
                             finalBlock = null;
                         }
+
+                        winnerBlock = null;
                     } else {
-                        logger.error(
-                                "!!! Does NOT receive the Final Block, Winner Block is NOT the final committed identifier, reach {} <- winner {}, Empty the Final Block",
-                                Hex.toHexString(blockIdentifier.getHash(), 0, 3),
-                                Hex.toHexString(winnerBlock.getHash(), 0, 3));
+                        logger.warn("Winner Block is Empty, try to Empty the Final Block");
                         finalBlock = null;
                     }
-
-                    winnerBlock = null;
                 } else {
-                    logger.warn("Winner Block is Empty, try to Empty the Final Block");
+                    logger.warn("Does Not reach Final Block, try to Empty the Final Block");
                     finalBlock = null;
                 }
-            } else {
-                logger.warn("Does Not reach Final Block, try to Empty the Final Block");
-                finalBlock = null;
+
+                // Update Vrf Round according to new block being finalized
+                if (finalBlock != null) {
+                    vrfRound.nextBlock(this);
+                } else {
+                    vrfRound.nextRound(this);
+                }
+
+                // Update Vrf Round to Pending Vrf State
+                pendingVrfState.setVrfRound(vrfRound);
+
+                addStateChanged(VRF_STATE_FINAL, VRF_STATE_PROPOSAL);
+
+                break;
             }
-
-            // Update Vrf Round according to new block being finalized
-            if (finalBlock != null) {
-                vrfRound.nextBlock(this);
-            } else {
-                vrfRound.nextRound(this);
+            default: {
+                logger.error("Unknown state: {}" + state);
+                break;
             }
-
-            // Update Vrf Round to Pending Vrf State
-            pendingVrfState.setVrfRound(vrfRound);
-
-            addStateChanged(VRF_STATE_FINAL, VRF_STATE_PROPOSAL);
-
-            break;
-        }
-        default: {
-            logger.error("Unknown state: {}" + state);
-            break;
-        }
         }
 
         return state;
@@ -619,22 +591,22 @@ public class VrfStateMachine {
         // Get timeout of state for auto transit
         long timeout = 0;
         switch (newState) {
-        case VRF_STATE_PROPOSAL: {
-            timeout = PROPOSAL_TIMEOUT;
-            break;
-        }
-        case VRF_STATE_REDUCTION: {
-            timeout = REDUCTION_TIMEOUT;
-            break;
-        }
-        case VRF_STATE_FINAL: {
-            timeout = FINAL_TIMEOUT;
-            break;
-        }
-        default: {
-            logger.error("Force to Unknown state: {}" + state);
-            break;
-        }
+            case VRF_STATE_PROPOSAL: {
+                timeout = PROPOSAL_TIMEOUT;
+                break;
+            }
+            case VRF_STATE_REDUCTION: {
+                timeout = REDUCTION_TIMEOUT;
+                break;
+            }
+            case VRF_STATE_FINAL: {
+                timeout = FINAL_TIMEOUT;
+                break;
+            }
+            default: {
+                logger.error("Force to Unknown state: {}" + state);
+                break;
+            }
         }
 
         // Allow to do state transit
@@ -717,22 +689,22 @@ public class VrfStateMachine {
             // Get role to tell type of commit proof
             final int role = proof.getVrfProof().getRole();
             switch (role) {
-            case VrfProof.ROLE_CODES_REDUCTION_COMMIT: {
-                int oldState = state;
-                int newState = forceTransit(VRF_STATE_REDUCTION);
-                logger.info("Align state {} -> {} as Commit Proof <{}> tell", oldState, newState, vrfRound);
-                break;
-            }
-            case VrfProof.ROLE_CODES_FINAL_COMMIT: {
-                int oldState = state;
-                int newState = forceTransit(VRF_STATE_FINAL);
-                logger.info("Align state {} -> {} as Final Proof <{}> tell", oldState, newState, vrfRound);
-                break;
-            }
-            default: {
-                logger.error("Unknown Proof Role<{}>", role);
-                return false;
-            }
+                case VrfProof.ROLE_CODES_REDUCTION_COMMIT: {
+                    int oldState = state;
+                    int newState = forceTransit(VRF_STATE_REDUCTION);
+                    logger.info("Align state {} -> {} as Commit Proof <{}> tell", oldState, newState, vrfRound);
+                    break;
+                }
+                case VrfProof.ROLE_CODES_FINAL_COMMIT: {
+                    int oldState = state;
+                    int newState = forceTransit(VRF_STATE_FINAL);
+                    logger.info("Align state {} -> {} as Final Proof <{}> tell", oldState, newState, vrfRound);
+                    break;
+                }
+                default: {
+                    logger.error("Unknown Proof Role<{}>", role);
+                    return false;
+                }
             }
 
             return true;
@@ -746,18 +718,18 @@ public class VrfStateMachine {
         int newState = -1;
         final int role = proof.getVrfProof().getRole();
         switch (role) {
-        case VrfProof.ROLE_CODES_REDUCTION_COMMIT: {
-            newState = VRF_STATE_REDUCTION;
-            break;
-        }
-        case VrfProof.ROLE_CODES_FINAL_COMMIT: {
-            newState = VRF_STATE_FINAL;
-            break;
-        }
-        default: {
-            logger.error("Unknown Proof Role<{}>", role);
-            return false;
-        }
+            case VrfProof.ROLE_CODES_REDUCTION_COMMIT: {
+                newState = VRF_STATE_REDUCTION;
+                break;
+            }
+            case VrfProof.ROLE_CODES_FINAL_COMMIT: {
+                newState = VRF_STATE_FINAL;
+                break;
+            }
+            default: {
+                logger.error("Unknown Proof Role<{}>", role);
+                return false;
+            }
         }
 
         if (newState > state) {
@@ -893,6 +865,14 @@ public class VrfStateMachine {
         return validatorManager.exist(coinbase, vrfPk);
     }
 
+    public void setBlockRepository(BlockRepository blockRepository) {
+        this.blockRepository = blockRepository;
+    }
+
+    public void setVrfConfig(VrfConfig vrfConfig) {
+        this.vrfConfig = vrfConfig;
+    }
+
     private class StateChanged {
         private final int from;
         private final int to;
@@ -909,14 +889,6 @@ public class VrfStateMachine {
         public int getTo() {
             return to;
         }
-    }
-
-    public void setBlockRepository(BlockRepository blockRepository) {
-        this.blockRepository = blockRepository;
-    }
-
-    public void setVrfConfig(VrfConfig vrfConfig) {
-        this.vrfConfig = vrfConfig;
     }
 
 }

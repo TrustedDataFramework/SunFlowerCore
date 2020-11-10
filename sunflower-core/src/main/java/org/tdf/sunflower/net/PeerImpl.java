@@ -15,29 +15,15 @@ import java.util.Optional;
 @AllArgsConstructor
 public class PeerImpl implements Peer, Comparable<PeerImpl> {
 
+    @Setter
+    long score;
     private String protocol;
-
     @Setter
     private String host;
     private int port;
     private HexBytes ID;
-
     @JsonIgnore
     private byte[] privateKey;
-
-
-    @Setter
-    long score;
-
-    public String toString() {
-        return String.format("%s://%s@%s:%d", protocol, ID, host, port);
-    }
-
-
-    @Override
-    public String encodeURI() {
-        return toString();
-    }
 
     public static Optional<PeerImpl> parse(String url) {
         try {
@@ -76,7 +62,6 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         return createSelf(u, CryptoContext.generateSecretKey());
     }
 
-
     // create self as peer from input
     // if private key is missing, generate key automatically
     public static PeerImpl createSelf(URI u, byte[] privateKey) {
@@ -94,6 +79,19 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         return ret;
     }
 
+    public static void main(String[] args) throws Exception {
+        PeerImpl p2 = createSelf(new URI("enode://localhost"));
+        System.out.println(p2);
+    }
+
+    public String toString() {
+        return String.format("%s://%s@%s:%d", protocol, ID, host, port);
+    }
+
+    @Override
+    public String encodeURI() {
+        return toString();
+    }
 
     public int distance(PeerImpl that) {
         int res = 0;
@@ -144,10 +142,5 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     @Override
     public int compareTo(PeerImpl o) {
         return ID.compareTo(o.ID);
-    }
-
-    public static void main(String[] args) throws Exception {
-        PeerImpl p2 = createSelf(new URI("enode://localhost"));
-        System.out.println(p2);
     }
 }

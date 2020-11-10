@@ -24,7 +24,7 @@ public class Genesis {
     private Map<String, Long> alloc;
 
     public Block get() {
-        if(nbits.size() != 32)
+        if (nbits.size() != 32)
             throw new RuntimeException("invalid nbits size should be 32");
         Trie<?, ?> trie = Trie.<byte[], byte[]>builder()
                 .keyCodec(Codec.identity())

@@ -10,8 +10,8 @@ import org.tdf.sunflower.PeerServerProperties;
 import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
-import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.facade.PeerServerListener;
+import org.tdf.sunflower.facade.SecretStore;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -29,7 +29,7 @@ import java.util.*;
 @Slf4j
 public class P2PDebugTool {
 
-    public static void main(String... args) throws Exception{
+    public static void main(String... args) throws Exception {
         io.netty.util.internal.logging.InternalLoggerFactory.setDefaultFactory(new InternalLoggerFactory() {
             @Override
             protected InternalLogger newInstance(String name) {
@@ -41,16 +41,16 @@ public class P2PDebugTool {
         PeerServerImpl server = new PeerServerImpl(new MapStore<>(), AbstractConsensusEngine.NONE, SecretStore.NONE);
         Properties properties = new PeerServerProperties();
         properties.setProperty("address", System.getenv("X_ADDRESS"));
-        if(System.getenv("X_BOOTSTRAPS") != null){
+        if (System.getenv("X_BOOTSTRAPS") != null) {
             String[] bootstraps = System.getenv("X_BOOTSTRAPS").split(",");
-            for(int i = 1; i < bootstraps.length + 1; i++){
-                properties.setProperty("bootstraps." + i, bootstraps[i-1]);
+            for (int i = 1; i < bootstraps.length + 1; i++) {
+                properties.setProperty("bootstraps." + i, bootstraps[i - 1]);
             }
         }
-        if(System.getenv("X_TRUSTED") != null){
+        if (System.getenv("X_TRUSTED") != null) {
             String[] trusted = System.getenv("X_TRUSTED").split(",");
-            for(int i = 1; i < trusted.length + 1; i++){
-                properties.setProperty("trusted." + i, trusted[i-1]);
+            for (int i = 1; i < trusted.length + 1; i++) {
+                properties.setProperty("trusted." + i, trusted[i - 1]);
             }
         }
         properties.setProperty("max-peers", "32");
@@ -64,17 +64,17 @@ public class P2PDebugTool {
             @Override
             public void onMessage(Context context, PeerServer server) {
                 String m = new String(context.getMessage(), StandardCharsets.UTF_8).trim();
-                if(m.equals("disconnect")){
+                if (m.equals("disconnect")) {
                     log.info("disconnect to remote " + context.getRemote());
                     context.disconnect();
                 }
-                if(m.equals("block")){
+                if (m.equals("block")) {
                     context.block();
                 }
-                if(m.equals("keep")){
+                if (m.equals("keep")) {
                     context.keep();
                 }
-                if(m.startsWith("relay")){
+                if (m.startsWith("relay")) {
                     context.relay();
                 }
                 log.info("remote = " + context.getRemote() + " message = " + m);
@@ -98,47 +98,47 @@ public class P2PDebugTool {
         server.start();
         PeersCache cache = server.getClient().peersCache;
         Scanner scanner = new Scanner(System.in);
-        while(true){
+        while (true) {
             String line = scanner.nextLine().trim();
-            if(line.equals("peers")){
+            if (line.equals("peers")) {
                 cache.getPeers().forEach(x -> System.out.println(x.encodeURI() + " " + x.score));
                 cache.blocked.keySet().forEach(x -> System.out.println(x.encodeURI() + " " + x.score));
                 continue;
             }
-            if(line.equals("clear")){
-                for(int i = 0; i < 2000; i++) System.out.println();
+            if (line.equals("clear")) {
+                for (int i = 0; i < 2000; i++) System.out.println();
                 continue;
             }
-            if(line.equals("self")){
+            if (line.equals("self")) {
                 System.out.println(server.getSelf());
                 continue;
             }
-            if(line.equals("trusted")){
+            if (line.equals("trusted")) {
                 server.getClient().peersCache.trusted.keySet().forEach(System.out::println);
                 continue;
             }
-            if(line.startsWith("connect")){
+            if (line.startsWith("connect")) {
                 String[] hostPort = line.substring("connect".length()).trim()
                         .split("\\s|:");
                 server.getClient().dial(hostPort[0], Integer.parseInt(hostPort[1]),
                         server.getClient()
-                        .messageBuilder
-                        .buildPing());
+                                .messageBuilder
+                                .buildPing());
                 continue;
             }
-            if(line.equals("bootstraps")){
+            if (line.equals("bootstraps")) {
                 server.getBootStraps().forEach(System.out::println);
                 continue;
             }
-            if(line.startsWith("broadcast")){
+            if (line.startsWith("broadcast")) {
                 server.broadcast(line.substring("broadcast".length())
                         .trim().getBytes(StandardCharsets.UTF_8));
                 continue;
             }
             List<String> arguments = Arrays.asList(line.split("\\s"));
-            if(arguments.size() == 0) continue;
-            for(Peer p: server.getPeers()){
-                if(p.getID().toString().startsWith(arguments.get(0))){
+            if (arguments.size() == 0) continue;
+            for (Peer p : server.getPeers()) {
+                if (p.getID().toString().startsWith(arguments.get(0))) {
                     server.dial(p,
                             String.join(" ", arguments.subList(1, arguments.size()))
                                     .getBytes(StandardCharsets.UTF_8)
@@ -148,7 +148,7 @@ public class P2PDebugTool {
         }
     }
 
-    private static final class  Nop implements InternalLogger{
+    private static final class Nop implements InternalLogger {
         @Override
         public String name() {
             return null;

@@ -13,7 +13,6 @@ import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
-import org.tdf.sunflower.vm.abi.Context;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,9 +27,9 @@ import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 
 @Slf4j
 public class VrfPreBuiltContract implements PreBuiltContract {
+    public static final byte[] TOTAL_KEY = "total_deposits".getBytes();
     private Account genesisAccount;
     private Map<byte[], byte[]> genesisStorage;
-    public static final byte[] TOTAL_KEY = "total_deposits".getBytes();
 
     @Override
     public Account getGenesisAccount() {

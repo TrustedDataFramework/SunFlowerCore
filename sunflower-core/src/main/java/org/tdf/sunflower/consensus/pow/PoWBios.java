@@ -24,13 +24,11 @@ import java.util.Map;
 
 @Slf4j(topic = "pow")
 public class PoWBios implements Bios {
+    public static final HexBytes ADDRESS = Constants.POW_BIOS_ADDR;
     static final byte[] N_BITS_KEY = "nbits".getBytes(StandardCharsets.US_ASCII);
     static final byte[] TIMESTAMPS_KEY = "ts".getBytes(StandardCharsets.US_ASCII);
     static final long MAX_ADJUST_RATE = 16;
     static final BigInteger MAX_UINT_256 = new BigInteger("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
-
-    public static final HexBytes ADDRESS = Constants.POW_BIOS_ADDR;
-
     private final byte[] genesisNbits;
 
     private final PoWConfig config;

@@ -11,7 +11,10 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.state.*;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.Constants;
+import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
@@ -71,7 +74,7 @@ public class PoS extends AbstractConsensusEngine {
     public void init(Properties properties) throws ConsensusEngineInitException {
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
         posConfig = MappingUtil.propertiesToPojo(properties, PoSConfig.class);
-        InputStream  in = FileUtils.getInputStream(posConfig.getGenesis());
+        InputStream in = FileUtils.getInputStream(posConfig.getGenesis());
         genesis = objectMapper.readValue(in, Genesis.class);
         setGenesisBlock(genesis.getBlock());
 
@@ -106,7 +109,7 @@ public class PoS extends AbstractConsensusEngine {
             switch (Objects.requireNonNull(method)) {
                 case "nodeInfos":
                     return minerContract.getNodeInfos(root);
-                case "voteInfo":{
+                case "voteInfo": {
                     String txHash = body.get("txHash").asText();
                     return minerContract.getVoteInfo(root, HexBytes.decode(txHash)).orElseThrow(() -> new RuntimeException("tx hash not found"));
                 }

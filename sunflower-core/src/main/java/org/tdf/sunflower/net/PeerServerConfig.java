@@ -23,45 +23,35 @@ public class PeerServerConfig {
 
     @Getter(AccessLevel.NONE)
     private String name;
-
-    public String getName() {
-        return (name == null || name.isEmpty()) ? DEFAULT_NAME : name;
-    }
-
     @JsonProperty(value = "max-peers")
     private int maxPeers;
     @JsonProperty(value = "max-ttl")
     private long maxTTL;
     @JsonProperty(value = "enable-discovery")
     private boolean enableDiscovery;
-
     @Deprecated
     @JsonProperty(value = "enable-message-log")
     private boolean enableMessageLog;
-
     private URI address;
     private List<URI> bootstraps;
     private List<URI> trusted;
-
     @JsonProperty(value = "white-list")
     private Set<HexBytes> whiteList;
-
     @JsonProperty(value = "blocked-list")
     private Set<HexBytes> blockedList;
-
     @JsonProperty(value = "private-key")
     private HexBytes privateKey;
-
     private boolean persist;
-
     @JsonProperty(value = "discover-rate")
     private int discoverRate;
-
     @JsonProperty(value = "max-packet-size")
     private int maxPacketSize;
-
     @JsonProperty(value = "cache-expired-after")
     private int cacheExpiredAfter;
+
+    public String getName() {
+        return (name == null || name.isEmpty()) ? DEFAULT_NAME : name;
+    }
 
     @JsonIgnore
     public boolean isBlocked(HexBytes id) {

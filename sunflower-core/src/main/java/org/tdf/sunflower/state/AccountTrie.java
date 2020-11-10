@@ -9,7 +9,6 @@ import org.tdf.common.store.*;
 import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Parameters;
-import org.tdf.sunflower.types.TransactionResult;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
@@ -19,7 +18,10 @@ import org.tdf.sunflower.Start;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.vm.abi.*;
+import org.tdf.sunflower.types.TransactionResult;
+import org.tdf.sunflower.vm.abi.ContractCall;
+import org.tdf.sunflower.vm.abi.ContractCallPayload;
+import org.tdf.sunflower.vm.abi.ContractDeployPayload;
 import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.util.*;
@@ -136,7 +138,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
 
     @Override
     protected Trie<HexBytes, Account> commitInternal(byte[] parentRoot, Map<HexBytes, Account> data) {
-        data.remove(Constants.FEE_ACCOUNT_ADDR);
         return super.commitInternal(parentRoot, data);
     }
 
@@ -168,13 +169,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         );
     }
 
-    public void updateFeeAccount(Uint256 fee) {
-        Map<HexBytes, Account> states = this.dirtyTrie.asMap();
-        Account feeAccount = states.get(Constants.FEE_ACCOUNT_ADDR);
-        feeAccount.addBalance(fee);
-        states.put(feeAccount.getAddress(), feeAccount);
-    }
-
     public void increaseNonce(Transaction tx) {
         Map<HexBytes, Account> states = this.dirtyTrie.asMap();
         Account state = states.get(tx.getFromAddress());
@@ -202,7 +196,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         to.addBalance(amount);
         states.put(fromAddr, from);
         states.put(toAddr, to);
-        updateFeeAccount(fee);
     }
 
     public TransactionResult update(Header header, Transaction tx) {
@@ -210,7 +203,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         if (tx.getType() == Transaction.Type.COIN_BASE.code && header.getHeight() != tx.getNonce()) {
             throw new RuntimeException("nonce of coinbase transaction should be " + header.getHeight());
         }
-        states.putIfAbsent(Constants.FEE_ACCOUNT_ADDR, Account.emptyAccount(Constants.FEE_ACCOUNT_ADDR));
         switch (Transaction.Type.TYPE_MAP.get(tx.getType())) {
             case TRANSFER: {
                 states.putIfAbsent(tx.getTo(), Account.emptyAccount(tx.getTo()));
@@ -221,7 +213,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
                         tx.getAmount(),
                         tx.getFee()
                 );
-                return new TransactionResult(Transaction.TRANSFER_GAS, RLPList.createEmpty(), Collections.emptyList());
+                return new TransactionResult(Transaction.TRANSFER_GAS, RLPList.createEmpty(), Collections.emptyList(), tx.getFee());
             }
             case COIN_BASE: {
                 states.putIfAbsent(tx.getTo(), Account.emptyAccount(tx.getTo()));
@@ -287,9 +279,9 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
 
         // estimate gas
         Uint256 fee = Uint256.of(limit.getGas()).safeMul(t.getGasPrice());
-
+        createdBy.subBalance(fee);
+        ret.setFee(fee);
         accounts.put(createdBy.getAddress(), createdBy);
-        updateFeeAccount(fee);
         log.info("deploy contract at " + contractAccount.getAddress() + " success");
         return ret;
     }
@@ -300,7 +292,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         Map<HexBytes, Account> accounts = getDirtyTrie().asMap();
         Account originAccount = accounts.get(t.getFromAddress());
         Account contractAccount = accounts.get(t.getTo());
-        if(contractAccount == null){
+        if (contractAccount == null) {
             throw new RuntimeException("contract " + t.getTo() + " not found");
         }
 
@@ -319,9 +311,8 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
             updater.update(header, t, accounts, before);
             byte[] root = before.commit();
             contractAccount.setStorageRoot(root);
-            updateFeeAccount(fee);
             accounts.put(contractAccount.getAddress(), contractAccount);
-            return new TransactionResult(Transaction.BUILTIN_CALL_GAS, RLPList.createEmpty(), Collections.emptyList());
+            return new TransactionResult(Transaction.BUILTIN_CALL_GAS, RLPList.createEmpty(), Collections.emptyList(), fee);
         }
 
         ContractCallPayload callPayload = RLPCodec.decode(t.getPayload().getBytes(), ContractCallPayload.class);
@@ -352,7 +343,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         caller.subBalance(fee);
         accounts.put(contractAccount.getAddress(), contractAccount);
         accounts.put(caller.getAddress(), caller);
-        updateFeeAccount(fee);
+        result.setFee(fee);
         return result;
     }
 

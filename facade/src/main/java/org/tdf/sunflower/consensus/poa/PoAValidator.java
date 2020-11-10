@@ -7,10 +7,7 @@ import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.ValidateResult;
+import org.tdf.sunflower.types.*;
 
 @Setter
 public class PoAValidator extends AbstractValidator {
@@ -25,7 +22,7 @@ public class PoAValidator extends AbstractValidator {
     public ValidateResult validate(Block block, Block dependency) {
         ValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
-        Uint256 fee = (Uint256) res.getCtx();
+        Uint256 fee = ((BlockValidateResult) res).getFee();
         if (!fee.safeAdd(poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1)).equals(block.getBody().get(0).getAmount())) {
             return ValidateResult.fault("reward of coin base transaction should be " + poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1));
         }

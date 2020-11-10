@@ -20,7 +20,7 @@ public class MerkleUtil {
                 .store(new ByteArrayMapStore<>())
                 .build();
 
-        for(Hashed n: nodes){
+        for (Hashed n : nodes) {
             trie.put(i, n.getHash().getBytes());
             i++;
         }

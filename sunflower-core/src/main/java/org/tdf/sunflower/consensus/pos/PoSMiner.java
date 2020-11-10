@@ -33,23 +33,17 @@ import static org.tdf.sunflower.state.Account.ADDRESS_SIZE;
 @Slf4j(topic = "miner")
 public class PoSMiner extends AbstractMiner {
 
-    private PoSConfig posConfig;
-
+    private final PoS pos;
     @Getter
     public HexBytes minerAddress;
-
+    private PoSConfig posConfig;
     @Setter
     private BlockRepository blockRepository;
-
     private volatile boolean stopped;
-
     private ScheduledExecutorService minerExecutor;
-
     @Setter
     @Getter
     private TransactionPool transactionPool;
-
-    private final PoS pos;
 
     public PoSMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig, PoS pos) {
         super(accountTrie, eventBus, minerConfig);
@@ -107,7 +101,7 @@ public class PoSMiner extends AbstractMiner {
         if (!posConfig.isEnableMining() || stopped) {
             return;
         }
-        if(posConfig.getMinerCoinBase() == null || posConfig.getMinerCoinBase().size() != ADDRESS_SIZE){
+        if (posConfig.getMinerCoinBase() == null || posConfig.getMinerCoinBase().size() != ADDRESS_SIZE) {
             log.warn("pos miner: invalid coinbase address {}", posConfig.getMinerCoinBase());
             return;
         }

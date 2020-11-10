@@ -44,7 +44,6 @@ import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.controller.WebSocket;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.*;
-import org.tdf.sunflower.mq.SocketIOMessageQueue;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.net.PeerServerImpl;
 import org.tdf.sunflower.pool.TransactionPoolImpl;
@@ -61,7 +60,6 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
-import javax.websocket.server.ServerEndpointConfig;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -81,10 +79,10 @@ import java.util.stream.Collectors;
 @EnableWebSocket
 // use SPRING_CONFIG_LOCATION environment to locate spring config
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
-public class Start{
+public class Start {
+    public static final ObjectMapper MAPPER = MappingUtil.OBJECT_MAPPER;
     @Getter
     private static boolean enableAssertion;
-
     private static ClassLoader customClassLoader = ClassUtils.getDefaultClassLoader();
 
     public static ClassLoader getCustomClassLoader() {
@@ -105,8 +103,6 @@ public class Start{
         if (!enableAssertion) return;
         Assert.isTrue(predicate.test(thing), error);
     }
-
-    public static final ObjectMapper MAPPER = MappingUtil.OBJECT_MAPPER;
 
     @SneakyThrows
     private static Properties loadDefaultConfig() {

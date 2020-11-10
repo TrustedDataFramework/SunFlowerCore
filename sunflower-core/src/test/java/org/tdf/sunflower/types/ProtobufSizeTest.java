@@ -14,7 +14,7 @@ import org.tdf.sunflower.proto.Message;
 public class ProtobufSizeTest {
 
     @Test
-    public void test0(){
+    public void test0() {
         Message msg = Message.newBuilder()
                 .setCode(Code.PING)
                 .setCreatedAt(Timestamp.newBuilder().setSeconds(System.currentTimeMillis() / 1000))

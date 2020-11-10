@@ -17,42 +17,25 @@
  */
 package org.tdf.sunflower.consensus.vrf.util;
 
-import static java.lang.String.format;
-import static org.apache.commons.codec.binary.Base64.decodeBase64;
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterOutputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.system.SystemProperties;
+import static java.lang.String.format;
+import static org.apache.commons.codec.binary.Base64.decodeBase64;
+import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
 public final class VMUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("VM");
+    private static final int BUF_SIZE = 4096;
 
     private VMUtils() {
-    }
-
-    public static void closeQuietly(Closeable closeable) {
-        try {
-            if (closeable != null) {
-                closeable.close();
-            }
-        } catch (IOException ioe) {
-            // ignore
-        }
     }
 
 //    private static File createProgramTraceFile(SystemProperties config, String txHash) {
@@ -80,17 +63,13 @@ public final class VMUtils {
 //        return result;
 //    }
 
-    private static void writeStringToFile(File file, String data) {
-        OutputStream out = null;
+    public static void closeQuietly(Closeable closeable) {
         try {
-            out = new FileOutputStream(file);
-            if (data != null) {
-                out.write(data.getBytes("UTF-8"));
+            if (closeable != null) {
+                closeable.close();
             }
-        } catch (Exception e){
-            LOGGER.error(format("Cannot write to file '%s': ", file.getAbsolutePath()), e);
-        } finally {
-            closeQuietly(out);
+        } catch (IOException ioe) {
+            // ignore
         }
     }
 
@@ -101,7 +80,19 @@ public final class VMUtils {
 //        }
 //    }
 
-    private static final int BUF_SIZE = 4096;
+    private static void writeStringToFile(File file, String data) {
+        OutputStream out = null;
+        try {
+            out = new FileOutputStream(file);
+            if (data != null) {
+                out.write(data.getBytes("UTF-8"));
+            }
+        } catch (Exception e) {
+            LOGGER.error(format("Cannot write to file '%s': ", file.getAbsolutePath()), e);
+        } finally {
+            closeQuietly(out);
+        }
+    }
 
     private static void write(InputStream in, OutputStream out, int bufSize) throws IOException {
         try {

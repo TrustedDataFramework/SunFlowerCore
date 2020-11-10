@@ -31,6 +31,8 @@ public class SyncConfig {
     private String fastSyncHash;
 
     private int maxAccountsTransfer;
+    @Getter
+    private Map<String, Double> rateLimits;
 
     public long getHeartRate() {
         return heartRate > 0 ? heartRate : 5;
@@ -49,7 +51,7 @@ public class SyncConfig {
     }
 
     public int getMaxAccountsTransfer() {
-        return maxAccountsTransfer > 0? maxAccountsTransfer : 512;
+        return maxAccountsTransfer > 0 ? maxAccountsTransfer : 512;
     }
 
     public byte[] getPruneHash() {
@@ -59,7 +61,4 @@ public class SyncConfig {
     public byte[] getFastSyncHash() {
         return fastSyncHash == null ? null : HexBytes.decode(fastSyncHash);
     }
-
-    @Getter
-    private Map<String, Double> rateLimits;
 }

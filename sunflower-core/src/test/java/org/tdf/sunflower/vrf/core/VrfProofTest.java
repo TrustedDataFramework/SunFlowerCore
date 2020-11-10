@@ -17,10 +17,6 @@
  */
 package org.tdf.sunflower.vrf.core;
 
-import static org.junit.Assert.assertEquals;
-
-import java.security.SecureRandom;
-
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -35,6 +31,10 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.consensus.vrf.vm.DataWord;
 import org.tdf.sunflower.types.Header;
+
+import java.security.SecureRandom;
+
+import static org.junit.Assert.assertEquals;
 
 public class VrfProofTest {
 
@@ -66,8 +66,8 @@ public class VrfProofTest {
     private static final byte[] coinbase9 = org.spongycastle.util.encoders.Hex
             .decode("3551b14081dc0fd629671114f49d332f059e0cba");
 
-    private static final byte[][] COINBASE_ARRAY = new byte[][] { coinbase0, coinbase1, coinbase2, coinbase3, coinbase4,
-            coinbase5, coinbase6, coinbase7, coinbase8, coinbase9 };
+    private static final byte[][] COINBASE_ARRAY = new byte[][]{coinbase0, coinbase1, coinbase2, coinbase3, coinbase4,
+            coinbase5, coinbase6, coinbase7, coinbase8, coinbase9};
 
     private static Header createBlockHeader(int index, byte[] coinbase) {
         byte[] emptyArray = new byte[0];

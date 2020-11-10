@@ -200,7 +200,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
             }
             eventBus.publish(new NewBestBlock(block));
             long h = block.getHeight() - ApplicationConstants.TRANSACTION_CONFIRMS;
-            if(h > 0){
+            if (h > 0) {
                 getCanonicalBlock(h).get().getBody()
                         .stream().skip(1)
                         .forEach(tx -> eventBus.publish(new TransactionConfirmed(tx)));

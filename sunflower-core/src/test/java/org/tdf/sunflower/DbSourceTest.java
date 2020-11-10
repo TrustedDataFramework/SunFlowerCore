@@ -1,9 +1,5 @@
 package org.tdf.sunflower;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -11,6 +7,10 @@ import org.tdf.common.store.DatabaseStore;
 import org.tdf.common.store.RocksDb;
 import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @RunWith(JUnit4.class)
 public class DbSourceTest {
@@ -28,7 +28,6 @@ public class DbSourceTest {
             e.printStackTrace();
         }
     }
-
 
 
     @Test
@@ -55,10 +54,10 @@ public class DbSourceTest {
             int finalX = x;
             assert batchAbleStore.stream().anyMatch(y -> Arrays.equals(y.getKey(), (s + finalX).getBytes()));
         }
-        for(byte[] k: rows.keySet()){
+        for (byte[] k : rows.keySet()) {
             assert batchAbleStore.get(k).isPresent();
             assert Arrays.equals(batchAbleStore.get(k).get(), k);
-            if(batchAbleStore instanceof RocksDb){
+            if (batchAbleStore instanceof RocksDb) {
 //                assert batchAbleStore.prefixLookup(Arrays.copyOfRane(k, 0, k.length - 1)).isPresent();
             }
             assert !batchAbleStore.get(Arrays.copyOfRange(k, 0, k.length - 1)).isPresent();

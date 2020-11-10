@@ -1,14 +1,7 @@
 package org.tdf.sunflower.consensus.vrf.util;
 
-import static org.tdf.sunflower.consensus.vrf.util.VrfConstants.VRF_KEYSTORE_PASSWORD;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.PrivateKey;
@@ -19,11 +12,7 @@ import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.consensus.vrf.VrfConfig;
-import org.tdf.sunflower.consensus.vrf.core.BlockIdentifier;
-import org.tdf.sunflower.consensus.vrf.core.CommitProof;
-import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
-import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
-import org.tdf.sunflower.consensus.vrf.core.VrfProof;
+import org.tdf.sunflower.consensus.vrf.core.*;
 import org.tdf.sunflower.consensus.vrf.db.HashMapDB;
 import org.tdf.sunflower.consensus.vrf.keystore.FileSystemKeystore;
 import org.tdf.sunflower.consensus.vrf.struct.VrfBlockFields;
@@ -35,23 +24,22 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.ByteUtil;
 
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+
+import static org.tdf.sunflower.consensus.vrf.util.VrfConstants.VRF_KEYSTORE_PASSWORD;
 
 @Slf4j
 public class VrfUtil {
-    public static String VRF_PK = "c42e9a44063bfd0956da144d6500ca05351507f55f2490b3966c78a4d7e096ca";
     public static final String VRF_SK = "065994b6ccef45a1dcabbbd77cc11638308142b8c50e08845c3f1e0eeefa8dee";
-
+    public static String VRF_PK = "c42e9a44063bfd0956da144d6500ca05351507f55f2490b3966c78a4d7e096ca";
     // for testing purposes when the timer might be changed
     // to manage current time according to test scenarios
     public static Timer TIMER = new Timer();
-
-    public static class Timer {
-        public long curTime() {
-            return System.currentTimeMillis();
-        }
-    }
 
     public static long curTime() {
         return TIMER.curTime();
@@ -202,13 +190,6 @@ public class VrfUtil {
         return vrfBlockFields;
     }
 
-    // -----> Need to be implemented
-//    public static VrfPrivateKey getVrfPrivateKey() {
-//        Ed25519PrivateKey skEd25519 = new Ed25519PrivateKey(ByteUtil.hexStringToBytes(VRF_SK));
-//        VrfPrivateKey sk = new VrfPrivateKey(skEd25519);
-//        return sk;
-//    }
-
     public static VrfPrivateKey getVrfPrivateKey(String vrfDataDir) {
         final String vrfPkDir = vrfDataDir + "/keystore";
 
@@ -240,12 +221,19 @@ public class VrfUtil {
         return new VrfPrivateKey(key);
     }
 
+    // -----> Need to be implemented
+//    public static VrfPrivateKey getVrfPrivateKey() {
+//        Ed25519PrivateKey skEd25519 = new Ed25519PrivateKey(ByteUtil.hexStringToBytes(VRF_SK));
+//        VrfPrivateKey sk = new VrfPrivateKey(skEd25519);
+//        return sk;
+//    }
+
     public static VrfPrivateKey getVrfPrivateKey(VrfConfig vrfConfig) {
         return getVrfPrivateKey(vrfConfig.getVrfDataDir());
     }
 
     public static byte[] genPayload(long blockNum, int round, String seedStr, String minerCoinbaseStr,
-            String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
+                                    String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
             throws IOException {
         byte[] priority = ByteUtil.hexStringToBytes(priorityStr);
         byte[] seed = ByteUtil.hexStringToBytes(seedStr);
@@ -255,7 +243,7 @@ public class VrfUtil {
     }
 
     public static byte[] genPayload(long blockNum, int round, byte[] seed, byte[] minerCoinbase, byte[] priority,
-            byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig) throws IOException {
+                                    byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig) throws IOException {
         VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, seed, minerCoinbase, priority, blockHash, vrfSk, vrfPk,
                 vrfConfig);
 
@@ -264,7 +252,7 @@ public class VrfUtil {
     }
 
     public static byte[] genPayload(long blockNum, int round, HexBytes seed, HexBytes minerCoinbase, HexBytes priority,
-            HexBytes blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig) throws IOException {
+                                    HexBytes blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig) throws IOException {
         VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, seed.getBytes(), minerCoinbase.getBytes(),
                 priority.getBytes(), blockHash.getBytes(), vrfSk, vrfPk, vrfConfig);
 
@@ -273,7 +261,7 @@ public class VrfUtil {
     }
 
     public static VrfBlockFields genVrfBlockFields(long blockNum, int round, String seedStr, String minerCoinbaseStr,
-            String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
+                                                   String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
             throws IOException {
         byte[] priority = ByteUtil.hexStringToBytes(priorityStr);
         byte[] seed = ByteUtil.hexStringToBytes(seedStr);
@@ -284,7 +272,7 @@ public class VrfUtil {
     }
 
     public static VrfBlockFields genVrfBlockFields(long blockNum, int round, byte[] seed, byte[] minerCoinbase,
-            byte[] priority, byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
+                                                   byte[] priority, byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
             throws IOException {
 
         ProposalProof proposalProof = genProposalProof(blockNum, round, seed, minerCoinbase, blockHash, vrfSk, vrfPk);
@@ -302,7 +290,7 @@ public class VrfUtil {
     }
 
     public static ProposalProof genProposalProof(long blockNum, int round, String seedStr, String minerCoinbaseStr,
-            String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
+                                                 String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk) {
         byte[] seed = ByteUtil.hexStringToBytes(seedStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
         byte[] minerCoinbase = ByteUtil.hexStringToBytes(minerCoinbaseStr);
@@ -310,7 +298,7 @@ public class VrfUtil {
     }
 
     public static ProposalProof genProposalProof(long blockNum, int round, byte[] seed, byte[] minerCoinbase,
-            byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
+                                                 byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk) {
         BlockIdentifier blockIdentifier = new BlockIdentifier(blockHash, blockNum);
 
         VrfResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_PROPOSER, round, vrfSk, seed);
@@ -321,7 +309,7 @@ public class VrfUtil {
     }
 
     public static CommitProof genCommitlProof(long blockNum, int round, String seedStr, String minerCoinbaseStr,
-            String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk, int role) {
+                                              String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk, int role) {
         byte[] seed = ByteUtil.hexStringToBytes(seedStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
         byte[] minerCoinbase = ByteUtil.hexStringToBytes(minerCoinbaseStr);
@@ -329,7 +317,7 @@ public class VrfUtil {
     }
 
     public static CommitProof genCommitProof(long blockNum, int round, byte[] seed, byte[] minerCoinbase,
-            byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, int role) {
+                                             byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, int role) {
         BlockIdentifier blockIdentifier = new BlockIdentifier(blockHash, blockNum);
 
         VrfResult vrfResult = VrfProof.Util.prove(role, round, vrfSk, seed);
@@ -353,17 +341,6 @@ public class VrfUtil {
         RLPList list = RLPElement.readRLPTree(object).asRLPList();
         list.add(0, RLPItem.fromInt(code));
         return list.getEncoded();
-    }
-
-    @Getter
-    public static class VrfMessageCodeAndBytes {
-        VrfMessageCode code;
-        byte[] rlpBytes;
-
-        public VrfMessageCodeAndBytes(VrfMessageCode code, byte[] rlpBytes) {
-            this.code = code;
-            this.rlpBytes = rlpBytes;
-        }
     }
 
     public static VrfMessageCodeAndBytes parseMessageBytes(byte[] msg) {
@@ -558,7 +535,7 @@ public class VrfUtil {
     }
 
     public static byte[] getFromContractStorage(HexBytes contractAddress, Header h, byte[] key, AccountTrie accountTrie,
-            Trie<byte[], byte[]> contractStorageTrie) {
+                                                Trie<byte[], byte[]> contractStorageTrie) {
         Account account = null;
         Optional<Account> accountOpt = accountTrie.get(h.getStateRoot().getBytes(), contractAddress);
         if (accountOpt.isPresent()) {
@@ -568,5 +545,22 @@ public class VrfUtil {
         }
         Trie<byte[], byte[]> trie = contractStorageTrie.revert(account.getStorageRoot());
         return trie.get(key).orElse(null);
+    }
+
+    public static class Timer {
+        public long curTime() {
+            return System.currentTimeMillis();
+        }
+    }
+
+    @Getter
+    public static class VrfMessageCodeAndBytes {
+        VrfMessageCode code;
+        byte[] rlpBytes;
+
+        public VrfMessageCodeAndBytes(VrfMessageCode code, byte[] rlpBytes) {
+            this.code = code;
+            this.rlpBytes = rlpBytes;
+        }
     }
 }

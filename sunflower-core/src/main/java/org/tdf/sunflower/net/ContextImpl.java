@@ -72,7 +72,7 @@ public class ContextImpl implements Context {
     @Override
     public byte[] getMessage() {
         if (message.getCode() == Code.ANOTHER) {
-            if(decrypted != null)
+            if (decrypted != null)
                 return decrypted;
             decrypted = CryptoContext.decrypt(
                     CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), remote.getID().getBytes()),

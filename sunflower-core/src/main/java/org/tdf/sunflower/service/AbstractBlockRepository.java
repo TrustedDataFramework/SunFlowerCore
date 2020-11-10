@@ -21,16 +21,12 @@ import java.util.Optional;
 
 public abstract class AbstractBlockRepository implements BlockRepository {
     protected final EventBus eventBus;
+    protected final DatabaseStoreFactory factory;
+    protected final Trie<byte[], byte[]> contractStorageTrie;
+    protected final Store<byte[], byte[]> contractCodeStore;
     protected Block genesis;
-
     @Setter
     protected StateTrie<HexBytes, Account> accountTrie;
-
-    protected final DatabaseStoreFactory factory;
-
-    protected final Trie<byte[], byte[]> contractStorageTrie;
-
-    protected final Store<byte[], byte[]> contractCodeStore;
 
     public AbstractBlockRepository(ApplicationContext context) {
         this.eventBus = context.getBean(EventBus.class);

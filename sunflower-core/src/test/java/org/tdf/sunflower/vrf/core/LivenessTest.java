@@ -17,19 +17,19 @@
  */
 package org.tdf.sunflower.vrf.core;
 
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 import org.tdf.sunflower.consensus.vrf.core.Liveness;
 import org.tdf.sunflower.consensus.vrf.core.Validator;
 
+import static org.junit.Assert.assertTrue;
+
 public class LivenessTest {
 
-    private static final int[] HIT_INDEX_ARRAY = new int[] { 21, 34, 98, 108, 182, 290, 312, 377, 492, 592, 601, 669,
-            698, 713, 823, 872, 999 };
+    private static final int[] HIT_INDEX_ARRAY = new int[]{21, 34, 98, 108, 182, 290, 312, 377, 492, 592, 601, 669,
+            698, 713, 823, 872, 999};
 
-    private static final int[] PRIORITY_ARRAY = new int[] { 1, 2, 1, 1, 1, 2, 3, 1, 3, 1, 1, 2, 2, 2, 1, 3, 1 };
+    private static final int[] PRIORITY_ARRAY = new int[]{1, 2, 1, 1, 1, 2, 3, 1, 3, 1, 1, 2, 2, 2, 1, 3, 1};
 
     private static final byte[] coinbase = Hex.decode("3a0b32b4e6f404934d098957d200e803239fdf75");
 

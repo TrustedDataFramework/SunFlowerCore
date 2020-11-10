@@ -36,7 +36,7 @@ public class Transfer extends HostFunction {
 
     @Override
     public long[] execute(long... parameters) {
-        if(readonly)
+        if (readonly)
             throw new RuntimeException("transfer is not allowed here");
         if (parameters[0] != 0) {
             throw new RuntimeException("unexpected");

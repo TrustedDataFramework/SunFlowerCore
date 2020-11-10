@@ -51,8 +51,15 @@ public class JsonStore implements BatchStore<String, JsonNode> {
             node = new HashMap<>();
             return;
         }
-        ObjectNode tmp = (ObjectNode) mapper.readValue(f, JsonNode.class);
-        Iterator<Map.Entry<String, JsonNode>> it = tmp.fields();
+        ObjectNode n = null;
+        try{
+            n = (ObjectNode) mapper.readValue(f, JsonNode.class);
+        }catch (Exception ignored){
+
+        }
+        if(n == null)
+            return;
+        Iterator<Map.Entry<String, JsonNode>> it = n.fields();
         while (it.hasNext()) {
             Map.Entry<String, JsonNode> e = it.next();
             this.node.put(e.getKey(), e.getValue());

@@ -1,9 +1,5 @@
 package org.tdf.sunflower.vrf;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
 import org.junit.Test;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
@@ -22,12 +18,14 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.ByteUtil;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
 public class VrfBlockFieldsTest {
-    private VrfConfig vrfConfig = new VrfConfig();
     int round = 1;
     long blockNum = 2;
     int version = 999;
-
     // !!! Following hex string length should be even number.
     String prevHashStr = "fedcba";
     HexBytes prevHash = HexBytes.fromHex(prevHashStr);
@@ -38,6 +36,7 @@ public class VrfBlockFieldsTest {
     byte[] minerCoinbase = ByteUtil.hexStringToBytes(minerCoinbaseStr);
     VrfPrivateKey vrfSk = VrfUtil.getVrfPrivateKeyDummy();
     byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
+    private VrfConfig vrfConfig = new VrfConfig();
 
     public VrfBlockFieldsTest() throws IOException {
         vrfConfig.setVrfDataDir("test");

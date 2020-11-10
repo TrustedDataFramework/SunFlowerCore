@@ -1,14 +1,14 @@
 package org.tdf.sunflower.consensus.vrf.db;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.tdf.common.store.DBSettings;
 import org.tdf.sunflower.consensus.vrf.util.ALock;
 import org.tdf.sunflower.consensus.vrf.util.ByteArrayMap;
 import org.tdf.sunflower.consensus.vrf.util.FastByteComparisons;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by Anton Nashatyrev on 12.10.2016.
@@ -60,18 +60,21 @@ public class HashMapDB<V> implements DbSource<V> {
     }
 
     @Override
-    public void setName(String name) {}
-
-    @Override
     public String getName() {
         return "in-memory";
     }
 
     @Override
-    public void init() {}
+    public void setName(String name) {
+    }
 
     @Override
-    public void init(DBSettings settings) {}
+    public void init() {
+    }
+
+    @Override
+    public void init(DBSettings settings) {
+    }
 
     @Override
     public boolean isAlive() {
@@ -79,7 +82,8 @@ public class HashMapDB<V> implements DbSource<V> {
     }
 
     @Override
-    public void close() {}
+    public void close() {
+    }
 
     @Override
     public Set<byte[]> keys() {

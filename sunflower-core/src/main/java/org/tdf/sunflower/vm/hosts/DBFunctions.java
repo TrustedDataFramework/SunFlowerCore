@@ -10,22 +10,11 @@ import org.tdf.lotusvm.types.ValueType;
 import java.util.*;
 
 public class DBFunctions extends HostFunction {
-    enum Type {
-        SET, GET, REMOVE, HAS, NEXT, CURRENT_KEY, CURRENT_VALUE, HAS_NEXT, RESET
-    }
-
     @Getter
     private final Trie<byte[], byte[]> storageTrie;
+    private final boolean readonly;
     private List<Map.Entry<HexBytes, byte[]>> entries;
     private int index;
-    private final boolean readonly;
-
-    private void reset() {
-        Map<HexBytes, byte[]> m = new TreeMap<>();
-        storageTrie.forEach((x, y) -> m.put(HexBytes.fromBytes(x), y));
-        this.entries = new ArrayList<>(m.entrySet());
-    }
-
     public DBFunctions(Trie<byte[], byte[]> storageTrie, boolean readonly) {
         this.storageTrie = storageTrie;
         setName("_db");
@@ -37,8 +26,14 @@ public class DBFunctions extends HostFunction {
         this.readonly = readonly;
     }
 
-    private void assertReadOnly(Type t){
-        switch (t){
+    private void reset() {
+        Map<HexBytes, byte[]> m = new TreeMap<>();
+        storageTrie.forEach((x, y) -> m.put(HexBytes.fromBytes(x), y));
+        this.entries = new ArrayList<>(m.entrySet());
+    }
+
+    private void assertReadOnly(Type t) {
+        switch (t) {
             case SET:
             case REMOVE:
                 if (readonly)
@@ -107,5 +102,9 @@ public class DBFunctions extends HostFunction {
                 throw new RuntimeException("unreachable");
         }
         return new long[1];
+    }
+
+    enum Type {
+        SET, GET, REMOVE, HAS, NEXT, CURRENT_KEY, CURRENT_VALUE, HAS_NEXT, RESET
     }
 }

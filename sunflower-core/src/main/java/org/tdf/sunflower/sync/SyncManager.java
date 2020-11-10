@@ -16,16 +16,16 @@ import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
-import org.tdf.sunflower.net.Context;
-import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.events.NewBlocksReceived;
 import org.tdf.sunflower.events.NewTransactionsReceived;
 import org.tdf.sunflower.facade.*;
+import org.tdf.sunflower.net.Context;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 
@@ -88,17 +88,6 @@ public class SyncManager implements PeerServerListener {
     // not null when accounts transports, all accounts received when the size of this set == Accounts.getTotal()
     private volatile Set<HexBytes> fastSyncAddresses;
 
-    private boolean isNotApproved(Context context) {
-        // filter nodes not auth
-        Optional<Set<HexBytes>> nodes = engine.getApprovedNodes();
-        if (nodes.isPresent() && !nodes.get().contains(Address.fromPublicKey(context.getRemote().getID()))) {
-            context.exit();
-            log.error("invalid node " + context.getRemote().getID() + " not approved");
-            return true;
-        }
-        return false;
-    }
-
     public SyncManager(
             PeerServer peerServer, ConsensusEngine engine,
             SunflowerRepository repository,
@@ -132,6 +121,17 @@ public class SyncManager implements PeerServerListener {
         );
         if (this.fastSyncing)
             this.miner.stop();
+    }
+
+    private boolean isNotApproved(Context context) {
+        // filter nodes not auth
+        Optional<Set<HexBytes>> nodes = engine.getApprovedNodes();
+        if (nodes.isPresent() && !nodes.get().contains(Address.fromPublicKey(context.getRemote().getID()))) {
+            context.exit();
+            log.error("invalid node " + context.getRemote().getID() + " not approved");
+            return true;
+        }
+        return false;
     }
 
     private void broadcastToApproved(byte[] body) {
@@ -350,7 +350,7 @@ public class SyncManager implements PeerServerListener {
                         fastSyncTrie.put(a.getAddress(), a);
                     }
                     log.info("synced accounts = " + fastSyncAddresses.size());
-                    if(accounts.isTraversed()){
+                    if (accounts.isTraversed()) {
                         fastSyncTotalAccounts = accounts.getTotal();
                     }
                     if (fastSyncAddresses.size() != fastSyncTotalAccounts) {

@@ -13,14 +13,6 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class Util extends HostFunction {
-    enum Type {
-        CONCAT_BYTES,
-        DECODE_HEX,
-        ENCODE_HEX,
-        BYTES_TO_U64,
-        U64_TO_BYTES
-    }
-
     public Util() {
         setType(
                 new FunctionType(
@@ -83,5 +75,13 @@ public class Util extends HostFunction {
             putMemory((int) longs[5], data);
         }
         return new long[]{ret};
+    }
+
+    enum Type {
+        CONCAT_BYTES,
+        DECODE_HEX,
+        ENCODE_HEX,
+        BYTES_TO_U64,
+        U64_TO_BYTES
     }
 }

@@ -1,13 +1,13 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
-import java.math.BigInteger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.RLPList;
 import org.tdf.sunflower.util.RLPUtils;
+
+import java.math.BigInteger;
 
 import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
 import static org.tdf.sunflower.util.ByteUtil.toHexString;
@@ -18,20 +18,17 @@ import static org.tdf.sunflower.util.ByteUtil.toHexString;
  */
 public class Validator {
 
-    private static final Logger logger = LoggerFactory.getLogger("Validator");
-
     /**
      * The threshold of validator deposit(Ether units)
      * NOTE:
      * DEPOSIT_MIN_VALUE and DEPOSIT_MAX_VALUE must be a multiple of DEPOSIT_UNIT_VALUE
      */
     public static final long DEPOSIT_UNIT_VALUE = 100L;
-    public static final long DEPOSIT_MIN_VALUE  = DEPOSIT_UNIT_VALUE * 1000;
-    public static final long DEPOSIT_MAX_VALUE  = DEPOSIT_UNIT_VALUE * 10000;
-
+    public static final long DEPOSIT_MIN_VALUE = DEPOSIT_UNIT_VALUE * 1000;
+    public static final long DEPOSIT_MAX_VALUE = DEPOSIT_UNIT_VALUE * 10000;
     public static final int ETHER_POW_WEI = 1;
     public static final BigInteger ETHER_TO_WEI = BigInteger.valueOf(10).pow(ETHER_POW_WEI);
-
+    private static final Logger logger = LoggerFactory.getLogger("Validator");
     /* The 160-bit address to which all fees collected from the
      * successful mining of this block be transferred; formally */
     private byte[] coinbase;

@@ -26,8 +26,8 @@ import java.util.function.Consumer;
 @Slf4j(topic = "net")
 public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
     private final Map<WebSocket, Channel> channels = new ConcurrentHashMap<>();
-    private Consumer<Channel> channelHandler;
     private final MessageBuilder builder;
+    private Consumer<Channel> channelHandler;
 
     WebSocketNetLayer(int port, MessageBuilder builder) {
         super(new InetSocketAddress(port));
@@ -89,13 +89,23 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
         try {
             Client client = new Client(host, port, builder);
             client.getChannel().addListeners(listeners);
-            if (client.connectBlocking(1, TimeUnit.SECONDS)){
+            if (client.connectBlocking(1, TimeUnit.SECONDS)) {
                 return Optional.of(client.getChannel());
             }
             return Optional.empty();
         } catch (Exception e) {
             e.printStackTrace();
             return Optional.empty();
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            stop((int) ApplicationConstants.MAX_SHUTDOWN_WAITING * 1000);
+            log.info("websocket server closed normally");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -168,16 +178,6 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    @Override
-    public void close() throws IOException {
-        try {
-            stop((int) ApplicationConstants.MAX_SHUTDOWN_WAITING * 1000);
-            log.info("websocket server closed normally");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 }

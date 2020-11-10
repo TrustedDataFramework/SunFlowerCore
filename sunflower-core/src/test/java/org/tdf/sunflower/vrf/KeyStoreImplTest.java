@@ -17,13 +17,6 @@
  */
 package org.tdf.sunflower.vrf;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -34,6 +27,13 @@ import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.sunflower.consensus.vrf.keystore.FileSystemKeystore;
 import org.tdf.sunflower.consensus.vrf.keystore.Keystore;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author James Hu
@@ -46,6 +46,7 @@ public class KeyStoreImplTest {
      * Keystore which uses temp dir instead of real user keystore dir
      */
     private static Keystore fileSystemKeystore;
+    private static String CORRECT_KEY = "{\"pubkey\":\"aa61e3f3239bc8e647ec9593167e729857a6a05ab9f59b8d1a906f07d8f576e2\",\"crypto\":{\"cipher\":\"aes-128-ctr\",\"ciphertext\":\"2aae2acddad8849593dde27132692f8e11a2c9de0824ad42f41dae29c421b32d\",\"cipherparams\":{\"iv\":\"d73651672e9a0e71482876a4003ef68f\"},\"kdf\":\"scrypt\",\"kdfparams\":{\"dklen\":32,\"n\":262144,\"p\":1,\"r\":8,\"salt\":\"b7c23f0d5e306ab8c6410b7158603b22ab41a67b65ef946cba07bfd8845eb8f3\"},\"mac\":\"5b7eaeecc0b420a46c419a3d7a83799c7eaf33f50c4a76bc54dcf1258da706c3\"},\"id\":\"f1a6fb4f-11d9-435b-a2f6-8956424c9b47\",\"version\":3}";
 
     @BeforeClass
     public static void setup() {
@@ -136,6 +137,4 @@ public class KeyStoreImplTest {
             fileSystemKeystore.removeKey(pubkey);
         }
     }
-
-    private static String CORRECT_KEY = "{\"pubkey\":\"aa61e3f3239bc8e647ec9593167e729857a6a05ab9f59b8d1a906f07d8f576e2\",\"crypto\":{\"cipher\":\"aes-128-ctr\",\"ciphertext\":\"2aae2acddad8849593dde27132692f8e11a2c9de0824ad42f41dae29c421b32d\",\"cipherparams\":{\"iv\":\"d73651672e9a0e71482876a4003ef68f\"},\"kdf\":\"scrypt\",\"kdfparams\":{\"dklen\":32,\"n\":262144,\"p\":1,\"r\":8,\"salt\":\"b7c23f0d5e306ab8c6410b7158603b22ab41a67b65ef946cba07bfd8845eb8f3\"},\"mac\":\"5b7eaeecc0b420a46c419a3d7a83799c7eaf33f50c4a76bc54dcf1258da706c3\"},\"id\":\"f1a6fb4f-11d9-435b-a2f6-8956424c9b47\",\"version\":3}";
 }

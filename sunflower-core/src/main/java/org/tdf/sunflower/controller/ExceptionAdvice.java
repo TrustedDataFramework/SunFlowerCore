@@ -7,13 +7,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 /**
  * Global Exception handler
  * e.g.
- *
+ * <p>
  * throw new RuntimeException("failed") in RestController
- *   -> {
- *       "code": 500,
- *       "message": "failed",
- *       "data": ""
- *   }
+ * -> {
+ * "code": 500,
+ * "message": "failed",
+ * "data": ""
+ * }
  */
 @ControllerAdvice
 public class ExceptionAdvice {

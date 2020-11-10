@@ -12,14 +12,15 @@ import java.util.function.Consumer;
 
 @Slf4j(topic = "net")
 public class Client implements ChannelListener {
+    MessageBuilder messageBuilder;
+    PeersCache peersCache;
     // listener for channel event
     private ChannelListener listener = ChannelListener.NONE;
     private PeerServerConfig config;
-    MessageBuilder messageBuilder;
-    PeersCache peersCache;
     private NetLayer netLayer;
     private PeerImpl self;
     private MessageBuilder builder;
+
     public Client(
             PeerImpl self,
             PeerServerConfig config,
@@ -86,20 +87,20 @@ public class Client implements ChannelListener {
             public void onClose(Channel channel) {
             }
         })
-        .flatMap(Channel::getRemote)
-        // if the connection had already created, onConnect will not triggered
-        // but the peer will be handled here
-        .ifPresent(connectionConsumer);
+                .flatMap(Channel::getRemote)
+                // if the connection had already created, onConnect will not triggered
+                // but the peer will be handled here
+                .ifPresent(connectionConsumer);
     }
 
     // try to get channel from cache, if channel not exists in cache,
     // create from net layer
     private Optional<Channel> getChannel(Peer peer) {
         // cannot create channel connect to your self
-        if(peer.equals(self)) return Optional.empty();
+        if (peer.equals(self)) return Optional.empty();
         Optional<Channel> ch = peersCache
                 .getChannel(peer.getID());
-        if(ch.isPresent()) return ch;
+        if (ch.isPresent()) return ch;
         ch = netLayer
                 .createChannel(peer.getHost(), peer.getPort(), this, listener)
                 .filter(Channel::isAlive);
@@ -134,7 +135,7 @@ public class Client implements ChannelListener {
             channel.close("discovery is not enabled accept bootstraps and trusted only");
             return;
         }
-        if(remote.equals(self)){
+        if (remote.equals(self)) {
             channel.close("close channel connect to self");
         }
         Optional<Channel> o = peersCache.getChannel(remote);
@@ -172,7 +173,7 @@ public class Client implements ChannelListener {
         peersCache.getChannels()
                 .filter(x -> x.getRemote().map(p -> !p.equals(receivedFrom)).orElse(false))
                 .forEach(c -> {
-                    if (message.getCode() == Code.ANOTHER){
+                    if (message.getCode() == Code.ANOTHER) {
                         byte[] msg = CryptoContext.decrypt(
                                 CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), receivedFrom.getID().getBytes()),
                                 message.getBody().toByteArray());

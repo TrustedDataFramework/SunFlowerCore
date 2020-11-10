@@ -6,12 +6,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ClassUtils;
 import org.tdf.common.store.MapStore;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
-import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.facade.PeerServerListener;
+import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.util.FileUtils;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.Scanner;
 
 /**
  * debug configs
@@ -94,10 +97,10 @@ public class P2PDebug {
                 server.getClient().peersCache.trusted.keySet().forEach(System.out::println);
                 continue;
             }
-            if(line.equals("lookup")){
+            if (line.equals("lookup")) {
                 server.getClient().broadcast(
                         server.getClient().messageBuilder
-                        .buildLookup()
+                                .buildLookup()
                 );
                 continue;
             }
@@ -119,7 +122,7 @@ public class P2PDebug {
                         .trim().getBytes(StandardCharsets.UTF_8));
                 continue;
             }
-            if(line.startsWith("shutdown")){
+            if (line.startsWith("shutdown")) {
                 break;
             }
             List<String> arguments = Arrays.asList(line.split("\\s"));

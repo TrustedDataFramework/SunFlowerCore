@@ -1,14 +1,9 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
-import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
-import static org.tdf.sunflower.util.ByteUtil.toHexString;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.rlp.RLP;
-import org.tdf.rlp.RLPDecoding;
-import org.tdf.rlp.RLPEncoding;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPublicKey;
@@ -17,19 +12,20 @@ import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.RLPList;
 import org.tdf.sunflower.util.RLPUtils;
 
+import static org.tdf.sunflower.util.ByteUtil.isNullOrZeroArray;
+import static org.tdf.sunflower.util.ByteUtil.toHexString;
+
 /**
  * @author James Hu
  * @since 2019/5/17
  */
 public class VrfProof {
 
-    private static final Logger logger = LoggerFactory.getLogger("VrfProve");
-
     /* Role codes of VRF prove */
     public static final int ROLE_CODES_PROPOSER = 0x01;
     public static final int ROLE_CODES_REDUCTION_COMMIT = 0x11;
     public static final int ROLE_CODES_FINAL_COMMIT = 0x12;
-
+    private static final Logger logger = LoggerFactory.getLogger("VrfProve");
     /* Role of the prove */
     @RLP(0)
     private int role;
@@ -79,6 +75,25 @@ public class VrfProof {
 
     public VrfProof(RLPList rlpProve) {
         parseRLP(rlpProve);
+    }
+
+    private static byte[] composeVrfSeed(int role, int round, byte[] seed) {
+        // Compose new seed with role and round
+        byte[] vrfSeed = new byte[seed.length + 4 + 4];
+
+        System.arraycopy(seed, 0, vrfSeed, 0, seed.length);
+
+        vrfSeed[seed.length] = (byte) ((role >> 24) & 0xFF);
+        vrfSeed[seed.length + 1] = (byte) ((role >> 16) & 0xFF);
+        vrfSeed[seed.length + 2] = (byte) ((role >> 8) & 0xFF);
+        vrfSeed[seed.length + 3] = (byte) (role & 0xFF);
+
+        vrfSeed[seed.length + 4] = (byte) ((round >> 24) & 0xFF);
+        vrfSeed[seed.length + 5] = (byte) ((round >> 16) & 0xFF);
+        vrfSeed[seed.length + 6] = (byte) ((round >> 8) & 0xFF);
+        vrfSeed[seed.length + 7] = (byte) (round & 0xFF);
+
+        return vrfSeed;
     }
 
     private synchronized void parseRLP() {
@@ -210,25 +225,6 @@ public class VrfProof {
         toStringBuff.append("  vrfResult.r=").append(toHexString(vrfResult.getR())).append(suffix);
         toStringBuff.append("  vrfResult.proof=").append(toHexString(vrfResult.getProof()));
         return toStringBuff.toString();
-    }
-
-    private static byte[] composeVrfSeed(int role, int round, byte[] seed) {
-        // Compose new seed with role and round
-        byte[] vrfSeed = new byte[seed.length + 4 + 4];
-
-        System.arraycopy(seed, 0, vrfSeed, 0, seed.length);
-
-        vrfSeed[seed.length] = (byte) ((role >> 24) & 0xFF);
-        vrfSeed[seed.length + 1] = (byte) ((role >> 16) & 0xFF);
-        vrfSeed[seed.length + 2] = (byte) ((role >> 8) & 0xFF);
-        vrfSeed[seed.length + 3] = (byte) (role & 0xFF);
-
-        vrfSeed[seed.length + 4] = (byte) ((round >> 24) & 0xFF);
-        vrfSeed[seed.length + 5] = (byte) ((round >> 16) & 0xFF);
-        vrfSeed[seed.length + 6] = (byte) ((round >> 8) & 0xFF);
-        vrfSeed[seed.length + 7] = (byte) (round & 0xFF);
-
-        return vrfSeed;
     }
 
     static public class Util {

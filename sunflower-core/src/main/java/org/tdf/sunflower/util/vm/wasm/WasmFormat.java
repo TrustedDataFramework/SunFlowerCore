@@ -24,11 +24,10 @@ public class WasmFormat {
     @AllArgsConstructor
     public static class WasmParam {
 
-        enum Wasm_Type {I32, I64, F32, F64}
-
         private Wasm_Type type;
-
         private Object value;
+
+        enum Wasm_Type {I32, I64, F32, F64}
 
     }
 

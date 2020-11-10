@@ -8,8 +8,8 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.LittleEndian;
 import org.tdf.crypto.ed25519.Ed25519PrivateKey;
 import org.tdf.rlp.RLPCodec;
-import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.FileUtils;
 
@@ -22,7 +22,7 @@ public class ZombieContractTest {
     private static final String TEST_PUBLIC_KEY = "6db6eef88329fdfed125fef83b529e5f4d396b44fb1ed8d096700d72a6424720";
 
     private static final String TEST_PUBLIC_KEY2 = "36ddb2d6686a827e7edc751f7304d59ea749cd045a7945a028cb4d92a71db870";
-    
+
     public void testDeployContract() throws Exception {
         byte[] binary = ByteStreams.toByteArray(FileUtils.getInputStream(System.getenv("FILE_PATH")));
         HexBytes from = HexBytes.fromHex(TEST_PUBLIC_KEY);

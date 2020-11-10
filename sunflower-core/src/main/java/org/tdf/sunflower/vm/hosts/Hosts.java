@@ -53,7 +53,7 @@ public class Hosts {
                 )
         );
 
-        if(reflect != null)
+        if (reflect != null)
             all.add(this.reflect);
 
         if (eventHost != null)

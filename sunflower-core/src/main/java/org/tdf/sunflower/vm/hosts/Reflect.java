@@ -1,5 +1,6 @@
 package org.tdf.sunflower.vm.hosts;
 
+import org.tdf.common.types.Parameters;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
@@ -8,7 +9,6 @@ import org.tdf.lotusvm.types.ValueType;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.vm.abi.ContractABI;
 import org.tdf.sunflower.vm.abi.ContractCall;
-import org.tdf.common.types.Parameters;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,12 +17,6 @@ public class Reflect extends HostFunction {
     private final ContractCall parent;
     private byte[] result;
     private boolean readonly;
-
-    enum Type {
-        CALL_WITHOUT_PUT, // call without put into memory
-        CALL_WITH_PUT, // call and put into memory
-        CREATE // create
-    }
 
     public Reflect(ContractCall parent, boolean readonly) {
         this.parent = parent;
@@ -93,5 +87,11 @@ public class Reflect extends HostFunction {
         if (put)
             putMemory((int) offset, data);
         return new long[]{ret};
+    }
+
+    enum Type {
+        CALL_WITHOUT_PUT, // call without put into memory
+        CALL_WITH_PUT, // call and put into memory
+        CREATE // create
     }
 }
