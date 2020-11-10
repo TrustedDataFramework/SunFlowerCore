@@ -8,7 +8,6 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
-import java.nio.charset.StandardCharsets;
 
 
 @Getter

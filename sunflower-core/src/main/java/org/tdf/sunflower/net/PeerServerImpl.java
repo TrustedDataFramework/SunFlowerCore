@@ -163,17 +163,10 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         // find valid private key from 1.properties 2.persist 3. generate
         byte[] sk = config.getPrivateKey() == null ? null : config.getPrivateKey().getBytes();
         if (sk == null || sk.length == 0) {
-            sk = peerStore.get("self").map(HexBytes::decode)
-                    .orElse(null);
-        }
-        if (sk == null || sk.length == 0) {
             sk = CryptoContext.generateSecretKey();
         }
 
         this.self = PeerImpl.createSelf(config.getAddress(), sk);
-
-        // generate a new private key when not found
-        peerStore.put("self", HexBytes.encode(sk));
     }
 
     @Override

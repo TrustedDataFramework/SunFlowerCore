@@ -112,7 +112,6 @@ public class PoA extends AbstractConsensusEngine {
             e.printStackTrace();
             throw new RuntimeException("failed to parse genesis");
         }
-
         setGenesisBlock(genesis.getBlock());
 
         setPeerServerListener(PeerServerListener.NONE);
