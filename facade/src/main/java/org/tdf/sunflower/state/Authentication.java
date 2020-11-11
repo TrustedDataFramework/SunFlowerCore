@@ -98,26 +98,26 @@ public class Authentication implements PreBuiltContract {
             case JOIN_NODE: {
                 HexBytes fromAddr = transaction.getFromAddress();
                 if (nodes.contains(fromAddr))
-                    throw new RuntimeException(fromAddr + " has already in nodes");
+                    throw new RuntimeException("authentication contract error: " + fromAddr + " has already in nodes");
 
                 if (pending.containsKey(fromAddr))
-                    throw new RuntimeException(fromAddr + " has already in pending");
+                    throw new RuntimeException("authentication contract error: " + fromAddr + " has already in pending");
 
                 pending.put(fromAddr, new TreeSet<>());
                 break;
             }
             case APPROVE_JOIN: {
                 if (!nodes.contains(transaction.getFromAddress())) {
-                    throw new RuntimeException("cannot approve " + transaction.getFromAddress() + " is not in nodes list");
+                    throw new RuntimeException("authentication contract error: cannot approve " + transaction.getFromAddress() + " is not in nodes list");
                 }
                 HexBytes toApprove = transaction.getPayload().slice(1);
 
                 Optional<TreeSet<HexBytes>> approves = pending.get(toApprove);
                 if (!approves.isPresent())
-                    throw new RuntimeException("cannot approve " + toApprove + " not in pending");
+                    throw new RuntimeException("authentication contract error: cannot approve " + toApprove + " not in pending");
 
                 if (approves.get().contains(transaction.getFromAddress())) {
-                    throw new RuntimeException("cannot approve " + toApprove + " has approved");
+                    throw new RuntimeException("authentication contract error: cannot approve " + toApprove + " has approved");
                 }
 
                 approves.get().add(transaction.getFromAddress());
@@ -133,9 +133,9 @@ public class Authentication implements PreBuiltContract {
             case EXIT: {
                 HexBytes fromAddr = transaction.getFromAddress();
                 if (!nodes.contains(fromAddr))
-                    throw new RuntimeException(fromAddr + " not in nodes");
+                    throw new RuntimeException("authentication contract error: " + fromAddr + " not in nodes");
                 if (nodes.size() <= 1)
-                    throw new RuntimeException("cannot exit, at least one miner");
+                    throw new RuntimeException("authentication contract error: cannot exit, at least one miner");
 
                 nodes.remove(fromAddr);
                 contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
