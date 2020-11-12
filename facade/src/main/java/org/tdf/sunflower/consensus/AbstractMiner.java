@@ -81,6 +81,7 @@ public abstract class AbstractMiner implements Miner {
 
     protected abstract void finalizeBlock(Block parent, Block block);
 
+    // TODO: 1. 错误事务的处理 2. 增加打包超时时间
     protected Optional<Block> createBlock(Block parent) {
         if (!minerConfig.isAllowEmptyBlock() && getTransactionPool().size() == 0)
             return Optional.empty();

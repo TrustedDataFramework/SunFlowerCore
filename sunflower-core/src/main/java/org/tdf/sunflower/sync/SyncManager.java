@@ -30,6 +30,7 @@ import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 
 import javax.annotation.PostConstruct;
+import java.io.Closeable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -46,7 +47,7 @@ import static org.tdf.sunflower.Start.devAssert;
  */
 @Component
 @Slf4j(topic = "sync")
-public class SyncManager implements PeerServerListener {
+public class SyncManager implements PeerServerListener, Closeable {
     private final PeerServer peerServer;
     private final ConsensusEngine engine;
     private final SunflowerRepository repository;
@@ -621,5 +622,12 @@ public class SyncManager implements PeerServerListener {
     @Override
     public void onDisconnect(Peer peer, PeerServer server) {
 
+    }
+
+    @SneakyThrows
+    public void close() {
+        log.info("close sync manager");
+        this.executorService.shutdown();
+        this.executorService.awaitTermination(ApplicationConstants.MAX_SHUTDOWN_WAITING, TimeUnit.SECONDS);
     }
 }

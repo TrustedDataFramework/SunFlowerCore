@@ -46,9 +46,9 @@ public class JsonStore implements BatchStore<String, JsonNode> {
 
     @SneakyThrows
     private void load() {
+        this.node = new HashMap<>();
         File f = new File(jsonFile);
         if (!f.exists()) {
-            node = new HashMap<>();
             return;
         }
         ObjectNode n = null;
@@ -57,8 +57,9 @@ public class JsonStore implements BatchStore<String, JsonNode> {
         }catch (Exception ignored){
 
         }
-        if(n == null)
+        if(n == null){
             return;
+        }
         Iterator<Map.Entry<String, JsonNode>> it = n.fields();
         while (it.hasNext()) {
             Map.Entry<String, JsonNode> e = it.next();
