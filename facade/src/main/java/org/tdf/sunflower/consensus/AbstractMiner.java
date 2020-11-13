@@ -92,7 +92,7 @@ public abstract class AbstractMiner implements Miner {
 
         // get a trie at parent block's state
         // modifications to the trie will not persisted until flush() called
-        ForkedStateTrie<HexBytes, Account> tmp = accountTrie.fork(parent.getStateRoot().getBytes());
+        ForkedStateTrie tmp = accountTrie.fork(parent.getStateRoot().getBytes());
 
 
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
@@ -136,11 +136,10 @@ public abstract class AbstractMiner implements Miner {
 
         // calculate state root
         b.setStateRoot(
-                HexBytes.fromBytes(tmp.commit())
+                HexBytes.fromBytes(tmp.getCurrentRoot())
         );
 
         // persist modifications of trie to database
-        tmp.flush();
         b.resetTransactionsRoot();
 
         // the mined block cannot be modified any more

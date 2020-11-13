@@ -29,7 +29,7 @@ public class VrfValidator extends AbstractValidator {
 //        if (!PoAHashPolicy.HASH_POLICY.getHash(block).equals(block.getHash())){
 //            return ValidateResult.fault("hash not match");
 //        }
-        return ValidateResult.success();
+        return res;
     }
 
     @Override

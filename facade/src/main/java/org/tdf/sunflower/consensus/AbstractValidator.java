@@ -1,6 +1,7 @@
 package org.tdf.sunflower.consensus;
 
 import lombok.NonNull;
+import org.tdf.common.event.EventBus;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
@@ -12,6 +13,7 @@ import org.tdf.sunflower.state.ForkedStateTrie;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class AbstractValidator implements Validator {
@@ -54,12 +56,15 @@ public abstract class AbstractValidator implements Validator {
         Uint256 totalFee = Uint256.ZERO;
         long gas = 0;
 
+        Map<HexBytes, TransactionResult> results = new HashMap<>();
+
         try {
-            ForkedStateTrie<HexBytes, Account> tmp = accountTrie.fork(parent.getStateRoot().getBytes());
+            ForkedStateTrie tmp = accountTrie.fork(parent.getStateRoot().getBytes());
             Transaction coinbase = block.getBody().get(0);
 
             for (Transaction tx : block.getBody().subList(1, block.getBody().size())) {
                 TransactionResult r  = tmp.update(block.getHeader(), tx);
+                results.put(tx.getHash(), r);
                 totalFee = totalFee.safeAdd(r.getFee());
                 // todo:
                 gas = SafeMath.add(gas, r.getGasUsed());
@@ -67,16 +72,16 @@ public abstract class AbstractValidator implements Validator {
 
             tmp.update(block.getHeader(), coinbase);
 
-            byte[] rootHash = tmp.commit();
+            byte[] rootHash = tmp.getCurrentRoot();
 
             if (!HexBytes.fromBytes(rootHash).equals(block.getStateRoot())) {
                 return BlockValidateResult.fault("state root not match");
             }
-            tmp.flush();
         } catch (Exception e) {
             e.printStackTrace();
             return BlockValidateResult.fault("contract evaluation failed or " + e.getMessage());
         }
+        success.setResults(results);
         success.setFee(totalFee);
         success.setGas(gas);
         return success;

@@ -18,7 +18,8 @@ import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.events.NewBlocksReceived;
-import org.tdf.sunflower.events.NewTransactionsReceived;
+import org.tdf.sunflower.events.NewTransactionsCollected;
+import org.tdf.sunflower.events.TransactionIncluded;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.Context;
 import org.tdf.sunflower.net.Peer;
@@ -162,7 +163,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 syncConfig.getHeartRate(), TimeUnit.SECONDS
         );
         eventBus.subscribe(NewBlockMined.class, (e) -> propose(e.getBlock()));
-        eventBus.subscribe(NewTransactionsReceived.class,
+        eventBus.subscribe(NewTransactionsCollected.class,
                 (e) -> broadcastToApproved(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransactions()))
         );
         eventBus.subscribe(NewBlocksReceived.class, (e) -> onBlocks(e.getBlocks()));
@@ -583,6 +584,12 @@ public class SyncManager implements PeerServerListener, Closeable {
                     continue;
                 }
                 it.remove();
+                Map<HexBytes, TransactionResult> rs = ((BlockValidateResult) res).getResults();
+                b.getBody().stream().filter(x -> x.getType() != Transaction.Type.COIN_BASE.code)
+                        .forEach(t -> {
+                            TransactionResult r = rs.get(t.getHash());
+                            eventBus.publish(new TransactionIncluded(t, b, r.getGasUsed(), r.getReturns(), r.getEvents()));
+                        });
                 repository.writeBlock(b);
             }
         } finally {

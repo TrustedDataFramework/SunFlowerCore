@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @Getter
 @Slf4j(topic = "trie")
 @AllArgsConstructor
-public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements ForkedStateTrie<HexBytes, Account> {
+public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements ForkedStateTrie {
     private Trie<HexBytes, Account> trie;
     private Trie<byte[], byte[]> contractStorageTrie;
     private Store<byte[], byte[]> contractCodeStore;
@@ -48,6 +48,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
     private NoDeleteCachedStore<byte[], byte[]> contractStorageCache;
     private CachedStore<byte[], byte[]> contractCodeCache;
     private Trie<HexBytes, Account> dirtyTrie;
+    private byte[] currentRoot;
 
     @SneakyThrows
     public AccountTrie(
@@ -109,27 +110,12 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         tmp.flush();
     }
 
-    private static void require(boolean b, String msg) throws RuntimeException {
-        if (!b) {
-            throw new RuntimeException(msg);
-        }
-    }
-
     private Trie<byte[], byte[]> getDirtyContractStorageTrie(byte[] storageRoot) {
         return contractStorageTrie.revert(
                 storageRoot,
                 this.contractStorageCache
         );
     }
-
-//    public byte[] view(byte[] stateRoot, HexBytes address, HexBytes args) {
-//        Store<byte[], byte[]> cache = new CachedStore<>(getTrieStore(), ByteArrayMap::new);
-//        Store<HexBytes, Account> trie = getTrie().revert(stateRoot, cache);
-//        Store<byte[], byte[]> contractCodeStore = new CachedStore<>(this.contractCodeStore, ByteArrayMap::new);
-//
-//        ContractCall call = new ContractCall();
-//        return hosts.getResult();
-//    }
 
     @Override
     DatabaseStore getDB() {
@@ -141,17 +127,19 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         return super.commitInternal(parentRoot, data);
     }
 
-    @Override
-    public ForkedStateTrie<HexBytes, Account> fork(byte[] parentRoot) {
+    private void clearCache() {
         Map<byte[], byte[]> trieCache = new ByteArrayMap<>();
         Map<byte[], byte[]> contractStorageCacheMap = new ByteArrayMap<>();
-        CachedStore<byte[], byte[]> cachedTrieStore = new CachedStore<>(trie.getStore(), () -> trieCache);
-        NoDeleteCachedStore<byte[], byte[]> contractStorageCache = new NoDeleteCachedStore<>(
-                this.contractStorageTrie.getStore(),
-                () -> contractStorageCacheMap
-        );
         Map<byte[], byte[]> contractCodeCache = new ByteArrayMap<>();
-        return new AccountTrie(
+        this.trieCache = new CachedStore<>(trie.getStore(), () -> trieCache);;
+        this.contractStorageCache = new NoDeleteCachedStore<>(this.contractStorageTrie.getStore(), () -> contractStorageCacheMap);;
+        this.contractCodeCache = new CachedStore<>(contractCodeStore, () -> contractCodeCache);
+        this.dirtyTrie = trie.revert(this.currentRoot, this.trieCache);
+    }
+
+    @Override
+    public ForkedStateTrie fork(byte[] parentRoot) {
+        AccountTrie ret = new AccountTrie(
                 trie,
                 contractStorageTrie,
                 this.contractCodeStore,
@@ -162,11 +150,14 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
                 db,
                 this.trieStore,
                 genesisRoot,
-                cachedTrieStore,
-                contractStorageCache,
-                new CachedStore<>(contractCodeStore, () -> contractCodeCache),
-                trie.revert(parentRoot, cachedTrieStore)
+                null,
+                null,
+                null,
+                null,
+                parentRoot
         );
+        ret.clearCache();
+        return ret;
     }
 
     public void increaseNonce(Transaction tx) {
@@ -199,6 +190,20 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
     }
 
     public TransactionResult update(Header header, Transaction tx) {
+
+        try {
+            TransactionResult r = updateInternal(header, tx);
+            this.currentRoot = dirtyTrie.commit();
+            flush();
+            return r;
+        } catch (Exception e) {
+            throw e;
+        }finally {
+            clearCache();
+        }
+    }
+
+    private TransactionResult updateInternal(Header header, Transaction tx) {
         Map<HexBytes, Account> states = this.dirtyTrie.asMap();
         if (tx.getType() == Transaction.Type.COIN_BASE.code && header.getHeight() != tx.getNonce()) {
             throw new RuntimeException("nonce of coinbase transaction should be " + header.getHeight());
@@ -347,34 +352,10 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         return result;
     }
 
-    @Override
-    public Account remove(HexBytes key) {
-        Account a = getDirtyTrie().get(key)
-                .orElse(null);
-        getDirtyTrie().remove(key);
-        return a;
-    }
-
-    @Override
-    public Optional<Account> get(HexBytes bytes) {
-        return getDirtyTrie().get(bytes);
-    }
-
-    @Override
-    public byte[] commit() {
-        return getDirtyTrie().commit();
-    }
-
-    @Override
-    public void flush() {
+    private void flush() {
         this.trieCache.flush();
         this.contractStorageCache.flush();
         this.contractCodeCache.flush();
-    }
-
-    @Override
-    public void put(HexBytes key, Account value) {
-        getDirtyTrie().put(key, value);
     }
 
     public RLPList call(HexBytes address, String method, Parameters parameters) {

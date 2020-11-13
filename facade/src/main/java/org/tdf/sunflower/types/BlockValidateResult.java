@@ -4,6 +4,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.HexBytes;
+
+import java.util.Map;
 
 public class BlockValidateResult extends ValidateResult{
 
@@ -27,4 +30,8 @@ public class BlockValidateResult extends ValidateResult{
     @Getter
     @Setter
     private Uint256 fee;
+
+    @Getter
+    @Setter
+    private Map<HexBytes, TransactionResult> results;
 }

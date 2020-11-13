@@ -34,5 +34,5 @@ public interface StateTrie<ID, S> {
     // collect garbage
     void prune(Collection<? extends byte[]> excludedRoots);
 
-    ForkedStateTrie<ID, S> fork(byte[] parentRoot);
+    ForkedStateTrie fork(byte[] parentRoot);
 }

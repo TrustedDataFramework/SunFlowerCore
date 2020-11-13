@@ -9,12 +9,8 @@ import org.tdf.sunflower.types.Transaction;
 
 import java.util.Optional;
 
-public interface ForkedStateTrie<ID, S> {
+public interface ForkedStateTrie {
     TransactionResult update(Header header, Transaction tx);
-    S remove(ID key);
-    Optional<S> get(ID id);
-    byte[] commit();
-    void flush();
-    void put(ID key, S value);
     RLPList call(HexBytes address, String method, Parameters parameters);
+    byte[] getCurrentRoot();
 }

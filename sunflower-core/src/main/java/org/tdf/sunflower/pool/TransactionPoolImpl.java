@@ -110,7 +110,6 @@ public class TransactionPoolImpl implements TransactionPool {
     @Override
     @SneakyThrows
     public List<String> collect(Collection<? extends Transaction> transactions) {
-        eventBus.publish(new NewTransactionsReceived(new ArrayList<>(transactions)));
         List<String> errors = new ArrayList<>();
         this.cacheLock.writeLock().lock();
         try {

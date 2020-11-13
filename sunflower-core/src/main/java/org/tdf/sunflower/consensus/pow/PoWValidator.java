@@ -4,6 +4,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.BlockValidateResult;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
@@ -17,7 +18,7 @@ public class PoWValidator extends AbstractValidator {
 
     @Override
     public ValidateResult validate(Block block, Block dependency) {
-        ValidateResult res = super.commonValidate(block, dependency);
+        BlockValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
 
         if (block.getVersion() != PoW.BLOCK_VERSION) {
@@ -32,7 +33,7 @@ public class PoWValidator extends AbstractValidator {
                             HexBytes.fromBytes(nbits)
                     )
             );
-        return ValidateResult.success();
+        return res;
     }
 
     @Override

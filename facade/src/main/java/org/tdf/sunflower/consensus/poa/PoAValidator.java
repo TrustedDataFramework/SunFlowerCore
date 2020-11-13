@@ -20,9 +20,9 @@ public class PoAValidator extends AbstractValidator {
 
     @Override
     public ValidateResult validate(Block block, Block dependency) {
-        ValidateResult res = super.commonValidate(block, dependency);
+        BlockValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
-        Uint256 fee = ((BlockValidateResult) res).getFee();
+        Uint256 fee = res.getFee();
         if (!fee.safeAdd(poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1)).equals(block.getBody().get(0).getAmount())) {
             return ValidateResult.fault("reward of coin base transaction should be " + poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1));
         }
@@ -37,16 +37,16 @@ public class PoAValidator extends AbstractValidator {
         if (!CryptoContext.verify(pk, plain, block.getPayload().getBytes()))
             return ValidateResult.fault("verify signature failed");
 
-        res = validateCoinBase(dependency, block.getBody().get(0));
-        if (!res.isSuccess())
-            return res;
+        ValidateResult res0 = validateCoinBase(dependency, block.getBody().get(0));
+        if (!res0.isSuccess())
+            return res0;
 
         if (
                 !poA.getProposer(dependency, block.getCreatedAt())
                         .map(x -> x.getAddress().equals(block.getBody().get(0).getTo()))
                         .orElse(false)
         ) return ValidateResult.fault("invalid proposer " + block.getBody().get(0).getFromAddress());
-        return ValidateResult.success();
+        return res;
     }
 
     @Override
