@@ -125,17 +125,21 @@ public class PoWMiner extends AbstractMiner {
 
         Block best = poW.getSunflowerRepository().getBestBlock();
         log.debug("try to mining at height " + (best.getHeight() + 1));
-        this.task = () -> {
+        Runnable task = () -> {
             try {
                 Optional<Block> b = createBlock(poW.getSunflowerRepository().getBestBlock());
-                if (!b.isPresent()) return;
+                if (!b.isPresent()) {
+                    return;
+                }
                 log.info("mining success block: {}", b.get().getHeader());
                 getEventBus().publish(new NewBlockMined(b.get()));
             } catch (Exception e) {
                 e.printStackTrace();
+            }finally {
+                this.task = null;
             }
-            this.task = null;
         };
+        this.task = task;
         threadPool.submit(task);
     }
 }
