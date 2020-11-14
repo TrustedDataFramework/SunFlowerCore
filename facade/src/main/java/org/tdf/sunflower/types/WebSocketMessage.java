@@ -9,7 +9,15 @@ import org.tdf.rlp.RLPElement;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WebSocketMessage {
-    public enum Code{
+    private long nonce;
+    private int code;
+    private RLPElement body;
+
+    public Code getCodeEnum() {
+        return Code.values()[code];
+    }
+
+    public enum Code {
         NULL,
         EVENT_EMIT,
         EVENT_SUBSCRIBE,
@@ -18,13 +26,5 @@ public class WebSocketMessage {
         TRANSACTION_SEND,
         ACCOUNT_QUERY,
         CONTRACT_QUERY
-    }
-
-    private long nonce;
-    private int code;
-    private RLPElement body;
-
-    public Code getCodeEnum(){
-        return Code.values()[code];
     }
 }

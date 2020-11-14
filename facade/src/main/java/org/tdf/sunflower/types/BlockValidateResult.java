@@ -8,7 +8,21 @@ import org.tdf.common.util.HexBytes;
 
 import java.util.Map;
 
-public class BlockValidateResult extends ValidateResult{
+public class BlockValidateResult extends ValidateResult {
+
+    @Getter
+    @Setter
+    private long gas;
+    @Getter
+    @Setter
+    private Uint256 fee;
+    @Getter
+    @Setter
+    private Map<HexBytes, TransactionResult> results;
+
+    public BlockValidateResult(boolean success, @NonNull String reason) {
+        super(success, reason);
+    }
 
     public static BlockValidateResult fault(String reason) {
         return new BlockValidateResult(false, reason);
@@ -17,21 +31,4 @@ public class BlockValidateResult extends ValidateResult{
     public static BlockValidateResult success() {
         return new BlockValidateResult(true, "");
     }
-
-
-    public BlockValidateResult(boolean success, @NonNull String reason) {
-        super(success, reason);
-    }
-
-    @Getter
-    @Setter
-    private long gas;
-
-    @Getter
-    @Setter
-    private Uint256 fee;
-
-    @Getter
-    @Setter
-    private Map<HexBytes, TransactionResult> results;
 }

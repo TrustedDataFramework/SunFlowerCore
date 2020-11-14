@@ -13,9 +13,9 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TransactionResult {
+    public static final TransactionResult EMPTY = new TransactionResult(0, RLPList.createEmpty(), Collections.emptyList(), Uint256.ZERO);
     long gasUsed;
     RLPList returns;
     List<Event> events;
     Uint256 fee;
-    public static final TransactionResult EMPTY = new TransactionResult(0, RLPList.createEmpty(), Collections.emptyList(), Uint256.ZERO);
 }

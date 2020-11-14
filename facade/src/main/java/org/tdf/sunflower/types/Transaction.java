@@ -9,16 +9,12 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.Constants;
-import org.tdf.common.util.EpochSecondDeserializer;
-import org.tdf.common.util.EpochSecondsSerializer;
-import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.*;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
-import org.tdf.common.util.IntSerializer;
 
 import java.util.*;
 import java.util.function.Function;
@@ -28,16 +24,8 @@ import java.util.stream.Stream;
 @ToString
 @NoArgsConstructor
 public class Transaction {
-    public enum Status{
-        PENDING,
-        INCLUDED,
-        CONFIRMED,
-        DROPPED
-    }
-    
     public static final long TRANSFER_GAS = 10;
     public static final long BUILTIN_CALL_GAS = 10;
-
     public static final Comparator<Transaction> NONCE_COMPARATOR = (a, b) -> {
         int cmp = a.getFrom().compareTo(b.getFrom());
         if (cmp != 0)
@@ -45,28 +33,6 @@ public class Transaction {
         if (a.getNonce() != b.getNonce()) return Long.compare(a.getNonce(), b.getNonce());
         return a.getHash().compareTo(b.getHash());
     };
-
-    public long getGasLimit() {
-        return gasLimit;
-    }
-
-
-    @JsonIgnore
-    public byte[] getSignaturePlain() {
-        return RLPCodec.encode(new Object[]{
-                version,
-                type,
-                createdAt,
-                nonce,
-                from,
-                gasLimit,
-                gasPrice,
-                amount,
-                payload,
-                to
-        });
-    }
-
     @RLP(0)
     protected int version;
     @RLP(1)
@@ -78,37 +44,30 @@ public class Transaction {
     @RLP(3)
     @JsonSerialize(using = IntSerializer.class)
     protected long nonce;
-
     /**
      * for coinbase, this field is null or empty bytes
      */
     @RLP(4)
     protected HexBytes from;
-
     @RLP(5)
     @JsonSerialize(using = IntSerializer.class)
     protected long gasLimit;
-
     @RLP(6)
     @JsonSerialize(using = IntSerializer.class)
     protected Uint256 gasPrice;
-
     @RLP(7)
     @JsonSerialize(using = IntSerializer.class)
     protected Uint256 amount;
-
     /**
      * for coinbase and transfer, this field is null or empty bytes
      */
     @RLP(8)
     protected HexBytes payload;
-
     /**
      * for contract deploy, this field is null or empty bytes
      */
     @RLP(9)
     protected HexBytes to;
-
     /**
      * not null
      */
@@ -162,6 +121,42 @@ public class Transaction {
         return HexBytes.fromBytes(tmp.commit());
     }
 
+    /**
+     * get contract address, contract address = hash(rlp(from, nonce))
+     *
+     * @return contact address
+     */
+    public static HexBytes createContractAddress(HexBytes address, long nonce) {
+        byte[] bytes = CryptoContext.hash(RLPCodec.encode(new Object[]{address, nonce}));
+        HexBytes ret = HexBytes.fromBytes(bytes);
+        return ret.slice(ret.size() - Account.ADDRESS_SIZE, ret.size());
+    }
+
+    public long getGasLimit() {
+        return gasLimit;
+    }
+
+    public void setGasLimit(long gasLimit) {
+        this.gasLimit = gasLimit;
+        getHash(true);
+    }
+
+    @JsonIgnore
+    public byte[] getSignaturePlain() {
+        return RLPCodec.encode(new Object[]{
+                version,
+                type,
+                createdAt,
+                nonce,
+                from,
+                gasLimit,
+                gasPrice,
+                amount,
+                payload,
+                to
+        });
+    }
+
     public HexBytes getHash() {
         return getHash(false);
     }
@@ -192,61 +187,6 @@ public class Transaction {
                         .reduce(0, Integer::sum);
     }
 
-    public void setVersion(int version) {
-        this.version = version;
-        getHash(true);
-    }
-
-    public void setType(int type) {
-        this.type = type;
-        getHash(true);
-    }
-
-    public void setCreatedAt(long createdAt) {
-        this.createdAt = createdAt;
-        getHash(true);
-    }
-
-    public void setNonce(long nonce) {
-        this.nonce = nonce;
-        getHash(true);
-    }
-
-    public void setFrom(HexBytes from) {
-        this.from = from;
-        getHash(true);
-    }
-
-    public void setGasLimit(long gasLimit){
-        this.gasLimit = gasLimit;
-        getHash(true);
-    }
-
-    public void setGasPrice(Uint256 gasPrice) {
-        this.gasPrice = gasPrice;
-        getHash(true);
-    }
-
-    public void setAmount(Uint256 amount) {
-        this.amount = amount;
-        getHash(true);
-    }
-
-    public void setPayload(HexBytes payload) {
-        this.payload = payload;
-        getHash(true);
-    }
-
-    public void setTo(HexBytes to) {
-        this.to = to;
-        getHash(true);
-    }
-
-    public void setSignature(HexBytes signature) {
-        this.signature = signature;
-        getHash(true);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -265,18 +205,162 @@ public class Transaction {
     }
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    public Uint256 getFee(){
-        if(type == Type.COIN_BASE.code)
+    public Uint256 getFee() {
+        if (type == Type.COIN_BASE.code)
             return Uint256.ZERO;
-        if(type == Type.TRANSFER.code)
-            return  Uint256.of(TRANSFER_GAS).mul(getGasPrice());
+        if (type == Type.TRANSFER.code)
+            return Uint256.of(TRANSFER_GAS).mul(getGasPrice());
         return Uint256.ZERO;
     }
-
 
     @Override
     public int hashCode() {
         return Objects.hash(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
+    }
+
+    /**
+     * get contract address, contract address = hash(rlp(from, nonce))
+     *
+     * @return contact address
+     */
+    public HexBytes createContractAddress() {
+        if (type != Type.CONTRACT_DEPLOY.code) throw new RuntimeException("not a contract deploy transaction");
+        return createContractAddress(getFromAddress(), nonce);
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+        getHash(true);
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+        getHash(true);
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(long createdAt) {
+        this.createdAt = createdAt;
+        getHash(true);
+    }
+
+    public long getNonce() {
+        return nonce;
+    }
+
+    public void setNonce(long nonce) {
+        this.nonce = nonce;
+        getHash(true);
+    }
+
+    public HexBytes getFrom() {
+        return from == null ? HexBytes.EMPTY : from;
+    }
+
+    public void setFrom(HexBytes from) {
+        this.from = from;
+        getHash(true);
+    }
+
+    @JsonIgnore
+    public HexBytes getFromAddress() {
+        if (getFrom().isEmpty()) throw new RuntimeException("from not found: coinbase transaction");
+        return Address.fromPublicKey(getFrom());
+    }
+
+    public Uint256 getGasPrice() {
+        return gasPrice;
+    }
+
+    public void setGasPrice(Uint256 gasPrice) {
+        this.gasPrice = gasPrice;
+        getHash(true);
+    }
+
+    public Uint256 getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Uint256 amount) {
+        this.amount = amount;
+        getHash(true);
+    }
+
+    public HexBytes getPayload() {
+        return payload == null ? HexBytes.EMPTY : payload;
+    }
+
+    public void setPayload(HexBytes payload) {
+        this.payload = payload;
+        getHash(true);
+    }
+
+    public HexBytes getTo() {
+        return to == null ? HexBytes.EMPTY : to;
+    }
+
+    public void setTo(HexBytes to) {
+        this.to = to;
+        getHash(true);
+    }
+
+    public HexBytes getSignature() {
+        return signature == null ? HexBytes.EMPTY : signature;
+    }
+
+    public void setSignature(HexBytes signature) {
+        this.signature = signature;
+        getHash(true);
+    }
+
+    public ValidateResult basicValidate() {
+        if (gasLimit < 0)
+            throw new RuntimeException("negative gas limit");
+        if (amount == null || gasPrice == null)
+            return ValidateResult.fault("missing amount or gas price");
+        if (!Type.TYPE_MAP.containsKey(type))
+            return ValidateResult.fault("unknown transaction type " + type + " of " + getHash());
+        if (type != Type.COIN_BASE.code && (signature == null || signature.isEmpty()))
+            return ValidateResult.fault("missing signature of transaction " + getHash());
+        if (type == Type.COIN_BASE.code && !getFrom().isEmpty())
+            return ValidateResult.fault("\"from\" of coinbase transaction " + getHash() + " should be empty");
+        if (type == Type.CONTRACT_DEPLOY.code && !getTo().isEmpty()) {
+            return ValidateResult.fault("\"to\" of contract deploy transaction " + getHash() + " should be empty");
+        }
+        if (type == Type.CONTRACT_CALL.code || type == Type.TRANSFER.code) {
+            if (getFrom().isEmpty() || getTo().isEmpty())
+                return ValidateResult.fault("\"from\" or \"to\" of transaction " + getHash() + " is empty");
+        }
+        if (type == Type.CONTRACT_CALL.code || type == Type.CONTRACT_DEPLOY.code) {
+            if (getPayload().isEmpty())
+                return ValidateResult.fault("missing payload of transaction " + getHash());
+        }
+        if (type == Type.TRANSFER.code) {
+            if (!getPayload().isEmpty())
+                return ValidateResult.fault("payload of transaction " + getHash() + " should be empty");
+        }
+        if (type != Type.COIN_BASE.code && !CryptoContext.verify(from.getBytes(), getSignaturePlain(), signature.getBytes())) {
+            return ValidateResult.fault("verify signature failed " + getHash());
+        }
+        return ValidateResult.success();
+    }
+
+    public enum Status {
+        PENDING,
+        INCLUDED,
+        CONFIRMED,
+        DROPPED
     }
 
     public enum Type {
@@ -307,104 +391,5 @@ public class Transaction {
         Type(int code) {
             this.code = code;
         }
-    }
-
-    /**
-     * get contract address, contract address = hash(rlp(from, nonce))
-     *
-     * @return contact address
-     */
-    public HexBytes createContractAddress() {
-        if (type != Type.CONTRACT_DEPLOY.code) throw new RuntimeException("not a contract deploy transaction");
-        return createContractAddress(getFromAddress(), nonce);
-    }
-
-    /**
-     * get contract address, contract address = hash(rlp(from, nonce))
-     *
-     * @return contact address
-     */
-    public static HexBytes createContractAddress(HexBytes address, long nonce) {
-        byte[] bytes = CryptoContext.hash(RLPCodec.encode(new Object[]{address, nonce}));
-        HexBytes ret = HexBytes.fromBytes(bytes);
-        return ret.slice(ret.size() - Account.ADDRESS_SIZE, ret.size());
-    }
-
-    public int getVersion() {
-        return version;
-    }
-
-    public int getType() {
-        return type;
-    }
-
-    public long getCreatedAt() {
-        return createdAt;
-    }
-
-    public long getNonce() {
-        return nonce;
-    }
-
-    public HexBytes getFrom() {
-        return from == null ? HexBytes.EMPTY : from;
-    }
-
-    @JsonIgnore
-    public HexBytes getFromAddress() {
-        if (getFrom().isEmpty()) throw new RuntimeException("from not found: coinbase transaction");
-        return Address.fromPublicKey(getFrom());
-    }
-
-    public Uint256 getGasPrice() {
-        return gasPrice;
-    }
-
-    public Uint256 getAmount() {
-        return amount;
-    }
-
-    public HexBytes getPayload() {
-        return payload == null ? HexBytes.EMPTY : payload;
-    }
-
-    public HexBytes getTo() {
-        return to == null ? HexBytes.EMPTY : to;
-    }
-
-    public HexBytes getSignature() {
-        return signature == null ? HexBytes.EMPTY : signature;
-    }
-
-    public ValidateResult basicValidate() {
-        if(gasLimit < 0)
-            throw new RuntimeException("negative gas limit");
-        if (amount == null || gasPrice == null)
-            return ValidateResult.fault("missing amount or gas price");
-        if (!Type.TYPE_MAP.containsKey(type))
-            return ValidateResult.fault("unknown transaction type " + type + " of " + getHash());
-        if (type != Type.COIN_BASE.code && (signature == null || signature.isEmpty()))
-            return ValidateResult.fault("missing signature of transaction " + getHash());
-        if (type == Type.COIN_BASE.code && !getFrom().isEmpty())
-            return ValidateResult.fault("\"from\" of coinbase transaction " + getHash() + " should be empty");
-        if (type == Type.CONTRACT_DEPLOY.code && !getTo().isEmpty()) {
-            return ValidateResult.fault("\"to\" of contract deploy transaction " + getHash() + " should be empty");
-        }
-        if (type == Type.CONTRACT_CALL.code || type == Type.TRANSFER.code) {
-            if (getFrom().isEmpty() || getTo().isEmpty())
-                return ValidateResult.fault("\"from\" or \"to\" of transaction " + getHash() + " is empty");
-        }
-        if (type == Type.CONTRACT_CALL.code || type == Type.CONTRACT_DEPLOY.code) {
-            if (getPayload().isEmpty())
-                return ValidateResult.fault("missing payload of transaction " + getHash());
-        }
-        if (type == Type.TRANSFER.code) {
-            if (!getPayload().isEmpty())
-                return ValidateResult.fault("payload of transaction " + getHash() + " should be empty");
-        }
-        if (type != Type.COIN_BASE.code && !CryptoContext.verify(from.getBytes(), getSignaturePlain(), signature.getBytes())) {
-            return ValidateResult.fault("verify signature failed " + getHash());
-        }
-        return ValidateResult.success();
     }
 }
