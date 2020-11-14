@@ -16,10 +16,7 @@ import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
-import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.events.NewBlocksReceived;
-import org.tdf.sunflower.events.NewTransactionsCollected;
-import org.tdf.sunflower.events.TransactionIncluded;
+import org.tdf.sunflower.events.*;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.Context;
 import org.tdf.sunflower.net.Peer;
@@ -162,7 +159,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 this::sendStatus, 0,
                 syncConfig.getHeartRate(), TimeUnit.SECONDS
         );
-        eventBus.subscribe(NewBlockMined.class, (e) -> propose(e.getBlock()));
+        eventBus.subscribe(NewBlockMined.class, (e) -> broadcastToApproved(SyncMessage.encode(SyncMessage.PROPOSAL, new Proposal(e.getBlock(), e.getFailedTransactions(), e.getReasons()))));
         eventBus.subscribe(NewTransactionsCollected.class,
                 (e) -> broadcastToApproved(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransactions()))
         );
@@ -231,7 +228,13 @@ public class SyncManager implements PeerServerListener, Closeable {
             case SyncMessage.PROPOSAL: {
                 if (isNotApproved(context))
                     return;
-                Block proposal = msg.getBodyAs(Block.class);
+                Proposal p = msg.getBodyAs(Proposal.class);
+                Block proposal = p.getBlock();
+                for (int i = 0; i < p.getFailedTransactions().size(); i++) {
+                    eventBus.publish(new TransactionFailed(p.getFailedTransactions().get(i), p.getReasons().get(i)));
+                }
+                if (proposal == null)
+                    return;
                 if (fastSyncing && !receivedProposals.asMap().containsKey(proposal.getHash())) {
                     receivedProposals.put(proposal.getHash(), true);
                     context.relay();
@@ -588,7 +591,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 b.getBody().stream().filter(x -> x.getType() != Transaction.Type.COIN_BASE.code)
                         .forEach(t -> {
                             TransactionResult r = rs.get(t.getHash());
-                            eventBus.publish(new TransactionIncluded(t, b, r.getGasUsed(), r.getReturns(), r.getEvents()));
+                            eventBus.publish(new TransactionIncluded(t.getHash(), b, r.getGasUsed(), r.getReturns(), r.getEvents()));
                         });
                 repository.writeBlock(b);
             }
@@ -611,10 +614,6 @@ public class SyncManager implements PeerServerListener, Closeable {
         broadcastToApproved(SyncMessage.encode(SyncMessage.STATUS, status));
     }
 
-
-    public void propose(Block b) {
-        broadcastToApproved(SyncMessage.encode(SyncMessage.PROPOSAL, b));
-    }
 
     @Override
     public void onStart(PeerServer server) {

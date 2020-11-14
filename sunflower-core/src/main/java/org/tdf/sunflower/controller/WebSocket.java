@@ -61,40 +61,40 @@ public class WebSocket {
         }
     }
 
-    public static void broadcastTransaction(Transaction tx, RLPElement body, boolean delete) {
+    public static void broadcastTransaction(HexBytes txHash, RLPElement body, boolean delete) {
         WebSocketMessage msg = new WebSocketMessage(
                 0,
                 WebSocketMessage.Code.TRANSACTION_EMIT.ordinal(),
                 body
         );
         broadcastAsync(msg,
-                ws -> ws.transactions.containsKey(tx.getHash()),
+                ws -> ws.transactions.containsKey(txHash),
                 ws -> {
-                    if (delete) ws.transactions.remove(tx.getHash());
+                    if (delete) ws.transactions.remove(txHash);
                 }
         );
     }
 
-    public static void broadcastPendingOrConfirm(Transaction tx, Transaction.Status status) {
-        RLPElement body = RLPElement.readRLPTree(new WebSocketTransactionBody(tx.getHash(), status.ordinal(), null));
-        broadcastTransaction(tx, body, status == Transaction.Status.CONFIRMED);
+    public static void broadcastPendingOrConfirm(HexBytes txHash, Transaction.Status status) {
+        RLPElement body = RLPElement.readRLPTree(new WebSocketTransactionBody(txHash, status.ordinal(), null));
+        broadcastTransaction(txHash, body, status == Transaction.Status.CONFIRMED);
     }
 
-    public static void broadcastDrop(Transaction tx, String reason) {
-        RLPElement body = RLPElement.readRLPTree(new WebSocketTransactionBody(tx.getHash(), Transaction.Status.DROPPED.ordinal(), reason));
-        broadcastTransaction(tx, body.asRLPList(), true);
+    public static void broadcastDrop(HexBytes hash, String reason) {
+        RLPElement body = RLPElement.readRLPTree(new WebSocketTransactionBody(hash, Transaction.Status.DROPPED.ordinal(), reason));
+        broadcastTransaction(hash, body.asRLPList(), true);
     }
 
-    public static void broadCastIncluded(Transaction tx, long height, HexBytes blockHash, long gasUsed, RLPList returns, List<Event> events) {
+    public static void broadCastIncluded(HexBytes txHash, long height, HexBytes blockHash, long gasUsed, RLPList returns, List<Event> events) {
         WebSocketTransactionBody bd =
                 new WebSocketTransactionBody(
-                        tx.getHash(),
+                        txHash,
                         Transaction.Status.INCLUDED.ordinal(),
                         new Object[]{height, blockHash, gasUsed, returns, events}
                 );
 
         RLPElement body = RLPElement.readRLPTree(bd);
-        broadcastTransaction(tx, body.asRLPList(), false);
+        broadcastTransaction(txHash, body.asRLPList(), false);
     }
 
     public static void broadcastEvent(byte[] address, String event, RLPList outputs) {

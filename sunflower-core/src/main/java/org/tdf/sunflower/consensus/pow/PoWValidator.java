@@ -38,7 +38,7 @@ public class PoWValidator extends AbstractValidator {
 
     @Override
     public ValidateResult validate(Transaction transaction) {
-        if (transaction.getVersion() != PoAConstants.TRANSACTION_VERSION) {
+        if (transaction.getVersion() != PoW.TRANSACTION_VERSION) {
             return ValidateResult.fault("transaction version not match");
         }
         return ValidateResult.success();

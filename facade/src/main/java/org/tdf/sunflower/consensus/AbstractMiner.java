@@ -7,7 +7,7 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.types.Uint256;
-import org.tdf.sunflower.types.TransactionResult;
+import org.tdf.sunflower.types.*;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.events.TransactionFailed;
@@ -18,14 +18,8 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.ForkedStateTrie;
 import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j(topic = "miner")
 public abstract class AbstractMiner implements Miner {
@@ -81,14 +75,13 @@ public abstract class AbstractMiner implements Miner {
 
     protected abstract void finalizeBlock(Block parent, Block block);
 
-    // TODO: 1. 错误事务的处理 2. 增加打包超时时间
-    protected Optional<Block> createBlock(Block parent) {
+    // TODO:  2. 增加打包超时时间
+    protected BlockCreateResult createBlock(Block parent) {
         if (!minerConfig.isAllowEmptyBlock() && getTransactionPool().size() == 0)
-            return Optional.empty();
+            return BlockCreateResult.empty();
 
         Header header = createHeader(parent);
         Block b = new Block(header);
-        Store<byte[], byte[]> cache = new CachedStore<>(accountTrie.getTrieStore(), ByteArrayMap::new);
 
         // get a trie at parent block's state
         // modifications to the trie will not persisted until flush() called
@@ -104,6 +97,10 @@ public abstract class AbstractMiner implements Miner {
         transactionList.add(0, coinbase);
         Map<HexBytes, TransactionResult> m = new HashMap<>();
         Uint256 totalFee = Uint256.ZERO;
+
+        List<HexBytes> failedTransactions = new ArrayList<>();
+        List<String> reasons = new ArrayList<>();
+
         for (Transaction tx : transactionList.subList(1, transactionList.size())) {
             // try to fetch transaction from pool
             try {
@@ -117,9 +114,11 @@ public abstract class AbstractMiner implements Miner {
             } catch (Exception e) {
                 // prompt reason for failed updates
                 e.printStackTrace();
+                failedTransactions.add(tx.getHash());
+                reasons.add(e.getMessage());
                 log.error("execute transaction " + tx.getHash() + " failed, reason = " + e.getMessage());
                 getTransactionPool().drop(tx);
-                eventBus.publish(new TransactionFailed(tx, e.getMessage()));
+                eventBus.publish(new TransactionFailed(tx.getHash(), e.getMessage()));
                 continue;
             }
             b.getBody().add(tx);
@@ -128,7 +127,7 @@ public abstract class AbstractMiner implements Miner {
         b.getBody().add(0, coinbase);
         // transactions may failed to execute
         if (b.getBody().size() == 1 && !minerConfig.isAllowEmptyBlock())
-            return Optional.empty();
+            return new BlockCreateResult(null, failedTransactions, reasons);
 
         // add fee to miners account
         coinbase.setAmount(coinbase.getAmount().safeAdd(totalFee));
@@ -148,7 +147,7 @@ public abstract class AbstractMiner implements Miner {
         b.getBody().stream().skip(1)
                 .forEach(tx -> {
                     TransactionResult res = m.get(tx.getHash());
-                    eventBus.publish(new TransactionIncluded(tx, b, res.getGasUsed(), res.getReturns(), res.getEvents())); });
-        return Optional.of(b);
+                    eventBus.publish(new TransactionIncluded(tx.getHash(), b, res.getGasUsed(), res.getReturns(), res.getEvents())); });
+        return new BlockCreateResult(b, failedTransactions, reasons);
     }
 }

@@ -68,15 +68,15 @@ public class TransactionPoolImpl implements TransactionPool {
         this.mCache = new HashMap<>();
 
         this.eventBus.subscribe(TransactionIncluded.class, (e) -> {
-            WebSocket.broadCastIncluded(e.getTransaction(), e.getBlock().getHeight(), e.getBlock().getHash(), e.getGasUsed(), e.getReturns(), e.getEvents());
+            WebSocket.broadCastIncluded(e.getTxHash(), e.getBlock().getHeight(), e.getBlock().getHash(), e.getGasUsed(), e.getReturns(), e.getEvents());
         });
 
         this.eventBus.subscribe(TransactionFailed.class, (e) -> {
-            WebSocket.broadcastDrop(e.getTx(), e.getReason());
+            WebSocket.broadcastDrop(e.getTxHash(), e.getReason());
         });
 
         this.eventBus.subscribe(TransactionConfirmed.class, (e) -> {
-            WebSocket.broadcastPendingOrConfirm(e.getTx(), Transaction.Status.CONFIRMED);
+            WebSocket.broadcastPendingOrConfirm(e.getTxHash(), Transaction.Status.CONFIRMED);
         });
     }
 
@@ -95,7 +95,7 @@ public class TransactionPoolImpl implements TransactionPool {
                     info -> {
                         boolean remove = (now - info.receivedAt) / 1000 > config.getExpiredIn();
                         if (remove && !transactionRepository.containsTransaction(info.tx.getHash().getBytes())) {
-                            WebSocket.broadcastDrop(info.tx, "invalid nonce");
+                            WebSocket.broadcastDrop(info.tx.getHash(), "invalid nonce");
                             dropped.put(info.tx.getHash(), info.tx);
                         }
                         return remove;
@@ -129,7 +129,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 if (!res.isSuccess()) {
                     log.error(res.getReason());
                     errors.add(res.getReason());
-                    WebSocket.broadcastDrop(transaction, res.getReason());
+                    WebSocket.broadcastDrop(transaction.getHash(), res.getReason());
                     continue;
                 }
                 res = validator.validate(transaction);
@@ -138,7 +138,7 @@ public class TransactionPoolImpl implements TransactionPool {
                     mCache.put(info.tx.getHash(), info);
                     newCollected.add(transaction);
                 } else {
-                    WebSocket.broadcastDrop(transaction, res.getReason());
+                    WebSocket.broadcastDrop(transaction.getHash(), res.getReason());
                     log.error(res.getReason());
                     errors.add(res.getReason());
                 }
@@ -147,7 +147,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 newCollected = Collections.emptyList();
 
             for (Transaction tx : newCollected) {
-                WebSocket.broadcastPendingOrConfirm(tx, Transaction.Status.PENDING);
+                WebSocket.broadcastPendingOrConfirm(tx.getHash(), Transaction.Status.PENDING);
             }
 
             if (!newCollected.isEmpty())
@@ -180,7 +180,7 @@ public class TransactionPoolImpl implements TransactionPool {
                     mCache.remove(t.getHash());
                     if (!transactionRepository.containsTransaction(t.getHash().getBytes()))
                         dropped.put(t.getHash(), t);
-                    WebSocket.broadcastDrop(t, "invalid nonce");
+                    WebSocket.broadcastDrop(t.getHash(), "invalid nonce");
                     continue;
                 }
                 if (t.getNonce() != prevNonce + 1) {

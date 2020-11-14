@@ -7,5 +7,5 @@ import java.util.List;
 
 @Value
 public class NewBlocksReceived {
-    private List<Block> blocks;
+    List<Block> blocks;
 }

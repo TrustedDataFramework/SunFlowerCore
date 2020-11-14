@@ -12,17 +12,14 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class CryptoContext {
-    @Setter
-    private static Function<byte[], byte[]> hashFunction
-            = Function.identity();
-
-    @Setter
-    private static SignatureVerifier signatureVerifier = (pk, msg, sig) -> true;
-
     // (sk, msg) -> signature
     @Setter
     public static BiFunction<byte[], byte[], byte[]> signer = (a, b) -> HexBytes.EMPTY_BYTES;
-
+    @Setter
+    private static Function<byte[], byte[]> hashFunction
+            = Function.identity();
+    @Setter
+    private static SignatureVerifier signatureVerifier = (pk, msg, sig) -> true;
     @Setter
     private static Supplier<byte[]> secretKeyGenerator = () -> HexBytes.EMPTY_BYTES;
 

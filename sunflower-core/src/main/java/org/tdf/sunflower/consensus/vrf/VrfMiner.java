@@ -324,7 +324,9 @@ public class VrfMiner extends AbstractMiner {
         log.debug("getNewBlockForMining best blocks: PendingState: " + bestPendingState.getHeight() + ", Blockchain: "
                 + bestBlock.getHeight());
 
-        Block newMiningBlock = createBlock(bestBlock).get();// blockchain.createNewBlock(bestPendingState,
+        Block newMiningBlock = createBlock(bestBlock).getBlock();// blockchain.createNewBlock(bestPendingState,
+        if(newMiningBlock == null)
+            return null;
         // getAllPendingTransactions(), getUncles(bestPendingState));
         log.info("######## Get new block for mining: #" + newMiningBlock.getHeight());
 

@@ -203,7 +203,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
             if (h > 0) {
                 getCanonicalBlock(h).get().getBody()
                         .stream().skip(1)
-                        .forEach(tx -> eventBus.publish(new TransactionConfirmed(tx)));
+                        .forEach(tx -> eventBus.publish(new TransactionConfirmed(tx.getHash())));
             }
         }
     }

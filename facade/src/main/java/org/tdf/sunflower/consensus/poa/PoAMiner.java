@@ -16,10 +16,7 @@ import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.*;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -130,10 +127,11 @@ public class PoAMiner extends AbstractMiner {
         if (!o.isPresent()) return;
         log.debug("try to mining at height " + (best.getHeight() + 1));
         try {
-            Optional<Block> b = createBlock(blockRepository.getBestBlock());
-            if (!b.isPresent()) return;
-            log.info("mining success block: {}", b.get().getHeader());
-            getEventBus().publish(new NewBlockMined(b.get()));
+            BlockCreateResult b = createBlock(blockRepository.getBestBlock());
+            if (b.getBlock() != null) {
+                log.info("mining success block: {}", b.getBlock().getHeader());
+            }
+            getEventBus().publish(new NewBlockMined(b.getBlock(), b.getFailedTransactions(), b.getReasons()));
         } catch (Exception e) {
             e.printStackTrace();
         }
