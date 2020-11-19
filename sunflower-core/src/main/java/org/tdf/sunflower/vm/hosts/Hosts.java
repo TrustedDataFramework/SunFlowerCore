@@ -47,7 +47,7 @@ public class Hosts {
     public Set<HostFunction> getAll() {
         Set<HostFunction> all = new HashSet<>(
                 Arrays.asList(
-                        new Abort(), new HashHost(),
+                        new HashHost(),
                         new Log(), new RLPHost(),
                         new Util(), new Uint256Host()
                 )

@@ -20,7 +20,7 @@ public class Abort extends HostFunction {
                 ),
                 new ArrayList<>())
         );
-        setName("abort");
+        setName("____abort");
     }
 
     @Override

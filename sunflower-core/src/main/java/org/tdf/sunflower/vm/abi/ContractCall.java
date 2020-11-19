@@ -7,7 +7,6 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Parameters;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
-import org.tdf.common.util.LittleEndian;
 import org.tdf.common.util.SafeMath;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.Module;
@@ -65,38 +64,19 @@ public class ContractCall {
     }
 
     public static int allocString(ModuleInstance moduleInstance, String s) {
-        byte[] data = s.getBytes(StandardCharsets.UTF_16LE);
-        long id = (int) moduleInstance.execute("__idof", AbiDataType.STRING.ordinal())[0];
-        long offset = moduleInstance.execute("__alloc", data.length, id)[0];
-        moduleInstance.getMemory().put((int) offset, data);
-        moduleInstance.execute("__retain", offset);
-        return (int) offset;
+        return WasmBlockChainInterface.malloc(moduleInstance, s);
     }
 
     public static int allocBytes(ModuleInstance moduleInstance, byte[] buf) {
-        long id = (int) moduleInstance.execute("__idof", AbiDataType.BYTES.ordinal())[0];
-        int offset = (int) moduleInstance.execute("__alloc", buf.length, id)[0];
-        moduleInstance.getMemory().put(offset, buf);
-        moduleInstance.execute("__retain", offset);
-        return offset;
+       return WasmBlockChainInterface.mallocBytes(moduleInstance, buf);
     }
 
     public static int allocAddress(ModuleInstance moduleInstance, byte[] addr) {
-        long id = (int) moduleInstance.execute("__idof", AbiDataType.ADDRESS.ordinal())[0];
-        int offset = (int) moduleInstance.execute("__alloc", 4L, id)[0];
-        int ptr = allocBytes(moduleInstance, addr);
-        moduleInstance.getMemory().put(offset, LittleEndian.encodeInt32(ptr));
-        moduleInstance.execute("__retain", offset);
-        return offset;
+        return WasmBlockChainInterface.mallocAddress(moduleInstance, addr);
     }
 
     public static int allocU256(ModuleInstance moduleInstance, Uint256 u) {
-        long id = (int) moduleInstance.execute("__idof", AbiDataType.U256.ordinal())[0];
-        int offset = (int) moduleInstance.execute("__alloc", 4L, id)[0];
-        int ptr = allocBytes(moduleInstance, u.getNoLeadZeroesData());
-        moduleInstance.getMemory().put(offset, LittleEndian.encodeInt32(ptr));
-        moduleInstance.execute("__retain", offset);
-        return offset;
+        return WasmBlockChainInterface.malloc(moduleInstance, u);
     }
 
     static Object getResult(ModuleInstance module, long offset, AbiDataType type) {
@@ -107,21 +87,8 @@ public class ContractCall {
             case BOOL: {
                 return offset;
             }
-            case BYTES: {
-                int len = module.getMemory().load32((int) offset - 4);
-                return module.getMemory().loadN((int) offset, len);
-            }
-            case STRING: {
-                int len = module.getMemory().load32((int) offset - 4);
-                return new String(module.getMemory().loadN((int) offset, len), StandardCharsets.UTF_16LE);
-            }
-            case U256:
-            case ADDRESS: {
-                int ptr = module.getMemory().load32((int) offset);
-                return getResult(module, ptr, AbiDataType.BYTES);
-            }
             default:
-                throw new UnsupportedOperationException();
+                return WasmBlockChainInterface.mpeek(module, (int) offset, type);
         }
     }
 
