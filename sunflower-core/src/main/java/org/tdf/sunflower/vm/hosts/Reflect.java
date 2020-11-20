@@ -9,7 +9,6 @@ import org.tdf.lotusvm.types.ValueType;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
-import org.tdf.sunflower.types.TransactionResult;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 import org.tdf.sunflower.vm.abi.ContractABI;
 import org.tdf.sunflower.vm.abi.ContractCall;
@@ -41,13 +40,13 @@ public class Reflect extends HostFunction {
         Type t = Type.values()[(int) longs[0]];
         switch (t) {
             case CALL: {
-                byte[] addr = (byte[]) WasmBlockChainInterface.mpeek(getInstance(), (int) longs[1], AbiDataType.ADDRESS);
-                String method = (String) WasmBlockChainInterface.mpeek(getInstance(), (int) longs[2], AbiDataType.STRING);
+                byte[] addr = (byte[]) WasmBlockChainInterface.peek(getInstance(), (int) longs[1], AbiDataType.ADDRESS);
+                String method = (String) WasmBlockChainInterface.peek(getInstance(), (int) longs[2], AbiDataType.STRING);
                 if ("init".equals(method))
                     throw new RuntimeException("cannot call constructor");
-                byte[] parameters = (byte[]) WasmBlockChainInterface.mpeek(getInstance(), (int) longs[3], AbiDataType.BYTES);
+                byte[] parameters = (byte[]) WasmBlockChainInterface.peek(getInstance(), (int) longs[3], AbiDataType.BYTES);
                 Parameters params = RLPCodec.decode(parameters, Parameters.class);
-                Uint256 amount = (Uint256) WasmBlockChainInterface.mpeek(getInstance(), (int) longs[4], AbiDataType.U256);
+                Uint256 amount = (Uint256) WasmBlockChainInterface.peek(getInstance(), (int) longs[4], AbiDataType.U256);
                 ContractCall forked = parent.fork();
                 RLPList result = forked.call(HexBytes.fromBytes(addr), method, params, amount, false, null).getReturns();
                 if(result.isEmpty())
@@ -82,10 +81,10 @@ public class Reflect extends HostFunction {
             case CREATE:
                 if (this.readonly)
                     throw new RuntimeException("cannot create contract here");
-                byte[] binary = (byte[]) WasmBlockChainInterface.mpeek(getInstance(), (int) longs[1], AbiDataType.BYTES);
-                byte[] parameters = (byte[]) WasmBlockChainInterface.mpeek(getInstance(), (int) longs[3], AbiDataType.BYTES);
-                byte[] abi = (byte[]) WasmBlockChainInterface.mpeek(getInstance(), (int) longs[5], AbiDataType.BYTES);
-                Uint256 amount = (Uint256) WasmBlockChainInterface.mpeek(getInstance(), (int) longs[4], AbiDataType.U256);
+                byte[] binary = (byte[]) WasmBlockChainInterface.peek(getInstance(), (int) longs[1], AbiDataType.BYTES);
+                byte[] parameters = (byte[]) WasmBlockChainInterface.peek(getInstance(), (int) longs[3], AbiDataType.BYTES);
+                byte[] abi = (byte[]) WasmBlockChainInterface.peek(getInstance(), (int) longs[5], AbiDataType.BYTES);
+                Uint256 amount = (Uint256) WasmBlockChainInterface.peek(getInstance(), (int) longs[4], AbiDataType.U256);
                 ContractCall forked = parent.fork();
                 byte[] data = forked
                         .call(HexBytes.fromBytes(binary),

@@ -41,7 +41,7 @@ public class HashHost extends HostFunction {
 
     byte[] getData(long... parameters){
         return (byte[]) WasmBlockChainInterface
-        .mpeek(getInstance(), (int) parameters[1], AbiDataType.BYTES);
+        .peek(getInstance(), (int) parameters[1], AbiDataType.BYTES);
     }
 
     enum Algorithm {

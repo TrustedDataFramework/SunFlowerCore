@@ -1,52 +1,20 @@
 package org.tdf.sunflower.vm.hosts;
 
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.BigEndian;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 
-import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+
 
 public abstract class WasmBlockChainInterface {
-
-    // 元数据，包含了字符串编码等信息
-    public static List<byte[]> getMeta(ModuleInstance instance) {
-        int offset = (int) instance.execute("__meta")[0];
-        int metaLen = Byte.toUnsignedInt(instance.getMemory().getData()[offset]);
-        List<byte[]> ret = new ArrayList<>();
-        offset++;
-        for (int i = 0; i < metaLen; i++){
-            int l = instance.getMemory().getData()[offset];
-            offset++;
-            ret.add(instance.getMemory().loadN(offset, l));
-            offset += l;
-        }
-        return ret;
-    }
-
-    public static Charset getCharSet(ModuleInstance instance) {
-        List<byte[]> meta = getMeta(instance);
-        int c = meta.size() >= 1 ? Uint256.of(meta.get(0)).intValue() : 0;
-        if (c == 0)
-            return StandardCharsets.UTF_8;
-        if (c == 1)
-            return StandardCharsets.UTF_16;
-        if(c == 2)
-            return StandardCharsets.UTF_16LE;
-        throw new RuntimeException("get charset failed unknown charset");
-    }
-
-    public static Object mpeek(ModuleInstance instance, int offset, AbiDataType type){
-        long lenAndStart = instance.execute("__mpeek", offset, type.ordinal())[0];
+    public static Object peek(ModuleInstance instance, int offset, AbiDataType type){
+        long lenAndStart = instance.execute("__peek", offset, type.ordinal())[0];
         int len = (int) (lenAndStart >>> 32);
         byte[] bin = instance.getMemory().loadN((int) lenAndStart, len);
         switch (type){
             case STRING:{
-                return new String(bin, getCharSet(instance));
+                return new String(bin, StandardCharsets.UTF_8);
             }
             case U256:{
                 return Uint256.of(bin);
@@ -59,29 +27,28 @@ public abstract class WasmBlockChainInterface {
         throw new RuntimeException("unexpected");
     }
 
-    public static int malloc(ModuleInstance instance, String s) {
-        byte[] bin = s.getBytes(getCharSet(instance));
-        long ptr = instance.execute("__malloc", bin.length, AbiDataType.STRING.ordinal())[0];
+    private static int mallocInternal(ModuleInstance instance, AbiDataType t, byte[] bin){
+        long ptr = instance.execute("__malloc", bin.length)[0];
         instance.getMemory().put((int) ptr, bin);
-        return (int) (ptr >>> 32);
+        long p = instance.execute("__change_t", t.ordinal(), ptr, bin.length)[0];
+        return (int) p;
+    }
+
+    public static int malloc(ModuleInstance instance, String s) {
+        byte[] bin = s.getBytes(StandardCharsets.UTF_8);
+        return mallocInternal(instance, AbiDataType.STRING, bin);
     }
 
     public static int malloc(ModuleInstance instance, Uint256 s) {
         byte[] bin = s.getNoLeadZeroesData();
-        long ptr = instance.execute("__malloc", bin.length, AbiDataType.U256.ordinal())[0];
-        instance.getMemory().put((int) ptr, bin);
-        return (int) (ptr >>> 32);
+        return mallocInternal(instance, AbiDataType.U256, bin);
     }
 
     public static int mallocBytes(ModuleInstance instance, byte[] bin) {
-        long ptr = instance.execute("__malloc", bin.length, AbiDataType.BYTES.ordinal())[0];
-        instance.getMemory().put((int) ptr, bin);
-        return (int) (ptr >>> 32);
+        return mallocInternal(instance, AbiDataType.BYTES, bin);
     }
 
     public static int mallocAddress(ModuleInstance instance, byte[] address) {
-        long ptr = instance.execute("__malloc", address.length, AbiDataType.ADDRESS.ordinal())[0];
-        instance.getMemory().put((int) ptr, address);
-        return (int) (ptr >>> 32);
+        return mallocInternal(instance, AbiDataType.ADDRESS, address);
     }
 }

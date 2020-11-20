@@ -11,7 +11,6 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 import org.tdf.sunflower.vm.abi.Context;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
@@ -122,14 +121,14 @@ public class ContextHost extends HostFunction {
             }
             case ACCOUNT_NONCE: {
                 byte[] addr = (byte[]) WasmBlockChainInterface
-                        .mpeek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
+                        .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
                 long r = a.getNonce();
                 return new long[]{r};
             }
             case ACCOUNT_BALANCE: {
                 byte[] addr = (byte[]) WasmBlockChainInterface
-                        .mpeek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
+                        .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
                 long r = WasmBlockChainInterface.malloc(getInstance(), a.getBalance());
                 return new long[]{r};
@@ -145,7 +144,7 @@ public class ContextHost extends HostFunction {
             }
             case CONTRACT_CODE: {
                 byte[] addr = (byte[]) WasmBlockChainInterface
-                        .mpeek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
+                        .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
                 if (a.getContractHash() == null || a.getContractHash().length == 0)
                     throw new RuntimeException(HexBytes.fromBytes(addr) + " is not a contract account");
@@ -155,7 +154,7 @@ public class ContextHost extends HostFunction {
             }
             case CONTRACT_ABI: {
                 byte[] addr = (byte[]) WasmBlockChainInterface
-                        .mpeek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
+                        .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
                 if (a.getContractHash() == null || a.getContractHash().length == 0)
                     throw new RuntimeException(HexBytes.fromBytes(addr) + " is not a contract account");

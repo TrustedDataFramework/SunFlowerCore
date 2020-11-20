@@ -6,7 +6,6 @@ import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -24,7 +23,7 @@ public class Log extends HostFunction {
     @Override
     public long[] execute(long... parameters) {
         log.info(
-                (String) WasmBlockChainInterface.mpeek(getInstance(),  (int) parameters[0], AbiDataType.STRING)
+                (String) WasmBlockChainInterface.peek(getInstance(),  (int) parameters[0], AbiDataType.STRING)
         );
         return new long[0];
     }

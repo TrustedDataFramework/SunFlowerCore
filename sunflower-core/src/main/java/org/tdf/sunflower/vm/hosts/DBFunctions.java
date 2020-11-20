@@ -46,12 +46,12 @@ public class DBFunctions extends HostFunction {
 
     private byte[] getKey(long... longs){
         return (byte[]) WasmBlockChainInterface
-                .mpeek(getInstance(), (int) longs[1], AbiDataType.BYTES);
+                .peek(getInstance(), (int) longs[1], AbiDataType.BYTES);
     }
 
     private byte[] getValue(long... longs){
         return (byte[]) WasmBlockChainInterface
-                .mpeek(getInstance(), (int) longs[2], AbiDataType.BYTES);
+                .peek(getInstance(), (int) longs[2], AbiDataType.BYTES);
     }
 
     @Override

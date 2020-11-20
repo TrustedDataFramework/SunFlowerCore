@@ -51,11 +51,11 @@ public class Uint256Host extends HostFunction {
     }
 
     private Uint256 getX(long... longs) {
-        return (Uint256) WasmBlockChainInterface.mpeek(getInstance(), (int) longs[1], AbiDataType.U256);
+        return (Uint256) WasmBlockChainInterface.peek(getInstance(), (int) longs[1], AbiDataType.U256);
     }
 
     private Uint256 getY(long... longs) {
-        return (Uint256) WasmBlockChainInterface.mpeek(getInstance(), (int) longs[2], AbiDataType.U256);
+        return (Uint256) WasmBlockChainInterface.peek(getInstance(), (int) longs[2], AbiDataType.U256);
     }
 
     enum Type {

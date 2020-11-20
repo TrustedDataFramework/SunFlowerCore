@@ -41,9 +41,9 @@ public class EventHost extends HostFunction {
         if (readonly)
             throw new RuntimeException("cannot call event here");
         String x = (String) WasmBlockChainInterface
-                    .mpeek(getInstance(), (int) parameters[0], AbiDataType.STRING);
+                    .peek(getInstance(), (int) parameters[0], AbiDataType.STRING);
         byte[] y = (byte[]) WasmBlockChainInterface
-                .mpeek(getInstance(), (int) parameters[1], AbiDataType.BYTES);
+                .peek(getInstance(), (int) parameters[1], AbiDataType.BYTES);
 
         RLPList li = RLPElement.fromEncoded(y).asRLPList();
         WebSocket.broadcastEvent(address.getBytes(), x, li);
