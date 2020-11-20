@@ -6,6 +6,7 @@ import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.vm.abi.AbiDataType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,7 +26,6 @@ public class Transfer extends HostFunction {
                 new FunctionType(
                         Arrays.asList(
                                 ValueType.I64, ValueType.I64,
-                                ValueType.I64, ValueType.I64,
                                 ValueType.I64
                         ),
                         Collections.emptyList()
@@ -41,9 +41,9 @@ public class Transfer extends HostFunction {
         if (parameters[0] != 0) {
             throw new RuntimeException("unexpected");
         }
-        Uint256 amount = Uint256.of(loadMemory((int) parameters[3], (int) parameters[4]));
+        HexBytes toAddr = HexBytes.fromBytes((byte[]) WasmBlockChainInterface.mpeek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS));
+        Uint256 amount = (Uint256) WasmBlockChainInterface.mpeek(getInstance(), (int) parameters[2], AbiDataType.U256);
         Account contractAccount = states.get(this.contractAddress);
-        HexBytes toAddr = HexBytes.fromBytes(loadMemory((int) parameters[1], (int) parameters[2]));
         contractAccount.subBalance(amount);
         states.putIfAbsent(toAddr, Account.emptyAccount(toAddr));
         Account to = states.get(toAddr);

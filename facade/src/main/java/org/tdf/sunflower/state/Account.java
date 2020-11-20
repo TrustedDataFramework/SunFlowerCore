@@ -1,5 +1,6 @@
 package org.tdf.sunflower.state;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,6 +11,9 @@ import org.tdf.rlp.RLPIgnored;
 import org.tdf.rlp.RLPItem;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.common.util.IntSerializer;
+import org.tdf.sunflower.vm.abi.ContractABI;
+
+import java.util.List;
 
 
 @AllArgsConstructor
@@ -24,7 +28,8 @@ public class Account {
                 Uint256.ZERO, address,
                 null,
                 CryptoContext.hash(RLPItem.NULL.getEncoded()),
-                true
+                true,
+                null
         );
     }
 
@@ -59,6 +64,10 @@ public class Account {
     @RLPIgnored
     private transient boolean fresh;
 
+    // contract abis
+    @JsonIgnore
+    private List<ContractABI> contractABIs;
+
     // TODO: reduce zero content of memory
 
     private Account() {
@@ -77,7 +86,7 @@ public class Account {
 
     @Override
     public Account clone() {
-        return new Account(address, nonce, balance, createdBy, contractHash, storageRoot, fresh);
+        return new Account(address, nonce, balance, createdBy, contractHash, storageRoot, fresh, contractABIs);
     }
 
     /**
@@ -87,7 +96,7 @@ public class Account {
      * @return a fresh new account
      */
     public static Account emptyAccount(HexBytes address) {
-        return new Account(address, 0, Uint256.ZERO, HexBytes.EMPTY, null, null, true);
+        return new Account(address, 0, Uint256.ZERO, HexBytes.EMPTY, null, null, true, null);
     }
 
     public void addBalance(Uint256 amount){

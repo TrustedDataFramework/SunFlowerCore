@@ -48,8 +48,8 @@ public class Hosts {
         Set<HostFunction> all = new HashSet<>(
                 Arrays.asList(
                         new HashHost(),
-                        new Log(), new RLPHost(),
-                        new Util(), new Uint256Host()
+                        new Log()
+                        , new Uint256Host()
                 )
         );
 

@@ -4,17 +4,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
+import org.tdf.sunflower.vm.abi.AbiDataType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 @Slf4j(topic = "vm")
 public class Log extends HostFunction {
     public Log() {
         setType(new FunctionType(
                 // offset, length, offset
-                Arrays.asList(ValueType.I32, ValueType.I32),
-                new ArrayList<>()
+                Arrays.asList(ValueType.I64),
+                Collections.emptyList()
         ));
         setName("_log");
     }
@@ -22,7 +24,7 @@ public class Log extends HostFunction {
     @Override
     public long[] execute(long... parameters) {
         log.info(
-                loadStringFromMemory((int) parameters[0], (int) parameters[1])
+                (String) WasmBlockChainInterface.mpeek(getInstance(),  (int) parameters[0], AbiDataType.STRING)
         );
         return new long[0];
     }

@@ -9,6 +9,7 @@ import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.controller.WebSocket;
 import org.tdf.sunflower.types.Event;
+import org.tdf.sunflower.vm.abi.AbiDataType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +28,7 @@ public class EventHost extends HostFunction {
         setType(
                 new FunctionType(
                         Arrays.asList
-                                (ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),
+                                (ValueType.I64, ValueType.I64),
                         Collections.emptyList()
                 )
         );
@@ -39,8 +40,11 @@ public class EventHost extends HostFunction {
     public long[] execute(long... parameters) {
         if (readonly)
             throw new RuntimeException("cannot call event here");
-        String x = loadStringFromMemory((int) parameters[0], (int) parameters[1]);
-        byte[] y = loadMemory((int) parameters[2], (int) parameters[3]);
+        String x = (String) WasmBlockChainInterface
+                    .mpeek(getInstance(), (int) parameters[0], AbiDataType.STRING);
+        byte[] y = (byte[]) WasmBlockChainInterface
+                .mpeek(getInstance(), (int) parameters[1], AbiDataType.BYTES);
+
         RLPList li = RLPElement.fromEncoded(y).asRLPList();
         WebSocket.broadcastEvent(address.getBytes(), x, li);
         events.add(new Event(x, li));

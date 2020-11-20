@@ -6,6 +6,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
+import org.tdf.sunflower.vm.abi.AbiDataType;
 
 import java.util.*;
 
@@ -19,7 +20,7 @@ public class DBFunctions extends HostFunction {
         this.storageTrie = storageTrie;
         setName("_db");
         setType(new FunctionType(
-                Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),
+                Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
                 Collections.singletonList(ValueType.I64)
         ));
         reset();
@@ -43,65 +44,74 @@ public class DBFunctions extends HostFunction {
 
     }
 
+    private byte[] getKey(long... longs){
+        return (byte[]) WasmBlockChainInterface
+                .mpeek(getInstance(), (int) longs[1], AbiDataType.BYTES);
+    }
+
+    private byte[] getValue(long... longs){
+        return (byte[]) WasmBlockChainInterface
+                .mpeek(getInstance(), (int) longs[2], AbiDataType.BYTES);
+    }
+
     @Override
     public long[] execute(long... longs) {
         Type t = Type.values()[(int) longs[0]];
         assertReadOnly(t);
         switch (t) {
             case SET: {
-                byte[] key = loadMemory((int) longs[1], (int) longs[2]);
-                byte[] value = loadMemory((int) longs[3], (int) longs[4]);
+                byte[] key = getKey(longs);
+                byte[] value = getValue(longs);
                 this.storageTrie.put(key, value);
-                break;
+                return new long[1];
             }
             case GET: {
-                byte[] key = loadMemory((int) longs[1], (int) longs[2]);
+                byte[] key = getKey(longs);
                 byte[] value = storageTrie.get(key).orElseThrow(() -> new RuntimeException(HexBytes.fromBytes(key) + " not found"));
-                if (longs[4] != 0) {
-                    putMemory((int) longs[3], value);
-                }
-                return new long[]{value.length};
+                long r = WasmBlockChainInterface
+                        .mallocBytes(getInstance(), value);
+                return new long[]{r};
             }
             case HAS: {
-                byte[] key = loadMemory((int) longs[1], (int) longs[2]);
+                byte[] key = getKey(longs);
                 return new long[]{storageTrie.containsKey(key) ? 1 : 0};
             }
             case REMOVE: {
                 if (readonly)
                     throw new RuntimeException("readonly");
-                byte[] key = loadMemory((int) longs[1], (int) longs[2]);
+                byte[] key = getKey(longs);
                 storageTrie.remove(key);
-                break;
+                return new long[1];
             }
-            case NEXT: {
-                this.index++;
-                break;
-            }
-            case HAS_NEXT: {
-                return new long[]{this.index < entries.size() - 1 ? 1 : 0};
-            }
-            case CURRENT_KEY: {
-                Map.Entry<HexBytes, byte[]> entry = entries.get(index);
-                if (longs[2] != 0) {
-                    putMemory((int) longs[1], entry.getKey().getBytes());
-                }
-                return new long[]{entry.getKey().size()};
-            }
-            case CURRENT_VALUE: {
-                Map.Entry<HexBytes, byte[]> entry = entries.get(index);
-                if (longs[2] != 0) {
-                    putMemory((int) longs[1], entry.getValue());
-                }
-                return new long[]{entry.getValue().length};
-            }
-            case RESET: {
-                reset();
-                break;
-            }
+//            case NEXT: {
+//                this.index++;
+//                break;
+//            }
+//            case HAS_NEXT: {
+//                return new long[]{this.index < entries.size() - 1 ? 1 : 0};
+//            }
+//            case CURRENT_KEY: {
+//                Map.Entry<HexBytes, byte[]> entry = entries.get(index);
+//                if (longs[2] != 0) {
+//                    putMemory((int) longs[1], entry.getKey().getBytes());
+//                }
+//                return new long[]{entry.getKey().size()};
+//            }
+//            case CURRENT_VALUE: {
+//                Map.Entry<HexBytes, byte[]> entry = entries.get(index);
+//                if (longs[2] != 0) {
+//                    putMemory((int) longs[1], entry.getValue());
+//                }
+//                return new long[]{entry.getValue().length};
+//            }
+//            case RESET: {
+//                reset();
+//                break;
+//            }
             default:
                 throw new RuntimeException("unreachable");
         }
-        return new long[1];
+//        return new long[1];
     }
 
     enum Type {

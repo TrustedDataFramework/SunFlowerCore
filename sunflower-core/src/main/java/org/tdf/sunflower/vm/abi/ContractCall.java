@@ -68,7 +68,7 @@ public class ContractCall {
     }
 
     public static int allocBytes(ModuleInstance moduleInstance, byte[] buf) {
-       return WasmBlockChainInterface.mallocBytes(moduleInstance, buf);
+        return WasmBlockChainInterface.mallocBytes(moduleInstance, buf);
     }
 
     public static int allocAddress(ModuleInstance moduleInstance, byte[] addr) {
@@ -198,7 +198,7 @@ public class ContractCall {
         );
 
         if (isDeploy && contractABIs != null) {
-            DBFunctions.getStorageTrie().put("__abi".getBytes(StandardCharsets.UTF_8), RLPCodec.encode(contractABIs));
+            contractAccount.setContractABIs(contractABIs);
             contractAccount.setStorageRoot(DBFunctions.getStorageTrie().commit());
             states.put(contractAddress, contractAccount);
         }

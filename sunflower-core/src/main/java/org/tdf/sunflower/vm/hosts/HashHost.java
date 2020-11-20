@@ -5,6 +5,7 @@ import org.tdf.gmhelper.SM3Util;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
+import org.tdf.sunflower.vm.abi.AbiDataType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,7 +14,7 @@ public class HashHost extends HostFunction {
     public HashHost() {
         setType(new FunctionType(
                 // offset, length, offset
-                Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),
+                Arrays.asList(ValueType.I64, ValueType.I64),
                 Collections.singletonList(ValueType.I64)
         ));
         setName("_hash");
@@ -21,7 +22,7 @@ public class HashHost extends HostFunction {
 
     @Override
     public long[] execute(long... parameters) {
-        byte[] data = loadMemory((int) parameters[1], (int) parameters[2]);
+        byte[] data = getData(parameters);
         Algorithm a = Algorithm.values()[(int) parameters[0]];
         byte[] ret;
         switch (a) {
@@ -34,9 +35,13 @@ public class HashHost extends HostFunction {
             default:
                 throw new RuntimeException("unreachable");
         }
-        if (parameters[4] != 0)
-            putMemory((int) parameters[3], ret);
-        return new long[]{ret.length};
+        long r = WasmBlockChainInterface.mallocBytes(getInstance(), ret);
+        return new long[]{r};
+    }
+
+    byte[] getData(long... parameters){
+        return (byte[]) WasmBlockChainInterface
+        .mpeek(getInstance(), (int) parameters[1], AbiDataType.BYTES);
     }
 
     enum Algorithm {

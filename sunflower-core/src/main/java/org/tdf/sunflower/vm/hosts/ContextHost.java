@@ -6,7 +6,9 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
+import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.vm.abi.AbiDataType;
 import org.tdf.sunflower.vm.abi.Context;
 
 import java.nio.charset.StandardCharsets;
@@ -21,6 +23,7 @@ public class ContextHost extends HostFunction {
     private Store<byte[], byte[]> contractCodeStore;
     private Function<byte[], Trie<byte[], byte[]>> storageTrieSupplier;
     private boolean readonly;
+
     public ContextHost(
             Context context,
             Map<HexBytes, Account> states,
@@ -30,7 +33,7 @@ public class ContextHost extends HostFunction {
     ) {
         setName("_context");
         setType(
-                new FunctionType(Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),
+                new FunctionType(Arrays.asList(ValueType.I64, ValueType.I64),
                         Collections.singletonList(ValueType.I64))
         );
         this.context = context;
@@ -43,10 +46,6 @@ public class ContextHost extends HostFunction {
     @Override
     public long[] execute(long... parameters) {
         Type type = Type.values()[(int) parameters[0]];
-        long ret = 0;
-        boolean isPut = parameters[2] != 0;
-        byte[] data = null;
-        long offset = parameters[1];
         if ((type != Type.CONTRACT_ADDRESS
                 && type != Type.CONTRACT_NONCE
                 && type != Type.CONTRACT_CREATED_BY
@@ -59,136 +58,114 @@ public class ContextHost extends HostFunction {
         }
         switch (type) {
             case HEADER_PARENT_HASH: {
-                data = context.getHeader().getHashPrev().getBytes();
-                ret = data.length;
-                break;
+                long r = WasmBlockChainInterface
+                        .mallocBytes(getInstance(), context.getHeader().getHashPrev().getBytes());
+                return new long[]{r};
             }
             case HEADER_CREATED_AT: {
-                isPut = false;
-                ret = context.getHeader().getCreatedAt();
-                break;
+                long r = context.getHeader().getCreatedAt();
+                return new long[]{r};
             }
             case HEADER_HEIGHT: {
-                isPut = false;
-                ret = context.getHeader().getHeight();
-                break;
+                long r = context.getHeader().getHeight();
+                return new long[]{r};
             }
             case TX_TYPE: {
-                isPut = false;
-                ret = context.getTransaction().getType();
-                break;
+                long r = context.getTransaction().getType();
+                return new long[]{r};
             }
             case TX_CREATED_AT: {
-                isPut = false;
-                ret = context.getTransaction().getCreatedAt();
-                break;
+                long r = context.getTransaction().getCreatedAt();
+                return new long[]{r};
             }
             case TX_NONCE: {
-                isPut = false;
-                ret = context.getTransaction().getNonce();
-                break;
+                long r = context.getTransaction().getNonce();
+                return new long[]{r};
             }
             case TX_ORIGIN: {
-                data = context.getTransaction().getFromAddress().getBytes();
-                ret = data.length;
-                break;
+                long r = WasmBlockChainInterface.mallocAddress(getInstance(), context.getTransaction().getFromAddress().getBytes());
+                return new long[]{r};
             }
             case TX_GAS_PRICE: {
-                data = context.getTransaction().getGasPrice().getNoLeadZeroesData();
-                ret = data.length;
-                break;
+                long r = WasmBlockChainInterface.malloc(getInstance(), context.getTransaction().getGasPrice());
+                return new long[]{r};
             }
             case TX_AMOUNT: {
-                data = context.getTransaction().getAmount().getNoLeadZeroesData();
-                ret = data.length;
-                break;
+                long r = WasmBlockChainInterface.malloc(getInstance(), context.getTransaction().getAmount());
+                return new long[]{r};
             }
             case TX_TO: {
-                data = context.getTransaction().getTo().getBytes();
-                ret = data.length;
-                break;
+                long r = WasmBlockChainInterface.mallocAddress(getInstance(), context.getTransaction().getTo().getBytes());
+                return new long[]{r};
             }
             case TX_SIGNATURE: {
-                data = context.getTransaction().getSignature().getBytes();
-                ret = data.length;
-                break;
+                long r = WasmBlockChainInterface.mallocBytes(getInstance(), context.getTransaction().getSignature().getBytes());
+                return new long[]{r};
             }
             case TX_HASH: {
-                data = context.getTransaction().getHash().getBytes();
-                ret = data.length;
-                break;
+                long r = WasmBlockChainInterface.mallocBytes(getInstance(), context.getTransaction().getHash().getBytes());
+                return new long[]{r};
             }
             case CONTRACT_ADDRESS: {
-                data = context.getContractAccount().getAddress().getBytes();
-                ret = data.length;
-                break;
+                long r = WasmBlockChainInterface
+                        .mallocAddress(getInstance(), context.getContractAccount().getAddress().getBytes());
+
+                return new long[]{r};
             }
             case CONTRACT_NONCE: {
-                isPut = false;
-                ret = context.getContractAccount().getNonce();
-                break;
+                long r = context.getContractAccount().getNonce();
+                return new long[]{r};
             }
             case CONTRACT_CREATED_BY: {
-                data = context.getContractAccount().getCreatedBy().getBytes();
-                ret = data.length;
-                break;
+                long r = WasmBlockChainInterface.mallocAddress(getInstance(), context.getContractAccount().getCreatedBy().getBytes());
+                return new long[]{r};
             }
             case ACCOUNT_NONCE: {
-                isPut = false;
-                byte[] addr = loadMemory((int) parameters[1], (int) parameters[2]);
+                byte[] addr = (byte[]) WasmBlockChainInterface
+                        .mpeek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
-                ret = a.getNonce();
-                break;
+                long r = a.getNonce();
+                return new long[]{r};
             }
             case ACCOUNT_BALANCE: {
-                byte[] addr = loadMemory((int) parameters[1], (int) parameters[2]);
+                byte[] addr = (byte[]) WasmBlockChainInterface
+                        .mpeek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
-                data = a.getBalance().getNoLeadZeroesData();
-                offset = parameters[3];
-                isPut = parameters[4] != 0;
-                ret = data.length;
-                break;
+                long r = WasmBlockChainInterface.malloc(getInstance(), a.getBalance());
+                return new long[]{r};
             }
             case MSG_SENDER: {
-                data = context.getMsgSender().getBytes();
-                ret = data.length;
-                break;
+                long r = WasmBlockChainInterface.mallocAddress(getInstance(), context.getMsgSender().getBytes());
+                return new long[]{r};
             }
             case MSG_AMOUNT: {
-                data = context.getAmount().getNoLeadZeroesData();
-                ret = data.length;
-                break;
+                long r =
+                        WasmBlockChainInterface.malloc(getInstance(), context.getAmount());
+                return new long[]{r};
             }
             case CONTRACT_CODE: {
-                byte[] addr = loadMemory((int) parameters[1], (int) parameters[2]);
+                byte[] addr = (byte[]) WasmBlockChainInterface
+                        .mpeek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
                 if (a.getContractHash() == null || a.getContractHash().length == 0)
                     throw new RuntimeException(HexBytes.fromBytes(addr) + " is not a contract account");
-                data = this.contractCodeStore.get(a.getContractHash()).get();
-                ret = data.length;
-                isPut = parameters[4] != 0;
-                offset = parameters[3];
-                break;
+                byte[] code = this.contractCodeStore.get(a.getContractHash()).get();
+                long r = WasmBlockChainInterface.mallocBytes(getInstance(), code);
+                return new long[]{r};
             }
             case CONTRACT_ABI: {
-                byte[] addr = loadMemory((int) parameters[1], (int) parameters[2]);
+                byte[] addr = (byte[]) WasmBlockChainInterface
+                        .mpeek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
                 if (a.getContractHash() == null || a.getContractHash().length == 0)
                     throw new RuntimeException(HexBytes.fromBytes(addr) + " is not a contract account");
-                data = this.storageTrieSupplier.apply(a.getStorageRoot()).get("__abi".getBytes(StandardCharsets.UTF_8)).get();
-                ret = data.length;
-                isPut = parameters[4] != 0;
-                offset = parameters[3];
-                break;
+                byte[] data = RLPCodec.encode(a.getContractABIs());
+                long r = WasmBlockChainInterface.mallocBytes(getInstance(), data);
+                return new long[]{r};
             }
             default:
                 throw new RuntimeException("unexpected type " + type);
         }
-
-        if (isPut) {
-            putMemory((int) offset, data);
-        }
-        return new long[]{ret};
     }
 
     public enum Type {

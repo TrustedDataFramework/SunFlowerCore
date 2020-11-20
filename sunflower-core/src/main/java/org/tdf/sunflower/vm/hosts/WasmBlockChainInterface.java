@@ -1,23 +1,36 @@
 package org.tdf.sunflower.vm.hosts;
 
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.BigEndian;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class WasmBlockChainInterface {
 
     // 元数据，包含了字符串编码等信息
-    public static byte[] getMeta(ModuleInstance instance) {
+    public static List<byte[]> getMeta(ModuleInstance instance) {
         int offset = (int) instance.execute("__meta")[0];
-        byte metaLen =instance.getMemory().getData()[offset];
-        return instance.getMemory().loadN(offset, metaLen);
+        int metaLen = Byte.toUnsignedInt(instance.getMemory().getData()[offset]);
+        List<byte[]> ret = new ArrayList<>();
+        offset++;
+        for (int i = 0; i < metaLen; i++){
+            int l = instance.getMemory().getData()[offset];
+            offset++;
+            ret.add(instance.getMemory().loadN(offset, l));
+            offset += l;
+        }
+        return ret;
     }
 
     public static Charset getCharSet(ModuleInstance instance) {
-        byte c = getMeta(instance)[1];
+        List<byte[]> meta = getMeta(instance);
+        int c = meta.size() >= 1 ? Uint256.of(meta.get(0)).intValue() : 0;
         if (c == 0)
             return StandardCharsets.UTF_8;
         if (c == 1)
