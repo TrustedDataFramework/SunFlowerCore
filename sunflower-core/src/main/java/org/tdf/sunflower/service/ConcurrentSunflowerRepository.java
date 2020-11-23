@@ -1,6 +1,7 @@
 package org.tdf.sunflower.service;
 
 import lombok.RequiredArgsConstructor;
+import org.tdf.common.types.BlockConfirms;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.exception.GenesisConflictsException;
 import org.tdf.sunflower.exception.WriteGenesisFailedException;
@@ -239,7 +240,7 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
     }
 
     @Override
-    public long getConfirms(byte[] transactionHash) {
+    public BlockConfirms getConfirms(byte[] transactionHash) {
         lock.readLock().lock();
         try {
             return delegate.getConfirms(transactionHash);
