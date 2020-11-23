@@ -7,6 +7,7 @@ import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.MemoryDatabaseStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
+import org.tdf.common.types.BlockConfirms;
 import org.tdf.common.util.ByteArraySet;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
@@ -229,19 +230,19 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     }
 
     @Override
-    public long getConfirms(byte[] transactionHash) {
+    public BlockConfirms getConfirms(byte[] transactionHash) {
         HexBytes[] blockHashes =
                 transactionIncludes.get(transactionHash).orElse(new HexBytes[0]);
-
+        // 确认数
         if (blockHashes.length == 0)
-            return -1;
+            return new BlockConfirms(-1, null, null);
         for (HexBytes hash : blockHashes) {
             Header h = headerStore.get(hash.getBytes()).orElse(null);
             if (h == null) continue;
             if (isCanonical(hash.getBytes()))
-                return getBestHeader().getHeight() - h.getHeight();
+                return new BlockConfirms(getBestHeader().getHeight() - h.getHeight(), h.getHash(), h.getHeight());
         }
-        return -1;
+        return new BlockConfirms(-1, null, null);
     }
 
     private boolean isCanonical(Header h) {

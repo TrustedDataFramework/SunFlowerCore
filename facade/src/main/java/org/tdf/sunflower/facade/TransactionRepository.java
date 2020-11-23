@@ -1,5 +1,6 @@
 package org.tdf.sunflower.facade;
 
+import org.tdf.common.types.BlockConfirms;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.Collections;
@@ -34,8 +35,8 @@ public interface TransactionRepository {
         }
 
         @Override
-        public long getConfirms(byte[] transactionHash) {
-            return 0;
+        public BlockConfirms getConfirms(byte[] transactionHash) {
+            return null;
         }
 
         @Override
@@ -44,7 +45,7 @@ public interface TransactionRepository {
         }
     };
 
-    long getConfirms(byte[] transactionHash);
+    BlockConfirms getConfirms(byte[] transactionHash);
 
     void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser);
 }

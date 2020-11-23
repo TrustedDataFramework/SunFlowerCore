@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.tdf.common.types.BlockConfirms;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.dao.HeaderDao;
@@ -185,8 +186,8 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
     }
 
     @Override
-    public long getConfirms(byte[] transactionHash) {
-        return 0;
+    public BlockConfirms getConfirms(byte[] transactionHash) {
+        return null;
     }
 
     public List<Transaction> getTransactionsByBlockHeight(long height) {

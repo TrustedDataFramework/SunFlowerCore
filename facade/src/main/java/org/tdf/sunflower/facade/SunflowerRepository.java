@@ -1,5 +1,6 @@
 package org.tdf.sunflower.facade;
 
+import org.tdf.common.types.BlockConfirms;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
@@ -153,8 +154,8 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
         }
 
         @Override
-        public long getConfirms(byte[] transactionHash) {
-            return 0;
+        public BlockConfirms getConfirms(byte[] transactionHash) {
+            return null;
         }
 
         @Override

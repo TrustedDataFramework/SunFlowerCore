@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.types.BlockConfirms;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
@@ -108,7 +109,10 @@ public class EntryController {
         Optional<Transaction> o = repository.getTransactionByHash(HexBytes.decode(hash));
         if (o.isPresent()) {
             Map<String, Object> m = MappingUtil.pojoToMap(o.get());
-            m.put("confirms", repository.getConfirms(HexBytes.decode(hash)));
+            BlockConfirms confirms = repository.getConfirms(HexBytes.decode(hash));
+            m.put("confirms", confirms.getConfirms());
+            m.put("blockHeight", confirms.getBlockHeight());
+            m.put("blockHash", confirms.getBlockHash().toHex());
             return m;
         }
         o = pool.get(HexBytes.fromHex(hash));
