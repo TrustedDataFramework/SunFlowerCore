@@ -57,7 +57,7 @@ public class ContextHost extends HostFunction {
         }
         switch (type) {
             case HEADER_PARENT_HASH: {
-                long r = WasmBlockChainInterface
+                long r = WBI
                         .mallocBytes(getInstance(), context.getHeader().getHashPrev().getBytes());
                 return new long[]{r};
             }
@@ -82,31 +82,31 @@ public class ContextHost extends HostFunction {
                 return new long[]{r};
             }
             case TX_ORIGIN: {
-                long r = WasmBlockChainInterface.mallocAddress(getInstance(), context.getTransaction().getFromAddress().getBytes());
+                long r = WBI.mallocAddress(getInstance(), context.getTransaction().getFromAddress().getBytes());
                 return new long[]{r};
             }
             case TX_GAS_PRICE: {
-                long r = WasmBlockChainInterface.malloc(getInstance(), context.getTransaction().getGasPrice());
+                long r = WBI.malloc(getInstance(), context.getTransaction().getGasPrice());
                 return new long[]{r};
             }
             case TX_AMOUNT: {
-                long r = WasmBlockChainInterface.malloc(getInstance(), context.getTransaction().getAmount());
+                long r = WBI.malloc(getInstance(), context.getTransaction().getAmount());
                 return new long[]{r};
             }
             case TX_TO: {
-                long r = WasmBlockChainInterface.mallocAddress(getInstance(), context.getTransaction().getTo().getBytes());
+                long r = WBI.mallocAddress(getInstance(), context.getTransaction().getTo().getBytes());
                 return new long[]{r};
             }
             case TX_SIGNATURE: {
-                long r = WasmBlockChainInterface.mallocBytes(getInstance(), context.getTransaction().getSignature().getBytes());
+                long r = WBI.mallocBytes(getInstance(), context.getTransaction().getSignature().getBytes());
                 return new long[]{r};
             }
             case TX_HASH: {
-                long r = WasmBlockChainInterface.mallocBytes(getInstance(), context.getTransaction().getHash().getBytes());
+                long r = WBI.mallocBytes(getInstance(), context.getTransaction().getHash().getBytes());
                 return new long[]{r};
             }
             case CONTRACT_ADDRESS: {
-                long r = WasmBlockChainInterface
+                long r = WBI
                         .mallocAddress(getInstance(), context.getContractAccount().getAddress().getBytes());
 
                 return new long[]{r};
@@ -116,50 +116,50 @@ public class ContextHost extends HostFunction {
                 return new long[]{r};
             }
             case CONTRACT_CREATED_BY: {
-                long r = WasmBlockChainInterface.mallocAddress(getInstance(), context.getContractAccount().getCreatedBy().getBytes());
+                long r = WBI.mallocAddress(getInstance(), context.getContractAccount().getCreatedBy().getBytes());
                 return new long[]{r};
             }
             case ACCOUNT_NONCE: {
-                byte[] addr = (byte[]) WasmBlockChainInterface
+                byte[] addr = (byte[]) WBI
                         .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
                 long r = a.getNonce();
                 return new long[]{r};
             }
             case ACCOUNT_BALANCE: {
-                byte[] addr = (byte[]) WasmBlockChainInterface
+                byte[] addr = (byte[]) WBI
                         .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
-                long r = WasmBlockChainInterface.malloc(getInstance(), a.getBalance());
+                long r = WBI.malloc(getInstance(), a.getBalance());
                 return new long[]{r};
             }
             case MSG_SENDER: {
-                long r = WasmBlockChainInterface.mallocAddress(getInstance(), context.getMsgSender().getBytes());
+                long r = WBI.mallocAddress(getInstance(), context.getMsgSender().getBytes());
                 return new long[]{r};
             }
             case MSG_AMOUNT: {
                 long r =
-                        WasmBlockChainInterface.malloc(getInstance(), context.getAmount());
+                        WBI.malloc(getInstance(), context.getAmount());
                 return new long[]{r};
             }
             case CONTRACT_CODE: {
-                byte[] addr = (byte[]) WasmBlockChainInterface
+                byte[] addr = (byte[]) WBI
                         .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
                 if (a.getContractHash() == null || a.getContractHash().length == 0)
                     throw new RuntimeException(HexBytes.fromBytes(addr) + " is not a contract account");
                 byte[] code = this.contractCodeStore.get(a.getContractHash()).get();
-                long r = WasmBlockChainInterface.mallocBytes(getInstance(), code);
+                long r = WBI.mallocBytes(getInstance(), code);
                 return new long[]{r};
             }
             case CONTRACT_ABI: {
-                byte[] addr = (byte[]) WasmBlockChainInterface
+                byte[] addr = (byte[]) WBI
                         .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
                 Account a = states.get(HexBytes.fromBytes(addr));
                 if (a.getContractHash() == null || a.getContractHash().length == 0)
                     throw new RuntimeException(HexBytes.fromBytes(addr) + " is not a contract account");
                 byte[] data = RLPCodec.encode(a.getContractABIs());
-                long r = WasmBlockChainInterface.mallocBytes(getInstance(), data);
+                long r = WBI.mallocBytes(getInstance(), data);
                 return new long[]{r};
             }
             default:

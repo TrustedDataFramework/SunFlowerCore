@@ -45,12 +45,12 @@ public class DBFunctions extends HostFunction {
     }
 
     private byte[] getKey(long... longs){
-        return (byte[]) WasmBlockChainInterface
+        return (byte[]) WBI
                 .peek(getInstance(), (int) longs[1], AbiDataType.BYTES);
     }
 
     private byte[] getValue(long... longs){
-        return (byte[]) WasmBlockChainInterface
+        return (byte[]) WBI
                 .peek(getInstance(), (int) longs[2], AbiDataType.BYTES);
     }
 
@@ -68,7 +68,7 @@ public class DBFunctions extends HostFunction {
             case GET: {
                 byte[] key = getKey(longs);
                 byte[] value = storageTrie.get(key).orElseThrow(() -> new RuntimeException(HexBytes.fromBytes(key) + " not found"));
-                long r = WasmBlockChainInterface
+                long r = WBI
                         .mallocBytes(getInstance(), value);
                 return new long[]{r};
             }

@@ -23,7 +23,7 @@ public class Log extends HostFunction {
     @Override
     public long[] execute(long... parameters) {
         log.info(
-                (String) WasmBlockChainInterface.peek(getInstance(),  (int) parameters[0], AbiDataType.STRING)
+                (String) WBI.peek(getInstance(),  (int) parameters[0], AbiDataType.STRING)
         );
         return new long[0];
     }

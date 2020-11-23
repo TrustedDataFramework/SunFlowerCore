@@ -46,16 +46,16 @@ public class Uint256Host extends HostFunction {
             default:
                 throw new RuntimeException("unreachable");
         }
-        int offset = WasmBlockChainInterface.malloc(getInstance(), ret);
+        int offset = WBI.malloc(getInstance(), ret);
         return new long[]{offset};
     }
 
     private Uint256 getX(long... longs) {
-        return (Uint256) WasmBlockChainInterface.peek(getInstance(), (int) longs[1], AbiDataType.U256);
+        return (Uint256) WBI.peek(getInstance(), (int) longs[1], AbiDataType.U256);
     }
 
     private Uint256 getY(long... longs) {
-        return (Uint256) WasmBlockChainInterface.peek(getInstance(), (int) longs[2], AbiDataType.U256);
+        return (Uint256) WBI.peek(getInstance(), (int) longs[2], AbiDataType.U256);
     }
 
     enum Type {

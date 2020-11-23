@@ -6,12 +6,13 @@ import org.tdf.sunflower.vm.abi.AbiDataType;
 
 import java.nio.charset.StandardCharsets;
 
-
-public abstract class WasmBlockChainInterface {
+// webassembly blockchain interface
+public abstract class WBI {
     public static Object peek(ModuleInstance instance, int offset, AbiDataType type){
-        long lenAndStart = instance.execute("__peek", offset, type.ordinal())[0];
-        int len = (int) (lenAndStart >>> 32);
-        byte[] bin = instance.getMemory().loadN((int) lenAndStart, len);
+        long startAndLen = instance.execute("__peek", offset, type.ordinal())[0];
+        int start = (int) (startAndLen >>> 32);
+        int len = (int) (startAndLen);
+        byte[] bin = instance.getMemory().loadN(start, len);
         switch (type){
             case STRING:{
                 return new String(bin, StandardCharsets.UTF_8);

@@ -40,13 +40,13 @@ public class Reflect extends HostFunction {
         Type t = Type.values()[(int) longs[0]];
         switch (t) {
             case CALL: {
-                byte[] addr = (byte[]) WasmBlockChainInterface.peek(getInstance(), (int) longs[1], AbiDataType.ADDRESS);
-                String method = (String) WasmBlockChainInterface.peek(getInstance(), (int) longs[2], AbiDataType.STRING);
+                byte[] addr = (byte[]) WBI.peek(getInstance(), (int) longs[1], AbiDataType.ADDRESS);
+                String method = (String) WBI.peek(getInstance(), (int) longs[2], AbiDataType.STRING);
                 if ("init".equals(method))
                     throw new RuntimeException("cannot call constructor");
-                byte[] parameters = (byte[]) WasmBlockChainInterface.peek(getInstance(), (int) longs[3], AbiDataType.BYTES);
+                byte[] parameters = (byte[]) WBI.peek(getInstance(), (int) longs[3], AbiDataType.BYTES);
                 Parameters params = RLPCodec.decode(parameters, Parameters.class);
-                Uint256 amount = (Uint256) WasmBlockChainInterface.peek(getInstance(), (int) longs[4], AbiDataType.U256);
+                Uint256 amount = (Uint256) WBI.peek(getInstance(), (int) longs[4], AbiDataType.U256);
                 ContractCall forked = parent.fork();
                 RLPList result = forked.call(HexBytes.fromBytes(addr), method, params, amount, false, null).getReturns();
                 if(result.isEmpty())
@@ -60,19 +60,19 @@ public class Reflect extends HostFunction {
                     case U64:
                         return new long[]{it.asLong()};
                     case U256:{
-                        long r = WasmBlockChainInterface.malloc(getInstance(), it.as(Uint256.class));
+                        long r = WBI.malloc(getInstance(), it.as(Uint256.class));
                         return new long[]{r};
                     }
                     case STRING:{
-                        long r = WasmBlockChainInterface.malloc(getInstance(), it.asString());
+                        long r = WBI.malloc(getInstance(), it.asString());
                         return new long[]{r};
                     }
                     case BYTES:{
-                        long r = WasmBlockChainInterface.mallocBytes(getInstance(), it.asBytes());
+                        long r = WBI.mallocBytes(getInstance(), it.asBytes());
                         return new long[]{r};
                     }
                     case ADDRESS:{
-                        long r = WasmBlockChainInterface.mallocAddress(getInstance(), it.asBytes());
+                        long r = WBI.mallocAddress(getInstance(), it.asBytes());
                         return new long[]{r};
                     }
                 }
@@ -81,10 +81,10 @@ public class Reflect extends HostFunction {
             case CREATE:
                 if (this.readonly)
                     throw new RuntimeException("cannot create contract here");
-                byte[] binary = (byte[]) WasmBlockChainInterface.peek(getInstance(), (int) longs[1], AbiDataType.BYTES);
-                byte[] parameters = (byte[]) WasmBlockChainInterface.peek(getInstance(), (int) longs[3], AbiDataType.BYTES);
-                byte[] abi = (byte[]) WasmBlockChainInterface.peek(getInstance(), (int) longs[5], AbiDataType.BYTES);
-                Uint256 amount = (Uint256) WasmBlockChainInterface.peek(getInstance(), (int) longs[4], AbiDataType.U256);
+                byte[] binary = (byte[]) WBI.peek(getInstance(), (int) longs[1], AbiDataType.BYTES);
+                byte[] parameters = (byte[]) WBI.peek(getInstance(), (int) longs[3], AbiDataType.BYTES);
+                byte[] abi = (byte[]) WBI.peek(getInstance(), (int) longs[5], AbiDataType.BYTES);
+                Uint256 amount = (Uint256) WBI.peek(getInstance(), (int) longs[4], AbiDataType.U256);
                 ContractCall forked = parent.fork();
                 byte[] data = forked
                         .call(HexBytes.fromBytes(binary),
@@ -95,7 +95,7 @@ public class Reflect extends HostFunction {
                                 Arrays.asList(RLPCodec.decode(abi, ContractABI[].class))
                         )
                         .getReturns().get(0).asBytes();
-                long r = WasmBlockChainInterface.mallocAddress(getInstance(), data);
+                long r = WBI.mallocAddress(getInstance(), data);
                 return new long[]{r};
         }
         throw new RuntimeException("unreachable");

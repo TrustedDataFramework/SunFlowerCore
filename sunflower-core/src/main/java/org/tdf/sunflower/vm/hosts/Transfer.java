@@ -41,8 +41,8 @@ public class Transfer extends HostFunction {
         if (parameters[0] != 0) {
             throw new RuntimeException("unexpected");
         }
-        HexBytes toAddr = HexBytes.fromBytes((byte[]) WasmBlockChainInterface.peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS));
-        Uint256 amount = (Uint256) WasmBlockChainInterface.peek(getInstance(), (int) parameters[2], AbiDataType.U256);
+        HexBytes toAddr = HexBytes.fromBytes((byte[]) WBI.peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS));
+        Uint256 amount = (Uint256) WBI.peek(getInstance(), (int) parameters[2], AbiDataType.U256);
         Account contractAccount = states.get(this.contractAddress);
         contractAccount.subBalance(amount);
         states.putIfAbsent(toAddr, Account.emptyAccount(toAddr));

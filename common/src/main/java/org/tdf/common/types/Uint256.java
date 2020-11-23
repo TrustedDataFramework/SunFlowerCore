@@ -218,6 +218,7 @@ public class Uint256 extends Number{
 
     public Uint256 add(Uint256 word) {
         byte[] newData = new byte[32];
+
         for (int i = 31, overflow = 0; i >= 0; i--) {
             int v = (this.data[i] & 0xff) + (word.data[i] & 0xff) + overflow;
             newData[i] = (byte) v;
@@ -303,5 +304,10 @@ public class Uint256 extends Number{
     @Override
     public int hashCode() {
         return Arrays.hashCode(data);
+    }
+
+    public static void main(String[] args) {
+        Uint256 u = Uint256.of(new byte[]{(byte)255, (byte)255,(byte)255,(byte)255,(byte)255,(byte)255,(byte)255,(byte)255});
+        System.out.println(u.add(u).value());
     }
 }

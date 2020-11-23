@@ -35,12 +35,12 @@ public class HashHost extends HostFunction {
             default:
                 throw new RuntimeException("unreachable");
         }
-        long r = WasmBlockChainInterface.mallocBytes(getInstance(), ret);
+        long r = WBI.mallocBytes(getInstance(), ret);
         return new long[]{r};
     }
 
     byte[] getData(long... parameters){
-        return (byte[]) WasmBlockChainInterface
+        return (byte[]) WBI
         .peek(getInstance(), (int) parameters[1], AbiDataType.BYTES);
     }
 

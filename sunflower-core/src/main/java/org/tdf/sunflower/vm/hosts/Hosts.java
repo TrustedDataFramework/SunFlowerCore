@@ -3,14 +3,31 @@ package org.tdf.sunflower.vm.hosts;
 import lombok.Getter;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
+import org.tdf.lotusvm.types.FunctionType;
+import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.state.Account;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Hosts {
+    public static class Nop extends HostFunction{
+        public Nop() {
+            setName("_nop");
+            setType(
+                    new FunctionType(
+                            Arrays.asList
+                                    (ValueType.I64, ValueType.I64),
+                            Collections.emptyList()
+                    )
+            );
+        }
+
+        @Override
+        public long[] execute(long... longs) {
+            return new long[0];
+        }
+    }
+
     private ContextHost contextHost;
 
     private DBFunctions dbFunctions;
@@ -47,9 +64,7 @@ public class Hosts {
     public Set<HostFunction> getAll() {
         Set<HostFunction> all = new HashSet<>(
                 Arrays.asList(
-                        new HashHost(),
-                        new Log()
-                        , new Uint256Host()
+                        new Log(), new Nop()
                 )
         );
 

@@ -61,19 +61,19 @@ public class ContractCall {
     }
 
     public static int allocString(ModuleInstance moduleInstance, String s) {
-        return WasmBlockChainInterface.malloc(moduleInstance, s);
+        return WBI.malloc(moduleInstance, s);
     }
 
     public static int allocBytes(ModuleInstance moduleInstance, byte[] buf) {
-        return WasmBlockChainInterface.mallocBytes(moduleInstance, buf);
+        return WBI.mallocBytes(moduleInstance, buf);
     }
 
     public static int allocAddress(ModuleInstance moduleInstance, byte[] addr) {
-        return WasmBlockChainInterface.mallocAddress(moduleInstance, addr);
+        return WBI.mallocAddress(moduleInstance, addr);
     }
 
     public static int allocU256(ModuleInstance moduleInstance, Uint256 u) {
-        return WasmBlockChainInterface.malloc(moduleInstance, u);
+        return WBI.malloc(moduleInstance, u);
     }
 
     static Object getResult(ModuleInstance module, long offset, AbiDataType type) {
@@ -85,7 +85,7 @@ public class ContractCall {
                 return offset;
             }
             default:
-                return WasmBlockChainInterface.peek(module, (int) offset, type);
+                return WBI.peek(module, (int) offset, type);
         }
     }
 
@@ -159,7 +159,6 @@ public class ContractCall {
             contractAccount = Account.emptyContract(contractAddress);
             contractAccount.setContractHash(hash);
             contractAccount.setCreatedBy(this.transaction.getFromAddress());
-            contractAccount.setNonce(originAccount.getNonce());
         } else {
             contractAddress = binaryOrAddress;
             contractAccount = states.get(contractAddress);

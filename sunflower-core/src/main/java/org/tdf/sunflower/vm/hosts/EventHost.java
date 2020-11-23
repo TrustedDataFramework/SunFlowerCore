@@ -40,9 +40,9 @@ public class EventHost extends HostFunction {
     public long[] execute(long... parameters) {
         if (readonly)
             throw new RuntimeException("cannot call event here");
-        String x = (String) WasmBlockChainInterface
+        String x = (String) WBI
                     .peek(getInstance(), (int) parameters[0], AbiDataType.STRING);
-        byte[] y = (byte[]) WasmBlockChainInterface
+        byte[] y = (byte[]) WBI
                 .peek(getInstance(), (int) parameters[1], AbiDataType.BYTES);
 
         RLPList li = RLPElement.fromEncoded(y).asRLPList();
