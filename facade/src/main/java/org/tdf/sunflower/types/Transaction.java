@@ -126,7 +126,7 @@ public class Transaction {
      *
      * @return contact address
      */
-    public static HexBytes createContractAddress(HexBytes address, long nonce) {
+    public static HexBytes  createContractAddress(HexBytes address, long nonce) {
         byte[] bytes = CryptoContext.hash(RLPCodec.encode(new Object[]{address, nonce}));
         HexBytes ret = HexBytes.fromBytes(bytes);
         return ret.slice(ret.size() - Account.ADDRESS_SIZE, ret.size());

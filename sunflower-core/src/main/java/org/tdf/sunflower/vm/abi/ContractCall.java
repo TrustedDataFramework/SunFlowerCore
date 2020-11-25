@@ -143,7 +143,8 @@ public class ContractCall {
     public TransactionResult call(HexBytes binaryOrAddress, String method, Parameters parameters, Uint256 amount, boolean returnAddress, List<ContractABI> contractABIs) {
         boolean isDeploy = "init".equals(method);
         Account contractAccount;
-        Account originAccount = readonly ? null : states.get(this.transaction.getFromAddress());
+        Account senderAccount = readonly ? null : states.get(this.sender);
+
         Module m = null;
         HexBytes contractAddress;
 
@@ -152,9 +153,9 @@ public class ContractCall {
                 throw new RuntimeException("cannot deploy contract here");
             m = new Module(binaryOrAddress.getBytes());
             byte[] hash = CryptoContext.hash(binaryOrAddress.getBytes());
-            originAccount.setNonce(SafeMath.add(originAccount.getNonce(), 1));
+            senderAccount.setNonce(SafeMath.add(senderAccount.getNonce(), 1));
             contractStore.put(hash, binaryOrAddress.getBytes());
-            contractAddress = Transaction.createContractAddress(transaction.getFromAddress(), originAccount.getNonce());
+            contractAddress = Transaction.createContractAddress(senderAccount.getAddress(), senderAccount.getNonce());
 
             contractAccount = Account.emptyContract(contractAddress);
             contractAccount.setContractHash(hash);
@@ -166,10 +167,10 @@ public class ContractCall {
 
         // transfer amount from origin account to contract account
         if (!readonly) {
-            originAccount.subBalance(amount);
+            senderAccount.subBalance(amount);
             contractAccount.addBalance(amount);
             states.put(contractAccount.getAddress(), contractAccount);
-            states.put(originAccount.getAddress(), originAccount);
+            states.put(senderAccount.getAddress(), senderAccount);
         }
 
 

@@ -32,7 +32,7 @@ import java.util.function.Predicate;
 @ServerEndpoint(value = "/websocket/{id}")
 @Component
 public class WebSocket {
-    private static final Map<String, WebSocket> clients = new CopyOnWriteMap<>();
+    private static final Map<String, WebSocket> clients = new ConcurrentHashMap<>();
     public static ApplicationContext ctx;
     private final Boolean lock = true;
     private TransactionPool transactionPool;
