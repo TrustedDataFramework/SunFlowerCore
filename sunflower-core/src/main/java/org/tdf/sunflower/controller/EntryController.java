@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.sun.management.OperatingSystemMXBean;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.tdf.common.store.Store;
@@ -19,6 +21,7 @@ import org.tdf.common.util.IntSerializer;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.GlobalConfig;
+import org.tdf.sunflower.Start;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
@@ -33,10 +36,13 @@ import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
+import org.tdf.sunflower.util.EnvReader;
+import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 import org.tdf.sunflower.vm.abi.ContractABI;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
 
+import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -72,6 +78,62 @@ public class EntryController {
     private ConsensusEngine consensusEngine;
 
     private Miner miner;
+
+    private ApplicationContext ctx;
+
+    @SneakyThrows
+    private Stat createState(){
+        Stat.StatBuilder builder = Stat.builder();
+        OperatingSystemMXBean osMxBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+        Block best = repository.getBestBlock();
+        List<Block> blocks = repository.getBlocksBetween(Math.max(0, best.getHeight() - 10), best.getHeight());
+        List<Block> blocksWithoutGenesis = blocks.stream().filter(b -> b.getHeight() != 0).collect(Collectors.toList());
+
+        Uint256 totalGasPrice = Uint256.ZERO;
+        long totalTransactions = 0;
+        long avgInterval = blocksWithoutGenesis.size() > 1
+                ? (blocksWithoutGenesis.get(blocksWithoutGenesis.size() - 1).getCreatedAt()
+                - blocksWithoutGenesis.get(0).getCreatedAt()) / (blocksWithoutGenesis.size() - 1)
+                : 0;
+
+        for (Block b : blocks) {
+            for (Transaction t : b.getBody()) {
+                if (t.getType() == Transaction.Type.COIN_BASE.code)
+                    continue;
+                totalGasPrice = totalGasPrice.safeAdd(t.getGasPrice());
+                totalTransactions++;
+            }
+        }
+
+        long yesterday = System.currentTimeMillis() / 1000 - (24 * 60 * 60);
+        Optional<Header> o = binarySearch(yesterday, 0, best.getHeight());
+
+        String diff = consensusEngine.getName().equals("pow")
+                ? HexBytes.encode(((PoW) consensusEngine).getNBits(best.getStateRoot().getBytes()))
+                : "";
+
+        EnvReader rd = new EnvReader(ctx.getEnvironment());
+        return builder
+                .cpu(osMxBean.getSystemLoadAverage())
+                .memoryUsed(osMxBean.getTotalPhysicalMemorySize() - osMxBean.getFreePhysicalMemorySize())
+                .totalMemory(osMxBean.getTotalPhysicalMemorySize())
+                .averageGasPrice(
+                        totalTransactions == 0 ? Uint256.ZERO : totalGasPrice.div(Uint256.of(totalTransactions)))
+                .averageBlockInterval(avgInterval).height(best.getHeight())
+                .mining(blocks.stream().anyMatch(
+                        x -> x.getBody().size() > 0 && x.getBody().get(0).getTo().equals(miner.getMinerAddress())))
+                .currentDifficulty(diff).transactionPoolSize(pool.size())
+                .blocksPerDay(o.map(h -> best.getHeight() - h.getHeight() + 1).orElse(0L))
+                .consensus(consensusEngine.getName())
+                .genesis(rd.getGenesis())
+                .ec(rd.getEC())
+                .hash(rd.getHash())
+                .ae(rd.getAE())
+                .blockInterval(rd.getBlockInterval())
+                .p2pPort(rd.getP2PPort())
+                .build()
+                ;
+    }
 
     private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func,
                                    Function<byte[], Optional<T>> func1) {
@@ -265,45 +327,7 @@ public class EntryController {
 
     @GetMapping(value = "/stat", produces = MediaType.APPLICATION_JSON_VALUE)
     public Stat stat() {
-        Stat.StatBuilder builder = Stat.builder();
-        OperatingSystemMXBean osMxBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-        Block best = repository.getBestBlock();
-        List<Block> blocks = repository.getBlocksBetween(Math.max(0, best.getHeight() - 10), best.getHeight());
-        List<Block> blocksWithoutGenesis = blocks.stream().filter(b -> b.getHeight() != 0).collect(Collectors.toList());
-
-        Uint256 totalGasPrice = Uint256.ZERO;
-        long totalTransactions = 0;
-        long avgInterval = blocksWithoutGenesis.size() > 1
-                ? (blocksWithoutGenesis.get(blocksWithoutGenesis.size() - 1).getCreatedAt()
-                - blocksWithoutGenesis.get(0).getCreatedAt()) / (blocksWithoutGenesis.size() - 1)
-                : 0;
-
-        for (Block b : blocks) {
-            for (Transaction t : b.getBody()) {
-                if (t.getType() == Transaction.Type.COIN_BASE.code)
-                    continue;
-                totalGasPrice = totalGasPrice.safeAdd(t.getGasPrice());
-                totalTransactions++;
-            }
-        }
-
-        long yesterday = System.currentTimeMillis() / 1000 - (24 * 60 * 60);
-        Optional<Header> o = binarySearch(yesterday, 0, best.getHeight());
-
-        String diff = consensusEngine.getName().equals("pow")
-                ? HexBytes.encode(((PoW) consensusEngine).getNBits(best.getStateRoot().getBytes()))
-                : "";
-        return builder.cpu(osMxBean.getSystemLoadAverage())
-                .memoryUsed(osMxBean.getTotalPhysicalMemorySize() - osMxBean.getFreePhysicalMemorySize())
-                .totalMemory(osMxBean.getTotalPhysicalMemorySize())
-                .averageGasPrice(
-                        totalTransactions == 0 ? Uint256.ZERO : totalGasPrice.div(Uint256.of(totalTransactions)))
-                .averageBlockInterval(avgInterval).height(best.getHeight())
-                .mining(blocks.stream().anyMatch(
-                        x -> x.getBody().size() > 0 && x.getBody().get(0).getTo().equals(miner.getMinerAddress())))
-                .currentDifficulty(diff).transactionPoolSize(pool.size())
-                .blocksPerDay(o.map(h -> best.getHeight() - h.getHeight() + 1).orElse(0L))
-                .consensus(consensusEngine.getName()).build();
+        return createState();
     }
 
     // get the nearest block after or equals to the timestamp

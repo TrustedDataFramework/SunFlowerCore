@@ -57,6 +57,7 @@ import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.util.EnvReader;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 
@@ -176,10 +177,8 @@ public class Start {
     }
 
     public static void loadCryptoContext(Environment env) {
-        String hash = env.getProperty("sunflower.crypto.hash");
-        hash = (hash == null || hash.isEmpty()) ? "sm3" : hash;
-        hash = hash.toLowerCase();
-        switch (hash) {
+        EnvReader reader = new EnvReader(env);
+        switch (reader.getHash()) {
             case "sm3":
                 CryptoContext.setHashFunction(SM3Util::hash);
                 break;
@@ -196,12 +195,9 @@ public class Start {
                 CryptoContext.setHashFunction(CryptoHelpers::sha3256);
                 break;
             default:
-                throw new ApplicationException("unknown hash function: " + hash);
+                throw new ApplicationException("unknown hash function: " + reader.getHash());
         }
-        String ec = env.getProperty("sunflower.crypto.ec");
-        ec = (ec == null || ec.isEmpty()) ? "sm2" : ec;
-        ec = ec.toLowerCase();
-        switch (ec) {
+        switch (reader.getEC()) {
             case "ed25519":
                 CryptoContext.setSignatureVerifier((pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig));
                 CryptoContext.setSigner((sk, msg) -> new Ed25519PrivateKey(sk).sign(msg));
@@ -218,14 +214,14 @@ public class Start {
                 CryptoContext.setEcdh((initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID));
                 break;
             default:
-                throw new ApplicationException("unknown ec curve " + ec);
+                throw new ApplicationException("unknown ec curve " + reader.getEC());
         }
         CryptoContext.setPublicKeySize(CryptoContext.getPkFromSk(CryptoContext.generateSecretKey()).length);
         CryptoContext.setEncrypt(CryptoHelpers.ENCRYPT);
         CryptoContext.setDecrypt(CryptoHelpers.DECRYPT);
 
-        log.info("use algorithm {} as hash function", hash);
-        log.info("use ec {} as signature algorithm", ec);
+        log.info("use algorithm {} as hash function", reader.getHash());
+        log.info("use ec {} as signature algorithm", reader.getEC());
     }
 
     public static void main(String[] args) {

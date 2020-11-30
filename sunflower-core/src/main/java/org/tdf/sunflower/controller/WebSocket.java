@@ -186,8 +186,12 @@ public class WebSocket {
                 Parameters parameters = msg.getBody().get(2)
                         .as(Parameters.class);
                 byte[] root = repository.getBestHeader().getStateRoot().getBytes();
-                RLPList result = accountTrie.fork(root).call(HexBytes.fromBytes(address), method, parameters);
-                sendResponse(msg.getNonce(), WebSocketMessage.Code.CONTRACT_QUERY, result);
+                try{
+                    RLPList result = accountTrie.fork(root).call(HexBytes.fromBytes(address), method, parameters);
+                    sendResponse(msg.getNonce(), WebSocketMessage.Code.CONTRACT_QUERY, result);
+                }catch (Exception e){
+                    sendNull(msg.getNonce());
+                }
                 break;
             }
         }

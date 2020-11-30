@@ -16,9 +16,6 @@ repositories {
         url 'http://maven.aliyun.com/nexus/content/repositories/jcenter'
     }
     mavenLocal()
-    maven {
-        url 'http://120.76.101.153:8081/repository/maven-public'
-    }
     mavenCentral()
 }
 

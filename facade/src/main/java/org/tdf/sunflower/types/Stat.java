@@ -1,5 +1,6 @@
 package org.tdf.sunflower.types;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,9 +41,28 @@ public class Stat {
     // blocks per day =
     private long blocksPerDay;
 
+    // p2p 网络的端口号
+    private int p2pPort;
+
+    // 创世区块文件
+    private JsonNode genesis;
+
+    // 哈希算法
+    private String hash;
+
+    // 签名算法
+    private String ec;
+
+    // 对称加密算法
+    private String ae;
+
+    // 出块的速度
+    private int blockInterval;
+
     // tds version
     @Builder.Default
     private String version = "v1.0.0";
 
+    // 共识机制
     private String consensus;
 }
