@@ -52,7 +52,7 @@ public class PeersManager implements Plugin {
                         .map(PeerImpl::parse)
                         .filter(Optional::isPresent)
                         .map(Optional::get)
-                        .filter(x -> !cache.contains(x) && !x.equals(server.getSelf()))
+                        .filter(x -> !cache.contains(x) && !x.equals(server.getSelf()) && x.getProtocol().equals(server.getSelf().getProtocol()))
                         .forEach(x -> pending.put(x, true));
                 return;
             case DISCONNECT:

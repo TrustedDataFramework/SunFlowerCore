@@ -21,6 +21,8 @@ public interface Peer {
     // encode the remote peer as uri
     String encodeURI();
 
+    String getProtocol();
+
     Peer NONE = new Peer() {
         @Override
         public String getHost() {
@@ -39,6 +41,11 @@ public interface Peer {
 
         @Override
         public String encodeURI() {
+            return null;
+        }
+
+        @Override
+        public String getProtocol() {
             return null;
         }
     };

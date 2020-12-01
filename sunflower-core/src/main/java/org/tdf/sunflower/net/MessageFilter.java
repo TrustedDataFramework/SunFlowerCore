@@ -12,6 +12,7 @@ import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 import org.tdf.sunflower.types.CryptoContext;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,6 +55,10 @@ public class MessageFilter implements Plugin {
     @Override
     public void onMessage(ContextImpl context, PeerServerImpl server) {
         // cache multi part message
+        if(!context.getRemote().getProtocol().equals(server.getSelf().getProtocol())){
+            context.block();
+            return;
+        }
         if (context.message.getCode() == Code.MULTI_PART) {
             multiPartCacheLock.lock();
             long now = System.currentTimeMillis() / 1000;
