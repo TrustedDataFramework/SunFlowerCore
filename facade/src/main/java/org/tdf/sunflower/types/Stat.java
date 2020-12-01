@@ -41,8 +41,8 @@ public class Stat {
     // blocks per day =
     private long blocksPerDay;
 
-    // p2p 网络的端口号
-    private int p2pPort;
+    // p2p 网络地址
+    private String p2pAddress;
 
     // 创世区块文件
     private JsonNode genesis;

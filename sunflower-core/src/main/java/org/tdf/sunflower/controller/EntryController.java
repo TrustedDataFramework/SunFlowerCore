@@ -130,7 +130,7 @@ public class EntryController {
                 .hash(rd.getHash())
                 .ae(rd.getAE())
                 .blockInterval(rd.getBlockInterval())
-                .p2pPort(rd.getP2PPort())
+                .p2pAddress(peerServer.getSelf().encodeURI())
                 .build()
                 ;
     }
