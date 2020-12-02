@@ -60,6 +60,8 @@ public class PoA extends AbstractConsensusEngine {
 
     @Override
     public Optional<Set<HexBytes>> getApprovedNodes() {
+        if(poAConfig.isAllowUnauthorized())
+            return Optional.empty();
         Block best = getSunflowerRepository().getBestBlock();
         return Optional.of(new HashSet<>(this.authContract.getNodes(best.getStateRoot().getBytes())));
     }

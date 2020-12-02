@@ -25,4 +25,8 @@ public class PoAConfig implements MinerConfig {
     private boolean allowEmptyBlock;
     @JsonProperty("max-body-size")
     private int maxBodySize;
+
+    // 是否允许未认证的节点同步
+    @JsonProperty("allow-unauthorized")
+    private boolean allowUnauthorized;
 }

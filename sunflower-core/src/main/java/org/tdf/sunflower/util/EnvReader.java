@@ -44,8 +44,25 @@ public class EnvReader {
         return Integer.parseInt(env.getProperty("sunflower.consensus.block-interval"));
     }
 
-    public int getP2PPort(){
-        int p = URI.create(env.getProperty("sunflower.p2p.address")).getPort();
-        return p < 0 ? 7000 : p;
+
+    public int getMaxMiners(){
+        String s = env.getProperty("sunflower.consensus.max-miners");
+        if(s == null)
+            return 0;
+        return Integer.parseInt(s.trim());
+    }
+
+    public int getBlocksPerEra(){
+        String s = env.getProperty("sunflower.consensus.blocks-per-era");
+        if(s == null)
+            return 0;
+        return Integer.parseInt(s.trim());
+    }
+
+    public boolean isAllowUnauthorized(){
+        String s = env.getProperty("sunflower.consensus.allow-unauthorized");
+        if(s == null)
+            return false;
+        return "true".equals(s.trim().toLowerCase());
     }
 }

@@ -59,6 +59,15 @@ public class Stat {
     // 出块的速度
     private int blockInterval;
 
+    // pos 矿工数量
+    private int maxMiners;
+
+    // pow 每个纪元区块数量
+    private int blocksPerEra;
+
+    // poa 是否允许未认证节点同步区块
+    private boolean allowUnauthorized;
+
     // tds version
     @Builder.Default
     private String version = "v1.0.0";

@@ -131,6 +131,9 @@ public class EntryController {
                 .ae(rd.getAE())
                 .blockInterval(rd.getBlockInterval())
                 .p2pAddress(peerServer.getSelf().encodeURI())
+                .blocksPerEra(rd.getBlocksPerEra())
+                .maxMiners(rd.getMaxMiners())
+                .allowUnauthorized(rd.isAllowUnauthorized())
                 .build()
                 ;
     }
