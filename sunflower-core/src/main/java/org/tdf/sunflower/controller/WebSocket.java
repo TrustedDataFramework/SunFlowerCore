@@ -1,10 +1,14 @@
 package org.tdf.sunflower.controller;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.tdf.common.types.Parameters;
-import org.tdf.common.util.CopyOnWriteMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
@@ -26,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -42,6 +47,28 @@ public class WebSocket {
     private Set<HexBytes> addresses;
     private Map<HexBytes, Boolean> transactions;
     private String id;
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    public static class CacheKey {
+        private HexBytes contractAddress;
+        private HexBytes stateRoot;
+        private String method;
+        private HexBytes parameters;
+    }
+
+    static final Cache<CacheKey, RLPList> CACHE = CacheBuilder.newBuilder()
+            .weigher((k, v) -> {
+                CacheKey key = (CacheKey) k;
+                RLPList value = (RLPList) v;
+                return key.contractAddress.size() + key.stateRoot.size() + key.method.length() + key.parameters.size()
+                        + value.getEncoded().length;
+            })
+            .expireAfterWrite(15, TimeUnit.SECONDS)
+            .maximumWeight(512 * 1024 * 1024)
+            .build();
+
 
     @SneakyThrows
     public static void broadcastAsync(WebSocketMessage msg, Predicate<WebSocket> when, Consumer<WebSocket> after) {
@@ -139,8 +166,17 @@ public class WebSocket {
      */
     @OnMessage
     @SneakyThrows
-    public void onMessage(byte[] messages, Session session) {
+    private void onMessage(byte[] messages) {
         WebSocketMessage msg = RLPCodec.decode(messages, WebSocketMessage.class);
+        try {
+            onMessageInternal(msg);
+        } catch (Exception e) {
+            sendError(msg.getNonce(), e.getMessage());
+        }
+    }
+
+    @SneakyThrows
+    private void onMessageInternal(WebSocketMessage msg) {
         switch (msg.getCodeEnum()) {
             // 事务监听
             case TRANSACTION_SUBSCRIBE: {
@@ -186,12 +222,17 @@ public class WebSocket {
                 Parameters parameters = msg.getBody().get(2)
                         .as(Parameters.class);
                 byte[] root = repository.getBestHeader().getStateRoot().getBytes();
-                try{
-                    RLPList result = accountTrie.fork(root).call(HexBytes.fromBytes(address), method, parameters);
-                    sendResponse(msg.getNonce(), WebSocketMessage.Code.CONTRACT_QUERY, result);
-                }catch (Exception e){
-                    sendNull(msg.getNonce());
-                }
+                Account a = accountTrie.get(root, HexBytes.fromBytes(address)).get();
+
+                CacheKey k = new CacheKey(
+                        HexBytes.fromBytes(address),
+                        HexBytes.fromBytes(a.getStorageRoot()),
+                        method,
+                        HexBytes.fromBytes(msg.getBody().get(2).getEncoded())
+                );
+
+                RLPList result = CACHE.get(k, () -> accountTrie.fork(root).call(HexBytes.fromBytes(address), method, parameters));
+                sendResponse(msg.getNonce(), WebSocketMessage.Code.CONTRACT_QUERY, result);
                 break;
             }
         }
@@ -208,6 +249,10 @@ public class WebSocket {
 
     public void sendNull(long nonce) {
         sendBinary(RLPCodec.encode(new WebSocketMessage(nonce, 0, null)));
+    }
+
+    public void sendError(long nonce, String err) {
+        sendBinary(RLPCodec.encode(new WebSocketMessage(nonce, WebSocketMessage.Code.ERROR.ordinal(), RLPElement.readRLPTree(err))));
     }
 
     public void sendResponse(long nonce, WebSocketMessage.Code code, Object data) {

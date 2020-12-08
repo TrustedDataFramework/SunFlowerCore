@@ -25,6 +25,7 @@ public class WebSocketMessage {
         TRANSACTION_SUBSCRIBE,
         TRANSACTION_SEND,
         ACCOUNT_QUERY,
-        CONTRACT_QUERY
+        CONTRACT_QUERY,
+        ERROR
     }
 }
