@@ -165,8 +165,7 @@ public class WebSocket {
      * @param session  可选的参数
      */
     @OnMessage
-    @SneakyThrows
-    private void onMessage(byte[] messages) {
+    public void onMessage(byte[] messages) {
         WebSocketMessage msg = RLPCodec.decode(messages, WebSocketMessage.class);
         try {
             onMessageInternal(msg);
