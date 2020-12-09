@@ -58,16 +58,20 @@ public class WebSocket {
         private HexBytes parameters;
     }
 
-    static final Cache<CacheKey, RLPList> CACHE = CacheBuilder.newBuilder()
-            .weigher((k, v) -> {
-                CacheKey key = (CacheKey) k;
-                RLPList value = (RLPList) v;
-                return key.contractAddress.size() + key.stateRoot.size() + key.method.length() + key.parameters.size()
-                        + value.getEncoded().length;
-            })
-            .expireAfterWrite(15, TimeUnit.SECONDS)
-            .maximumWeight(512 * 1024 * 1024)
-            .build();
+    public static void initCache(int seconds) {
+        WebSocket.CACHE = CacheBuilder.newBuilder()
+                .weigher((k, v) -> {
+                    CacheKey key = (CacheKey) k;
+                    RLPList value = (RLPList) v;
+                    return key.contractAddress.size() + key.stateRoot.size() + key.method.length() + key.parameters.size()
+                            + value.getEncoded().length;
+                })
+                .expireAfterWrite(seconds, TimeUnit.SECONDS)
+                .maximumWeight(512 * 1024 * 1024)
+                .build();
+    }
+
+    static Cache<CacheKey, RLPList> CACHE;
 
 
     @SneakyThrows

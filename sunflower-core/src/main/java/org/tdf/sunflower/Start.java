@@ -113,6 +113,11 @@ public class Start {
         return p;
     }
 
+    static void setWebSocketCache(Environment env){
+        EnvReader r = new EnvReader(env);
+        WebSocket.initCache(r.getBlockInterval());
+    }
+
     public static void loadConstants(Environment env) {
         String constant = env.getProperty("sunflower.cache.trie");
         if (constant != null && !constant.isEmpty()) {
@@ -229,6 +234,7 @@ public class Start {
         SpringApplication app = new SpringApplication(Start.class);
         app.setDefaultProperties(loadDefaultConfig());
         app.addInitializers(applicationContext -> {
+            setWebSocketCache(applicationContext.getEnvironment());
             loadCryptoContext(applicationContext.getEnvironment());
             loadConstants(applicationContext.getEnvironment());
             String path = applicationContext.getEnvironment().getProperty("sunflower.libs");

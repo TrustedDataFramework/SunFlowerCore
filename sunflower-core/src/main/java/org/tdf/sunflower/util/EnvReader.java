@@ -7,7 +7,6 @@ import org.springframework.core.env.Environment;
 import org.tdf.sunflower.Start;
 
 import java.io.InputStream;
-import java.net.URI;
 
 @RequiredArgsConstructor
 public class EnvReader {
