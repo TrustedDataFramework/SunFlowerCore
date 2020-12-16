@@ -82,20 +82,14 @@ public class EntryController {
     private ApplicationContext ctx;
 
     @SneakyThrows
-    private Stat createState(){
+    private Stat createState() {
         Stat.StatBuilder builder = Stat.builder();
         OperatingSystemMXBean osMxBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
         Block best = repository.getBestBlock();
         List<Block> blocks = repository.getBlocksBetween(Math.max(0, best.getHeight() - 10), best.getHeight());
-        List<Block> blocksWithoutGenesis = blocks.stream().filter(b -> b.getHeight() != 0).collect(Collectors.toList());
 
         Uint256 totalGasPrice = Uint256.ZERO;
         long totalTransactions = 0;
-        long avgInterval = blocksWithoutGenesis.size() > 1
-                ? (blocksWithoutGenesis.get(blocksWithoutGenesis.size() - 1).getCreatedAt()
-                - blocksWithoutGenesis.get(0).getCreatedAt()) / (blocksWithoutGenesis.size() - 1)
-                : 0;
-
         for (Block b : blocks) {
             for (Transaction t : b.getBody()) {
                 if (t.getType() == Transaction.Type.COIN_BASE.code)
@@ -119,7 +113,7 @@ public class EntryController {
                 .totalMemory(osMxBean.getTotalPhysicalMemorySize())
                 .averageGasPrice(
                         totalTransactions == 0 ? Uint256.ZERO : totalGasPrice.div(Uint256.of(totalTransactions)))
-                .averageBlockInterval(avgInterval).height(best.getHeight())
+                .averageBlockInterval(rd.getBlockInterval()).height(best.getHeight())
                 .mining(blocks.stream().anyMatch(
                         x -> x.getBody().size() > 0 && x.getBody().get(0).getTo().equals(miner.getMinerAddress())))
                 .currentDifficulty(diff).transactionPoolSize(pool.size())

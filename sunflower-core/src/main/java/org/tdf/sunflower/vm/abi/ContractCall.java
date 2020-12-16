@@ -143,7 +143,7 @@ public class ContractCall {
     public TransactionResult call(HexBytes binaryOrAddress, String method, Parameters parameters, Uint256 amount, boolean returnAddress, List<ContractABI> contractABIs) {
         boolean isDeploy = "init".equals(method);
         Account contractAccount;
-        Account senderAccount = readonly ? null : states.get(this.sender);
+        Account senderAccount = readonly ? null : states.getOrDefault(this.sender, Account.emptyAccount(this.sender));
 
         Module m = null;
         HexBytes contractAddress;

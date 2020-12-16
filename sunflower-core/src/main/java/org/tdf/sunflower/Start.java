@@ -229,6 +229,7 @@ public class Start {
         log.info("use ec {} as signature algorithm", reader.getEC());
     }
 
+
     public static void main(String[] args) {
         FileUtils.setClassLoader(ClassUtils.getDefaultClassLoader());
         SpringApplication app = new SpringApplication(Start.class);
