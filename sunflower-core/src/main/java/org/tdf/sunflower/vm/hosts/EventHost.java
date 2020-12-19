@@ -37,7 +37,7 @@ public class EventHost extends HostFunction {
     }
 
     @Override
-    public long[] execute(long... parameters) {
+    public long execute(long... parameters) {
         if (readonly)
             throw new RuntimeException("cannot call event here");
         String x = (String) WBI
@@ -48,6 +48,6 @@ public class EventHost extends HostFunction {
         RLPList li = RLPElement.fromEncoded(y).asRLPList();
         WebSocket.broadcastEvent(address.getBytes(), x, li);
         events.add(new Event(x, li));
-        return new long[0];
+        return 0;
     }
 }

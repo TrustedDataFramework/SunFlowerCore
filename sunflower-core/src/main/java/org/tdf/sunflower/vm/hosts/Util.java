@@ -29,7 +29,7 @@ public class Util extends HostFunction {
     }
 
     @Override
-    public long[] execute(long... longs) {
+    public long execute(long... longs) {
         Type t = Type.values()[(int) longs[0]];
         boolean put = longs[6] != 0;
         byte[] data = null;
@@ -74,7 +74,7 @@ public class Util extends HostFunction {
         if (put) {
             putMemory((int) longs[5], data);
         }
-        return new long[]{ret};
+        return ret;
     }
 
     enum Type {

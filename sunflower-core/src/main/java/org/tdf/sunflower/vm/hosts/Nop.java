@@ -13,7 +13,7 @@ public class Nop extends HostFunction {
     }
 
     @Override
-    public long[] execute(long... parameters) {
+    public long execute(long... parameters) {
         throw new UnsupportedOperationException();
     }
 }

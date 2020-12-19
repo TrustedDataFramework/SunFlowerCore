@@ -32,7 +32,10 @@ public abstract class WBI {
         long ptr = instance.execute("__malloc", bin.length)[0];
         instance.getMemory().put((int) ptr, bin);
         long p = instance.execute("__change_t", t.ordinal(), ptr, bin.length)[0];
-        return (int) p;
+        int r = (int) p;
+        if(r < 0)
+            throw new RuntimeException("malloc failed: pointer is negative");
+        return r;
     }
 
     public static int malloc(ModuleInstance instance, String s) {

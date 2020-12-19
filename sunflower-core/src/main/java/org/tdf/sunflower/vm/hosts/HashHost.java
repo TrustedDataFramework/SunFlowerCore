@@ -21,7 +21,7 @@ public class HashHost extends HostFunction {
     }
 
     @Override
-    public long[] execute(long... parameters) {
+    public long execute(long... parameters) {
         byte[] data = getData(parameters);
         Algorithm a = Algorithm.values()[(int) parameters[0]];
         byte[] ret;
@@ -35,8 +35,7 @@ public class HashHost extends HostFunction {
             default:
                 throw new RuntimeException("unreachable");
         }
-        long r = WBI.mallocBytes(getInstance(), ret);
-        return new long[]{r};
+        return WBI.mallocBytes(getInstance(), ret);
     }
 
     byte[] getData(long... parameters){

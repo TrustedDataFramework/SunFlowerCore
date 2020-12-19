@@ -55,7 +55,7 @@ public class DBFunctions extends HostFunction {
     }
 
     @Override
-    public long[] execute(long... longs) {
+    public long execute(long... longs) {
         Type t = Type.values()[(int) longs[0]];
         assertReadOnly(t);
         switch (t) {
@@ -63,25 +63,24 @@ public class DBFunctions extends HostFunction {
                 byte[] key = getKey(longs);
                 byte[] value = getValue(longs);
                 this.storageTrie.put(key, value);
-                return new long[1];
+                return 0;
             }
             case GET: {
                 byte[] key = getKey(longs);
                 byte[] value = storageTrie.get(key).orElseThrow(() -> new RuntimeException(HexBytes.fromBytes(key) + " not found"));
-                long r = WBI
+                return WBI
                         .mallocBytes(getInstance(), value);
-                return new long[]{r};
             }
             case HAS: {
                 byte[] key = getKey(longs);
-                return new long[]{storageTrie.containsKey(key) ? 1 : 0};
+                return storageTrie.containsKey(key) ? 1 : 0;
             }
             case REMOVE: {
                 if (readonly)
                     throw new RuntimeException("readonly");
                 byte[] key = getKey(longs);
                 storageTrie.remove(key);
-                return new long[1];
+                return 0;
             }
 //            case NEXT: {
 //                this.index++;

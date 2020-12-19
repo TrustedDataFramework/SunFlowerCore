@@ -38,7 +38,7 @@ public class Decimal {
         }
 
         @Override
-        public long[] execute(long... parameters) {
+        public long execute(long... parameters) {
             String x = loadStringFromMemory((int) parameters[1], (int) parameters[2]);
             String y = loadStringFromMemory((int) parameters[3], (int) parameters[4]);
             Type t = Type.values()[(int) parameters[0]];
@@ -58,14 +58,14 @@ public class Decimal {
                     ret = new BigDecimal(x).divide(new BigDecimal(y), (int) parameters[6], RoundingMode.UNNECESSARY).toString();
                     break;
                 case COMPARE:
-                    return new long[]{new BigDecimal(x).compareTo(new BigDecimal(y))};
+                    return new BigDecimal(x).compareTo(new BigDecimal(y));
                 default:
                     throw new RuntimeException("unreachable");
             }
             if (parameters[7] != 0) {
                 putStringIntoMemory(ptr, ret);
             }
-            return new long[]{ret.length()};
+            return ret.length();
         }
     }
 }

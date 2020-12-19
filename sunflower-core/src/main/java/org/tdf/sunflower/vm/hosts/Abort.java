@@ -24,7 +24,7 @@ public class Abort extends HostFunction {
     }
 
     @Override
-    public long[] execute(long... parameters) {
+    public long execute(long... parameters) {
         String message = parameters[0] == 0 ? "" : this.loadString((int) parameters[0]);
         String filename = parameters[1] == 0 ? "" : this.loadString((int) parameters[1]);
         throw new RuntimeException(String.format("%s %s error at line %d column %d",

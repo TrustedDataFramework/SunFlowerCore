@@ -23,8 +23,8 @@ public class Hosts {
         }
 
         @Override
-        public long[] execute(long... longs) {
-            return new long[0];
+        public long execute(long... longs) {
+            return 0;
         }
     }
 

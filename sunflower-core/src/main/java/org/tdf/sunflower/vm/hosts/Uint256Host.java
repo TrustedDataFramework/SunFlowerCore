@@ -24,7 +24,7 @@ public class Uint256Host extends HostFunction {
     }
 
     @Override
-    public long[] execute(long... longs) {
+    public long execute(long... longs) {
         Type t = Type.values()[(int) longs[0]];
         Uint256 ret;
         switch (t) {
@@ -46,8 +46,7 @@ public class Uint256Host extends HostFunction {
             default:
                 throw new RuntimeException("unreachable");
         }
-        int offset = WBI.malloc(getInstance(), ret);
-        return new long[]{offset};
+        return WBI.malloc(getInstance(), ret) & 0xffffffffL;
     }
 
     private Uint256 getX(long... longs) {

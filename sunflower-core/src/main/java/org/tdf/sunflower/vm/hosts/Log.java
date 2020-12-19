@@ -21,10 +21,10 @@ public class Log extends HostFunction {
     }
 
     @Override
-    public long[] execute(long... parameters) {
+    public long execute(long... parameters) {
         log.info(
                 (String) WBI.peek(getInstance(),  (int) parameters[0], AbiDataType.STRING)
         );
-        return new long[0];
+        return 0;
     }
 }

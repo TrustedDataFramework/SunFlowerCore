@@ -36,7 +36,7 @@ public class Reflect extends HostFunction {
     }
 
     @Override
-    public long[] execute(long... longs) {
+    public long execute(long... longs) {
         Type t = Type.values()[(int) longs[0]];
         switch (t) {
             case CALL: {
@@ -50,7 +50,7 @@ public class Reflect extends HostFunction {
                 ContractCall forked = parent.fork();
                 RLPList result = forked.call(HexBytes.fromBytes(addr), method, params, amount, false, null).getReturns();
                 if(result.isEmpty())
-                    return new long[1];
+                    return 0;
 
                 RLPItem it = result.get(0).asRLPItem();
                 switch (AbiDataType.values()[params.getReturnType()[0]]){
@@ -58,22 +58,18 @@ public class Reflect extends HostFunction {
                     case I64:
                     case BOOL:
                     case U64:
-                        return new long[]{it.asLong()};
+                        return it.asLong();
                     case U256:{
-                        long r = WBI.malloc(getInstance(), it.as(Uint256.class));
-                        return new long[]{r};
+                        return WBI.malloc(getInstance(), it.as(Uint256.class));
                     }
                     case STRING:{
-                        long r = WBI.malloc(getInstance(), it.asString());
-                        return new long[]{r};
+                        return WBI.malloc(getInstance(), it.asString());
                     }
                     case BYTES:{
-                        long r = WBI.mallocBytes(getInstance(), it.asBytes());
-                        return new long[]{r};
+                        return WBI.mallocBytes(getInstance(), it.asBytes());
                     }
                     case ADDRESS:{
-                        long r = WBI.mallocAddress(getInstance(), it.asBytes());
-                        return new long[]{r};
+                        return WBI.mallocAddress(getInstance(), it.asBytes());
                     }
                 }
                 break;
@@ -95,8 +91,7 @@ public class Reflect extends HostFunction {
                                 Arrays.asList(RLPCodec.decode(abi, ContractABI[].class))
                         )
                         .getReturns().get(0).asBytes();
-                long r = WBI.mallocAddress(getInstance(), data);
-                return new long[]{r};
+                return WBI.mallocAddress(getInstance(), data);
         }
         throw new RuntimeException("unreachable");
     }

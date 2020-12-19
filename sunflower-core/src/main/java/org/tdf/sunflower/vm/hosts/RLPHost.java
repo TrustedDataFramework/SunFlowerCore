@@ -26,7 +26,7 @@ public class RLPHost extends HostFunction {
     }
 
     @Override
-    public long[] execute(long... longs) {
+    public long execute(long... longs) {
         Type t = Type.values()[(int) longs[0]];
         long ret = 0;
         boolean put = longs[4] != 0;
@@ -97,7 +97,7 @@ public class RLPHost extends HostFunction {
         if (put) {
             putMemory((int) longs[3], data);
         }
-        return new long[]{ret};
+        return ret;
     }
 
     enum Type {

@@ -35,7 +35,7 @@ public class Transfer extends HostFunction {
     }
 
     @Override
-    public long[] execute(long... parameters) {
+    public long execute(long... parameters) {
         if (readonly)
             throw new RuntimeException("transfer is not allowed here");
         if (parameters[0] != 0) {
@@ -50,6 +50,6 @@ public class Transfer extends HostFunction {
         to.addBalance(amount);
         states.put(contractAddress, contractAccount);
         states.put(to.getAddress(), to);
-        return new long[0];
+        return 0;
     }
 }
