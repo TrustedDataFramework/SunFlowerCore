@@ -23,8 +23,8 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     final Store<String, String> peerStore;
     final ConsensusEngine consensusEngine;
     final SecretStore secretStore;
+    private final List<Plugin> plugins = new CopyOnWriteArrayList<>();
     private PeerServerConfig config;
-    private List<Plugin> plugins = new CopyOnWriteArrayList<>();
     private Client client;
     private PeerImpl self;
     private MessageBuilder builder;

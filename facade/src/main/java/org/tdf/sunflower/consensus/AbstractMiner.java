@@ -4,25 +4,33 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
-import org.tdf.common.store.CachedStore;
-import org.tdf.common.store.Store;
 import org.tdf.common.types.Uint256;
-import org.tdf.sunflower.types.*;
-import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.events.TransactionFailed;
 import org.tdf.sunflower.events.TransactionIncluded;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.ForkedStateTrie;
 import org.tdf.sunflower.state.StateTrie;
+import org.tdf.sunflower.types.*;
 
 import java.util.*;
 
 @Slf4j(topic = "miner")
 public abstract class AbstractMiner implements Miner {
+    @Getter(AccessLevel.PROTECTED)
+    private final StateTrie<HexBytes, Account> accountTrie;
+    @Getter(AccessLevel.PROTECTED)
+    private final EventBus eventBus;
+    private final MinerConfig minerConfig;
+
+    public AbstractMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig) {
+        this.minerConfig = minerConfig;
+        this.accountTrie = accountTrie;
+        this.eventBus = eventBus;
+    }
+
     public static Optional<Proposer> getProposer(Block parent, long currentEpochSeconds, List<HexBytes> minerAddresses, long blockInterval) {
         if (currentEpochSeconds - parent.getCreatedAt() < blockInterval) {
             return Optional.empty();
@@ -50,21 +58,6 @@ public abstract class AbstractMiner implements Miner {
                 startTime,
                 endTime
         ));
-    }
-
-
-    @Getter(AccessLevel.PROTECTED)
-    private final StateTrie<HexBytes, Account> accountTrie;
-
-    @Getter(AccessLevel.PROTECTED)
-    private final EventBus eventBus;
-
-    private final MinerConfig minerConfig;
-
-    public AbstractMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig) {
-        this.minerConfig = minerConfig;
-        this.accountTrie = accountTrie;
-        this.eventBus = eventBus;
     }
 
     protected abstract TransactionPool getTransactionPool();
@@ -147,7 +140,8 @@ public abstract class AbstractMiner implements Miner {
         b.getBody().stream().skip(1)
                 .forEach(tx -> {
                     TransactionResult res = m.get(tx.getHash());
-                    eventBus.publish(new TransactionIncluded(tx.getHash(), b, res.getGasUsed(), res.getReturns(), res.getEvents())); });
+                    eventBus.publish(new TransactionIncluded(tx.getHash(), b, res.getGasUsed(), res.getReturns(), res.getEvents()));
+                });
         return new BlockCreateResult(b, failedTransactions, reasons);
     }
 }

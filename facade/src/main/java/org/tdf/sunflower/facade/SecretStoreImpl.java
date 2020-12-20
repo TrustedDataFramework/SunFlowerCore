@@ -8,7 +8,7 @@ import org.tdf.common.util.HexBytes;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SecretStoreImpl{
+public class SecretStoreImpl {
     private HexBytes publicKey;
     private HexBytes cipherText;
 }

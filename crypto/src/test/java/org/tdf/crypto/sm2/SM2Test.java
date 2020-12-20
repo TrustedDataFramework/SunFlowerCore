@@ -2,18 +2,16 @@ package org.tdf.crypto.sm2;
 
 
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-
 import org.junit.Ignore;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.tdf.crypto.KeyPair;
-import org.tdf.crypto.sm2.SM2;
-import org.tdf.crypto.sm2.SM2PrivateKey;
-import org.tdf.crypto.sm2.SM2PublicKey;
 import org.tdf.gmhelper.SM2Util;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SM2Test {
 
@@ -34,7 +32,7 @@ public class SM2Test {
     public void testCreatePrivateKey() {// 测试从字节数组形式的私钥创建私钥对象
         SM2PrivateKey sm2PrivateKey = new SM2PrivateKey(ByteUtils.fromHexString("74a7d0f0520366b09c16296aaec44102d1073b44fda1c25561a242228d75c863"));
 
-        SM2PublicKey sm2PublicKey = (SM2PublicKey)sm2PrivateKey.generatePublicKey();
+        SM2PublicKey sm2PublicKey = (SM2PublicKey) sm2PrivateKey.generatePublicKey();
         byte[] signature = sm2PrivateKey.sign("sm2 test".getBytes());
         assertTrue(sm2PublicKey.verify("sm2 test".getBytes(), signature));
     }
@@ -44,8 +42,9 @@ public class SM2Test {
         SM2PrivateKey sm2PrivateKey = new SM2PrivateKey(ByteUtils.fromHexString("f79bfd80ff249b35622669833844c6117f3a32dbdb18f5ad1a844389d3a3d2d4"));
         SM2PublicKey sm2PublicKey = new SM2PublicKey(ByteUtils.fromHexString("035eef0e68008d1abd45cde6c68f471d901e083a0c010072cab4214439b4914b5b"));
         byte[] signature = sm2PrivateKey.sign("sm2 test".getBytes());
-        assertTrue( sm2PublicKey.verify("sm2 test".getBytes(), signature));
+        assertTrue(sm2PublicKey.verify("sm2 test".getBytes(), signature));
     }
+
     @Test
     public void testAll() {
         String msg = "sm2 test";
@@ -56,12 +55,12 @@ public class SM2Test {
         SM2PrivateKey sm2PrivateKey1 = new SM2PrivateKey(priv);
 
         SM2PublicKey sm2PublicKey0 = new SM2PublicKey(pub);
-        SM2PublicKey sm2PublicKey1 = (SM2PublicKey)sm2PrivateKey0.generatePublicKey();
-        SM2PublicKey sm2PublicKey2 = (SM2PublicKey)sm2PrivateKey1.generatePublicKey();
+        SM2PublicKey sm2PublicKey1 = (SM2PublicKey) sm2PrivateKey0.generatePublicKey();
+        SM2PublicKey sm2PublicKey2 = (SM2PublicKey) sm2PrivateKey1.generatePublicKey();
         byte[] signature1 = sm2PrivateKey1.sign(msg.getBytes());
         byte[] signature0 = sm2PrivateKey0.sign(msg.getBytes());
 
-        assertTrue(sm2PublicKey0.verify(msg.getBytes(), signature0)  &&
+        assertTrue(sm2PublicKey0.verify(msg.getBytes(), signature0) &&
                 sm2PublicKey0.verify(msg.getBytes(), signature1) &&
                 sm2PublicKey1.verify(msg.getBytes(), signature0) &&
                 sm2PublicKey1.verify(msg.getBytes(), signature1) &&
@@ -115,8 +114,8 @@ public class SM2Test {
         byte[] pubkey2 = keyPair2.getPublicKey().getEncoded();
         byte[] pubkey3 = keyPair3.getPublicKey().getEncoded();
 
-        byte[] key0 = SM2.calculateShareKey(true, privateKey0,privateKey1,pubkey2,pubkey3, "userid@soie-chain.com".getBytes());
-        byte[] key1 = SM2.calculateShareKey(false, privateKey2,privateKey3,pubkey0,pubkey1, "userid@soie-chain.com".getBytes());
+        byte[] key0 = SM2.calculateShareKey(true, privateKey0, privateKey1, pubkey2, pubkey3, "userid@soie-chain.com".getBytes());
+        byte[] key1 = SM2.calculateShareKey(false, privateKey2, privateKey3, pubkey0, pubkey1, "userid@soie-chain.com".getBytes());
 
         assertArrayEquals(key0, key1);
 

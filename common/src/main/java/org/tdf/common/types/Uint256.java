@@ -19,92 +19,21 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static org.tdf.common.types.ByteUtil.*;
+import static org.tdf.common.types.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.tdf.common.types.ByteUtil.firstNonZeroByte;
 
 
 @JsonDeserialize(using = Uint256.Uint256Deserializer.class)
 @JsonSerialize(using = IntSerializer.class)
 @RLPEncoding(Uint256.Uint256EncoderDecoder.class)
 @RLPDecoding(Uint256.Uint256EncoderDecoder.class)
-public class Uint256 extends Number{
-    @Override
-    public int intValue() {
-        return value().intValueExact();
-    }
-
-    @Override
-    public long longValue() {
-        return value().longValueExact();
-    }
-
-    @Override
-    public float floatValue() {
-        return value().floatValue();
-    }
-
-    @Override
-    public double doubleValue() {
-        return value().doubleValue();
-    }
-
-    public static class Uint256Deserializer extends StdDeserializer<Uint256> {
-        public Uint256Deserializer() {
-            super(Uint256.class);
-        }
-
-        @Override
-        public Uint256 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            JsonNode node = p.getCodec().readTree(p);
-            if (node.isNull()) return Uint256.ZERO;
-            String encoded = node.asText();
-            if (encoded == null || encoded.equals("")) {
-                return Uint256.ZERO;
-            }
-            if (encoded.startsWith("0x")) {
-                return Uint256.of(encoded.substring(2), 16);
-            }
-            return Uint256.of(encoded, 10);
-        }
-
-    }
-
-    public static class Uint256Serializer extends StdSerializer<Uint256> {
-        public Uint256Serializer() {
-            super(Uint256.class);
-        }
-
-        @Override
-        public void serialize(Uint256 value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-            jgen.writeString(value.value().toString(10));
-        }
-    }
-
-    public static class Uint256EncoderDecoder implements RLPEncoder<Uint256>, RLPDecoder<Uint256> {
-        @Override
-        public RLPElement encode(@NonNull Uint256 uint256) {
-            return RLPItem.fromBytes(uint256.getNoLeadZeroesData());
-        }
-
-        @Override
-        public Uint256 decode(@NonNull RLPElement rlpElement) {
-            return Uint256.of(rlpElement.asBytes());
-        }
-    }
-
+public class Uint256 extends Number {
     public static final int MAX_POW = 256;
     public static final BigInteger _2_256 = BigInteger.valueOf(2).pow(MAX_POW);
     public static final BigInteger MAX_VALUE = _2_256.subtract(BigInteger.ONE);
-
-    private final byte[] data;
     public static final Uint256 ZERO = new Uint256(new byte[32]);
     public static final Uint256 ONE = of((byte) 1);
-
-    public static Uint256 of(String pattern, int radix) {
-        BigInteger i = new BigInteger(pattern, radix);
-        if (i.compareTo(BigInteger.ZERO) < 0 || i.compareTo(MAX_VALUE) > 0)
-            throw new RuntimeException(pattern + " overflow");
-        return of(ByteUtil.bigIntegerToBytes(i, 32));
-    }
+    private final byte[] data;
 
     /**
      * Unsafe private constructor
@@ -121,6 +50,13 @@ public class Uint256 extends Number{
         if (data == null || data.length != 32)
             throw new RuntimeException("Input byte array should have 32 bytes in it!");
         this.data = data;
+    }
+
+    public static Uint256 of(String pattern, int radix) {
+        BigInteger i = new BigInteger(pattern, radix);
+        if (i.compareTo(BigInteger.ZERO) < 0 || i.compareTo(MAX_VALUE) > 0)
+            throw new RuntimeException(pattern + " overflow");
+        return of(ByteUtil.bigIntegerToBytes(i, 32));
     }
 
     public static Uint256 of(byte[] data) {
@@ -156,7 +92,6 @@ public class Uint256 extends Number{
         return new Uint256(bb);
     }
 
-
     public static Uint256 of(int num) {
         return of(ByteUtil.intToBytes(num));
     }
@@ -165,6 +100,45 @@ public class Uint256 extends Number{
         return of(ByteUtil.longToBytes(num));
     }
 
+    public static byte[] getNoLeadZeroesData(byte[] data) {
+        final int firstNonZero = firstNonZeroByte(data);
+        switch (firstNonZero) {
+            case -1:
+                return EMPTY_BYTE_ARRAY;
+            case 0:
+                return data;
+            default:
+                byte[] result = new byte[data.length - firstNonZero];
+                System.arraycopy(data, firstNonZero, result, 0, data.length - firstNonZero);
+
+                return result;
+        }
+    }
+
+    public static void main(String[] args) {
+        Uint256 u = Uint256.of(new byte[]{(byte) 255, (byte) 255, (byte) 255, (byte) 255, (byte) 255, (byte) 255, (byte) 255, (byte) 255});
+        System.out.println(u.add(u).value());
+    }
+
+    @Override
+    public int intValue() {
+        return value().intValueExact();
+    }
+
+    @Override
+    public long longValue() {
+        return value().longValueExact();
+    }
+
+    @Override
+    public float floatValue() {
+        return value().floatValue();
+    }
+
+    @Override
+    public double doubleValue() {
+        return value().doubleValue();
+    }
 
     /**
      * Returns instance data
@@ -186,26 +160,9 @@ public class Uint256 extends Number{
         return Arrays.copyOf(data, data.length);
     }
 
-
-    public static byte[] getNoLeadZeroesData(byte[] data) {
-        final int firstNonZero = firstNonZeroByte(data);
-        switch (firstNonZero) {
-            case -1:
-                return EMPTY_BYTE_ARRAY;
-            case 0:
-                return data;
-            default:
-                byte[] result = new byte[data.length - firstNonZero];
-                System.arraycopy(data, firstNonZero, result, 0, data.length - firstNonZero);
-
-                return result;
-        }
-    }
-
     public byte[] getNoLeadZeroesData() {
         return getNoLeadZeroesData(this.data);
     }
-
 
     public BigInteger value() {
         return new BigInteger(1, data);
@@ -257,7 +214,6 @@ public class Uint256 extends Number{
         return this.sub(word);
     }
 
-
     // TODO: improve with no BigInteger
     public Uint256 mod(Uint256 word) {
 
@@ -306,8 +262,47 @@ public class Uint256 extends Number{
         return Arrays.hashCode(data);
     }
 
-    public static void main(String[] args) {
-        Uint256 u = Uint256.of(new byte[]{(byte)255, (byte)255,(byte)255,(byte)255,(byte)255,(byte)255,(byte)255,(byte)255});
-        System.out.println(u.add(u).value());
+    public static class Uint256Deserializer extends StdDeserializer<Uint256> {
+        public Uint256Deserializer() {
+            super(Uint256.class);
+        }
+
+        @Override
+        public Uint256 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            JsonNode node = p.getCodec().readTree(p);
+            if (node.isNull()) return Uint256.ZERO;
+            String encoded = node.asText();
+            if (encoded == null || encoded.equals("")) {
+                return Uint256.ZERO;
+            }
+            if (encoded.startsWith("0x")) {
+                return Uint256.of(encoded.substring(2), 16);
+            }
+            return Uint256.of(encoded, 10);
+        }
+
+    }
+
+    public static class Uint256Serializer extends StdSerializer<Uint256> {
+        public Uint256Serializer() {
+            super(Uint256.class);
+        }
+
+        @Override
+        public void serialize(Uint256 value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
+            jgen.writeString(value.value().toString(10));
+        }
+    }
+
+    public static class Uint256EncoderDecoder implements RLPEncoder<Uint256>, RLPDecoder<Uint256> {
+        @Override
+        public RLPElement encode(@NonNull Uint256 uint256) {
+            return RLPItem.fromBytes(uint256.getNoLeadZeroesData());
+        }
+
+        @Override
+        public Uint256 decode(@NonNull RLPElement rlpElement) {
+            return Uint256.of(rlpElement.asBytes());
+        }
     }
 }

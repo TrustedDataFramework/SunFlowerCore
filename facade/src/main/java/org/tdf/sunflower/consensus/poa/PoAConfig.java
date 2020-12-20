@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.MinerConfig;
 
 @Getter

@@ -10,7 +10,8 @@ public interface BlockValidator {
 
     /**
      * validate the block
-     * @param block the block to validate
+     *
+     * @param block      the block to validate
      * @param dependency parent block
      * @return validate result
      */

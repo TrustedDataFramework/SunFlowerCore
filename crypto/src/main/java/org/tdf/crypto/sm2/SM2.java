@@ -13,10 +13,12 @@ import java.security.NoSuchProviderException;
 
 public class SM2 {
     public static final String ALGORITHM = "sm2";
+    public static int KEY_BITS = 16;//密钥协商生成的Key密钥长度，可以修改
+
     public static String getAlgorithm() {
         return ALGORITHM;
     }
-    public static int KEY_BITS = 16;//密钥协商生成的Key密钥长度，可以修改
+
     /**
      * @return SM2 keypair for signature and verifying
      */
@@ -33,14 +35,16 @@ public class SM2 {
         }
         return new SM2KeyPair(keyPair);
     }
+
     /**
      * 密钥协商功能
-     * @param initiator 是否密钥协商发起者
-     * @param privStatic 本方固定私钥
-     * @param privEphemeral 本方临时私钥
+     *
+     * @param initiator       是否密钥协商发起者
+     * @param privStatic      本方固定私钥
+     * @param privEphemeral   本方临时私钥
      * @param publicKeyStatic 对方固定公钥 压缩的33字节公钥
      * @param publicEphemeral 对方临时公钥 压缩的33字节公钥
-     * @param userId 对方指定用户ID，注意本方ID为默认 "userid@soie-chain.com".getBytes()
+     * @param userId          对方指定用户ID，注意本方ID为默认 "userid@soie-chain.com".getBytes()
      */
     public static byte[] calculateShareKey(boolean initiator, byte[] privStatic, byte[] privEphemeral, byte[] publicKeyStatic, byte[] publicEphemeral, byte[] userId) {
         SM2PrivateKey skStatic = new SM2PrivateKey(privStatic);

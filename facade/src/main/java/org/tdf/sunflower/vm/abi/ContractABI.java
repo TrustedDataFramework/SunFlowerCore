@@ -17,24 +17,7 @@ public class ContractABI {
     private int[] inputs;
     private int[] outputs;
 
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class InputOutput{
-        private String type;
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class ContractABIJson{
-        private String name;
-        private String type;
-        private List<InputOutput> inputs;
-        private List<InputOutput> outputs;
-    }
-
-    public ContractABIJson toJSON(){
+    public ContractABIJson toJSON() {
         return new ContractABIJson(
                 name,
                 type == 0 ? "function" : "event",
@@ -43,7 +26,24 @@ public class ContractABI {
         );
     }
 
-    private List<InputOutput> map(int[] ints){
+    private List<InputOutput> map(int[] ints) {
         return Arrays.stream(ints).mapToObj(i -> new InputOutput(AbiDataType.values()[i].name().toLowerCase())).collect(Collectors.toList());
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class InputOutput {
+        private String type;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ContractABIJson {
+        private String name;
+        private String type;
+        private List<InputOutput> inputs;
+        private List<InputOutput> outputs;
     }
 }

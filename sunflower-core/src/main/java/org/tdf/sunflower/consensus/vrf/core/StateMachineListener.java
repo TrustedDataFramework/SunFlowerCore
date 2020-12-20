@@ -1,6 +1,5 @@
 package org.tdf.sunflower.consensus.vrf.core;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.codec.DecoderException;
 
 import java.io.IOException;
@@ -12,11 +11,11 @@ import java.io.IOException;
 public interface StateMachineListener {
 
     // This is a callback for VrfStateMachine to notify its changed state.
-    public void stateChanged(int from, int to) throws DecoderException, JsonProcessingException, IOException;
+    void stateChanged(int from, int to) throws DecoderException, IOException;
 
     // This is a callback for VrfStateMachine to finalize that if blockchain system
     // can accept it as final block.
     // TODO: DO NOT implement it as a blocking logic, that will impact
     // VrfStateMachine performance.
-    public boolean finalizeNewBlock(VrfRound vrfRound, VrfBlockWrapper finalBlock);
+    boolean finalizeNewBlock(VrfRound vrfRound, VrfBlockWrapper finalBlock);
 }

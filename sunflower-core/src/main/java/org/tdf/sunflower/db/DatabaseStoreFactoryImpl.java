@@ -15,7 +15,7 @@ import java.util.List;
 @Component
 public class DatabaseStoreFactoryImpl implements DatabaseStoreFactory {
     private static final List<DatabaseStore> STORES_LIST = new ArrayList<>();
-    private DatabaseConfig config;
+    private final DatabaseConfig config;
 
     public DatabaseStoreFactoryImpl(DatabaseConfig config) {
 

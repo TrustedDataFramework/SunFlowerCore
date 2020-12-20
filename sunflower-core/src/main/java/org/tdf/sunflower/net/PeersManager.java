@@ -21,9 +21,9 @@ import java.util.stream.Stream;
 @Slf4j(topic = "net")
 // plugin for peers join/remove management
 public class PeersManager implements Plugin {
+    private final PeerServerConfig config;
+    private final ConcurrentHashMap<PeerImpl, Boolean> pending = new ConcurrentHashMap<>();
     private PeerServerImpl server;
-    private PeerServerConfig config;
-    private ConcurrentHashMap<PeerImpl, Boolean> pending = new ConcurrentHashMap<>();
     private ScheduledExecutorService executorService;
 
     PeersManager(PeerServerConfig config) {

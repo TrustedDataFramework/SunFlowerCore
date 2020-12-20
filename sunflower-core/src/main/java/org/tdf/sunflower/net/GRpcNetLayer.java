@@ -81,7 +81,7 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
 
     @AllArgsConstructor
     private static class ChannelWrapper implements StreamObserver<Message> {
-        private Channel channel;
+        private final Channel channel;
 
         @Override
         public void onNext(Message value) {
@@ -101,7 +101,7 @@ public class GRpcNetLayer extends EntryGrpc.EntryImplBase implements NetLayer {
 
     @AllArgsConstructor
     private static class GRpcChannelOut implements ProtoChannel.ChannelOut {
-        private StreamObserver<Message> out;
+        private final StreamObserver<Message> out;
 
         @Override
         public void write(Message message) {

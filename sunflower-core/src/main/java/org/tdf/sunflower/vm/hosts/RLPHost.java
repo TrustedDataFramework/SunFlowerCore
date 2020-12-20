@@ -16,6 +16,7 @@ public class RLPHost extends HostFunction {
     private RLPList list;
     private List<byte[]> elements;
     private byte[] elementsEncoded;
+
     public RLPHost() {
         setType(new FunctionType(
                 // offset, length, offset

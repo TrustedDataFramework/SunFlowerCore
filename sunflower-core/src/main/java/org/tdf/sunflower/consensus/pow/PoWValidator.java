@@ -2,7 +2,6 @@ package org.tdf.sunflower.consensus.pow;
 
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
-import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.BlockValidateResult;
 import org.tdf.sunflower.types.Transaction;

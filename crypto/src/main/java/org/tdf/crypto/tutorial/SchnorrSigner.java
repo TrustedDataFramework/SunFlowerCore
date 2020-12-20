@@ -47,7 +47,7 @@ public class SchnorrSigner {
                 )) % q;
     }
 
-    public long getBeta(long a){
+    public long getBeta(long a) {
         return d.power(alpha, a);
     }
 }

@@ -111,7 +111,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
 
     @AllArgsConstructor
     private static class WebSocketClientChannelOut implements ProtoChannel.ChannelOut {
-        private Client client;
+        private final Client client;
 
         @Override
         public void write(Message message) {
@@ -126,7 +126,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
 
     @Getter
     private static class Client extends WebSocketClient {
-        private ProtoChannel channel;
+        private final ProtoChannel channel;
 
         Client(String host, int port, MessageBuilder builder) throws Exception {
             super(new URI("ws", "", host, port, "", "", ""));
@@ -164,7 +164,7 @@ public class WebSocketNetLayer extends WebSocketServer implements NetLayer {
 
     @AllArgsConstructor
     private static class WebSocketChannelOut implements ProtoChannel.ChannelOut {
-        private WebSocket conn;
+        private final WebSocket conn;
 
         @Override
         public void write(Message message) {

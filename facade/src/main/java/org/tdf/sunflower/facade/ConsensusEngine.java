@@ -41,7 +41,7 @@ public interface ConsensusEngine {
         return ValidateResult.success();
     }
 
-    default Object rpcQuery(HexBytes address, JsonNode body){
+    default Object rpcQuery(HexBytes address, JsonNode body) {
         throw new UnsupportedOperationException("unsupported yet");
     }
 }

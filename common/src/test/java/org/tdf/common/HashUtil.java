@@ -21,6 +21,8 @@ public class HashUtil {
 
     private static final String HASH_256_ALGORITHM_NAME;
     private static final String HASH_512_ALGORITHM_NAME;
+    public static HashFunction sha3 = new HashFunction(HashUtil::sha3);
+    public static HashFunction sha256 = new HashFunction(HashUtil::sha256);
 
     static {
         Security.addProvider(SpongyCastleProvider.getInstance());
@@ -44,10 +46,6 @@ public class HashUtil {
             throw new RuntimeException(e);
         }
     }
-
-    public static HashFunction sha3 = new HashFunction(HashUtil::sha3);
-
-    public static HashFunction sha256 = new HashFunction(HashUtil::sha256);
 
     public static byte[] sha3(byte[] input) {
         MessageDigest digest;

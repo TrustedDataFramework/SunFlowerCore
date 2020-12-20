@@ -11,7 +11,6 @@ import org.tdf.sunflower.types.BlockCreateResult;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
-import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
@@ -135,7 +134,7 @@ public class PoWMiner extends AbstractMiner {
                 getEventBus().publish(new NewBlockMined(res.getBlock(), res.getFailedTransactions(), res.getReasons()));
             } catch (Exception e) {
                 e.printStackTrace();
-            }finally {
+            } finally {
                 this.task = null;
             }
         };

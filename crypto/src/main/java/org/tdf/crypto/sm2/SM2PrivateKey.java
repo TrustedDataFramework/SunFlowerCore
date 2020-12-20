@@ -7,6 +7,8 @@ import org.tdf.gmhelper.SM2Util;
 
 
 public class SM2PrivateKey implements PrivateKey {
+    private BCECPrivateKey privateKey;
+
     public SM2PrivateKey(BCECPrivateKey privateKey) {
         this.privateKey = privateKey;
     }
@@ -18,8 +20,6 @@ public class SM2PrivateKey implements PrivateKey {
     public BCECPrivateKey getPrivateKey() {
         return privateKey;
     }
-
-    private BCECPrivateKey privateKey;
 
     public byte[] sign(byte[] msg) {
         byte[] signature = null;

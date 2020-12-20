@@ -7,25 +7,22 @@ import java.net.URL;
 import java.nio.file.Paths;
 
 public class FileUtils {
-    private static ClassLoader loader = FileUtils.class.getClassLoader();
-
-    public static void setClassLoader(ClassLoader loader) {
-        FileUtils.loader = loader;
-    }
-
     /**
      * Represents the end-of-file (or stream).
      *
      * @since 2.5 (made public)
      */
     public static final int EOF = -1;
-
     /**
      * The default buffer size ({@value}) to use for
      * {@link #copyLarge(InputStream, OutputStream)}.
      */
     private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
+    private static ClassLoader loader = FileUtils.class.getClassLoader();
 
+    public static void setClassLoader(ClassLoader loader) {
+        FileUtils.loader = loader;
+    }
 
     /**
      * @param pathOrUrl path or url priority url > file system > class path

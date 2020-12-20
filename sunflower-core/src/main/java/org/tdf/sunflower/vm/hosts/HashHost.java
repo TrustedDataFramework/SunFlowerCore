@@ -38,9 +38,9 @@ public class HashHost extends HostFunction {
         return WBI.mallocBytes(getInstance(), ret);
     }
 
-    byte[] getData(long... parameters){
+    byte[] getData(long... parameters) {
         return (byte[]) WBI
-        .peek(getInstance(), (int) parameters[1], AbiDataType.BYTES);
+                .peek(getInstance(), (int) parameters[1], AbiDataType.BYTES);
     }
 
     enum Algorithm {

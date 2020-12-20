@@ -12,14 +12,14 @@ import java.util.function.Consumer;
 
 @Slf4j(topic = "net")
 public class Client implements ChannelListener {
+    private final PeerServerConfig config;
+    private final NetLayer netLayer;
+    private final PeerImpl self;
+    private final MessageBuilder builder;
     MessageBuilder messageBuilder;
     PeersCache peersCache;
     // listener for channel event
     private ChannelListener listener = ChannelListener.NONE;
-    private PeerServerConfig config;
-    private NetLayer netLayer;
-    private PeerImpl self;
-    private MessageBuilder builder;
 
     public Client(
             PeerImpl self,

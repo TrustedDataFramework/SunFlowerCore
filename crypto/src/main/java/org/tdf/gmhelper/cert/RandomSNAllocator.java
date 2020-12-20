@@ -11,7 +11,7 @@ import java.security.SecureRandom;
 
 /**
  * Random serial number generator.
- * 
+ * <p>
  * This class is thread safe.
  *
  * @author Lijun Liao
@@ -30,12 +30,12 @@ public class RandomSNAllocator implements CertSNAllocator {
      */
     private final static int MAX_SERIALNUMBER_SIZE = 159;
 
-    private static int[] AND_MASKS = new int[] {0xFF, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F};
+    private static int[] AND_MASKS = new int[]{0xFF, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F};
 
-    private static int[]  OR_MASKS = new int[] {0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40};
+    private static int[] OR_MASKS = new int[]{0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40};
 
     private final SecureRandom random;
-  
+
     private final int bitLen;
 
     /**
@@ -47,14 +47,15 @@ public class RandomSNAllocator implements CertSNAllocator {
 
     /**
      * Constructor with the specification of bitLen.
+     *
      * @param bitLen bit length of the serial number. The highest bit is always set to 1, so the
-     *        effective bit length is bitLen - 1. Valid value is [65, 159].
+     *               effective bit length is bitLen - 1. Valid value is [65, 159].
      */
     public RandomSNAllocator(int bitLen) {
         if (bitLen < MIN_SERIALNUMBER_SIZE || bitLen > MAX_SERIALNUMBER_SIZE) {
             throw new IllegalArgumentException(String.format(
-                "%s may not be out of the range [%d, %d]: %d",
-                "bitLen", MIN_SERIALNUMBER_SIZE, MAX_SERIALNUMBER_SIZE, bitLen));
+                    "%s may not be out of the range [%d, %d]: %d",
+                    "bitLen", MIN_SERIALNUMBER_SIZE, MAX_SERIALNUMBER_SIZE, bitLen));
         }
 
         this.random = new SecureRandom();
@@ -74,5 +75,5 @@ public class RandomSNAllocator implements CertSNAllocator {
 
         return new BigInteger(1, rdnBytes);
     }
-  
+
 }

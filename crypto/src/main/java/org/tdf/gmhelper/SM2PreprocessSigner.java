@@ -1,30 +1,15 @@
 package org.tdf.gmhelper;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SM3Digest;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECKeyParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.ParametersWithID;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.crypto.signers.DSAKCalculator;
 import org.bouncycastle.crypto.signers.RandomDSAKCalculator;
-import org.bouncycastle.math.ec.ECAlgorithms;
-import org.bouncycastle.math.ec.ECConstants;
-import org.bouncycastle.math.ec.ECFieldElement;
-import org.bouncycastle.math.ec.ECMultiplier;
-import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.FixedPointCombMultiplier;
+import org.bouncycastle.math.ec.*;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -90,6 +75,7 @@ public class SM2PreprocessSigner implements ECConstants {
      * ZA=H256(ENT LA ∥ IDA ∥ a ∥ b ∥ xG ∥yG ∥ xA ∥ yA)。
      * M=ZA ∥ M；
      * e = Hv(M)
+     *
      * @return
      */
     public byte[] preprocess(byte[] m, int off, int len) {
@@ -246,7 +232,7 @@ public class SM2PreprocessSigner implements ECConstants {
     }
 
     protected BigInteger[] derDecode(byte[] encoding)
-        throws IOException {
+            throws IOException {
         ASN1Sequence seq = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(encoding));
         if (seq.size() != 2) {
             return null;
@@ -264,7 +250,7 @@ public class SM2PreprocessSigner implements ECConstants {
     }
 
     protected byte[] derEncode(BigInteger r, BigInteger s)
-        throws IOException {
+            throws IOException {
 
         ASN1EncodableVector v = new ASN1EncodableVector();
         v.add(new ASN1Integer(r));

@@ -28,21 +28,22 @@ public class PendingCommit {
     private final ValidatorManager validatorManager;
     private final PendingProposal pendingProposal;
     /* VRF Round to tell block numer and round in VRF consensus protocol */
-    private VrfRound vrfRound;
+    private final VrfRound vrfRound;
     /**
      * A Hash Map to store committed Reduction/Final Proof Objects with committer's
      * coinbase. NOTE: Coinbase is set as key of HashMap, because new VRF keys is
      * chosen when blockchain restart. So we should collect all committed proof
      * identified by committer's coinbase. Map<committer coinbase, commit proof>
      */
-    private HashMapDB<CommitProof> commitProofs = new HashMapDB<>();
+    private final HashMapDB<CommitProof> commitProofs = new HashMapDB<>();
     /**
      * Store weights in priority as block identifier be committed. NOTE: To let
      * Block Miner get best committed block identifier directly, we store encoded
      * byte array of block identifier as key. Map<block identifier encoded,
      * committed weights in priority>E
      */
-    private HashMapDB<CommitWeights> commitWeights = new HashMapDB<>();
+    private final HashMapDB<CommitWeights> commitWeights = new HashMapDB<>();
+
     public PendingCommit(ValidatorManager validatorManager, PendingProposal pendingProposal, String tagName) {
         this.validatorManager = validatorManager;
         this.pendingProposal = pendingProposal;
@@ -197,7 +198,6 @@ public class PendingCommit {
                             "!!! Fatal Error, Sub Optimum ∑{} is reach 2/3 threshold when sorting Best Committed Identifier, PLEASE HELP ME",
                             bestCommittedWeights);
                 }
-                ;
                 bestCommittedWeights = weights.weights;
                 bestIdentifierEncoded = entry.getKey();
             }

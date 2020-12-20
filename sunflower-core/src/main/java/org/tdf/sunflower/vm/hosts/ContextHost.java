@@ -17,11 +17,11 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class ContextHost extends HostFunction {
-    private Context context;
-    private Map<HexBytes, Account> states;
-    private Store<byte[], byte[]> contractCodeStore;
-    private Function<byte[], Trie<byte[], byte[]>> storageTrieSupplier;
-    private boolean readonly;
+    private final Context context;
+    private final Map<HexBytes, Account> states;
+    private final Store<byte[], byte[]> contractCodeStore;
+    private final Function<byte[], Trie<byte[], byte[]>> storageTrieSupplier;
+    private final boolean readonly;
 
     public ContextHost(
             Context context,

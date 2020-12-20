@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 
 @AllArgsConstructor
 class SocketIODataListener implements DataListener<JsonNode> {
-    private Consumer<Message> consumer;
+    private final Consumer<Message> consumer;
 
     @Override
     public void onData(SocketIOClient client, JsonNode data, AckRequest ackSender) throws Exception {

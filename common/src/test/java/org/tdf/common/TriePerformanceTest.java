@@ -23,7 +23,7 @@ public class TriePerformanceTest {
             byte[] bytes = new byte[32];
             sr.nextBytes(bytes);
             trie.put(bytes, dummy);
-            if(i % 100000 == 0){
+            if (i % 100000 == 0) {
                 System.out.println(i * 1.0 / n);
             }
         }

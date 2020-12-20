@@ -7,14 +7,17 @@ import org.tdf.sunflower.types.PageSize;
 import org.tdf.sunflower.types.PagedView;
 import org.tdf.sunflower.types.Transaction;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
-public interface TransactionPool{
+public interface TransactionPool {
 
     // collect transactions into transaction pool
     List<String> collect(Collection<? extends Transaction> transactions);
 
-    default void collect(Transaction tx){
+    default void collect(Transaction tx) {
         collect(Collections.singleton(tx));
     }
 
@@ -35,7 +38,7 @@ public interface TransactionPool{
 
     void drop(Transaction transaction);
 
-    default Optional<Transaction> get(HexBytes hash){
+    default Optional<Transaction> get(HexBytes hash) {
         return Optional.empty();
     }
 

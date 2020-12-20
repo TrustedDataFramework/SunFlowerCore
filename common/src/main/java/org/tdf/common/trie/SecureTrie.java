@@ -115,29 +115,6 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
         return delegate.getStore();
     }
 
-    public class ValueOnlyEntry implements Map.Entry<K, V>{
-        private V value;
-
-        public ValueOnlyEntry(V value) {
-            this.value = value;
-        }
-
-        @Override
-        public K getKey() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public V getValue() {
-            return value;
-        }
-
-        @Override
-        public V setValue(V value) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
     @Override
     public void traverse(Function<Map.Entry<K, V>, Boolean> traverser) {
         traverseInternal((k, v) -> traverser.apply(new ValueOnlyEntry(getVCodec().getDecoder().apply(v))));
@@ -191,5 +168,28 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     @Override
     void traverseInternal(BiFunction<byte[], byte[], Boolean> traverser) {
         delegate.traverseInternal(traverser);
+    }
+
+    public class ValueOnlyEntry implements Map.Entry<K, V> {
+        private V value;
+
+        public ValueOnlyEntry(V value) {
+            this.value = value;
+        }
+
+        @Override
+        public K getKey() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V getValue() {
+            return value;
+        }
+
+        @Override
+        public V setValue(V value) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

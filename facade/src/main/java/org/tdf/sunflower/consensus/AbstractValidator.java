@@ -1,14 +1,11 @@
 package org.tdf.sunflower.consensus;
 
 import lombok.NonNull;
-import org.tdf.common.event.EventBus;
-import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.SafeMath;
 import org.tdf.sunflower.facade.Validator;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.ForkedStateTrie;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
@@ -63,7 +60,7 @@ public abstract class AbstractValidator implements Validator {
             Transaction coinbase = block.getBody().get(0);
 
             for (Transaction tx : block.getBody().subList(1, block.getBody().size())) {
-                TransactionResult r  = tmp.update(block.getHeader(), tx);
+                TransactionResult r = tmp.update(block.getHeader(), tx);
                 results.put(tx.getHash(), r);
                 totalFee = totalFee.safeAdd(r.getFee());
                 // todo:

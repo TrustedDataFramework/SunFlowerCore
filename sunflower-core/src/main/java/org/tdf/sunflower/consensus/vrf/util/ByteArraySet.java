@@ -41,7 +41,7 @@ public class ByteArraySet implements Set<byte[]> {
     public Iterator<byte[]> iterator() {
         return new Iterator<byte[]>() {
 
-            Iterator<ByteArrayWrapper> it = delegate.iterator();
+            final Iterator<ByteArrayWrapper> it = delegate.iterator();
 
             @Override
             public boolean hasNext() {

@@ -5,7 +5,7 @@ import org.tdf.sunflower.proto.Code;
 
 // wrap listener as plugin
 public class PluginWrapper implements Plugin {
-    private PeerServerListener listener;
+    private final PeerServerListener listener;
 
     PluginWrapper(PeerServerListener listener) {
         this.listener = listener;

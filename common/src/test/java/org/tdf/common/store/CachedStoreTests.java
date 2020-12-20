@@ -4,11 +4,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.ByteArraySet;
-import org.tdf.common.util.HexBytes;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -33,7 +30,7 @@ public abstract class CachedStoreTests {
     }
 
     @After
-    public void after(){
+    public void after() {
 
     }
 

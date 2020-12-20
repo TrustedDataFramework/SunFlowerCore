@@ -39,7 +39,7 @@ import java.util.function.Predicate;
 public class WebSocket {
     private static final Map<String, WebSocket> clients = new ConcurrentHashMap<>();
     public static ApplicationContext ctx;
-    private final Boolean lock = true;
+    static Cache<CacheKey, RLPList> CACHE;
     private TransactionPool transactionPool;
     private AccountTrie accountTrie;
     private SunflowerRepository repository;
@@ -47,16 +47,6 @@ public class WebSocket {
     private Set<HexBytes> addresses;
     private Map<HexBytes, Boolean> transactions;
     private String id;
-
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Data
-    public static class CacheKey {
-        private HexBytes contractAddress;
-        private HexBytes stateRoot;
-        private String method;
-        private HexBytes parameters;
-    }
 
     public static void initCache(int seconds) {
         WebSocket.CACHE = CacheBuilder.newBuilder()
@@ -70,9 +60,6 @@ public class WebSocket {
                 .maximumWeight(512 * 1024 * 1024)
                 .build();
     }
-
-    static Cache<CacheKey, RLPList> CACHE;
-
 
     @SneakyThrows
     public static void broadcastAsync(WebSocketMessage msg, Predicate<WebSocket> when, Consumer<WebSocket> after) {
@@ -245,7 +232,7 @@ public class WebSocket {
     public void sendBinary(byte[] binary) {
         if (this.session == null)
             return;
-        synchronized (this.lock) {
+        synchronized (this) {
             this.session.getBasicRemote().sendBinary(ByteBuffer.wrap(binary, 0, binary.length));
         }
     }
@@ -260,5 +247,15 @@ public class WebSocket {
 
     public void sendResponse(long nonce, WebSocketMessage.Code code, Object data) {
         sendBinary(RLPCodec.encode(new WebSocketMessage(nonce, code.ordinal(), RLPElement.readRLPTree(data))));
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    public static class CacheKey {
+        private HexBytes contractAddress;
+        private HexBytes stateRoot;
+        private String method;
+        private HexBytes parameters;
     }
 }

@@ -8,32 +8,32 @@ import java.nio.charset.StandardCharsets;
 
 // webassembly blockchain interface
 public abstract class WBI {
-    public static Object peek(ModuleInstance instance, int offset, AbiDataType type){
+    public static Object peek(ModuleInstance instance, int offset, AbiDataType type) {
         long startAndLen = instance.execute("__peek", offset, type.ordinal())[0];
         int start = (int) (startAndLen >>> 32);
         int len = (int) (startAndLen);
         byte[] bin = instance.getMemory().loadN(start, len);
-        switch (type){
-            case STRING:{
+        switch (type) {
+            case STRING: {
                 return new String(bin, StandardCharsets.UTF_8);
             }
-            case U256:{
+            case U256: {
                 return Uint256.of(bin);
             }
             case BYTES:
-            case ADDRESS:{
+            case ADDRESS: {
                 return bin;
             }
         }
         throw new RuntimeException("unexpected");
     }
 
-    private static int mallocInternal(ModuleInstance instance, AbiDataType t, byte[] bin){
+    private static int mallocInternal(ModuleInstance instance, AbiDataType t, byte[] bin) {
         long ptr = instance.execute("__malloc", bin.length)[0];
         instance.getMemory().put((int) ptr, bin);
         long p = instance.execute("__change_t", t.ordinal(), ptr, bin.length)[0];
         int r = (int) p;
-        if(r < 0)
+        if (r < 0)
             throw new RuntimeException("malloc failed: pointer is negative");
         return r;
     }

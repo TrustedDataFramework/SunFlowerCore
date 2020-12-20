@@ -49,8 +49,11 @@ import java.security.MessageDigest;
 
 public abstract class DigestEngine extends MessageDigest implements Digest {
 
-    private int digestLen, blockLen, inputLen;
-    private byte[] inputBuf, outputBuf;
+    private final int blockLen;
+    private final byte[] inputBuf;
+    private int digestLen;
+    private int inputLen;
+    private byte[] outputBuf;
     private long blockCount;
 
     /**
@@ -154,7 +157,7 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
      * @see org.silkroad.crypto.cryptohash.Digest
      */
     public void update(byte input) {
-        inputBuf[inputLen++] = (byte) input;
+        inputBuf[inputLen++] = input;
         if (inputLen == blockLen) {
             processBlock(inputBuf);
             blockCount++;

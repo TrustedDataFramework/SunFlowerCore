@@ -13,10 +13,11 @@ public class ElgamalSigner {
 
     /**
      * 从私钥生成公钥
+     *
      * @param a 私钥
      * @return 公钥
      */
-    public long getBeta(long a){
+    public long getBeta(long a) {
         return this.d.power(alpha, a);
     }
 

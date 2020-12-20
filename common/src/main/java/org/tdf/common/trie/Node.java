@@ -36,7 +36,6 @@ class Node {
     private HashFunction hashFunction;
 
 
-
     private Node(RLPList rlp, boolean dirty, byte[] hash, Store<byte[], byte[]> readOnlyCache, Object[] children, HashFunction hashFunction) {
         this.rlp = rlp;
         this.dirty = dirty;
@@ -566,12 +565,6 @@ class Node {
         return this.hash;
     }
 
-    enum Type {
-        BRANCH,
-        EXTENSION,
-        LEAF
-    }
-
     Map<byte[], byte[]> getProof(TrieKey path, Map<byte[], byte[]> map) {
         if (hash != null) map.put(hash, rlp.getEncoded());
         switch (getType()) {
@@ -597,6 +590,12 @@ class Node {
             }
         }
         throw new RuntimeException();
+    }
+
+    enum Type {
+        BRANCH,
+        EXTENSION,
+        LEAF
     }
 
     private static class NodeBuilder {

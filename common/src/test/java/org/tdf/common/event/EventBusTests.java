@@ -18,7 +18,7 @@ public class EventBusTests {
     }
 
     @Test
-    public void testPublishEvent() throws Exception{
+    public void testPublishEvent() throws Exception {
         SuccessEvent event = new SuccessEvent();
         SuccessCounter counter = new SuccessCounter();
         FailedCounter failedCounter = new FailedCounter();

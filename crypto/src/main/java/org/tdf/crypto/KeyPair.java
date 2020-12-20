@@ -1,6 +1,7 @@
 package org.tdf.crypto;
 
-public interface KeyPair{
+public interface KeyPair {
     PrivateKey getPrivateKey();
+
     PublicKey getPublicKey();
 }

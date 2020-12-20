@@ -11,7 +11,6 @@ import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.NoDeleteStore;
 import org.tdf.common.store.NoDoubleDeleteStore;
 import org.tdf.common.store.Store;
-import org.tdf.common.util.ByteArraySet;
 
 import java.io.File;
 import java.net.URL;

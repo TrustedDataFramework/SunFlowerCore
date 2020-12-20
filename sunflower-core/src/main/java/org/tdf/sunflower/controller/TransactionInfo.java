@@ -9,6 +9,7 @@ public class TransactionInfo {
     private long height;
     private long confirms;
     private Transaction transaction;
+
     enum Status {
         PENDING,
         INCLUDED,

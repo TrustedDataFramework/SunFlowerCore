@@ -7,30 +7,6 @@ import java.util.List;
 import java.util.Properties;
 
 public interface PeerServer {
-    // dial a peer with a message
-    void dial(Peer peer, byte[] message);
-
-    // broadcast a message to all the peers
-    void broadcast(byte[] message);
-
-    // get all peers had been connected
-    List<Peer> getPeers();
-
-    // get all bootstraps
-    List<Peer> getBootStraps();
-
-    boolean isFull();
-
-    void addListeners(PeerServerListener... peerServerListeners);
-
-    void start();
-
-    void stop();
-
-    void init(Properties properties);
-
-    Peer getSelf();
-
     PeerServer NONE = new PeerServer() {
         @Override
         public void dial(Peer peer, byte[] message) {
@@ -82,4 +58,28 @@ public interface PeerServer {
             return false;
         }
     };
+
+    // dial a peer with a message
+    void dial(Peer peer, byte[] message);
+
+    // broadcast a message to all the peers
+    void broadcast(byte[] message);
+
+    // get all peers had been connected
+    List<Peer> getPeers();
+
+    // get all bootstraps
+    List<Peer> getBootStraps();
+
+    boolean isFull();
+
+    void addListeners(PeerServerListener... peerServerListeners);
+
+    void start();
+
+    void stop();
+
+    void init(Properties properties);
+
+    Peer getSelf();
 }

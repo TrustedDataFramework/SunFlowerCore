@@ -1,14 +1,11 @@
 package org.tdf.common.store;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.SneakyThrows;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
@@ -18,10 +15,6 @@ import java.util.function.BiFunction;
 import static java.nio.file.StandardOpenOption.*;
 
 public class JsonStore implements BatchStore<String, JsonNode> {
-    private final ObjectMapper mapper;
-    private final String jsonFile;
-    private Map<String, JsonNode> node;
-
     static Set<PosixFilePermission> defaultPosixPermissions = null;
 
     static {
@@ -29,6 +22,10 @@ public class JsonStore implements BatchStore<String, JsonNode> {
         defaultPosixPermissions.add(PosixFilePermission.OWNER_READ);
         defaultPosixPermissions.add(PosixFilePermission.OWNER_WRITE);
     }
+
+    private final ObjectMapper mapper;
+    private final String jsonFile;
+    private Map<String, JsonNode> node;
 
 
     public JsonStore(String jsonFile, ObjectMapper mapper) {
@@ -52,12 +49,12 @@ public class JsonStore implements BatchStore<String, JsonNode> {
             return;
         }
         ObjectNode n = null;
-        try{
+        try {
             n = (ObjectNode) mapper.readValue(f, JsonNode.class);
-        }catch (Exception ignored){
+        } catch (Exception ignored) {
 
         }
-        if(n == null){
+        if (n == null) {
             return;
         }
         Iterator<Map.Entry<String, JsonNode>> it = n.fields();

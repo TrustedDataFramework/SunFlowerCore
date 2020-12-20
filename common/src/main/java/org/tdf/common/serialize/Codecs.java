@@ -16,7 +16,7 @@ public class Codecs {
             );
     static Codec IDENTITY = Codec.newInstance(Function.identity(), Function.identity());
 
-    public static <K> Codec<K, byte[]> newRLPCodec(Class<K> clazz){
+    public static <K> Codec<K, byte[]> newRLPCodec(Class<K> clazz) {
         return Codec.newInstance(RLPCodec::encode, x -> RLPCodec.decode(x, clazz));
     }
 }

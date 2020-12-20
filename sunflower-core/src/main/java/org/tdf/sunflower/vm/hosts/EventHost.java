@@ -19,8 +19,8 @@ import java.util.List;
 public class EventHost extends HostFunction {
     @Getter
     private final List<Event> events;
-    private HexBytes address;
-    private boolean readonly;
+    private final HexBytes address;
+    private final boolean readonly;
 
     public EventHost(HexBytes address, boolean readonly) {
         this.address = address;
@@ -41,7 +41,7 @@ public class EventHost extends HostFunction {
         if (readonly)
             throw new RuntimeException("cannot call event here");
         String x = (String) WBI
-                    .peek(getInstance(), (int) parameters[0], AbiDataType.STRING);
+                .peek(getInstance(), (int) parameters[0], AbiDataType.STRING);
         byte[] y = (byte[]) WBI
                 .peek(getInstance(), (int) parameters[1], AbiDataType.BYTES);
 

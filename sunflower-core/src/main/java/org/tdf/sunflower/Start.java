@@ -113,7 +113,7 @@ public class Start {
         return p;
     }
 
-    static void setWebSocketCache(Environment env){
+    static void setWebSocketCache(Environment env) {
         EnvReader r = new EnvReader(env);
         WebSocket.initCache(r.getBlockInterval());
     }

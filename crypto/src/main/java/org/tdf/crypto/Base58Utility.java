@@ -4,19 +4,6 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 public class Base58Utility {
-    private static class AddressFormatException extends RuntimeException {
-        public AddressFormatException() {
-        }
-
-        public AddressFormatException(String message) {
-            super(message);
-        }
-
-        public static AddressFormatException invalidCharacter(char c, int i) {
-            return new AddressFormatException(String.format("invalid character %c at position %d", c, i));
-        }
-    }
-
     public static final char[] ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".toCharArray();
     private static final char ENCODED_ZERO = ALPHABET[0];
     private static final int[] INDEXES = new int[128];
@@ -133,5 +120,18 @@ public class Base58Utility {
             remainder = temp % divisor;
         }
         return (byte) remainder;
+    }
+
+    private static class AddressFormatException extends RuntimeException {
+        public AddressFormatException() {
+        }
+
+        public AddressFormatException(String message) {
+            super(message);
+        }
+
+        public static AddressFormatException invalidCharacter(char c, int i) {
+            return new AddressFormatException(String.format("invalid character %c at position %d", c, i));
+        }
     }
 }

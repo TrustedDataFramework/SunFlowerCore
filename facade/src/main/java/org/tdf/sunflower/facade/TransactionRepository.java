@@ -4,18 +4,11 @@ import org.tdf.common.types.BlockConfirms;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
 public interface TransactionRepository {
-    boolean containsTransaction(byte[] hash);
-
-    Optional<Transaction> getTransactionByHash(byte[] hash);
-
-    List<Transaction> getTransactionsByBlockHash(byte[] blockHash);
-
     TransactionRepository NONE = new TransactionRepository() {
         @Override
         public boolean containsTransaction(byte[] hash) {
@@ -44,6 +37,12 @@ public interface TransactionRepository {
 
         }
     };
+
+    boolean containsTransaction(byte[] hash);
+
+    Optional<Transaction> getTransactionByHash(byte[] hash);
+
+    List<Transaction> getTransactionsByBlockHash(byte[] blockHash);
 
     BlockConfirms getConfirms(byte[] transactionHash);
 

@@ -325,7 +325,7 @@ public class VrfMiner extends AbstractMiner {
                 + bestBlock.getHeight());
 
         Block newMiningBlock = createBlock(bestBlock).getBlock();// blockchain.createNewBlock(bestPendingState,
-        if(newMiningBlock == null)
+        if (newMiningBlock == null)
             return null;
         // getAllPendingTransactions(), getUncles(bestPendingState));
         log.info("######## Get new block for mining: #" + newMiningBlock.getHeight());
@@ -743,8 +743,8 @@ public class VrfMiner extends AbstractMiner {
      * @since 2019/06/27
      */
     private class VrfMined {
-        private Block vrfBlock;
-        private byte[] vrfSeed;
+        private final Block vrfBlock;
+        private final byte[] vrfSeed;
 
         public VrfMined(Block vrfBlock, byte[] vrfSeed) {
             this.vrfBlock = vrfBlock;
@@ -761,8 +761,8 @@ public class VrfMiner extends AbstractMiner {
     }
 
     private class VrfBlockProof {
-        private ProposalProof proof;
-        private int priority;
+        private final ProposalProof proof;
+        private final int priority;
 
         public VrfBlockProof(ProposalProof proof, int priority) {
             this.proof = proof;

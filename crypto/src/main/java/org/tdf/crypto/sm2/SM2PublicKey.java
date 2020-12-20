@@ -2,13 +2,15 @@ package org.tdf.crypto.sm2;
 
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
+import org.tdf.crypto.PublicKey;
 import org.tdf.gmhelper.BCECUtil;
 import org.tdf.gmhelper.SM2Util;
-import org.tdf.crypto.PublicKey;
 
 import java.io.IOException;
 
 public class SM2PublicKey implements PublicKey {
+
+    private BCECPublicKey bcecPublicKey;
 
     public SM2PublicKey(BCECPublicKey bcecPublicKey) {
         this.bcecPublicKey = bcecPublicKey;
@@ -21,8 +23,6 @@ public class SM2PublicKey implements PublicKey {
     public BCECPublicKey getBcecPublicKey() {
         return bcecPublicKey;
     }
-
-    private BCECPublicKey bcecPublicKey;
 
     public boolean verify(byte[] msg, byte[] signature) {//签名为r，s字节数组的原始拼接
         ECPublicKeyParameters pubKeyParameters = BCECUtil.convertPublicKeyToParameters(bcecPublicKey);

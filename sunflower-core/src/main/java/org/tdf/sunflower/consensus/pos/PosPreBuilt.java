@@ -28,7 +28,7 @@ public class PosPreBuilt implements PreBuiltContract {
     public static final byte[] NODE_INFO_KEY = "nodes".getBytes(StandardCharsets.US_ASCII);
     public static final byte[] VOTE_INFO_KEY = "votes".getBytes(StandardCharsets.US_ASCII);
 
-    private Map<HexBytes, NodeInfo> nodes;
+    private final Map<HexBytes, NodeInfo> nodes;
     @Setter
     private AccountTrie accountTrie;
 

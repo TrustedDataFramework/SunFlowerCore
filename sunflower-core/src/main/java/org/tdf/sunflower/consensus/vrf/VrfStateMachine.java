@@ -81,7 +81,7 @@ public class VrfStateMachine {
     private final List<StateMachineListener> listeners = new ArrayList<>();
     private final BlockingQueue<StateChanged> notifyStateQueue = new LinkedBlockingQueue<>();
     // Block header validator
-    private VrfValidator headerValidator;
+    private final VrfValidator headerValidator;
     // Current state of the VRF state machine
     private int state;
     private VrfConfig vrfConfig;

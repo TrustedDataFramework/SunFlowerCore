@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 // enhanced radix tree
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class TrieImpl<K, V> extends AbstractTrie<K, V>{
+public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     @Getter
     private final byte[] nullHash;
     HashFunction function;
@@ -31,15 +31,6 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
 
     Codec<K, byte[]> kCodec;
     Codec<V, byte[]> vCodec;
-
-    Codec<K, byte[]> getKCodec() {
-        return kCodec;
-    }
-
-    Codec<V, byte[]> getVCodec() {
-        return vCodec;
-    }
-
     private Node root;
 
     static <K, V> TrieImpl<K, V> newInstance(
@@ -57,6 +48,14 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V>{
                 valueCodec,
                 null
         );
+    }
+
+    Codec<K, byte[]> getKCodec() {
+        return kCodec;
+    }
+
+    Codec<V, byte[]> getVCodec() {
+        return vCodec;
     }
 
     Optional<V> getFromBytes(byte[] data) {

@@ -60,25 +60,20 @@ public class SyncManager implements PeerServerListener, Closeable {
     private final Store<byte[], byte[]> contractCodeStore;
     private final Miner miner;
 
-    private Limiters limiters;
-    private volatile Block fastSyncBlock;
-
-    private Cache<HexBytes, Boolean> receivedTransactions = CacheBuilder.newBuilder()
+    private final Limiters limiters;
+    private final Cache<HexBytes, Boolean> receivedTransactions = CacheBuilder.newBuilder()
             .maximumSize(ApplicationConstants.P2P_TRANSACTION_CACHE_SIZE)
             .build();
-    private Cache<HexBytes, Boolean> receivedProposals = CacheBuilder.newBuilder()
+    private final Cache<HexBytes, Boolean> receivedProposals = CacheBuilder.newBuilder()
             .maximumSize(ApplicationConstants.P2P_PROPOSAL_CACHE_SIZE)
             .build();
-    private Lock blockQueueLock = new ReentrantLock();
-
+    private final Lock blockQueueLock = new ReentrantLock();
+    // lock when accounts received, avoid concurrent handling
+    private final Lock fastSyncAddressesLock = new ReentrantLock();
+    private final ScheduledExecutorService executorService;
+    private volatile Block fastSyncBlock;
     // lock when another node ask for all accounts in the trie, avoid concurrent traverse
     private volatile boolean trieTraverseLock;
-
-    // lock when accounts received, avoid concurrent handling
-    private Lock fastSyncAddressesLock = new ReentrantLock();
-
-    private ScheduledExecutorService executorService;
-
     // when fastSyncing = true, the node is in fast-syncing mode
     private volatile boolean fastSyncing;
     private volatile Trie<HexBytes, Account> fastSyncTrie;

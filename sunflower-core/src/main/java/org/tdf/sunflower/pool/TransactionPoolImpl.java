@@ -44,11 +44,10 @@ public class TransactionPoolImpl implements TransactionPool {
     private final ScheduledExecutorService poolExecutor;
     private final TransactionPoolConfig config;
     private final TransactionRepository transactionRepository;
-    private PendingTransactionValidator validator;
-    private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
-
+    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     // dropped transactions
-    private Cache<HexBytes, Transaction> dropped;
+    private final Cache<HexBytes, Transaction> dropped;
+    private PendingTransactionValidator validator;
 
     public TransactionPoolImpl(
             EventBus eventBus,
@@ -270,8 +269,8 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @AllArgsConstructor
     static class TransactionInfo implements Comparable<TransactionInfo> {
-        private long receivedAt;
-        private Transaction tx;
+        private final long receivedAt;
+        private final Transaction tx;
 
         @Override
         public int compareTo(TransactionInfo o) {

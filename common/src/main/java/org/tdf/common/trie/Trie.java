@@ -15,11 +15,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public interface Trie<K, V> extends Store<K, V> {
-    Store<byte[], byte[]> getStore();
-
     static <K, V> Builder<K, V> builder() {
         return new Builder<>();
     }
+
+    Store<byte[], byte[]> getStore();
 
     /**
      * rollback to a previous trie
@@ -117,6 +117,31 @@ public interface Trie<K, V> extends Store<K, V> {
         return ret;
     }
 
+    default void prune(Collection<? extends byte[]> excludedRoots) {
+        prune(excludedRoots, getStore());
+    }
+
+    default void prune(Collection<? extends byte[]> excludedRoots, Store<byte[], byte[]> db) {
+        Set<byte[]> excludes = new ByteArraySet();
+        for (byte[] root : excludedRoots) {
+            excludes.addAll(revert(root).dumpKeys());
+        }
+        Consumer<byte[]> fn = k -> {
+            if (!excludes.contains(k))
+                db.remove(k);
+        };
+        boolean isMem = db instanceof MemoryDatabaseStore ||
+                (
+                        db instanceof NoDeleteStore &&
+                                ((NoDeleteStore) db).getDelegate() instanceof MemoryDatabaseStore
+                );
+        if (isMem) {
+            new ArrayList<>(db.keySet()).forEach(fn);
+        } else {
+            db.stream().forEach(e -> fn.accept(e.getKey()));
+        }
+    }
+
     class Builder<K, V> {
         private Function<byte[], byte[]> hashFunction;
         private Store<byte[], byte[]> store;
@@ -145,31 +170,6 @@ public interface Trie<K, V> extends Store<K, V> {
 
         public Trie<K, V> build() {
             return TrieImpl.newInstance(hashFunction, store, keyCodec, valueCodec);
-        }
-    }
-
-    default void prune(Collection<? extends byte[]> excludedRoots) {
-        prune(excludedRoots, getStore());
-    }
-
-    default void prune(Collection<? extends byte[]> excludedRoots, Store<byte[], byte[]> db) {
-        Set<byte[]> excludes = new ByteArraySet();
-        for (byte[] root : excludedRoots) {
-            excludes.addAll(revert(root).dumpKeys());
-        }
-        Consumer<byte[]> fn = k -> {
-            if (!excludes.contains(k))
-                db.remove(k);
-        };
-        boolean isMem = db instanceof MemoryDatabaseStore ||
-                (
-                        db instanceof NoDeleteStore &&
-                                ((NoDeleteStore) db).getDelegate() instanceof MemoryDatabaseStore
-                );
-        if (isMem) {
-            new ArrayList<>(db.keySet()).forEach(fn);
-        } else {
-            db.stream().forEach(e -> fn.accept(e.getKey()));
         }
     }
 }

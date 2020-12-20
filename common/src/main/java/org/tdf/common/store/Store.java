@@ -164,9 +164,9 @@ public interface Store<K, V> {
      */
     void traverse(BiFunction<? super K, ? super V, Boolean> traverser);
 
-    default void traverse(Function<Map.Entry<K, V>, Boolean> traverser){
+    default void traverse(Function<Map.Entry<K, V>, Boolean> traverser) {
         traverse((k, v) ->
-            traverser.apply(new AbstractMap.SimpleImmutableEntry<>(k, v))
+                traverser.apply(new AbstractMap.SimpleImmutableEntry<>(k, v))
         );
     }
 

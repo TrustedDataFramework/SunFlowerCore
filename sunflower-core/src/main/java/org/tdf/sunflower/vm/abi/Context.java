@@ -12,11 +12,11 @@ import org.tdf.sunflower.types.Transaction;
 @Getter
 @AllArgsConstructor
 public class Context {
-    private Header header;
-    private Transaction transaction;
-    private Account contractAccount;
-    private HexBytes msgSender;
-    private Uint256 amount;
+    private final Header header;
+    private final Transaction transaction;
+    private final Account contractAccount;
+    private final HexBytes msgSender;
+    private final Uint256 amount;
 
     public boolean containsTransaction() {
         return transaction != null;

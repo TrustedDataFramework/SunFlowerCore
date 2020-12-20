@@ -7,7 +7,7 @@ import org.tdf.common.util.ByteArraySet;
 import java.util.Set;
 
 @Getter(AccessLevel.PACKAGE)
-class DumpKeys implements ScannerAction{
+class DumpKeys implements ScannerAction {
     private Set<byte[]> keys = new ByteArraySet();
 
     @Override

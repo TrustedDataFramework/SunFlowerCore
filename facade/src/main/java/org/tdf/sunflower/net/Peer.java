@@ -5,24 +5,6 @@ import org.tdf.sunflower.state.Address;
 
 // Peer is a p2p node could be connected
 public interface Peer {
-    // get the host name of remote peer
-    String getHost();
-
-    // get the server port of remote
-    int getPort();
-
-    // the id is typically an ecc public key
-    HexBytes getID();
-
-    default HexBytes getAddress(){
-        return Address.fromPublicKey(getID());
-    }
-
-    // encode the remote peer as uri
-    String encodeURI();
-
-    String getProtocol();
-
     Peer NONE = new Peer() {
         @Override
         public String getHost() {
@@ -49,4 +31,22 @@ public interface Peer {
             return null;
         }
     };
+
+    // get the host name of remote peer
+    String getHost();
+
+    // get the server port of remote
+    int getPort();
+
+    // the id is typically an ecc public key
+    HexBytes getID();
+
+    default HexBytes getAddress() {
+        return Address.fromPublicKey(getID());
+    }
+
+    // encode the remote peer as uri
+    String encodeURI();
+
+    String getProtocol();
 }

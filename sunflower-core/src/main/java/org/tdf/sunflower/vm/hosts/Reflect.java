@@ -18,8 +18,8 @@ import java.util.Collections;
 
 public class Reflect extends HostFunction {
     private final ContractCall parent;
+    private final boolean readonly;
     private byte[] result;
-    private boolean readonly;
 
     public Reflect(ContractCall parent, boolean readonly) {
         this.parent = parent;
@@ -49,26 +49,26 @@ public class Reflect extends HostFunction {
                 Uint256 amount = (Uint256) WBI.peek(getInstance(), (int) longs[4], AbiDataType.U256);
                 ContractCall forked = parent.fork();
                 RLPList result = forked.call(HexBytes.fromBytes(addr), method, params, amount, false, null).getReturns();
-                if(result.isEmpty())
+                if (result.isEmpty())
                     return 0;
 
                 RLPItem it = result.get(0).asRLPItem();
-                switch (AbiDataType.values()[params.getReturnType()[0]]){
+                switch (AbiDataType.values()[params.getReturnType()[0]]) {
                     case F64:
                     case I64:
                     case BOOL:
                     case U64:
                         return it.asLong();
-                    case U256:{
+                    case U256: {
                         return WBI.malloc(getInstance(), it.as(Uint256.class));
                     }
-                    case STRING:{
+                    case STRING: {
                         return WBI.malloc(getInstance(), it.asString());
                     }
-                    case BYTES:{
+                    case BYTES: {
                         return WBI.mallocBytes(getInstance(), it.asBytes());
                     }
-                    case ADDRESS:{
+                    case ADDRESS: {
                         return WBI.mallocAddress(getInstance(), it.asBytes());
                     }
                 }

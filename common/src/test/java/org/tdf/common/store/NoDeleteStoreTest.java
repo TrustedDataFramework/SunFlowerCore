@@ -12,6 +12,7 @@ public abstract class NoDeleteStoreTest {
 
 
     abstract protected Store<byte[], byte[]> supplyNoDelete();
+
     @Before
     public void before() {
         store = supplyNoDelete();

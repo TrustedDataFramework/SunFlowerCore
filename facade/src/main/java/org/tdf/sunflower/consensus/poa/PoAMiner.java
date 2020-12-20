@@ -28,28 +28,21 @@ import java.util.concurrent.TimeUnit;
 @Slf4j(topic = "miner")
 public class PoAMiner extends AbstractMiner {
     public static final int MAX_SHUTDOWN_WAITING = 5;
-
-    private PoAConfig poAConfig;
-
+    private final PoA poA;
     @Getter
     public HexBytes minerAddress;
 
     HexBytes privateKey;
 
     HexBytes publicKey;
-
+    private PoAConfig poAConfig;
     @Setter
     private BlockRepository blockRepository;
-
     private volatile boolean stopped;
-
     private ScheduledExecutorService minerExecutor;
-
     @Setter
     @Getter
     private TransactionPool transactionPool;
-
-    private final PoA poA;
 
     public PoAMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig, PoA poA) {
         super(accountTrie, eventBus, minerConfig);

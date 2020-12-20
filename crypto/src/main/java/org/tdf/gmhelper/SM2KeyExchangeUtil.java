@@ -1,10 +1,6 @@
 package org.tdf.gmhelper;
 
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.ParametersWithID;
-import org.bouncycastle.crypto.params.SM2KeyExchangePrivateParameters;
-import org.bouncycastle.crypto.params.SM2KeyExchangePublicParameters;
+import org.bouncycastle.crypto.params.*;
 
 import java.util.Arrays;
 
@@ -21,15 +17,15 @@ public class SM2KeyExchangeUtil {
      * @return 返回协商出的密钥，但是这个密钥是没有经过确认的
      */
     public static byte[] calculateKey(boolean initiator, int keyBits,
-        ECPrivateKeyParameters selfStaticPriv, ECPrivateKeyParameters selfEphemeralPriv, byte[] selfId,
-        ECPublicKeyParameters otherStaticPub, ECPublicKeyParameters otherEphemeralPub, byte[] otherId) {
+                                      ECPrivateKeyParameters selfStaticPriv, ECPrivateKeyParameters selfEphemeralPriv, byte[] selfId,
+                                      ECPublicKeyParameters otherStaticPub, ECPublicKeyParameters otherEphemeralPub, byte[] otherId) {
         SM2KeyExchange exch = new SM2KeyExchange();
         exch.init(new ParametersWithID(
-            new SM2KeyExchangePrivateParameters(initiator, selfStaticPriv, selfEphemeralPriv),
-            selfId));
+                new SM2KeyExchangePrivateParameters(initiator, selfStaticPriv, selfEphemeralPriv),
+                selfId));
         return exch.calculateKey(
-            keyBits,
-            new ParametersWithID(new SM2KeyExchangePublicParameters(otherStaticPub, otherEphemeralPub), otherId));
+                keyBits,
+                new ParametersWithID(new SM2KeyExchangePublicParameters(otherStaticPub, otherEphemeralPub), otherId));
     }
 
     /**
@@ -45,16 +41,16 @@ public class SM2KeyExchangeUtil {
      * @return
      */
     public static ExchangeResult calculateKeyWithConfirmation(boolean initiator, int keyBits, byte[] confirmationTag,
-        ECPrivateKeyParameters selfStaticPriv, ECPrivateKeyParameters selfEphemeralPriv, byte[] selfId,
-        ECPublicKeyParameters otherStaticPub, ECPublicKeyParameters otherEphemeralPub, byte[] otherId) {
+                                                              ECPrivateKeyParameters selfStaticPriv, ECPrivateKeyParameters selfEphemeralPriv, byte[] selfId,
+                                                              ECPublicKeyParameters otherStaticPub, ECPublicKeyParameters otherEphemeralPub, byte[] otherId) {
         SM2KeyExchange exch = new SM2KeyExchange();
         exch.init(new ParametersWithID(
-            new SM2KeyExchangePrivateParameters(initiator, selfStaticPriv, selfEphemeralPriv),
-            selfId));
+                new SM2KeyExchangePrivateParameters(initiator, selfStaticPriv, selfEphemeralPriv),
+                selfId));
         byte[][] result = exch.calculateKeyWithConfirmation(
-            keyBits,
-            confirmationTag,
-            new ParametersWithID(new SM2KeyExchangePublicParameters(otherStaticPub, otherEphemeralPub), otherId));
+                keyBits,
+                confirmationTag,
+                new ParametersWithID(new SM2KeyExchangePublicParameters(otherStaticPub, otherEphemeralPub), otherId));
         ExchangeResult confirmResult = new ExchangeResult();
         confirmResult.setKey(result[0]);
         if (initiator) {

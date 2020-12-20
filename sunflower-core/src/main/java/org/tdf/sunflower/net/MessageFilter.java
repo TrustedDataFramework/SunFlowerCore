@@ -12,7 +12,6 @@ import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
 import org.tdf.sunflower.types.CryptoContext;
 
-import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,10 +27,10 @@ import java.util.concurrent.locks.ReentrantLock;
 @Slf4j(topic = "net")
 public class MessageFilter implements Plugin {
     private final ConsensusEngine consensusEngine;
-    private Cache<HexBytes, Boolean> cache;
-    private Map<HexBytes, Messages> multiPartCache = new HashMap<>();
-    private PeerServerConfig config;
-    private Lock multiPartCacheLock = new ReentrantLock();
+    private final Cache<HexBytes, Boolean> cache;
+    private final Map<HexBytes, Messages> multiPartCache = new HashMap<>();
+    private final PeerServerConfig config;
+    private final Lock multiPartCacheLock = new ReentrantLock();
 
     MessageFilter(PeerServerConfig config, ConsensusEngine consensusEngine) {
         this.cache = CacheBuilder.newBuilder()
@@ -55,7 +54,7 @@ public class MessageFilter implements Plugin {
     @Override
     public void onMessage(ContextImpl context, PeerServerImpl server) {
         // cache multi part message
-        if(!context.getRemote().getProtocol().equals(server.getSelf().getProtocol())){
+        if (!context.getRemote().getProtocol().equals(server.getSelf().getProtocol())) {
             context.block();
             return;
         }
@@ -155,9 +154,9 @@ public class MessageFilter implements Plugin {
 
     @AllArgsConstructor
     private static class Messages {
-        private Message[] multiParts;
-        private int total;
-        private long writeAt;
+        private final Message[] multiParts;
+        private final int total;
+        private final long writeAt;
 
         public int size() {
             return (int) Arrays.stream(multiParts).filter(Objects::nonNull).count();

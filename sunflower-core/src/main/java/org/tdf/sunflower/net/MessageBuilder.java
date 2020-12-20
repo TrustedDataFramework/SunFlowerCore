@@ -18,8 +18,8 @@ import static org.tdf.sunflower.net.Util.getRawForSign;
 public class MessageBuilder {
     private final PeerServerConfig config;
     @Getter
-    private PeerImpl self;
-    private AtomicLong nonce = new AtomicLong();
+    private final PeerImpl self;
+    private final AtomicLong nonce = new AtomicLong();
 
     public MessageBuilder(PeerImpl self, PeerServerConfig config) {
         this.self = self;

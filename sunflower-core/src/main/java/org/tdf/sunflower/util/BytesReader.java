@@ -3,7 +3,7 @@ package org.tdf.sunflower.util;
 import java.util.Arrays;
 
 public class BytesReader {
-    private byte[] data;
+    private final byte[] data;
     private int pc;
 
     public BytesReader(byte[] data) {

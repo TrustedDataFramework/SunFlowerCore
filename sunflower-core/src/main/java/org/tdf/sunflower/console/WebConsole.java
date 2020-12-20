@@ -22,7 +22,7 @@ public class WebConsole {
 
     // event for
 
-    private ConsoleConfig consoleConfig;
+    private final ConsoleConfig consoleConfig;
 
     private SocketIOServer socketIOServer;
 

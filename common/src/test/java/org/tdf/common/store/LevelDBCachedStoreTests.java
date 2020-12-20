@@ -1,12 +1,11 @@
 package org.tdf.common.store;
 
-import org.fusesource.leveldbjni.JniDBFactory;
 import org.iq80.leveldb.impl.Iq80DBFactory;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class LevelDBCachedStoreTests extends CachedStoreTests{
+public class LevelDBCachedStoreTests extends CachedStoreTests {
     private LevelDb db;
 
     @Override

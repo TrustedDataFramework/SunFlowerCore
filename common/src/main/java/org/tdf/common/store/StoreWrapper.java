@@ -97,7 +97,7 @@ public class StoreWrapper<K, V, U, R>
                         keyCodec.getEncoder().apply(e.getKey()),
                         valueCodec.getEncoder().apply(e.getValue())
                 ))
-                .collect(Collectors.toList())
+                        .collect(Collectors.toList())
         );
     }
 }

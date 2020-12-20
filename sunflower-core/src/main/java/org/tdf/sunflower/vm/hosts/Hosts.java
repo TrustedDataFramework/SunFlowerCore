@@ -10,33 +10,11 @@ import org.tdf.sunflower.state.Account;
 import java.util.*;
 
 public class Hosts {
-    public static class Nop extends HostFunction{
-        public Nop() {
-            setName("_nop");
-            setType(
-                    new FunctionType(
-                            Arrays.asList
-                                    (ValueType.I64, ValueType.I64),
-                            Collections.emptyList()
-                    )
-            );
-        }
-
-        @Override
-        public long execute(long... longs) {
-            return 0;
-        }
-    }
-
     private ContextHost contextHost;
-
     private DBFunctions dbFunctions;
-
     private Transfer transfer;
-
     @Getter
     private EventHost eventHost;
-
     private Reflect reflect;
 
     public Hosts() {
@@ -96,5 +74,23 @@ public class Hosts {
     public Hosts withDB(DBFunctions dbFunctions) {
         this.dbFunctions = dbFunctions;
         return this;
+    }
+
+    public static class Nop extends HostFunction {
+        public Nop() {
+            setName("_nop");
+            setType(
+                    new FunctionType(
+                            Arrays.asList
+                                    (ValueType.I64, ValueType.I64),
+                            Collections.emptyList()
+                    )
+            );
+        }
+
+        @Override
+        public long execute(long... longs) {
+            return 0;
+        }
     }
 }

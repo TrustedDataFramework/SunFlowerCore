@@ -16,9 +16,6 @@ import java.util.function.BiFunction;
 public interface SunflowerRepository extends BlockRepository, TransactionRepository {
 
 
-    void setProvider(ConfirmedBlocksProvider provider);
-    void setAccountTrie(StateTrie<HexBytes, Account> accountTrie);
-
     SunflowerRepository NONE = new SunflowerRepository() {
 
         @Override
@@ -163,4 +160,8 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
 
         }
     };
+
+    void setProvider(ConfirmedBlocksProvider provider);
+
+    void setAccountTrie(StateTrie<HexBytes, Account> accountTrie);
 }

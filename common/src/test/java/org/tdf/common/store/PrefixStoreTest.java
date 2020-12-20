@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 public class PrefixStoreTest {
 
     @Test
-    public void test0(){
+    public void test0() {
         Store<byte[], byte[]> s = new ByteArrayMapStore<>();
         PrefixStore<String, String> p = new PrefixStore<>(
                 s,

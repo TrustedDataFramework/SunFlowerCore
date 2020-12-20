@@ -29,6 +29,26 @@ public class ECC {
         this.size = s + 1;
     }
 
+    public static void main(String[] args) {
+        ECC ecc = new ECC(1, 6, 11);
+        ECCPoint alpha = new ECCPoint(2, 7);
+        long sk = 7;
+        ECCPoint pk = ecc.mul(sk, alpha);
+        ECCPoint plain = new ECCPoint(10, 9);
+        long k = 3;
+        ECCPoint y1 = ecc.mul(k, alpha);
+        ECCPoint y2 = ecc.add(plain, ecc.mul(k, pk));
+        ECCPoint d = ecc.mul(sk, y1);
+        d = ecc.negative(d);
+        d = ecc.add(y2, d);
+        System.out.println(d);
+    }
+
+    static void assertTrue(boolean b) {
+        if (!b)
+            throw new AssertionError();
+    }
+
     public boolean isOnCurve(ECCPoint point) {
         return isOnCurve(point.getX(), point.getY());
     }
@@ -51,7 +71,7 @@ public class ECC {
         return ret;
     }
 
-    public ECCPoint negative(ECCPoint point){
+    public ECCPoint negative(ECCPoint point) {
         return new ECCPoint(point.getX(), domain.negative(point.getY()));
     }
 
@@ -86,25 +106,5 @@ public class ECC {
         long y3 = domain.mul(lambda, domain.sub(x1, x3));
         y3 = domain.sub(y3, y1);
         return new ECCPoint(x3, y3);
-    }
-
-    public static void main(String[] args) {
-        ECC ecc = new ECC(1, 6, 11);
-        ECCPoint alpha = new ECCPoint(2, 7);
-        long sk = 7;
-        ECCPoint pk = ecc.mul(sk, alpha);
-        ECCPoint plain = new ECCPoint(10, 9);
-        long k = 3;
-        ECCPoint y1 =  ecc.mul(k, alpha);
-        ECCPoint y2 = ecc.add(plain, ecc.mul(k, pk));
-        ECCPoint d = ecc.mul(sk, y1);
-        d = ecc.negative(d);
-        d = ecc.add(y2, d);
-        System.out.println(d);
-    }
-
-    static void assertTrue(boolean b) {
-        if (!b)
-            throw new AssertionError();
     }
 }

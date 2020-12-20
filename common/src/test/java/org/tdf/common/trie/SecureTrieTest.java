@@ -1,6 +1,5 @@
 package org.tdf.common.trie;
 
-import com.google.common.hash.HashFunction;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,7 +13,7 @@ import org.tdf.common.store.NoDeleteStore;
 import java.util.Map;
 
 @RunWith(JUnit4.class)
-public class SecureTrieTest{
+public class SecureTrieTest {
 
     private Trie<byte[], String> notSecured;
 
@@ -22,12 +21,12 @@ public class SecureTrieTest{
 
 
     @Before
-    public void before(){
+    public void before() {
         notSecured = Trie.<byte[], String>builder()
-                    .hashFunction(HashUtil::sha3)
-                    .keyCodec(Codec.identity())
-                    .valueCodec(Codecs.STRING)
-                    .store(new NoDeleteStore<>(new ByteArrayMapStore<>()))
+                .hashFunction(HashUtil::sha3)
+                .keyCodec(Codec.identity())
+                .valueCodec(Codecs.STRING)
+                .store(new NoDeleteStore<>(new ByteArrayMapStore<>()))
                 .build();
 
         secured = new SecureTrie<>(notSecured, HashUtil::sha3);
@@ -55,7 +54,7 @@ public class SecureTrieTest{
 
 
     @Test
-    public void testRevert(){
+    public void testRevert() {
         secured.put("1".getBytes(), "1");
         byte[] root = secured.commit();
         secured.put("2".getBytes(), "2");

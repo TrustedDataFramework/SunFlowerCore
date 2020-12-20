@@ -21,7 +21,6 @@ import org.tdf.common.util.IntSerializer;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.GlobalConfig;
-import org.tdf.sunflower.Start;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
@@ -37,12 +36,10 @@ import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.util.EnvReader;
-import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
 import org.tdf.sunflower.vm.abi.ContractABI;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
 
-import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -56,30 +53,30 @@ import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 @RequestMapping("/rpc")
 @Slf4j(topic = "rpc")
 public class EntryController {
-    private AccountTrie accountTrie;
+    private final AccountTrie accountTrie;
 
     @Qualifier("contractStorageTrie")
-    private Trie<byte[], byte[]> contractStorageTrie;
+    private final Trie<byte[], byte[]> contractStorageTrie;
 
-    private GlobalConfig config;
+    private final GlobalConfig config;
 
-    private PeerServer peerServer;
+    private final PeerServer peerServer;
 
-    private TransactionPool pool;
+    private final TransactionPool pool;
 
-    private SunflowerRepository sunflowerRepository;
+    private final SunflowerRepository sunflowerRepository;
 
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-    private SunflowerRepository repository;
+    private final SunflowerRepository repository;
 
-    private SyncManager syncManager;
+    private final SyncManager syncManager;
 
-    private ConsensusEngine consensusEngine;
+    private final ConsensusEngine consensusEngine;
 
-    private Miner miner;
+    private final Miner miner;
 
-    private ApplicationContext ctx;
+    private final ApplicationContext ctx;
 
     @SneakyThrows
     private Stat createState() {
@@ -368,29 +365,29 @@ public class EntryController {
     @AllArgsConstructor
     @Getter
     static class AccountView {
-        private HexBytes address;
+        private final HexBytes address;
 
         // for normal account this field is continuous integer
         // for contract account this field is nonce of deploy transaction
         @JsonSerialize(using = IntSerializer.class)
-        private long nonce;
+        private final long nonce;
 
         // the balance of account
         // for contract account, this field is zero
         @JsonSerialize(using = IntSerializer.class)
-        private Uint256 balance;
+        private final Uint256 balance;
 
         // for normal address this field is null
         // for contract address this field is creator of this contract
-        private HexBytes createdBy;
+        private final HexBytes createdBy;
 
         // hash code of contract code
         // if the account contains none contract, contract hash will be null
-        private HexBytes contractHash;
+        private final HexBytes contractHash;
 
         // root hash of contract db
         // if the account is not contract account, this field will be null
-        private HexBytes storageRoot;
+        private final HexBytes storageRoot;
 
         static AccountView fromAccount(Account account) {
             return new AccountView(account.getAddress(), account.getNonce(), account.getBalance(),

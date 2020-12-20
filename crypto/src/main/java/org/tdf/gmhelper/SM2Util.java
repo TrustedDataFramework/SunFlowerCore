@@ -495,35 +495,6 @@ public class SM2Util extends GMBaseUtil {
                 c3);
     }
 
-    @RequiredArgsConstructor
-    static class BytesReader {
-        private final byte[] bytes;
-        private int current;
-
-        public byte[] readN(int n) {
-            byte[] ret = Arrays.copyOfRange(bytes, current, current + n);
-            current += n;
-            return ret;
-        }
-
-        public int available() {
-            return bytes.length - current;
-        }
-
-        public byte read() {
-            return bytes[current++];
-        }
-
-        public byte peek() {
-            return bytes[current];
-        }
-
-        public BytesReader skip(int n) {
-            this.current += n;
-            return this;
-        }
-    }
-
     /**
      * 解密（采用新版本的分组方式C1 | C2 | C3）
      *
@@ -561,6 +532,35 @@ public class SM2Util extends GMBaseUtil {
         cipher.decrypt(c2);
         cipher.doFinal(c3);
         return c2;
+    }
+
+    @RequiredArgsConstructor
+    static class BytesReader {
+        private final byte[] bytes;
+        private int current;
+
+        public byte[] readN(int n) {
+            byte[] ret = Arrays.copyOfRange(bytes, current, current + n);
+            current += n;
+            return ret;
+        }
+
+        public int available() {
+            return bytes.length - current;
+        }
+
+        public byte read() {
+            return bytes[current++];
+        }
+
+        public byte peek() {
+            return bytes[current];
+        }
+
+        public BytesReader skip(int n) {
+            this.current += n;
+            return this;
+        }
     }
 
     public static class Cipher {

@@ -17,7 +17,7 @@ public class VrfPublicKey {
     private static final BigInteger maxUint256 = BigInteger.valueOf(2).pow(256);
     private static final BigFraction one = new BigFraction(1);
 
-    private PublicKey verifier;
+    private final PublicKey verifier;
 
     public VrfPublicKey(byte[] encoded, String algorithm) {
         if (algorithm.equals(Ed25519.getAlgorithm())) {
@@ -154,10 +154,10 @@ public class VrfPublicKey {
     }
 
     public static class Binomial {
-        private BigFraction[] pbs;
-        private BigFraction[] cbs;
-        private int w;
-        private BigFraction p;
+        private final BigFraction[] pbs;
+        private final BigFraction[] cbs;
+        private final int w;
+        private final BigFraction p;
 
         public Binomial(int w, BigFraction p) {
             this.p = p;

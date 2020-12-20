@@ -6,20 +6,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public interface Chained extends Hashed {
-    HexBytes getHashPrev();
-
-    default boolean isParentOf(Chained another) {
-        return another.isChildOf(this);
-    }
-
-    default boolean isChildOf(Chained another) {
-        return isChildOf(another.getHash());
-    }
-
-    default boolean isChildOf(HexBytes hash) {
-        return getHashPrev().equals(hash);
-    }
-
     static <T extends Chained> List<T> getInitialsOf(Collection<T> col) {
         Set<T> s = new TreeSet<>(Comparator.comparing(Hashed::getHash));
         s.addAll(col);
@@ -81,5 +67,19 @@ public interface Chained extends Hashed {
         li.removeIf(x -> x.getHash().equals(hash));
         Collections.reverse(li);
         return li;
+    }
+
+    HexBytes getHashPrev();
+
+    default boolean isParentOf(Chained another) {
+        return another.isChildOf(this);
+    }
+
+    default boolean isChildOf(Chained another) {
+        return isChildOf(another.getHash());
+    }
+
+    default boolean isChildOf(HexBytes hash) {
+        return getHashPrev().equals(hash);
     }
 }

@@ -121,7 +121,7 @@ public class FileSystemKeystore implements Keystore {
     private boolean hasPubkeyInName(String pubkey, File file) {
         String trim;
         if (pubkey.startsWith("0x")) {
-            trim = pubkey.substring(2, pubkey.length());
+            trim = pubkey.substring(2);
         } else {
             trim = pubkey;
         }

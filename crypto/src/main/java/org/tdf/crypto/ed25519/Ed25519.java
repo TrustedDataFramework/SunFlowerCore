@@ -1,5 +1,3 @@
-
-
 package org.tdf.crypto.ed25519;
 
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
@@ -12,12 +10,11 @@ public class Ed25519 {
     public static final String ALGORITHM = "ed25519";
 
     public static final BigInteger MAX_PRIVATE_KEY = new BigInteger("1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ec", 16);
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     public static String getAlgorithm() {
         return ALGORITHM;
     }
-
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     /**
      * @return Ed25519 keypair for signature and verifying
@@ -29,7 +26,7 @@ public class Ed25519 {
                 continue;
             }
             Ed25519PublicKeyParameters publicKey = privateKey.generatePublicKey();
-            return new Ed25519KeyPair(new Ed25519PrivateKey(privateKey),new Ed25519PublicKey(publicKey));
+            return new Ed25519KeyPair(new Ed25519PrivateKey(privateKey), new Ed25519PublicKey(publicKey));
         }
     }
 }

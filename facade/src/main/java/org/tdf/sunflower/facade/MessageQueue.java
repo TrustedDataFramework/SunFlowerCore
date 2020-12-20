@@ -10,5 +10,6 @@ import java.util.function.Consumer;
 // topic (2) /event/event-name
 public interface MessageQueue<E, M extends Message> {
     void publish(E event, Object msg);
+
     void subscribe(E event, Consumer<M> listener);
 }

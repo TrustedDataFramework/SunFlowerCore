@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
@@ -85,7 +86,7 @@ public final class VMUtils {
         try {
             out = new FileOutputStream(file);
             if (data != null) {
-                out.write(data.getBytes("UTF-8"));
+                out.write(data.getBytes(StandardCharsets.UTF_8));
             }
         } catch (Exception e) {
             LOGGER.error(format("Cannot write to file '%s': ", file.getAbsolutePath()), e);
@@ -118,7 +119,7 @@ public final class VMUtils {
     }
 
     public static byte[] compress(String content) throws IOException {
-        return compress(content.getBytes("UTF-8"));
+        return compress(content.getBytes(StandardCharsets.UTF_8));
     }
 
     public static byte[] decompress(byte[] data) throws IOException {
@@ -144,7 +145,7 @@ public final class VMUtils {
     public static String unzipAndDecode(String content) {
         try {
             byte[] decoded = decodeBase64(content);
-            return new String(decompress(decoded), "UTF-8");
+            return new String(decompress(decoded), StandardCharsets.UTF_8);
         } catch (Exception e) {
             LOGGER.error("Cannot unzip or decode: ", e);
             return content;

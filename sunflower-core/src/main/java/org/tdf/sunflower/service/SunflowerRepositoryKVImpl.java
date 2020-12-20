@@ -37,25 +37,25 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     private static final String PRUNE = "prune";
 
     // transaction hash -> transaction
-    private Store<byte[], Transaction> transactionsStore;
+    private final Store<byte[], Transaction> transactionsStore;
 
     // block hash -> header
-    private Store<byte[], Header> headerStore;
+    private final Store<byte[], Header> headerStore;
 
     // transactions root -> transaction hashes
-    private Store<byte[], HexBytes[]> transactionsRoot;
+    private final Store<byte[], HexBytes[]> transactionsRoot;
 
     // block height -> block hashes
-    private Store<Long, HexBytes[]> heightIndex;
+    private final Store<Long, HexBytes[]> heightIndex;
 
     // block height -> canonical hash
-    private Store<Long, byte[]> canonicalIndex;
+    private final Store<Long, byte[]> canonicalIndex;
 
     // "best" -> best header, "prune" -> pruned header
-    private Store<String, Header> status;
+    private final Store<String, Header> status;
 
     // transaction hash -> block hashes which includes this transaction
-    private Store<byte[], HexBytes[]> transactionIncludes;
+    private final Store<byte[], HexBytes[]> transactionIncludes;
 
     private Header pruned;
 

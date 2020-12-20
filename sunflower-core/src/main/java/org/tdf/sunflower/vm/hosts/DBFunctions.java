@@ -16,6 +16,7 @@ public class DBFunctions extends HostFunction {
     private final boolean readonly;
     private List<Map.Entry<HexBytes, byte[]>> entries;
     private int index;
+
     public DBFunctions(Trie<byte[], byte[]> storageTrie, boolean readonly) {
         this.storageTrie = storageTrie;
         setName("_db");
@@ -44,12 +45,12 @@ public class DBFunctions extends HostFunction {
 
     }
 
-    private byte[] getKey(long... longs){
+    private byte[] getKey(long... longs) {
         return (byte[]) WBI
                 .peek(getInstance(), (int) longs[1], AbiDataType.BYTES);
     }
 
-    private byte[] getValue(long... longs){
+    private byte[] getValue(long... longs) {
         return (byte[]) WBI
                 .peek(getInstance(), (int) longs[2], AbiDataType.BYTES);
     }

@@ -4,6 +4,6 @@
 package org.tdf.sunflower.proto;
 
 public interface NothingOrBuilder extends
-    // @@protoc_insertion_point(interface_extends:Nothing)
-    com.google.protobuf.MessageOrBuilder {
+        // @@protoc_insertion_point(interface_extends:Nothing)
+        com.google.protobuf.MessageOrBuilder {
 }

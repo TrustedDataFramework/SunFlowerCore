@@ -1,7 +1,5 @@
 package org.tdf.sunflower.consensus.vrf.contract;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.Store;
 import org.tdf.common.types.Uint256;
@@ -91,7 +89,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
     }
 
     private void deposit(Transaction transaction, Map<HexBytes, Account> accounts,
-                         Store<byte[], byte[]> contractStorage) throws JsonParseException, JsonMappingException, IOException {
+                         Store<byte[], byte[]> contractStorage) throws IOException {
 
         DepositParams depositParams = parseDepositParams(transaction);
         long amount = depositParams.getDepositAmount();
@@ -145,7 +143,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
     }
 
     private void withdraw(Transaction transaction, Map<HexBytes, Account> accounts,
-                          Store<byte[], byte[]> contractStorage) throws JsonParseException, JsonMappingException, IOException {
+                          Store<byte[], byte[]> contractStorage) throws IOException {
 
         WithdrawParams withdrawParams = parseWithdrawParams(transaction);
 
@@ -186,7 +184,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
     }
 
     private WithdrawParams parseWithdrawParams(Transaction transaction)
-            throws JsonParseException, JsonMappingException, IOException {
+            throws IOException {
         byte[] payload = transaction.getPayload().getBytes();
         int methodNameLen = payload[0];
         int paramBytesLen = payload.length - methodNameLen - 1;
@@ -197,7 +195,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
     }
 
     private DepositParams parseDepositParams(Transaction transaction)
-            throws JsonParseException, JsonMappingException, IOException {
+            throws IOException {
         byte[] payload = transaction.getPayload().getBytes();
         int methodNameLen = payload[0];
         int paramBytesLen = payload.length - methodNameLen - 1;

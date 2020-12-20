@@ -4,17 +4,14 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.util.HexBytes;
 
-import java.util.Map;
-import java.util.Objects;
-
 @RunWith(JUnit4.class)
-public class NormalCachedStoreTests extends CachedStoreTests{
+public class NormalCachedStoreTests extends CachedStoreTests {
     @Override
     protected Store<byte[], byte[]> supplyDelegate() {
         return new ByteArrayMapStoreWithTrap();
     }
 
-    private static class ByteArrayMapStoreWithTrap extends ByteArrayMapStore<byte[]>{
+    private static class ByteArrayMapStoreWithTrap extends ByteArrayMapStore<byte[]> {
         @Override
         public byte[] getTrap() {
             return HexBytes.EMPTY_BYTES;

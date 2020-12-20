@@ -21,7 +21,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class HttpService {
-    private RestTemplate restTemplate = new RestTemplate(Collections.singletonList(
+    private final RestTemplate restTemplate = new RestTemplate(Collections.singletonList(
             new StringHttpMessageConverter(StandardCharsets.UTF_8)
     ));
 

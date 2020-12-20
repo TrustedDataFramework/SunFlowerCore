@@ -230,7 +230,6 @@ public class LivenessAnalyzer {
             if (validDpsOwnerList.remove(key)) {
                 logger.debug("Deposit Owner is already monitored in LivenessAnalyzer, coinbase {}", Hex.toHexString(key.getData(), 0, 3));
             }
-            ;
         }
 
         // We get all valid deposit owner from manager, and remove one if it is already existed in analyzer.
@@ -245,7 +244,6 @@ public class LivenessAnalyzer {
             } else {
                 logger.warn("Fail to add new liveness from repository to monitor, validDpsOwner {}", Hex.toHexString(validDpsOwner.getData(), 0, 3));
             }
-            ;
         }
 
         return list;

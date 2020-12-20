@@ -7,7 +7,7 @@ import org.tdf.sunflower.facade.Message;
 
 // socketIO message is json-like object
 public class SocketIOMessage implements Message {
-    private TreeNode node;
+    private final TreeNode node;
 
     SocketIOMessage(TreeNode node) {
         this.node = node;

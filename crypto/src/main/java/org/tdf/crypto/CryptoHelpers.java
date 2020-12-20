@@ -13,30 +13,6 @@ import java.util.function.BiFunction;
 
 
 public class CryptoHelpers {
-    @Data
-    private static class ECDHParameters {
-        private boolean initiator;
-        private HexBytes sk;
-        private HexBytes pk;
-
-        ECDHParameters(boolean initiator, @NonNull byte[] sk, @NonNull byte[] pk) {
-            this.initiator = initiator;
-            this.sk = HexBytes.fromBytes(sk);
-            this.pk = HexBytes.fromBytes(pk);
-        }
-    }
-
-
-//
-//    @SneakyThrows
-//    public static byte[] ecdh(boolean initiator, byte[] sk, byte[] pk) {
-//        return cache.get(new ECDHParameters(initiator, sk, pk), () -> ecdhInternal(initiator, sk, pk));
-//    }
-
-//    public static Ecdh ecdh = (initiator, sk, pk) ->
-//            SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID);
-
-
     // (sk, msg) -> encrypted
     public static final BiFunction<byte[], byte[], byte[]> ENCRYPT = (key, msg) -> {
         try {
@@ -46,6 +22,15 @@ public class CryptoHelpers {
         }
     };
 
+
+//
+//    @SneakyThrows
+//    public static byte[] ecdh(boolean initiator, byte[] sk, byte[] pk) {
+//        return cache.get(new ECDHParameters(initiator, sk, pk), () -> ecdhInternal(initiator, sk, pk));
+//    }
+
+    //    public static Ecdh ecdh = (initiator, sk, pk) ->
+//            SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID);
     // (sk, encrypted) -> msg
     public static final BiFunction<byte[], byte[], byte[]> DECRYPT = (key, encryptMsg) -> {
         try {
@@ -78,17 +63,15 @@ public class CryptoHelpers {
         return ret;
     }
 
-//
-//    private static byte[] ecdhInternal(boolean initiator, byte[] sk, byte[] pk) {
-//        return ecdh.exchange(initiator, sk, pk);
-//    }
-
-
-
     public static byte[] keccak256(byte[] in) {
         Digest digest = new KeccakDigest(256);
         return CryptoHelpers.hash(in, digest);
     }
+
+//
+//    private static byte[] ecdhInternal(boolean initiator, byte[] sk, byte[] pk) {
+//        return ecdh.exchange(initiator, sk, pk);
+//    }
 
     private static byte[] hash(byte[] input, Digest digest) {
         byte[] retValue = new byte[digest.getDigestSize()];
@@ -137,6 +120,19 @@ public class CryptoHelpers {
         byte[] rsData = new byte[digest.getDigestSize()];
         digest.doFinal(rsData, 0);
         return rsData;
+    }
+
+    @Data
+    private static class ECDHParameters {
+        private boolean initiator;
+        private HexBytes sk;
+        private HexBytes pk;
+
+        ECDHParameters(boolean initiator, @NonNull byte[] sk, @NonNull byte[] pk) {
+            this.initiator = initiator;
+            this.sk = HexBytes.fromBytes(sk);
+            this.pk = HexBytes.fromBytes(pk);
+        }
     }
 
 }

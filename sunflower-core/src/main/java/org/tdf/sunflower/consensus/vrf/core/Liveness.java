@@ -17,10 +17,10 @@ public class Liveness {
     // Every node should do liveness statistics by itself.
 
     private final byte[] coinbase;
+    // The hits statistics data, including first start hit and sum of hit priority.
+    private final Hitsness hitsness;
     // The latest hit index to tell that validator is proposed or voted in Validator Manager.
     private long index;
-    // The hits statistics data, including first start hit and sum of hit priority.
-    private Hitsness hitsness;
     // The missed times to tell that validator is missed to propose or vote in Validator Manager.
     private int misses;
 

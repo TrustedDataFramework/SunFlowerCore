@@ -32,17 +32,16 @@ import java.util.stream.Collectors;
 @Slf4j(topic = "trie")
 @AllArgsConstructor
 public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements ForkedStateTrie {
+    private final Trie<byte[], byte[]> contractStorageTrie;
+    private final Store<byte[], byte[]> contractCodeStore;
+    private final List<PreBuiltContract> preBuiltContracts;
+    private final Map<HexBytes, Bios> biosList;
+    private final Map<HexBytes, Account> genesisStates;
+    private final Map<HexBytes, PreBuiltContract> preBuiltContractAddresses;
+    private final DatabaseStore db;
+    private final Store<byte[], byte[]> trieStore;
+    private final HexBytes genesisRoot;
     private Trie<HexBytes, Account> trie;
-    private Trie<byte[], byte[]> contractStorageTrie;
-    private Store<byte[], byte[]> contractCodeStore;
-    private List<PreBuiltContract> preBuiltContracts;
-    private Map<HexBytes, Bios> biosList;
-    private Map<HexBytes, Account> genesisStates;
-    private Map<HexBytes, PreBuiltContract> preBuiltContractAddresses;
-    private DatabaseStore db;
-    private Store<byte[], byte[]> trieStore;
-    private HexBytes genesisRoot;
-
     // memory cached
     private CachedStore<byte[], byte[]> trieCache;
     private NoDeleteCachedStore<byte[], byte[]> contractStorageCache;
@@ -131,8 +130,8 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         Map<byte[], byte[]> trieCache = new ByteArrayMap<>();
         Map<byte[], byte[]> contractStorageCacheMap = new ByteArrayMap<>();
         Map<byte[], byte[]> contractCodeCache = new ByteArrayMap<>();
-        this.trieCache = new CachedStore<>(trie.getStore(), () -> trieCache);;
-        this.contractStorageCache = new NoDeleteCachedStore<>(this.contractStorageTrie.getStore(), () -> contractStorageCacheMap);;
+        this.trieCache = new CachedStore<>(trie.getStore(), () -> trieCache);
+        this.contractStorageCache = new NoDeleteCachedStore<>(this.contractStorageTrie.getStore(), () -> contractStorageCacheMap);
         this.contractCodeCache = new CachedStore<>(contractCodeStore, () -> contractCodeCache);
         this.dirtyTrie = trie.revert(this.currentRoot, this.trieCache);
     }
@@ -198,7 +197,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
             return r;
         } catch (Exception e) {
             throw e;
-        }finally {
+        } finally {
             clearCache();
         }
     }

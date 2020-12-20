@@ -10,8 +10,8 @@ import org.tdf.sunflower.facade.Message;
 import java.util.function.Consumer;
 
 public class SocketIOMessageQueue implements BasicMessageQueue {
-    private MessageQueueConfig config;
-    private SocketIOServer socketIOServer;
+    private final MessageQueueConfig config;
+    private final SocketIOServer socketIOServer;
 
     public SocketIOMessageQueue(MessageQueueConfig config) {
         this.config = config;

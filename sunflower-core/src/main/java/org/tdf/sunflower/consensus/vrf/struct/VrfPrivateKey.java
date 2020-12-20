@@ -6,7 +6,7 @@ import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 
 public class VrfPrivateKey {
-    private PrivateKey signer;
+    private final PrivateKey signer;
 
     public VrfPrivateKey(String algorithm) throws CryptoException {
         if (algorithm.equals(Ed25519.getAlgorithm())) {

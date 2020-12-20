@@ -10,7 +10,6 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.Container;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -22,22 +21,14 @@ import java.util.*;
  * used for node join/exit
  */
 public class Authentication implements PreBuiltContract {
-    public enum Method {
-        JOIN_NODE,
-        APPROVE_JOIN,
-        EXIT
-    }
-
+    static final byte[] NODES_KEY = "nodes".getBytes(StandardCharsets.US_ASCII);
+    static final byte[] PENDING_NODES_KEY = "pending".getBytes(StandardCharsets.US_ASCII);
     private final Collection<? extends HexBytes> nodes;
-
     private final HexBytes contractAddress;
-
     @Setter
     private StateTrie<HexBytes, Account> accountTrie;
-
     @Setter
     private Trie<byte[], byte[]> contractStorageTrie;
-
 
     public Authentication(
             @NonNull Collection<? extends HexBytes> nodes,
@@ -45,6 +36,13 @@ public class Authentication implements PreBuiltContract {
     ) {
         this.nodes = nodes;
         this.contractAddress = contractAddress;
+    }
+
+    static int divideAndCeil(int a, int b) {
+        int ret = a / b;
+        if (a % b != 0)
+            return ret + 1;
+        return ret;
     }
 
     private byte[] getValue(byte[] stateRoot, byte[] key) {
@@ -58,7 +56,7 @@ public class Authentication implements PreBuiltContract {
         return Arrays.asList(RLPCodec.decode(v, HexBytes[].class));
     }
 
-    public Map<HexBytes, TreeSet<HexBytes>> getPending(byte[] stateRoot){
+    public Map<HexBytes, TreeSet<HexBytes>> getPending(byte[] stateRoot) {
         Account a = accountTrie.get(stateRoot, contractAddress).get();
         Store<byte[], byte[]> contractStorage = contractStorageTrie.revert(a.getStorageRoot());
         return new HashMap<>(getPendingStore(contractStorage).asMap());
@@ -76,11 +74,6 @@ public class Authentication implements PreBuiltContract {
                 )
         );
     }
-
-    static final byte[] NODES_KEY = "nodes".getBytes(StandardCharsets.US_ASCII);
-
-    static final byte[] PENDING_NODES_KEY = "pending".getBytes(StandardCharsets.US_ASCII);
-
 
     @Override
     public Account getGenesisAccount() {
@@ -124,7 +117,7 @@ public class Authentication implements PreBuiltContract {
                 if (approves.get().size() >= divideAndCeil(nodes.size() * 2, 3)) {
                     pending.remove(toApprove);
                     nodes.add(toApprove);
-                }else{
+                } else {
                     pending.put(toApprove, approves.get());
                 }
                 contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
@@ -144,17 +137,16 @@ public class Authentication implements PreBuiltContract {
         }
     }
 
-    static int divideAndCeil(int a, int b) {
-        int ret = a / b;
-        if (a % b != 0)
-            return ret + 1;
-        return ret;
-    }
-
     @Override
     public Map<byte[], byte[]> getGenesisStorage() {
         Map<byte[], byte[]> ret = new ByteArrayMap<>();
         ret.put(NODES_KEY, RLPCodec.encode(this.nodes));
         return ret;
+    }
+
+    public enum Method {
+        JOIN_NODE,
+        APPROVE_JOIN,
+        EXIT
     }
 }

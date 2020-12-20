@@ -42,9 +42,9 @@ public class ValidatorManager {
     public static final long WEIGHT_UNIT_OF_DEPOSIT = Validator.DEPOSIT_UNIT_VALUE / 100;
     public static final long WEIGHT_MIN_VALUE = Validator.DEPOSIT_MIN_VALUE / WEIGHT_UNIT_OF_DEPOSIT;
     private static final Logger logger = LoggerFactory.getLogger("ValidatorManager");
-    private BlockRepository repository;
-    private AccountTrie accountTrie;
-    private Trie<byte[], byte[]> contractStorageTrie;
+    private final BlockRepository repository;
+    private final AccountTrie accountTrie;
+    private final Trie<byte[], byte[]> contractStorageTrie;
     private VrfConfig vrfConfig;
 
     /*

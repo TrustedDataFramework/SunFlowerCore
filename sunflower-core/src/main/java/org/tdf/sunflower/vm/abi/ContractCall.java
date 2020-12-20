@@ -1,7 +1,10 @@
 package org.tdf.sunflower.vm.abi;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Parameters;
@@ -18,35 +21,42 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.hosts.*;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 @RequiredArgsConstructor
 @Getter
 public class ContractCall {
+    static Cache<HexBytes, Module> CACHE;
+
+    static {
+        initCache();
+    }
+
     // contract address already called
     private final Map<HexBytes, Account> states;
     private final Header header;
     private final Transaction transaction;
-
     private final Function<byte[], Trie<byte[], byte[]>> storageTrieSupplier;
-
     // contract code store
     private final Store<byte[], byte[]> contractStore;
-
     // gas limit hook
     private final Limit limit;
-
     // call depth
     private final int depth;
-
     // msg.sender
     private final HexBytes sender;
-
     private final boolean readonly;
-
     // contract address called currently
     private HexBytes recipient;
+
+    public static void initCache() {
+        ContractCall.CACHE = CacheBuilder.newBuilder()
+                .maximumSize(1024)
+                .build();
+    }
 
     public static void assertContractAddress(HexBytes address) {
         if (address.size() != Account.ADDRESS_SIZE)
@@ -87,6 +97,15 @@ public class ContractCall {
             default:
                 return WBI.peek(module, (int) offset, type);
         }
+    }
+
+    @SneakyThrows
+    private Module getModule(HexBytes contractHash) {
+        return CACHE.get(contractHash, () -> new Module(
+                contractStore.get(contractHash.getBytes())
+                        .orElseThrow(() -> new RuntimeException(
+                                "contract " + this.recipient + " not found in db"))
+        ));
     }
 
     public ContractCall fork() {
@@ -153,6 +172,7 @@ public class ContractCall {
                 throw new RuntimeException("cannot deploy contract here");
             m = new Module(binaryOrAddress.getBytes());
             byte[] hash = CryptoContext.hash(binaryOrAddress.getBytes());
+            CACHE.put(HexBytes.fromBytes(hash), m);
             senderAccount.setNonce(SafeMath.add(senderAccount.getNonce(), 1));
             contractStore.put(hash, binaryOrAddress.getBytes());
             contractAddress = Transaction.createContractAddress(senderAccount.getAddress(), senderAccount.getNonce());
@@ -212,11 +232,9 @@ public class ContractCall {
         // every contract should have a init method
         ModuleInstance instance = ModuleInstance
                 .builder()
+                .module(getModule(HexBytes.fromBytes(contractAccount.getContractHash())))
                 .hooks(Collections.singleton(limit))
                 .hostFunctions(hosts.getAll())
-                .binary(contractStore.get(contractAccount.getContractHash())
-                        .orElseThrow(() -> new RuntimeException(
-                                "contract " + this.recipient + " not found in db")))
                 .build();
 
 

@@ -13,7 +13,7 @@ public class EnvReader {
     private final Environment env;
 
     // 哈希算法
-    public String getHash(){
+    public String getHash() {
         String hash = env.getProperty("sunflower.crypto.hash");
         hash = (hash == null || hash.isEmpty()) ? "sm3" : hash;
         hash = hash.toLowerCase();
@@ -21,7 +21,7 @@ public class EnvReader {
     }
 
     // 签名算法
-    public String getEC(){
+    public String getEC() {
         String ec = env.getProperty("sunflower.crypto.ec");
         ec = (ec == null || ec.isEmpty()) ? "sm2" : ec;
         ec = ec.toLowerCase();
@@ -29,38 +29,38 @@ public class EnvReader {
     }
 
     // 对称加密算法
-    public String getAE(){
+    public String getAE() {
         return "sm4";
     }
 
     @SneakyThrows
-    public JsonNode getGenesis(){
+    public JsonNode getGenesis() {
         InputStream in = FileUtils.getInputStream(env.getProperty("sunflower.consensus.genesis"));
         return Start.MAPPER.readValue(in, JsonNode.class);
     }
 
-    public int getBlockInterval(){
+    public int getBlockInterval() {
         return Integer.parseInt(env.getProperty("sunflower.consensus.block-interval"));
     }
 
 
-    public int getMaxMiners(){
+    public int getMaxMiners() {
         String s = env.getProperty("sunflower.consensus.max-miners");
-        if(s == null)
+        if (s == null)
             return 0;
         return Integer.parseInt(s.trim());
     }
 
-    public int getBlocksPerEra(){
+    public int getBlocksPerEra() {
         String s = env.getProperty("sunflower.consensus.blocks-per-era");
-        if(s == null)
+        if (s == null)
             return 0;
         return Integer.parseInt(s.trim());
     }
 
-    public boolean isAllowUnauthorized(){
+    public boolean isAllowUnauthorized() {
         String s = env.getProperty("sunflower.consensus.allow-unauthorized");
-        if(s == null)
+        if (s == null)
             return false;
         return "true".equals(s.trim().toLowerCase());
     }

@@ -30,7 +30,7 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
 
     @Override
     public void put(@NonNull K k, @NonNull V v) {
-        if(isTrap(v)) return;
+        if (isTrap(v)) return;
         delegate.put(k, v);
     }
 
@@ -66,7 +66,7 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
     }
 
     @Override
-    public void clear(){
+    public void clear() {
     }
 
     @Override

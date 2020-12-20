@@ -22,7 +22,7 @@ import java.util.function.BiFunction;
 @RequiredArgsConstructor
 public class ConcurrentSunflowerRepository implements SunflowerRepository {
     private final SunflowerRepository delegate;
-    private ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     @Override
     public void setAccountTrie(StateTrie<HexBytes, Account> accountTrie) {

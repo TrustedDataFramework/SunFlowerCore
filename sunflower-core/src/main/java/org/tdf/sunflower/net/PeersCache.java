@@ -13,12 +13,12 @@ import java.util.stream.Stream;
 class PeersCache {
     private static final int PEER_SCORE = 32;
     private static final int EVIL_SCORE = -(1 << 31);
+    private final PeerServerConfig config;
+    private final Bucket[] peers = new Bucket[CryptoContext.getPublicKeySize() * 8];
+    private final PeerImpl self;
     Map<PeerImpl, Boolean> bootstraps = new ConcurrentHashMap<>();
     Map<PeerImpl, Boolean> blocked = new ConcurrentHashMap<>();
     Map<PeerImpl, Boolean> trusted = new ConcurrentHashMap<>();
-    private PeerServerConfig config;
-    private Bucket[] peers = new Bucket[CryptoContext.getPublicKeySize() * 8];
-    private PeerImpl self;
 
     PeersCache(
             PeerImpl self,

@@ -7,10 +7,10 @@ import org.tdf.sunflower.types.Header;
 import java.util.List;
 import java.util.Optional;
 
-public interface BlockRepository{
+public interface BlockRepository {
     Block getGenesis();
 
-    void saveGenesis(Block block) ;
+    void saveGenesis(Block block);
 
     // TODO: use guava cache
     boolean containsHeader(byte[] hash);

@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 // poa is a minimal non-trivial consensus engine
 @Slf4j(topic = "poa")
 public class PoA extends AbstractConsensusEngine {
+    EconomicModel economicModel;
     private PoAConfig poAConfig;
     private Genesis genesis;
     private PoAMiner poaMiner;
@@ -34,14 +35,7 @@ public class PoA extends AbstractConsensusEngine {
     private Authentication authContract;
     private Authentication minerContract;
     private List<PreBuiltContract> preBuiltContracts;
-    EconomicModel economicModel;
 
-
-    static byte[] getSignaturePlain(Block b) {
-        Header nh = b.getHeader().clone();
-        nh.setPayload(HexBytes.EMPTY);
-        return RLPCodec.encode(nh);
-    }
 
     public PoA() {
         this.preBuiltContracts = new ArrayList<>();
@@ -58,9 +52,15 @@ public class PoA extends AbstractConsensusEngine {
         this.economicModel = economicModel;
     }
 
+    static byte[] getSignaturePlain(Block b) {
+        Header nh = b.getHeader().clone();
+        nh.setPayload(HexBytes.EMPTY);
+        return RLPCodec.encode(nh);
+    }
+
     @Override
     public Optional<Set<HexBytes>> getApprovedNodes() {
-        if(poAConfig.isAllowUnauthorized())
+        if (poAConfig.isAllowUnauthorized())
             return Optional.empty();
         Block best = getSunflowerRepository().getBestBlock();
         return Optional.of(new HashSet<>(this.authContract.getNodes(best.getStateRoot().getBytes())));
@@ -99,8 +99,7 @@ public class PoA extends AbstractConsensusEngine {
     @Override
     public void init(Properties properties) {
         ObjectMapper objectMapper = new ObjectMapper()
-                .enable(JsonParser.Feature.ALLOW_COMMENTS)
-                ;
+                .enable(JsonParser.Feature.ALLOW_COMMENTS);
         poAConfig = MappingUtil.propertiesToPojo(properties, PoAConfig.class);
         InputStream in;
         try {

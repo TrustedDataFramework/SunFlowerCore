@@ -10,9 +10,9 @@ package org.tdf.sunflower.controller;
  * }
  */
 public class Response<T> {
-    private int code;
-    private T data;
-    private String message;
+    private final int code;
+    private final T data;
+    private final String message;
 
     private Response(int code, T data, String message) {
         this.code = code;
@@ -44,7 +44,7 @@ public class Response<T> {
         return message;
     }
 
-    public static enum Code {
+    public enum Code {
         SUCCESS(200, "success"),
 
         INTERNAL_ERROR(500, "internal error");
