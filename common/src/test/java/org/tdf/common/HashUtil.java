@@ -16,13 +16,10 @@ public class HashUtil {
     public static final byte[] EMPTY_LIST_HASH;
     public static final byte[] EMPTY_TRIE_HASH;
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-
     private static final Provider CRYPTO_PROVIDER;
-
     private static final String HASH_256_ALGORITHM_NAME;
     private static final String HASH_512_ALGORITHM_NAME;
-    public static HashFunction sha3 = new HashFunction(HashUtil::sha3);
-    public static HashFunction sha256 = new HashFunction(HashUtil::sha256);
+
 
     static {
         Security.addProvider(SpongyCastleProvider.getInstance());
@@ -33,6 +30,9 @@ public class HashUtil {
         EMPTY_LIST_HASH = sha3(RLPList.createEmpty().getEncoded());
         EMPTY_TRIE_HASH = sha3(RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY));
     }
+
+    public static HashFunction sha3 = new HashFunction(HashUtil::sha3);
+    public static HashFunction sha256 = new HashFunction(HashUtil::sha256);
 
     /**
      * @param input - data for hashing
