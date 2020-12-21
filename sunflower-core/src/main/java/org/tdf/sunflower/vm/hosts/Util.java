@@ -13,19 +13,18 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class Util extends HostFunction {
+    public static final FunctionType FUNCTION_TYPE = new FunctionType(
+            Arrays.asList(
+                    ValueType.I64, ValueType.I64,
+                    ValueType.I64, ValueType.I64,
+                    ValueType.I64, ValueType.I64,
+                    ValueType.I64
+            ),
+            Collections.singletonList(ValueType.I64)
+    );
+
     public Util() {
-        setType(
-                new FunctionType(
-                        Arrays.asList(
-                                ValueType.I64, ValueType.I64,
-                                ValueType.I64, ValueType.I64,
-                                ValueType.I64, ValueType.I64,
-                                ValueType.I64
-                        ),
-                        Collections.singletonList(ValueType.I64)
-                )
-        );
-        setName("_util");
+        super("_util", FUNCTION_TYPE);
     }
 
     @Override

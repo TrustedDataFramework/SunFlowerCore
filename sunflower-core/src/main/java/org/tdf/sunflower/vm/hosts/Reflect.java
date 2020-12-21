@@ -19,19 +19,18 @@ import java.util.Collections;
 public class Reflect extends HostFunction {
     private final ContractCall parent;
     private final boolean readonly;
-    private byte[] result;
+    public static final FunctionType FUNCTION_TYPE = new FunctionType(
+            // offset, length, offset
+            Arrays.asList(
+                    ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64,
+                    ValueType.I64, ValueType.I64
+            ),
+            Collections.singletonList(ValueType.I64)
+    );
 
     public Reflect(ContractCall parent, boolean readonly) {
+        super("_reflect", FUNCTION_TYPE);
         this.parent = parent;
-        setType(new FunctionType(
-                // offset, length, offset
-                Arrays.asList(
-                        ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64,
-                        ValueType.I64, ValueType.I64
-                ),
-                Collections.singletonList(ValueType.I64)
-        ));
-        setName("_reflect");
         this.readonly = readonly;
     }
 

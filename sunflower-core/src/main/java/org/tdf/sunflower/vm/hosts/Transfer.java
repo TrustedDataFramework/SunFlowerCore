@@ -17,21 +17,19 @@ public class Transfer extends HostFunction {
     private final Map<HexBytes, Account> states;
     private final HexBytes contractAddress;
     private final boolean readonly;
+    public static final FunctionType FUNCTION_TYPE = new FunctionType(
+            Arrays.asList(
+                    ValueType.I64, ValueType.I64,
+                    ValueType.I64
+            ),
+            Collections.emptyList()
+    );
 
     public Transfer(Map<HexBytes, Account> states, HexBytes contractAddress, boolean readonly) {
+        super("_transfer", FUNCTION_TYPE);
         this.states = states;
         this.contractAddress = contractAddress;
         this.readonly = readonly;
-        setType(
-                new FunctionType(
-                        Arrays.asList(
-                                ValueType.I64, ValueType.I64,
-                                ValueType.I64
-                        ),
-                        Collections.emptyList()
-                )
-        );
-        setName("_transfer");
     }
 
     @Override

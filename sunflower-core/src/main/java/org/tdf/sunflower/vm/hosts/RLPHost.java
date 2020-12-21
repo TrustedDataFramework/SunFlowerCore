@@ -17,13 +17,13 @@ public class RLPHost extends HostFunction {
     private List<byte[]> elements;
     private byte[] elementsEncoded;
 
+    public static final FunctionType FUNCTION_TYPE = new FunctionType(
+            // offset, length, offset
+            Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),
+            Collections.singletonList(ValueType.I64));
+
     public RLPHost() {
-        setType(new FunctionType(
-                // offset, length, offset
-                Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),
-                Collections.singletonList(ValueType.I64)
-        ));
-        setName("_rlp");
+        super("_rlp", FUNCTION_TYPE);
     }
 
     @Override

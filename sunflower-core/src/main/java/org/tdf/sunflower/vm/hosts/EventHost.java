@@ -21,17 +21,15 @@ public class EventHost extends HostFunction {
     private final List<Event> events;
     private final HexBytes address;
     private final boolean readonly;
+    public static final FunctionType FUNCTION_TYPE = new FunctionType(
+            Arrays.asList
+                    (ValueType.I64, ValueType.I64),
+            Collections.emptyList()
+    );
 
     public EventHost(HexBytes address, boolean readonly) {
+        super("_event", FUNCTION_TYPE);
         this.address = address;
-        setName("_event");
-        setType(
-                new FunctionType(
-                        Arrays.asList
-                                (ValueType.I64, ValueType.I64),
-                        Collections.emptyList()
-                )
-        );
         this.readonly = readonly;
         this.events = new ArrayList<>();
     }

@@ -8,22 +8,23 @@ import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class DBFunctions extends HostFunction {
     @Getter
     private final Trie<byte[], byte[]> storageTrie;
     private final boolean readonly;
-    private List<Map.Entry<HexBytes, byte[]>> entries;
-    private int index;
+    public static final FunctionType FUNCTION_TYPE = new FunctionType(
+            Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
+            Collections.singletonList(ValueType.I64)
+    );
 
     public DBFunctions(Trie<byte[], byte[]> storageTrie, boolean readonly) {
+        super("_db", FUNCTION_TYPE);
         this.storageTrie = storageTrie;
-        setName("_db");
-        setType(new FunctionType(
-                Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
-                Collections.singletonList(ValueType.I64)
-        ));
         reset();
         this.readonly = readonly;
     }
@@ -31,7 +32,6 @@ public class DBFunctions extends HostFunction {
     private void reset() {
         Map<HexBytes, byte[]> m = new TreeMap<>();
         storageTrie.forEach((x, y) -> m.put(HexBytes.fromBytes(x), y));
-        this.entries = new ArrayList<>(m.entrySet());
     }
 
     private void assertReadOnly(Type t) {

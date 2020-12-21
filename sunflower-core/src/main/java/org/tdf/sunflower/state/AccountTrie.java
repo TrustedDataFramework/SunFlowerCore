@@ -32,16 +32,17 @@ import java.util.stream.Collectors;
 @Slf4j(topic = "trie")
 @AllArgsConstructor
 public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements ForkedStateTrie {
-    private final Trie<byte[], byte[]> contractStorageTrie;
-    private final Store<byte[], byte[]> contractCodeStore;
-    private final List<PreBuiltContract> preBuiltContracts;
-    private final Map<HexBytes, Bios> biosList;
-    private final Map<HexBytes, Account> genesisStates;
-    private final Map<HexBytes, PreBuiltContract> preBuiltContractAddresses;
-    private final DatabaseStore db;
-    private final Store<byte[], byte[]> trieStore;
-    private final HexBytes genesisRoot;
     private Trie<HexBytes, Account> trie;
+    private Trie<byte[], byte[]> contractStorageTrie;
+    private Store<byte[], byte[]> contractCodeStore;
+    private List<PreBuiltContract> preBuiltContracts;
+    private Map<HexBytes, Bios> biosList;
+    private Map<HexBytes, Account> genesisStates;
+    private Map<HexBytes, PreBuiltContract> preBuiltContractAddresses;
+    private DatabaseStore db;
+    private Store<byte[], byte[]> trieStore;
+    private HexBytes genesisRoot;
+
     // memory cached
     private CachedStore<byte[], byte[]> trieCache;
     private NoDeleteCachedStore<byte[], byte[]> contractStorageCache;

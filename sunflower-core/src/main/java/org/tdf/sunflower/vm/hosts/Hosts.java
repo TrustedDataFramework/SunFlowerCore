@@ -77,15 +77,14 @@ public class Hosts {
     }
 
     public static class Nop extends HostFunction {
+        static final FunctionType FUNCTION_TYPE = new FunctionType(
+                Arrays.asList
+                        (ValueType.I64, ValueType.I64),
+                Collections.emptyList()
+        );
+
         public Nop() {
-            setName("_nop");
-            setType(
-                    new FunctionType(
-                            Arrays.asList
-                                    (ValueType.I64, ValueType.I64),
-                            Collections.emptyList()
-                    )
-            );
+            super("_nop", FUNCTION_TYPE);
         }
 
         @Override

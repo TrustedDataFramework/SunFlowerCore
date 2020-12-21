@@ -6,18 +6,18 @@ import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 @Slf4j(topic = "vm")
 public class Log extends HostFunction {
+    public static final FunctionType FUNCTION_TYPE = new FunctionType(
+            // offset, length, offset
+            Collections.singletonList(ValueType.I64),
+            Collections.emptyList()
+    );
+
     public Log() {
-        setType(new FunctionType(
-                // offset, length, offset
-                Arrays.asList(ValueType.I64),
-                Collections.emptyList()
-        ));
-        setName("_log");
+        super("_log", FUNCTION_TYPE);
     }
 
     @Override

@@ -22,6 +22,8 @@ public class ContextHost extends HostFunction {
     private final Store<byte[], byte[]> contractCodeStore;
     private final Function<byte[], Trie<byte[], byte[]>> storageTrieSupplier;
     private final boolean readonly;
+    public static final FunctionType FUNCTION_TYPE = new FunctionType(Arrays.asList(ValueType.I64, ValueType.I64),
+            Collections.singletonList(ValueType.I64));
 
     public ContextHost(
             Context context,
@@ -30,11 +32,7 @@ public class ContextHost extends HostFunction {
             Function<byte[], Trie<byte[], byte[]>> storageTrieSupplier,
             boolean readonly
     ) {
-        setName("_context");
-        setType(
-                new FunctionType(Arrays.asList(ValueType.I64, ValueType.I64),
-                        Collections.singletonList(ValueType.I64))
-        );
+        super("_context", FUNCTION_TYPE);
         this.context = context;
         this.states = states;
         this.contractCodeStore = contractCodeStore;
