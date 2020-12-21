@@ -25,4 +25,5 @@ jobs:
       env: 
         GITHUB_USERNAME: ${{ github.actor }}
         GITHUB_TOKEN: ${{ secrets.PROJECT_TOKEN }} 
+        GITHUB: true
 
