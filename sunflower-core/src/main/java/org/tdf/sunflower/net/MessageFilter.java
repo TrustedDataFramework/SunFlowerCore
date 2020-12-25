@@ -55,6 +55,7 @@ public class MessageFilter implements Plugin {
     public void onMessage(ContextImpl context, PeerServerImpl server) {
         // cache multi part message
         if (!context.getRemote().getProtocol().equals(server.getSelf().getProtocol())) {
+            log.error("protocol not match received = {}, while {} expected", context.getRemote().getProtocol(), server.getSelf().getProtocol());
             context.block();
             return;
         }

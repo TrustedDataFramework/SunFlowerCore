@@ -81,6 +81,12 @@ import java.util.stream.Collectors;
 // use SPRING_CONFIG_LOCATION environment to locate spring config
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 public class Start {
+    public static final byte[] TRIVIAL_KEY = new byte[]{
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 1
+    };
     public static final ObjectMapper MAPPER = MappingUtil.OBJECT_MAPPER;
     @Getter
     private static boolean enableAssertion;
@@ -209,7 +215,7 @@ public class Start {
                 CryptoContext.setSecretKeyGenerator(() -> Ed25519.generateKeyPair().getPrivateKey().getEncoded());
                 CryptoContext.setGetPkFromSk((sk) -> new Ed25519PrivateKey(sk).generatePublicKey().getEncoded());
                 // TODO add ed25519 ecdh
-                // CryptoContext.ecdh =
+                CryptoContext.setEcdh((i, sk, pk) -> TRIVIAL_KEY);
                 break;
             case "sm2":
                 CryptoContext.setSignatureVerifier((pk, msg, sig) -> new SM2PublicKey(pk).verify(msg, sig));
