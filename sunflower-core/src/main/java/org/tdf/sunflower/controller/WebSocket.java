@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.tdf.common.types.Parameters;
@@ -36,6 +37,7 @@ import java.util.function.Predicate;
 
 @ServerEndpoint(value = "/websocket/{id}")
 @Component
+@Slf4j
 public class WebSocket {
     private static final Map<String, WebSocket> clients = new ConcurrentHashMap<>();
     public static ApplicationContext ctx;
@@ -188,6 +190,7 @@ public class WebSocket {
             }
             // 发送事务
             case TRANSACTION_SEND: {
+                log.info("transaction received");
                 boolean isList = msg.getBody().get(0).asBoolean();
                 Transaction[] txs = isList ? msg.getBody().get(1).as(Transaction[].class) :
                         new Transaction[]{msg.getBody().get(1).as(Transaction.class)};
