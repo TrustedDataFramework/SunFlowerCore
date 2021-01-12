@@ -179,7 +179,7 @@ public class ContractCall {
 
             contractAccount = Account.emptyContract(contractAddress);
             contractAccount.setContractHash(hash);
-            contractAccount.setCreatedBy(this.transaction.getFromAddress());
+            contractAccount.setCreatedBy(sender);
         } else {
             contractAddress = binaryOrAddress;
             contractAccount = states.get(contractAddress);
