@@ -112,6 +112,7 @@ public class PoWMiner extends AbstractMiner {
     @Override
     public void stop() {
         if (stopped) return;
+        this.working = false;
         minerExecutor.shutdown();
         try {
             minerExecutor.awaitTermination(MAX_SHUTDOWN_WAITING, TimeUnit.SECONDS);
