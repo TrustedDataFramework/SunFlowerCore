@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
+import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.types.Block;
@@ -12,10 +13,7 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
 import static org.tdf.sunflower.state.Account.ADDRESS_SIZE;
@@ -28,7 +26,10 @@ public class PoWMiner extends AbstractMiner {
     private final ForkJoinPool threadPool = (ForkJoinPool) Executors.newWorkStealingPool();
     private ScheduledExecutorService minerExecutor;
     private volatile boolean stopped;
-    private volatile Runnable task;
+
+    private volatile long currentMiningHeight;
+    private volatile boolean working;
+    private Future<?> task;
 
     public PoWMiner(
             PoWConfig minerConfig,
@@ -39,6 +40,14 @@ public class PoWMiner extends AbstractMiner {
         this.transactionPool = tp;
         this.poWConfig = minerConfig;
         this.poW = pow;
+
+        getEventBus().subscribe(NewBestBlock.class, e -> {
+            if(e.getBlock().getHeight() >= this.currentMiningHeight){
+                // cancel mining
+                this.working = false;
+                this.currentMiningHeight = 0;
+            }
+        });
     }
 
     @Override
@@ -68,16 +77,23 @@ public class PoWMiner extends AbstractMiner {
     }
 
     @Override
-    protected void finalizeBlock(Block parent, Block block) {
+    protected boolean finalizeBlock(Block parent, Block block) {
         byte[] nbits = poW.getNBits(parent.getStateRoot().getBytes());
         Random rd = new Random();
         log.info("start finish pow target = {}", HexBytes.fromBytes(nbits));
+        this.working = true;
         while (PoW.compare(PoW.getPoWHash(block), nbits) > 0) {
+            if(!working){
+                log.info("mining canceled");
+                return false;
+            }
             byte[] nonce = new byte[32];
             rd.nextBytes(nonce);
             block.setPayload(HexBytes.fromBytes(nonce));
         }
         log.info("pow success");
+        this.working = false;
+        return true;
     }
 
     @Override
@@ -121,10 +137,11 @@ public class PoWMiner extends AbstractMiner {
             log.warn("pow miner: invalid coinbase address {}", poWConfig.getMinerCoinBase());
             return;
         }
-        if (task != null) return;
+        if (working || task != null) return;
 
         Block best = poW.getSunflowerRepository().getBestBlock();
         log.debug("try to mining at height " + (best.getHeight() + 1));
+        this.currentMiningHeight = best.getHeight() + 1;
         Runnable task = () -> {
             try {
                 BlockCreateResult res = createBlock(poW.getSunflowerRepository().getBestBlock());
@@ -138,7 +155,6 @@ public class PoWMiner extends AbstractMiner {
                 this.task = null;
             }
         };
-        this.task = task;
-        threadPool.submit(task);
+        this.task = threadPool.submit(task);
     }
 }

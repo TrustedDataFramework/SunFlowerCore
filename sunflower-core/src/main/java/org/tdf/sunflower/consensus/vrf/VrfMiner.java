@@ -169,8 +169,8 @@ public class VrfMiner extends AbstractMiner {
     }
 
     @Override
-    protected void finalizeBlock(Block parent, Block block) {
-
+    protected boolean finalizeBlock(Block parent, Block block) {
+        return true;
     }
 
     public void setVrfStateMachine(VrfStateMachine vrfStateMachine) {

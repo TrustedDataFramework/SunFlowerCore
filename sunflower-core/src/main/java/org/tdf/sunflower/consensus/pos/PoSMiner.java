@@ -62,8 +62,8 @@ public class PoSMiner extends AbstractMiner {
     }
 
     @Override
-    protected void finalizeBlock(Block parent, Block block) {
-
+    protected boolean finalizeBlock(Block parent, Block block) {
+        return true;
     }
 
     public void setPoSConfig(PoSConfig posConfig) throws ConsensusEngineInitException {

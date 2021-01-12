@@ -66,7 +66,7 @@ public abstract class AbstractMiner implements Miner {
 
     protected abstract Header createHeader(Block parent);
 
-    protected abstract void finalizeBlock(Block parent, Block block);
+    protected abstract boolean finalizeBlock(Block parent, Block block);
 
     // TODO:  2. 增加打包超时时间
     protected BlockCreateResult createBlock(Block parent) {
@@ -135,7 +135,9 @@ public abstract class AbstractMiner implements Miner {
         b.resetTransactionsRoot();
 
         // the mined block cannot be modified any more
-        finalizeBlock(parent, b);
+        if(!finalizeBlock(parent, b)){
+            return BlockCreateResult.empty();
+        }
 
         b.getBody().stream().skip(1)
                 .forEach(tx -> {

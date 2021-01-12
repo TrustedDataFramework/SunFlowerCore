@@ -61,10 +61,11 @@ public class PoAMiner extends AbstractMiner {
     }
 
     @Override
-    protected void finalizeBlock(Block parent, Block block) {
+    protected boolean finalizeBlock(Block parent, Block block) {
         byte[] plain = PoA.getSignaturePlain(block);
         byte[] sig = CryptoContext.sign(privateKey.getBytes(), plain);
         block.setPayload(HexBytes.fromBytes(sig));
+        return true;
     }
 
     public void setPoAConfig(PoAConfig poAConfig) {
