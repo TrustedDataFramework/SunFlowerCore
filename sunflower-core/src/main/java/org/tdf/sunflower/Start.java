@@ -189,7 +189,7 @@ public class Start {
 
     public static void loadCryptoContext(Environment env) {
         EnvReader reader = new EnvReader(env);
-        switch (reader.getHash()) {
+        switch (reader.getHash().toLowerCase()) {
             case "sm3":
                 CryptoContext.setHashFunction(SM3Util::hash);
                 break;
@@ -208,7 +208,7 @@ public class Start {
             default:
                 throw new ApplicationException("unknown hash function: " + reader.getHash());
         }
-        switch (reader.getEC()) {
+        switch (reader.getEC().toLowerCase()) {
             case "ed25519":
                 CryptoContext.setSignatureVerifier((pk, msg, sig) -> new Ed25519PublicKey(pk).verify(msg, sig));
                 CryptoContext.setSigner((sk, msg) -> new Ed25519PrivateKey(sk).sign(msg));

@@ -1,7 +1,7 @@
 {
   "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "timestamp": 1572511433,
-  "nbits": "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "nbits": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
   "alloc":{
         "9cbf30db111483e4b84e77ca0e39378fd7605e1b": 1000000,
         "bf0aba026e5a0e1a69094c8a0d19d905367d64cf": 1000000
