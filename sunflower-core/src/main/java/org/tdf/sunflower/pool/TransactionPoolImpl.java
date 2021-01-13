@@ -179,6 +179,7 @@ public class TransactionPoolImpl implements TransactionPool {
                     mCache.remove(t.getHash());
                     if (!transactionRepository.containsTransaction(t.getHash().getBytes()))
                         dropped.put(t.getHash(), t);
+                    log.error("drop transaction {}, reason = invalid nonce", t.getHash());
                     WebSocket.broadcastDrop(t.getHash(), "invalid nonce");
                     continue;
                 }
