@@ -10,6 +10,7 @@ import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -44,5 +45,18 @@ public class Genesis {
     public static class MinerInfo {
         @JsonProperty("addr")
         public HexBytes address;
+    }
+
+    // 去重后的矿工地址
+    public List<HexBytes> filterMiners(){
+        if(miners == null || miners.isEmpty())
+            return Collections.emptyList();
+        List<HexBytes> ret = new ArrayList<>();
+        for (MinerInfo m : miners) {
+            if (ret.contains(m.getAddress()))
+                throw new RuntimeException("duplicated miner address");
+            ret.add(m.getAddress());
+        }
+        return ret;
     }
 }

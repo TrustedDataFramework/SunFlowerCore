@@ -121,12 +121,12 @@ public class PoA extends AbstractConsensusEngine {
 
         this.authContract = new Authentication(
                 genesis.miners == null ? Collections.emptyList() :
-                        genesis.miners.stream().map(Genesis.MinerInfo::getAddress).collect(Collectors.toSet()),
+                        genesis.filterMiners(),
                 Constants.PEER_AUTHENTICATION_ADDR
         );
 
         this.minerContract = new Authentication(genesis.miners == null ? Collections.emptyList() :
-                genesis.miners.stream().map(Genesis.MinerInfo::getAddress).collect(Collectors.toSet()),
+                genesis.filterMiners(),
                 Constants.POA_AUTHENTICATION_ADDR
         );
 
