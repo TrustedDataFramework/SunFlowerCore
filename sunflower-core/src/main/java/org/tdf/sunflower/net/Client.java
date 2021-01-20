@@ -69,10 +69,11 @@ public class Client implements ChannelListener {
     // consumer may be called more than once
     // usually called when server starts
     private void connect(String host, int port, Consumer<PeerImpl> connectionConsumer) {
-        getChannel(host, port, this, listener, new ChannelListener() {
+        getChannel(host, port, listener, new ChannelListener() {
             @Override
             public void onConnect(PeerImpl remote, Channel channel) {
                 connectionConsumer.accept(remote);
+                addPeer(remote, channel);
             }
 
             @Override
@@ -135,6 +136,10 @@ public class Client implements ChannelListener {
             channel.close("discovery is not enabled accept bootstraps and trusted only");
             return;
         }
+        addPeer(remote, channel);
+    }
+
+    private void addPeer(PeerImpl remote, Channel channel){
         if (remote.equals(self)) {
             channel.close("close channel connect to self");
         }
