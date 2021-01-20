@@ -20,6 +20,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPList;
+import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
@@ -125,6 +126,7 @@ public class EntryController {
                 .blocksPerEra(rd.getBlocksPerEra())
                 .maxMiners(rd.getMaxMiners())
                 .allowUnauthorized(rd.isAllowUnauthorized())
+                .gasPrice(ApplicationConstants.VM_GAS_PRICE)
                 .build()
                 ;
     }

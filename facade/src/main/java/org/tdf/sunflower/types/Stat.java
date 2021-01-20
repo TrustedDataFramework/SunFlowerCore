@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.tdf.common.types.Uint256;
+import org.tdf.sunflower.state.Constants;
 
 @Data
 @Builder
@@ -74,4 +75,6 @@ public class Stat {
 
     // 共识机制
     private String consensus;
+
+    private long gasPrice;
 }
