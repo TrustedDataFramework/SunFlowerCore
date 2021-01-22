@@ -77,4 +77,6 @@ public class Stat {
     private String consensus;
 
     private long gasPrice;
+
+    private boolean allowEmptyBlock;
 }

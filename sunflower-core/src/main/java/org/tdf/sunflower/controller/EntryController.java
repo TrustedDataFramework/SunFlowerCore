@@ -127,6 +127,7 @@ public class EntryController {
                 .maxMiners(rd.getMaxMiners())
                 .allowUnauthorized(rd.isAllowUnauthorized())
                 .gasPrice(ApplicationConstants.VM_GAS_PRICE)
+                .allowEmptyBlock(ApplicationConstants.ALLOW_EMPTY_BLOCK)
                 .build()
                 ;
     }

@@ -40,7 +40,7 @@ public abstract class AbstractValidator implements Validator {
         }
         if (parent.getCreatedAt() >= block.getCreatedAt()) {
             return BlockValidateResult.fault(
-                    String.format("invalid timestamp %d ", block.getCreatedAt())
+                    String.format("invalid timestamp %d at block height %d", block.getCreatedAt(), block.getHeight())
             );
         }
         if (!Transaction.getTransactionsRoot(block.getBody())

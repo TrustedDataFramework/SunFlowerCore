@@ -30,4 +30,6 @@ public class ApplicationConstants {
     public static boolean VALIDATE;
 
     public static long TRANSACTION_CONFIRMS = 0;
+
+    public static boolean ALLOW_EMPTY_BLOCK = false;
 }

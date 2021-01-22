@@ -161,6 +161,9 @@ public class Start {
         constant = env.getProperty("sunflower.vm.gas-price");
         if (constant != null && !constant.isEmpty())
             ApplicationConstants.VM_GAS_PRICE = Long.parseLong(constant);
+        constant = env.getProperty("sunflowr.consensus.allow-empty-block");
+        if(constant != null && "true".equals(constant.toLowerCase()))
+            ApplicationConstants.ALLOW_EMPTY_BLOCK = true;
     }
 
     @SneakyThrows

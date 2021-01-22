@@ -143,6 +143,9 @@ public class PoWMiner extends AbstractMiner {
         Block best = poW.getSunflowerRepository().getBestBlock();
         log.debug("try to mining at height " + (best.getHeight() + 1));
         this.currentMiningHeight = best.getHeight() + 1;
+        long current = System.currentTimeMillis() / 1000;
+        if(current <= best.getCreatedAt())
+            return;
         Runnable task = () -> {
             try {
                 BlockCreateResult res = createBlock(poW.getSunflowerRepository().getBestBlock());
