@@ -121,7 +121,6 @@ public class Start {
 
     static void setWebSocketCache(Environment env) {
         EnvReader r = new EnvReader(env);
-        WebSocket.initCache(r.getBlockInterval());
     }
 
     public static void loadConstants(Environment env) {

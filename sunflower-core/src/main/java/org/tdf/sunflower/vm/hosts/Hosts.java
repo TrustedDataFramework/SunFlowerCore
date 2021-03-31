@@ -16,8 +16,10 @@ public class Hosts {
     @Getter
     private EventHost eventHost;
     private Reflect reflect;
+    private U256Host u256Host;
 
     public Hosts() {
+        this.u256Host = new U256Host();
     }
 
     public Hosts withEvent(HexBytes address, boolean readonly) {
@@ -45,6 +47,9 @@ public class Hosts {
                         new Log(), new Nop()
                 )
         );
+
+        if(u256Host != null)
+            all.add(this.u256Host);
 
         if (reflect != null)
             all.add(this.reflect);

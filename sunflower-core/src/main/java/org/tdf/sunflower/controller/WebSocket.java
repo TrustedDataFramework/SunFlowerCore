@@ -1,7 +1,5 @@
 package org.tdf.sunflower.controller;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -41,7 +39,6 @@ import java.util.function.Predicate;
 public class WebSocket {
     private static final Map<String, WebSocket> clients = new ConcurrentHashMap<>();
     public static ApplicationContext ctx;
-    static Cache<CacheKey, RLPList> CACHE;
     private TransactionPool transactionPool;
     private AccountTrie accountTrie;
     private SunflowerRepository repository;
@@ -49,19 +46,6 @@ public class WebSocket {
     private Set<HexBytes> addresses;
     private Map<HexBytes, Boolean> transactions;
     private String id;
-
-    public static void initCache(int seconds) {
-        WebSocket.CACHE = CacheBuilder.newBuilder()
-                .weigher((k, v) -> {
-                    CacheKey key = (CacheKey) k;
-                    RLPList value = (RLPList) v;
-                    return key.contractAddress.size() + key.stateRoot.size() + key.method.length() + key.parameters.size()
-                            + value.getEncoded().length;
-                })
-                .expireAfterWrite(seconds, TimeUnit.SECONDS)
-                .maximumWeight(512 * 1024 * 1024)
-                .build();
-    }
 
     @SneakyThrows
     public static void broadcastAsync(WebSocketMessage msg, Predicate<WebSocket> when, Consumer<WebSocket> after) {
@@ -215,16 +199,7 @@ public class WebSocket {
                 Parameters parameters = msg.getBody().get(2)
                         .as(Parameters.class);
                 byte[] root = repository.getBestHeader().getStateRoot().getBytes();
-                Account a = accountTrie.get(root, HexBytes.fromBytes(address)).get();
-
-                CacheKey k = new CacheKey(
-                        HexBytes.fromBytes(address),
-                        HexBytes.fromBytes(a.getStorageRoot()),
-                        method,
-                        HexBytes.fromBytes(msg.getBody().get(2).getEncoded())
-                );
-
-                RLPList result = CACHE.get(k, () -> accountTrie.fork(root).call(HexBytes.fromBytes(address), method, parameters));
+                RLPList result =  accountTrie.fork(root).call(HexBytes.fromBytes(address), method, parameters);
                 sendResponse(msg.getNonce(), WebSocketMessage.Code.CONTRACT_QUERY, result);
                 break;
             }

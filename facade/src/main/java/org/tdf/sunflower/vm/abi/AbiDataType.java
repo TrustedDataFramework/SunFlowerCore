@@ -5,8 +5,8 @@ public enum AbiDataType {
     I64,  // 1
     U64, //  2 BN
     F64, //
-    STRING, // 3 string
-    BYTES, // 4
-    ADDRESS, // 5
+    STRING, // 4 string
+    BYTES, // 5
+    ADDRESS, // 6
     U256
 }
