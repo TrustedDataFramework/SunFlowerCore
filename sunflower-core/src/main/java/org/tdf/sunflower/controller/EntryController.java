@@ -196,12 +196,6 @@ public class EntryController {
         return consensusEngine.getApprovedNodes().map(ArrayList::new).orElse(null);
     }
 
-    // TODO: enclose this config
-    @GetMapping(value = "/config", produces = MediaType.APPLICATION_JSON_VALUE)
-    public GlobalConfig config() {
-        return config;
-    }
-
     @GetMapping(value = "/peers", produces = MediaType.APPLICATION_JSON_VALUE)
     public PeersInfo peers() {
         return new PeersInfo(peerServer.getPeers(), peerServer.getBootStraps());
