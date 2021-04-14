@@ -21,6 +21,7 @@ public class Genesis {
     public long timestamp;
     public List<MinerInfo> miners;
     public Map<String, Long> alloc;
+    public List<ValidatorInfo> validator;
 
     @JsonIgnore
     public Block getBlock() {
@@ -47,6 +48,12 @@ public class Genesis {
         public HexBytes address;
     }
 
+    @Getter
+    public static class ValidatorInfo{
+        @JsonProperty("pk")
+        public HexBytes pk;
+    }
+
     // 去重后的矿工地址
     public List<HexBytes> filterMiners(){
         if(miners == null || miners.isEmpty())
@@ -56,6 +63,19 @@ public class Genesis {
             if (ret.contains(m.getAddress()))
                 throw new RuntimeException("duplicated miner address");
             ret.add(m.getAddress());
+        }
+        return ret;
+    }
+
+    // 去重后的验证者公钥
+    public List<HexBytes> filtersValidators(){
+        if(validator == null || validator.isEmpty())
+            return Collections.emptyList();
+        List<HexBytes> ret = new ArrayList<>();
+        for (ValidatorInfo m : validator) {
+            if (ret.contains(m.getPk()))
+                throw new RuntimeException("duplicated validator pk");
+            ret.add(m.getPk());
         }
         return ret;
     }

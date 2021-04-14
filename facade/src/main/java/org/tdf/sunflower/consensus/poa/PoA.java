@@ -132,10 +132,8 @@ public class PoA extends AbstractConsensusEngine {
         );
 
 
-        List<HexBytes> list = new ArrayList<>();
-        list.add(HexBytes.fromHex("03e8d8894729c719526af67da49f8476d706c1883986daf0a04b4ced186e2468d7"));
-        this.farmbaseContract = new Authentication(
-                list,
+        this.farmbaseContract = new Authentication(genesis.validator == null ? Collections.emptyList() :
+                genesis.filtersValidators(),
                 Constants.FARMBASE_CONTRACT_ADDR
         );
 
@@ -156,7 +154,7 @@ public class PoA extends AbstractConsensusEngine {
         this.minerContract.setContractStorageTrie(getContractStorageTrie());
 
         this.farmbaseContract.setAccountTrie(trie);
-        this.setContractStorageTrie(getContractStorageTrie());
+        this.farmbaseContract.setContractStorageTrie(getContractStorageTrie());
 
         poaMiner = new PoAMiner(getAccountTrie(), getEventBus(), poAConfig, this);
         poaMiner.setBlockRepository(this.getSunflowerRepository());
