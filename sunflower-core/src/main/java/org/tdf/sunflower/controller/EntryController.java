@@ -225,13 +225,14 @@ public class EntryController {
 
     @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
     public Response<List<?>> sendTransaction(@RequestBody JsonNode node) {
+        Block best = repository.getBestBlock();
         List<Transaction> ts;
         if (node.isArray()) {
             ts = Arrays.asList(objectMapper.convertValue(node, Transaction[].class));
         } else {
             ts = Collections.singletonList(objectMapper.convertValue(node, Transaction.class));
         }
-        List<String> errors = pool.collect(ts);
+        List<String> errors = pool.collect(best, ts);
         Response<List<?>> errResp = Response.newFailed(Response.Code.INTERNAL_ERROR, String.join("\n", errors));
         if (!errors.isEmpty())
             return errResp;

@@ -12,7 +12,7 @@ public interface Validator extends BlockValidator, PendingTransactionValidator {
         }
 
         @Override
-        public ValidateResult validate(Transaction transaction) {
+        public ValidateResult validate(Block dependency, Transaction transaction) {
             return ValidateResult.success();
         }
     };

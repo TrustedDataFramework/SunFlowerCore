@@ -50,7 +50,7 @@ public class PoAValidator extends AbstractValidator {
     }
 
     @Override
-    public ValidateResult validate(Transaction transaction) {
+    public ValidateResult validate(Block dependency, Transaction transaction) {
         //todo 验证所有事务
         if (transaction.getVersion() != PoAConstants.TRANSACTION_VERSION) {
             return ValidateResult.fault("transaction version not match");

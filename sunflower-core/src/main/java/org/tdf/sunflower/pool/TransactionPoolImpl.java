@@ -19,10 +19,7 @@ import org.tdf.sunflower.facade.PendingTransactionValidator;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.facade.TransactionRepository;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.types.PageSize;
-import org.tdf.sunflower.types.PagedView;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.ValidateResult;
+import org.tdf.sunflower.types.*;
 
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -108,7 +105,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     @SneakyThrows
-    public List<String> collect(Collection<? extends Transaction> transactions) {
+    public List<String> collect(Block best, Collection<? extends Transaction> transactions) {
         List<String> errors = new ArrayList<>();
         this.cacheLock.writeLock().lock();
         try {
@@ -131,7 +128,7 @@ public class TransactionPoolImpl implements TransactionPool {
                     WebSocket.broadcastDrop(transaction.getHash(), res.getReason());
                     continue;
                 }
-                res = validator.validate(transaction);
+                res = validator.validate(best, transaction);
                 if (res.isSuccess()) {
                     cache.add(info);
                     mCache.put(info.tx.getHash(), info);

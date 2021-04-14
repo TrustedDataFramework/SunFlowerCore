@@ -174,11 +174,12 @@ public class WebSocket {
             }
             // 发送事务
             case TRANSACTION_SEND: {
+                Block bestBlock = repository.getBestBlock();
                 log.info("transaction received");
                 boolean isList = msg.getBody().get(0).asBoolean();
                 Transaction[] txs = isList ? msg.getBody().get(1).as(Transaction[].class) :
                         new Transaction[]{msg.getBody().get(1).as(Transaction.class)};
-                transactionPool.collect(Arrays.asList(txs));
+                transactionPool.collect(bestBlock, Arrays.asList(txs));
                 sendNull(msg.getNonce());
                 break;
             }

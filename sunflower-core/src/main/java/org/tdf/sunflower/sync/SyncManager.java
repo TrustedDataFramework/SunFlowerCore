@@ -175,6 +175,7 @@ public class SyncManager implements PeerServerListener, Closeable {
     @SneakyThrows
     private void onMessageInternal(Context context, PeerServer server) {
         Optional<SyncMessage> o = SyncMessage.decode(context.getMessage());
+        Block bestBlock = repository.getBestBlock();;
         if (!o.isPresent()) return;
         SyncMessage msg = o.get();
         log.debug("receive {} message from {}", msg.getCode(), context.getRemote());
@@ -216,7 +217,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 if (receivedTransactions.asMap().containsKey(root))
                     return;
                 receivedTransactions.put(root, true);
-                transactionPool.collect(txs);
+                transactionPool.collect(bestBlock, txs);
                 context.relay();
                 return;
             }
