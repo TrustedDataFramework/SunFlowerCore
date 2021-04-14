@@ -34,6 +34,7 @@ public class PoA extends AbstractConsensusEngine {
     private PoAValidator poAValidator;
     private Authentication authContract;
     private Authentication minerContract;
+    private Authentication farmbaseContract;
     private List<PreBuiltContract> preBuiltContracts;
 
 
@@ -130,8 +131,19 @@ public class PoA extends AbstractConsensusEngine {
                 Constants.POA_AUTHENTICATION_ADDR
         );
 
+
+        List<HexBytes> list = new ArrayList<>();
+        list.add(HexBytes.fromHex("03e8d8894729c719526af67da49f8476d706c1883986daf0a04b4ced186e2468d7"));
+        this.farmbaseContract = new Authentication(
+                list,
+                Constants.FARMBASE_CONTRACT_ADDR
+        );
+
+
+
         preBuiltContracts.add(this.authContract);
         preBuiltContracts.add(this.minerContract);
+        preBuiltContracts.add(this.farmbaseContract);
 
         initStateTrie();
 
@@ -142,6 +154,9 @@ public class PoA extends AbstractConsensusEngine {
 
         this.minerContract.setAccountTrie(trie);
         this.minerContract.setContractStorageTrie(getContractStorageTrie());
+
+        this.farmbaseContract.setAccountTrie(trie);
+        this.setContractStorageTrie(getContractStorageTrie());
 
         poaMiner = new PoAMiner(getAccountTrie(), getEventBus(), poAConfig, this);
         poaMiner.setBlockRepository(this.getSunflowerRepository());
@@ -178,5 +193,10 @@ public class PoA extends AbstractConsensusEngine {
     @Override
     public String getName() {
         return "poa";
+    }
+
+
+    public List<HexBytes> getFarmbases(byte[] parentStateRoot) {
+        return farmbaseContract.getNodes(parentStateRoot);
     }
 }
