@@ -50,8 +50,8 @@ public class Genesis {
 
     @Getter
     public static class ValidatorInfo{
-        @JsonProperty("pk")
-        public HexBytes pk;
+        @JsonProperty("addr")
+        public HexBytes address;
     }
 
     // 去重后的矿工地址
@@ -73,9 +73,9 @@ public class Genesis {
             return Collections.emptyList();
         List<HexBytes> ret = new ArrayList<>();
         for (ValidatorInfo m : validator) {
-            if (ret.contains(m.getPk()))
+            if (ret.contains(m.getAddress()))
                 throw new RuntimeException("duplicated validator pk");
-            ret.add(m.getPk());
+            ret.add(m.getAddress());
         }
         return ret;
     }

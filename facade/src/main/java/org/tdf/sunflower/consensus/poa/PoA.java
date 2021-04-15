@@ -34,7 +34,7 @@ public class PoA extends AbstractConsensusEngine {
     private PoAValidator poAValidator;
     private Authentication authContract;
     private Authentication minerContract;
-    private Authentication farmbaseContract;
+    private Authentication validatorContract;
     private List<PreBuiltContract> preBuiltContracts;
 
 
@@ -132,16 +132,16 @@ public class PoA extends AbstractConsensusEngine {
         );
 
 
-        this.farmbaseContract = new Authentication(genesis.validator == null ? Collections.emptyList() :
+        this.validatorContract = new Authentication(genesis.validator == null ? Collections.emptyList() :
                 genesis.filtersValidators(),
-                Constants.FARMBASE_CONTRACT_ADDR
+                Constants.VALIDATOR_CONTRACT_ADDR
         );
 
 
 
         preBuiltContracts.add(this.authContract);
         preBuiltContracts.add(this.minerContract);
-        preBuiltContracts.add(this.farmbaseContract);
+        preBuiltContracts.add(this.validatorContract);
 
         initStateTrie();
 
@@ -153,8 +153,8 @@ public class PoA extends AbstractConsensusEngine {
         this.minerContract.setAccountTrie(trie);
         this.minerContract.setContractStorageTrie(getContractStorageTrie());
 
-        this.farmbaseContract.setAccountTrie(trie);
-        this.farmbaseContract.setContractStorageTrie(getContractStorageTrie());
+        this.validatorContract.setAccountTrie(trie);
+        this.validatorContract.setContractStorageTrie(getContractStorageTrie());
 
         poaMiner = new PoAMiner(getAccountTrie(), getEventBus(), poAConfig, this);
         poaMiner.setBlockRepository(this.getSunflowerRepository());
@@ -194,7 +194,7 @@ public class PoA extends AbstractConsensusEngine {
     }
 
 
-    public List<HexBytes> getFarmbases(byte[] parentStateRoot) {
-        return farmbaseContract.getNodes(parentStateRoot);
+    public List<HexBytes> getValidators(byte[] parentStateRoot) {
+        return validatorContract.getNodes(parentStateRoot);
     }
 }

@@ -6,6 +6,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
+import org.tdf.sunflower.state.Authentication;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 
@@ -51,11 +52,15 @@ public class PoAValidator extends AbstractValidator {
 
     @Override
     public ValidateResult validate(Block dependency, Transaction transaction) {
+        Authentication.Method m = Authentication.Method.values()[transaction.getPayload().get(0)];
         if (transaction.getVersion() != PoAConstants.TRANSACTION_VERSION) {
             return ValidateResult.fault("transaction version not match");
         }
-        if (!poA.getFarmbases(dependency.getStateRoot().getBytes()).contains(transaction.getFrom()))
-            return ValidateResult.fault("from address is not in the farmbase");
+        if (!m.equals(Authentication.Method.JOIN_NODE)){
+            if (poA.getValidators(dependency.getStateRoot().getBytes()).contains(transaction.getFrom()))
+                return ValidateResult.fault("from address is not in the farmbase");
+        }
+
         return ValidateResult.success();
     }
 

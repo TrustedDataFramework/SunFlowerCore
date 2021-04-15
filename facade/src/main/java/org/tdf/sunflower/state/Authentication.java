@@ -114,11 +114,16 @@ public class Authentication implements PreBuiltContract {
                 }
 
                 approves.get().add(transaction.getFromAddress());
-                if (approves.get().size() >= divideAndCeil(nodes.size() * 2, 3)) {
+                if (transaction.getTo().equals(Constants.VALIDATOR_CONTRACT_ADDR)){
                     pending.remove(toApprove);
                     nodes.add(toApprove);
-                } else {
-                    pending.put(toApprove, approves.get());
+                }else {
+                    if (approves.get().size() >= divideAndCeil(nodes.size() * 2, 3)) {
+                        pending.remove(toApprove);
+                        nodes.add(toApprove);
+                    } else {
+                        pending.put(toApprove, approves.get());
+                    }
                 }
                 contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
                 break;

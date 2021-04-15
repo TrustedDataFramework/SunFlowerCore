@@ -4,17 +4,21 @@
   "miners": [{
       "addr": "9cbf30db111483e4b84e77ca0e39378fd7605e1b"
       // "addr": "bf0aba026e5a0e1a69094c8a0d19d905367d64cf"
-    }
+    },
+    {
+     "addr": "bf0aba026e5a0e1a69094c8a0d19d905367d64cf"
+        }
+
   ],
   "alloc":{
         "9cbf30db111483e4b84e77ca0e39378fd7605e1b": 1000000,
         "bf0aba026e5a0e1a69094c8a0d19d905367d64cf": 1000000
   },
   "validator":[{
-        "pk":"02f9d915954e04107d11fb9689a6330c22199e1e830857bff076e033bbca2888d4"
+        "addr":"9cbf30db111483e4b84e77ca0e39378fd7605e1b"
       },
       {
-        "pk":"02b507fe1afd0cc7a525488292beadbe9f143784de44f8bc1c991636509fd50936"
+        "addr":"bf0aba026e5a0e1a69094c8a0d19d905367d64cf"
       }
   ]
 }
