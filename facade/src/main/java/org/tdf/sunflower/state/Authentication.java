@@ -21,6 +21,7 @@ import java.util.*;
  * used for node join/exit
  */
 public class Authentication implements PreBuiltContract {
+
     static final byte[] NODES_KEY = "nodes".getBytes(StandardCharsets.US_ASCII);
     static final byte[] PENDING_NODES_KEY = "pending".getBytes(StandardCharsets.US_ASCII);
     private final Collection<? extends HexBytes> nodes;
@@ -100,10 +101,18 @@ public class Authentication implements PreBuiltContract {
                 break;
             }
             case APPROVE_JOIN: {
+                HexBytes toApprove = transaction.getPayload().slice(1);
+
+                if (transaction.getTo().equals(Constants.VALIDATOR_CONTRACT_ADDR)){
+                    pending.remove(toApprove);
+                    nodes.add(toApprove);
+                    contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
+                    break;
+                }
+
                 if (!nodes.contains(transaction.getFromAddress())) {
                     throw new RuntimeException("authentication contract error: cannot approve " + transaction.getFromAddress() + " is not in nodes list");
                 }
-                HexBytes toApprove = transaction.getPayload().slice(1);
 
                 Optional<TreeSet<HexBytes>> approves = pending.get(toApprove);
                 if (!approves.isPresent())
@@ -114,21 +123,19 @@ public class Authentication implements PreBuiltContract {
                 }
 
                 approves.get().add(transaction.getFromAddress());
-                if (transaction.getTo().equals(Constants.VALIDATOR_CONTRACT_ADDR)){
+
+                if (approves.get().size() >= divideAndCeil(nodes.size() * 2, 3)) {
                     pending.remove(toApprove);
                     nodes.add(toApprove);
-                }else {
-                    if (approves.get().size() >= divideAndCeil(nodes.size() * 2, 3)) {
-                        pending.remove(toApprove);
-                        nodes.add(toApprove);
-                    } else {
-                        pending.put(toApprove, approves.get());
-                    }
+                } else {
+                    pending.put(toApprove, approves.get());
                 }
+
                 contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
                 break;
             }
             case EXIT: {
+
                 HexBytes fromAddr = transaction.getFromAddress();
                 if (!nodes.contains(fromAddr))
                     throw new RuntimeException("authentication contract error: " + fromAddr + " not in nodes");

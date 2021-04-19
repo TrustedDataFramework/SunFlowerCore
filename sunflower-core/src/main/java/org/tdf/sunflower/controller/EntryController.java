@@ -22,6 +22,7 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.GlobalConfig;
+import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
@@ -320,6 +321,14 @@ public class EntryController {
     @GetMapping(value = "/stat", produces = MediaType.APPLICATION_JSON_VALUE)
     public Stat stat() {
         return createState();
+    }
+
+    // if thread node not receive farm base transaciont and gateway node restarted
+    // needs to construct the transaction
+    @GetMapping(value = "/farmBaseTransactions", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<Transaction> farmBaseTransactions() {
+        PoA poa = (PoA) consensusEngine;
+        return poa.farmBaseTransactions;
     }
 
     // get the nearest block after or equals to the timestamp

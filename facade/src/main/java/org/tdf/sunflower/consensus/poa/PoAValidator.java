@@ -12,6 +12,8 @@ import org.tdf.sunflower.types.*;
 
 @Setter
 public class PoAValidator extends AbstractValidator {
+    public static final HexBytes FARM_BASE_ADMIN = HexBytes.fromHex("");
+
     private final PoA poA;
 
     public PoAValidator(StateTrie<HexBytes, Account> accountTrie, PoA poA) {
@@ -52,14 +54,55 @@ public class PoAValidator extends AbstractValidator {
 
     @Override
     public ValidateResult validate(Block dependency, Transaction transaction) {
-        Authentication.Method m = Authentication.Method.values()[transaction.getPayload().get(0)];
-        if (transaction.getVersion() != PoAConstants.TRANSACTION_VERSION) {
-            return ValidateResult.fault("transaction version not match");
+        HexBytes farmBaseAdmin = HexBytes.fromHex(poA.getPoAConfig().getFarmBaseAdmin());
+
+        switch (poA.getPoAConfig().getRole()) {
+            case "gateway": {
+                // for farm base node, only accept transaction from farm-base admin
+                if (transaction.getVersion() != 0 || !transaction.getFrom().equals(farmBaseAdmin)) {
+                    return ValidateResult.fault(
+                            String.format(
+                                    "farmbase only accept admin transaction with network id = 0, while from = %s, network id = %s",
+                                    transaction.getFrom(),
+                                    transaction.getVersion()
+                            )
+                    );
+                }
+                break;
+            }
+
+            // for thread node, only accept transaction with thread id or zero
+            case "thread": {
+                if (transaction.getVersion() != 0 && transaction.getVersion() != poA.getPoAConfig().getThreadId()) {
+                    return ValidateResult.fault(
+                            String.format(
+                                    "this thread only accept transaction with thread id = %s, while id = %s received",
+                                    poA.getPoAConfig().getThreadId(),
+                                    transaction.getVersion()
+                            )
+                    );
+                }
+
+                if(transaction.getVersion() == 0 && !transaction.getFrom().equals(farmBaseAdmin)) {
+                    return ValidateResult.fault("transaction with zero version should received from farmbase");
+                }
+
+                break;
+            }
+            default: {
+                throw new RuntimeException("invalid role");
+            }
         }
-        if (!m.equals(Authentication.Method.JOIN_NODE)){
-            if (poA.getValidators(dependency.getStateRoot().getBytes()).contains(transaction.getFrom()))
-                return ValidateResult.fault("from address is not in the farmbase");
-        }
+
+
+        if (!transaction.getFrom().equals(farmBaseAdmin)
+                && !poA.getValidators(
+                        dependency.getStateRoot().getBytes())
+                .contains(transaction.getFromAddress()
+                 )
+        )
+            return ValidateResult.fault("from address is not approved");
+
 
         return ValidateResult.success();
     }

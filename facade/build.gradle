@@ -42,4 +42,6 @@ dependencies {
     compileOnly "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"
     compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-properties:${jacksonVersion}"
+    compileOnly "com.google.guava:guava:${guavaVersion}"
+
 }

@@ -25,6 +25,23 @@ public class PoAConfig implements MinerConfig {
     @JsonProperty("max-body-size")
     private int maxBodySize;
 
+    // farm base admin's public key
+    @JsonProperty("farm-base-admin")
+    private String farmBaseAdmin;
+
+    // your role, thread or gateway
+    @JsonProperty("role") //
+    private String role;
+
+    // your thread id,
+    @JsonProperty("thread-id") //
+    private int threadId;
+
+    // your thread id,
+    @JsonProperty("gateway-node") //
+    private String gatewayNode;
+
+
     // 是否允许未认证的节点同步
     @JsonProperty("allow-unauthorized")
     private boolean allowUnauthorized;

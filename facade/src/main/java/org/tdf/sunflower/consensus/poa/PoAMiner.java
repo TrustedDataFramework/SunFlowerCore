@@ -65,6 +65,12 @@ public class PoAMiner extends AbstractMiner {
         byte[] plain = PoA.getSignaturePlain(block);
         byte[] sig = CryptoContext.sign(privateKey.getBytes(), plain);
         block.setPayload(HexBytes.fromBytes(sig));
+
+        if(poAConfig.getRole().equals("gateway")) {
+            for(int i = 1; i < block.getBody().size(); i++){
+                poA.farmBaseTransactions.add(block.getBody().get(i));
+            }
+        }
         return true;
     }
 
