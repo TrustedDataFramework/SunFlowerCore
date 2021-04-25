@@ -199,11 +199,6 @@ public class BackendImpl implements Backend {
     }
 
     @Override
-    public long getMaxDepth() {
-        return 64;
-    }
-
-    @Override
     public Map<HexBytes, PreBuiltContract> getPreBuiltContracts() {
         return preBuiltContracts;
     }

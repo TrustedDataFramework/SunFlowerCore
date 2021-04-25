@@ -1,24 +1,21 @@
 package org.tdf.sunflower.types;
 
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import lombok.*;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
+import org.tdf.rlp.RLPList;
 
+import java.util.List;
 import java.util.Map;
 
+@Getter
+@Setter
 public class BlockValidateResult extends ValidateResult {
-
-    @Getter
-    @Setter
     private long gas;
-    @Getter
-    @Setter
     private Uint256 fee;
-    @Getter
-    @Setter
     private Map<HexBytes, TransactionResult> results;
+
+    private Map<HexBytes, List<Map.Entry<String, RLPList>>> events;
 
     public BlockValidateResult(boolean success, @NonNull String reason) {
         super(success, reason);

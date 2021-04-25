@@ -7,6 +7,7 @@ import org.tdf.sunflower.types.Block;
 
 import java.util.List;
 
+// proposal new block and failed transactions to peers
 @Value
 @AllArgsConstructor
 public class NewBlockMined {

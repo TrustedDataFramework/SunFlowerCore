@@ -11,7 +11,6 @@ import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.events.NewBestBlock;
-import org.tdf.sunflower.events.NewBlockWritten;
 import org.tdf.sunflower.events.TransactionConfirmed;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.exception.GenesisConflictsException;
@@ -315,7 +314,6 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         heightIndex.put(block.getHeight(), headerHashes.toArray(new HexBytes[0]));
 
 
-        eventBus.publish(new NewBlockWritten(block));
         log.info("write block at height " + block.getHeight() + " " + block.getHeader().getHash() + " to database success");
     }
 

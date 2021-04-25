@@ -7,5 +7,5 @@ import org.tdf.sunflower.types.Block;
 @Value
 @AllArgsConstructor
 public class NewBestBlock {
-    private Block block;
+   Block block;
 }

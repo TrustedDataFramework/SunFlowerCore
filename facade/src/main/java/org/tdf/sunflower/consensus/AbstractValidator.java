@@ -79,6 +79,7 @@ public abstract class AbstractValidator implements Validator {
             if (!HexBytes.fromBytes(rootHash).equals(block.getStateRoot())) {
                 return BlockValidateResult.fault("state root not match");
             }
+            success.setEvents(tmp.getEvents());
         } catch (Exception e) {
             e.printStackTrace();
             return BlockValidateResult.fault("contract evaluation failed or " + e.getMessage());

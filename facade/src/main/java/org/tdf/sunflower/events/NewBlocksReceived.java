@@ -5,6 +5,7 @@ import org.tdf.sunflower.types.Block;
 
 import java.util.List;
 
+// used for vrf consensus
 @Value
 public class NewBlocksReceived {
     List<Block> blocks;

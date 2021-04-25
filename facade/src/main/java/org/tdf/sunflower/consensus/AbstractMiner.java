@@ -6,8 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.events.TransactionFailed;
-import org.tdf.sunflower.events.TransactionIncluded;
+import org.tdf.sunflower.events.TransactionOutput;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
@@ -90,11 +89,12 @@ public abstract class AbstractMiner implements Miner {
         );
 
         transactionList.add(0, coinbase);
-        Map<HexBytes, TransactionResult> m = new HashMap<>();
+        Map<HexBytes, TransactionResult> results = new HashMap<>();
         Uint256 totalFee = Uint256.ZERO;
 
         List<HexBytes> failedTransactions = new ArrayList<>();
         List<String> reasons = new ArrayList<>();
+        Map<HexBytes, String> failedMessages = new HashMap<>();
 
         for (Transaction tx : transactionList.subList(1, transactionList.size())) {
             // try to fetch transaction from pool
@@ -108,16 +108,16 @@ public abstract class AbstractMiner implements Miner {
                 VMExecutor vmExecutor = new VMExecutor(tmp, callData, new Limit(), 0);
                 TransactionResult res = vmExecutor.execute();
                 totalFee = totalFee.safeAdd(res.getFee());
-                m.put(tx.getHash(), res);
+                results.put(tx.getHash(), res);
             } catch (Exception e) {
                 tmp = tmp.getParentBackend();
                 // prompt reason for failed updates
                 e.printStackTrace();
                 failedTransactions.add(tx.getHash());
                 reasons.add(e.getMessage());
+                failedMessages.put(tx.getHash(), e.getMessage());
                 log.error("execute transaction " + tx.getHash() + " failed, reason = " + e.getMessage());
                 getTransactionPool().drop(tx);
-                eventBus.publish(new TransactionFailed(tx.getHash(), e.getMessage()));
                 continue;
             }
             b.getBody().add(tx);
@@ -147,11 +147,14 @@ public abstract class AbstractMiner implements Miner {
             return BlockCreateResult.empty();
         }
 
-        b.getBody().stream().skip(1)
-                .forEach(tx -> {
-                    TransactionResult res = m.get(tx.getHash());
-                    eventBus.publish(new TransactionIncluded(tx.getHash(), b, res.getGasUsed(), res.getReturns(), res.getEvents()));
-                });
+        eventBus.publish(new TransactionOutput(
+                b.getHeight(),
+                b.getHash(),
+                results,
+                tmp.getEvents(),
+                failedMessages
+        ));
+
         return new BlockCreateResult(b, failedTransactions, reasons);
     }
 }

@@ -63,13 +63,18 @@ public class TransactionPoolImpl implements TransactionPool {
         this.transactionRepository = repository;
         this.mCache = new HashMap<>();
 
-        this.eventBus.subscribe(TransactionIncluded.class, (e) -> {
-            WebSocket.broadCastIncluded(e.getTxHash(), e.getBlock().getHeight(), e.getBlock().getHash(), e.getGasUsed(), e.getReturns(), e.getEvents());
+        this.eventBus.subscribe(TransactionOutput.class, e -> {
+           e.getResults().forEach((h, r) -> {
+               WebSocket.broadCastIncluded(h, e.getBlockHeight(), e.getBlockHash(), r.getGasUsed(), r.getReturns(), r.getEvents());
+           });
+           e.getReasons().forEach(WebSocket::broadcastDrop);
+           e.getEvents().forEach((addr, events) -> {
+               events.forEach(event -> {
+                   WebSocket.broadcastEvent(addr.getBytes(), event.getKey(), event.getValue());
+               });
+           });
         });
 
-        this.eventBus.subscribe(TransactionFailed.class, (e) -> {
-            WebSocket.broadcastDrop(e.getTxHash(), e.getReason());
-        });
 
         this.eventBus.subscribe(TransactionConfirmed.class, (e) -> {
             WebSocket.broadcastPendingOrConfirm(e.getTxHash(), Transaction.Status.CONFIRMED);

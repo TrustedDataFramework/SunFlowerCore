@@ -25,7 +25,6 @@ public class CallData {
                 Address.empty(),
                 HexBytes.empty(),
                 0,
-                HexBytes.empty(),
                 0,
                 Uint256.ZERO,
                 0
@@ -45,7 +44,6 @@ public class CallData {
                 tx.isCoinbase() ? Address.empty() : tx.getFromAddress(),
                 tx.getHash(),
                 tx.getNonce(),
-                tx.getSignature(),
                 tx.getCreatedAt(),
                 tx.getGasPrice(),
                 tx.getGasLimit()
@@ -64,7 +62,6 @@ public class CallData {
     private HexBytes origin;
     private HexBytes txHash;
     private long txNonce;
-    private HexBytes txSignature;
     private long txCreatedAt;
     private Uint256 gasPrice;
     private long gasLimit;
@@ -73,7 +70,7 @@ public class CallData {
         return new CallData(
                 caller, amount, txAmount, to, txTo,
                 txType, callType, payload, origin, txHash,
-                txNonce, txSignature, txCreatedAt,
+                txNonce, txCreatedAt,
                 gasPrice, gasLimit
         );
     }

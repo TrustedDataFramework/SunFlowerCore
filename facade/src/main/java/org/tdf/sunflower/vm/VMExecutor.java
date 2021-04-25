@@ -47,6 +47,8 @@ public class VMExecutor {
 
 
     public VMExecutor clone() {
+        if(depth == 63)
+            throw new RuntimeException("vm call depth overflow");
         return new VMExecutor(backend, callData.clone(), limit, depth + 1);
     }
 

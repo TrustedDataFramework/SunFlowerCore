@@ -14,6 +14,7 @@ import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
+import org.tdf.sunflower.controller.WebSocket;
 import org.tdf.sunflower.events.*;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.Context;
@@ -223,7 +224,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 Proposal p = msg.getBodyAs(Proposal.class);
                 Block proposal = p.getBlock();
                 for (int i = 0; i < p.getFailedTransactions().size(); i++) {
-                    eventBus.publish(new TransactionFailed(p.getFailedTransactions().get(i), p.getReasons().get(i)));
+                    WebSocket.broadcastDrop(p.getFailedTransactions().get(i), p.getReasons().get(i));
                 }
                 if (proposal == null)
                     return;
@@ -579,12 +580,14 @@ public class SyncManager implements PeerServerListener, Closeable {
                     continue;
                 }
                 it.remove();
-                Map<HexBytes, TransactionResult> rs = ((BlockValidateResult) res).getResults();
-                b.getBody().stream().filter(x -> x.getType() != Transaction.Type.COIN_BASE.code)
-                        .forEach(t -> {
-                            TransactionResult r = rs.get(t.getHash());
-                            eventBus.publish(new TransactionIncluded(t.getHash(), b, r.getGasUsed(), r.getReturns(), r.getEvents()));
-                        });
+                BlockValidateResult rs = ((BlockValidateResult) res);
+                eventBus.publish(new TransactionOutput(
+                        b.getHeight(),
+                        b.getHash(),
+                        rs.getResults(),
+                        rs.getEvents(),
+                        Collections.emptyMap()
+                ));
                 repository.writeBlock(b);
             }
         } finally {

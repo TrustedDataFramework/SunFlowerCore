@@ -69,9 +69,6 @@ public class ContextHost extends HostFunction {
             case TX_TO: {
                 return WBI.mallocAddress(getInstance(), callData.getTxTo().getBytes());
             }
-            case TX_SIGNATURE: {
-                return WBI.mallocBytes(getInstance(), callData.getTxSignature().getBytes());
-            }
             case TX_HASH: {
                 return WBI.mallocBytes(getInstance(), callData.getTxHash().getBytes());
             }
@@ -130,7 +127,6 @@ public class ContextHost extends HostFunction {
         TX_GAS_PRICE,
         TX_AMOUNT,
         TX_TO,
-        TX_SIGNATURE,
         TX_HASH,
         CONTRACT_ADDRESS,
         CONTRACT_NONCE,

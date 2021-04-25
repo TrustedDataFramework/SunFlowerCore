@@ -35,7 +35,6 @@ public interface Backend {
 
     long getInitialGas(int payloadSize);
 
-    long getMaxDepth();
 
     Map<HexBytes, PreBuiltContract> getPreBuiltContracts();
 
