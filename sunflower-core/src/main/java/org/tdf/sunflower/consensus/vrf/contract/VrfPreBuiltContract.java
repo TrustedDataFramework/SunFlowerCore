@@ -8,7 +8,6 @@ import org.tdf.sunflower.Start;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.PreBuiltContract;
-import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.vm.Backend;

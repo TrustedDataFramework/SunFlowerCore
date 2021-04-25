@@ -11,7 +11,6 @@ import org.tdf.sunflower.types.Transaction;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 
 public interface SunflowerRepository extends BlockRepository, TransactionRepository {
 

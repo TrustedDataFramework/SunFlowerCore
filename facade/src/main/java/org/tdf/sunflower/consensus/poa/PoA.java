@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -115,7 +114,6 @@ public class PoA extends AbstractConsensusEngine {
     public List<Transaction> farmBaseTransactions = new Vector<>();
 
 
-
     @Override
     public void init(Properties properties) {
 
@@ -141,7 +139,7 @@ public class PoA extends AbstractConsensusEngine {
         setPeerServerListener(PeerServerListener.NONE);
         // create state repository
 
-        if(poAConfig.getRole().equals("thread")){
+        if (poAConfig.getRole().equals("thread")) {
             int core = Runtime.getRuntime().availableProcessors();
             executorService = Executors.newScheduledThreadPool(
                     core > 1 ? core / 2 : core,
@@ -150,7 +148,7 @@ public class PoA extends AbstractConsensusEngine {
 
             executorService.scheduleAtFixedRate(() ->
                     {
-                        try{
+                        try {
                             URL url = new URL(poAConfig.getGatewayNode());
                             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
@@ -158,17 +156,17 @@ public class PoA extends AbstractConsensusEngine {
                             InputStream responseStream = connection.getInputStream();
                             JsonNode n = objectMapper.readValue(responseStream, JsonNode.class);
                             Transaction[] txs = objectMapper.convertValue(n.get("data"), Transaction[].class);
-                            for (Transaction tx: txs) {
-                                if(!getSunflowerRepository().containsTransaction(tx.getHash().getBytes())){
+                            for (Transaction tx : txs) {
+                                if (!getSunflowerRepository().containsTransaction(tx.getHash().getBytes())) {
                                     Block best = getSunflowerRepository().getBestBlock();
                                     getTransactionPool().collect(best, tx);
                                 }
                             }
-                        }catch (Exception e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
 
-                }, 0, 30, TimeUnit.SECONDS
+                    }, 0, 30, TimeUnit.SECONDS
             );
         }
 
@@ -188,7 +186,6 @@ public class PoA extends AbstractConsensusEngine {
                 genesis.filtersValidators(),
                 Constants.VALIDATOR_CONTRACT_ADDR
         );
-
 
 
         preBuiltContracts.add(this.authContract);
@@ -227,13 +224,13 @@ public class PoA extends AbstractConsensusEngine {
         String method = body == null ? null : body.get("method").asText();
         if (address.equals(Constants.POA_AUTHENTICATION_ADDR) || address.equals(Constants.PEER_AUTHENTICATION_ADDR) || address.equals(Constants.VALIDATOR_CONTRACT_ADDR)) {
             Authentication auth = null;
-            if (address.equals(Constants.POA_AUTHENTICATION_ADDR) ) {
+            if (address.equals(Constants.POA_AUTHENTICATION_ADDR)) {
                 auth = minerContract;
             }
             if (address.equals(Constants.PEER_AUTHENTICATION_ADDR)) {
                 auth = authContract;
             }
-            if(address.equals(Constants.VALIDATOR_CONTRACT_ADDR)) {
+            if (address.equals(Constants.VALIDATOR_CONTRACT_ADDR)) {
                 auth = validatorContract;
             }
             switch (Objects.requireNonNull(method)) {

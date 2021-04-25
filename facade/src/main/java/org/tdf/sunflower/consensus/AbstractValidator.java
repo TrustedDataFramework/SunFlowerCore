@@ -6,7 +6,6 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.SafeMath;
 import org.tdf.sunflower.facade.Validator;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.ForkedStateTrie;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.Backend;

@@ -42,7 +42,7 @@ public class PoWMiner extends AbstractMiner {
         this.poW = pow;
 
         getEventBus().subscribe(NewBestBlock.class, e -> {
-            if(e.getBlock().getHeight() >= this.currentMiningHeight){
+            if (e.getBlock().getHeight() >= this.currentMiningHeight) {
                 // cancel mining
                 this.working = false;
                 this.currentMiningHeight = 0;
@@ -83,7 +83,7 @@ public class PoWMiner extends AbstractMiner {
         log.info("start finish pow target = {}", HexBytes.fromBytes(nbits));
         this.working = true;
         while (PoW.compare(PoW.getPoWHash(block), nbits) > 0) {
-            if(!working){
+            if (!working) {
                 log.info("mining canceled");
                 return false;
             }
@@ -144,7 +144,7 @@ public class PoWMiner extends AbstractMiner {
         log.debug("try to mining at height " + (best.getHeight() + 1));
         this.currentMiningHeight = best.getHeight() + 1;
         long current = System.currentTimeMillis() / 1000;
-        if(current <= best.getCreatedAt())
+        if (current <= best.getCreatedAt())
             return;
         Runnable task = () -> {
             try {

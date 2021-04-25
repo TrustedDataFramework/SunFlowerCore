@@ -6,7 +6,6 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
-import org.tdf.sunflower.state.Authentication;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 
@@ -83,7 +82,7 @@ public class PoAValidator extends AbstractValidator {
                     );
                 }
 
-                if(transaction.getVersion() == 0 && !transaction.getFrom().equals(farmBaseAdmin)) {
+                if (transaction.getVersion() == 0 && !transaction.getFrom().equals(farmBaseAdmin)) {
                     return ValidateResult.fault("transaction with zero version should received from farmbase");
                 }
 
@@ -97,9 +96,9 @@ public class PoAValidator extends AbstractValidator {
 
         if (!transaction.getFrom().equals(farmBaseAdmin)
                 && !poA.getValidators(
-                        dependency.getStateRoot().getBytes())
+                dependency.getStateRoot().getBytes())
                 .contains(transaction.getFromAddress()
-                 )
+                )
         )
             return ValidateResult.fault("from address is not approved");
 

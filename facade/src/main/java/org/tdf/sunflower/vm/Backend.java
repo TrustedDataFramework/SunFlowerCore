@@ -14,32 +14,48 @@ import java.util.Map;
 
 public interface Backend {
     long getHeight();
+
     HexBytes getParentHash();
+
     Uint256 getBalance(HexBytes address);
+
     long getHeaderCreatedAt();
+
     void setBalance(HexBytes address, Uint256 balance);
+
     long getNonce(HexBytes address);
+
     void setNonce(HexBytes address, long nonce);
 
 
     List<ContractABI> getABI(HexBytes address);
+
     void setABI(HexBytes address, List<ContractABI> abi);
 
 
     long getInitialGas(int payloadSize);
+
     long getMaxDepth();
+
     Map<HexBytes, PreBuiltContract> getPreBuiltContracts();
+
     Map<HexBytes, Bios> getBios();
 
     void dbSet(HexBytes address, byte[] key, byte[] value);
+
     // return empty byte array if key not found
     byte[] dbGet(HexBytes address, byte[] key);
+
     boolean dbHas(HexBytes address, byte[] key);
+
     HexBytes getContractCreatedBy(HexBytes address);
+
     void setContractCreatedBy(HexBytes address, HexBytes createdBy);
+
     void dbRemove(HexBytes address, byte[] key);
 
     byte[] getCode(HexBytes address);
+
     void setCode(HexBytes address, byte[] code);
 
     void onEvent(HexBytes address, String eventName, RLPList eventData);

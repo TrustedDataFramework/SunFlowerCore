@@ -33,7 +33,7 @@ public class Limit implements Hook {
     private long gasLimit;
 
 
-    public void addGas(long gas){
+    public void addGas(long gas) {
         initialGas += gas;
     }
 

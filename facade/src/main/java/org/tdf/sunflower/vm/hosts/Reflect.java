@@ -11,7 +11,10 @@ import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.WBI;
-import org.tdf.sunflower.vm.abi.*;
+import org.tdf.sunflower.vm.abi.AbiDataType;
+import org.tdf.sunflower.vm.abi.ContractABI;
+import org.tdf.sunflower.vm.abi.ContractCallPayload;
+import org.tdf.sunflower.vm.abi.ContractDeployPayload;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,23 +86,23 @@ public class Reflect extends HostFunction {
 
         RLPItem it = result.get(0).asRLPItem();
         switch (AbiDataType.values()[params.getReturnType()[0]]) {
-                    case F64:
-                    case I64:
-                    case BOOL:
-                    case U64:
-                        return it.asLong();
-                    case U256: {
-                        return WBI.malloc(getInstance(), it.as(Uint256.class));
-                    }
-                    case STRING: {
-                        return WBI.malloc(getInstance(), it.asString());
-                    }
-                    case BYTES: {
-                        return WBI.mallocBytes(getInstance(), it.asBytes());
-                    }
-                    case ADDRESS: {
-                        return WBI.mallocAddress(getInstance(), it.asBytes());
-                    }
+            case F64:
+            case I64:
+            case BOOL:
+            case U64:
+                return it.asLong();
+            case U256: {
+                return WBI.malloc(getInstance(), it.as(Uint256.class));
+            }
+            case STRING: {
+                return WBI.malloc(getInstance(), it.asString());
+            }
+            case BYTES: {
+                return WBI.mallocBytes(getInstance(), it.asBytes());
+            }
+            case ADDRESS: {
+                return WBI.mallocAddress(getInstance(), it.asBytes());
+            }
         }
         throw new RuntimeException("unexpected");
     }

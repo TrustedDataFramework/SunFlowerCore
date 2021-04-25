@@ -28,7 +28,7 @@ public class PrefixStore<K, V> implements IterableStore<K, V> {
     }
 
     private byte[] verifyAndPrefix(byte[] key) {
-        if(key.length == 0)
+        if (key.length == 0)
             throw new RuntimeException("invalid key, length = 0");
         return Bytes.concat(prefix, key);
     }

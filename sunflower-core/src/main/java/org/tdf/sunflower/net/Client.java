@@ -139,7 +139,7 @@ public class Client implements ChannelListener {
         addPeer(remote, channel);
     }
 
-    private void addPeer(PeerImpl remote, Channel channel){
+    private void addPeer(PeerImpl remote, Channel channel) {
         if (remote.equals(self)) {
             channel.close("close channel connect to self");
         }

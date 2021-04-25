@@ -1,10 +1,8 @@
 package org.tdf.sunflower.net;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.JsonStore;
-import org.tdf.common.store.Store;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
@@ -96,7 +94,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             client.trust(config.getTrusted());
         }
         // connect to stored peers when server restarts
-        peerStore.forEach( k -> {
+        peerStore.forEach(k -> {
             if ("self".equals(k.getKey()))
                 return;
             PeerImpl peer = PeerImpl.parse(k.getValue().asText()).get();

@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -192,7 +191,7 @@ public class WebSocket {
                         HexBytes.fromBytes(address)
                 );
 
-                if(a == null)
+                if (a == null)
                     a = Account.emptyAccount(HexBytes.fromBytes(address), Uint256.ZERO);
 
                 sendResponse(msg.getNonce(), WebSocketMessage.Code.ACCOUNT_QUERY, a);
@@ -203,7 +202,7 @@ public class WebSocket {
                 String method = msg.getBody().get(1).asString();
                 Parameters parameters = msg.getBody().get(2)
                         .as(Parameters.class);
-                RLPList result =  accountTrie.call(repository.getBestHeader(), HexBytes.fromBytes(address), method, parameters);
+                RLPList result = accountTrie.call(repository.getBestHeader(), HexBytes.fromBytes(address), method, parameters);
                 sendResponse(msg.getNonce(), WebSocketMessage.Code.CONTRACT_QUERY, result);
                 break;
             }

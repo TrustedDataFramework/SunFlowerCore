@@ -4,7 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.fusesource.leveldbjni.JniDBFactory;
 import org.iq80.leveldb.impl.Iq80DBFactory;
 import org.springframework.stereotype.Component;
-import org.tdf.common.store.*;
+import org.tdf.common.store.DBSettings;
+import org.tdf.common.store.DatabaseStore;
+import org.tdf.common.store.LevelDb;
+import org.tdf.common.store.MemoryDatabaseStore;
 import org.tdf.sunflower.DatabaseConfig;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
 

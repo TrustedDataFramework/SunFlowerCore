@@ -72,11 +72,11 @@ public class BackendImpl implements Backend {
             parentBackend.mergeInternal(accounts, storage);
         }
 
-       modifiedAccounts.forEach(accounts::put);
-       for (Map.Entry<HexBytes, Map<HexBytes, byte[]>> entries : storage.entrySet()) {
-           storage.putIfAbsent(entries.getKey(), new HashMap<>());
-           storage.get(entries.getKey()).putAll(entries.getValue());
-       }
+        modifiedAccounts.forEach(accounts::put);
+        for (Map.Entry<HexBytes, Map<HexBytes, byte[]>> entries : storage.entrySet()) {
+            storage.putIfAbsent(entries.getKey(), new HashMap<>());
+            storage.get(entries.getKey()).putAll(entries.getValue());
+        }
     }
 
     @Override
@@ -91,14 +91,14 @@ public class BackendImpl implements Backend {
 
         Trie<HexBytes, Account> tmpTrie = trie.revert(parent.getStateRoot().getBytes());
 
-        for(HexBytes addr: modified) {
+        for (HexBytes addr : modified) {
             Account a = accounts.get(addr);
-            if(a == null)
+            if (a == null)
                 a = Account.emptyAccount(addr, Uint256.ZERO);
             Trie<byte[], byte[]> s = contractStorageTrie.revert(a.getStorageRoot());
 
-            for (Map.Entry<HexBytes, byte[]> entry: storage.get(addr).entrySet()) {
-                if(entry.getValue() == null || entry.getValue().length == 0) {
+            for (Map.Entry<HexBytes, byte[]> entry : storage.get(addr).entrySet()) {
+                if (entry.getValue() == null || entry.getValue().length == 0) {
                     s.remove(entry.getKey().getBytes());
                 } else {
                     s.put(entry.getKey().getBytes(), entry.getValue());
@@ -211,15 +211,15 @@ public class BackendImpl implements Backend {
 
     @Override
     public void dbSet(HexBytes address, @NonNull byte[] key, @NonNull byte[] value) {
-        if(key.length == 0)
+        if (key.length == 0)
             throw new RuntimeException("invalid key length = 0");
-        modifiedStorage.putIfAbsent(address , new HashMap<>());
+        modifiedStorage.putIfAbsent(address, new HashMap<>());
         modifiedStorage.get(address).put(HexBytes.fromBytes(key), HexBytes.fromBytes(value));
     }
 
     @Override
     public byte[] dbGet(HexBytes address, byte[] key) {
-        if(key.length == 0)
+        if (key.length == 0)
             throw new RuntimeException("invalid key length = 0");
 
         // if has modified
@@ -276,7 +276,7 @@ public class BackendImpl implements Backend {
 
     @Override
     public void dbRemove(HexBytes address, @NonNull byte[] key) {
-        if(key.length == 0)
+        if (key.length == 0)
             throw new RuntimeException("invalid key length = 0");
         dbSet(address, key, HexBytes.EMPTY_BYTES);
     }
@@ -308,7 +308,7 @@ public class BackendImpl implements Backend {
 
     @Override
     public void onEvent(HexBytes address, String eventName, RLPList eventData) {
-        if(isStatic)
+        if (isStatic)
             return;
         events.putIfAbsent(address, new ArrayList<>());
         events.get(address).add(new AbstractMap.SimpleImmutableEntry<>(eventName, eventData));

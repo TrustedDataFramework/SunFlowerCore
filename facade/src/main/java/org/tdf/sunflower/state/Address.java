@@ -10,7 +10,8 @@ import static org.tdf.sunflower.state.Account.ADDRESS_SIZE;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Address {
-    static HexBytes EMPTY =  HexBytes.fromBytes(new byte[ADDRESS_SIZE]);
+    static HexBytes EMPTY = HexBytes.fromBytes(new byte[ADDRESS_SIZE]);
+
     public static HexBytes empty() {
         return EMPTY;
     }

@@ -1,6 +1,5 @@
 package org.tdf.sunflower.facade;
 
-import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 

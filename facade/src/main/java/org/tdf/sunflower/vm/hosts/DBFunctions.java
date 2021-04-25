@@ -56,7 +56,7 @@ public class DBFunctions extends HostFunction {
             }
             case HAS: {
                 byte[] key = getKey(longs);
-                return backend.dbHas(address, key)? 1 : 0;
+                return backend.dbHas(address, key) ? 1 : 0;
             }
             case REMOVE: {
                 byte[] key = getKey(longs);
@@ -95,6 +95,6 @@ public class DBFunctions extends HostFunction {
     }
 
     enum Type {
-        SET, GET, REMOVE, HAS, 
+        SET, GET, REMOVE, HAS,
     }
 }

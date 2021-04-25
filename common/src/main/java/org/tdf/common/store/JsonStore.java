@@ -36,7 +36,7 @@ public class JsonStore implements BatchStore<String, JsonNode>, IterableStore<St
 
     @SneakyThrows
     private void sync() {
-        if(jsonFile.equals("$memory"))
+        if (jsonFile.equals("$memory"))
             return;
         byte[] bin = mapper.writeValueAsBytes(node);
         Files.write(Paths.get(this.jsonFile), bin, CREATE, TRUNCATE_EXISTING, WRITE);
@@ -46,7 +46,7 @@ public class JsonStore implements BatchStore<String, JsonNode>, IterableStore<St
     @SneakyThrows
     private void load() {
         this.node = new HashMap<>();
-        if( jsonFile.equals("$memory") )
+        if (jsonFile.equals("$memory"))
             return;
         File f = new File(jsonFile);
         if (!f.exists()) {

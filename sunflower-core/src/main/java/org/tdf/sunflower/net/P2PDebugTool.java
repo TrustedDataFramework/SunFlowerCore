@@ -6,7 +6,6 @@ import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.JsonStore;
-import org.tdf.common.store.MapStore;
 import org.tdf.sunflower.DatabaseConfig;
 import org.tdf.sunflower.PeerServerProperties;
 import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;

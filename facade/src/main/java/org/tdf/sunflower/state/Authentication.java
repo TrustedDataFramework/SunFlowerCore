@@ -87,7 +87,6 @@ public class Authentication implements PreBuiltContract {
     }
 
 
-
     @Override
     public Account getGenesisAccount() {
         return Account.emptyAccount(this.contractAddress, Uint256.ZERO);
@@ -117,7 +116,7 @@ public class Authentication implements PreBuiltContract {
             case APPROVE_JOIN: {
                 HexBytes toApprove = payload.slice(1);
 
-                if (callData.getTo().equals(Constants.VALIDATOR_CONTRACT_ADDR)){
+                if (callData.getTo().equals(Constants.VALIDATOR_CONTRACT_ADDR)) {
                     pending.remove(toApprove);
                     nodes.add(toApprove);
                     backend.dbSet(contractAddress, NODES_KEY, RLPCodec.encode(nodes));
@@ -128,7 +127,7 @@ public class Authentication implements PreBuiltContract {
                     throw new RuntimeException("authentication contract error: cannot approve " + callData.getCaller() + " is not in nodes list");
                 }
 
-               TreeSet<HexBytes> approves = pending.get(toApprove);
+                TreeSet<HexBytes> approves = pending.get(toApprove);
                 if (approves == null)
                     throw new RuntimeException("authentication contract error: cannot approve " + toApprove + " not in pending");
 

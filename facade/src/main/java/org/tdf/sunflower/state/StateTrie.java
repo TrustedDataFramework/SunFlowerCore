@@ -2,15 +2,9 @@ package org.tdf.sunflower.state;
 
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * state storage

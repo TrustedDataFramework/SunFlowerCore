@@ -69,7 +69,7 @@ public class Account {
     }
 
     public void subBalance(Uint256 amount) {
-        if(balance.compareTo(amount) < 0)
+        if (balance.compareTo(amount) < 0)
             throw new RuntimeException("balance of " + address + " is not enougth");
         this.balance = this.balance.safeSub(amount);
     }

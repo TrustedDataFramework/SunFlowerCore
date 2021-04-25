@@ -23,8 +23,6 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Slf4j(topic = "db")
@@ -108,7 +106,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         HexBytes[] txHashes = transactionsRoot
                 .get(header.getTransactionsRoot().getBytes());
         if (txHashes == null)
-                throw new ApplicationException("transactions of header " + header + " not found");
+            throw new ApplicationException("transactions of header " + header + " not found");
         List<Transaction> body = new ArrayList<>(txHashes.length);
         for (HexBytes hash : txHashes) {
             Transaction t = transactionsStore.get(hash.getBytes());
@@ -154,7 +152,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
                 for (HexBytes bytes : idx) {
                     Header h = headerStore.get(bytes.getBytes());
                     if (h == null) continue;
-                        ret.add(h);
+                    ret.add(h);
                 }
 
                 if (ret.size() > limit) break;
@@ -162,9 +160,9 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         } else {
             for (long i = startHeight; i <= stopHeight; i++) {
                 HexBytes[] idx = heightIndex.get(i);
-                if( idx == null) continue;
+                if (idx == null) continue;
 
-                for(HexBytes bytes : idx) {
+                for (HexBytes bytes : idx) {
                     Header h = headerStore.get(bytes.getBytes());
                     if (h == null) continue;
                     ret.add(h);
@@ -245,7 +243,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         HexBytes[] blockHashes =
                 transactionIncludes.get(transactionHash);
 
-        if(blockHashes == null)
+        if (blockHashes == null)
             blockHashes = new HexBytes[0];
 
         // 确认数
@@ -261,8 +259,8 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     }
 
     private boolean isCanonical(Header h) {
-        byte[] hash  = canonicalIndex.get(h.getHeight());
-        if ( hash == null || hash.length == 0)
+        byte[] hash = canonicalIndex.get(h.getHeight());
+        if (hash == null || hash.length == 0)
             return false;
 
         return FastByteComparisons.equal(hash, h.getHash().getBytes());

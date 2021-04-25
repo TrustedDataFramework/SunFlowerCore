@@ -15,8 +15,6 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.PreBuiltContract;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 

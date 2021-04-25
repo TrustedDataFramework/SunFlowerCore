@@ -11,11 +11,9 @@ import org.tdf.sunflower.events.TransactionIncluded;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.ForkedStateTrie;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.Backend;
-import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.CallDataImpl;
 import org.tdf.sunflower.vm.VMExecutor;
 import org.tdf.sunflower.vm.hosts.Limit;
@@ -145,7 +143,7 @@ public abstract class AbstractMiner implements Miner {
         b.resetTransactionsRoot();
 
         // the mined block cannot be modified any more
-        if(!finalizeBlock(parent, b)){
+        if (!finalizeBlock(parent, b)) {
             return BlockCreateResult.empty();
         }
 

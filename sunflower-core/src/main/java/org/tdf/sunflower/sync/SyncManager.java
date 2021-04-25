@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
@@ -29,15 +28,12 @@ import org.tdf.sunflower.types.*;
 import javax.annotation.PostConstruct;
 import java.io.Closeable;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
-
-import static org.tdf.sunflower.Start.devAssert;
 
 /**
  * sync manager for full-nodes
@@ -174,7 +170,8 @@ public class SyncManager implements PeerServerListener, Closeable {
     @SneakyThrows
     private void onMessageInternal(Context context, PeerServer server) {
         Optional<SyncMessage> o = SyncMessage.decode(context.getMessage());
-        Block bestBlock = repository.getBestBlock();;
+        Block bestBlock = repository.getBestBlock();
+        ;
         if (!o.isPresent()) return;
         SyncMessage msg = o.get();
         log.debug("receive {} message from {}", msg.getCode(), context.getRemote());

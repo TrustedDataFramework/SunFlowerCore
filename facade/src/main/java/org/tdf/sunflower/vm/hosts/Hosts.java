@@ -5,10 +5,12 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
-import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.vm.Backend;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Hosts {
     private ContextHost contextHost;
@@ -48,7 +50,7 @@ public class Hosts {
                 )
         );
 
-        if(u256Host != null)
+        if (u256Host != null)
             all.add(this.u256Host);
 
         if (reflect != null)

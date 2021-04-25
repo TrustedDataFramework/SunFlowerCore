@@ -14,7 +14,6 @@ import org.tdf.sunflower.dao.HeaderDao;
 import org.tdf.sunflower.dao.Mapping;
 import org.tdf.sunflower.dao.TransactionDao;
 import org.tdf.sunflower.entity.TransactionEntity;
-import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.ConfirmedBlocksProvider;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.types.Block;
@@ -23,7 +22,6 @@ import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 

@@ -47,14 +47,14 @@ public class Genesis {
     }
 
     @Getter
-    public static class ValidatorInfo{
+    public static class ValidatorInfo {
         @JsonProperty("addr")
         public HexBytes address;
     }
 
     // 去重后的矿工地址
-    public List<HexBytes> filterMiners(){
-        if(miners == null || miners.isEmpty())
+    public List<HexBytes> filterMiners() {
+        if (miners == null || miners.isEmpty())
             return Collections.emptyList();
         List<HexBytes> ret = new ArrayList<>();
         for (MinerInfo m : miners) {
@@ -66,8 +66,8 @@ public class Genesis {
     }
 
     // 去重后的验证者公钥
-    public List<HexBytes> filtersValidators(){
-        if(validator == null || validator.isEmpty())
+    public List<HexBytes> filtersValidators() {
+        if (validator == null || validator.isEmpty())
             return Collections.emptyList();
         List<HexBytes> ret = new ArrayList<>();
         for (ValidatorInfo m : validator) {

@@ -46,7 +46,6 @@ public class VMExecutor {
     private int depth;
 
 
-
     public VMExecutor clone() {
         return new VMExecutor(backend, callData.clone(), limit, depth + 1);
     }

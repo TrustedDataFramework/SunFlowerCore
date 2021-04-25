@@ -11,7 +11,7 @@ import org.tdf.sunflower.types.Transaction;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CallDataImpl implements CallData{
+public class CallDataImpl implements CallData {
     public static CallDataImpl empty() {
         return new CallDataImpl(
                 Address.empty(),
@@ -62,7 +62,7 @@ public class CallDataImpl implements CallData{
     private int callType;
     private HexBytes payload;
     private HexBytes origin;
-    private HexBytes  txHash;
+    private HexBytes txHash;
     private long txNonce;
     private HexBytes txSignature;
     private long txCreatedAt;

@@ -1,29 +1,33 @@
 package org.tdf.sunflower.state;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.serialize.Codecs;
-import org.tdf.common.store.*;
+import org.tdf.common.store.DatabaseStore;
+import org.tdf.common.store.NoDeleteBatchStore;
+import org.tdf.common.store.Store;
 import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Parameters;
-import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.pool.BackendImpl;
-import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
-import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.CallDataImpl;
 import org.tdf.sunflower.vm.VMExecutor;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
 import org.tdf.sunflower.vm.hosts.Limit;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -122,7 +126,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
         log.info("genesis state root = " + genesisRoot);
         tmp.flush();
     }
-
 
 
     @Override

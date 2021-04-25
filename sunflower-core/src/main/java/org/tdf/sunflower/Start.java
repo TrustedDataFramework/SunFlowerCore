@@ -1,8 +1,6 @@
 package org.tdf.sunflower;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.TextNode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -25,7 +23,9 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.*;
+import org.tdf.common.store.JsonStore;
+import org.tdf.common.store.NoDeleteBatchStore;
+import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.CryptoHelpers;
@@ -56,7 +56,6 @@ import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.EnvReader;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
@@ -162,7 +161,7 @@ public class Start {
         if (constant != null && !constant.isEmpty())
             ApplicationConstants.VM_GAS_PRICE = Long.parseLong(constant);
         constant = env.getProperty("sunflowr.consensus.allow-empty-block");
-        if(constant != null && "true".equals(constant.toLowerCase()))
+        if (constant != null && "true".equals(constant.toLowerCase()))
             ApplicationConstants.ALLOW_EMPTY_BLOCK = true;
     }
 
@@ -389,7 +388,7 @@ public class Start {
 
         JsonStore store = "true".equals(persist) && !"memory".equals(factory.getName()) ?
                 new JsonStore(Paths.get(factory.getDirectory(), "peers.json").toString(), MAPPER)
-        : new JsonStore("$memory", MAPPER);
+                : new JsonStore("$memory", MAPPER);
         PeerServer peerServer = new PeerServerImpl(store, engine, SecretStore.NONE);
         peerServer.init(properties);
         peerServer.addListeners(engine.getPeerServerListener());
