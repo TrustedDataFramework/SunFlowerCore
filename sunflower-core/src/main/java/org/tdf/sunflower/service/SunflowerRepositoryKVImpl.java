@@ -4,11 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
-import org.tdf.common.store.MemoryDatabaseStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.types.BlockConfirms;
-import org.tdf.common.util.ByteArraySet;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
@@ -20,7 +18,6 @@ import org.tdf.sunflower.exception.GenesisConflictsException;
 import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.facade.ConfirmedBlocksProvider;
 import org.tdf.sunflower.facade.SunflowerRepository;
-import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
@@ -151,22 +148,27 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         if (descend) {
             for (long i = stopHeight; i >= startHeight; i--) {
                 HexBytes[] idx = heightIndex.get(i);
-                if(idx != null) {
-                    for (HexBytes bytes : idx) {
-                        Header h = headerStore.get(bytes.getBytes());
-                        if (h != null)
-                            ret.add(h);
-                    }
+                if (idx == null)
+                    continue;
+
+                for (HexBytes bytes : idx) {
+                    Header h = headerStore.get(bytes.getBytes());
+                    if (h == null) continue;
+                        ret.add(h);
                 }
+
                 if (ret.size() > limit) break;
             }
         } else {
             for (long i = startHeight; i <= stopHeight; i++) {
-                heightIndex.get(i).ifPresent(hexBytes -> {
-                    for (HexBytes bytes : hexBytes) {
-                        headerStore.get(bytes.getBytes()).ifPresent(ret::add);
-                    }
-                });
+                HexBytes[] idx = heightIndex.get(i);
+                if( idx == null) continue;
+
+                for(HexBytes bytes : idx) {
+                    Header h = headerStore.get(bytes.getBytes());
+                    if (h == null) continue;
+                    ret.add(h);
+                }
                 if (ret.size() > limit) break;
             }
         }
@@ -176,13 +178,18 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
     @Override
     public List<Header> getHeadersByHeight(long height) {
-        return heightIndex.get(height).map(hexBytes -> {
-            List<Header> ret = new ArrayList<>(hexBytes.length);
-            for (HexBytes bytes : hexBytes) {
-                headerStore.get(bytes.getBytes()).ifPresent(ret::add);
-            }
-            return ret;
-        }).orElse(Collections.emptyList());
+        HexBytes[] idx = heightIndex.get(height);
+        if (idx == null)
+            return Collections.emptyList();
+        List<Header> ret = new ArrayList<>(idx.length);
+        for (HexBytes bytes : idx) {
+            Header h = headerStore.get(bytes.getBytes());
+            if (h == null)
+                continue;
+
+            ret.add(h);
+        }
+        return ret;
     }
 
 
@@ -194,15 +201,14 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
             status.put(BEST_HEADER, block.getHeader());
             byte[] hash = block.getHash().getBytes();
             while (true) {
-                Optional<Header> o = headerStore.get(hash);
-                if (!o.isPresent())
+                Header o = headerStore.get(hash);
+                if (o == null)
                     break;
-                Header h = o.get();
-                Optional<byte[]> canonicalHash = canonicalIndex.get(h.getHeight());
-                if (canonicalHash.isPresent() && FastByteComparisons.equal(canonicalHash.get(), hash))
+                byte[] canonicalHash = canonicalIndex.get(o.getHeight());
+                if (canonicalHash != null && canonicalHash.length != 0 && FastByteComparisons.equal(canonicalHash, hash))
                     break;
-                canonicalIndex.put(h.getHeight(), hash);
-                hash = h.getHashPrev().getBytes();
+                canonicalIndex.put(o.getHeight(), hash);
+                hash = o.getHashPrev().getBytes();
             }
             eventBus.publish(new NewBestBlock(block));
             long h = block.getHeight() - ApplicationConstants.TRANSACTION_CONFIRMS;
@@ -221,12 +227,12 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
     @Override
     public boolean containsTransaction(byte[] hash) {
-        return transactionsStore.containsKey(hash);
+        return transactionsStore.get(hash) != null;
     }
 
     @Override
     public Optional<Transaction> getTransactionByHash(byte[] hash) {
-        return transactionsStore.get(hash);
+        return Optional.ofNullable(transactionsStore.get(hash));
     }
 
     @Override
@@ -237,12 +243,16 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     @Override
     public BlockConfirms getConfirms(byte[] transactionHash) {
         HexBytes[] blockHashes =
-                transactionIncludes.get(transactionHash).orElse(new HexBytes[0]);
+                transactionIncludes.get(transactionHash);
+
+        if(blockHashes == null)
+            blockHashes = new HexBytes[0];
+
         // 确认数
         if (blockHashes.length == 0)
             return new BlockConfirms(-1, null, null);
         for (HexBytes hash : blockHashes) {
-            Header h = headerStore.get(hash.getBytes()).orElse(null);
+            Header h = headerStore.get(hash.getBytes());
             if (h == null) continue;
             if (isCanonical(hash.getBytes()))
                 return new BlockConfirms(getBestHeader().getHeight() - h.getHeight(), h.getHash(), h.getHeight());
@@ -251,13 +261,15 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     }
 
     private boolean isCanonical(Header h) {
-        return canonicalIndex.get(h.getHeight())
-                .map(x -> FastByteComparisons.equal(x, h.getHash().getBytes()))
-                .orElse(false);
+        byte[] hash  = canonicalIndex.get(h.getHeight());
+        if ( hash == null || hash.length == 0)
+            return false;
+
+        return FastByteComparisons.equal(hash, h.getHash().getBytes());
     }
 
     private boolean isCanonical(byte[] hash) {
-        Header h = headerStore.get(hash).orElse(null);
+        Header h = headerStore.get(hash);
         if (h == null)
             return false;
         return isCanonical(h);
@@ -270,8 +282,10 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     }
 
     private void writeBlockNoReset(Block block) {
+        byte[] v = accountTrie.getTrieStore().get(block.getStateRoot().getBytes());
+
         if (!block.getStateRoot().equals(HexBytes.fromBytes(accountTrie.getTrie().getNullHash()))
-                && !accountTrie.getTrieStore().containsKey(block.getStateRoot().getBytes())
+                && Store.IS_NULL.test(v)
         ) {
             throw new RuntimeException("unexpected error: account trie " + block.getStateRoot() + " not synced");
         }
@@ -282,7 +296,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
         for (Transaction t : block.getBody()) {
             transactionsStore.put(t.getHash().getBytes(), t);
-            Set<HexBytes> headerHashes = transactionIncludes.get(t.getHash().getBytes())
+            Set<HexBytes> headerHashes = Optional.ofNullable(transactionIncludes.get(t.getHash().getBytes()))
                     .map(x -> new HashSet<>(Arrays.asList(x)))
                     .orElse(new HashSet<>());
             headerHashes.add(block.getHash());
@@ -296,7 +310,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
                 block.getTransactionsRoot().getBytes(),
                 txHashes
         );
-        Set<HexBytes> headerHashes = heightIndex.get(block.getHeight())
+        Set<HexBytes> headerHashes = Optional.ofNullable(heightIndex.get(block.getHeight()))
                 .map(x -> new HashSet<>(Arrays.asList(x)))
                 .orElse(new HashSet<>());
         headerHashes.add(block.getHash());
@@ -307,108 +321,110 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         log.info("write block at height " + block.getHeight() + " " + block.getHeader().getHash() + " to database success");
     }
 
-    @Override
-    public void prune(byte[] hash) {
-        Block pruned = getBlock(hash).orElseThrow(
-                () -> new RuntimeException("pruned " + HexBytes.fromBytes(hash) + " not found")
-        );
+//    @Override
+//    public void prune(byte[] hash) {
+//        Block pruned = getBlock(hash).orElseThrow(
+//                () -> new RuntimeException("pruned " + HexBytes.fromBytes(hash) + " not found")
+//        );
+//
+//        Optional<Header> lastPruned = status.get(PRUNE);
+//        Header best = getBestHeader();
+//
+//
+//        if (lastPruned.isPresent() && lastPruned.get().getHash().equals(pruned.getHash())) {
+//            this.pruned = lastPruned.get();
+//            return;
+//        }
+//
+//        // try to find ancestor of current best pruned
+//        Header ancestor = best;
+//
+//        while (ancestor.getHeight() > pruned.getHeight()) {
+//            ancestor = headerStore.get(ancestor.getHashPrev().getBytes()).get();
+//        }
+//
+//        if (!ancestor.getHash().equals(pruned.getHash()))
+//            throw new RuntimeException("the pruned block " + pruned.getHash() + " is not canonical");
+//
+//        Set<HexBytes> txWhiteList = new HashSet<>();
+//        Set<HexBytes> txRootWhiteList = new HashSet<>();
+//        Set<byte[]> stateRootWhiteList = new ByteArraySet();
+//        stateRootWhiteList.add(genesis.getStateRoot().getBytes());
+//
+//        BiConsumer<byte[], Header> fn = (k, h) -> {
+//            if (h.getHeight() <= pruned.getHeight() && h.getHeight() != 0 && !h.getHash().equals(pruned.getHash())) {
+//                headerStore.remove(k);
+//                heightIndex.remove(h.getHeight());
+//            } else {
+//                HexBytes[] txs = transactionsRoot.get(h.getTransactionsRoot().getBytes()).orElse(new HexBytes[0]);
+//                txWhiteList.addAll(Arrays.asList(txs));
+//                txRootWhiteList.add(h.getTransactionsRoot());
+//                stateRootWhiteList.add(h.getStateRoot().getBytes());
+//            }
+//        };
+//
+//        if (((StoreWrapper) headerStore).getStore() instanceof MemoryDatabaseStore) {
+//            headerStore.stream().collect(Collectors.toList()).forEach(e -> fn.accept(e.getKey(), e.getValue()));
+//        } else {
+//            headerStore.forEach(fn);
+//        }
+//
+//        for (Store<byte[], ?> store : Arrays.asList(transactionsStore, transactionsRoot, transactionIncludes)) {
+//            BiConsumer<byte[], Object> f = (k, v) -> {
+//                if (!txWhiteList.contains(HexBytes.fromBytes(k)))
+//                    store.remove(k);
+//            };
+//            if (((StoreWrapper) store).getStore() instanceof MemoryDatabaseStore) {
+//                transactionsStore
+//                        .stream()
+//                        .collect(Collectors.toList())
+//                        .forEach(e -> f.accept(e.getKey(), e.getValue()));
+//            } else {
+//                transactionsStore.forEach(f);
+//            }
+//        }
+//
+//
+//        this.pruned = pruned.getHeader();
+//        accountTrie.prune(stateRootWhiteList);
+//
+//        Set<byte[]> storageRootWhiteList = new ByteArraySet();
+//        for (byte[] bytes : stateRootWhiteList) {
+//            accountTrie.getTrie(bytes).traverse(e -> {
+//                Account v = e.getValue();
+//                if (v.getStorageRoot() != null
+//                        && v.getStorageRoot().length != 0
+//                        && !FastByteComparisons.equal(contractStorageTrie.getNullHash(), v.getStorageRoot())
+//                ) {
+//                    storageRootWhiteList.add(v.getStorageRoot());
+//                }
+//                return true;
+//            });
+//        }
+//        contractStorageTrie.prune(storageRootWhiteList);
+//        status.put(PRUNE, pruned.getHeader());
+//    }
 
-        Optional<Header> lastPruned = status.get(PRUNE);
-        Header best = getBestHeader();
-
-
-        if (lastPruned.isPresent() && lastPruned.get().getHash().equals(pruned.getHash())) {
-            this.pruned = lastPruned.get();
-            return;
-        }
-
-        // try to find ancestor of current best pruned
-        Header ancestor = best;
-
-        while (ancestor.getHeight() > pruned.getHeight()) {
-            ancestor = headerStore.get(ancestor.getHashPrev().getBytes()).get();
-        }
-
-        if (!ancestor.getHash().equals(pruned.getHash()))
-            throw new RuntimeException("the pruned block " + pruned.getHash() + " is not canonical");
-
-        Set<HexBytes> txWhiteList = new HashSet<>();
-        Set<HexBytes> txRootWhiteList = new HashSet<>();
-        Set<byte[]> stateRootWhiteList = new ByteArraySet();
-        stateRootWhiteList.add(genesis.getStateRoot().getBytes());
-
-        BiConsumer<byte[], Header> fn = (k, h) -> {
-            if (h.getHeight() <= pruned.getHeight() && h.getHeight() != 0 && !h.getHash().equals(pruned.getHash())) {
-                headerStore.remove(k);
-                heightIndex.remove(h.getHeight());
-            } else {
-                HexBytes[] txs = transactionsRoot.get(h.getTransactionsRoot().getBytes()).orElse(new HexBytes[0]);
-                txWhiteList.addAll(Arrays.asList(txs));
-                txRootWhiteList.add(h.getTransactionsRoot());
-                stateRootWhiteList.add(h.getStateRoot().getBytes());
-            }
-        };
-
-        if (((StoreWrapper) headerStore).getStore() instanceof MemoryDatabaseStore) {
-            headerStore.stream().collect(Collectors.toList()).forEach(e -> fn.accept(e.getKey(), e.getValue()));
-        } else {
-            headerStore.forEach(fn);
-        }
-
-        for (Store<byte[], ?> store : Arrays.asList(transactionsStore, transactionsRoot, transactionIncludes)) {
-            BiConsumer<byte[], Object> f = (k, v) -> {
-                if (!txWhiteList.contains(HexBytes.fromBytes(k)))
-                    store.remove(k);
-            };
-            if (((StoreWrapper) store).getStore() instanceof MemoryDatabaseStore) {
-                transactionsStore
-                        .stream()
-                        .collect(Collectors.toList())
-                        .forEach(e -> f.accept(e.getKey(), e.getValue()));
-            } else {
-                transactionsStore.forEach(f);
-            }
-        }
-
-
-        this.pruned = pruned.getHeader();
-        accountTrie.prune(stateRootWhiteList);
-
-        Set<byte[]> storageRootWhiteList = new ByteArraySet();
-        for (byte[] bytes : stateRootWhiteList) {
-            accountTrie.getTrie(bytes).traverse(e -> {
-                Account v = e.getValue();
-                if (v.getStorageRoot() != null
-                        && v.getStorageRoot().length != 0
-                        && !FastByteComparisons.equal(contractStorageTrie.getNullHash(), v.getStorageRoot())
-                ) {
-                    storageRootWhiteList.add(v.getStorageRoot());
-                }
-                return true;
-            });
-        }
-        contractStorageTrie.prune(storageRootWhiteList);
-        status.put(PRUNE, pruned.getHeader());
-    }
-
-    @Override
-    public long getPrunedHeight() {
-        return pruned == null ? 0 : pruned.getHeight();
-    }
-
-    @Override
-    public HexBytes getPrunedHash() {
-        return pruned == null ? null : pruned.getHash();
-    }
+//    @Override
+//    public long getPrunedHeight() {
+//        return pruned == null ? 0 : pruned.getHeight();
+//    }
+//
+//    @Override
+//    public HexBytes getPrunedHash() {
+//        return pruned == null ? null : pruned.getHash();
+//    }
 
     @Override
     public Optional<Header> getCanonicalHeader(long height) {
-        return canonicalIndex.get(height)
-                .flatMap(this::getHeader);
+        byte[] v = canonicalIndex.get(height);
+        if (v == null || v.length == 0)
+            return Optional.empty();
+        return getHeader(v);
     }
-
-    @Override
-    public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
-        transactionsStore.traverse(traverser);
-    }
+//
+//    @Override
+//    public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
+//        transactionsStore.traverse(traverser);
+//    }
 }

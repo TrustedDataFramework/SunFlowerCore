@@ -4,15 +4,15 @@ import lombok.NonNull;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
  * delegate Map as Store
  *
  * @param <K> key type
- * @param <V> value type
  */
-public class MapStore<K, V> implements BatchStore<K, V> {
+public class MapStore<K, V> implements BatchStore<K, V>, IterableStore<K, V> {
     private Map<K, V> map;
 
     public MapStore() {
@@ -55,5 +55,11 @@ public class MapStore<K, V> implements BatchStore<K, V> {
 
     @Override
     public void flush() {
+    }
+
+
+    @Override
+    public Iterator<Map.Entry<K, V>> iterator() {
+        return map.entrySet().iterator();
     }
 }

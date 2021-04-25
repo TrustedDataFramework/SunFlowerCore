@@ -9,6 +9,10 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.ForkedStateTrie;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
+import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallDataImpl;
+import org.tdf.sunflower.vm.VMExecutor;
+import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,20 +60,22 @@ public abstract class AbstractValidator implements Validator {
         Map<HexBytes, TransactionResult> results = new HashMap<>();
 
         try {
-            ForkedStateTrie tmp = accountTrie.fork(parent.getStateRoot().getBytes());
+            Backend tmp = accountTrie.createBackend(parent.getHeader(), block.getCreatedAt(), false);
             Transaction coinbase = block.getBody().get(0);
 
             for (Transaction tx : block.getBody().subList(1, block.getBody().size())) {
-                TransactionResult r = tmp.update(block.getHeader(), tx);
+                VMExecutor executor = new VMExecutor(tmp, CallDataImpl.fromTransaction(tx), new Limit(), 0);
+                TransactionResult r = executor.execute();
                 results.put(tx.getHash(), r);
                 totalFee = totalFee.safeAdd(r.getFee());
                 // todo:
                 gas = SafeMath.add(gas, r.getGasUsed());
             }
 
-            tmp.update(block.getHeader(), coinbase);
+            VMExecutor executor = new VMExecutor(tmp, CallDataImpl.fromTransaction(coinbase), new Limit(), 0);
+            executor.execute();
 
-            byte[] rootHash = tmp.getCurrentRoot();
+            byte[] rootHash = tmp.merge();
 
             if (!HexBytes.fromBytes(rootHash).equals(block.getStateRoot())) {
                 return BlockValidateResult.fault("state root not match");

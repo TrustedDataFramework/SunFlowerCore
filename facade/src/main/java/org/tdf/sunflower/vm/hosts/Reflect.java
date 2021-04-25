@@ -10,14 +10,14 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.vm.Executor;
+import org.tdf.sunflower.vm.WBI;
 import org.tdf.sunflower.vm.abi.*;
 
 import java.util.Arrays;
 import java.util.Collections;
 
 public class Reflect extends HostFunction {
-    private final Executor executor;
+    private final org.tdf.sunflower.vm.VMExecutor VMExecutor;
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
             // offset, length, offset
             Arrays.asList(
@@ -27,9 +27,9 @@ public class Reflect extends HostFunction {
             Collections.singletonList(ValueType.I64)
     );
 
-    public Reflect(Executor executor) {
+    public Reflect(org.tdf.sunflower.vm.VMExecutor VMExecutor) {
         super("_reflect", FUNCTION_TYPE);
-        this.executor = executor;
+        this.VMExecutor = VMExecutor;
     }
 
     @Override
@@ -37,7 +37,7 @@ public class Reflect extends HostFunction {
         Type t = Type.values()[(int) longs[0]];
         byte[] payload = null;
         Uint256 amount = null;
-        Executor forked = executor.clone();
+        org.tdf.sunflower.vm.VMExecutor forked = VMExecutor.clone();
         Parameters params = null;
         switch (t) {
             case CALL: {
@@ -75,8 +75,8 @@ public class Reflect extends HostFunction {
 
         forked.getCallData().setAmount(amount);
         forked.getCallData().setPayload(HexBytes.fromBytes(RLPCodec.encode(payload)));
-        forked.getCallData().setCaller(executor.getCallData().getTo());
-        RLPList result = forked.execute();
+        forked.getCallData().setCaller(VMExecutor.getCallData().getTo());
+        RLPList result = forked.executeInternal();
 
         if (result.isEmpty())
             return 0;

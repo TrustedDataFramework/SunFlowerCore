@@ -36,8 +36,8 @@ public class TrieRollbackTest {
 
         delegate = new ByteArrayMapStore<>();
 
-        noDelete = new NoDeleteStore<>(delegate, x -> x == null || x.length == 0);
-        database = new NoDoubleDeleteStore<>(noDelete, x -> x == null || x.length == 0);
+        noDelete = new NoDeleteStore<>(delegate, Store.IS_NULL);
+        database = new NoDoubleDeleteStore<>(noDelete, Store.IS_NULL);
 
         trie = Trie.<String, String>builder().hashFunction(HashUtil::sha3)
                 .store(database)

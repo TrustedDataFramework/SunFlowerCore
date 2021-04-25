@@ -1,6 +1,5 @@
 package org.tdf.sunflower.vm;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.tdf.common.types.Parameters;
@@ -13,17 +12,28 @@ import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Bios;
 import org.tdf.sunflower.state.PreBuiltContract;
+import org.tdf.sunflower.types.Event;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.TransactionResult;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
 import org.tdf.sunflower.vm.abi.ContractDeployPayload;
 import org.tdf.sunflower.vm.hosts.*;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
-@AllArgsConstructor
 @NoArgsConstructor
-public class Executor {
+public class VMExecutor {
+    public VMExecutor(Backend backend, CallDataImpl callData, Limit limit, int depth) {
+        this.backend = backend;
+        this.callData = callData;
+        this.limit = limit;
+        this.depth = depth;
+    }
+
     @Getter
     private Backend backend;
     @Getter
@@ -35,8 +45,10 @@ public class Executor {
     // call depth
     private int depth;
 
-    public Executor clone() {
-        return new Executor(backend, callData.clone(), limit, depth + 1);
+
+
+    public VMExecutor clone() {
+        return new VMExecutor(backend, callData.clone(), limit, depth + 1);
     }
 
 
@@ -126,7 +138,33 @@ public class Executor {
         return ret;
     }
 
-    public RLPList execute() {
+    public TransactionResult execute() {
+        // 1. increase sender nonce
+        long n = backend.getNonce(callData.getOrigin());
+        backend.setNonce(callData.getOrigin(), n);
+
+        // 2. set initial gas by payload size
+        limit.setInitialGas(backend.getInitialGas(callData.getPayload().size()));
+
+        RLPList result = executeInternal();
+
+        // 3. calculate fee and
+        Uint256 fee = Uint256.of(limit.getGas()).mul(callData.getGasPrice());
+        Uint256 originBalance = backend.getBalance(callData.getOrigin());
+        backend.setBalance(callData.getOrigin(), originBalance.safeSub(fee));
+
+        List<Event> events = new ArrayList<>();
+
+        for (Map.Entry<HexBytes, List<Map.Entry<String, RLPList>>> entries : backend.getEvents().entrySet()) {
+            for (Map.Entry<String, RLPList> entry : entries.getValue()) {
+                events.add(new Event(entry.getKey(), entry.getValue()));
+            }
+        }
+
+        return new TransactionResult(limit.getGas(), result, events, fee);
+    }
+
+    public RLPList executeInternal() {
         Transaction.Type t = Transaction.Type.values()[callData.getCallType()];
 
         switch (t) {
@@ -139,20 +177,18 @@ public class Executor {
             }
             case TRANSFER: {
                 // increase nonce + balance
-                Uint256 fee = Uint256.of(Transaction.TRANSFER_GAS).safeMul(backend.getGasPrice());
+                limit.addGas(Transaction.TRANSFER_GAS);
                 addBalance(callData.getTo(), callData.getAmount());
                 subBalance(callData.getCaller(), callData.getAmount());
-                subBalance(callData.getCaller(), fee);
                 return RLPList.createEmpty();
             }
             case CONTRACT_DEPLOY:
             case CONTRACT_CALL: {
                 // is prebuilt
                 if (backend.getPreBuiltContracts().containsKey(callData.getTo())) {
-                    Uint256 fee = Uint256.of(Transaction.BUILTIN_CALL_GAS).safeMul(backend.getGasPrice());
+                    limit.addGas(Transaction.BUILTIN_CALL_GAS);
                     addBalance(callData.getTo(), callData.getAmount());
                     subBalance(callData.getCaller(), callData.getAmount());
-                    subBalance(callData.getCaller(), fee);
                     PreBuiltContract updater = backend.getPreBuiltContracts().get(callData.getTo());
                     updater.update(backend, callData);
                     return RLPList.createEmpty();
@@ -206,7 +242,7 @@ public class Executor {
                         .withReflect(new Reflect(this))
                         .withContext(new ContextHost(backend, callData))
                         .withDB(dbFunctions)
-                        .withEvent(backend, callData.getTo(), callData.isStatic());
+                        .withEvent(backend, callData.getTo());
 
                 ModuleInstance instance = ModuleInstance
                         .builder()

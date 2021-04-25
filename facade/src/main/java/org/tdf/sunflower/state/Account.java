@@ -8,10 +8,10 @@ import lombok.Data;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
-import org.tdf.rlp.RLPItem;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.vm.abi.ContractABI;
 
+import java.util.Collections;
 import java.util.List;
 
 
@@ -47,37 +47,17 @@ public class Account {
 
     }
 
-    // TODO: reduce zero content of memory
-
-    public Account(HexBytes address, Uint256 balance) {
-        if (address.size() != ADDRESS_SIZE) throw new RuntimeException("address size should be " + ADDRESS_SIZE);
-        this.address = address;
-        this.balance = balance;
-    }
-
-    public static Account emptyContract(HexBytes address) {
-        return new Account(
-                address, 0,
-                Uint256.ZERO, address,
-                null,
-                CryptoContext.hash(RLPItem.NULL.getEncoded()),
-                null
-        );
-    }
-
     /**
      * create a fresh new account by address
      *
      * @param address address
      * @return a fresh new account
      */
-    public static Account emptyAccount(HexBytes address) {
-        return new Account(address, 0, Uint256.ZERO, HexBytes.EMPTY, CryptoContext.getEmptyTrieRoot(), null, null);
+    public static Account emptyAccount(HexBytes address, Uint256 balance) {
+        if (address.size() != ADDRESS_SIZE) throw new RuntimeException("address size should be " + ADDRESS_SIZE);
+        return new Account(address, 0, Uint256.ZERO, HexBytes.EMPTY, HexBytes.EMPTY_BYTES, CryptoContext.getEmptyTrieRoot(), Collections.emptyList());
     }
 
-    public boolean containsContract() {
-        return contractHash != null && contractHash.length != 0;
-    }
 
     @Override
     public Account clone() {

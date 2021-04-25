@@ -56,9 +56,9 @@ public class PoW extends AbstractConsensusEngine {
 
     public byte[] getNBits(
             byte[] stateRoot) {
-        Account a = getAccountTrie().get(stateRoot, PoWBios.ADDRESS).get();
+        Account a = getAccountTrie().get(stateRoot, PoWBios.ADDRESS);
         return getContractStorageTrie().revert(a.getStorageRoot())
-                .get(N_BITS_KEY).get();
+                .get(N_BITS_KEY);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class PoW extends AbstractConsensusEngine {
 
         if (genesis.getAlloc() != null) {
             genesis.getAlloc().forEach((k, v) -> {
-                Account a = new Account(HexBytes.fromHex(k), Uint256.of(v));
+                Account a = Account.emptyAccount(HexBytes.fromHex(k), Uint256.of(v));
                 accounts.add(a);
             });
         }

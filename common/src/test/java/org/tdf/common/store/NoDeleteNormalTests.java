@@ -7,6 +7,6 @@ import org.junit.runners.JUnit4;
 public class NoDeleteNormalTests extends NoDeleteStoreTest {
     @Override
     protected NoDeleteStore<byte[], byte[]> supplyNoDelete() {
-        return new NoDeleteStore<>(new ByteArrayMapStore<>(), x -> x == null || x.length == 0);
+        return new NoDeleteStore<>(new ByteArrayMapStore<>(), Store.IS_NULL);
     }
 }

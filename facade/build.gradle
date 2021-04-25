@@ -23,6 +23,14 @@ repositories {
             password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
         }
     }
+    maven {
+        name = "lotusvm"
+        url = uri("https://maven.pkg.github.com/TrustedDataFramework/LotusVM")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
     mavenCentral()
 }
 
@@ -43,5 +51,5 @@ dependencies {
     compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"
     compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-properties:${jacksonVersion}"
     compileOnly "com.google.guava:guava:${guavaVersion}"
-
+    compile "org.tdf:lotusvm:${lotusvmVersion}"
 }

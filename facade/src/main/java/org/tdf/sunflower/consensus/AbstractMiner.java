@@ -14,6 +14,11 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.ForkedStateTrie;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
+import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallData;
+import org.tdf.sunflower.vm.CallDataImpl;
+import org.tdf.sunflower.vm.VMExecutor;
+import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.util.*;
 
@@ -78,8 +83,7 @@ public abstract class AbstractMiner implements Miner {
 
         // get a trie at parent block's state
         // modifications to the trie will not persisted until flush() called
-        ForkedStateTrie tmp = accountTrie.fork(parent.getStateRoot().getBytes());
-
+        Backend tmp = accountTrie.createBackend(parent.getHeader(), header.getCreatedAt(), false);
 
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
         List<Transaction> transactionList = getTransactionPool().popPackable(
@@ -101,10 +105,14 @@ public abstract class AbstractMiner implements Miner {
                 // get all account related to this transaction in the trie
 
                 // store updated result to the trie if update success
-                TransactionResult res = tmp.update(header, tx);
+                tmp = tmp.createChild();
+                CallDataImpl callData = CallDataImpl.fromTransaction(tx);
+                VMExecutor vmExecutor = new VMExecutor(tmp, callData, new Limit(), 0);
+                TransactionResult res = vmExecutor.execute();
                 totalFee = totalFee.safeAdd(res.getFee());
                 m.put(tx.getHash(), res);
             } catch (Exception e) {
+                tmp = tmp.getParentBackend();
                 // prompt reason for failed updates
                 e.printStackTrace();
                 failedTransactions.add(tx.getHash());
@@ -124,11 +132,13 @@ public abstract class AbstractMiner implements Miner {
 
         // add fee to miners account
         coinbase.setAmount(coinbase.getAmount().safeAdd(totalFee));
-        tmp.update(header, coinbase);
+        CallDataImpl callData = CallDataImpl.fromTransaction(coinbase);
+        VMExecutor executor = new VMExecutor(tmp, callData, new Limit(), 0);
+        executor.execute();
 
         // calculate state root
         b.setStateRoot(
-                HexBytes.fromBytes(tmp.getCurrentRoot())
+                HexBytes.fromBytes(tmp.merge())
         );
 
         // persist modifications of trie to database

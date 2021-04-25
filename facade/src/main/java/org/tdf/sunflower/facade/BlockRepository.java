@@ -48,11 +48,11 @@ public interface BlockRepository {
     void writeBlock(Block block);
 
     // delete all header and transactions until this height(inclusive), exclude this block
-    void prune(byte[] hash);
+//    void prune(byte[] hash);
 
     // pruned header height
-    long getPrunedHeight();
+//    long getPrunedHeight();
 
     // hash of pruned header
-    HexBytes getPrunedHash();
+//    HexBytes getPrunedHash();
 }

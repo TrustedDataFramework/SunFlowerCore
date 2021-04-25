@@ -23,8 +23,8 @@ public class Hosts {
         this.u256Host = new U256Host();
     }
 
-    public Hosts withEvent(Backend backend, HexBytes address, boolean isStatic) {
-        this.eventHost = new EventHost(backend, address, isStatic);
+    public Hosts withEvent(Backend backend, HexBytes address) {
+        this.eventHost = new EventHost(backend, address);
         return this;
     }
 

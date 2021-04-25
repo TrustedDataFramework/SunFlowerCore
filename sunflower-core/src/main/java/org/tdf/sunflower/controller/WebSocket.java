@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.tdf.common.types.Parameters;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
@@ -189,7 +190,10 @@ public class WebSocket {
                 Account a = accountTrie.get(
                         repository.getBestHeader().getStateRoot().getBytes(),
                         HexBytes.fromBytes(address)
-                ).orElse(Account.emptyAccount(HexBytes.fromBytes(address)));
+                );
+
+                if(a == null)
+                    a = Account.emptyAccount(HexBytes.fromBytes(address), Uint256.ZERO);
 
                 sendResponse(msg.getNonce(), WebSocketMessage.Code.ACCOUNT_QUERY, a);
                 break;
@@ -199,8 +203,7 @@ public class WebSocket {
                 String method = msg.getBody().get(1).asString();
                 Parameters parameters = msg.getBody().get(2)
                         .as(Parameters.class);
-                byte[] root = repository.getBestHeader().getStateRoot().getBytes();
-                RLPList result =  accountTrie.fork(root).call(HexBytes.fromBytes(address), method, parameters);
+                RLPList result =  accountTrie.call(repository.getBestHeader(), HexBytes.fromBytes(address), method, parameters);
                 sendResponse(msg.getNonce(), WebSocketMessage.Code.CONTRACT_QUERY, result);
                 break;
             }

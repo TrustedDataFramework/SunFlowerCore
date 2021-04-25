@@ -3,6 +3,7 @@ package org.tdf.sunflower.consensus.pow;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.fraction.BigFraction;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
@@ -39,7 +40,7 @@ public class PoWBios implements Bios {
 
     @Override
     public Account getGenesisAccount() {
-        return Account.emptyContract(ADDRESS);
+        return Account.emptyAccount(ADDRESS, Uint256.ZERO);
     }
 
     @Override

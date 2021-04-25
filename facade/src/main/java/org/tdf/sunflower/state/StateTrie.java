@@ -2,7 +2,11 @@ package org.tdf.sunflower.state;
 
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.vm.Backend;
 
 import java.util.Collection;
 import java.util.Map;
@@ -16,11 +20,10 @@ import java.util.Optional;
  */
 public interface StateTrie<ID, S> {
     // get an optional state at a root hash
-    Optional<S> get(byte[] rootHash, ID id);
+    S get(byte[] rootHash, ID id);
 
     HexBytes getGenesisRoot();
 
-    Map<byte[], byte[]> getProof(byte[] rootHash, Collection<? extends ID> ids);
 
     Trie<ID, S> getTrie();
 
@@ -28,8 +31,11 @@ public interface StateTrie<ID, S> {
 
     Store<byte[], byte[]> getTrieStore();
 
-    // collect garbage
-    void prune(Collection<? extends byte[]> excludedRoots);
+    Backend createBackend(
+            Header parent,
+            long newBlockCreatedAt,
+            boolean isStatic
+    );
 
-    ForkedStateTrie fork(byte[] parentRoot);
+
 }

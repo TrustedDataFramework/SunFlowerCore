@@ -41,16 +41,16 @@ public abstract class AbstractBlockRepository implements BlockRepository {
     }
 
     protected abstract void writeGenesis(Block genesis);
-
-    @Override
-    public long getPrunedHeight() {
-        return 0;
-    }
-
-    @Override
-    public HexBytes getPrunedHash() {
-        return null;
-    }
+//
+//    @Override
+//    public long getPrunedHeight() {
+//        return 0;
+//    }
+//
+//    @Override
+//    public HexBytes getPrunedHash() {
+//        return null;
+//    }
 
 
     @Override

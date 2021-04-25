@@ -139,22 +139,23 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void writeBlock(Block block) {
-        if (!accountTrie.getTrieStore().containsKey(block.getStateRoot().getBytes())) {
-            throw new RuntimeException("unexpected error: account trie not synced");
-        }
-        if (headerDao.existsById(block.getHash().getBytes()))
-            throw new RuntimeException(block + " had been persisted");
-        List<TransactionEntity> entities =
-                Mapping.getTransactionEntitiesFromBlock(block).collect(Collectors.toList());
-
-        if (!transactionDao
-                .findAllById(block.getBody().stream().map(x -> x.getHash().getBytes()).collect(Collectors.toList()))
-                .isEmpty()) {
-            throw new ApplicationException("transaction already exists in database");
-        }
-        headerDao.save(Mapping.getEntityFromHeader(block.getHeader()));
-        transactionDao.saveAll(entities);
-        log.info("write block at height " + block.getHeight() + " " + block.getHeader().getHash() + " to database success");
+        throw new UnsupportedOperationException();
+//        if (!accountTrie.getTrieStore().containsKey(block.getStateRoot().getBytes())) {
+//            throw new RuntimeException("unexpected error: account trie not synced");
+//        }
+//        if (headerDao.existsById(block.getHash().getBytes()))
+//            throw new RuntimeException(block + " had been persisted");
+//        List<TransactionEntity> entities =
+//                Mapping.getTransactionEntitiesFromBlock(block).collect(Collectors.toList());
+//
+//        if (!transactionDao
+//                .findAllById(block.getBody().stream().map(x -> x.getHash().getBytes()).collect(Collectors.toList()))
+//                .isEmpty()) {
+//            throw new ApplicationException("transaction already exists in database");
+//        }
+//        headerDao.save(Mapping.getEntityFromHeader(block.getHeader()));
+//        transactionDao.saveAll(entities);
+//        log.info("write block at height " + block.getHeight() + " " + block.getHeader().getHash() + " to database success");
     }
 
     public void writeHeader(Header header) {
@@ -202,13 +203,13 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
 
     }
 
-    @Override
-    public void prune(byte[] hash) {
+//    @Override
+//    public void prune(byte[] hash) {
+//
+//    }
 
-    }
-
-    @Override
-    public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
-        throw new UnsupportedOperationException();
-    }
+//    @Override
+//    public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
+//        throw new UnsupportedOperationException();
+//    }
 }

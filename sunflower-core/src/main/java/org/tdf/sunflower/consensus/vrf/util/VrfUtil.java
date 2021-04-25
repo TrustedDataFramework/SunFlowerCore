@@ -537,14 +537,14 @@ public class VrfUtil {
     public static byte[] getFromContractStorage(HexBytes contractAddress, Header h, byte[] key, AccountTrie accountTrie,
                                                 Trie<byte[], byte[]> contractStorageTrie) {
         Account account = null;
-        Optional<Account> accountOpt = accountTrie.get(h.getStateRoot().getBytes(), contractAddress);
+        Optional<Account> accountOpt = Optional.ofNullable(accountTrie.get(h.getStateRoot().getBytes(), contractAddress));
         if (accountOpt.isPresent()) {
             account = accountOpt.get();
         } else {
             return null;
         }
         Trie<byte[], byte[]> trie = contractStorageTrie.revert(account.getStorageRoot());
-        return trie.get(key).orElse(null);
+        return trie.get(key);
     }
 
     public static class Timer {

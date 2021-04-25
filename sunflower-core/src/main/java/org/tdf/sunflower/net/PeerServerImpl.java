@@ -3,6 +3,7 @@ package org.tdf.sunflower.net;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.store.JsonStore;
 import org.tdf.common.store.Store;
 import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.ConsensusEngine;
@@ -21,7 +22,7 @@ import java.util.stream.Stream;
 @Slf4j(topic = "net")
 public class PeerServerImpl implements ChannelListener, PeerServer {
     // if non-database provided, use memory database
-    final Store<String, JsonNode> peerStore;
+    final JsonStore peerStore;
     final ConsensusEngine consensusEngine;
     final SecretStore secretStore;
     private final List<Plugin> plugins = new CopyOnWriteArrayList<>();
@@ -31,7 +32,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     private MessageBuilder builder;
     private NetLayer netLayer;
 
-    public PeerServerImpl(Store<String, JsonNode> peerStore, ConsensusEngine consensusEngine, SecretStore secretStore) {
+    public PeerServerImpl(JsonStore peerStore, ConsensusEngine consensusEngine, SecretStore secretStore) {
         this.peerStore = peerStore;
         this.consensusEngine = consensusEngine;
         this.secretStore = secretStore;
@@ -95,10 +96,10 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             client.trust(config.getTrusted());
         }
         // connect to stored peers when server restarts
-        peerStore.forEach((k, p) -> {
-            if ("self".equals(k))
+        peerStore.forEach( k -> {
+            if ("self".equals(k.getKey()))
                 return;
-            PeerImpl peer = PeerImpl.parse(p).get();
+            PeerImpl peer = PeerImpl.parse(k.getValue().asText()).get();
             client.dial(peer.getHost(), peer.getPort(), builder.buildPing());
         });
     }

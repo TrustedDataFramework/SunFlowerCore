@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.tdf.common.event.EventBus;
-import org.tdf.common.store.CachedStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
@@ -256,63 +255,63 @@ public class SyncManager implements PeerServerListener, Closeable {
                 }
                 return;
             }
-            case SyncMessage.GET_ACCOUNTS: {
-                if (isNotApproved(context))
-                    return;
-                if (fastSyncing || this.trieTraverseLock) return;
-                this.trieTraverseLock = true;
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        GetAccounts getAccounts = msg.getBodyAs(GetAccounts.class);
-                        Trie<HexBytes, Account> trie = accountTrie.getTrie(getAccounts.getStateRoot().getBytes());
-                        int[] total = new int[1];
-                        List<SyncAccount> accounts = new ArrayList<>();
-                        trie.traverse((e) -> {
-                            Account a = e.getValue();
-                            List<byte[]> kv = new ArrayList<>();
-                            if (a.getStorageRoot() != null && a.getStorageRoot().length != 0) {
-                                contractStorageTrie.revert(a.getStorageRoot())
-                                        .forEach((k, v) -> {
-                                            kv.add(k);
-                                            kv.add(v);
-                                        });
-                            }
-                            accounts.add(new SyncAccount(
-                                    a,
-                                    (a.getContractHash() == null || a.getContractHash().length == 0) ?
-                                            null :
-                                            contractCodeStore.get(a.getContractHash()).get(),
-                                    kv
-                            ));
-                            total[0]++;
-                            if (accounts.size() % Math.min(syncConfig.getMaxAccountsTransfer(), getAccounts.getMaxAccounts()) == 0) {
-                                context.response(
-                                        SyncMessage.encode(SyncMessage.ACCOUNTS, new Accounts(0, accounts, false))
-                                );
-                                log.info("{} accounts traversed", total[0]);
-                                accounts.clear();
-                            }
-                            return true;
-                        });
-                        context.response(SyncMessage.encode(SyncMessage.ACCOUNTS, new Accounts(total[0], accounts, true)));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        this.trieTraverseLock = false;
-                    }
-                });
-                return;
-            }
+//            case SyncMessage.GET_ACCOUNTS: {
+//                if (isNotApproved(context))
+//                    return;
+//                if (fastSyncing || this.trieTraverseLock) return;
+//                this.trieTraverseLock = true;
+//                CompletableFuture.runAsync(() -> {
+//                    try {
+//                        GetAccounts getAccounts = msg.getBodyAs(GetAccounts.class);
+//                        Trie<HexBytes, Account> trie = accountTrie.getTrie(getAccounts.getStateRoot().getBytes());
+//                        int[] total = new int[1];
+//                        List<SyncAccount> accounts = new ArrayList<>();
+//                        trie.traverse((e) -> {
+//                            Account a = e.getValue();
+//                            List<byte[]> kv = new ArrayList<>();
+//                            if (a.getStorageRoot() != null && a.getStorageRoot().length != 0) {
+//                                contractStorageTrie.revert(a.getStorageRoot())
+//                                        .forEach((k, v) -> {
+//                                            kv.add(k);
+//                                            kv.add(v);
+//                                        });
+//                            }
+//                            accounts.add(new SyncAccount(
+//                                    a,
+//                                    (a.getContractHash() == null || a.getContractHash().length == 0) ?
+//                                            null :
+//                                            contractCodeStore.get(a.getContractHash()).get(),
+//                                    kv
+//                            ));
+//                            total[0]++;
+//                            if (accounts.size() % Math.min(syncConfig.getMaxAccountsTransfer(), getAccounts.getMaxAccounts()) == 0) {
+//                                context.response(
+//                                        SyncMessage.encode(SyncMessage.ACCOUNTS, new Accounts(0, accounts, false))
+//                                );
+//                                log.info("{} accounts traversed", total[0]);
+//                                accounts.clear();
+//                            }
+//                            return true;
+//                        });
+//                        context.response(SyncMessage.encode(SyncMessage.ACCOUNTS, new Accounts(total[0], accounts, true)));
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    } finally {
+//                        this.trieTraverseLock = false;
+//                    }
+//                });
+//                return;
+//            }
             case SyncMessage.ACCOUNTS: {
                 if (!fastSyncing) return;
                 if (fastSyncAddresses == null) {
                     fastSyncAddresses = new HashSet<>();
                 }
                 if (fastSyncTrie == null) {
-                    fastSyncTrie = accountTrie.getTrie().revert(
-                            accountTrie.getTrie().getNullHash(),
-                            new CachedStore<>(accountTrie.getTrieStore(), ByteArrayMap::new)
-                    );
+//                    fastSyncTrie = accountTrie.getTrie().revert(
+//                            accountTrie.getTrie().getNullHash(),
+//                            new CachedStore<>(accountTrie.getTrieStore(), ByteArrayMap::new)
+//                    );
                 }
                 this.fastSyncAddressesLock.lock();
                 try {
@@ -363,7 +362,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                         log.error("fast sync failed, state root not match, malicious node may exists in network!!!");
                         return;
                     }
-                    finishFastSync();
+//                    finishFastSync();
                 } finally {
                     this.fastSyncAddressesLock.unlock();
                 }
@@ -398,8 +397,8 @@ public class SyncManager implements PeerServerListener, Closeable {
             for (Block block : blocks) {
                 if (queue.contains(block))
                     continue;
-                if (block.getHeight() <= repository.getPrunedHeight())
-                    continue;
+//                if (block.getHeight() <= repository.getPrunedHeight())
+//                    continue;
                 if (Math.abs(block.getHeight() - best.getHeight()) > syncConfig.getMaxPendingBlocks())
                     break;
                 block.resetTransactionsRoot();
@@ -412,17 +411,17 @@ public class SyncManager implements PeerServerListener, Closeable {
         }
     }
 
-    private void finishFastSync() {
-        this.fastSyncing = false;
-        fastSyncTrie.flush();
-        repository.writeBlock(fastSyncBlock);
-        repository.prune(fastSyncBlock.getHash().getBytes());
-        devAssert(
-                repository.getPrunedHash().equals(fastSyncBlock.getHash()), "prune failed after fast sync");
-        log.info("fast sync success to height {} hash {}", fastSyncHeight, fastSyncBlock.getHash());
-        this.miner.start();
-        clearFastSyncCache();
-    }
+//    private void finishFastSync() {
+//        this.fastSyncing = false;
+//        fastSyncTrie.flush();
+//        repository.writeBlock(fastSyncBlock);
+//        repository.prune(fastSyncBlock.getHash().getBytes());
+//        devAssert(
+//                repository.getPrunedHash().equals(fastSyncBlock.getHash()), "prune failed after fast sync");
+//        log.info("fast sync success to height {} hash {}", fastSyncHeight, fastSyncBlock.getHash());
+//        this.miner.start();
+//        clearFastSyncCache();
+//    }
 
     @SneakyThrows
     private void onStatus(Context ctx, PeerServer server, Status s) {
@@ -558,7 +557,7 @@ public class SyncManager implements PeerServerListener, Closeable {
             while (it.hasNext()) {
                 Block b = it.next();
                 if (Math.abs(best.getHeight() - b.getHeight()) > syncConfig.getMaxAccountsTransfer()
-                        || b.getHeight() <= repository.getPrunedHeight()
+//                        || b.getHeight() <= repository.getPrunedHeight()
                 ) {
                     it.remove();
                     continue;
@@ -604,8 +603,10 @@ public class SyncManager implements PeerServerListener, Closeable {
                 best.getHeight(),
                 best.getHash(),
                 genesis.getHash(),
-                repository.getPrunedHeight(),
-                repository.getPrunedHash()
+                0,
+                null
+//                repository.getPrunedHeight(),
+//                repository.getPrunedHash()
         );
         broadcastToApproved(SyncMessage.encode(SyncMessage.STATUS, status));
     }

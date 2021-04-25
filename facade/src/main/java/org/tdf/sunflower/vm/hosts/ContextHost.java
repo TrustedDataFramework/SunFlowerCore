@@ -5,9 +5,9 @@ import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.rlp.RLPCodec;
-import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
+import org.tdf.sunflower.vm.WBI;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 import org.tdf.sunflower.vm.abi.ContractABI;
 
@@ -61,7 +61,7 @@ public class ContextHost extends HostFunction {
                 return WBI.mallocAddress(getInstance(), callData.getOrigin().getBytes());
             }
             case TX_GAS_PRICE: {
-                return WBI.malloc(getInstance(), backend.getGasPrice());
+                return WBI.malloc(getInstance(), callData.getGasPrice());
             }
             case TX_AMOUNT: {
                 return WBI.malloc(getInstance(), callData.getTxAmount());

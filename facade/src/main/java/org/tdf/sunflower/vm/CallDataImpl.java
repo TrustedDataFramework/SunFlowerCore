@@ -5,12 +5,33 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Transaction;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class CallDataImpl implements CallData{
+    public static CallDataImpl empty() {
+        return new CallDataImpl(
+                Address.empty(),
+                Uint256.ZERO,
+                Uint256.ZERO,
+                Address.empty(),
+                Address.empty(),
+                Transaction.Type.CONTRACT_CALL.code,
+                Transaction.Type.CONTRACT_CALL.code,
+                HexBytes.empty(),
+                Address.empty(),
+                HexBytes.empty(),
+                0,
+                HexBytes.empty(),
+                0,
+                Uint256.ZERO,
+                0
+        );
+    }
+
     public static CallDataImpl fromTransaction(Transaction tx) {
         return new CallDataImpl(
                 tx.getFromAddress(),
@@ -26,7 +47,8 @@ public class CallDataImpl implements CallData{
                 tx.getNonce(),
                 tx.getSignature(),
                 tx.getCreatedAt(),
-                false
+                tx.getGasPrice(),
+                tx.getGasLimit()
         );
     }
 
@@ -44,22 +66,15 @@ public class CallDataImpl implements CallData{
     private long txNonce;
     private HexBytes txSignature;
     private long txCreatedAt;
-    private boolean isStatic;
-
-    public boolean isStatic() {
-        return isStatic;
-    }
-
-    public void setStatic(boolean isStatic){
-        this.isStatic = isStatic;
-    }
+    private Uint256 gasPrice;
+    private long gasLimit;
 
     public CallDataImpl clone() {
         return new CallDataImpl(
                 caller, amount, txAmount, to, txTo,
                 txType, callType, payload, origin, txHash,
                 txNonce, txSignature, txCreatedAt,
-                isStatic
+                gasPrice, gasLimit
         );
     }
 }

@@ -187,9 +187,10 @@ public class EntryController {
     @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)
     public AccountView getAccount(@PathVariable String addressOrPublicKey) throws Exception {
         HexBytes addressHex = Address.of(addressOrPublicKey);
-        return accountTrie.get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex)
-                .map(AccountView::fromAccount)
-                .orElse(new AccountView(addressHex, 0, Uint256.ZERO, HexBytes.EMPTY, HexBytes.EMPTY, HexBytes.empty()));
+        Account a = accountTrie.get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex);
+        if (a == null)
+            a = Account.emptyAccount(addressHex, Uint256.ZERO);
+        return AccountView.fromAccount(a);
     }
 
     @GetMapping(value = "/approved")
@@ -253,7 +254,7 @@ public class EntryController {
         Header h = sunflowerRepository.getBestHeader();
 
         ContractCallPayload callPayload = RLPCodec.decode(args.getBytes(), ContractCallPayload.class);
-        RLPList result = accountTrie.fork(h.getStateRoot().getBytes()).call(addressHex, callPayload.getMethod(),
+        RLPList result = accountTrie.call(h, addressHex, callPayload.getMethod(),
                 callPayload.getParameters());
 
         return HexBytes.fromBytes(result.getEncoded());
@@ -272,10 +273,8 @@ public class EntryController {
     public Object getABI(@PathVariable("address") final String address) {
         HexBytes addressHex = Address.of(address);
         Header h = sunflowerRepository.getBestHeader();
-        Account a = accountTrie.get(h.getStateRoot().getBytes(), addressHex).get();
-        Store<byte[], byte[]> store = contractStorageTrie.revert(a.getStorageRoot());
-        byte[] abiEncoded = store.get("__abi".getBytes(StandardCharsets.UTF_8)).get();
-        return Arrays.stream(RLPCodec.decode(abiEncoded, ContractABI[].class)).map(ContractABI::toJSON)
+        Account a = accountTrie.get(h.getStateRoot().getBytes(), addressHex);
+        return a.getContractABIs().stream().map(ContractABI::toJSON)
                 .collect(Collectors.toList());
     }
 
@@ -302,17 +301,17 @@ public class EntryController {
         String m = node.get("method").asText();
         switch (m) {
             case "export": {
-                List<Transaction> li = new ArrayList<>();
-                String publicKey = node.get("publicKey").asText();
-                HexBytes pk = HexBytes.fromHex(publicKey);
-                HexBytes address = Address.fromPublicKey(pk);
-                sunflowerRepository.traverseTransactions((h, t) -> {
-                    if (t.getFrom().equals(pk) || t.getTo().equals(address)) {
-                        li.add(t);
-                    }
-                    return true;
-                });
-                return li;
+//                List<Transaction> li = new ArrayList<>();
+//                String publicKey = node.get("publicKey").asText();
+//                HexBytes pk = HexBytes.fromHex(publicKey);
+//                HexBytes address = Address.fromPublicKey(pk);
+//                sunflowerRepository.traverseTransactions((h, t) -> {
+//                    if (t.getFrom().equals(pk) || t.getTo().equals(address)) {
+//                        li.add(t);
+//                    }
+//                    return true;
+//                });
+                return new ArrayList<>();
             }
         }
         throw new RuntimeException("invalid payload " + node.toString());

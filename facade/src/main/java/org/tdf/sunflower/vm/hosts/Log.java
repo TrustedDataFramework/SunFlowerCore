@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
+import org.tdf.sunflower.vm.WBI;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 
 import java.util.Collections;

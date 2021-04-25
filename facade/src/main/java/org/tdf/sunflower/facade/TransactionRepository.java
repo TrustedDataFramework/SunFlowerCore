@@ -6,7 +6,6 @@ import org.tdf.sunflower.types.Transaction;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 
 public interface TransactionRepository {
     TransactionRepository NONE = new TransactionRepository() {
@@ -32,10 +31,10 @@ public interface TransactionRepository {
             return null;
         }
 
-        @Override
-        public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
-
-        }
+//        @Override
+//        public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
+//
+//        }
     };
 
     boolean containsTransaction(byte[] hash);
@@ -46,5 +45,5 @@ public interface TransactionRepository {
 
     BlockConfirms getConfirms(byte[] transactionHash);
 
-    void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser);
+//    void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser);
 }

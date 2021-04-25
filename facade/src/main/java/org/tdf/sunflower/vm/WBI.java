@@ -1,4 +1,4 @@
-package org.tdf.sunflower.vm.hosts;
+package org.tdf.sunflower.vm;
 
 import org.tdf.common.types.Uint256;
 import org.tdf.lotusvm.ModuleInstance;

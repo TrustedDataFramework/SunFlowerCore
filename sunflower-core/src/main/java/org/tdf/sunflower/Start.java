@@ -60,6 +60,7 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.util.EnvReader;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
+import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.io.File;
 import java.net.URL;
@@ -143,7 +144,7 @@ public class Start {
         }
         constant = env.getProperty("sunflower.vm.step-limit");
         if (constant != null && !constant.isEmpty())
-            ApplicationConstants.VM_STEP_LIMIT = Long.parseLong(constant);
+            Limit.setVMStepLimit(Long.parseLong(constant));
 
         constant = env.getProperty("sunflower.validate");
         if (constant != null && constant.trim().toLowerCase().equals("true")) {
@@ -151,7 +152,7 @@ public class Start {
         }
         constant = env.getProperty("sunflower.vm.max-frames");
         if (constant != null && !constant.isEmpty())
-            ApplicationConstants.MAX_FRAMES = Long.parseLong(constant);
+            Limit.setMaxFrames(Long.parseLong(constant));
 
         constant = env.getProperty("sunflower.vm.max-contract-call-depth");
         if (constant != null && !constant.isEmpty())
@@ -362,9 +363,9 @@ public class Start {
         transactionPool.setEngine(engine);
         if (engine == AbstractConsensusEngine.NONE) return engine;
         repositoryService.saveGenesis(engine.getGenesisBlock());
-        if (syncConfig.getPruneHash().length > 0) {
-            repositoryService.prune(syncConfig.getPruneHash());
-        }
+//        if (syncConfig.getPruneHash().length > 0) {
+//            repositoryService.prune(syncConfig.getPruneHash());
+//        }
 
         // validate trie
         return engine;
@@ -386,9 +387,9 @@ public class Start {
         String persist = properties.getProperty("persist");
         persist = (persist == null) ? "" : persist.trim().toLowerCase();
 
-        Store<String, JsonNode> store = "true".equals(persist) && !"memory".equals(factory.getName()) ?
+        JsonStore store = "true".equals(persist) && !"memory".equals(factory.getName()) ?
                 new JsonStore(Paths.get(factory.getDirectory(), "peers.json").toString(), MAPPER)
-        : new MapStore<>();
+        : new JsonStore("$memory", MAPPER);
         PeerServer peerServer = new PeerServerImpl(store, engine, SecretStore.NONE);
         peerServer.init(properties);
         peerServer.addListeners(engine.getPeerServerListener());
@@ -409,7 +410,12 @@ public class Start {
                 .hashFunction(CryptoContext::hash)
                 .keyCodec(Codec.identity())
                 .valueCodec(Codec.identity())
-                .store(new NoDeleteBatchStore<>(factory.create("contract-storage-trie")))
+                .store(
+                        new NoDeleteBatchStore<>(
+                                factory.create("contract-storage-trie"),
+                                Store.IS_NULL
+                        )
+                )
                 .build();
     }
 

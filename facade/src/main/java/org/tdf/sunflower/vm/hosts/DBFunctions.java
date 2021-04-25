@@ -1,18 +1,16 @@
 package org.tdf.sunflower.vm.hosts;
 
 import lombok.Getter;
-import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.WBI;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class DBFunctions extends HostFunction {
     @Getter

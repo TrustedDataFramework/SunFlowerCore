@@ -14,7 +14,7 @@ import java.util.*;
 
 import static java.nio.file.StandardOpenOption.*;
 
-public class JsonStore implements BatchStore<String, JsonNode> {
+public class JsonStore implements BatchStore<String, JsonNode>, IterableStore<String, JsonNode> {
     static Set<PosixFilePermission> defaultPosixPermissions = null;
 
     static {
@@ -36,6 +36,8 @@ public class JsonStore implements BatchStore<String, JsonNode> {
 
     @SneakyThrows
     private void sync() {
+        if(jsonFile.equals("$memory"))
+            return;
         byte[] bin = mapper.writeValueAsBytes(node);
         Files.write(Paths.get(this.jsonFile), bin, CREATE, TRUNCATE_EXISTING, WRITE);
         Files.setPosixFilePermissions(Paths.get(this.jsonFile), defaultPosixPermissions);
@@ -44,6 +46,8 @@ public class JsonStore implements BatchStore<String, JsonNode> {
     @SneakyThrows
     private void load() {
         this.node = new HashMap<>();
+        if( jsonFile.equals("$memory") )
+            return;
         File f = new File(jsonFile);
         if (!f.exists()) {
             return;
@@ -97,5 +101,11 @@ public class JsonStore implements BatchStore<String, JsonNode> {
             node.put(Objects.requireNonNull(row.getKey()), Objects.requireNonNull(row.getValue()));
         }
         sync();
+    }
+
+
+    @Override
+    public Iterator<Map.Entry<String, JsonNode>> iterator() {
+        return node.entrySet().iterator();
     }
 }

@@ -2,6 +2,8 @@ package org.tdf.common.store;
 
 import lombok.NonNull;
 
+import java.util.function.Predicate;
+
 
 /**
  * abstract storage of key-value mappings
@@ -12,6 +14,8 @@ import lombok.NonNull;
  * @author zhuyingjie
  */
 public interface Store<K, V> {
+    Predicate<byte[]> IS_NULL = x -> x == null || x.length == 0;
+
     /**
      * a trivial store implementation which is always empty
      */
@@ -81,5 +85,4 @@ public interface Store<K, V> {
      * Source didn't change
      */
     void flush();
-
 }

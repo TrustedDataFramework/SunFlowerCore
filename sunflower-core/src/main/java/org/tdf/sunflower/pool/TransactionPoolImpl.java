@@ -168,7 +168,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 long prevNonce =
                         nonceMap.containsKey(t.getFromAddress()) ?
                                 nonceMap.get(t.getFromAddress()) :
-                                accountStore.get(t.getFromAddress())
+                                Optional.ofNullable(accountStore.get(t.getFromAddress()))
                                         .map(Account::getNonce)
                                         .orElse(0L);
                 if (t.getNonce() <= prevNonce) {

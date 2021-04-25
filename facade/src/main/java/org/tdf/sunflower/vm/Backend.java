@@ -10,8 +10,7 @@ import org.tdf.sunflower.vm.abi.ContractABI;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.BiFunction;
+
 
 public interface Backend {
     long getHeight();
@@ -26,7 +25,7 @@ public interface Backend {
     List<ContractABI> getABI(HexBytes address);
     void setABI(HexBytes address, List<ContractABI> abi);
 
-    long getGasLimit();
+
     long getInitialGas(int payloadSize);
     long getMaxDepth();
     Map<HexBytes, PreBuiltContract> getPreBuiltContracts();
@@ -40,17 +39,27 @@ public interface Backend {
     void setContractCreatedBy(HexBytes address, HexBytes createdBy);
     void dbRemove(HexBytes address, byte[] key);
 
-    Uint256 getGasPrice();
     byte[] getCode(HexBytes address);
-    byte[] setCode(HexBytes address, byte[] code);
+    void setCode(HexBytes address, byte[] code);
 
-    void onEvent(HexBytes address, String eventName, byte[] eventData);
+    void onEvent(HexBytes address, String eventName, RLPList eventData);
+
+    Map<HexBytes, List<Map.Entry<String, RLPList>>> getEvents();
+
+    boolean isStatic();
+
+    Backend getParentBackend();
+
+    Backend createChild();
+
+    // merge modifications, return the new state root
+    byte[] merge();
 
     default Store<byte[], byte[]> getAsStore(HexBytes address) {
         return new Store<byte[], byte[]>() {
             @Override
-            public Optional<byte[]> get(byte[] bytes) {
-                return Optional.of(dbGet(address, bytes));
+            public byte[] get(byte[] bytes) {
+                return dbGet(address, bytes);
             }
 
             @Override
@@ -65,16 +74,6 @@ public interface Backend {
 
             @Override
             public void flush() {
-                throw new RuntimeException("not implemented");
-            }
-
-            @Override
-            public void clear() {
-                throw new RuntimeException("not implemented");
-            }
-
-            @Override
-            public void traverse(BiFunction<? super byte[], ? super byte[], Boolean> traverser) {
                 throw new RuntimeException("not implemented");
             }
         };

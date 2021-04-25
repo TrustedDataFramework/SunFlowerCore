@@ -8,6 +8,7 @@ import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.PrefixStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
@@ -47,7 +48,7 @@ public class Authentication implements PreBuiltContract {
     }
 
     private byte[] getValue(byte[] stateRoot, byte[] key) {
-        Account a = accountTrie.get(stateRoot, this.contractAddress).get();
+        Account a = accountTrie.get(stateRoot, this.contractAddress);
         Store<byte[], byte[]> db = contractStorageTrie.revert(a.getStorageRoot());
         return db.get(key);
     }
@@ -58,13 +59,17 @@ public class Authentication implements PreBuiltContract {
     }
 
     public Map<HexBytes, TreeSet<HexBytes>> getPending(byte[] stateRoot) {
-        Account a = accountTrie.get(stateRoot, contractAddress).get();
+        Account a = accountTrie.get(stateRoot, contractAddress);
         Store<byte[], byte[]> contractStorage = contractStorageTrie.revert(a.getStorageRoot());
-        return new HashMap<>(getPendingStore(contractStorage).asMap());
+        Map<HexBytes, TreeSet<HexBytes>> ret = new HashMap<>();
+        for (Map.Entry<HexBytes, TreeSet<HexBytes>> entry : getPendingStore(contractStorage)) {
+            ret.put(entry.getKey(), entry.getValue());
+        }
+        return ret;
     }
 
     @SneakyThrows
-    public Store<HexBytes, TreeSet<HexBytes>> getPendingStore(Store<byte[], byte[]> contractStorage) {
+    public PrefixStore<HexBytes, TreeSet<HexBytes>> getPendingStore(Store<byte[], byte[]> contractStorage) {
         return new PrefixStore<>(
                 contractStorage,
                 PENDING_NODES_KEY,
@@ -85,7 +90,7 @@ public class Authentication implements PreBuiltContract {
 
     @Override
     public Account getGenesisAccount() {
-        return Account.emptyContract(this.contractAddress);
+        return Account.emptyAccount(this.contractAddress, Uint256.ZERO);
     }
 
     @Override

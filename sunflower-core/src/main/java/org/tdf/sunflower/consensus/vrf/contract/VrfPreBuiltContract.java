@@ -36,7 +36,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
         if (genesisAccount == null) {
             synchronized (VrfPreBuiltContract.class) {
                 if (genesisAccount == null) {
-                    genesisAccount = Account.emptyContract(Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES);
+                    genesisAccount = Account.emptyAccount(Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES, Uint256.ZERO);
                 }
             }
         }
@@ -112,11 +112,11 @@ public class VrfPreBuiltContract implements PreBuiltContract {
 
         long deposit = 0;
         long total = 0;
-        if (contractStorage.get(fromAddr).isPresent()) {
-            deposit = ByteUtil.byteArrayToLong(contractStorage.get(fromAddr).get());
+        if (!Store.IS_NULL.test(contractStorage.get(fromAddr))) {
+            deposit = ByteUtil.byteArrayToLong(contractStorage.get(fromAddr));
         }
-        if (contractStorage.get(TOTAL_KEY).isPresent()) {
-            total = ByteUtil.byteArrayToLong(contractStorage.get(TOTAL_KEY).get());
+        if (!Store.IS_NULL.test(contractStorage.get(TOTAL_KEY))) {
+            total = ByteUtil.byteArrayToLong(contractStorage.get(TOTAL_KEY));
         }
 
         long formerDeposit = deposit;
@@ -161,11 +161,11 @@ public class VrfPreBuiltContract implements PreBuiltContract {
         // Get current address deposit and contract total
         long deposit = 0;
         long total = 0;
-        if (contractStorage.get(fromAddr).isPresent()) {
-            deposit = ByteUtil.byteArrayToLong(contractStorage.get(fromAddr).get());
+        if (!Store.IS_NULL.test(contractStorage.get(fromAddr))) {
+            deposit = ByteUtil.byteArrayToLong(contractStorage.get(fromAddr));
         }
-        if (contractStorage.get(TOTAL_KEY).isPresent()) {
-            total = ByteUtil.byteArrayToLong(contractStorage.get(TOTAL_KEY).get());
+        if (!Store.IS_NULL.test(contractStorage.get(TOTAL_KEY))) {
+            total = ByteUtil.byteArrayToLong(contractStorage.get(TOTAL_KEY));
         }
 
         if (deposit < amount) {

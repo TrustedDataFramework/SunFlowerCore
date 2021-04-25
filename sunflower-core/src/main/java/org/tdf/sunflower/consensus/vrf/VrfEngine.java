@@ -56,7 +56,7 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
         List<Account> ret = new ArrayList<>();
         if (genesis.alloc != null) {
             genesis.alloc.forEach((k, v) -> {
-                Account a = new Account(HexBytes.fromHex(k), Uint256.of(v));
+                Account a = Account.emptyAccount(HexBytes.fromHex(k), Uint256.of(v));
                 ret.add(a);
             });
         }

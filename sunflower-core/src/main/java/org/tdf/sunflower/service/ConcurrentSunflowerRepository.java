@@ -254,33 +254,33 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
 
     }
 
-    @Override
-    public void prune(byte[] hash) {
-        lock.writeLock().lock();
-        try {
-            delegate.prune(hash);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    @Override
-    public long getPrunedHeight() {
-        return delegate.getPrunedHeight();
-    }
-
-    @Override
-    public HexBytes getPrunedHash() {
-        return delegate.getPrunedHash();
-    }
-
-    @Override
-    public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
-        lock.readLock().lock();
-        try {
-            delegate.traverseTransactions(traverser);
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
+//    @Override
+//    public void prune(byte[] hash) {
+//        lock.writeLock().lock();
+//        try {
+//            delegate.prune(hash);
+//        } finally {
+//            lock.writeLock().unlock();
+//        }
+//    }
+//
+//    @Override
+//    public long getPrunedHeight() {
+//        return delegate.getPrunedHeight();
+//    }
+//
+//    @Override
+//    public HexBytes getPrunedHash() {
+//        return delegate.getPrunedHash();
+//    }
+//
+//    @Override
+//    public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
+//        lock.readLock().lock();
+//        try {
+//            delegate.traverseTransactions(traverser);
+//        } finally {
+//            lock.readLock().unlock();
+//        }
+//    }
 }

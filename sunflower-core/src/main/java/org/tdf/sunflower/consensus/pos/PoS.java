@@ -60,7 +60,7 @@ public class PoS extends AbstractConsensusEngine {
     public List<Account> getGenesisStates() {
         return genesis.alloc == null ? Collections.emptyList() :
                 genesis.alloc.entrySet().stream()
-                        .map(e -> new Account(HexBytes.fromHex(e.getKey()), Uint256.of(e.getValue())))
+                        .map(e -> Account.emptyAccount(HexBytes.fromHex(e.getKey()), Uint256.of(e.getValue())))
                         .collect(Collectors.toList());
     }
 

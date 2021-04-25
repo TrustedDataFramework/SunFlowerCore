@@ -21,7 +21,8 @@ public interface CallData {
     HexBytes getTxSignature();
     long getTxCreatedAt();
 
-    boolean isStatic();
-
     CallData clone();
+
+    Uint256 getGasPrice();
+    long getGasLimit();
 }

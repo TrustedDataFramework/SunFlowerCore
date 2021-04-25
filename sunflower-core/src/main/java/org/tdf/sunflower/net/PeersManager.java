@@ -1,5 +1,7 @@
 package org.tdf.sunflower.net;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.base.Functions;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.SneakyThrows;
@@ -85,10 +87,10 @@ public class PeersManager implements Plugin {
         executorService
                 .scheduleWithFixedDelay(() -> {
 
-                    ((BatchStore<String, String>) server.peerStore)
+                    ((BatchStore<String, JsonNode>) server.peerStore)
                             .putAll(
                                     client.peersCache.getPeers()
-                                            .map(p -> new AbstractMap.SimpleEntry<>(p.getID().toHex(), p.encodeURI()))
+                                            .map(p -> new AbstractMap.SimpleEntry<>(p.getID().toHex(), new TextNode(p.encodeURI())))
                                             .collect(Collectors.toList())
                             );
 

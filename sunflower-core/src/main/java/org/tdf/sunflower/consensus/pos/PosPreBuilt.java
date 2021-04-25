@@ -48,9 +48,9 @@ public class PosPreBuilt implements PreBuiltContract {
     }
 
     private byte[] getValue(byte[] stateRoot, byte[] key) {
-        Account a = accountTrie.get(stateRoot, Constants.POS_CONTRACT_ADDR).get();
+        Account a = accountTrie.get(stateRoot, Constants.POS_CONTRACT_ADDR);
         Store<byte[], byte[]> db = accountTrie.getContractStorageTrie().revert(a.getStorageRoot());
-        return db.get(key).get();
+        return db.get(key);
     }
 
     public List<HexBytes> getNodes(byte[] stateRoot) {
@@ -65,10 +65,10 @@ public class PosPreBuilt implements PreBuiltContract {
     }
 
     public Optional<VoteInfo> getVoteInfo(byte[] stateRoot, byte[] txHash) {
-        Account a = accountTrie.get(stateRoot, Constants.POS_CONTRACT_ADDR).get();
+        Account a = accountTrie.get(stateRoot, Constants.POS_CONTRACT_ADDR);
         Store<byte[], byte[]> db = accountTrie.getContractStorageTrie().revert(a.getStorageRoot());
         PrefixStore<byte[], VoteInfo> store = getVoteInfoStore(db);
-        return store.get(txHash);
+        return Optional.ofNullable(store.get(txHash));
     }
 
     public PrefixStore<byte[], VoteInfo> getVoteInfoStore(Store<byte[], byte[]> contractStore) {
@@ -82,7 +82,7 @@ public class PosPreBuilt implements PreBuiltContract {
 
     @Override
     public Account getGenesisAccount() {
-        return Account.emptyContract(Constants.POS_CONTRACT_ADDR);
+        return Account.emptyAccount(Constants.POS_CONTRACT_ADDR, Uint256.ZERO);
     }
 
     @Override
@@ -134,7 +134,7 @@ public class PosPreBuilt implements PreBuiltContract {
             case CANCEL_VOTE:
                 if (callData.getAmount().compareTo(Uint256.ZERO) != 0)
                     throw new RuntimeException("amount of cancel vote should be 0");
-                Optional<VoteInfo> o = voteInfos.get(args.getBytes());
+                Optional<VoteInfo> o = Optional.ofNullable(voteInfos.get(args.getBytes()));
                 voteInfos.remove(args.getBytes());
 
                 if (!o.isPresent()) {
