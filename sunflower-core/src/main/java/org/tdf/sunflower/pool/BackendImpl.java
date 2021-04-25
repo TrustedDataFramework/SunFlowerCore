@@ -39,6 +39,7 @@ public class BackendImpl implements Backend {
     private Store<byte[], byte[]> codeStore;
     private Map<HexBytes, byte[]> codeCache;
     private Map<HexBytes, List<Map.Entry<String, RLPList>>> events;
+    private long headerCreatedAt;
 
     // get account by parent without clone
     private Account lookup(HexBytes address) {
@@ -63,7 +64,8 @@ public class BackendImpl implements Backend {
                 isStatic,
                 codeStore,
                 codeCache,
-                events
+                events,
+                headerCreatedAt
         );
     }
 
@@ -97,7 +99,9 @@ public class BackendImpl implements Backend {
                 a = Account.emptyAccount(addr, Uint256.ZERO);
             Trie<byte[], byte[]> s = contractStorageTrie.revert(a.getStorageRoot());
 
-            for (Map.Entry<HexBytes, byte[]> entry : storage.get(addr).entrySet()) {
+            Map<HexBytes, byte[]> map = storage.getOrDefault(addr, Collections.emptyMap());
+
+            for (Map.Entry<HexBytes, byte[]> entry : map.entrySet()) {
                 if (entry.getValue() == null || entry.getValue().length == 0) {
                     s.remove(entry.getKey().getBytes());
                 } else {
@@ -136,7 +140,7 @@ public class BackendImpl implements Backend {
 
     @Override
     public long getHeaderCreatedAt() {
-        return 0;
+        return headerCreatedAt;
     }
 
     @Override
@@ -283,7 +287,10 @@ public class BackendImpl implements Backend {
 
     @Override
     public byte[] getCode(HexBytes address) {
-        Account a = lookup(address);
+        Account a = modifiedAccounts.get(address);
+        if (a == null)
+            a = lookup(address).clone();
+
         if (a.getContractHash() == null || a.getContractHash().length == 0)
             return HexBytes.EMPTY_BYTES;
         byte[] code = codeCache.get(HexBytes.fromBytes(a.getContractHash()));

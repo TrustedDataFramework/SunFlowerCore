@@ -9,7 +9,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.Backend;
-import org.tdf.sunflower.vm.CallDataImpl;
+import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
 import org.tdf.sunflower.vm.hosts.Limit;
 
@@ -63,7 +63,7 @@ public abstract class AbstractValidator implements Validator {
             Transaction coinbase = block.getBody().get(0);
 
             for (Transaction tx : block.getBody().subList(1, block.getBody().size())) {
-                VMExecutor executor = new VMExecutor(tmp, CallDataImpl.fromTransaction(tx), new Limit(), 0);
+                VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(tx), new Limit(), 0);
                 TransactionResult r = executor.execute();
                 results.put(tx.getHash(), r);
                 totalFee = totalFee.safeAdd(r.getFee());
@@ -71,7 +71,7 @@ public abstract class AbstractValidator implements Validator {
                 gas = SafeMath.add(gas, r.getGasUsed());
             }
 
-            VMExecutor executor = new VMExecutor(tmp, CallDataImpl.fromTransaction(coinbase), new Limit(), 0);
+            VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(coinbase), new Limit(), 0);
             executor.execute();
 
             byte[] rootHash = tmp.merge();

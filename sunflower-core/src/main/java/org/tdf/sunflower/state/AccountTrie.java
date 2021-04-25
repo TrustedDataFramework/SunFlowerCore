@@ -19,7 +19,7 @@ import org.tdf.sunflower.pool.BackendImpl;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
-import org.tdf.sunflower.vm.CallDataImpl;
+import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
 import org.tdf.sunflower.vm.hosts.Limit;
@@ -63,7 +63,8 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
                 isStatic,
                 contractCodeStore,
                 new HashMap<>(),
-                new HashMap<>()
+                new HashMap<>(),
+                newBlockCreatedAt
         );
     }
 
@@ -136,7 +137,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
 
     public RLPList call(Header header, HexBytes address, String method, Parameters parameters) {
         // execute method
-        CallDataImpl callData = CallDataImpl.empty();
+        CallData callData = CallData.empty();
         callData.setTo(address);
         callData.setPayload(HexBytes.fromBytes(RLPCodec.encode(new ContractCallPayload(method, parameters))));
 

@@ -27,7 +27,7 @@ import java.util.Map;
 
 @NoArgsConstructor
 public class VMExecutor {
-    public VMExecutor(Backend backend, CallDataImpl callData, Limit limit, int depth) {
+    public VMExecutor(Backend backend, CallData callData, Limit limit, int depth) {
         this.backend = backend;
         this.callData = callData;
         this.limit = limit;
@@ -37,7 +37,7 @@ public class VMExecutor {
     @Getter
     private Backend backend;
     @Getter
-    private CallDataImpl callData;
+    private CallData callData;
 
 
     // gas limit hook
@@ -140,7 +140,20 @@ public class VMExecutor {
     public TransactionResult execute() {
         // 1. increase sender nonce
         long n = backend.getNonce(callData.getOrigin());
-        backend.setNonce(callData.getOrigin(), n);
+        if(!backend.isStatic() && n + 1 != callData.getTxNonce() )
+            throw new RuntimeException("invalid nonce");
+
+        Transaction.Type t = Transaction.Type.values()[callData.getCallType()];
+
+        switch (t) {
+            case TRANSFER:
+            case CONTRACT_CALL:{
+                backend.setNonce(callData.getOrigin(), n + 1);
+                break;
+            }
+            // contract deploy nonce will increase internally
+        }
+
 
         // 2. set initial gas by payload size
         limit.setInitialGas(backend.getInitialGas(callData.getPayload().size()));
@@ -175,7 +188,7 @@ public class VMExecutor {
                 return RLPList.createEmpty();
             }
             case TRANSFER: {
-                // increase nonce + balance
+                // transfer balance
                 limit.addGas(Transaction.TRANSFER_GAS);
                 addBalance(callData.getTo(), callData.getAmount());
                 subBalance(callData.getCaller(), callData.getAmount());
@@ -199,6 +212,10 @@ public class VMExecutor {
 
                 // if this is contract deploy, should create contract account
                 if (t == Transaction.Type.CONTRACT_DEPLOY) {
+                    // increase sender nonce
+                    long n = backend.getNonce(callData.getCaller());
+                    backend.setNonce(callData.getCaller(), n + 1);
+
                     ContractDeployPayload deployPayload =
                             RLPCodec.decode(
                                     callData.getPayload().getBytes(),
@@ -208,6 +225,7 @@ public class VMExecutor {
                     method = "init";
                     // increase nonce here to avoid conflicts
                     contractAddress = Transaction.createContractAddress(callData.getCaller(), backend.getNonce(callData.getCaller()));
+                    callData.setTo(contractAddress);
                     backend.setCode(contractAddress, deployPayload.getBinary());
                     backend.setABI(contractAddress, deployPayload.getContractABIs());
                     backend.setContractCreatedBy(contractAddress, callData.getCaller());
@@ -226,7 +244,7 @@ public class VMExecutor {
                 // is wasm call
                 addBalance(contractAddress, callData.getAmount());
                 subBalance(callData.getCaller(), callData.getAmount());
-                byte[] contractCode = backend.getCode(callData.getTo());
+                byte[] contractCode = backend.getCode(contractAddress);
 
                 if (contractCode.length == 0)
                     throw new RuntimeException("contract not found or is not a ccontract address");

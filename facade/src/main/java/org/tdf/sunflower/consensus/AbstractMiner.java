@@ -14,7 +14,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.Backend;
-import org.tdf.sunflower.vm.CallDataImpl;
+import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
 import org.tdf.sunflower.vm.hosts.Limit;
 
@@ -104,7 +104,7 @@ public abstract class AbstractMiner implements Miner {
 
                 // store updated result to the trie if update success
                 tmp = tmp.createChild();
-                CallDataImpl callData = CallDataImpl.fromTransaction(tx);
+                CallData callData = CallData.fromTransaction(tx);
                 VMExecutor vmExecutor = new VMExecutor(tmp, callData, new Limit(), 0);
                 TransactionResult res = vmExecutor.execute();
                 totalFee = totalFee.safeAdd(res.getFee());
@@ -130,7 +130,7 @@ public abstract class AbstractMiner implements Miner {
 
         // add fee to miners account
         coinbase.setAmount(coinbase.getAmount().safeAdd(totalFee));
-        CallDataImpl callData = CallDataImpl.fromTransaction(coinbase);
+        CallData callData = CallData.fromTransaction(coinbase);
         VMExecutor executor = new VMExecutor(tmp, callData, new Limit(), 0);
         executor.execute();
 
