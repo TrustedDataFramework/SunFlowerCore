@@ -13,7 +13,6 @@ import org.tdf.rlp.RLPItem;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -29,15 +28,15 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     @Getter
     Store<byte[], byte[]> store;
 
-    Codec<K, byte[]> kCodec;
-    Codec<V, byte[]> vCodec;
+    Codec<K> kCodec;
+    Codec<V> vCodec;
     private Node root;
 
     static <K, V> TrieImpl<K, V> newInstance(
             @NonNull Function<byte[], byte[]> hashFunction,
             @NonNull Store<byte[], byte[]> store,
-            @NonNull Codec<K, byte[]> keyCodec,
-            @NonNull Codec<V, byte[]> valueCodec
+            @NonNull Codec<K> keyCodec,
+            @NonNull Codec<V> valueCodec
     ) {
 
         return new TrieImpl<>(
@@ -50,18 +49,19 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
         );
     }
 
-    Codec<K, byte[]> getKCodec() {
+    Codec<K> getKCodec() {
         return kCodec;
     }
 
-    Codec<V, byte[]> getVCodec() {
+    Codec<V> getVCodec() {
         return vCodec;
     }
 
-    Optional<V> getFromBytes(byte[] data) {
+    V getFromBytes(byte[] data) {
         if (data == null || data.length == 0) throw new IllegalArgumentException("key cannot be null");
-        if (root == null) return Optional.empty();
-        return Optional.ofNullable(root.get(TrieKey.fromNormal(data))).map(vCodec.getDecoder());
+        if (root == null) return null;
+        byte[] v = root.get(TrieKey.fromNormal(data));
+        return (v == null || v.length == 0) ? null : vCodec.getDecoder().apply(v);
     }
 
     void putBytes(byte[] key, byte[] value) {
@@ -83,16 +83,9 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
         root = root.delete(TrieKey.fromNormal(data), store);
     }
 
-    @Override
-    public boolean isEmpty() {
-        return root == null;
-    }
-
-    @Override
     public void clear() {
         root = null;
     }
-
 
     public byte[] commit() {
         if (root == null) return nullHash;
@@ -113,7 +106,8 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
         if (FastByteComparisons.equal(rootHash, nullHash))
             return new TrieImpl<>(nullHash, function, store,
                     kCodec, vCodec, null);
-        if (!store.containsKey(rootHash)) throw new RuntimeException("rollback failed, root hash not exists");
+        byte[] v = store.get(rootHash);
+        if (v == null || v.length == 0) throw new RuntimeException("rollback failed, root hash not exists");
         return new TrieImpl<>(
                 nullHash,
                 function,
@@ -181,12 +175,6 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
         });
     }
 
-
-    @Override
-    public boolean isTrap(V v) {
-        byte[] encoded = vCodec.getEncoder().apply(v);
-        return encoded == null || encoded.length == 0;
-    }
 
     public Map<byte[], byte[]> getProofInternal(byte[] key) {
         return root == null ?

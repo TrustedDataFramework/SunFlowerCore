@@ -9,16 +9,15 @@ import org.tdf.lotusvm.types.ValueType;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
-import org.tdf.sunflower.vm.abi.AbiDataType;
-import org.tdf.sunflower.vm.abi.ContractABI;
-import org.tdf.sunflower.vm.abi.ContractCall;
+import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.vm.Executor;
+import org.tdf.sunflower.vm.abi.*;
 
 import java.util.Arrays;
 import java.util.Collections;
 
 public class Reflect extends HostFunction {
-    private final ContractCall parent;
-    private final boolean readonly;
+    private final Executor executor;
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
             // offset, length, offset
             Arrays.asList(
@@ -28,31 +27,62 @@ public class Reflect extends HostFunction {
             Collections.singletonList(ValueType.I64)
     );
 
-    public Reflect(ContractCall parent, boolean readonly) {
+    public Reflect(Executor executor) {
         super("_reflect", FUNCTION_TYPE);
-        this.parent = parent;
-        this.readonly = readonly;
+        this.executor = executor;
     }
 
     @Override
     public long execute(long... longs) {
         Type t = Type.values()[(int) longs[0]];
+        byte[] payload = null;
+        Uint256 amount = null;
+        Executor forked = executor.clone();
+        Parameters params = null;
         switch (t) {
             case CALL: {
                 byte[] addr = (byte[]) WBI.peek(getInstance(), (int) longs[1], AbiDataType.ADDRESS);
+                forked.getCallData().setTo(HexBytes.fromBytes(addr));
                 String method = (String) WBI.peek(getInstance(), (int) longs[2], AbiDataType.STRING);
+
                 if ("init".equals(method))
                     throw new RuntimeException("cannot call constructor");
-                byte[] parameters = (byte[]) WBI.peek(getInstance(), (int) longs[3], AbiDataType.BYTES);
-                Parameters params = RLPCodec.decode(parameters, Parameters.class);
-                Uint256 amount = (Uint256) WBI.peek(getInstance(), (int) longs[4], AbiDataType.U256);
-                ContractCall forked = parent.fork();
-                RLPList result = forked.call(HexBytes.fromBytes(addr), method, params, amount, false, null).getReturns();
-                if (result.isEmpty())
-                    return 0;
 
-                RLPItem it = result.get(0).asRLPItem();
-                switch (AbiDataType.values()[params.getReturnType()[0]]) {
+                byte[] parameters = (byte[]) WBI.peek(getInstance(), (int) longs[3], AbiDataType.BYTES);
+                params = RLPCodec.decode(parameters, Parameters.class);
+                amount = (Uint256) WBI.peek(getInstance(), (int) longs[4], AbiDataType.U256);
+                payload = RLPCodec.encode(new ContractCallPayload(method, params));
+                forked.getCallData().setCallType(Transaction.Type.CONTRACT_CALL.code);
+                break;
+            }
+            case CREATE: {
+                forked.getCallData().setTo(HexBytes.empty());
+                byte[] binary = (byte[]) WBI.peek(getInstance(), (int) longs[1], AbiDataType.BYTES);
+                byte[] parameters = (byte[]) WBI.peek(getInstance(), (int) longs[3], AbiDataType.BYTES);
+                byte[] abi = (byte[]) WBI.peek(getInstance(), (int) longs[5], AbiDataType.BYTES);
+                params = RLPCodec.decode(parameters, Parameters.class);
+                payload = RLPCodec.encode(new ContractDeployPayload(
+                        binary, params,
+                        Arrays.asList(RLPCodec.decode(abi, ContractABI[].class))
+                ));
+                amount = (Uint256) WBI.peek(getInstance(), (int) longs[4], AbiDataType.U256);
+                forked.getCallData().setCallType(Transaction.Type.CONTRACT_DEPLOY.code);
+                break;
+            }
+            default:
+                throw new RuntimeException("unexpected");
+        }
+
+        forked.getCallData().setAmount(amount);
+        forked.getCallData().setPayload(HexBytes.fromBytes(RLPCodec.encode(payload)));
+        forked.getCallData().setCaller(executor.getCallData().getTo());
+        RLPList result = forked.execute();
+
+        if (result.isEmpty())
+            return 0;
+
+        RLPItem it = result.get(0).asRLPItem();
+        switch (AbiDataType.values()[params.getReturnType()[0]]) {
                     case F64:
                     case I64:
                     case BOOL:
@@ -70,30 +100,10 @@ public class Reflect extends HostFunction {
                     case ADDRESS: {
                         return WBI.mallocAddress(getInstance(), it.asBytes());
                     }
-                }
-                break;
-            }
-            case CREATE:
-                if (this.readonly)
-                    throw new RuntimeException("cannot create contract here");
-                byte[] binary = (byte[]) WBI.peek(getInstance(), (int) longs[1], AbiDataType.BYTES);
-                byte[] parameters = (byte[]) WBI.peek(getInstance(), (int) longs[3], AbiDataType.BYTES);
-                byte[] abi = (byte[]) WBI.peek(getInstance(), (int) longs[5], AbiDataType.BYTES);
-                Uint256 amount = (Uint256) WBI.peek(getInstance(), (int) longs[4], AbiDataType.U256);
-                ContractCall forked = parent.fork();
-                byte[] data = forked
-                        .call(HexBytes.fromBytes(binary),
-                                "init",
-                                RLPCodec.decode(parameters, Parameters.class),
-                                amount,
-                                true,
-                                Arrays.asList(RLPCodec.decode(abi, ContractABI[].class))
-                        )
-                        .getReturns().get(0).asBytes();
-                return WBI.mallocAddress(getInstance(), data);
         }
-        throw new RuntimeException("unreachable");
+        throw new RuntimeException("unexpected");
     }
+
 
     enum Type {
         CALL, // call and put into memory

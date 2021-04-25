@@ -11,10 +11,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiFunction;
 
 
 @Slf4j(topic = "leveldb")
@@ -138,18 +137,9 @@ public class LevelDb implements DatabaseStore {
         init(dbSettings);
     }
 
-    @Override
-    public boolean containsKey(@NonNull byte[] bytes) {
-        resetDbLock.readLock().lock();
-        try {
-            return db.get(bytes) != null;
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
 
     @Override
-    public void putAll(Collection<? extends Map.Entry<? extends byte[], ? extends byte[]>> rows) {
+    public void putAll(@NonNull Collection<? extends Map.Entry<? extends byte[], ? extends byte[]>> rows) {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
@@ -176,10 +166,10 @@ public class LevelDb implements DatabaseStore {
     private void updateBatchInternal(Collection<? extends Map.Entry<? extends byte[], ? extends byte[]>> rows) throws IOException {
         try (WriteBatch batch = db.createWriteBatch()) {
             for (Map.Entry<? extends byte[], ? extends byte[]> entry : rows) {
-                if (entry.getValue() == null || isTrap(entry.getValue())) {
-                    batch.delete(entry.getKey());
+                if (entry.getValue() == null || entry.getValue().length == 0) {
+                    batch.delete(Objects.requireNonNull(entry.getKey()));
                 } else {
-                    batch.put(entry.getKey(), entry.getValue());
+                    batch.put(Objects.requireNonNull(entry.getKey()), entry.getValue());
                 }
             }
             db.write(batch);
@@ -187,7 +177,7 @@ public class LevelDb implements DatabaseStore {
     }
 
     @Override
-    public Optional<byte[]> get(@NonNull byte[] key) {
+    public byte[] get(@NonNull byte[] key) {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled())
@@ -196,13 +186,13 @@ public class LevelDb implements DatabaseStore {
                 byte[] ret = db.get(key);
                 if (log.isTraceEnabled())
                     log.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.encodeHexString(key) + ", " + (ret == null ? "null" : ret.length));
-                return Optional.ofNullable(ret);
+                return ret == null ? new byte[0] : ret;
             } catch (DBException e) {
                 log.warn("Exception. Retrying again...", e);
                 byte[] ret = db.get(key);
                 if (log.isTraceEnabled())
                     log.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.encodeHexString(key) + ", " + (ret == null ? "null" : ret.length));
-                return Optional.ofNullable(ret);
+                return ret == null ? new byte[0] : ret;
             }
         } finally {
             resetDbLock.readLock().unlock();
@@ -215,30 +205,13 @@ public class LevelDb implements DatabaseStore {
         try {
             if (log.isTraceEnabled())
                 log.trace("~> LevelDbDataSource.put(): " + name + ", key: " + Hex.encodeHexString(key));
-            if (isTrap(val)) {
+            if (val.length == 0) {
                 db.delete(key);
             } else {
                 db.put(key, val);
             }
             if (log.isTraceEnabled())
                 log.trace("<~ LevelDbDataSource.put(): " + name + ", key: " + Hex.encodeHexString(key));
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public void putIfAbsent(@NonNull byte[] key, @NonNull byte[] val) {
-        resetDbLock.readLock().lock();
-        try {
-            if (db.get(key) != null) {
-                return;
-            }
-            if (val != getTrap() && val.length != 0) {
-                db.put(key, val);
-            } else {
-                db.delete(key);
-            }
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -271,24 +244,4 @@ public class LevelDb implements DatabaseStore {
     public void flush() {
     }
 
-    @Override
-    public void traverse(BiFunction<? super byte[], ? super byte[], Boolean> traverser) {
-        resetDbLock.readLock().lock();
-        try {
-            if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.keys(): " + name);
-            try (DBIterator iterator = db.iterator()) {
-                for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
-                    Map.Entry<byte[], byte[]> entry = iterator.peekNext();
-                    if (!traverser.apply(entry.getKey(), entry.getValue())) {
-                        return;
-                    }
-                }
-            } catch (IOException e) {
-                log.error("Unexpected", e);
-                throw new RuntimeException(e);
-            }
-        } finally {
-            resetDbLock.readLock().unlock();
-        }
-    }
 }

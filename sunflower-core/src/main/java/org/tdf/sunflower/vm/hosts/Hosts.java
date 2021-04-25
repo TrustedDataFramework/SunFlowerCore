@@ -6,6 +6,7 @@ import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.vm.Backend;
 
 import java.util.*;
 
@@ -22,8 +23,8 @@ public class Hosts {
         this.u256Host = new U256Host();
     }
 
-    public Hosts withEvent(HexBytes address, boolean readonly) {
-        this.eventHost = new EventHost(address, readonly);
+    public Hosts withEvent(Backend backend, HexBytes address, boolean isStatic) {
+        this.eventHost = new EventHost(backend, address, isStatic);
         return this;
     }
 
@@ -33,11 +34,10 @@ public class Hosts {
     }
 
     public Hosts withTransfer(
-            Map<HexBytes, Account> states,
-            HexBytes contractAddress,
-            boolean readonly
+            Backend backend,
+            HexBytes contractAddress
     ) {
-        this.transfer = new Transfer(states, contractAddress, readonly);
+        this.transfer = new Transfer(backend, contractAddress);
         return this;
     }
 

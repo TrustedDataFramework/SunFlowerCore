@@ -8,7 +8,6 @@ import lombok.Data;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
-import org.tdf.rlp.RLPIgnored;
 import org.tdf.rlp.RLPItem;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.vm.abi.ContractABI;
@@ -39,11 +38,7 @@ public class Account {
     // root hash of contract db
     // if the account is not contract account, this field will be null
     private byte[] storageRoot;
-    /**
-     * mark the account not persisted before
-     */
-    @RLPIgnored
-    private transient boolean fresh;
+
     // contract abis
     @JsonIgnore
     private List<ContractABI> contractABIs;
@@ -66,7 +61,6 @@ public class Account {
                 Uint256.ZERO, address,
                 null,
                 CryptoContext.hash(RLPItem.NULL.getEncoded()),
-                true,
                 null
         );
     }
@@ -78,7 +72,7 @@ public class Account {
      * @return a fresh new account
      */
     public static Account emptyAccount(HexBytes address) {
-        return new Account(address, 0, Uint256.ZERO, HexBytes.EMPTY, null, null, true, null);
+        return new Account(address, 0, Uint256.ZERO, HexBytes.EMPTY, CryptoContext.getEmptyTrieRoot(), null, null);
     }
 
     public boolean containsContract() {
@@ -87,7 +81,7 @@ public class Account {
 
     @Override
     public Account clone() {
-        return new Account(address, nonce, balance, createdBy, contractHash, storageRoot, fresh, contractABIs);
+        return new Account(address, nonce, balance, createdBy, contractHash, storageRoot, contractABIs);
     }
 
     public void addBalance(Uint256 amount) {

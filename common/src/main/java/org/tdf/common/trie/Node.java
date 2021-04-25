@@ -161,12 +161,13 @@ class Node {
     // get actual rlp encoding in the cache
     private void resolve() {
         if (rlp != null || hash == null) return;
-        rlp = readOnlyCache
-                .get(hash)
-                .filter(x -> FastByteComparisons.equal(hash, hashFunction.apply(x)))
-                .map(RLPElement::fromEncoded)
-                .map(RLPElement::asRLPList)
-                .orElseThrow(() -> new RuntimeException("rlp encoding not found in cache"));
+
+        byte[] v = readOnlyCache
+                .get(hash);
+        if (v == null || !FastByteComparisons.equal(hash, hashFunction.apply(v))) {
+            throw new RuntimeException("rlp encoding not found in cache");
+        }
+        rlp = RLPElement.fromEncoded(v).asRLPList();
     }
 
 

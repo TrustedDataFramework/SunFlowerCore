@@ -3,13 +3,10 @@ package org.tdf.common.trie;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
 
-import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * https://medium.com/codechain/secure-tree-why-state-tries-key-is-256-bits-1276beb68485
@@ -79,30 +76,10 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
         return delegate.isDirty();
     }
 
-    @Override
-    public V getTrap() {
-        return delegate.getTrap();
-    }
-
-    @Override
-    public boolean isTrap(V v) {
-        return delegate.isTrap(v);
-    }
-
 
     @Override
     public void flush() {
         delegate.flush();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return delegate.isEmpty();
-    }
-
-    @Override
-    public void clear() {
-        delegate.clear();
     }
 
     @Override
@@ -116,37 +93,22 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public void traverse(Function<Map.Entry<K, V>, Boolean> traverser) {
-        traverseInternal((k, v) -> traverser.apply(new ValueOnlyEntry(getVCodec().getDecoder().apply(v))));
+    public void traverseValue(Function<? super V, Boolean> traverser) {
+        traverseInternal((k, v) -> traverser.apply(getVCodec().getDecoder().apply(v)));
     }
 
     @Override
-    public Collection<V> values() {
-        return delegate.values();
-    }
-
-    @Override
-    public int size() {
-        return delegate.size();
-    }
-
-    @Override
-    public Stream<Map.Entry<K, V>> stream() {
-        throw new UnsupportedOperationException("not supported in secure trie");
-    }
-
-    @Override
-    public Codec<K, byte[]> getKCodec() {
+    public Codec<K> getKCodec() {
         return delegate.getKCodec();
     }
 
     @Override
-    public Codec<V, byte[]> getVCodec() {
+    public Codec<V> getVCodec() {
         return delegate.getVCodec();
     }
 
     @Override
-    public Optional<V> getFromBytes(byte[] data) {
+    public V getFromBytes(byte[] data) {
         return delegate.getFromBytes(hashFunction.apply(data));
     }
 

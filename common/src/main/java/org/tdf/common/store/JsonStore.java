@@ -3,6 +3,7 @@ package org.tdf.common.store;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 
 import java.io.File;
@@ -10,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.*;
-import java.util.function.BiFunction;
 
 import static java.nio.file.StandardOpenOption.*;
 
@@ -66,20 +66,20 @@ public class JsonStore implements BatchStore<String, JsonNode> {
 
     @Override
     @SneakyThrows
-    public Optional<JsonNode> get(String s) {
-        return Optional.ofNullable(node.get(s));
+    public JsonNode get(@NonNull String s) {
+        return node.get(s);
     }
 
     @Override
     @SneakyThrows
-    public void put(String s, JsonNode jsonNode) {
+    public void put(@NonNull String s, @NonNull JsonNode jsonNode) {
         node.put(s, jsonNode);
         sync();
     }
 
     @Override
     @SneakyThrows
-    public void remove(String s) {
+    public void remove(@NonNull String s) {
         node.remove(s);
         sync();
     }
@@ -89,27 +89,12 @@ public class JsonStore implements BatchStore<String, JsonNode> {
         sync();
     }
 
-    @Override
-    public void clear() {
-        node = new HashMap<>();
-        sync();
-    }
 
     @Override
     @SneakyThrows
-    public void traverse(BiFunction<? super String, ? super JsonNode, Boolean> traverser) {
-        for (Map.Entry<String, JsonNode> entry : node.entrySet()) {
-            boolean cont = traverser.apply(entry.getKey(), entry.getValue());
-            if (!cont)
-                return;
-        }
-    }
-
-    @Override
-    @SneakyThrows
-    public void putAll(Collection<? extends Map.Entry<? extends String, ? extends JsonNode>> rows) {
+    public void putAll(@NonNull Collection<? extends Map.Entry<? extends String, ? extends JsonNode>> rows) {
         for (Map.Entry<? extends String, ? extends JsonNode> row : rows) {
-            node.put(row.getKey(), row.getValue());
+            node.put(Objects.requireNonNull(row.getKey()), Objects.requireNonNull(row.getValue()));
         }
         sync();
     }

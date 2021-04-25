@@ -1,5 +1,6 @@
 package org.tdf.sunflower.net;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.Store;
@@ -20,7 +21,7 @@ import java.util.stream.Stream;
 @Slf4j(topic = "net")
 public class PeerServerImpl implements ChannelListener, PeerServer {
     // if non-database provided, use memory database
-    final Store<String, String> peerStore;
+    final Store<String, JsonNode> peerStore;
     final ConsensusEngine consensusEngine;
     final SecretStore secretStore;
     private final List<Plugin> plugins = new CopyOnWriteArrayList<>();
@@ -30,7 +31,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     private MessageBuilder builder;
     private NetLayer netLayer;
 
-    public PeerServerImpl(Store<String, String> peerStore, ConsensusEngine consensusEngine, SecretStore secretStore) {
+    public PeerServerImpl(Store<String, JsonNode> peerStore, ConsensusEngine consensusEngine, SecretStore secretStore) {
         this.peerStore = peerStore;
         this.consensusEngine = consensusEngine;
         this.secretStore = secretStore;

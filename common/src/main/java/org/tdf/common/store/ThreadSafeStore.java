@@ -1,14 +1,7 @@
 package org.tdf.common.store;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.stream.Stream;
 
 public class ThreadSafeStore<K, V> implements Store<K, V> {
     private Store<K, V> delegate;
@@ -20,7 +13,7 @@ public class ThreadSafeStore<K, V> implements Store<K, V> {
     }
 
     @Override
-    public Optional<V> get(K k) {
+    public V get(K k) {
         lock.readLock().lock();
         try {
             return delegate.get(k);
@@ -34,16 +27,6 @@ public class ThreadSafeStore<K, V> implements Store<K, V> {
         lock.writeLock().lock();
         try {
             delegate.put(k, v);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    @Override
-    public void putIfAbsent(K k, V v) {
-        lock.writeLock().lock();
-        try {
-            delegate.putIfAbsent(k, v);
         } finally {
             lock.writeLock().unlock();
         }
@@ -69,103 +52,5 @@ public class ThreadSafeStore<K, V> implements Store<K, V> {
         }
     }
 
-    @Override
-    public boolean containsKey(K k) {
-        lock.readLock().lock();
-        try {
-            return delegate.containsKey(k);
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
 
-    @Override
-    public int size() {
-        lock.readLock().lock();
-        try {
-            return delegate.size();
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public boolean isEmpty() {
-        lock.readLock().lock();
-        try {
-            return delegate.isEmpty();
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public void clear() {
-        lock.writeLock().lock();
-        try {
-            delegate.clear();
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    @Override
-    public Map<K, V> asMap() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void forEach(BiConsumer<? super K, ? super V> consumer) {
-        lock.readLock().lock();
-        try {
-            delegate.forEach(consumer);
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
-        lock.readLock().lock();
-        try {
-            delegate.traverse(traverser);
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public Set<K> keySet() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Collection<V> values() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Set<Map.Entry<K, V>> entrySet() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Stream<Map.Entry<K, V>> stream() {
-        lock.readLock().lock();
-        try {
-            return delegate.stream();
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public V getTrap() {
-        return delegate.getTrap();
-    }
-
-    @Override
-    public boolean isTrap(V v) {
-        return delegate.isTrap(v);
-    }
 }

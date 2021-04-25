@@ -9,10 +9,6 @@ public class ByteArrayMapStore<V> extends MapStore<byte[], V> {
         super(new ByteArrayMap<>());
     }
 
-    public ByteArrayMapStore(Store<byte[], V> store) {
-        this();
-        store.forEach(super::put);
-    }
 
     public ByteArrayMapStore(Map<byte[], V> map) {
         super(map);

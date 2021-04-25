@@ -16,7 +16,10 @@ import org.tdf.rlp.RLPList;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
@@ -58,17 +61,17 @@ public abstract class ProofTest {
         byte[] root = trie.getRootHash();
 
         Map<byte[], byte[]> merklePath = trie.getProof(paramnesia);
-        String val = trie.get(paramnesia).get();
+        String val = trie.get(paramnesia);
 
         assert trie
                 .revert(root, new MapStore<>(merklePath))
-                .get(paramnesia).get()
+                .get(paramnesia)
                 .equals(val);
 
         merklePath = trie.getProof(stoopingly);
 
 
-        assert !trie.revert(root, new MapStore<>(merklePath)).containsKey(stoopingly);
+        assert trie.revert(root, new MapStore<>(merklePath)).get(stoopingly) == null;
 
         System.out.println("file size = " + fileSize);
         System.out.println("proof size = " + getProofSize(merklePath));
@@ -97,8 +100,8 @@ public abstract class ProofTest {
                 trie.revert(trie.getRootHash(), new MapStore<>(rlpElement));
 
         for (String k : proofKeys) {
-            Optional<String> actual = merkleProof.get(k);
-            Optional<String> expected = trie.get(k);
+            String actual = merkleProof.get(k);
+            String expected = trie.get(k);
             assert actual.equals(expected);
         }
     }
@@ -148,15 +151,15 @@ public abstract class ProofTest {
         Trie<byte[], RLPElement> proofTrie = accountTrie.revert(root, new MapStore<>(proof));
 
         for (byte[] bigAccount : bigAccounts) {
-            assert FastByteComparisons.equal(proofTrie.get(bigAccount).get()
-                    .getEncoded(), accountTrie.get(bigAccount).get().getEncoded());
+            assert FastByteComparisons.equal(proofTrie.get(bigAccount)
+                    .getEncoded(), accountTrie.get(bigAccount).getEncoded());
         }
 
         System.out.println("proof size = " + getProofSize(proof));
 
         System.out.println("accounts size = " +
                 bigAccounts.stream().map(accountTrie::get)
-                        .map(Optional::get).map(e -> e.getEncoded().length)
+                        .map(e -> e.getEncoded().length)
                         .reduce(0, Integer::sum)
         );
 

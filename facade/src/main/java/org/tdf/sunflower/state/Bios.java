@@ -1,11 +1,10 @@
 package org.tdf.sunflower.state;
 
-import org.tdf.common.store.Store;
-import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.vm.Backend;
 
 public interface Bios extends CommonUpdater {
     default void update(
-            Header header, Store<byte[], byte[]> contractStorage) {
+            Backend backend) {
         throw new IllegalArgumentException();
     }
 }

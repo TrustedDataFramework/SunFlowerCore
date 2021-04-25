@@ -6,6 +6,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
+import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 
 import java.util.Arrays;
@@ -15,34 +16,18 @@ import java.util.TreeMap;
 
 public class DBFunctions extends HostFunction {
     @Getter
-    private final Trie<byte[], byte[]> storageTrie;
-    private final boolean readonly;
+    private final Backend backend;
+    private final HexBytes address;
+
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
             Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
             Collections.singletonList(ValueType.I64)
     );
 
-    public DBFunctions(Trie<byte[], byte[]> storageTrie, boolean readonly) {
+    public DBFunctions(Backend backend, HexBytes address) {
         super("_db", FUNCTION_TYPE);
-        this.storageTrie = storageTrie;
-        reset();
-        this.readonly = readonly;
-    }
-
-    private void reset() {
-        Map<HexBytes, byte[]> m = new TreeMap<>();
-        storageTrie.forEach((x, y) -> m.put(HexBytes.fromBytes(x), y));
-    }
-
-    private void assertReadOnly(Type t) {
-        switch (t) {
-            case SET:
-            case REMOVE:
-                if (readonly)
-                    throw new RuntimeException("readonly");
-                break;
-        }
-
+        this.backend = backend;
+        this.address = address;
     }
 
     private byte[] getKey(long... longs) {
@@ -58,29 +43,26 @@ public class DBFunctions extends HostFunction {
     @Override
     public long execute(long... longs) {
         Type t = Type.values()[(int) longs[0]];
-        assertReadOnly(t);
         switch (t) {
             case SET: {
                 byte[] key = getKey(longs);
                 byte[] value = getValue(longs);
-                this.storageTrie.put(key, value);
+                this.backend.dbSet(address, key, value);
                 return 0;
             }
             case GET: {
                 byte[] key = getKey(longs);
-                byte[] value = storageTrie.get(key).orElseThrow(() -> new RuntimeException(HexBytes.fromBytes(key) + " not found"));
+                byte[] value = this.backend.dbGet(address, key);
                 return WBI
                         .mallocBytes(getInstance(), value);
             }
             case HAS: {
                 byte[] key = getKey(longs);
-                return storageTrie.containsKey(key) ? 1 : 0;
+                return backend.dbHas(address, key)? 1 : 0;
             }
             case REMOVE: {
-                if (readonly)
-                    throw new RuntimeException("readonly");
                 byte[] key = getKey(longs);
-                storageTrie.remove(key);
+                backend.dbRemove(address, key);
                 return 0;
             }
 //            case NEXT: {
@@ -115,6 +97,6 @@ public class DBFunctions extends HostFunction {
     }
 
     enum Type {
-        SET, GET, REMOVE, HAS, NEXT, CURRENT_KEY, CURRENT_VALUE, HAS_NEXT, RESET
+        SET, GET, REMOVE, HAS, 
     }
 }

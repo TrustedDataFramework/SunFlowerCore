@@ -29,9 +29,6 @@ public class TrieRollbackTest {
     protected List<Map<byte[], byte[]>> nodes;
     private NoDeleteStore<byte[], byte[]> noDelete;
 
-    private NoDeleteStore<byte[], byte[]> cloneDatabase() {
-        return new NoDeleteStore<>(new ByteArrayMapStore<>(delegate));
-    }
 
     @Before
     public void before() throws Exception {
@@ -39,8 +36,8 @@ public class TrieRollbackTest {
 
         delegate = new ByteArrayMapStore<>();
 
-        noDelete = new NoDeleteStore<>(delegate);
-        database = new NoDoubleDeleteStore<>(noDelete);
+        noDelete = new NoDeleteStore<>(delegate, x -> x == null || x.length == 0);
+        database = new NoDoubleDeleteStore<>(noDelete, x -> x == null || x.length == 0);
 
         trie = Trie.<String, String>builder().hashFunction(HashUtil::sha3)
                 .store(database)
@@ -108,9 +105,12 @@ public class TrieRollbackTest {
         }
     }
 
-    private Map<String, String> dump(Store<String, String> store) {
+    private Map<String, String> dump(Trie<String, String> trie) {
         Map<String, String> m = new HashMap<>();
-        store.forEach(m::put);
+        trie.traverse((k, v) -> {
+            m.put(k, v);
+            return true;
+        });
         return m;
     }
 

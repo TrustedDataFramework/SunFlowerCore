@@ -6,10 +6,8 @@ import org.junit.runners.JUnit4;
 import org.tdf.common.serialize.Codecs;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnit4.class)
 public class PrefixStoreTest {
@@ -25,7 +23,7 @@ public class PrefixStoreTest {
         );
 
         p.put("aaa", "bbb");
-        Map<String, String> m = new HashMap<>(p.asMap());
-        assertTrue(m.containsKey("aaa"));
+//        Map<String, String> m = new HashMap<>(p.asMap());
+        assertEquals("bbb", p.get("aaa"));
     }
 }

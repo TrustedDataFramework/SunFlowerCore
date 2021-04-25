@@ -24,4 +24,9 @@ public class MemoryDatabaseStore extends ByteArrayMapStore<byte[]> implements Da
     public void close() {
 
     }
+
+    @Override
+    public void clear() {
+        getMap().clear();
+    }
 }

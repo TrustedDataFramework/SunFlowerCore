@@ -31,9 +31,7 @@ public class Genesis {
         Header h = Header.builder()
                 .version(PoAConstants.BLOCK_VERSION)
                 .hashPrev(PoAConstants.ZERO_BYTES)
-                .stateRoot(HexBytes.fromBytes(CryptoContext.getEmptyTrieRoot(
-                        CryptoContext::hash
-                )))
+                .stateRoot(HexBytes.fromBytes(CryptoContext.getEmptyTrieRoot()))
                 .transactionsRoot(emptyRoot)
                 .height(0)
                 .payload(HexBytes.EMPTY)

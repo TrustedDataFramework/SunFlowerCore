@@ -366,17 +366,7 @@ public class Start {
             repositoryService.prune(syncConfig.getPruneHash());
         }
 
-        Header best = repositoryService.getBestHeader();
-
         // validate trie
-        if (ApplicationConstants.VALIDATE) {
-            HexBytes root = best.getStateRoot();
-            engine.getAccountTrie().getTrie()
-                    .revert(root.getBytes())
-                    .forEach((x, v) -> {
-                    });
-        }
-
         return engine;
     }
 
@@ -396,21 +386,9 @@ public class Start {
         String persist = properties.getProperty("persist");
         persist = (persist == null) ? "" : persist.trim().toLowerCase();
 
-        Store<String, String> store = "true".equals(persist) && !"memory".equals(factory.getName()) ? new StoreWrapper<>(
-                new JsonStore(Paths.get(factory.getDirectory(), "peers.json").toString(), MAPPER),
-                Codec.identity(),
-                new Codec<String, JsonNode>() {
-                    @Override
-                    public Function<? super String, ? extends JsonNode> getEncoder() {
-                        return TextNode::new;
-                    }
-
-                    @Override
-                    public Function<? super JsonNode, ? extends String> getDecoder() {
-                        return JsonNode::asText;
-                    }
-                }
-        ) : new MapStore<>();
+        Store<String, JsonNode> store = "true".equals(persist) && !"memory".equals(factory.getName()) ?
+                new JsonStore(Paths.get(factory.getDirectory(), "peers.json").toString(), MAPPER)
+        : new MapStore<>();
         PeerServer peerServer = new PeerServerImpl(store, engine, SecretStore.NONE);
         peerServer.init(properties);
         peerServer.addListeners(engine.getPeerServerListener());

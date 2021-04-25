@@ -17,6 +17,8 @@ import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallData;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -95,20 +97,21 @@ public class PosPreBuilt implements PreBuiltContract {
 
     @Override
     @SneakyThrows
-    public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
-        Type type = Type.values()[transaction.getPayload().get(0)];
-        HexBytes args = transaction.getPayload().slice(1);
+    public void update(Backend backend, CallData callData) {
+        HexBytes payload = callData.getPayload();
+        Type type = Type.values()[payload.get(0)];
+        HexBytes args = payload.slice(1);
 
         List<NodeInfo> nodeInfos = new ArrayList<>(
                 Arrays.asList(
-                        RLPCodec.decode(contractStorage.get(NODE_INFO_KEY).get(), NodeInfo[].class))
+                        RLPCodec.decode(backend.dbGet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY), NodeInfo[].class))
         );
 
-        PrefixStore<byte[], VoteInfo> voteInfos = getVoteInfoStore(contractStorage);
+        PrefixStore<byte[], VoteInfo> voteInfos = getVoteInfoStore(backend.getAsStore(Constants.POS_CONTRACT_ADDR));
 
         switch (type) {
             case VOTE: {
-                if (transaction.getAmount().compareTo(Uint256.ZERO) == 0)
+                if (callData.getAmount().compareTo(Uint256.ZERO) == 0)
                     throw new RuntimeException("amount of vote cannot be 0 ");
                 Map.Entry<Integer, NodeInfo> e =
                         findFirst(nodeInfos, x -> x.address.equals(args));
@@ -116,20 +119,20 @@ public class PosPreBuilt implements PreBuiltContract {
                 NodeInfo n = e.getKey() < 0 ? new NodeInfo(args, Uint256.ZERO, new ArrayList<>()) :
                         e.getValue();
 
-                n.vote = n.vote.safeAdd(transaction.getAmount());
-                n.txHash.add(transaction.getHash());
+                n.vote = n.vote.safeAdd(callData.getAmount());
+                n.txHash.add(callData.getTxHash());
                 if (e.getKey() < 0)
                     nodeInfos.add(n);
                 else
                     nodeInfos.set(e.getKey(), n);
-                voteInfos.put(transaction.getHash().getBytes(), new VoteInfo(
-                        transaction.getHash(), transaction.getFromAddress(),
-                        args, transaction.getAmount()
+                voteInfos.put(callData.getTxHash().getBytes(), new VoteInfo(
+                        callData.getTxHash(), callData.getCaller(),
+                        args, callData.getAmount()
                 ));
                 break;
             }
             case CANCEL_VOTE:
-                if (transaction.getAmount().compareTo(Uint256.ZERO) != 0)
+                if (callData.getAmount().compareTo(Uint256.ZERO) != 0)
                     throw new RuntimeException("amount of cancel vote should be 0");
                 Optional<VoteInfo> o = voteInfos.get(args.getBytes());
                 voteInfos.remove(args.getBytes());
@@ -138,8 +141,8 @@ public class PosPreBuilt implements PreBuiltContract {
                     throw new RuntimeException(args + " voting business does not exist and cannot be withdrawn");
                 }
                 VoteInfo voteInfo = o.get();
-                if (!voteInfo.getFrom().equals(transaction.getFromAddress())) {
-                    throw new RuntimeException("vote transaction from " + voteInfo.getFrom() + " not equals to " + transaction.getFromAddress());
+                if (!voteInfo.getFrom().equals(callData.getCaller())) {
+                    throw new RuntimeException("vote transaction from " + voteInfo.getFrom() + " not equals to " + callData.getCaller());
                 }
 
                 Map.Entry<Integer, NodeInfo> e2 =
@@ -162,17 +165,17 @@ public class PosPreBuilt implements PreBuiltContract {
                     nodeInfos.set(e2.getKey(), ninfo);
                 }
 
-                Account fromaccount = accounts.get(transaction.getFromAddress());
-                fromaccount.addBalance(voteInfo.getAmount());
-                accounts.put(fromaccount.getAddress(), fromaccount);
-                Account thisContract = accounts.get(Constants.POS_CONTRACT_ADDR);
-                thisContract.subBalance(voteInfo.amount);
-                accounts.put(thisContract.getAddress(), thisContract);
+
+                Uint256 callerBalance = backend.getBalance(callData.getCaller());
+                backend.setBalance(callData.getCaller(), callerBalance.add(voteInfo.amount));
+
+                Uint256 thisBalance = backend.getBalance(Constants.POS_CONTRACT_ADDR);
+                backend.setBalance(Constants.POS_CONTRACT_ADDR, thisBalance.safeSub(voteInfo.amount));
                 break;
         }
         nodeInfos.sort(NodeInfo::compareTo);
         Collections.reverse(nodeInfos);
-        contractStorage.put(NODE_INFO_KEY, RLPCodec.encode(nodeInfos));
+        backend.dbSet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY, RLPCodec.encode(nodeInfos));
     }
 
     public enum Type {

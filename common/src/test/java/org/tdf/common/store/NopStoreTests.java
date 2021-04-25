@@ -10,7 +10,6 @@ public class NopStoreTests {
     public void test0() {
         Store<String, String> nop = Store.getNop();
         nop.put("k", "v");
-        assert !nop.containsKey("k");
-        assert nop.isEmpty();
+        assert nop.get("k") == null;
     }
 }

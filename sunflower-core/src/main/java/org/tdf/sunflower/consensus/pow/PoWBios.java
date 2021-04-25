@@ -3,7 +3,6 @@ package org.tdf.sunflower.consensus.pow;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.fraction.BigFraction;
-import org.tdf.common.store.Store;
 import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
@@ -13,7 +12,7 @@ import org.tdf.sunflower.Start;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Bios;
 import org.tdf.sunflower.state.Constants;
-import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.vm.Backend;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -45,11 +44,15 @@ public class PoWBios implements Bios {
 
     @Override
     @SneakyThrows
-    public void update(Header header, Store<byte[], byte[]> contractStorage) {
+    public void update(Backend backend) {
         List<Long> ts = new ArrayList<>(
-                Arrays.asList(RLPCodec.decode(contractStorage.get(TIMESTAMPS_KEY).get(), Long[].class))
+                Arrays.asList(
+                        RLPCodec.decode(
+                                backend.dbGet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY), Long[].class
+                        )
+                )
         );
-        ts.add(header.getCreatedAt());
+        ts.add(backend.getHeaderCreatedAt());
         log.debug("timestamps = {}", Start.MAPPER.writeValueAsString(ts));
         if (ts.size() == config.getBlocksPerEra()) {
             long duration = ts.get(ts.size() - 1) - ts.get(0);
@@ -65,12 +68,12 @@ public class PoWBios implements Bios {
             if (rate.compareTo(new BigFraction(1, MAX_ADJUST_RATE)) < 0) {
                 rate = new BigFraction(1, MAX_ADJUST_RATE);
             }
-            BigInteger nbits = BigEndian.decodeUint256(contractStorage.get(N_BITS_KEY).get());
+            BigInteger nbits = BigEndian.decodeUint256(backend.dbGet(Constants.POW_BIOS_ADDR, N_BITS_KEY));
             nbits = safeTyMul(nbits, rate);
-            contractStorage.put(N_BITS_KEY, BigEndian.encodeUint256(nbits));
-            contractStorage.put(TIMESTAMPS_KEY, RLPList.createEmpty().getEncoded());
+            backend.dbSet(Constants.POW_BIOS_ADDR, N_BITS_KEY, BigEndian.encodeUint256(nbits));
+            backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, RLPList.createEmpty().getEncoded());
         } else {
-            contractStorage.put(TIMESTAMPS_KEY, RLPCodec.encode(ts));
+            backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, RLPCodec.encode(ts));
         }
     }
 

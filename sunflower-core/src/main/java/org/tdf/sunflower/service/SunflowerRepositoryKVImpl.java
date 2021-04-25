@@ -101,7 +101,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     @Override
     public void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
         super.saveGenesis(block);
-        if (!status.get(BEST_HEADER).isPresent()) {
+        if (status.get(BEST_HEADER) == null) {
             status.put(BEST_HEADER, block.getHeader());
         }
     }
@@ -109,13 +109,15 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     @Override
     protected Block getBlockFromHeader(Header header) {
         HexBytes[] txHashes = transactionsRoot
-                .get(header.getTransactionsRoot().getBytes())
-                .orElseThrow(() -> new ApplicationException("transactions of header " + header + " not found"));
+                .get(header.getTransactionsRoot().getBytes());
+        if (txHashes == null)
+                throw new ApplicationException("transactions of header " + header + " not found");
         List<Transaction> body = new ArrayList<>(txHashes.length);
         for (HexBytes hash : txHashes) {
-            body.add(transactionsStore.get(hash.getBytes()).orElseThrow(
-                    () -> new ApplicationException("transaction " + hash + " not found")
-            ));
+            Transaction t = transactionsStore.get(hash.getBytes());
+            if (t == null)
+                throw new ApplicationException("transaction " + hash + " not found");
+            body.add(t);
         }
         Block ret = new Block(header);
         ret.setBody(body);
@@ -129,17 +131,17 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
     @Override
     public boolean containsHeader(byte[] hash) {
-        return headerStore.containsKey(hash);
+        return headerStore.get(hash) != null;
     }
 
     @Override
     public Header getBestHeader() {
-        return status.get(BEST_HEADER).get();
+        return status.get(BEST_HEADER);
     }
 
     @Override
     public Optional<Header> getHeader(byte[] hash) {
-        return headerStore.get(hash);
+        return Optional.ofNullable(headerStore.get(hash));
     }
 
 
@@ -148,11 +150,14 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         List<Header> ret = new ArrayList<>();
         if (descend) {
             for (long i = stopHeight; i >= startHeight; i--) {
-                heightIndex.get(i).ifPresent(hexBytes -> {
-                    for (HexBytes bytes : hexBytes) {
-                        headerStore.get(bytes.getBytes()).ifPresent(ret::add);
+                HexBytes[] idx = heightIndex.get(i);
+                if(idx != null) {
+                    for (HexBytes bytes : idx) {
+                        Header h = headerStore.get(bytes.getBytes());
+                        if (h != null)
+                            ret.add(h);
                     }
-                });
+                }
                 if (ret.size() > limit) break;
             }
         } else {

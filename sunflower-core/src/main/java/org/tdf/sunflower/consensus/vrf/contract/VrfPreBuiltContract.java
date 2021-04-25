@@ -11,6 +11,8 @@ import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
+import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallData;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -43,12 +45,11 @@ public class VrfPreBuiltContract implements PreBuiltContract {
     }
 
     @Override
-    public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts,
-                       Store<byte[], byte[]> contractStorage) {
+    public void update(Backend backend, CallData callData) {
 
         String methodName = "";
-        log.info("++++++>> VrfBiosContract method {}, txn hash {}, nonce {}", methodName, transaction.getHash().toHex(),
-                transaction.getNonce());
+        log.info("++++++>> VrfBiosContract method {}, txn hash {}, nonce {}", methodName, callData.getTxHash().toHex(),
+                callData.getTxNonce());
 
         if (methodName.trim().isEmpty()) {
             log.error("No method name ");
@@ -56,20 +57,20 @@ public class VrfPreBuiltContract implements PreBuiltContract {
         }
 
         if (methodName.equals("deposit")) {
-            try {
-                deposit(transaction, accounts, contractStorage);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                deposit(transaction, accounts, contractStorage);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
             return;
         }
 
         if (methodName.equals("withdraw")) {
-            try {
-                withdraw(transaction, accounts, contractStorage);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                withdraw(transaction, accounts, contractStorage);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
             return;
         }
 

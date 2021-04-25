@@ -43,12 +43,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
     private Store<byte[], byte[]> trieStore;
     private HexBytes genesisRoot;
 
-    // memory cached
-    private CachedStore<byte[], byte[]> trieCache;
-    private NoDeleteCachedStore<byte[], byte[]> contractStorageCache;
-    private CachedStore<byte[], byte[]> contractCodeCache;
-    private Trie<HexBytes, Account> dirtyTrie;
-    private byte[] currentRoot;
 
     @SneakyThrows
     public AccountTrie(
@@ -246,7 +240,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
         for (Bios bios : biosList.values()) {
             Account a = accounts.get(bios.getGenesisAccount().getAddress());
             Trie<byte[], byte[]> before = getDirtyContractStorageTrie(a.getStorageRoot());
-            bios.update(header, before);
+//            bios.update(header, before);
             byte[] root = before.commit();
             before.flush();
             a.setStorageRoot(root);
@@ -313,7 +307,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> implements
             accounts.put(originAccount.getAddress(), originAccount);
 
             PreBuiltContract updater = preBuiltContractAddresses.get(contractAccount.getAddress());
-            updater.update(header, t, accounts, before);
+//            updater.update(header, t, accounts, before);
             byte[] root = before.commit();
             contractAccount.setStorageRoot(root);
             accounts.put(contractAccount.getAddress(), contractAccount);

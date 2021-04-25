@@ -5,10 +5,9 @@ import lombok.AllArgsConstructor;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
 
-import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.stream.Stream;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
@@ -66,27 +65,12 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public Optional<V> get(K k) {
+    public V get(K k) {
         return delegate.get(k);
     }
 
     @Override
-    public V getTrap() {
-        return delegate.getTrap();
-    }
-
-    @Override
-    public boolean isTrap(V v) {
-        return delegate.isTrap(v);
-    }
-
-    @Override
     public void put(K k, V v) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void putIfAbsent(K k, V v) {
         throw new UnsupportedOperationException();
     }
 
@@ -100,60 +84,6 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public boolean containsKey(K k) {
-        return delegate.containsKey(k);
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return delegate.isEmpty();
-    }
-
-    @Override
-    public void clear() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void traverse(BiFunction<? super K, ? super V, Boolean> traverser) {
-        delegate.traverse(traverser);
-    }
-
-    @Override
-    public void forEach(BiConsumer<? super K, ? super V> consumer) {
-        delegate.forEach(consumer);
-    }
-
-    @Override
-    public Set<K> keySet() {
-        return Collections.unmodifiableSet(delegate.keySet());
-    }
-
-    @Override
-    public Collection<V> values() {
-        return Collections.unmodifiableCollection(delegate.values());
-    }
-
-    @Override
-    public Set<Map.Entry<K, V>> entrySet() {
-        return Collections.unmodifiableSet(delegate.entrySet());
-    }
-
-    @Override
-    public int size() {
-        return delegate.size();
-    }
-
-    @Override
-    public Stream<Map.Entry<K, V>> stream() {
-        return delegate.stream();
-    }
-
-    @Override
-    public Map<K, V> asMap() {
-        return Collections.unmodifiableMap(delegate.asMap());
-    }
 
     @Override
     public Map<byte[], byte[]> getProof(K k) {
@@ -161,17 +91,17 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public Codec<K, byte[]> getKCodec() {
+    public Codec<K> getKCodec() {
         return delegate.getKCodec();
     }
 
     @Override
-    public Codec<V, byte[]> getVCodec() {
+    public Codec<V> getVCodec() {
         return delegate.getVCodec();
     }
 
     @Override
-    public Optional<V> getFromBytes(byte[] data) {
+    public V getFromBytes(byte[] data) {
         return delegate.getFromBytes(data);
     }
 

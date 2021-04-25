@@ -62,7 +62,7 @@ public abstract class AbstractTrieTest {
         for (String s : Arrays.asList("test", "toaster", "toasting", "slow", "slowly")
         ) {
             assert keys.contains(s.getBytes());
-            assert Arrays.equals(trie.get(s.getBytes()).get(), s.getBytes());
+            assert Arrays.equals(trie.get(s.getBytes()), s.getBytes());
             assert values.contains(s.getBytes());
         }
 
@@ -78,14 +78,14 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie = newStringTrie();
 
         trie.put(cat, dog);
-        assertEquals(dog, trie.get(cat).get());
+        assertEquals(dog, trie.get(cat));
 
         trie.put(ca, dude);
-        assertEquals(dude, trie.get(ca).get());
+        assertEquals(dude, trie.get(ca));
         assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(ca);
-        assertEquals("", trie.get(ca).orElse(""));
+        assertNull(trie.get(ca));
         assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
@@ -96,14 +96,14 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie = newStringTrie();
 
         trie.put(ca, dude);
-        assertEquals(dude, trie.get(ca).get());
+        assertEquals(dude, trie.get(ca));
 
         trie.put(cat, dog);
-        assertEquals(dog, trie.get(cat).get());
+        assertEquals(dog, trie.get(cat));
         assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(cat);
-        assertEquals("", trie.get(cat).orElse(""));
+        assertNull(trie.get(cat));
         assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
@@ -114,14 +114,14 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie = newStringTrie();
 
         trie.put(cat, dude);
-        assertEquals(dude, trie.get(cat).get());
+        assertEquals(dude, trie.get(cat));
 
         trie.put(dog, test);
-        assertEquals(test, trie.get(dog).get());
+        assertEquals(test, trie.get(dog));
         assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(dog);
-        assertEquals("", trie.get(dog).orElse(""));
+        assertNull("", trie.get(dog));
         assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
@@ -132,14 +132,14 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie = newStringTrie();
 
         trie.put(cat, LONG_STRING);
-        assertEquals(LONG_STRING, trie.get(cat).get());
+        assertEquals(LONG_STRING, trie.get(cat));
 
         trie.put(dog, LONG_STRING);
-        assertEquals(LONG_STRING, trie.get(dog).get());
+        assertEquals(LONG_STRING, trie.get(dog));
         assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(dog);
-        assertEquals("", trie.get(dog).orElse(""));
+        assertNull(trie.get(dog));
         assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
@@ -150,14 +150,14 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie = newStringTrie();
 
         trie.put(ca, LONG_STRING);
-        assertEquals(LONG_STRING, trie.get(ca).get());
+        assertEquals(LONG_STRING, trie.get(ca));
 
         trie.put(cat, LONG_STRING);
-        assertEquals(LONG_STRING, trie.get(cat).get());
+        assertEquals(LONG_STRING, trie.get(cat));
         assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(cat);
-        assertEquals("", trie.get(cat).orElse(""));
+        assertNull(trie.get(cat));
         assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
@@ -168,14 +168,14 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie = newStringTrie();
 
         trie.put(cat, LONG_STRING);
-        assertEquals(LONG_STRING, trie.get(cat).get());
+        assertEquals(LONG_STRING, trie.get(cat));
 
         trie.put(ca, LONG_STRING);
-        assertEquals(LONG_STRING, trie.get(ca).get());
+        assertEquals(LONG_STRING, trie.get(ca));
         assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(ca);
-        assertEquals("", trie.get(ca).orElse(""));
+        assertNull(trie.get(ca));
         assertEquals(ROOT_HASH_AFTER, Hex.toHexString(trie.commit()));
     }
 
@@ -207,27 +207,27 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie = newStringTrie();
 
         trie.put(cat, dog);
-        assertEquals(dog, trie.get(cat).get());
+        assertEquals(dog, trie.get(cat));
 
         trie.put(ca, dude);
-        assertEquals(dude, trie.get(ca).get());
+        assertEquals(dude, trie.get(ca));
 
         trie.put(doge, LONG_STRING);
-        assertEquals(LONG_STRING, trie.get(doge).get());
+        assertEquals(LONG_STRING, trie.get(doge));
 
         trie.put(dog, test);
-        assertEquals(test, trie.get(dog).get());
+        assertEquals(test, trie.get(dog));
 
         trie.put(test, LONG_STRING);
-        assertEquals(LONG_STRING, trie.get(test).get());
+        assertEquals(LONG_STRING, trie.get(test));
         assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(dog);
-        assertEquals("", trie.get(dog).orElse(""));
+        assertNull(trie.get(dog));
         assertEquals(ROOT_HASH_AFTER1, Hex.toHexString(trie.commit()));
 
         trie.remove(test);
-        assertEquals("", trie.get(test).orElse(""));
+        assertNull(trie.get(test));
         assertEquals(ROOT_HASH_AFTER2, Hex.toHexString(trie.commit()));
     }
 
@@ -239,21 +239,21 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie = newStringTrie();
 
         trie.put(c, LONG_STRING);
-        assertEquals(LONG_STRING, trie.get(c).get());
+        assertEquals(LONG_STRING, trie.get(c));
 
         trie.put(ca, LONG_STRING);
-        assertEquals(LONG_STRING, trie.get(ca).get());
+        assertEquals(LONG_STRING, trie.get(ca));
 
         trie.put(cat, LONG_STRING);
-        assertEquals(LONG_STRING, trie.get(cat).get());
+        assertEquals(LONG_STRING, trie.get(cat));
         assertEquals(ROOT_HASH_BEFORE, Hex.toHexString(trie.commit()));
 
         trie.remove(ca);
-        assertEquals("", trie.get(ca).orElse(""));
+        assertNull(trie.get(ca));
         assertEquals(ROOT_HASH_AFTER1, Hex.toHexString(trie.commit()));
 
         trie.remove(cat);
-        assertEquals("", trie.get(cat).orElse(""));
+        assertNull(trie.get(cat));
         assertEquals(ROOT_HASH_AFTER2, Hex.toHexString(trie.commit()));
     }
 
@@ -325,7 +325,7 @@ public abstract class AbstractTrieTest {
         assertEquals("05ae693aac2107336a79309e0c60b24a7aac6aa3edecaef593921500d33c63c4", Hex.toHexString(impl.commit()));
 
         Trie<String, String> trie2 = impl;
-        assert trie2.get("dog").get().equals("puppy");
+        assert trie2.get("dog").equals("puppy");
         trie.put("dogglesworth", "cat");
         impl.commit();
     }
@@ -429,7 +429,7 @@ public abstract class AbstractTrieTest {
 
                 String mapWord1 = keys.next();
                 String mapWord2 = testerMap.get(mapWord1);
-                String treeWord2 = trie.get(mapWord1).get();
+                String treeWord2 = trie.get(mapWord1);
 
                 Assert.assertEquals(mapWord2, treeWord2);
             }
@@ -473,7 +473,7 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie1 = newStringTrie();
         trie1.put(cat, LONG_STRING);
         Trie<String, String> trie2 = trie1;
-        assertEquals(LONG_STRING, trie2.get(cat).get());
+        assertEquals(LONG_STRING, trie2.get(cat));
     }
 
     @Test
@@ -566,18 +566,18 @@ public abstract class AbstractTrieTest {
             trie.put(Hex.decode(e.getKey()), Hex.decode(e.getValue()));
         }
 
-        assertArrayEquals(trie.get(Hex.decode("6e929251b981389774af84a07585724c432e2db487381810719c3dd913192ae2")).get(),
+        assertArrayEquals(Objects.requireNonNull(trie.get(Hex.decode("6e929251b981389774af84a07585724c432e2db487381810719c3dd913192ae2"))),
                 Hex.decode("00000000000000000000000000000000000000000000000000000000000000be"));
 
-        assertArrayEquals(trie.get(Hex.decode("6e92718d00dae27b2a96f6853a0bf11ded08bc658b2e75904ca0344df5aff9ae")).get(),
+        assertArrayEquals(Objects.requireNonNull(trie.get(Hex.decode("6e92718d00dae27b2a96f6853a0bf11ded08bc658b2e75904ca0344df5aff9ae"))),
                 Hex.decode("00000000000000000000000000000000000000000000002f0000000000000000"));
 
         trie.remove(Hex.decode("6e9286c946c6dd1f5d97f35683732dc8a70dc511133a43d416892f527dfcd243"));
 
-        assertArrayEquals(trie.get(Hex.decode("6e929251b981389774af84a07585724c432e2db487381810719c3dd913192ae2")).get(),
+        assertArrayEquals(Objects.requireNonNull(trie.get(Hex.decode("6e929251b981389774af84a07585724c432e2db487381810719c3dd913192ae2"))),
                 Hex.decode("00000000000000000000000000000000000000000000000000000000000000be"));
 
-        assertArrayEquals(trie.get(Hex.decode("6e92718d00dae27b2a96f6853a0bf11ded08bc658b2e75904ca0344df5aff9ae")).get(),
+        assertArrayEquals(Objects.requireNonNull(trie.get(Hex.decode("6e92718d00dae27b2a96f6853a0bf11ded08bc658b2e75904ca0344df5aff9ae"))),
                 Hex.decode("00000000000000000000000000000000000000000000002f0000000000000000"));
     }
 
@@ -625,24 +625,28 @@ public abstract class AbstractTrieTest {
 
         trie.remove(Hex.decode("0000000000000000000000000000000000000000000000000000000000011255"));
 
-        assertFalse(src.containsKey(Hex.decode("5152f9274abb8e61f3956ccd08d31e38bfa2913afd23bc13b5e7bb709ce7f603")));
+        byte[] v = src.get(Hex.decode("5152f9274abb8e61f3956ccd08d31e38bfa2913afd23bc13b5e7bb709ce7f603"));
+        assertTrue(v == null || v.length == 0);
     }
 
     public static class NoDoubleDeleteStore extends ByteArrayMapStore<byte[]> {
         @Override
         public void remove(byte[] bytes) {
-            if (!super.containsKey(bytes)) throw new RuntimeException("key to delete not found");
+            byte[] v = get(bytes);
+
+            if (v == null || v.length == 0) throw new RuntimeException("key to delete not found");
             super.remove(bytes);
         }
 
         public String toString() {
             StringBuffer buffer = new StringBuffer();
-            forEach((k, v) -> {
-                buffer.append(Hex.toHexString(k));
-                buffer.append(" = ");
-                buffer.append(Hex.toHexString(v));
-                buffer.append("\n");
-            });
+            getMap().
+                    forEach((k, v) -> {
+                        buffer.append(Hex.toHexString(k));
+                        buffer.append(" = ");
+                        buffer.append(Hex.toHexString(v));
+                        buffer.append("\n");
+                    });
             return buffer.toString();
         }
     }

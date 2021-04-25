@@ -56,7 +56,7 @@ public class CryptoContext {
         return getPkFromSk.apply(sk);
     }
 
-    public static byte[] getEmptyTrieRoot(Function<byte[], byte[]> hashFunction) {
+    public static byte[] getEmptyTrieRoot() {
         Trie<?, ?> trie = Trie.<byte[], byte[]>builder()
                 .keyCodec(Codec.identity())
                 .valueCodec(Codec.identity())

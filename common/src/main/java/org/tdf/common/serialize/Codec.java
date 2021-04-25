@@ -5,32 +5,31 @@ import java.util.function.Function;
 /**
  * encoder and decoder from a type to another type
  *
- * @param <K> type before encode
- * @param <V> type encode to
+ * @param <K> type
  */
-public interface Codec<K, V> {
-    static <K> Codec<K, K> identity() {
-        return (Codec<K, K>) Codecs.IDENTITY;
+public interface Codec<K> {
+    static Codec<byte[]> identity() {
+        return (Codec<byte[]>) Codecs.IDENTITY;
     }
 
-    static <K, V> Codec<K, V> newInstance(
-            Function<? super K, ? extends V> encoder,
-            Function<? super V, ? extends K> decoder
+    static <K> Codec<K> newInstance(
+            Function<? super K, byte[]> encoder,
+            Function<byte[], ? extends K> decoder
     ) {
-        return new Codec<K, V>() {
+        return new Codec<K>() {
             @Override
-            public Function<? super K, ? extends V> getEncoder() {
+            public Function<? super K, byte[]> getEncoder() {
                 return encoder;
             }
 
             @Override
-            public Function<? super V, ? extends K> getDecoder() {
+            public Function<byte[], ? extends K> getDecoder() {
                 return decoder;
             }
         };
     }
 
-    Function<? super K, ? extends V> getEncoder();
+    Function<? super K, byte[]> getEncoder();
 
-    Function<? super V, ? extends K> getDecoder();
+    Function<byte[], ? extends K> getDecoder();
 }

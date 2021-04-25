@@ -1,18 +1,16 @@
 package org.tdf.common.trie;
 
 import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.MemoryDatabaseStore;
-import org.tdf.common.store.NoDeleteStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.ByteArrayMap;
-import org.tdf.common.util.ByteArraySet;
 
-import java.util.ArrayList;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 public interface Trie<K, V> extends Store<K, V> {
     static <K, V> Builder<K, V> builder() {
@@ -117,36 +115,58 @@ public interface Trie<K, V> extends Store<K, V> {
         return ret;
     }
 
-    default void prune(Collection<? extends byte[]> excludedRoots) {
-        prune(excludedRoots, getStore());
+//    default void prune(Collection<? extends byte[]> excludedRoots) {
+//        prune(excludedRoots, getStore());
+//    }
+//
+//    default void prune(Collection<? extends byte[]> excludedRoots, Store<byte[], byte[]> db) {
+//        Set<byte[]> excludes = new ByteArraySet();
+//        for (byte[] root : excludedRoots) {
+//            excludes.addAll(revert(root).dumpKeys());
+//        }
+//        Consumer<byte[]> fn = k -> {
+//            if (!excludes.contains(k))
+//                db.remove(k);
+//        };
+//        boolean isMem = db instanceof MemoryDatabaseStore ||
+//                (
+//                        db instanceof NoDeleteStore &&
+//                                ((NoDeleteStore) db).getDelegate() instanceof MemoryDatabaseStore
+//                );
+//        if (isMem) {
+//            new ArrayList<>(db.keySet()).forEach(fn);
+//        } else {
+//            db.stream().forEach(e -> fn.accept(e.getKey()));
+//        }
+//    }
+
+    default int size() {
+        int[] count = new int[1];
+        traverseValue(v -> {
+            count[0]++;
+            return true;
+        });
+        return count[0];
     }
 
-    default void prune(Collection<? extends byte[]> excludedRoots, Store<byte[], byte[]> db) {
-        Set<byte[]> excludes = new ByteArraySet();
-        for (byte[] root : excludedRoots) {
-            excludes.addAll(revert(root).dumpKeys());
-        }
-        Consumer<byte[]> fn = k -> {
-            if (!excludes.contains(k))
-                db.remove(k);
-        };
-        boolean isMem = db instanceof MemoryDatabaseStore ||
-                (
-                        db instanceof NoDeleteStore &&
-                                ((NoDeleteStore) db).getDelegate() instanceof MemoryDatabaseStore
-                );
-        if (isMem) {
-            new ArrayList<>(db.keySet()).forEach(fn);
-        } else {
-            db.stream().forEach(e -> fn.accept(e.getKey()));
-        }
+    default Stream<Map.Entry<K, V>> stream() {
+        Stream.Builder<Map.Entry<K, V>> builder = Stream.builder();
+        traverse((k, v) -> {
+            builder.accept(new AbstractMap.SimpleImmutableEntry<>(k, v));
+            return true;
+        });
+        return builder.build();
     }
+
+    void traverse(BiFunction<? super K, ? super V, Boolean> traverser);
+
+    void traverseValue(Function<? super V, Boolean> traverser);
 
     class Builder<K, V> {
         private Function<byte[], byte[]> hashFunction;
         private Store<byte[], byte[]> store;
-        private Codec<K, byte[]> keyCodec;
-        private Codec<V, byte[]> valueCodec;
+        private Codec<K> keyCodec;
+        private Codec<V> valueCodec;
 
         public Builder<K, V> hashFunction(Function<byte[], byte[]> hashFunction) {
             this.hashFunction = hashFunction;
@@ -158,12 +178,12 @@ public interface Trie<K, V> extends Store<K, V> {
             return this;
         }
 
-        public Builder<K, V> keyCodec(Codec<K, byte[]> keyCodec) {
+        public Builder<K, V> keyCodec(Codec<K> keyCodec) {
             this.keyCodec = keyCodec;
             return this;
         }
 
-        public Builder<K, V> valueCodec(Codec<V, byte[]> valueCodec) {
+        public Builder<K, V> valueCodec(Codec<V> valueCodec) {
             this.valueCodec = valueCodec;
             return this;
         }

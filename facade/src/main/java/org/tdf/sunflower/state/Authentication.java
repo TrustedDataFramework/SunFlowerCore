@@ -11,8 +11,8 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallData;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -49,7 +49,7 @@ public class Authentication implements PreBuiltContract {
     private byte[] getValue(byte[] stateRoot, byte[] key) {
         Account a = accountTrie.get(stateRoot, this.contractAddress).get();
         Store<byte[], byte[]> db = contractStorageTrie.revert(a.getStorageRoot());
-        return db.get(key).get();
+        return db.get(key);
     }
 
     public List<HexBytes> getNodes(byte[] stateRoot) {
@@ -76,6 +76,13 @@ public class Authentication implements PreBuiltContract {
         );
     }
 
+
+    private byte[] getByNodesKey(Backend backend) {
+        return backend.dbGet(contractAddress, NODES_KEY);
+    }
+
+
+
     @Override
     public Account getGenesisAccount() {
         return Account.emptyContract(this.contractAddress);
@@ -83,67 +90,69 @@ public class Authentication implements PreBuiltContract {
 
     @Override
     @SneakyThrows
-    public void update(Header header, Transaction transaction, Map<HexBytes, Account> accounts, Store<byte[], byte[]> contractStorage) {
-        Method m = Method.values()[transaction.getPayload().get(0)];
-        List<HexBytes> nodes = new ArrayList<>(Arrays.asList(RLPCodec.decode(contractStorage.get(NODES_KEY).get(), HexBytes[].class)));
-        Store<HexBytes, TreeSet<HexBytes>> pending = getPendingStore(contractStorage);
+    public void update(Backend backend, CallData callData) {
+        HexBytes payload = callData.getPayload();
+
+        Method m = Method.values()[callData.getPayload().get(0)];
+        List<HexBytes> nodes = new ArrayList<>(Arrays.asList(RLPCodec.decode(getByNodesKey(backend), HexBytes[].class)));
+        Store<HexBytes, TreeSet<HexBytes>> pending = getPendingStore(backend.getAsStore(contractAddress));
 
         switch (m) {
             case JOIN_NODE: {
-                HexBytes fromAddr = transaction.getFromAddress();
+                HexBytes fromAddr = callData.getCaller();
                 if (nodes.contains(fromAddr))
                     throw new RuntimeException("authentication contract error: " + fromAddr + " has already in nodes");
 
-                if (pending.containsKey(fromAddr))
+                if (pending.get(fromAddr) == null)
                     throw new RuntimeException("authentication contract error: " + fromAddr + " has already in pending");
 
                 pending.put(fromAddr, new TreeSet<>());
                 break;
             }
             case APPROVE_JOIN: {
-                HexBytes toApprove = transaction.getPayload().slice(1);
+                HexBytes toApprove = payload.slice(1);
 
-                if (transaction.getTo().equals(Constants.VALIDATOR_CONTRACT_ADDR)){
+                if (callData.getTo().equals(Constants.VALIDATOR_CONTRACT_ADDR)){
                     pending.remove(toApprove);
                     nodes.add(toApprove);
-                    contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
+                    backend.dbSet(contractAddress, NODES_KEY, RLPCodec.encode(nodes));
                     break;
                 }
 
-                if (!nodes.contains(transaction.getFromAddress())) {
-                    throw new RuntimeException("authentication contract error: cannot approve " + transaction.getFromAddress() + " is not in nodes list");
+                if (!nodes.contains(callData.getCaller())) {
+                    throw new RuntimeException("authentication contract error: cannot approve " + callData.getCaller() + " is not in nodes list");
                 }
 
-                Optional<TreeSet<HexBytes>> approves = pending.get(toApprove);
-                if (!approves.isPresent())
+               TreeSet<HexBytes> approves = pending.get(toApprove);
+                if (approves == null)
                     throw new RuntimeException("authentication contract error: cannot approve " + toApprove + " not in pending");
 
-                if (approves.get().contains(transaction.getFromAddress())) {
+                if (approves.contains(callData.getCaller())) {
                     throw new RuntimeException("authentication contract error: cannot approve " + toApprove + " has approved");
                 }
 
-                approves.get().add(transaction.getFromAddress());
+                approves.add(callData.getCaller());
 
-                if (approves.get().size() >= divideAndCeil(nodes.size() * 2, 3)) {
+                if (approves.size() >= divideAndCeil(nodes.size() * 2, 3)) {
                     pending.remove(toApprove);
                     nodes.add(toApprove);
                 } else {
-                    pending.put(toApprove, approves.get());
+                    pending.put(toApprove, approves);
                 }
 
-                contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
+                backend.dbSet(contractAddress, NODES_KEY, RLPCodec.encode(nodes));
                 break;
             }
             case EXIT: {
 
-                HexBytes fromAddr = transaction.getFromAddress();
+                HexBytes fromAddr = callData.getCaller();
                 if (!nodes.contains(fromAddr))
                     throw new RuntimeException("authentication contract error: " + fromAddr + " not in nodes");
                 if (nodes.size() <= 1)
                     throw new RuntimeException("authentication contract error: cannot exit, at least one miner");
 
                 nodes.remove(fromAddr);
-                contractStorage.put(NODES_KEY, RLPCodec.encode(nodes));
+                backend.dbSet(contractAddress, NODES_KEY, RLPCodec.encode(nodes));
                 break;
             }
         }

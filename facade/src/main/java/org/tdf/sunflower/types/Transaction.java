@@ -338,6 +338,9 @@ public class Transaction {
         if (type == Type.CONTRACT_DEPLOY.code && !getTo().isEmpty()) {
             return ValidateResult.fault("\"to\" of contract deploy transaction " + getHash() + " should be empty");
         }
+        if (to.size() != 0 && to.size() != 20)
+            return ValidateResult.fault("invalid address size");
+
         if (type == Type.CONTRACT_CALL.code || type == Type.TRANSFER.code) {
             if (getFrom().isEmpty() || getTo().isEmpty())
                 return ValidateResult.fault("\"from\" or \"to\" of transaction " + getHash() + " is empty");
