@@ -125,8 +125,16 @@ public abstract class AbstractMiner implements Miner {
 
         b.getBody().add(0, coinbase);
         // transactions may failed to execute
-        if (b.getBody().size() == 1 && !minerConfig.isAllowEmptyBlock())
+        if (b.getBody().size() == 1 && !minerConfig.isAllowEmptyBlock()) {
+            eventBus.publish(new TransactionOutput(
+                    b.getHeight(),
+                    b.getHash(),
+                    Collections.emptyMap(),
+                    Collections.emptyMap(),
+                    failedMessages
+            ));
             return new BlockCreateResult(null, failedTransactions, reasons);
+        }
 
         // add fee to miners account
         coinbase.setAmount(coinbase.getAmount().safeAdd(totalFee));

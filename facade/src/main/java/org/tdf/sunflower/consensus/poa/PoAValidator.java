@@ -82,7 +82,7 @@ public class PoAValidator extends AbstractValidator {
                     );
                 }
 
-                if (transaction.getVersion() == 0 && !transaction.getFrom().equals(farmBaseAdmin)) {
+                if (transaction.getVersion() == 0 && !transaction.getFromAddress().equals(farmBaseAdmin)) {
                     return ValidateResult.fault("transaction with zero version should received from farmbase");
                 }
 

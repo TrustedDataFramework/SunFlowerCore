@@ -69,13 +69,13 @@ public class BackendImpl implements Backend {
         );
     }
 
-    private void mergeInternal(Map<HexBytes, Account> accounts, Map<HexBytes, Map<HexBytes, byte[]>> storage) {
+    private void mergeInternal(Map<HexBytes, Account> accounts, Map<HexBytes, Map<HexBytes, HexBytes>> storage) {
         if (parentBackend != null) {
             parentBackend.mergeInternal(accounts, storage);
         }
 
         modifiedAccounts.forEach(accounts::put);
-        for (Map.Entry<HexBytes, Map<HexBytes, byte[]>> entries : storage.entrySet()) {
+        for (Map.Entry<HexBytes, Map<HexBytes, HexBytes>> entries : modifiedStorage.entrySet()) {
             storage.putIfAbsent(entries.getKey(), new HashMap<>());
             storage.get(entries.getKey()).putAll(entries.getValue());
         }
@@ -84,7 +84,7 @@ public class BackendImpl implements Backend {
     @Override
     public byte[] merge() {
         Map<HexBytes, Account> accounts = new HashMap<>();
-        Map<HexBytes, Map<HexBytes, byte[]>> storage = new HashMap<>();
+        Map<HexBytes, Map<HexBytes, HexBytes>> storage = new HashMap<>();
         mergeInternal(accounts, storage);
 
         Set<HexBytes> modified = new HashSet<>();
@@ -99,13 +99,13 @@ public class BackendImpl implements Backend {
                 a = Account.emptyAccount(addr, Uint256.ZERO);
             Trie<byte[], byte[]> s = contractStorageTrie.revert(a.getStorageRoot());
 
-            Map<HexBytes, byte[]> map = storage.getOrDefault(addr, Collections.emptyMap());
+            Map<HexBytes, HexBytes> map = storage.getOrDefault(addr, Collections.emptyMap());
 
-            for (Map.Entry<HexBytes, byte[]> entry : map.entrySet()) {
-                if (entry.getValue() == null || entry.getValue().length == 0) {
+            for (Map.Entry<HexBytes, HexBytes> entry : map.entrySet()) {
+                if (entry.getValue() == null || entry.getValue().size() == 0) {
                     s.remove(entry.getKey().getBytes());
                 } else {
-                    s.put(entry.getKey().getBytes(), entry.getValue());
+                    s.put(entry.getKey().getBytes(), entry.getValue().getBytes());
                 }
             }
 

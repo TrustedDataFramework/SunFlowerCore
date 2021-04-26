@@ -78,6 +78,7 @@ public class Transaction {
     @RLPIgnored
     protected transient HexBytes hash;
 
+    @JsonIgnore
     public boolean isCoinbase() {
         return type == Type.COIN_BASE.code;
     }
