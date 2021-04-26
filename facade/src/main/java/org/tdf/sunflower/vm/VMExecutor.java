@@ -140,12 +140,13 @@ public class VMExecutor {
     }
 
     public TransactionResult execute() {
+        Transaction.Type t = Transaction.Type.values()[callData.getCallType()];
+
         // 1. increase sender nonce
         long n = backend.getNonce(callData.getOrigin());
-        if(!backend.isStatic() && n + 1 != callData.getTxNonce() )
+        if(!backend.isStatic() && n + 1 != callData.getTxNonce() && t != Transaction.Type.COIN_BASE)
             throw new RuntimeException("invalid nonce");
 
-        Transaction.Type t = Transaction.Type.values()[callData.getCallType()];
 
         switch (t) {
             case TRANSFER:
