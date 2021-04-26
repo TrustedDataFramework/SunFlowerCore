@@ -1,9 +1,11 @@
 package org.tdf.sunflower.net;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ClassUtils;
+import org.tdf.common.store.JsonStore;
 import org.tdf.common.store.MapStore;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
@@ -35,7 +37,7 @@ public class P2PDebug {
         });
 
         // port listening on
-        PeerServerImpl server = new PeerServerImpl(new MapStore<>(), AbstractConsensusEngine.NONE, SecretStore.NONE);
+        PeerServerImpl server = new PeerServerImpl(new JsonStore("$memory", new ObjectMapper()), AbstractConsensusEngine.NONE, SecretStore.NONE);
         Properties properties = new Properties();
         FileUtils.setClassLoader(ClassUtils.getDefaultClassLoader());
         properties.load(FileUtils.getInputStream("p2p/node3.properties"));

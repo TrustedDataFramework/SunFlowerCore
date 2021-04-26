@@ -7,8 +7,12 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.common.types.Parameters;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
+import org.tdf.rlp.RLPElement;
+
+import java.util.Arrays;
 
 @RunWith(JUnit4.class)
 public class CommonTest {
@@ -45,5 +49,20 @@ public class CommonTest {
 
     private static class N {
         private HexBytes m;
+    }
+
+
+    @Test
+    public void test2() {
+        Parameters p = new Parameters();
+        p.setTypes(new long[]{2, 2, 2});
+        p.setLi(RLPElement.readRLPTree(Arrays.asList(
+                1,
+                2,
+                3
+        )));
+        p.setReturnType(new int[]{2});
+
+        System.out.println(HexBytes.encode(RLPCodec.encode(p)));
     }
 }
