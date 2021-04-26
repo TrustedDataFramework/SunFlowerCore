@@ -58,11 +58,11 @@ public class PoAValidator extends AbstractValidator {
         switch (poA.getPoAConfig().getRole()) {
             case "gateway": {
                 // for farm base node, only accept transaction from farm-base admin
-                if (transaction.getVersion() != 0 || !transaction.getFrom().equals(farmBaseAdmin)) {
+                if (transaction.getVersion() != 0 || !transaction.getFromAddress().equals(farmBaseAdmin)) {
                     return ValidateResult.fault(
                             String.format(
                                     "farmbase only accept admin transaction with network id = 0, while from = %s, network id = %s",
-                                    transaction.getFrom(),
+                                    transaction.getFromAddress(),
                                     transaction.getVersion()
                             )
                     );
@@ -94,7 +94,7 @@ public class PoAValidator extends AbstractValidator {
         }
 
 
-        if (!transaction.getFrom().equals(farmBaseAdmin)
+        if (!transaction.getFromAddress().equals(farmBaseAdmin)
                 && !poA.getValidators(
                 dependency.getStateRoot().getBytes())
                 .contains(transaction.getFromAddress()
