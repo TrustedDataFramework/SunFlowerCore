@@ -38,7 +38,7 @@ import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.util.EnvReader;
 import org.tdf.sunflower.util.MappingUtil;
-import org.tdf.sunflower.vm.abi.ContractABI;
+import org.tdf.sunflower.vm.ContractABI;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
 
 import java.lang.management.ManagementFactory;

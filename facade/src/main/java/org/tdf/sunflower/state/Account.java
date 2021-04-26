@@ -9,7 +9,7 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
 import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.vm.abi.ContractABI;
+import org.tdf.sunflower.vm.ContractABI;
 
 import java.util.Collections;
 import java.util.List;
@@ -55,7 +55,7 @@ public class Account {
      */
     public static Account emptyAccount(HexBytes address, Uint256 balance) {
         if (address.size() != ADDRESS_SIZE) throw new RuntimeException("address size should be " + ADDRESS_SIZE);
-        return new Account(address, 0, Uint256.ZERO, HexBytes.EMPTY, HexBytes.EMPTY_BYTES, CryptoContext.getEmptyTrieRoot(), Collections.emptyList());
+        return new Account(address, 0, balance, HexBytes.EMPTY, HexBytes.EMPTY_BYTES, CryptoContext.getEmptyTrieRoot(), Collections.emptyList());
     }
 
 

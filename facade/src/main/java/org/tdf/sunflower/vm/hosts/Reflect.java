@@ -12,7 +12,7 @@ import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.WBI;
 import org.tdf.sunflower.vm.abi.AbiDataType;
-import org.tdf.sunflower.vm.abi.ContractABI;
+import org.tdf.sunflower.vm.ContractABI;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
 import org.tdf.sunflower.vm.abi.ContractDeployPayload;
 
@@ -77,7 +77,7 @@ public class Reflect extends HostFunction {
         }
 
         forked.getCallData().setAmount(amount);
-        forked.getCallData().setPayload(HexBytes.fromBytes(RLPCodec.encode(payload)));
+        forked.getCallData().setPayload(HexBytes.fromBytes(payload));
         forked.getCallData().setCaller(VMExecutor.getCallData().getTo());
         RLPList result = forked.executeInternal();
 

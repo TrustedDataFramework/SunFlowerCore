@@ -15,7 +15,7 @@ import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
-import org.tdf.sunflower.vm.abi.ContractABI;
+import org.tdf.sunflower.vm.ContractABI;
 
 import java.util.*;
 

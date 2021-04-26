@@ -52,17 +52,6 @@ public class VMExecutor {
         return new VMExecutor(backend, callData.clone(), limit, depth + 1);
     }
 
-
-    private void addBalance(HexBytes address, Uint256 amount) {
-        Uint256 before = backend.getBalance(address);
-        backend.setBalance(address, before.safeAdd(amount));
-    }
-
-    private void subBalance(HexBytes address, Uint256 amount) {
-        Uint256 before = backend.getBalance(address);
-        backend.setBalance(address, before.safeSub(amount));
-    }
-
     public static void assertContractAddress(HexBytes address) {
         if (address.size() != Account.ADDRESS_SIZE)
             throw new RuntimeException("invalid address size " + address.size());
@@ -165,8 +154,7 @@ public class VMExecutor {
 
         // 3. calculate fee and
         Uint256 fee = Uint256.of(limit.getGas()).mul(callData.getGasPrice());
-        Uint256 originBalance = backend.getBalance(callData.getOrigin());
-        backend.setBalance(callData.getOrigin(), originBalance.safeSub(fee));
+        backend.subBalance(callData.getOrigin(), fee);
 
         List<Event> events = new ArrayList<>();
 
@@ -184,7 +172,7 @@ public class VMExecutor {
 
         switch (t) {
             case COIN_BASE: {
-                addBalance(callData.getTxTo(), callData.getTxAmount());
+                backend.addBalance(callData.getTxTo(), callData.getTxAmount());
                 for (Bios bios : backend.getBios().values()) {
                     bios.update(backend);
                 }
@@ -193,17 +181,17 @@ public class VMExecutor {
             case TRANSFER: {
                 // transfer balance
                 limit.addGas(Transaction.TRANSFER_GAS);
-                addBalance(callData.getTo(), callData.getAmount());
-                subBalance(callData.getCaller(), callData.getAmount());
+                backend.addBalance(callData.getTo(), callData.getAmount());
+                backend.subBalance(callData.getCaller(), callData.getAmount());
                 return RLPList.createEmpty();
             }
-            case CONTRACT_DEPLOY:
-            case CONTRACT_CALL: {
+            case CONTRACT_CALL:
+            case CONTRACT_DEPLOY:{
                 // is prebuilt
                 if (backend.getPreBuiltContracts().containsKey(callData.getTo())) {
                     limit.addGas(Transaction.BUILTIN_CALL_GAS);
-                    addBalance(callData.getTo(), callData.getAmount());
-                    subBalance(callData.getCaller(), callData.getAmount());
+                    backend.addBalance(callData.getTo(), callData.getAmount());
+                    backend.subBalance(callData.getCaller(), callData.getAmount());
                     PreBuiltContract updater = backend.getPreBuiltContracts().get(callData.getTo());
                     updater.update(backend, callData);
                     return RLPList.createEmpty();
@@ -245,8 +233,8 @@ public class VMExecutor {
                 }
 
                 // is wasm call
-                addBalance(contractAddress, callData.getAmount());
-                subBalance(callData.getCaller(), callData.getAmount());
+                backend.addBalance(contractAddress, callData.getAmount());
+                backend.subBalance(callData.getCaller(), callData.getAmount());
                 byte[] contractCode = backend.getCode(contractAddress);
 
                 if (contractCode.length == 0)

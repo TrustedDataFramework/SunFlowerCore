@@ -9,7 +9,7 @@ import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.WBI;
 import org.tdf.sunflower.vm.abi.AbiDataType;
-import org.tdf.sunflower.vm.abi.ContractABI;
+import org.tdf.sunflower.vm.ContractABI;
 
 import java.util.Arrays;
 import java.util.Collections;

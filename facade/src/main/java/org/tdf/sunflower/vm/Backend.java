@@ -6,13 +6,22 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.state.Bios;
 import org.tdf.sunflower.state.PreBuiltContract;
-import org.tdf.sunflower.vm.abi.ContractABI;
 
 import java.util.List;
 import java.util.Map;
 
 
 public interface Backend {
+    default void subBalance(HexBytes addr, Uint256 amount) {
+        if (getBalance(addr).compareTo(amount) < 0)
+            throw new RuntimeException(String.format("balance of account %s less than %s", addr, amount.value().toString(10)));
+        setBalance(addr, getBalance(addr).safeSub(amount));
+    }
+
+    default void addBalance(HexBytes addr, Uint256 amount) {
+        setBalance(addr, getBalance(addr).safeAdd(amount));
+    }
+
     long getHeight();
 
     HexBytes getParentHash();
