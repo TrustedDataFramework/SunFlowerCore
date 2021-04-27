@@ -87,6 +87,7 @@ dependencies {
     compile "org.iq80.leveldb:leveldb:${leveldbVersion}"
     // for test and dev
     compile 'com.h2database:h2'
+
 }
 
 task copyDependencies(type: Copy) {

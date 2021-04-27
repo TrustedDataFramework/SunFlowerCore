@@ -15,7 +15,7 @@ extern {
     fn alert(s: &str);
 }
 
-fn decode_hex(s: &str) -> Result<Vec<u8>, String> {
+fn drop_blank(s: &str) -> String{
     // drop blank
     let mut ret = String::new();
     for c in s.chars().into_iter() {
@@ -23,9 +23,15 @@ fn decode_hex(s: &str) -> Result<Vec<u8>, String> {
             continue;
         }
         ret.push(c);
-    }
-    let mut out: Vec<u8> = vec![0u8; ret.len() / 2];
-    hex::decode_to_slice(&ret, &mut out).map_err(|_| "decode hex failed".to_string())?;
+    }    
+    ret
+}
+
+fn decode_hex(s: &str) -> Result<Vec<u8>, String> {
+    // drop blank
+    let s = drop_blank(s);
+    let mut out: Vec<u8> = vec![0u8; s.len() / 2];
+    hex::decode_to_slice(&s, &mut out).map_err(|_| "decode hex failed".to_string())?;
     Ok(out)
 }
 

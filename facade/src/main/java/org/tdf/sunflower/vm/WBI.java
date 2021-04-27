@@ -2,12 +2,17 @@ package org.tdf.sunflower.vm;
 
 import org.tdf.common.types.Uint256;
 import org.tdf.lotusvm.ModuleInstance;
+import org.tdf.lotusvm.types.Module;
 import org.tdf.sunflower.vm.abi.AbiDataType;
 
 import java.nio.charset.StandardCharsets;
 
 // webassembly blockchain interface
 public abstract class WBI {
+    public static void inject(Module m, ModuleInstance i, byte[] input) {
+
+    }
+
     public static Object peek(ModuleInstance instance, int offset, AbiDataType type) {
         long startAndLen = instance.execute("__peek", offset, type.ordinal())[0];
         int start = (int) (startAndLen >>> 32);
