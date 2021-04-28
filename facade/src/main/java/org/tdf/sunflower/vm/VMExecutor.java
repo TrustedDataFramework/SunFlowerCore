@@ -10,11 +10,17 @@ import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Bios;
 import org.tdf.sunflower.state.PreBuiltContract;
+import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Event;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.TransactionResult;
+import org.tdf.sunflower.vm.abi.Abi;
+import org.tdf.sunflower.vm.abi.WbiType;
 import org.tdf.sunflower.vm.hosts.*;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +48,7 @@ public class VMExecutor {
 
 
     public VMExecutor clone() {
-        if(depth == 63)
+        if (depth == 63)
             throw new RuntimeException("vm call depth overflow");
         return new VMExecutor(backend, callData.clone(), limit, depth + 1);
     }
@@ -60,19 +66,18 @@ public class VMExecutor {
     }
 
 
-
     public TransactionResult execute() {
         Transaction.Type t = Transaction.Type.values()[callData.getCallType()];
 
         // 1. increase sender nonce
         long n = backend.getNonce(callData.getOrigin());
-        if(!backend.isStatic() && n + 1 != callData.getTxNonce() && t != Transaction.Type.COIN_BASE)
+        if (!backend.isStatic() && n + 1 != callData.getTxNonce() && t != Transaction.Type.COIN_BASE)
             throw new RuntimeException("invalid nonce");
 
 
         switch (t) {
             case TRANSFER:
-            case CONTRACT_CALL:{
+            case CONTRACT_CALL: {
                 backend.setNonce(callData.getOrigin(), n + 1);
                 break;
             }
@@ -119,7 +124,7 @@ public class VMExecutor {
                 return RLPList.createEmpty();
             }
             case CONTRACT_CALL:
-            case CONTRACT_DEPLOY:{
+            case CONTRACT_DEPLOY: {
                 // is prebuilt
                 if (backend.getPreBuiltContracts().containsKey(callData.getTo())) {
                     limit.addGas(Transaction.BUILTIN_CALL_GAS);
@@ -130,15 +135,13 @@ public class VMExecutor {
                     return RLPList.createEmpty();
                 }
 
-
-
-
                 byte[] code;
                 byte[] data;
                 HexBytes contractAddress;
+                boolean create = t == Transaction.Type.CONTRACT_DEPLOY;
 
                 // if this is contract deploy, should create contract account
-                if (t == Transaction.Type.CONTRACT_DEPLOY) {
+                if (create) {
                     // increase sender nonce
                     long n = backend.getNonce(callData.getCaller());
                     backend.setNonce(callData.getCaller(), n + 1);
@@ -177,6 +180,11 @@ public class VMExecutor {
                         .withEvent(backend, callData.getTo());
 
                 Module m = new Module(code);
+                Abi abi = m.getCustomSections()
+                        .stream().filter(x -> x.getName().equals("__abi"))
+                        .findFirst()
+                        .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
+                        .get();
 
                 ModuleInstance instance = ModuleInstance
                         .builder()
@@ -185,7 +193,7 @@ public class VMExecutor {
                         .hostFunctions(hosts.getAll())
                         .build();
 
-                WBI.InjectResult r = WBI.inject(t == Transaction.Type.CONTRACT_DEPLOY, m, instance, data);
+                WBI.InjectResult r = WBI.inject(create, abi, instance, data);
 
                 RLPList ret = RLPList.createEmpty();
 
@@ -194,6 +202,39 @@ public class VMExecutor {
 
                 // put parameters will not consume steps
                 long[] rets = instance.execute(r.getFunction(), r.getPointers());
+
+                Object result = null;
+                // extract result
+                if (rets.length > 0) {
+                    List<Abi.Entry.Param> outputs;
+
+                    if (create) {
+                        outputs = abi.findConstructor().outputs;
+                    } else {
+                        outputs = abi.findFunction(x -> x.name.equals(r.getFunction())).outputs;
+                    }
+
+                    // outputs
+                    int outType = ByteBuffer.wrap(
+                            CryptoContext.keccak256(outputs.get(0).type.getName().getBytes(StandardCharsets.US_ASCII)),
+                            0,
+                            4
+                    ).order(ByteOrder.BIG_ENDIAN).getInt();
+
+                    switch (outType) {
+                        case WbiType.BYTES:
+                        case WbiType.STRING:
+                        case WbiType.ADDRESS:
+                        case WbiType.UINT_256: {
+                            result = WBI.peek(instance, (int) rets[0], outType);
+                            break;
+                        }
+                        default: {
+                            result = rets[0];
+                        }
+                    }
+                }
+
 
                 return ret;
             }

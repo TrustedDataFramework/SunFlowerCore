@@ -48,14 +48,7 @@ public abstract class WBI {
     }
 
     // the __init section is dropped before inject
-    public static InjectResult inject(boolean create, Module m, ModuleInstance i, byte[] input) {
-        // 1. get abi section
-        Abi abi = m.getCustomSections()
-                .stream().filter(x -> x.getName().equals("__abi"))
-                .findFirst()
-                .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
-                .get();
-
+    public static InjectResult inject(boolean create, Abi abi, ModuleInstance i, byte[] input) {
         List<Abi.Entry.Param> params = null;
         byte[] encoded = null;
         String function = null;
@@ -98,6 +91,7 @@ public abstract class WBI {
         return new InjectResult(function, ret, true);
     }
 
+    // String / U256 / byte[]
     public static Object peek(ModuleInstance instance, int offset, int type) {
         long t = Integer.toUnsignedLong(type);
         long startAndLen = instance.execute("__peek", offset, t)[0];
