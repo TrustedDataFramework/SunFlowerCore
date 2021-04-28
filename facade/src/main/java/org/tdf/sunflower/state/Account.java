@@ -39,10 +39,6 @@ public class Account {
     // if the account is not contract account, this field will be null
     private byte[] storageRoot;
 
-    // contract abis
-    @JsonIgnore
-    private List<ContractABI> contractABIs;
-
     private Account() {
 
     }
@@ -55,13 +51,13 @@ public class Account {
      */
     public static Account emptyAccount(HexBytes address, Uint256 balance) {
         if (address.size() != ADDRESS_SIZE) throw new RuntimeException("address size should be " + ADDRESS_SIZE);
-        return new Account(address, 0, balance, HexBytes.EMPTY, HexBytes.EMPTY_BYTES, CryptoContext.getEmptyTrieRoot(), Collections.emptyList());
+        return new Account(address, 0, balance, HexBytes.EMPTY, HexBytes.EMPTY_BYTES, CryptoContext.getEmptyTrieRoot());
     }
 
 
     @Override
     public Account clone() {
-        return new Account(address, nonce, balance, createdBy, contractHash, storageRoot, contractABIs);
+        return new Account(address, nonce, balance, createdBy, contractHash, storageRoot);
     }
 
     public void addBalance(Uint256 amount) {

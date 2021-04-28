@@ -36,12 +36,6 @@ public interface Backend {
 
     void setNonce(HexBytes address, long nonce);
 
-
-    List<ContractABI> getABI(HexBytes address);
-
-    void setABI(HexBytes address, List<ContractABI> abi);
-
-
     long getInitialGas(int payloadSize);
 
 

@@ -95,9 +95,9 @@ public class Authentication implements PreBuiltContract {
     @Override
     @SneakyThrows
     public void update(Backend backend, CallData callData) {
-        HexBytes payload = callData.getPayload();
+        HexBytes payload = callData.getData();
 
-        Method m = Method.values()[callData.getPayload().get(0)];
+        Method m = Method.values()[callData.getData().get(0)];
         List<HexBytes> nodes = new ArrayList<>(Arrays.asList(RLPCodec.decode(getByNodesKey(backend), HexBytes[].class)));
         Store<HexBytes, TreeSet<HexBytes>> pending = getPendingStore(backend.getAsStore(contractAddress));
 

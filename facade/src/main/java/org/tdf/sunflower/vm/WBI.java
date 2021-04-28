@@ -9,6 +9,7 @@ import org.tdf.lotusvm.types.Module;
 import org.tdf.sunflower.vm.abi.Abi;
 import org.tdf.sunflower.vm.abi.WbiType;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -23,9 +24,30 @@ public abstract class WBI {
     public static class InjectResult {
         String function;
         long[] pointers;
-        boolean execute;
+        boolean executable;
     }
 
+    public static byte[] dropInit(byte[] code) {
+        Module m = new Module(code);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        // drop __init sections
+        int now = 0;
+        for (CustomSection section : m.getCustomSections()) {
+            if (section.getName().equals("__init")) {
+                out.write(code, now, section.getOffset() - now);
+                now = section.getLimit();
+            }
+        }
+        out.write(code, now, code.length - now);
+        return out.toByteArray();
+    }
+
+    public static byte[] extractInitData(Module m) {
+        return m.getCustomSections().stream().filter(x -> x.getName().equals("__init")).findFirst()
+                .map(CustomSection::getData).orElse(new byte[0]);
+    }
+
+    // the __init section is dropped before inject
     public static InjectResult inject(boolean create, Module m, ModuleInstance i, byte[] input) {
         // 1. get abi section
         Abi abi = m.getCustomSections()
@@ -42,8 +64,7 @@ public abstract class WBI {
         if (create && abi.findConstructor() != null) {
             function = "init";
             params = abi.findConstructor().inputs;
-            encoded = m.getCustomSections().stream().filter(x -> x.getName().equals("__init")).findFirst()
-                    .map(CustomSection::getData).orElse(new byte[0]);
+            encoded = input;
         }
 
         // 3. for contract call, find function by signature

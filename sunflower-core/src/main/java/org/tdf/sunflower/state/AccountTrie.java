@@ -139,7 +139,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
         // execute method
         CallData callData = CallData.empty();
         callData.setTo(address);
-        callData.setPayload(HexBytes.fromBytes(RLPCodec.encode(new ContractCallPayload(method, parameters))));
+        callData.setData(HexBytes.fromBytes(RLPCodec.encode(new ContractCallPayload(method, parameters))));
 
         Backend backend = createBackend(header, System.currentTimeMillis() / 1000, true);
 

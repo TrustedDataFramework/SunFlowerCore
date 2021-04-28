@@ -104,13 +104,6 @@ public class ContextHost extends HostFunction {
                         .peek(getInstance(), (int) parameters[1], WbiType.ADDRESS);
                 return WBI.mallocBytes(getInstance(), backend.getCode(HexBytes.fromBytes(addr)));
             }
-            case CONTRACT_ABI: {
-                byte[] addr = (byte[]) WBI
-                        .peek(getInstance(), (int) parameters[1], WbiType.ADDRESS);
-                List<ContractABI> abi = backend.getABI(HexBytes.fromBytes(addr));
-                byte[] data = RLPCodec.encode(abi);
-                return WBI.mallocBytes(getInstance(), data);
-            }
             default:
                 throw new RuntimeException("unexpected type " + type);
         }

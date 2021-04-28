@@ -174,26 +174,6 @@ public class BackendImpl implements Backend {
     }
 
     @Override
-    public List<ContractABI> getABI(HexBytes address) {
-        if (modifiedAccounts.containsKey(address)) {
-            return modifiedAccounts.get(address).getContractABIs();
-        }
-        return lookup(address).getContractABIs();
-    }
-
-    @Override
-    public void setABI(HexBytes address, List<ContractABI> abi) {
-        if (modifiedAccounts.containsKey(address)) {
-            modifiedAccounts.get(address).setContractABIs(abi);
-            return;
-        }
-        Account a = lookup(address).clone();
-        a.setContractABIs(abi);
-        modifiedAccounts.put(address, a);
-    }
-
-
-    @Override
     public long getInitialGas(int payloadSize) {
         return payloadSize / 1024;
     }

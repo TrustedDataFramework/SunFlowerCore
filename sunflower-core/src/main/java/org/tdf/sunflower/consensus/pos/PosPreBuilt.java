@@ -96,7 +96,7 @@ public class PosPreBuilt implements PreBuiltContract {
     @Override
     @SneakyThrows
     public void update(Backend backend, CallData callData) {
-        HexBytes payload = callData.getPayload();
+        HexBytes payload = callData.getData();
         Type type = Type.values()[payload.get(0)];
         HexBytes args = payload.slice(1);
 

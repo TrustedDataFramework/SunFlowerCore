@@ -77,7 +77,7 @@ public class Reflect extends HostFunction {
         }
 
         forked.getCallData().setAmount(amount);
-        forked.getCallData().setPayload(HexBytes.fromBytes(payload));
+        forked.getCallData().setData(HexBytes.fromBytes(payload));
         forked.getCallData().setCaller(VMExecutor.getCallData().getTo());
         RLPList result = forked.executeInternal();
 

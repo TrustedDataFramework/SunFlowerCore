@@ -272,8 +272,7 @@ public class EntryController {
         HexBytes addressHex = Address.of(address);
         Header h = sunflowerRepository.getBestHeader();
         Account a = accountTrie.get(h.getStateRoot().getBytes(), addressHex);
-        return a.getContractABIs().stream().map(ContractABI::toJSON)
-                .collect(Collectors.toList());
+        return null;
     }
 
     @GetMapping(value = "/contract/vrf/{address}", produces = MediaType.APPLICATION_JSON_VALUE)

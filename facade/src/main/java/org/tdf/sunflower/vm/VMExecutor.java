@@ -2,11 +2,10 @@ package org.tdf.sunflower.vm;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.tdf.common.types.Parameters;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.rlp.RLPCodec;
+import org.tdf.lotusvm.types.Module;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Bios;
@@ -14,9 +13,6 @@ import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.Event;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.TransactionResult;
-import org.tdf.sunflower.vm.abi.WbiType;
-import org.tdf.sunflower.vm.abi.ContractCallPayload;
-import org.tdf.sunflower.vm.abi.ContractDeployPayload;
 import org.tdf.sunflower.vm.hosts.*;
 
 import java.util.ArrayList;
@@ -63,33 +59,7 @@ public class VMExecutor {
         throw new RuntimeException("cannot call reversed address " + address);
     }
 
-    public static int allocString(ModuleInstance moduleInstance, String s) {
-        return WBI.malloc(moduleInstance, s);
-    }
 
-    public static int allocBytes(ModuleInstance moduleInstance, byte[] buf) {
-        return WBI.mallocBytes(moduleInstance, buf);
-    }
-
-    public static int allocAddress(ModuleInstance moduleInstance, byte[] addr) {
-        return WBI.mallocAddress(moduleInstance, addr);
-    }
-
-    public static int allocU256(ModuleInstance moduleInstance, Uint256 u) {
-        return WBI.malloc(moduleInstance, u);
-    }
-
-    static Object getResult(ModuleInstance module, long offset, WbiType type) {
-        return null;
-    }
-
-    private long[] putParameters(ModuleInstance module, Parameters params) {
-        long[] ret = new long[params.getTypes().length];
-        for (int i = 0; i < ret.length; i++) {
-            return new long[0];
-        }
-        return ret;
-    }
 
     public TransactionResult execute() {
         Transaction.Type t = Transaction.Type.values()[callData.getCallType()];
@@ -111,7 +81,7 @@ public class VMExecutor {
 
 
         // 2. set initial gas by payload size
-        limit.setInitialGas(backend.getInitialGas(callData.getPayload().size()));
+        limit.setInitialGas(backend.getInitialGas(callData.getData().size()));
 
         RLPList result = executeInternal();
 
@@ -160,8 +130,11 @@ public class VMExecutor {
                     return RLPList.createEmpty();
                 }
 
-                Parameters parameters;
-                String method;
+
+
+
+                byte[] code;
+                byte[] data;
                 HexBytes contractAddress;
 
                 // if this is contract deploy, should create contract account
@@ -169,38 +142,26 @@ public class VMExecutor {
                     // increase sender nonce
                     long n = backend.getNonce(callData.getCaller());
                     backend.setNonce(callData.getCaller(), n + 1);
+                    Module tmpModule = new Module(callData.getData().getBytes());
+                    code = WBI.dropInit(callData.getData().getBytes());
+                    data = WBI.extractInitData(tmpModule);
 
-                    ContractDeployPayload deployPayload =
-                            RLPCodec.decode(
-                                    callData.getPayload().getBytes(),
-                                    ContractDeployPayload.class
-                            );
-                    parameters = deployPayload.getParameters();
-                    method = "init";
                     // increase nonce here to avoid conflicts
                     contractAddress = Transaction.createContractAddress(callData.getCaller(), backend.getNonce(callData.getCaller()));
                     callData.setTo(contractAddress);
-                    backend.setCode(contractAddress, deployPayload.getBinary());
-                    backend.setABI(contractAddress, deployPayload.getContractABIs());
+                    backend.setCode(contractAddress, code);
                     backend.setContractCreatedBy(contractAddress, callData.getCaller());
                 } else {
-                    ContractCallPayload callPayload =
-                            RLPCodec.decode(
-                                    callData.getPayload().getBytes(), ContractCallPayload.class
-                            );
-                    parameters = callPayload.getParameters();
-                    method = callPayload.getMethod();
-                    if (method.equals("init"))
-                        throw new RuntimeException("cannot call construct");
                     contractAddress = callData.getTo();
+                    code = backend.getCode(contractAddress);
+                    data = callData.getData().getBytes();
                 }
 
                 // is wasm call
                 backend.addBalance(contractAddress, callData.getAmount());
                 backend.subBalance(callData.getCaller(), callData.getAmount());
-                byte[] contractCode = backend.getCode(contractAddress);
 
-                if (contractCode.length == 0)
+                if (code.length == 0)
                     throw new RuntimeException("contract not found or is not a ccontract address");
 
                 DBFunctions dbFunctions = new DBFunctions(backend, callData.getTo());
@@ -215,25 +176,24 @@ public class VMExecutor {
                         .withDB(dbFunctions)
                         .withEvent(backend, callData.getTo());
 
+                Module m = new Module(code);
+
                 ModuleInstance instance = ModuleInstance
                         .builder()
-                        .binary(contractCode)
+                        .module(m)
                         .hooks(Collections.singleton(limit))
                         .hostFunctions(hosts.getAll())
                         .build();
 
+                WBI.InjectResult r = WBI.inject(t == Transaction.Type.CONTRACT_DEPLOY, m, instance, data);
 
                 RLPList ret = RLPList.createEmpty();
 
-                if (method.equals("init") && !instance.containsExport("init"))
+                if (!r.isExecutable())
                     return ret;
 
                 // put parameters will not consume steps
-                long steps = limit.getSteps();
-                long[] offsets = putParameters(instance, parameters);
-                limit.setSteps(steps);
-
-                long[] rets = instance.execute(method, offsets);
+                long[] rets = instance.execute(r.getFunction(), r.getPointers());
 
                 return ret;
             }

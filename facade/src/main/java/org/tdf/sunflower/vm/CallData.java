@@ -58,7 +58,7 @@ public class CallData {
     private HexBytes txTo;
     private int txType;
     private int callType;
-    private HexBytes payload;
+    private HexBytes data;
     private HexBytes origin;
     private HexBytes txHash;
     private long txNonce;
@@ -69,7 +69,7 @@ public class CallData {
     public CallData clone() {
         return new CallData(
                 caller, amount, txAmount, to, txTo,
-                txType, callType, payload, origin, txHash,
+                txType, callType, data, origin, txHash,
                 txNonce, txCreatedAt,
                 gasPrice, gasLimit
         );
