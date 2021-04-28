@@ -1,12 +1,8 @@
 package org.tdf.sunflower.vm.abi;
 
-public enum AbiDataType {
-    BOOL, // 0
-    I64,  // 1
-    U64, //  2 BN
-    F64, //
-    STRING, // 4 string
-    BYTES, // 5
-    ADDRESS, // 6
-    U256
+public class AbiDataType {
+    public static final int UINT_256  = 0xec13d6d1; // keccak(uint256)
+    public static final int ADDRESS  = 0x421683f8; // keccak(address)
+    public static final int STRING  = 0x97fc4627; // keccak(string)
+    public static final int BYTES  = 0xb963e9b4; // keccak(bytes)
 }

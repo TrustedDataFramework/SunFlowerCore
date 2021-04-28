@@ -9,39 +9,45 @@ import java.nio.charset.StandardCharsets;
 
 // webassembly blockchain interface
 public abstract class WBI {
+
+
     public static void inject(Module m, ModuleInstance i, byte[] input) {
 
     }
 
-    public static Object peek(ModuleInstance instance, int offset, AbiDataType type) {
-        long startAndLen = instance.execute("__peek", offset, type.ordinal())[0];
+    public static Object peek(ModuleInstance instance, int offset, int type) {
+        long t = Integer.toUnsignedLong(type);
+        long startAndLen = instance.execute("__peek", offset, t)[0];
         int start = (int) (startAndLen >>> 32);
         int len = (int) (startAndLen);
         byte[] bin = instance.getMemory().loadN(start, len);
         switch (type) {
-            case STRING: {
+            case AbiDataType.STRING: {
                 return new String(bin, StandardCharsets.UTF_8);
             }
-            case U256: {
+            case AbiDataType.UINT_256: {
                 return Uint256.of(bin);
             }
-            case BYTES:
-            case ADDRESS: {
+            case AbiDataType.BYTES:
+            case AbiDataType.ADDRESS: {
                 return bin;
             }
         }
         throw new RuntimeException("unexpected");
     }
 
-    private static int mallocInternal(ModuleInstance instance, AbiDataType t, byte[] bin) {
+    private static int mallocInternal(ModuleInstance instance, int type, byte[] bin) {
+        long t = Integer.toUnsignedLong(type);
         long ptr = instance.execute("__malloc", bin.length)[0];
         instance.getMemory().put((int) ptr, bin);
-        long p = instance.execute("__change_t", t.ordinal(), ptr, bin.length)[0];
+        long p = instance.execute("__change_t", t, ptr, bin.length)[0];
         int r = (int) p;
         if (r < 0)
             throw new RuntimeException("malloc failed: pointer is negative");
         return r;
     }
+
+
 
     public static int malloc(ModuleInstance instance, String s) {
         byte[] bin = s.getBytes(StandardCharsets.UTF_8);
@@ -50,7 +56,7 @@ public abstract class WBI {
 
     public static int malloc(ModuleInstance instance, Uint256 s) {
         byte[] bin = s.getNoLeadZeroesData();
-        return mallocInternal(instance, AbiDataType.U256, bin);
+        return mallocInternal(instance, AbiDataType.UINT_256, bin);
     }
 
     public static int mallocBytes(ModuleInstance instance, byte[] bin) {
