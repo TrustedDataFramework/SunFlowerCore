@@ -45,3 +45,4 @@ out
 tmp
 logs
 .DS_Store
+*.lock

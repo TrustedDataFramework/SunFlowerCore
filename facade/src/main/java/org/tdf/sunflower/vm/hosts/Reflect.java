@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class Reflect extends HostFunction {
-    private final org.tdf.sunflower.vm.VMExecutor VMExecutor;
+    private final org.tdf.sunflower.vm.VMExecutor executor;
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
             // offset, length, offset
             Arrays.asList(
@@ -30,9 +30,9 @@ public class Reflect extends HostFunction {
             Collections.singletonList(ValueType.I64)
     );
 
-    public Reflect(org.tdf.sunflower.vm.VMExecutor VMExecutor) {
+    public Reflect(org.tdf.sunflower.vm.VMExecutor executor) {
         super("_reflect", FUNCTION_TYPE);
-        this.VMExecutor = VMExecutor;
+        this.executor = executor;
     }
 
     @Override
@@ -40,9 +40,14 @@ public class Reflect extends HostFunction {
         Type t = Type.values()[(int) longs[0]];
         byte[] payload = null;
         Uint256 amount = null;
-        org.tdf.sunflower.vm.VMExecutor forked = VMExecutor.clone();
+        org.tdf.sunflower.vm.VMExecutor forked = executor.clone();
         Parameters params = null;
         switch (t) {
+            case UPDATE: {
+                byte[] binary = (byte[]) WBI.peek(getInstance(), (int) longs[1], AbiDataType.BYTES);
+                executor.getBackend().setCode(executor.getCallData().getTo(), binary);
+                return 0;
+            }
             case CALL: {
                 byte[] addr = (byte[]) WBI.peek(getInstance(), (int) longs[1], AbiDataType.ADDRESS);
                 forked.getCallData().setTo(HexBytes.fromBytes(addr));
@@ -78,7 +83,7 @@ public class Reflect extends HostFunction {
 
         forked.getCallData().setAmount(amount);
         forked.getCallData().setPayload(HexBytes.fromBytes(payload));
-        forked.getCallData().setCaller(VMExecutor.getCallData().getTo());
+        forked.getCallData().setCaller(executor.getCallData().getTo());
         RLPList result = forked.executeInternal();
 
         if (result.isEmpty())
@@ -110,6 +115,7 @@ public class Reflect extends HostFunction {
 
     enum Type {
         CALL, // call and put into memory
-        CREATE // create
+        CREATE, // create
+        UPDATE, // update contract code
     }
 }
