@@ -1,12 +1,16 @@
 package org.tdf.sunflower.vm;
 
+import lombok.Value;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.lotusvm.ModuleInstance;
+import org.tdf.lotusvm.types.CustomSection;
 import org.tdf.lotusvm.types.Module;
 import org.tdf.sunflower.vm.abi.Abi;
 import org.tdf.sunflower.vm.abi.WbiType;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -14,37 +18,63 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public abstract class WBI {
-    public static void inject(boolean create, Module m, ModuleInstance i, byte[] input) {
+
+    @Value
+    public static class InjectResult {
+        String function;
+        long[] pointers;
+        boolean execute;
+    }
+
+    public static InjectResult inject(boolean create, Module m, ModuleInstance i, byte[] input) {
         // 1. get abi section
         Abi abi = m.getCustomSections()
                 .stream().filter(x -> x.getName().equals("__abi"))
-                .findAny()
+                .findFirst()
                 .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
                 .get();
 
         List<Abi.Entry.Param> params = null;
         byte[] encoded = null;
+        String function = null;
 
         // 2. for contract create, constructor is not necessarily
         if (create && abi.findConstructor() != null) {
+            function = "init";
             params = abi.findConstructor().inputs;
-            encoded = input;
+            encoded = m.getCustomSections().stream().filter(x -> x.getName().equals("__init")).findFirst()
+                    .map(CustomSection::getData).orElse(new byte[0]);
         }
 
         // 3. for contract call, find function by signature
         if (!create) {
-            params = abi
-                    .findFunction(x -> FastByteComparisons.equal(x.encodeSignature(), Arrays.copyOfRange(input, 0 ,4))).inputs;
+            Abi.Function f = abi.findFunction(x -> FastByteComparisons.equal(x.encodeSignature(), Arrays.copyOfRange(input, 0 ,4)));
+            Objects.requireNonNull(f);
+            function = f.name;
+            params = f.inputs;
             Objects.requireNonNull(params);
             encoded = Arrays.copyOfRange(input, 4, input.length);
         }
 
         if (params == null)
-            return;
+            return new InjectResult(function, new long[0], false);
 
         // malloc param types
-        String joined = params.inputs.stream().map(x -> x.type.getName()).collect(Collectors.joining(","));
+        String joined = params.stream().map(x -> x.type.getName()).collect(Collectors.joining(","));
 
+        // convert to pointers
+        long[] ptrs = new long[] {
+                Integer.toUnsignedLong(malloc(i, joined)),
+                Integer.toUnsignedLong(mallocBytes(i, encoded))
+        };
+
+        byte[] bytes = (byte[]) peek(i, (int) i.execute("__abi_decode", ptrs)[0], WbiType.BYTES);
+
+        long[] ret = new long[params.size()];
+        for(int j = 0; j < ret.length; j++) {
+            ret[j] = ByteBuffer.wrap(bytes, j * 8, 8).order(ByteOrder.BIG_ENDIAN).getLong();
+        }
+        return new InjectResult(function, ret, true);
     }
 
     public static Object peek(ModuleInstance instance, int offset, int type) {
