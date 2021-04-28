@@ -7,8 +7,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.Predicate;
-import org.tdf.crypto.CryptoHelpers;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.tdf.sunflower.types.CryptoContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,10 +19,6 @@ import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static java.lang.String.format;
-import static org.apache.commons.collections4.ListUtils.select;
-import static org.apache.commons.lang3.ArrayUtils.subarray;
-import static org.apache.commons.lang3.StringUtils.join;
-import static org.apache.commons.lang3.StringUtils.stripEnd;
 
 
 public class Abi extends ArrayList<Abi.Entry> {
@@ -155,11 +154,11 @@ public class Abi extends ArrayList<Abi.Entry> {
                 paramsTypes.append(param.type.getCanonicalName()).append(",");
             }
 
-            return format("%s(%s)", name, stripEnd(paramsTypes.toString(), ","));
+            return String.format("%s(%s)", name, StringUtils.stripEnd(paramsTypes.toString(), ","));
         }
 
         public byte[] fingerprintSignature() {
-            return CryptoHelpers.keccak256(formatSignature().getBytes());
+            return CryptoContext.keccak256(formatSignature().getBytes());
         }
 
         public byte[] encodeSignature() {
@@ -203,7 +202,7 @@ public class Abi extends ArrayList<Abi.Entry> {
         }
 
         public String formatSignature(String contractName) {
-            return format("function %s(%s)", contractName, join(inputs, ", "));
+            return String.format("function %s(%s)", contractName, StringUtils.join(inputs, ", "));
         }
     }
 
@@ -252,7 +251,7 @@ public class Abi extends ArrayList<Abi.Entry> {
         }
 
         public List<?> decode(byte[] encoded) {
-            return Param.decodeList(inputs, subarray(encoded, ENCODED_SIGN_LENGTH, encoded.length));
+            return Param.decodeList(inputs, ArrayUtils.subarray(encoded, ENCODED_SIGN_LENGTH, encoded.length));
         }
 
         public List<?> decodeResult(byte[] encoded) {
@@ -265,7 +264,7 @@ public class Abi extends ArrayList<Abi.Entry> {
         }
 
         public static byte[] extractSignature(byte[] data) {
-            return subarray(data, 0, ENCODED_SIGN_LENGTH);
+            return ArrayUtils.subarray(data, 0, ENCODED_SIGN_LENGTH);
         }
 
         @Override
@@ -279,10 +278,10 @@ public class Abi extends ArrayList<Abi.Entry> {
                 for (Param output : outputs) {
                     types.add(output.type.getCanonicalName());
                 }
-                returnTail += format(" returns(%s)", join(types, ", "));
+                returnTail += String.format(" returns(%s)", StringUtils.join(types, ", "));
             }
 
-            return format("function %s(%s)%s;", name, join(inputs, ", "), returnTail);
+            return String.format("function %s(%s)%s;", name, StringUtils.join(inputs, ", "), returnTail);
         }
     }
 
@@ -295,7 +294,7 @@ public class Abi extends ArrayList<Abi.Entry> {
         public List<?> decode(byte[] data, byte[][] topics) {
             List<Object> result = new ArrayList<>(inputs.size());
 
-            byte[][] argTopics = anonymous ? topics : subarray(topics, 1, topics.length);
+            byte[][] argTopics = anonymous ? topics : ArrayUtils.subarray(topics, 1, topics.length);
             List<Param> indexedParams = filteredInputs(true);
             List<Object> indexed = new ArrayList<>();
             for (int i = 0; i < indexedParams.size(); i++) {
@@ -319,12 +318,12 @@ public class Abi extends ArrayList<Abi.Entry> {
         }
 
         private List<Param> filteredInputs(final boolean indexed) {
-            return select(inputs, param -> param.indexed == indexed);
+            return ListUtils.select(inputs, param -> param.indexed == indexed);
         }
 
         @Override
         public String toString() {
-            return format("event %s(%s);", name, join(inputs, ", "));
+            return String.format("event %s(%s);", name, StringUtils.join(inputs, ", "));
         }
     }
 }

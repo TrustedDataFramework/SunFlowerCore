@@ -7,7 +7,6 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Bios;
@@ -15,7 +14,7 @@ import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.Event;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.TransactionResult;
-import org.tdf.sunflower.vm.abi.AbiDataType;
+import org.tdf.sunflower.vm.abi.WbiType;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
 import org.tdf.sunflower.vm.abi.ContractDeployPayload;
 import org.tdf.sunflower.vm.hosts.*;
@@ -80,50 +79,14 @@ public class VMExecutor {
         return WBI.malloc(moduleInstance, u);
     }
 
-    static Object getResult(ModuleInstance module, long offset, AbiDataType type) {
-        switch (type) {
-            case I64:
-            case U64:
-            case F64:
-            case BOOL: {
-                return offset;
-            }
-            default:
-                return WBI.peek(module, (int) offset, type);
-        }
+    static Object getResult(ModuleInstance module, long offset, WbiType type) {
+        return null;
     }
 
     private long[] putParameters(ModuleInstance module, Parameters params) {
         long[] ret = new long[params.getTypes().length];
         for (int i = 0; i < ret.length; i++) {
-            AbiDataType t = AbiDataType.values()[(int) params.getTypes()[i]];
-            switch (t) {
-                case I64:
-                case U64:
-                case F64:
-                case BOOL: {
-                    ret[i] = params.getLi().get(i).asLong();
-                    break;
-                }
-                case BYTES: {
-                    ret[i] = allocBytes(module, params.getLi().get(i).asBytes());
-                    break;
-                }
-                case STRING: {
-                    ret[i] = allocString(module, params.getLi().get(i).asString());
-                    break;
-                }
-                case U256: {
-                    ret[i] = allocU256(module, Uint256.of(params.getLi().get(i).asBytes()));
-                    break;
-                }
-                case ADDRESS: {
-                    ret[i] = allocAddress(module, params.getLi().get(i).asBytes());
-                    break;
-                }
-                default:
-                    throw new UnsupportedOperationException();
-            }
+            return new long[0];
         }
         return ret;
     }
@@ -271,14 +234,6 @@ public class VMExecutor {
                 limit.setSteps(steps);
 
                 long[] rets = instance.execute(method, offsets);
-                if (parameters.getReturnType().length > 0) {
-                    ret.add(
-                            RLPElement.readRLPTree(
-                                    getResult(
-                                            instance, rets[0], AbiDataType.values()[parameters.getReturnType()[0]])
-                            )
-                    );
-                }
 
                 return ret;
             }

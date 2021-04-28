@@ -91,4 +91,10 @@ public class CryptoContext {
     public static byte[] ecdh(byte[] sk, byte[] pk) {
         return ecdh.exchange(sk, pk);
     }
+
+    public static Function<byte[], byte[]> keccak256 = null;
+
+    public static byte[] keccak256(byte[] in) {
+        return keccak256.apply(in);
+    }
 }

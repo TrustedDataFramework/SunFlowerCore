@@ -8,7 +8,7 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.WBI;
-import org.tdf.sunflower.vm.abi.AbiDataType;
+import org.tdf.sunflower.vm.abi.WbiType;
 import org.tdf.sunflower.vm.ContractABI;
 
 import java.util.Arrays;
@@ -84,12 +84,12 @@ public class ContextHost extends HostFunction {
             }
             case ACCOUNT_NONCE: {
                 byte[] addr = (byte[]) WBI
-                        .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
+                        .peek(getInstance(), (int) parameters[1], WbiType.ADDRESS);
                 return backend.getNonce(HexBytes.fromBytes(addr));
             }
             case ACCOUNT_BALANCE: {
                 byte[] addr = (byte[]) WBI
-                        .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
+                        .peek(getInstance(), (int) parameters[1], WbiType.ADDRESS);
                 return WBI.malloc(getInstance(), backend.getBalance(HexBytes.fromBytes(addr)));
             }
             case MSG_SENDER: {
@@ -101,12 +101,12 @@ public class ContextHost extends HostFunction {
             }
             case CONTRACT_CODE: {
                 byte[] addr = (byte[]) WBI
-                        .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
+                        .peek(getInstance(), (int) parameters[1], WbiType.ADDRESS);
                 return WBI.mallocBytes(getInstance(), backend.getCode(HexBytes.fromBytes(addr)));
             }
             case CONTRACT_ABI: {
                 byte[] addr = (byte[]) WBI
-                        .peek(getInstance(), (int) parameters[1], AbiDataType.ADDRESS);
+                        .peek(getInstance(), (int) parameters[1], WbiType.ADDRESS);
                 List<ContractABI> abi = backend.getABI(HexBytes.fromBytes(addr));
                 byte[] data = RLPCodec.encode(abi);
                 return WBI.mallocBytes(getInstance(), data);

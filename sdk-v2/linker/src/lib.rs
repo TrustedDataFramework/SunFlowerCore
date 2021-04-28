@@ -38,16 +38,24 @@ fn decode_hex(s: &str) -> Result<Vec<u8>, String> {
 
 #[wasm_bindgen]
 /// link abi into wasm byte code 
-pub fn link(code: String, abi: String) -> String {
+pub fn link(code: String, abi: String, init: String) -> String {
     let c = decode_hex(&code).unwrap();
     let mut m: Module = deserialize_buffer(&c).unwrap();
-    let linked = m.custom_sections().any(|x| x.name() == "abi");
+    let linked = m.custom_sections().any(|x| x.name() == "__abi");
 
     if !linked {
-        let new_section = Section::Custom(CustomSection::new("abi".to_string(), abi.into_bytes()));
+        let new_section = Section::Custom(CustomSection::new("__abi".to_string(), abi.into_bytes()));
         m.sections_mut().insert(0, new_section);
     }
 
+    let linked = m.custom_sections().any(|x| x.name() == "__init");
+
+    if !linked {
+        let data = decode_hex(&init).unwrap();
+        let new_section = Section::Custom(CustomSection::new("__init".to_string(), data));
+        m.sections_mut().insert(0, new_section);        
+    }
+  
     let mut v = Vec::new();
     m.serialize(&mut v).unwrap();
     v.encode_hex()

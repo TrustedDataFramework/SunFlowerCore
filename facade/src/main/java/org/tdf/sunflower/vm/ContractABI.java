@@ -4,11 +4,9 @@ package org.tdf.sunflower.vm;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.tdf.sunflower.vm.abi.AbiDataType;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Data
 public class ContractABI {
@@ -28,7 +26,7 @@ public class ContractABI {
     }
 
     private List<InputOutput> map(int[] ints) {
-        return Arrays.stream(ints).mapToObj(i -> new InputOutput(AbiDataType.values()[i].name().toLowerCase())).collect(Collectors.toList());
+        return Collections.emptyList();
     }
 
     @Data

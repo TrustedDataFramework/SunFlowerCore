@@ -1,17 +1,49 @@
 package org.tdf.sunflower.vm;
 
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.FastByteComparisons;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.Module;
-import org.tdf.sunflower.vm.abi.AbiDataType;
+import org.tdf.sunflower.vm.abi.Abi;
+import org.tdf.sunflower.vm.abi.WbiType;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
-// webassembly blockchain interface
 public abstract class WBI {
+    public static void inject(boolean create, Module m, ModuleInstance i, byte[] input) {
+        // 1. get abi section
+        Abi abi = m.getCustomSections()
+                .stream().filter(x -> x.getName().equals("__abi"))
+                .findAny()
+                .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
+                .get();
 
+        List<Abi.Entry.Param> params = null;
+        byte[] encoded = null;
 
-    public static void inject(Module m, ModuleInstance i, byte[] input) {
+        // 2. for contract create, constructor is not necessarily
+        if (create && abi.findConstructor() != null) {
+            params = abi.findConstructor().inputs;
+            encoded = input;
+        }
+
+        // 3. for contract call, find function by signature
+        if (!create) {
+            params = abi
+                    .findFunction(x -> FastByteComparisons.equal(x.encodeSignature(), Arrays.copyOfRange(input, 0 ,4))).inputs;
+            Objects.requireNonNull(params);
+            encoded = Arrays.copyOfRange(input, 4, input.length);
+        }
+
+        if (params == null)
+            return;
+
+        // malloc param types
+        String joined = params.inputs.stream().map(x -> x.type.getName()).collect(Collectors.joining(","));
 
     }
 
@@ -22,14 +54,14 @@ public abstract class WBI {
         int len = (int) (startAndLen);
         byte[] bin = instance.getMemory().loadN(start, len);
         switch (type) {
-            case AbiDataType.STRING: {
+            case WbiType.STRING: {
                 return new String(bin, StandardCharsets.UTF_8);
             }
-            case AbiDataType.UINT_256: {
+            case WbiType.UINT_256: {
                 return Uint256.of(bin);
             }
-            case AbiDataType.BYTES:
-            case AbiDataType.ADDRESS: {
+            case WbiType.BYTES:
+            case WbiType.ADDRESS: {
                 return bin;
             }
         }
@@ -51,19 +83,19 @@ public abstract class WBI {
 
     public static int malloc(ModuleInstance instance, String s) {
         byte[] bin = s.getBytes(StandardCharsets.UTF_8);
-        return mallocInternal(instance, AbiDataType.STRING, bin);
+        return mallocInternal(instance, WbiType.STRING, bin);
     }
 
     public static int malloc(ModuleInstance instance, Uint256 s) {
         byte[] bin = s.getNoLeadZeroesData();
-        return mallocInternal(instance, AbiDataType.UINT_256, bin);
+        return mallocInternal(instance, WbiType.UINT_256, bin);
     }
 
     public static int mallocBytes(ModuleInstance instance, byte[] bin) {
-        return mallocInternal(instance, AbiDataType.BYTES, bin);
+        return mallocInternal(instance, WbiType.BYTES, bin);
     }
 
     public static int mallocAddress(ModuleInstance instance, byte[] address) {
-        return mallocInternal(instance, AbiDataType.ADDRESS, address);
+        return mallocInternal(instance, WbiType.ADDRESS, address);
     }
 }

@@ -52,4 +52,6 @@ dependencies {
     compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-properties:${jacksonVersion}"
     compileOnly "com.google.guava:guava:${guavaVersion}"
     compile "org.tdf:lotusvm:${lotusvmVersion}"
+    compile "org.apache.commons:commons-collections4:${commonsCollections4Version}"
+    compile "org.apache.commons:commons-lang3:${commonsLang3Version}"
 }

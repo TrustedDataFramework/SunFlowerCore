@@ -5,7 +5,7 @@ import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.vm.WBI;
-import org.tdf.sunflower.vm.abi.AbiDataType;
+import org.tdf.sunflower.vm.abi.WbiType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,8 +32,8 @@ public class U256Host extends HostFunction {
     public long execute(long[] longs) {
         int i = (int) longs[0];
         U256OP op = U256OP.values()[i];
-        Uint256 l = (Uint256) WBI.peek(getInstance(), (int) longs[1], AbiDataType.U256);
-        Uint256 r = (Uint256) WBI.peek(getInstance(), (int) longs[2], AbiDataType.U256);
+        Uint256 l = (Uint256) WBI.peek(getInstance(), (int) longs[1], WbiType.UINT_256);
+        Uint256 r = (Uint256) WBI.peek(getInstance(), (int) longs[2], WbiType.UINT_256);
         Uint256 res;
         switch (op) {
             case SUM:

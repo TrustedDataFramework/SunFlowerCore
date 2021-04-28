@@ -7,7 +7,7 @@ import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.WBI;
-import org.tdf.sunflower.vm.abi.AbiDataType;
+import org.tdf.sunflower.vm.abi.WbiType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,12 +30,12 @@ public class DBFunctions extends HostFunction {
 
     private byte[] getKey(long... longs) {
         return (byte[]) WBI
-                .peek(getInstance(), (int) longs[1], AbiDataType.BYTES);
+                .peek(getInstance(), (int) longs[1], WbiType.BYTES);
     }
 
     private byte[] getValue(long... longs) {
         return (byte[]) WBI
-                .peek(getInstance(), (int) longs[2], AbiDataType.BYTES);
+                .peek(getInstance(), (int) longs[2], WbiType.BYTES);
     }
 
     @Override
