@@ -103,6 +103,38 @@ public class Abi extends ArrayList<Abi.Entry> {
             public String name;
             public SolidityType type;
 
+            public static byte[] encodeList(List<Param> inputs, Object... args) {
+                if (args.length > inputs.size())
+                    throw new RuntimeException("Too many arguments: " + args.length + " > " + inputs.size());
+
+                int staticSize = 0;
+                int dynamicCnt = 0;
+                // calculating static size and number of dynamic params
+                for (int i = 0; i < args.length; i++) {
+                    SolidityType type = inputs.get(i).type;
+                    if (type.isDynamicType()) {
+                        dynamicCnt++;
+                    }
+                    staticSize += type.getFixedSize();
+                }
+
+                byte[][] bb = new byte[args.length + dynamicCnt][];
+                for (int curDynamicPtr = staticSize, curDynamicCnt = 0, i = 0; i < args.length; i++) {
+                    SolidityType type = inputs.get(i).type;
+                    if (type.isDynamicType()) {
+                        byte[] dynBB = type.encode(args[i]);
+                        bb[i] = SolidityType.IntType.encodeInt(curDynamicPtr);
+                        bb[args.length + curDynamicCnt] = dynBB;
+                        curDynamicCnt++;
+                        curDynamicPtr += dynBB.length;
+                    } else {
+                        bb[i] = type.encode(args[i]);
+                    }
+                }
+
+                return merge(bb);
+            }
+
             // string -> String
             // bytes -> byte[]
             // address -> byte[]
@@ -219,35 +251,7 @@ public class Abi extends ArrayList<Abi.Entry> {
         }
 
         private byte[] encodeArguments(Object... args) {
-            if (args.length > inputs.size())
-                throw new RuntimeException("Too many arguments: " + args.length + " > " + inputs.size());
-
-            int staticSize = 0;
-            int dynamicCnt = 0;
-            // calculating static size and number of dynamic params
-            for (int i = 0; i < args.length; i++) {
-                SolidityType type = inputs.get(i).type;
-                if (type.isDynamicType()) {
-                    dynamicCnt++;
-                }
-                staticSize += type.getFixedSize();
-            }
-
-            byte[][] bb = new byte[args.length + dynamicCnt][];
-            for (int curDynamicPtr = staticSize, curDynamicCnt = 0, i = 0; i < args.length; i++) {
-                SolidityType type = inputs.get(i).type;
-                if (type.isDynamicType()) {
-                    byte[] dynBB = type.encode(args[i]);
-                    bb[i] = SolidityType.IntType.encodeInt(curDynamicPtr);
-                    bb[args.length + curDynamicCnt] = dynBB;
-                    curDynamicCnt++;
-                    curDynamicPtr += dynBB.length;
-                } else {
-                    bb[i] = type.encode(args[i]);
-                }
-            }
-
-            return merge(bb);
+            return Param.encodeList(inputs, args);
         }
 
         public List<?> decode(byte[] encoded) {

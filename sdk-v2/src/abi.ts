@@ -2,7 +2,7 @@ import { utils } from 'ethers'
 import { JsonFragment, JsonFragmentType } from '@ethersproject/abi'
 
 export function compileRust(str: string): JsonFragment[] {
-  let re = /#\[no_mangle\][\s\n\t]*pub[\s\n\t]+fn[\s\n\t]+([a-zA-Z_][a-zA-Z0-9_]*)[\s\n\t]*\(([a-z\n\s\tA-Z0-9_,:<>]*)\)[\s\n\t]*(->[\s\n\t]*.*)?{/g
+  let re = /#\[no_mangle\][\s\n\t]*pub[\s\n\t]+fn[\s\n\t]+([a-zA-Z_][a-zA-Z0-9_]*)[\s\n\t]*\(([a-z\n\s\tA-Z0-9_,:<>]*)\)[\s\n\t]*(->[\s\n\t]*.*)?{[\s\t]*(\/\/[\s\n\t]*@[a-z]+)?/g
   const ret = []
   const types = {
     u64: 'uint64',
@@ -39,6 +39,19 @@ export function compileRust(str: string): JsonFragment[] {
     return []
   }  
 
+  function getStateMutability(str: string) {
+    const stateMutabilities = ['payable', 'view', 'pure', 'nopayable']
+
+    if (!str)
+      return 'payable'
+
+    for (let x of stateMutabilities) {
+      if (str.indexOf(x) >= 0)
+        return x
+    }
+    return 'payable'
+  }
+
   for (let m of str.match(re) || []) {
     re.lastIndex = 0
     const r = re.exec(m)
@@ -49,7 +62,7 @@ export function compileRust(str: string): JsonFragment[] {
       type: r[1] === 'init' ? 'constructor' : 'function',
       inputs: getInputs(r[2]),
       outputs: getOutputs(r[3]),
-      stateMutability: 'payable'
+      stateMutability: getStateMutability(r[4]),
     }
     
     if (o.name === '') {
