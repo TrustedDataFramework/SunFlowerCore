@@ -1,6 +1,5 @@
 package org.tdf.sunflower.vm;
 
-import org.checkerframework.checker.units.qual.C;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -10,31 +9,22 @@ import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.CryptoHelpers;
-import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.lotusvm.runtime.HostFunction;
-import org.tdf.lotusvm.types.Module;
 import org.tdf.sunflower.pool.BackendImpl;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.hosts.Limit;
-import org.tdf.sunflower.vm.hosts.Log;
-import org.tdf.sunflower.vm.hosts.U256Host;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.function.Function;
 
 @RunWith(JUnit4.class)
 public class AbiTests {
 
     @Test
-    public void test0() throws Exception{
+    public void test0() throws Exception {
         Codec<HexBytes> k = Codec.newInstance(HexBytes::getBytes, HexBytes::fromBytes);
         Codec<Account> v = Codecs.newRLPCodec(Account.class);
 
