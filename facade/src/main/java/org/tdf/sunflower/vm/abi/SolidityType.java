@@ -2,7 +2,7 @@ package org.tdf.sunflower.vm.abi;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import org.tdf.common.types.ByteUtil;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 
 import java.lang.reflect.Array;

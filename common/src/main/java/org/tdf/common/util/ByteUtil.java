@@ -1,6 +1,4 @@
-package org.tdf.common.types;
-
-import org.tdf.common.util.HexBytes;
+package org.tdf.common.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import lombok.NonNull;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
@@ -19,8 +20,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static org.tdf.common.types.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.tdf.common.types.ByteUtil.firstNonZeroByte;
+import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.tdf.common.util.ByteUtil.firstNonZeroByte;
 
 
 @JsonDeserialize(using = Uint256.Uint256Deserializer.class)

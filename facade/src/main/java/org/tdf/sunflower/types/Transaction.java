@@ -1,403 +1,527 @@
 package org.tdf.sunflower.types;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import lombok.*;
-import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.ByteArrayMapStore;
-import org.tdf.common.trie.Trie;
-import org.tdf.common.types.Uint256;
-import org.tdf.common.util.*;
+import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.util.BigIntegers;
+import org.tdf.common.util.ByteUtil;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPIgnored;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Address;
+import org.tdf.rlp.RLPElement;
+import org.tdf.rlp.RLPList;
 
+import java.math.BigInteger;
+import java.security.SignatureException;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-@ToString
-@NoArgsConstructor
+import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
+@Slf4j(topic = "tx")
 public class Transaction {
-    public static final long TRANSFER_GAS = 10;
-    public static final long BUILTIN_CALL_GAS = 10;
-    public static final Comparator<Transaction> NONCE_COMPARATOR = (a, b) -> {
-        int cmp = a.getFrom().compareTo(b.getFrom());
-        if (cmp != 0)
-            return cmp;
-        if (a.getNonce() != b.getNonce()) return Long.compare(a.getNonce(), b.getNonce());
-        return a.getHash().compareTo(b.getHash());
-    };
-    @RLP(0)
-    protected int version;
-    @RLP(1)
-    protected int type;
-    @JsonSerialize(using = EpochSecondsSerializer.class)
-    @JsonDeserialize(using = EpochSecondDeserializer.class)
-    @RLP(2)
-    protected long createdAt;
-    @RLP(3)
-    @JsonSerialize(using = IntSerializer.class)
-    protected long nonce;
+    public static final int HASH_LENGTH = 32;
+    public static final int ADDRESS_LENGTH = 20;
+    private static final BigInteger DEFAULT_GAS_PRICE = new BigInteger("10000000000000");
+    private static final BigInteger DEFAULT_BALANCE_GAS = new BigInteger("21000");
     /**
-     * for coinbase, this field is null or empty bytes
+     * Since EIP-155, we could encode chainId in V
      */
-    @RLP(4)
-    protected HexBytes from;
-    @RLP(5)
-    @JsonSerialize(using = IntSerializer.class)
-    protected long gasLimit;
-    @RLP(6)
-    @JsonSerialize(using = IntSerializer.class)
-    protected Uint256 gasPrice;
-    @RLP(7)
-    @JsonSerialize(using = IntSerializer.class)
-    protected Uint256 amount;
-    /**
-     * for coinbase and transfer, this field is null or empty bytes
-     */
-    @RLP(8)
-    protected HexBytes payload;
-    /**
-     * for contract deploy, this field is null or empty bytes
-     */
-    @RLP(9)
-    protected HexBytes to;
-    /**
-     * not null
-     */
-    @RLP(10)
-    protected HexBytes signature;
-    // generated value, no need to encode into rlp
-    @Getter(AccessLevel.NONE)
-    @RLPIgnored
-    protected transient HexBytes hash;
+    private static final int CHAIN_ID_INC = 35;
+    private static final int LOWER_REAL_V = 27;
+    protected byte[] sendAddress;
+    /* Tx in encoded form */
+    protected byte[] rlpEncoded;
+    /* Indicates if this transaction has been parsed
+     * from the RLP-encoded data */
+    protected boolean parsed = false;
+    /* SHA3 hash of the RLP encoded transaction */
+    private byte[] hash;
+    /* a counter used to make sure each transaction can only be processed once */
+    private byte[] nonce;
+    /* the amount of ether to transfer (calculated as wei) */
+    private byte[] value;
+    /* the address of the destination account
+     * In creation transaction the receive address is - 0 */
+    private byte[] receiveAddress;
+    /* the amount of ether to pay as a transaction fee
+     * to the miner for each unit of gas */
+    private byte[] gasPrice;
+    /* the amount of "gas" to allow for the computation.
+     * Gas is the fuel of the computational engine;
+     * every computational step taken and every byte added
+     * to the state or transaction list consumes some gas. */
+    private byte[] gasLimit;
+    /* An unlimited size byte array specifying
+     * input [data] of the message call or
+     * Initialization code for a new contract */
+    private byte[] data;
+    private Integer chainId = null;
+    /* the elliptic curve signature
+     * (including public key recovery bits) */
+    private ECDSASignature signature;
+    private byte[] rawHash;
 
-    @JsonIgnore
-    public boolean isCoinbase() {
-        return type == Type.COIN_BASE.code;
+    public Transaction(byte[] rawData) {
+        this.rlpEncoded = rawData;
+        parsed = false;
     }
 
-    @Builder
-    public Transaction(
-            int version,
-            int type, long createdAt, long nonce, HexBytes from,
-            long gasLimit,
-            Uint256 gasPrice, Uint256 amount, HexBytes payload,
-            HexBytes to, HexBytes signature
-    ) {
-        this.version = version;
-        this.type = type;
-        this.createdAt = createdAt;
+    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
+                       Integer chainId) {
         this.nonce = nonce;
-        this.from = from;
         this.gasPrice = gasPrice;
-        this.amount = amount;
-        this.payload = payload;
-        this.to = to;
-        this.signature = signature;
         this.gasLimit = gasLimit;
+        this.receiveAddress = receiveAddress;
+        if (ByteUtil.isSingleZero(value)) {
+            this.value = EMPTY_BYTE_ARRAY;
+        } else {
+            this.value = value;
+        }
+        this.data = data;
+        this.chainId = chainId;
+
+        if (receiveAddress == null) {
+            this.receiveAddress = EMPTY_BYTE_ARRAY;
+        }
+
+        parsed = true;
     }
 
     /**
-     * get transactions root of block body, any modification of transaction or their order
-     * will result in a totally different transactions root
-     * light client cloud require a merkle proof to verify the existence of a transaction in the block {@link Trie#getProof(Object)}
-     *
-     * @param transactions list of transaction in sequential
-     * @return transactions root
+     * Warning: this transaction would not be protected by replay-attack protection mechanism
+     * Use {@link Transaction#Transaction(byte[], byte[], byte[], byte[], byte[], byte[], Integer)} constructor instead
+     * and specify the desired chainID
      */
-    public static HexBytes getTransactionsRoot(List<Transaction> transactions) {
-        Trie<Integer, Transaction> tmp = Trie.<Integer, Transaction>builder()
-                .hashFunction(CryptoContext::hash)
-                .keyCodec(Codec.newInstance(RLPCodec::encode, RLPCodec::decodeInt))
-                .valueCodec(Codec.newInstance(RLPCodec::encode, x -> RLPCodec.decode(x, Transaction.class)))
-                .store(new ByteArrayMapStore<>())
-                .build();
+    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
+        this(nonce, gasPrice, gasLimit, receiveAddress, value, data, null);
+    }
 
-        for (int i = 0; i < transactions.size(); i++) {
-            tmp.put(i, transactions.get(i));
-        }
-        return HexBytes.fromBytes(tmp.commit());
+    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
+                       byte[] r, byte[] s, byte v, Integer chainId) {
+        this(nonce, gasPrice, gasLimit, receiveAddress, value, data, chainId);
+        this.signature = ECDSASignature.fromComponents(r, s, v);
+    }
+
+
+    /**
+     * Warning: this transaction would not be protected by replay-attack protection mechanism
+     * Use {@link Transaction#Transaction(byte[], byte[], byte[], byte[], byte[], byte[], byte[], byte[], byte, Integer)}
+     * constructor instead and specify the desired chainID
+     */
+    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
+                       byte[] r, byte[] s, byte v) {
+        this(nonce, gasPrice, gasLimit, receiveAddress, value, data, r, s, v, null);
     }
 
     /**
-     * get contract address, contract address = hash(rlp(from, nonce))
-     *
-     * @return contact address
+     * @deprecated Use {@link Transaction#createDefault(String, BigInteger, BigInteger, Integer)} instead
      */
-    public static HexBytes createContractAddress(HexBytes address, long nonce) {
-        byte[] bytes = CryptoContext.hash(RLPCodec.encode(new Object[]{address, nonce}));
-        HexBytes ret = HexBytes.fromBytes(bytes);
-        return ret.slice(ret.size() - Account.ADDRESS_SIZE, ret.size());
+    @Deprecated
+    public static Transaction createDefault(String to, BigInteger amount, BigInteger nonce) {
+        return create(to, amount, nonce, DEFAULT_GAS_PRICE, DEFAULT_BALANCE_GAS);
     }
 
-    public long getGasLimit() {
-        return gasLimit;
+    public static Transaction createDefault(String to, BigInteger amount, BigInteger nonce, Integer chainId) {
+        return create(to, amount, nonce, DEFAULT_GAS_PRICE, DEFAULT_BALANCE_GAS, chainId);
     }
 
-    public void setGasLimit(long gasLimit) {
-        this.gasLimit = gasLimit;
-        getHash(true);
+    /**
+     * @deprecated use {@link Transaction#create(String, BigInteger, BigInteger, BigInteger, BigInteger, Integer)} instead
+     */
+    @Deprecated
+    public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit) {
+        return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
+                BigIntegers.asUnsignedByteArray(gasPrice),
+                BigIntegers.asUnsignedByteArray(gasLimit),
+                HexBytes.decode(to),
+                BigIntegers.asUnsignedByteArray(amount),
+                null);
     }
 
-    @JsonIgnore
-    public byte[] getSignaturePlain() {
-        return RLPCodec.encode(new Object[]{
-                version,
-                type,
-                createdAt,
-                nonce,
-                from,
-                gasLimit,
-                gasPrice,
-                amount,
-                payload,
-                to
-        });
+    public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice,
+                                     BigInteger gasLimit, Integer chainId) {
+        return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
+                BigIntegers.asUnsignedByteArray(gasPrice),
+                BigIntegers.asUnsignedByteArray(gasLimit),
+                HexBytes.decode(to),
+                BigIntegers.asUnsignedByteArray(amount),
+                null,
+                chainId);
     }
 
-    public HexBytes getHash() {
-        return getHash(false);
+    private Integer extractChainIdFromRawSignature(BigInteger bv, byte[] r, byte[] s) {
+        if (r == null && s == null) return bv.intValue();  // EIP 86
+        if (bv.bitLength() > 31)
+            return Integer.MAX_VALUE; // chainId is limited to 31 bits, longer are not valid for now
+        long v = bv.longValue();
+        if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) return null;
+        return (int) ((v - CHAIN_ID_INC) / 2);
     }
 
-    private HexBytes getHash(boolean forceReHash) {
-        if (forceReHash || this.hash == null) {
-            this.hash = HexBytes.fromBytes(
-                    CryptoContext.hash(getSignaturePlain())
-            );
-            return this.hash;
+    private byte getRealV(BigInteger bv) {
+        if (bv.bitLength() > 31) return 0; // chainId is limited to 31 bits, longer are not valid for now
+        long v = bv.longValue();
+        if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) return (byte) v;
+        byte realV = LOWER_REAL_V;
+        int inc = 0;
+        if ((int) v % 2 == 0) inc = 1;
+        return (byte) (realV + inc);
+    }
+
+    public long transactionCost(Block block) {
+        rlpParse();
+        return 0;
+    }
+
+    public synchronized void verify() {
+        rlpParse();
+        validate();
+    }
+
+    public synchronized void rlpParse() {
+        if (parsed) return;
+        try {
+            RLPList decodedTxList = RLPElement.fromEncoded(rlpEncoded).asRLPList();
+            RLPList transaction = (RLPList) decodedTxList.get(0);
+
+            // Basic verification
+            if (transaction.size() > 9) throw new RuntimeException("Too many RLP elements");
+            for (RLPElement rlpElement : transaction) {
+                if (!rlpElement.isRLPItem())
+                    throw new RuntimeException("Transaction RLP elements shouldn't be lists");
+            }
+
+            this.nonce = transaction.get(0).asBytes();
+            this.gasPrice = transaction.get(1).asBytes();
+            this.gasLimit = transaction.get(2).asBytes();
+            this.receiveAddress = transaction.get(3).asBytes();
+            this.value = transaction.get(4).asBytes();
+            this.data = transaction.get(5).asBytes();
+            // only parse signature in case tx is signed
+            if (transaction.size() >= 7 && !transaction.get(6).isNull()) {
+                byte[] vData = transaction.get(6).asBytes();
+                BigInteger v = ByteUtil.bytesToBigInteger(vData);
+                byte[] r = transaction.get(7).asBytes();
+                byte[] s = transaction.get(8).asBytes();
+                this.chainId = extractChainIdFromRawSignature(v, r, s);
+                if (r != null && s != null) {
+                    this.signature = ECDSASignature.fromComponents(r, s, getRealV(v));
+                }
+            } else {
+                log.debug("RLP encoded tx is not signed!");
+            }
+            this.hash = HashUtil.sha3(rlpEncoded);
+            this.parsed = true;
+        } catch (Exception e) {
+            throw new RuntimeException("Error on parsing RLP", e);
         }
-        return this.hash;
+    }
+
+    private void validate() {
+        if (getNonce().length > HASH_LENGTH) throw new RuntimeException("Nonce is not valid");
+        if (receiveAddress != null && receiveAddress.length != 0 && receiveAddress.length != ADDRESS_LENGTH)
+            throw new RuntimeException("Receive address is not valid");
+        if (gasLimit.length > HASH_LENGTH)
+            throw new RuntimeException("Gas Limit is not valid");
+        if (gasPrice != null && gasPrice.length > HASH_LENGTH)
+            throw new RuntimeException("Gas Price is not valid");
+        if (value != null && value.length > HASH_LENGTH)
+            throw new RuntimeException("Value is not valid");
+        if (getSignature() != null) {
+            if (BigIntegers.asUnsignedByteArray(signature.r).length > HASH_LENGTH)
+                throw new RuntimeException("Signature R is not valid");
+            if (BigIntegers.asUnsignedByteArray(signature.s).length > HASH_LENGTH)
+                throw new RuntimeException("Signature S is not valid");
+            if (getSender() != null && getSender().length != ADDRESS_LENGTH)
+                throw new RuntimeException("Sender is not valid");
+        }
+    }
+
+    public boolean isParsed() {
+        return parsed;
+    }
+
+    public byte[] getHash() {
+        if (hash == null || hash.length == 0) return hash;
+        rlpParse();
+        getEncoded();
+        return hash;
+    }
+
+    public byte[] getRawHash() {
+        rlpParse();
+        if (rawHash != null) return rawHash;
+        byte[] plainMsg = this.getEncodedRaw();
+        return rawHash = HashUtil.sha3(plainMsg);
+    }
+
+    public byte[] getNonce() {
+        rlpParse();
+
+        return nonce == null ? ZERO_BYTE_ARRAY : nonce;
+    }
+
+    protected void setNonce(byte[] nonce) {
+        this.nonce = nonce;
+        parsed = true;
+    }
+
+    public boolean isValueTx() {
+        rlpParse();
+        return value != null;
+    }
+
+    public byte[] getValue() {
+        rlpParse();
+        return value == null ? ZERO_BYTE_ARRAY : value;
+    }
+
+    protected void setValue(byte[] value) {
+        this.value = value;
+        parsed = true;
+    }
+
+    public byte[] getReceiveAddress() {
+        rlpParse();
+        return receiveAddress;
+    }
+
+    protected void setReceiveAddress(byte[] receiveAddress) {
+        this.receiveAddress = receiveAddress;
+        parsed = true;
+    }
+
+    public byte[] getGasPrice() {
+        rlpParse();
+        return gasPrice == null ? ZERO_BYTE_ARRAY : gasPrice;
+    }
+
+    protected void setGasPrice(byte[] gasPrice) {
+        this.gasPrice = gasPrice;
+        parsed = true;
+    }
+
+    public byte[] getGasLimit() {
+        rlpParse();
+        return gasLimit == null ? ZERO_BYTE_ARRAY : gasLimit;
+    }
+
+    protected void setGasLimit(byte[] gasLimit) {
+        this.gasLimit = gasLimit;
+        parsed = true;
+    }
+
+    public long nonZeroDataBytes() {
+        if (data == null) return 0;
+        int counter = 0;
+        for (final byte aData : data) {
+            if (aData != 0) ++counter;
+        }
+        return counter;
+    }
+
+    public long zeroDataBytes() {
+        if (data == null) return 0;
+        int counter = 0;
+        for (final byte aData : data) {
+            if (aData == 0) ++counter;
+        }
+        return counter;
+    }
+
+    /*
+     * Crypto
+     */
+
+    public byte[] getData() {
+        rlpParse();
+        return data;
+    }
+
+    protected void setData(byte[] data) {
+        this.data = data;
+        parsed = true;
+    }
+
+    public ECDSASignature getSignature() {
+        rlpParse();
+        return signature;
+    }
+
+    public byte[] getContractAddress() {
+        if (!isContractCreation()) return null;
+        return HashUtil.calcNewAddr(this.getSender(), this.getNonce());
+    }
+
+    public boolean isContractCreation() {
+        rlpParse();
+        return this.receiveAddress == null || Arrays.equals(this.receiveAddress, EMPTY_BYTE_ARRAY);
+    }
+
+    public ECKey getKey() {
+        byte[] hash = getRawHash();
+        return ECKey.recoverFromSignature(signature.v, signature, hash);
+    }
+
+    public synchronized byte[] getSender() {
+        try {
+            if (sendAddress == null && getSignature() != null) {
+                sendAddress = ECKey.signatureToAddress(getRawHash(), getSignature());
+            }
+            return sendAddress;
+        } catch (SignatureException e) {
+            log.error(e.getMessage(), e);
+        }
+        return null;
+    }
+
+    public Integer getChainId() {
+        rlpParse();
+        return chainId == null ? null : chainId;
+    }
+
+    /**
+     * @deprecated should prefer #sign(ECKey) over this method
+     */
+    @Deprecated
+    public void sign(byte[] privKeyBytes) throws ECKey.MissingPrivateKeyException {
+        sign(ECKey.fromPrivate(privKeyBytes));
+    }
+
+    public void sign(ECKey key) throws ECKey.MissingPrivateKeyException {
+        this.signature = key.sign(this.getRawHash());
+        this.rlpEncoded = null;
     }
 
     @Override
-    public Transaction clone() {
-        return new Transaction(version, type, createdAt, nonce, from, gasLimit, gasPrice, amount, payload, to, signature);
+    public String toString() {
+        return toString(Integer.MAX_VALUE);
     }
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    public int size() {
-        return Constants.sizeOf(version) + Constants.sizeOf(type)
-                + Constants.sizeOf(createdAt) + Constants.sizeOf(nonce)
-                + this.gasPrice.getNoLeadZeroesData().length +
-                this.amount.getNoLeadZeroesData().length +
-                Stream.of(from, payload, to, signature)
-                        .map(Constants::sizeOf)
-                        .reduce(0, Integer::sum);
+    public String toString(int maxDataSize) {
+        rlpParse();
+        String dataS;
+        if (data == null) {
+            dataS = "";
+        } else if (data.length < maxDataSize) {
+            dataS = ByteUtil.toHexString(data);
+        } else {
+            dataS = ByteUtil.toHexString(Arrays.copyOfRange(data, 0, maxDataSize)) +
+                    "... (" + data.length + " bytes)";
+        }
+        return "TransactionData [" + "hash=" + ByteUtil.toHexString(hash) +
+                "  nonce=" + ByteUtil.toHexString(nonce) +
+                ", gasPrice=" + ByteUtil.toHexString(gasPrice) +
+                ", gas=" + ByteUtil.toHexString(gasLimit) +
+                ", receiveAddress=" + ByteUtil.toHexString(receiveAddress) +
+                ", sendAddress=" + ByteUtil.toHexString(getSender()) +
+                ", value=" + ByteUtil.toHexString(value) +
+                ", data=" + dataS +
+                ", signatureV=" + (signature == null ? "" : signature.v) +
+                ", signatureR=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.r))) +
+                ", signatureS=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.s))) +
+                "]";
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Transaction that = (Transaction) o;
-        return version == that.version &&
-                type == that.type &&
-                createdAt == that.createdAt &&
-                nonce == that.nonce &&
-                gasPrice == that.gasPrice &&
-                amount == that.amount &&
-                Objects.equals(from, that.from) &&
-                Objects.equals(payload, that.payload) &&
-                Objects.equals(to, that.to) &&
-                Objects.equals(signature, that.signature);
+    /**
+     * For signatures you have to keep also
+     * RLP of the transaction without any signature data
+     */
+    public byte[] getEncodedRaw() {
+
+        rlpParse();
+        byte[] rlpRaw;
+
+        // parse null as 0 for nonce
+        byte[] nonce = null;
+        if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
+            nonce = RLP.encodeElement(null);
+        } else {
+            nonce = RLP.encodeElement(this.nonce);
+        }
+        byte[] gasPrice = RLP.encodeElement(this.gasPrice);
+        byte[] gasLimit = RLP.encodeElement(this.gasLimit);
+        byte[] receiveAddress = RLP.encodeElement(this.receiveAddress);
+        byte[] value = RLP.encodeElement(this.value);
+        byte[] data = RLP.encodeElement(this.data);
+
+        // Since EIP-155 use chainId for v
+        if (chainId == null) {
+            rlpRaw = RLP.encodeList(nonce, gasPrice, gasLimit, receiveAddress,
+                    value, data);
+        } else {
+            byte[] v, r, s;
+            v = RLP.encodeInt(chainId);
+            r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+            s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+            rlpRaw = RLP.encodeList(nonce, gasPrice, gasLimit, receiveAddress,
+                    value, data, v, r, s);
+        }
+        return rlpRaw;
     }
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    public Uint256 getFee() {
-        if (type == Type.COIN_BASE.code)
-            return Uint256.ZERO;
-        if (type == Type.TRANSFER.code)
-            return Uint256.of(TRANSFER_GAS).mul(getGasPrice());
-        return Uint256.ZERO;
+    public synchronized byte[] getEncoded() {
+
+        if (rlpEncoded != null) return rlpEncoded;
+
+        // parse null as 0 for nonce
+        byte[] nonce = null;
+        if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
+            nonce = RLPCodec.encodeBytes(null);
+        } else {
+            nonce = RLPCodec.encodeBytes(this.nonce);
+        }
+        byte[] gasPrice = RLPCodec.encodeBytes(this.gasPrice);
+        byte[] gasLimit = RLPCodec.encodeBytes(this.gasLimit);
+        byte[] receiveAddress = RLPCodec.encodeBytes(this.receiveAddress);
+        byte[] value = RLPCodec.encodeBytes(this.value);
+        byte[] data = RLPCodec.encodeBytes(this.data);
+
+        byte[] v, r, s;
+
+        if (signature != null) {
+            int encodeV;
+            if (chainId == null) {
+                encodeV = signature.v;
+            } else {
+                encodeV = signature.v - LOWER_REAL_V;
+                encodeV += chainId * 2 + CHAIN_ID_INC;
+            }
+            v = RLPCodec.encodeInt(encodeV);
+            r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
+            s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s));
+        } else {
+            // Since EIP-155 use chainId for v
+            v = chainId == null ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeInt(chainId);
+            r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+            s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        }
+
+        this.rlpEncoded = RLP.encodeList(nonce, gasPrice, gasLimit,
+                receiveAddress, value, data, v, r, s);
+
+        this.hash = HashUtil.sha3(rlpEncoded);
+
+        return rlpEncoded;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(version, type, createdAt, nonce, from, gasPrice, amount, payload, to, signature);
-    }
 
-    /**
-     * get contract address, contract address = hash(rlp(from, nonce))
-     *
-     * @return contact address
-     */
-    public HexBytes createContractAddress() {
-        if (type != Type.CONTRACT_DEPLOY.code) throw new RuntimeException("not a contract deploy transaction");
-        return createContractAddress(getFromAddress(), nonce);
-    }
+        byte[] hash = this.getHash();
+        int hashCode = 0;
 
-    public int getVersion() {
-        return version;
-    }
-
-    public void setVersion(int version) {
-        this.version = version;
-        getHash(true);
-    }
-
-    public int getType() {
-        return type;
-    }
-
-    public void setType(int type) {
-        this.type = type;
-        getHash(true);
-    }
-
-    public long getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(long createdAt) {
-        this.createdAt = createdAt;
-        getHash(true);
-    }
-
-    public long getNonce() {
-        return nonce;
-    }
-
-    public void setNonce(long nonce) {
-        this.nonce = nonce;
-        getHash(true);
-    }
-
-    public HexBytes getFrom() {
-        return from == null ? HexBytes.EMPTY : from;
-    }
-
-    public void setFrom(HexBytes from) {
-        this.from = from;
-        getHash(true);
-    }
-
-    @JsonIgnore
-    public HexBytes getFromAddress() {
-        if (getFrom().isEmpty()) throw new RuntimeException("from not found: coinbase transaction");
-        return Address.fromPublicKey(getFrom());
-    }
-
-    public Uint256 getGasPrice() {
-        return gasPrice;
-    }
-
-    public void setGasPrice(Uint256 gasPrice) {
-        this.gasPrice = gasPrice;
-        getHash(true);
-    }
-
-    public Uint256 getAmount() {
-        return amount;
-    }
-
-    public void setAmount(Uint256 amount) {
-        this.amount = amount;
-        getHash(true);
-    }
-
-    public HexBytes getPayload() {
-        return payload == null ? HexBytes.EMPTY : payload;
-    }
-
-    public void setPayload(HexBytes payload) {
-        this.payload = payload;
-        getHash(true);
-    }
-
-    public HexBytes getTo() {
-        return to == null ? HexBytes.EMPTY : to;
-    }
-
-    public void setTo(HexBytes to) {
-        this.to = to;
-        getHash(true);
-    }
-
-    public HexBytes getSignature() {
-        return signature == null ? HexBytes.EMPTY : signature;
-    }
-
-    public void setSignature(HexBytes signature) {
-        this.signature = signature;
-        getHash(true);
-    }
-
-    public ValidateResult basicValidate() {
-        if (gasLimit < 0)
-            throw new RuntimeException("negative gas limit");
-        if (amount == null || gasPrice == null)
-            return ValidateResult.fault("missing amount or gas price");
-        if (!Type.TYPE_MAP.containsKey(type))
-            return ValidateResult.fault("unknown transaction type " + type + " of " + getHash());
-        if (type != Type.COIN_BASE.code && (signature == null || signature.isEmpty()))
-            return ValidateResult.fault("missing signature of transaction " + getHash());
-        if (type == Type.COIN_BASE.code && !getFrom().isEmpty())
-            return ValidateResult.fault("\"from\" of coinbase transaction " + getHash() + " should be empty");
-        if (type == Type.CONTRACT_DEPLOY.code && !getTo().isEmpty()) {
-            return ValidateResult.fault("\"to\" of contract deploy transaction " + getHash() + " should be empty");
+        for (int i = 0; i < hash.length; ++i) {
+            hashCode += hash[i] * i;
         }
-        if (to.size() != 0 && to.size() != 20)
-            return ValidateResult.fault("invalid address size");
 
-        if (type == Type.CONTRACT_CALL.code || type == Type.TRANSFER.code) {
-            if (getFrom().isEmpty() || getTo().isEmpty())
-                return ValidateResult.fault("\"from\" or \"to\" of transaction " + getHash() + " is empty");
-        }
-        if (type == Type.CONTRACT_CALL.code || type == Type.CONTRACT_DEPLOY.code) {
-            if (getPayload().isEmpty())
-                return ValidateResult.fault("missing payload of transaction " + getHash());
-        }
-        if (type == Type.TRANSFER.code) {
-            if (!getPayload().isEmpty())
-                return ValidateResult.fault("payload of transaction " + getHash() + " should be empty");
-        }
-        if (type != Type.COIN_BASE.code && !CryptoContext.verify(from.getBytes(), getSignaturePlain(), signature.getBytes())) {
-            return ValidateResult.fault("verify signature failed " + getHash());
-        }
-        return ValidateResult.success();
+        return hashCode;
     }
 
-    public enum Status {
-        PENDING,
-        INCLUDED,
-        CONFIRMED,
-        DROPPED
-    }
+    @Override
+    public boolean equals(Object obj) {
 
-    public enum Type {
-        // coinbase transaction has code 0, may trigger bios
-        COIN_BASE(0x00),
-        // the amount is transferred from sender to recipient
-        // if type is transfer, payload is null
-        // and fee is a constant
-        TRANSFER(0x01),
-        // if type is contract deploy, payload is wasm binary module
-        // fee = gasPrice * gasUsage
-        CONTRACT_DEPLOY(0x02),
-        // if type is contract call, payload = gasLimit(little endian, 8 bytes) +
-        // method name length (an unsigned byte) +
-        // method name(ascii string, [_a-zA-Z][_a-zA-Z0-9]*) +
-        // custom parameters, could be load by Parameters.load() in contract
-        // fee = gasPrice * gasUsage
-        // e.g.
-        /**
-         * const parameter: Parameters = Parameters.load();
-         * const customData: Uint8Array = parameter.raw();
-         */
-        CONTRACT_CALL(0x03);
-        public static final Map<Integer, Type> TYPE_MAP =
-                Arrays.stream(values()).collect(Collectors.toMap(x -> x.code, Function.identity()));
-        public final int code;
+        if (!(obj instanceof Transaction)) return false;
+        Transaction tx = (Transaction) obj;
 
-        Type(int code) {
-            this.code = code;
-        }
+        return tx.hashCode() == this.hashCode();
     }
 }
