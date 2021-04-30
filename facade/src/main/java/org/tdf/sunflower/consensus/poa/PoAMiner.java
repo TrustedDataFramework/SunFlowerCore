@@ -24,6 +24,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static org.tdf.common.util.ByteUtil.*;
+
 
 @Slf4j(topic = "miner")
 public class PoAMiner extends AbstractMiner {
@@ -139,15 +141,13 @@ public class PoAMiner extends AbstractMiner {
 
     protected Transaction createCoinBase(long height) {
         return Transaction.builder()
-                .version(PoAConstants.TRANSACTION_VERSION)
-                .createdAt(System.currentTimeMillis() / 1000)
-                .nonce(height)
-                .from(HexBytes.EMPTY)
-                .amount(poA.economicModel.getConsensusRewardAtHeight(height))
-                .payload(publicKey)
-                .to(minerAddress)
-                .gasPrice(Uint256.ZERO)
-                .signature(HexBytes.EMPTY).build();
+                .nonce(longToBytesNoLeadZeroes(height))
+                .data(publicKey.getBytes())
+                .value(poA.economicModel.getConsensusRewardAtHeight(height).getNoLeadZeroesData())
+                .data(publicKey.getBytes())
+                .receiveAddress(minerAddress.getBytes())
+                .gasPrice(EMPTY_BYTE_ARRAY)
+                .gasLimit()
     }
 
 }

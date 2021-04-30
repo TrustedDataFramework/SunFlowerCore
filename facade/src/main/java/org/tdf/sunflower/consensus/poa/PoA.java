@@ -157,7 +157,7 @@ public class PoA extends AbstractConsensusEngine {
                             JsonNode n = objectMapper.readValue(responseStream, JsonNode.class);
                             Transaction[] txs = objectMapper.convertValue(n.get("data"), Transaction[].class);
                             for (Transaction tx : txs) {
-                                if (!getSunflowerRepository().containsTransaction(tx.getHash().getBytes())) {
+                                if (!getSunflowerRepository().containsTransaction(tx.getHash())) {
                                     Block best = getSunflowerRepository().getBestBlock();
                                     getTransactionPool().collect(best, tx);
                                 }

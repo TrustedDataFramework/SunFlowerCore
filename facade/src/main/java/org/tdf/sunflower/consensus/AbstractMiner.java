@@ -41,7 +41,7 @@ public abstract class AbstractMiner implements Miner {
             return Optional.of(new Proposer(minerAddresses.get(0), 0, Long.MAX_VALUE));
         }
 
-        HexBytes prev = parent.getBody().get(0).getTo();
+        HexBytes prev = HexBytes.fromBytes(parent.getBody().get(0).getReceiveAddress());
 
         int prevIndex = minerAddresses.indexOf(prev);
 
@@ -108,15 +108,18 @@ public abstract class AbstractMiner implements Miner {
                 VMExecutor vmExecutor = new VMExecutor(tmp, callData, new Limit(), 0);
                 TransactionResult res = vmExecutor.execute();
                 totalFee = totalFee.safeAdd(res.getFee());
-                results.put(tx.getHash(), res);
+                results.put(
+                        HexBytes.fromBytes(tx.getHash()), res
+                );
             } catch (Exception e) {
                 tmp = tmp.getParentBackend();
                 // prompt reason for failed updates
                 e.printStackTrace();
-                failedTransactions.add(tx.getHash());
+                HexBytes h = HexBytes.fromBytes(tx.getHash());
+                failedTransactions.add(h);
                 reasons.add(e.getMessage());
-                failedMessages.put(tx.getHash(), e.getMessage());
-                log.error("execute transaction " + tx.getHash() + " failed, reason = " + e.getMessage());
+                failedMessages.put(h, e.getMessage());
+                log.error("execute transaction " + h + " failed, reason = " + e.getMessage());
                 getTransactionPool().drop(tx);
                 continue;
             }
@@ -137,7 +140,7 @@ public abstract class AbstractMiner implements Miner {
         }
 
         // add fee to miners account
-        coinbase.setAmount(coinbase.getAmount().safeAdd(totalFee));
+//        coinbase.setAmount(coinbase.getAmount().safeAdd(totalFee));
         CallData callData = CallData.fromTransaction(coinbase);
         VMExecutor executor = new VMExecutor(tmp, callData, new Limit(), 0);
         executor.execute();

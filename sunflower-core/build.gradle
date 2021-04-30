@@ -58,7 +58,6 @@ dependencies {
     testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
     compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
     compile project(':common')
-    compile project(':crypto')
     compile project(':facade')
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"

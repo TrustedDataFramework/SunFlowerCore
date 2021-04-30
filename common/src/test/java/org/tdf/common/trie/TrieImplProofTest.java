@@ -1,8 +1,8 @@
 package org.tdf.common.trie;
 
-import org.tdf.common.HashUtil;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.ByteArrayMapStore;
+import org.tdf.common.util.HashUtil;
 
 public class TrieImplProofTest extends ProofTest {
     @Override

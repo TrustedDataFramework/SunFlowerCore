@@ -55,7 +55,6 @@ public class Reflect extends HostFunction {
                 params = RLPCodec.decode(parameters, Parameters.class);
                 amount = (Uint256) WBI.peek(getInstance(), (int) longs[4], WbiType.UINT_256);
                 payload = RLPCodec.encode(new ContractCallPayload(method, params));
-                forked.getCallData().setCallType(Transaction.Type.CONTRACT_CALL.code);
                 break;
             }
             case CREATE: {
@@ -69,7 +68,6 @@ public class Reflect extends HostFunction {
                         Arrays.asList(RLPCodec.decode(abi, ContractABI[].class))
                 ));
                 amount = (Uint256) WBI.peek(getInstance(), (int) longs[4], WbiType.UINT_256);
-                forked.getCallData().setCallType(Transaction.Type.CONTRACT_DEPLOY.code);
                 break;
             }
             default:

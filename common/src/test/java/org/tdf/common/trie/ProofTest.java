@@ -5,11 +5,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.HashUtil;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.MapStore;
 import org.tdf.common.util.FastByteComparisons;
+import org.tdf.common.util.HashUtil;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPList;
 

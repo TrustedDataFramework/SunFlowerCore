@@ -5,12 +5,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.spongycastle.util.encoders.Hex;
-import org.tdf.common.HashUtil;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.NoDeleteStore;
 import org.tdf.common.store.NoDoubleDeleteStore;
 import org.tdf.common.store.Store;
+import org.tdf.common.util.HashUtil;
 
 import java.io.File;
 import java.net.URL;

@@ -5,11 +5,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.spongycastle.util.encoders.Hex;
-import org.tdf.common.HashUtil;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.ByteArraySet;
+import org.tdf.common.util.HashUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
-import static org.tdf.common.HashUtil.EMPTY_TRIE_HASH;
+import static org.tdf.common.util.HashUtil.EMPTY_TRIE_HASH;
 
 @RunWith(JUnit4.class)
 public abstract class AbstractTrieTest {

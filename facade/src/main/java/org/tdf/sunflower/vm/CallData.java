@@ -19,8 +19,8 @@ public class CallData {
                 Uint256.ZERO,
                 Address.empty(),
                 Address.empty(),
-                Transaction.Type.CONTRACT_CALL.code,
-                Transaction.Type.CONTRACT_CALL.code,
+                0,
+                0,
                 HexBytes.empty(),
                 Address.empty(),
                 HexBytes.empty(),
@@ -32,22 +32,7 @@ public class CallData {
     }
 
     public static CallData fromTransaction(Transaction tx) {
-        return new CallData(
-                tx.isCoinbase() ? Address.empty() : tx.getFromAddress(),
-                tx.getAmount(),
-                tx.getAmount(),
-                tx.getTo(),
-                tx.getTo(),
-                tx.getType(),
-                tx.getType(),
-                tx.getPayload(),
-                tx.isCoinbase() ? Address.empty() : tx.getFromAddress(),
-                tx.getHash(),
-                tx.getNonce(),
-                tx.getCreatedAt(),
-                tx.getGasPrice(),
-                tx.getGasLimit()
-        );
+        return empty();
     }
 
 

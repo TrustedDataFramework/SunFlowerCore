@@ -6,7 +6,7 @@ import org.tdf.common.util.HexBytes;
 
 @Value
 public class BlockConfirms {
-    private long confirms;
-    private HexBytes blockHash;
-    private Long blockHeight;
+    long confirms;
+    HexBytes blockHash;
+    Long blockHeight;
 }

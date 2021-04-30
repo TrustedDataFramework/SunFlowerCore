@@ -83,9 +83,7 @@ public class Block implements Chained {
     }
 
     private int bodySize() {
-        return body == null ? 0 : body.stream()
-                .map(Transaction::size)
-                .reduce(0, Integer::sum);
+        return 0;
     }
 
     @Override
@@ -127,7 +125,9 @@ public class Block implements Chained {
     }
 
     public void resetTransactionsRoot() {
-        setTransactionsRoot(Transaction.getTransactionsRoot(getBody()));
+        setTransactionsRoot(
+                HexBytes.fromBytes(Transaction.calcTxTrie(getBody()))
+        );
     }
 
     public HexBytes getStateRoot() {

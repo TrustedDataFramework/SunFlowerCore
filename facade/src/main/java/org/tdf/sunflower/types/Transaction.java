@@ -1,10 +1,16 @@
 package org.tdf.sunflower.types;
 
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.crypto.ECDSASignature;
+import org.tdf.common.crypto.ECKey;
+import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.ByteArrayMapStore;
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPList;
@@ -14,9 +20,28 @@ import java.security.SignatureException;
 import java.util.*;
 
 import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.tdf.common.util.ByteUtil.ZERO_BYTE_ARRAY;
 
 @Slf4j(topic = "tx")
 public class Transaction {
+    public static byte[] calcTxTrie(List<Transaction> transactions) {
+        Trie<byte[], byte[]> txsState = Trie
+                .<byte[], byte[]>builder()
+                .keyCodec(Codec.identity())
+                .valueCodec(Codec.identity())
+                .store(new ByteArrayMapStore<>())
+                .hashFunction(HashUtil::sha3).build();
+
+        if (transactions == null || transactions.isEmpty())
+            return HashUtil.EMPTY_TRIE_HASH;
+
+        for (int i = 0; i < transactions.size(); i++) {
+            txsState.put(RLPCodec.encodeInt(i), transactions.get(i).getEncoded());
+        }
+
+        return txsState.getRootHash();
+    }
+
     public static final int HASH_LENGTH = 32;
     public static final int ADDRESS_LENGTH = 20;
     private static final BigInteger DEFAULT_GAS_PRICE = new BigInteger("10000000000000");
@@ -90,6 +115,7 @@ public class Transaction {
      * Use {@link Transaction#Transaction(byte[], byte[], byte[], byte[], byte[], byte[], Integer)} constructor instead
      * and specify the desired chainID
      */
+    @Builder
     public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
         this(nonce, gasPrice, gasLimit, receiveAddress, value, data, null);
     }
@@ -208,7 +234,7 @@ public class Transaction {
             } else {
                 log.debug("RLP encoded tx is not signed!");
             }
-            this.hash = HashUtil.sha3(rlpEncoded);
+            this.hash = CryptoContext.keccak256(rlpEncoded);
             this.parsed = true;
         } catch (Exception e) {
             throw new RuntimeException("Error on parsing RLP", e);
@@ -250,13 +276,12 @@ public class Transaction {
         rlpParse();
         if (rawHash != null) return rawHash;
         byte[] plainMsg = this.getEncodedRaw();
-        return rawHash = HashUtil.sha3(plainMsg);
+        return rawHash = CryptoContext.keccak256(plainMsg);
     }
 
     public byte[] getNonce() {
         rlpParse();
-
-        return nonce == null ? ZERO_BYTE_ARRAY : nonce;
+        return nonce;
     }
 
     protected void setNonce(byte[] nonce) {
@@ -271,7 +296,7 @@ public class Transaction {
 
     public byte[] getValue() {
         rlpParse();
-        return value == null ? ZERO_BYTE_ARRAY : value;
+        return value;
     }
 
     protected void setValue(byte[] value) {
@@ -291,7 +316,7 @@ public class Transaction {
 
     public byte[] getGasPrice() {
         rlpParse();
-        return gasPrice == null ? ZERO_BYTE_ARRAY : gasPrice;
+        return gasPrice;
     }
 
     protected void setGasPrice(byte[] gasPrice) {
@@ -301,7 +326,7 @@ public class Transaction {
 
     public byte[] getGasLimit() {
         rlpParse();
-        return gasLimit == null ? ZERO_BYTE_ARRAY : gasLimit;
+        return gasLimit;
     }
 
     protected void setGasLimit(byte[] gasLimit) {
@@ -348,7 +373,7 @@ public class Transaction {
 
     public byte[] getContractAddress() {
         if (!isContractCreation()) return null;
-        return HashUtil.calcNewAddr(this.getSender(), this.getNonce());
+        return HashUtil.calcNewAddr(getSender(), getNonce().length == 0 ? ZERO_BYTE_ARRAY : getNonce());
     }
 
     public boolean isContractCreation() {
@@ -433,27 +458,25 @@ public class Transaction {
         // parse null as 0 for nonce
         byte[] nonce = null;
         if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
-            nonce = RLP.encodeElement(null);
+            nonce = RLPCodec.encode(null);
         } else {
-            nonce = RLP.encodeElement(this.nonce);
+            nonce = RLPCodec.encodeBytes(this.nonce);
         }
-        byte[] gasPrice = RLP.encodeElement(this.gasPrice);
-        byte[] gasLimit = RLP.encodeElement(this.gasLimit);
-        byte[] receiveAddress = RLP.encodeElement(this.receiveAddress);
-        byte[] value = RLP.encodeElement(this.value);
-        byte[] data = RLP.encodeElement(this.data);
+        byte[] gasPrice = RLPCodec.encodeBytes(this.gasPrice);
+        byte[] gasLimit = RLPCodec.encodeBytes(this.gasLimit);
+        byte[] receiveAddress = RLPCodec.encodeBytes(this.receiveAddress);
+        byte[] value = RLPCodec.encodeBytes(this.value);
+        byte[] data = RLPCodec.encodeBytes(this.data);
 
         // Since EIP-155 use chainId for v
         if (chainId == null) {
-            rlpRaw = RLP.encodeList(nonce, gasPrice, gasLimit, receiveAddress,
-                    value, data);
+            rlpRaw = RLPCodec.encodeElements(Arrays.asList(nonce, gasPrice, gasLimit, receiveAddress, value, data));
         } else {
             byte[] v, r, s;
-            v = RLP.encodeInt(chainId);
-            r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-            s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-            rlpRaw = RLP.encodeList(nonce, gasPrice, gasLimit, receiveAddress,
-                    value, data, v, r, s);
+            v = RLPCodec.encodeInt(chainId);
+            r = RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY);
+            s = RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY);
+            rlpRaw = RLPCodec.encode(new Object[] {nonce, gasPrice, gasLimit, receiveAddress, value, data, v, r, s});
         }
         return rlpRaw;
     }
@@ -486,19 +509,21 @@ public class Transaction {
                 encodeV += chainId * 2 + CHAIN_ID_INC;
             }
             v = RLPCodec.encodeInt(encodeV);
-            r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
-            s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s));
+            r = RLPCodec.encodeBytes(BigIntegers.asUnsignedByteArray(signature.r));
+            s = RLPCodec.encodeBytes(BigIntegers.asUnsignedByteArray(signature.s));
         } else {
             // Since EIP-155 use chainId for v
-            v = chainId == null ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeInt(chainId);
-            r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-            s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+            v = chainId == null ? RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY) : RLPCodec.encodeInt(chainId);
+            r = RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY);
+            s = RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY);
         }
 
-        this.rlpEncoded = RLP.encodeList(nonce, gasPrice, gasLimit,
-                receiveAddress, value, data, v, r, s);
+        this.rlpEncoded = RLPCodec.encodeElements(
+                Arrays.asList(nonce, gasPrice, gasLimit,
+                receiveAddress, value, data, v, r, s)
+        );
 
-        this.hash = HashUtil.sha3(rlpEncoded);
+        this.hash = CryptoContext.keccak256(rlpEncoded);
 
         return rlpEncoded;
     }
@@ -523,5 +548,10 @@ public class Transaction {
         Transaction tx = (Transaction) obj;
 
         return tx.hashCode() == this.hashCode();
+    }
+
+    @Override
+    protected Transaction clone() {
+        return new Transaction(getEncoded());
     }
 }

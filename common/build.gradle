@@ -37,8 +37,8 @@ dependencies {
     compileOnly "org.tdf:rlp:${rlpVersion}"
     testCompile "org.tdf:rlp:${rlpVersion}"
 
-    testCompile "com.madgag.spongycastle:core:${scastleVersion}" // for rlp encoding
-    testCompile "com.madgag.spongycastle:prov:${scastleVersion}" // for rlp encoding
+    compile "com.madgag.spongycastle:core:${scastleVersion}" // for rlp encoding
+    compile "com.madgag.spongycastle:prov:${scastleVersion}" // for rlp encoding
     compileOnly "commons-codec:commons-codec:${commonsCodecVersion}"
     testCompile "commons-codec:commons-codec:${commonsCodecVersion}"
     compileOnly "org.projectlombok:lombok:${lombokVersion}"

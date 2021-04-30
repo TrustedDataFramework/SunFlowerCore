@@ -4,11 +4,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.HashUtil;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.NoDeleteStore;
+import org.tdf.common.util.HashUtil;
 
 @RunWith(JUnit4.class)
 public class SecureTrieTest {
