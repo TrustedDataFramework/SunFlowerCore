@@ -95,8 +95,11 @@ public class BackendImpl implements Backend {
 
         for (HexBytes addr : modified) {
             Account a = accounts.get(addr);
-            if (a == null)
-                a = Account.emptyAccount(addr, Uint256.ZERO);
+            // some account has not touched, but storage modified
+            if (a == null) {
+                a = lookup(addr);
+            }
+
             Trie<HexBytes, HexBytes> s = contractStorageTrie.revert(a.getStorageRoot());
 
             Map<HexBytes, HexBytes> map = storage.getOrDefault(addr, Collections.emptyMap());

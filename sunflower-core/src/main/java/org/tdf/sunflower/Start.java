@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
@@ -46,6 +47,7 @@ import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.controller.JsonRpc;
+import org.tdf.sunflower.controller.JsonRpcFilter;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.PeerServer;
@@ -509,11 +511,20 @@ public class Start {
         });
     }
 
-    @Bean
+    @Bean(name = "/")
     public JsonServiceExporter jsonServiceExporter(JsonRpc jsonRpc) {
         JsonServiceExporter exporter = new JsonServiceExporter();
         exporter.setService(jsonRpc);
         exporter.setServiceInterface(JsonRpc.class);
         return exporter;
+    }
+
+    @Bean
+    public FilterRegistrationBean<JsonRpcFilter> loggingFilter(JsonRpcFilter filter) {
+        FilterRegistrationBean<JsonRpcFilter> registrationBean
+                = new FilterRegistrationBean<>();
+        registrationBean.setFilter(filter);
+        registrationBean.addUrlPatterns("/");
+        return registrationBean;
     }
 }

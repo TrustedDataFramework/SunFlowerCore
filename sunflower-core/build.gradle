@@ -89,6 +89,7 @@ dependencies {
     compile project(':crypto')
     compile "com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6"
     runtimeOnly 'javax.jws:jsr181-api:1.0-MR1'
+    compile "org.apache.commons:commons-io:1.3.2"
 }
 
 task copyDependencies(type: Copy) {

@@ -1,6 +1,22 @@
 import { utils } from 'ethers'
 import { JsonFragment, JsonFragmentType } from '@ethersproject/abi'
 
+export const POW_BIOS = [
+  {
+      "inputs": [],
+      "name": "nbits",
+      "outputs": [
+          {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+          }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+  }
+]
+
 export function compileRust(str: string): JsonFragment[] {
   let re = /#\[no_mangle\][\s\n\t]*pub[\s\n\t]+fn[\s\n\t]+([a-zA-Z_][a-zA-Z0-9_]*)[\s\n\t]*\(([a-z\n\s\tA-Z0-9_,:<>]*)\)[\s\n\t]*(->[\s\n\t]*.*)?{[\s\t]*(\/\/[\s\n\t]*@[a-z]+)?/g
   const ret = []
