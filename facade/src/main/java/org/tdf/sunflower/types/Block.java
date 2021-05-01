@@ -126,7 +126,7 @@ public class Block implements Chained {
 
     public void resetTransactionsRoot() {
         setTransactionsRoot(
-                HexBytes.fromBytes(Transaction.calcTxTrie(getBody()))
+                Transaction.calcTxTrie(getBody())
         );
     }
 

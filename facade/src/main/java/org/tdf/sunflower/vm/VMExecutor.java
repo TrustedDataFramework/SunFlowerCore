@@ -3,6 +3,8 @@ package org.tdf.sunflower.vm;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.ByteUtil;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.Module;
@@ -12,7 +14,6 @@ import org.tdf.sunflower.state.Bios;
 import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Event;
-import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.TransactionResult;
 import org.tdf.sunflower.vm.abi.Abi;
 import org.tdf.sunflower.vm.abi.WbiType;
@@ -67,32 +68,27 @@ public class VMExecutor {
 
 
     public TransactionResult execute() {
-        Transaction.Type t = Transaction.Type.values()[callData.getCallType()];
 
         // 1. increase sender nonce
         long n = backend.getNonce(callData.getOrigin());
-        if (!backend.isStatic() && n + 1 != callData.getTxNonce() && t != Transaction.Type.COIN_BASE)
+        if (!backend.isStatic() && n + 1 != callData.getTxNonce() && callData.getCallType() != CallType.COINBASE)
             throw new RuntimeException("invalid nonce");
 
 
-        switch (t) {
-            case TRANSFER:
-            case CONTRACT_CALL: {
-                backend.setNonce(callData.getOrigin(), n + 1);
-                break;
-            }
+        if (callData.getCallType() == CallType.CALL) {
+            backend.setNonce(callData.getOrigin(), n + 1);
             // contract deploy nonce will increase internally
         }
 
 
         // 2. set initial gas by payload size
         limit.setInitialGas(backend.getInitialGas(callData.getData().size()));
-
-        RLPList result = executeInternal();
+        byte[] result = executeInternal();
 
         // 3. calculate fee and
         Uint256 fee = Uint256.of(limit.getGas()).mul(callData.getGasPrice());
         backend.subBalance(callData.getOrigin(), fee);
+
 
         List<Event> events = new ArrayList<>();
 
@@ -105,40 +101,29 @@ public class VMExecutor {
         return new TransactionResult(limit.getGas(), result, events, fee);
     }
 
-    public RLPList executeInternal() {
-        Transaction.Type t = Transaction.Type.values()[callData.getCallType()];
-
-        switch (t) {
-            case COIN_BASE: {
-                backend.addBalance(callData.getTxTo(), callData.getTxAmount());
+    public byte[] executeInternal() {
+        switch (callData.getCallType()) {
+            case COINBASE: {
+                backend.addBalance(callData.getTxTo(), callData.getTxValue());
                 for (Bios bios : backend.getBios().values()) {
-                    bios.update(backend);
+                    return bios.call(backend, callData);
                 }
-                return RLPList.createEmpty();
+                return ByteUtil.EMPTY_BYTE_ARRAY;
             }
-            case TRANSFER: {
-                // transfer balance
-                limit.addGas(Transaction.TRANSFER_GAS);
-                backend.addBalance(callData.getTo(), callData.getAmount());
-                backend.subBalance(callData.getCaller(), callData.getAmount());
-                return RLPList.createEmpty();
-            }
-            case CONTRACT_CALL:
-            case CONTRACT_DEPLOY: {
+            case CALL:
+            case CREATE: {
                 // is prebuilt
                 if (backend.getPreBuiltContracts().containsKey(callData.getTo())) {
-                    limit.addGas(Transaction.BUILTIN_CALL_GAS);
-                    backend.addBalance(callData.getTo(), callData.getAmount());
-                    backend.subBalance(callData.getCaller(), callData.getAmount());
+                    backend.addBalance(callData.getTo(), callData.getValue());
+                    backend.subBalance(callData.getCaller(), callData.getValue());
                     PreBuiltContract updater = backend.getPreBuiltContracts().get(callData.getTo());
-                    updater.update(backend, callData);
-                    return RLPList.createEmpty();
+                    return updater.call(backend, callData);
                 }
 
                 byte[] code;
                 byte[] data;
                 HexBytes contractAddress;
-                boolean create = t == Transaction.Type.CONTRACT_DEPLOY;
+                boolean create = callData.getCallType() == CallType.CREATE;
 
                 // if this is contract deploy, should create contract account
                 if (create) {
@@ -150,19 +135,23 @@ public class VMExecutor {
                     data = WBI.extractInitData(tmpModule);
 
                     // increase nonce here to avoid conflicts
-                    contractAddress = Transaction.createContractAddress(callData.getCaller(), backend.getNonce(callData.getCaller()));
+                    contractAddress = HexBytes.fromBytes(
+                            HashUtil.calcNewAddr(
+                            callData.getCaller().getBytes(), ByteUtil.longToBytesNoLeadZeroes(backend.getNonce(callData.getCaller())))
+                    )
+                    ;
                     callData.setTo(contractAddress);
-                    backend.setCode(contractAddress, code);
+                    backend.setCode(contractAddress, HexBytes.fromBytes(code));
                     backend.setContractCreatedBy(contractAddress, callData.getCaller());
                 } else {
                     contractAddress = callData.getTo();
-                    code = backend.getCode(contractAddress);
+                    code = backend.getCode(contractAddress).getBytes();
                     data = callData.getData().getBytes();
                 }
 
                 // is wasm call
-                backend.addBalance(contractAddress, callData.getAmount());
-                backend.subBalance(callData.getCaller(), callData.getAmount());
+                backend.addBalance(contractAddress, callData.getValue());
+                backend.subBalance(callData.getCaller(), callData.getValue());
 
                 if (code.length == 0)
                     throw new RuntimeException("contract not found or is not a ccontract address");
@@ -193,12 +182,12 @@ public class VMExecutor {
                         .hostFunctions(hosts.getAll())
                         .build();
 
-                WBI.InjectResult r = WBI.inject(create, abi, instance, data);
+                WBI.InjectResult r = WBI.inject(create, abi, instance, HexBytes.fromBytes(data));
 
                 RLPList ret = RLPList.createEmpty();
 
                 if (!r.isExecutable())
-                    return ret;
+                    return ByteUtil.EMPTY_BYTE_ARRAY;
 
                 // put parameters will not consume steps
                 long[] rets = instance.execute(r.getFunction(), r.getPointers());
@@ -216,7 +205,7 @@ public class VMExecutor {
 
                     // outputs
                     int outType = ByteBuffer.wrap(
-                            CryptoContext.keccak256(outputs.get(0).type.getName().getBytes(StandardCharsets.US_ASCII)),
+                            HashUtil.sha3(outputs.get(0).type.getName().getBytes(StandardCharsets.US_ASCII)),
                             0,
                             4
                     ).order(ByteOrder.BIG_ENDIAN).getInt();
@@ -236,7 +225,7 @@ public class VMExecutor {
                 }
 
 
-                return ret;
+                return ByteUtil.EMPTY_BYTE_ARRAY;
             }
             default:
                 throw new UnsupportedOperationException();

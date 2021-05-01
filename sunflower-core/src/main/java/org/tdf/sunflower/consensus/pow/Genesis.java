@@ -32,12 +32,12 @@ public class Genesis {
                 .store(new ByteArrayMapStore<>())
                 .hashFunction(CryptoContext::hash)
                 .build();
-        HexBytes emptyRoot = Transaction.getTransactionsRoot(Collections.emptyList());
+        HexBytes emptyRoot = Transaction.calcTxTrie(Collections.emptyList());
 
         Header h = Header.builder()
                 .version(PoW.BLOCK_VERSION)
                 .hashPrev(parentHash)
-                .stateRoot(HexBytes.fromBytes(trie.getNullHash()))
+                .stateRoot(trie.getNullHash())
                 .transactionsRoot(emptyRoot)
                 .height(0)
                 .payload(HexBytes.EMPTY)

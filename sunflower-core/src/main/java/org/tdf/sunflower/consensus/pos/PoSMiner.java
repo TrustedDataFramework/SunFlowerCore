@@ -127,21 +127,12 @@ public class PoSMiner extends AbstractMiner {
     }
 
     public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
-        List<HexBytes> minerAddresses = pos.getMinerAddresses(parent.getStateRoot().getBytes());
+        List<HexBytes> minerAddresses = pos.getMinerAddresses(parent.getStateRoot());
         return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, posConfig.getBlockInterval());
     }
 
 
     protected Transaction createCoinBase(long height) {
-        return Transaction.builder()
-                .version(PoS.TRANSACTION_VERSION)
-                .createdAt(System.currentTimeMillis() / 1000)
-                .nonce(height)
-                .from(HexBytes.EMPTY)
-                .amount(Uint256.ZERO)
-                .payload(HexBytes.empty())
-                .to(this.minerAddress)
-                .gasPrice(Uint256.ZERO)
-                .signature(HexBytes.EMPTY).build();
+        return Transaction.builder().build();
     }
 }

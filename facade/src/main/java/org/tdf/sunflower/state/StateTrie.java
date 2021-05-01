@@ -14,14 +14,14 @@ import org.tdf.sunflower.vm.Backend;
  */
 public interface StateTrie<ID, S> {
     // get an optional state at a root hash
-    S get(byte[] rootHash, ID id);
+    S get(HexBytes rootHash, ID id);
 
     HexBytes getGenesisRoot();
 
 
     Trie<ID, S> getTrie();
 
-    Trie<ID, S> getTrie(byte[] rootHash);
+    Trie<ID, S> getTrie(HexBytes rootHash);
 
     Store<byte[], byte[]> getTrieStore();
 

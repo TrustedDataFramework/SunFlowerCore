@@ -22,7 +22,7 @@ public class Mapping {
                 .createdAt(header.getCreatedAt())
                 .payload(HexBytes.fromBytes(header.getPayload()))
                 .build();
-        return UnmodifiableHeader.of(ret);
+        return ret;
     }
 
     public static List<Header> getFromHeaderEntities(Collection<? extends HeaderEntity> headers) {
@@ -30,16 +30,7 @@ public class Mapping {
     }
 
     public static Transaction getFromTransactionEntity(TransactionEntity transaction) {
-        Transaction ret = Transaction.builder()
-                .version(transaction.getVersion())
-                .type(transaction.getType()).createdAt(transaction.getCreatedAt())
-                .nonce(transaction.getNonce()).from(HexBytes.fromBytes(transaction.getFrom()))
-                .gasPrice(Uint256.of(transaction.getGasPrice()))
-                .amount(Uint256.of(transaction.getAmount()))
-                .payload(HexBytes.fromBytes(transaction.getPayload())).to(HexBytes.fromBytes(transaction.getTo()))
-                .signature(HexBytes.fromBytes(transaction.getSignature()))
-                .build();
-        return UnmodifiableTransaction.of(ret);
+        return null;
     }
 
     public static List<Transaction> getFromTransactionEntities(Collection<TransactionEntity> transactions) {
@@ -70,21 +61,6 @@ public class Mapping {
     }
 
     public static TransactionEntity getEntityFromTransactionAndHeader(Header header, int index, Transaction tx) {
-        return TransactionEntity.builder()
-                .blockHash(header.getHash().getBytes())
-                .hash(tx.getHash().getBytes())
-                .version(tx.getVersion())
-                .type(tx.getType())
-                .createdAt(tx.getCreatedAt())
-                .nonce(tx.getNonce())
-                .from(tx.getFrom().getBytes())
-                .gasPrice(tx.getGasPrice().value().longValue())
-                .amount(tx.getAmount().value().longValue())
-                .payload(tx.getPayload().getBytes())
-                .to(tx.getTo().getBytes())
-                .signature(tx.getSignature().getBytes())
-                .height(header.getHeight())
-                .position(index).build()
-                ;
+        return null;
     }
 }

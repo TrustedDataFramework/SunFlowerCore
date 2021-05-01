@@ -1,6 +1,7 @@
 package org.tdf.sunflower;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.googlecode.jsonrpc4j.spring.JsonServiceExporter;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -23,9 +24,11 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codec;
+import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.JsonStore;
 import org.tdf.common.store.NoDeleteBatchStore;
 import org.tdf.common.store.Store;
+import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.CryptoHelpers;
@@ -40,8 +43,9 @@ import org.tdf.gmhelper.SM3Util;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.pos.PoS;
 import org.tdf.sunflower.consensus.pow.PoW;
+import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
-import org.tdf.sunflower.controller.WebSocket;
+import org.tdf.sunflower.controller.JsonRpc;
 import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.PeerServer;
@@ -240,6 +244,7 @@ public class Start {
 
     public static void main(String[] args) {
         FileUtils.setClassLoader(ClassUtils.getDefaultClassLoader());
+        CryptoContext.keccak256 = HashUtil::sha3;
         SpringApplication app = new SpringApplication(Start.class);
         app.setDefaultProperties(loadDefaultConfig());
         app.addInitializers(applicationContext -> {
@@ -302,8 +307,8 @@ public class Start {
             EventBus eventBus,
             SyncConfig syncConfig,
             ApplicationContext context,
-            @Qualifier("contractStorageTrie") Trie<byte[], byte[]> contractStorageTrie,
-            @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore,
+            @Qualifier("contractStorageTrie") Trie<HexBytes, HexBytes> contractStorageTrie,
+            @Qualifier("contractCodeStore") Store<HexBytes, HexBytes> contractCodeStore,
             SecretStore secretStore
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
@@ -404,11 +409,11 @@ public class Start {
 
     // storage root of contract store
     @Bean
-    public Trie<byte[], byte[]> contractStorageTrie(DatabaseStoreFactory factory) {
-        return Trie.<byte[], byte[]>builder()
+    public Trie<HexBytes, HexBytes> contractStorageTrie(DatabaseStoreFactory factory) {
+        return Trie.<HexBytes, HexBytes>builder()
                 .hashFunction(CryptoContext::hash)
-                .keyCodec(Codec.identity())
-                .valueCodec(Codec.identity())
+                .keyCodec(Codecs.HEX)
+                .valueCodec(Codecs.HEX)
                 .store(
                         new NoDeleteBatchStore<>(
                                 factory.create("contract-storage-trie"),
@@ -420,8 +425,12 @@ public class Start {
 
     // contract hash code -> contract binary
     @Bean
-    public Store<byte[], byte[]> contractCodeStore(DatabaseStoreFactory factory) {
-        return factory.create("contract-code");
+    public Store<HexBytes, HexBytes> contractCodeStore(DatabaseStoreFactory factory) {
+        return new StoreWrapper<>(
+                factory.create("contract-code"),
+                Codecs.HEX,
+                Codecs.HEX
+        );
     }
 
     @Bean
@@ -501,8 +510,10 @@ public class Start {
     }
 
     @Bean
-    public ServerEndpointExporter serverEndpointExporter(ApplicationContext ctx) {
-        WebSocket.ctx = ctx;
-        return new ServerEndpointExporter();
+    public JsonServiceExporter jsonServiceExporter(JsonRpc jsonRpc) {
+        JsonServiceExporter exporter = new JsonServiceExporter();
+        exporter.setService(jsonRpc);
+        exporter.setServiceInterface(JsonRpc.class);
+        return exporter;
     }
 }

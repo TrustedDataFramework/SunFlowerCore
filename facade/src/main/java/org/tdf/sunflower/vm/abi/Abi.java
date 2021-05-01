@@ -11,6 +11,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.Predicate;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.tdf.common.util.HashUtil;
 import org.tdf.sunflower.types.CryptoContext;
 
 import java.io.IOException;
@@ -138,7 +139,7 @@ public class Abi extends ArrayList<Abi.Entry> {
             // string -> String
             // bytes -> byte[]
             // address -> byte[]
-            //
+            // uint/int -> BigInteger
             public static List<?> decodeList(List<Param> params, byte[] encoded) {
                 List<Object> result = new ArrayList<>(params.size());
 
@@ -190,7 +191,7 @@ public class Abi extends ArrayList<Abi.Entry> {
         }
 
         public byte[] fingerprintSignature() {
-            return CryptoContext.keccak256(formatSignature().getBytes());
+            return HashUtil.sha3(formatSignature().getBytes());
         }
 
         public byte[] encodeSignature() {

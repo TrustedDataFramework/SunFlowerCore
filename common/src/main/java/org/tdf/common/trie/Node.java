@@ -566,8 +566,8 @@ class Node {
         return this.hash;
     }
 
-    Map<byte[], byte[]> getProof(TrieKey path, Map<byte[], byte[]> map) {
-        if (hash != null) map.put(hash, rlp.getEncoded());
+    Map<HexBytes, HexBytes> getProof(TrieKey path, Map<HexBytes, HexBytes> map) {
+        if (hash != null) map.put(HexBytes.fromBytes(hash), HexBytes.fromBytes(rlp.getEncoded()));
         switch (getType()) {
             case BRANCH: {
                 for (int i = 0; i < BRANCH_SIZE - 1; i++) {

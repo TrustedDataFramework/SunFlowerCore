@@ -2,11 +2,13 @@ package org.tdf.sunflower.consensus.pow;
 
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.facade.TransactionPool;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.BlockCreateResult;
 import org.tdf.sunflower.types.Header;
@@ -57,32 +59,36 @@ public class PoWMiner extends AbstractMiner {
 
     @Override
     protected Transaction createCoinBase(long height) {
-        return new Transaction(
-                PoW.TRANSACTION_VERSION, Transaction.Type.COIN_BASE.code,
-                System.currentTimeMillis() / 1000, height,
-                HexBytes.EMPTY, 0, Uint256.ZERO,
-                Uint256.of(20), HexBytes.EMPTY, poWConfig.getMinerCoinBase(),
-                HexBytes.EMPTY
-        );
+        return Transaction.builder()
+                .gasLimit(ByteUtil.EMPTY_BYTE_ARRAY)
+                .receiveAddress(Address.empty().getBytes())
+                .data(PoWBios.UPDATE.encode())
+                .value(ByteUtil.EMPTY_BYTE_ARRAY)
+                .gasPrice(ByteUtil.EMPTY_BYTE_ARRAY)
+                .nonce(ByteUtil.longToBytesNoLeadZeroes(height))
+                .build();
     }
 
     @Override
     protected Header createHeader(Block parent) {
         return Header.builder()
+                .height(parent.getHeight() + 1)
                 .version(parent.getVersion())
                 .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
                 .createdAt(System.currentTimeMillis() / 1000)
-                .payload(HexBytes.fromBytes(poW.getNBits(parent.getStateRoot().getBytes())))
+                .payload(
+                        poW.getNBits(parent.getStateRoot()).getDataHex()
+                )
                 .build();
     }
 
     @Override
     protected boolean finalizeBlock(Block parent, Block block) {
-        byte[] nbits = poW.getNBits(parent.getStateRoot().getBytes());
+        Uint256 nbits = poW.getNBits(parent.getStateRoot());
         Random rd = new Random();
-        log.info("start finish pow target = {}", HexBytes.fromBytes(nbits));
+        log.info("start finish pow target = {}", nbits);
         this.working = true;
-        while (PoW.compare(PoW.getPoWHash(block), nbits) > 0) {
+        while (PoW.compare(PoW.getPoWHash(block), nbits.getData()) > 0) {
             if (!working) {
                 log.info("mining canceled");
                 return false;

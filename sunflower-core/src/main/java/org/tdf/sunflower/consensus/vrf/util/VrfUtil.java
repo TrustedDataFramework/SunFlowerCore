@@ -537,7 +537,7 @@ public class VrfUtil {
     public static byte[] getFromContractStorage(HexBytes contractAddress, Header h, byte[] key, AccountTrie accountTrie,
                                                 Trie<byte[], byte[]> contractStorageTrie) {
         Account account = null;
-        Optional<Account> accountOpt = Optional.ofNullable(accountTrie.get(h.getStateRoot().getBytes(), contractAddress));
+        Optional<Account> accountOpt = Optional.ofNullable(accountTrie.get(h.getStateRoot(), contractAddress));
         if (accountOpt.isPresent()) {
             account = accountOpt.get();
         } else {

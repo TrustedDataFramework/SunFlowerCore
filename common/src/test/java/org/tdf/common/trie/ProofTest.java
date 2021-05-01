@@ -7,9 +7,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
-import org.tdf.common.store.MapStore;
+import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HashUtil;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPList;
 
@@ -58,20 +59,24 @@ public abstract class ProofTest {
 
     @Test
     public void test() {
-        byte[] root = trie.getRootHash();
+        HexBytes root = trie.getRootHash();
 
-        Map<byte[], byte[]> merklePath = trie.getProof(paramnesia);
+        Map<HexBytes, HexBytes> merklePath = trie.getProof(paramnesia);
         String val = trie.get(paramnesia);
 
+        Store<byte[], byte[]> store = new ByteArrayMapStore<>();
+        merklePath.forEach((k, v) -> store.put(k.getBytes(), v.getBytes()));
+
         assert trie
-                .revert(root, new MapStore<>(merklePath))
+                .revert(root, store)
                 .get(paramnesia)
                 .equals(val);
 
         merklePath = trie.getProof(stoopingly);
+        Store<byte[], byte[]> store2 = new ByteArrayMapStore<>();
+        merklePath.forEach((k, v) -> store2.put(k.getBytes(), v.getBytes()));
 
-
-        assert trie.revert(root, new MapStore<>(merklePath)).get(stoopingly) == null;
+        assert trie.revert(root, store2).get(stoopingly) == null;
 
         System.out.println("file size = " + fileSize);
         System.out.println("proof size = " + getProofSize(merklePath));
@@ -80,24 +85,31 @@ public abstract class ProofTest {
     @Test
     public void testEmpty() {
         Trie<String, String> empty = trie.revert();
-        Map<byte[], byte[]> merklePath = empty.getProof(stoopingly);
-        byte[] root = trie.revert(trie.getNullHash(), new MapStore<>(merklePath)).getRootHash();
-        assert FastByteComparisons.equal(
-                empty.getNullHash(),
+        Map<HexBytes, HexBytes> merklePath = empty.getProof(stoopingly);
+
+        Store<byte[], byte[]> store = new ByteArrayMapStore<>();
+        merklePath.forEach((k, v) -> store.put(k.getBytes(), v.getBytes()));
+
+        HexBytes root = trie.revert(trie.getNullHash(), store).getRootHash();
+        assert
+                empty.getNullHash().equals(
                 root
-        );
+                );
     }
 
     @Test
     public void testMultiKeys() {
-        Map<byte[], byte[]> rlpElement = trie.getProof(proofKeys);
+        Map<HexBytes, HexBytes> rlpElement = trie.getProof(proofKeys);
 
         System.out.println(
                 "proof size = " + getProofSize(rlpElement)
         );
 
+        Store<byte[], byte[]> store = new ByteArrayMapStore<>();
+        rlpElement.forEach((k, v) -> store.put(k.getBytes(), v.getBytes()));
+
         Trie<String, String> merkleProof =
-                trie.revert(trie.getRootHash(), new MapStore<>(rlpElement));
+                trie.revert(trie.getRootHash(), store);
 
         for (String k : proofKeys) {
             String actual = merkleProof.get(k);
@@ -144,11 +156,14 @@ public abstract class ProofTest {
             accountTrie.put(key, account);
         }
 
-        byte[] root = accountTrie.commit();
+        HexBytes root = accountTrie.commit();
 
-        Map<byte[], byte[]> proof = accountTrie.getProof(bigAccounts);
+        Map<HexBytes, HexBytes> proof = accountTrie.getProof(bigAccounts);
 
-        Trie<byte[], RLPElement> proofTrie = accountTrie.revert(root, new MapStore<>(proof));
+        Store<byte[], byte[]> store = new ByteArrayMapStore<>();
+        proof.forEach((k, v) -> store.put(k.getBytes(), v.getBytes()));
+
+        Trie<byte[], RLPElement> proofTrie = accountTrie.revert(root, store);
 
         for (byte[] bigAccount : bigAccounts) {
             assert FastByteComparisons.equal(proofTrie.get(bigAccount)
@@ -172,8 +187,8 @@ public abstract class ProofTest {
 
     }
 
-    protected int getProofSize(Map<byte[], byte[]> proof) {
-        return proof.entrySet().stream().map(e -> e.getKey().length + e.getValue().length)
+    protected int getProofSize(Map<HexBytes, HexBytes> proof) {
+        return proof.entrySet().stream().map(e -> e.getKey().size() + e.getValue().size())
                 .reduce(0, Integer::sum);
     }
 }

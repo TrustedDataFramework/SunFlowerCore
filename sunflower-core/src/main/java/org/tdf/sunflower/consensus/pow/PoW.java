@@ -29,7 +29,6 @@ import static org.tdf.sunflower.consensus.pow.PoWBios.N_BITS_KEY;
 @Slf4j(topic = "pow")
 public class PoW extends AbstractConsensusEngine {
     public static final int BLOCK_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
-    public static final int TRANSACTION_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
     private Genesis genesis;
     private PoWConfig config;
 
@@ -44,7 +43,7 @@ public class PoW extends AbstractConsensusEngine {
 
     public static int compare(byte[] x, byte[] y) {
         if (x.length != y.length)
-            throw new RuntimeException("x y length");
+            throw new RuntimeException("compare failed for x and y, length not equal");
         for (int i = 0; i < x.length; i++) {
             int a = Byte.toUnsignedInt(x[i]);
             int b = Byte.toUnsignedInt(y[i]);
@@ -54,11 +53,12 @@ public class PoW extends AbstractConsensusEngine {
         return 0;
     }
 
-    public byte[] getNBits(
-            byte[] stateRoot) {
+    public Uint256 getNBits(
+           HexBytes stateRoot) {
         Account a = getAccountTrie().get(stateRoot, PoWBios.ADDRESS);
-        return getContractStorageTrie().revert(a.getStorageRoot())
+        HexBytes bytes = getContractStorageTrie().revert(a.getStorageRoot())
                 .get(N_BITS_KEY);
+        return Uint256.of(bytes.getBytes());
     }
 
     @Override
@@ -80,7 +80,7 @@ public class PoW extends AbstractConsensusEngine {
 
     @Override
     public List<Bios> getBios() {
-        PoWBios bios = new PoWBios(genesis.getNbits().getBytes(), config);
+        PoWBios bios = new PoWBios(genesis.getNbits(), config);
         return Collections.singletonList(bios);
     }
 

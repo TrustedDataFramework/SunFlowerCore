@@ -56,7 +56,7 @@ public class EntryController {
     private final AccountTrie accountTrie;
 
     @Qualifier("contractStorageTrie")
-    private final Trie<byte[], byte[]> contractStorageTrie;
+    private final Trie<HexBytes, HexBytes> contractStorageTrie;
 
     private final GlobalConfig config;
 
@@ -88,10 +88,11 @@ public class EntryController {
         Uint256 totalGasPrice = Uint256.ZERO;
         long totalTransactions = 0;
         for (Block b : blocks) {
-            for (Transaction t : b.getBody()) {
-                if (t.getType() == Transaction.Type.COIN_BASE.code)
+            boolean isCoinbase = true;
+            for (int i = 0; i < b.getBody().size(); i++) {
+                if (i == 0)
                     continue;
-                totalGasPrice = totalGasPrice.safeAdd(t.getGasPrice());
+                totalGasPrice = totalGasPrice.safeAdd(b.getBody().get(i).getGasPriceAsU256());
                 totalTransactions++;
             }
         }
@@ -100,7 +101,7 @@ public class EntryController {
         Optional<Header> o = binarySearch(yesterday, 0, best.getHeight());
 
         String diff = consensusEngine.getName().equals("pow")
-                ? HexBytes.encode(((PoW) consensusEngine).getNBits(best.getStateRoot().getBytes()))
+                ? ((PoW) consensusEngine).getNBits(best.getStateRoot()).getDataHex().toHex()
                 : "";
 
         EnvReader rd = new EnvReader(ctx.getEnvironment());
@@ -112,7 +113,7 @@ public class EntryController {
                         totalTransactions == 0 ? Uint256.ZERO : totalGasPrice.div(Uint256.of(totalTransactions)))
                 .averageBlockInterval(rd.getBlockInterval()).height(best.getHeight())
                 .mining(blocks.stream().anyMatch(
-                        x -> x.getBody().size() > 0 && x.getBody().get(0).getTo().equals(miner.getMinerAddress())))
+                        x -> x.getBody().size() > 0 && x.getBody().get(0).getReceiveHex().equals(miner.getMinerAddress())))
                 .currentDifficulty(diff).transactionPoolSize(pool.size())
                 .blocksPerDay(o.map(h -> best.getHeight() - h.getHeight() + 1).orElse(0L))
                 .consensus(consensusEngine.getName())
@@ -185,7 +186,7 @@ public class EntryController {
     @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)
     public AccountView getAccount(@PathVariable String addressOrPublicKey) throws Exception {
         HexBytes addressHex = Address.of(addressOrPublicKey);
-        Account a = accountTrie.get(sunflowerRepository.getBestHeader().getStateRoot().getBytes(), addressHex);
+        Account a = accountTrie.get(sunflowerRepository.getBestHeader().getStateRoot(), addressHex);
         if (a == null)
             a = Account.emptyAccount(addressHex, Uint256.ZERO);
         return AccountView.fromAccount(a);
@@ -240,57 +241,12 @@ public class EntryController {
         return Response.newSuccessFul(ts.stream().map(Transaction::getHash).collect(Collectors.toList()));
     }
 
-    @GetMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public HexBytes getContract(@PathVariable("address") final String address,
-                                @RequestParam(value = "parameters", required = false) String arguments,
-                                @RequestParam(value = "args", required = false) String argsStr) {
-        HexBytes addressHex = Address.of(address);
-        arguments = arguments == null ? argsStr : arguments;
-        if (arguments == null || arguments.isEmpty())
-            throw new RuntimeException("require parameters or args");
-        HexBytes args = HexBytes.fromHex(arguments);
-        Header h = sunflowerRepository.getBestHeader();
-
-        ContractCallPayload callPayload = RLPCodec.decode(args.getBytes(), ContractCallPayload.class);
-        RLPList result = accountTrie.call(h, addressHex, callPayload.getMethod(),
-                callPayload.getParameters());
-
-        return HexBytes.fromBytes(result.getEncoded());
-    }
-
-    @PostMapping(value = "/contract/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Object rpcQuery(@PathVariable("address") final String address,
-                           @RequestBody(required = false) JsonNode body) {
-        Object o = consensusEngine.rpcQuery(HexBytes.fromHex(address), body);
-        if (o == null)
-            return Response.newSuccessFul(null);
-        return o;
-    }
-
     @GetMapping(value = "/contract/{address}/abi", produces = MediaType.APPLICATION_JSON_VALUE)
     public Object getABI(@PathVariable("address") final String address) {
         HexBytes addressHex = Address.of(address);
         Header h = sunflowerRepository.getBestHeader();
-        Account a = accountTrie.get(h.getStateRoot().getBytes(), addressHex);
+        Account a = accountTrie.get(h.getStateRoot(), addressHex);
         return null;
-    }
-
-    @GetMapping(value = "/contract/vrf/{address}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public HexBytes getVrfContract(@PathVariable("address") final String address, String depAddr) throws Exception {
-        HexBytes contractAddressHex = Address.of(address);
-        Header h = sunflowerRepository.getBestHeader();
-        if (VRF_BIOS_CONTRACT_ADDR.equals(address)) {
-            if (depAddr != null && !depAddr.equals("")) {
-                HexBytes depositAddress = HexBytes.fromHex(depAddr);
-                return HexBytes.fromBytes(VrfUtil.getFromContractStorage(contractAddressHex, h,
-                        depositAddress.getBytes(), accountTrie, contractStorageTrie));
-            } else {
-                return HexBytes.fromBytes(VrfUtil.getFromContractStorage(contractAddressHex, h,
-                        VrfPreBuiltContract.TOTAL_KEY, accountTrie, contractStorageTrie));
-            }
-
-        }
-        return HexBytes.fromBytes("NOT_VRF_CONTRACT_ADDRESS".getBytes());
     }
 
     @PostMapping(value = "/operations", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -394,8 +350,8 @@ public class EntryController {
 
         static AccountView fromAccount(Account account) {
             return new AccountView(account.getAddress(), account.getNonce(), account.getBalance(),
-                    account.getCreatedBy(), HexBytes.fromBytes(account.getContractHash()),
-                    HexBytes.fromBytes(account.getStorageRoot()));
+                    account.getCreatedBy(), account.getContractHash(),
+                    account.getStorageRoot());
         }
     }
 }

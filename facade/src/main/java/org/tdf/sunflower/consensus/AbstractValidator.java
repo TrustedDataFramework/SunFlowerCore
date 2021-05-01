@@ -29,11 +29,6 @@ public abstract class AbstractValidator implements Validator {
             return BlockValidateResult.fault("missing block body");
 
         // a block should contains exactly one coin base transaction
-        if (block.getBody().get(0).getType() != Transaction.Type.COIN_BASE.code)
-            return BlockValidateResult.fault("the first transaction of block body should be coin base");
-
-        if (block.getBody().stream().filter(t -> t.getType() == Transaction.Type.COIN_BASE.code).count() > 1)
-            return BlockValidateResult.fault("the block body contains at most one coin base transaction");
 
         for (Transaction t : block.getBody()) {
             // TODO: transaction basic validte
@@ -48,8 +43,8 @@ public abstract class AbstractValidator implements Validator {
                     String.format("invalid timestamp %d at block height %d", block.getCreatedAt(), block.getHeight())
             );
         }
-        if (FastByteComparisons.equal(Transaction.calcTxTrie(block.getBody()),
-                block.getTransactionsRoot().getBytes()
+        if (!Transaction.calcTxTrie(block.getBody()).equals(
+                block.getTransactionsRoot()
         )) {
             return BlockValidateResult.fault("transactions root not match");
         }
@@ -65,7 +60,7 @@ public abstract class AbstractValidator implements Validator {
             Transaction coinbase = block.getBody().get(0);
 
             for (Transaction tx : block.getBody().subList(1, block.getBody().size())) {
-                VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(tx), new Limit(), 0);
+                VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(tx, false), new Limit(), 0);
                 TransactionResult r = executor.execute();
                 results.put(HexBytes.fromBytes(tx.getHash()), r);
                 totalFee = totalFee.safeAdd(r.getFee());
@@ -73,12 +68,12 @@ public abstract class AbstractValidator implements Validator {
                 gas = SafeMath.add(gas, r.getGasUsed());
             }
 
-            VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(coinbase), new Limit(), 0);
+            VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(coinbase, true), new Limit(), 0);
             executor.execute();
 
-            byte[] rootHash = tmp.merge();
+            HexBytes rootHash = tmp.merge();
 
-            if (!HexBytes.fromBytes(rootHash).equals(block.getStateRoot())) {
+            if (!rootHash.equals(block.getStateRoot())) {
                 return BlockValidateResult.fault("state root not match");
             }
             success.setEvents(tmp.getEvents());

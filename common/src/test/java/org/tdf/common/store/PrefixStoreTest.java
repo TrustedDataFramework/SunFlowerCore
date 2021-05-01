@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.serialize.Codecs;
+import org.tdf.common.util.HexBytes;
 
 import java.nio.charset.StandardCharsets;
 
@@ -14,10 +15,10 @@ public class PrefixStoreTest {
 
     @Test
     public void test0() {
-        Store<byte[], byte[]> s = new ByteArrayMapStore<>();
+        Store<HexBytes, HexBytes> s = new MapStore<>();
         PrefixStore<String, String> p = new PrefixStore<>(
                 s,
-                "aaa".getBytes(StandardCharsets.US_ASCII),
+                HexBytes.fromBytes("aaa".getBytes(StandardCharsets.US_ASCII)),
                 Codecs.newRLPCodec(String.class),
                 Codecs.newRLPCodec(String.class)
         );

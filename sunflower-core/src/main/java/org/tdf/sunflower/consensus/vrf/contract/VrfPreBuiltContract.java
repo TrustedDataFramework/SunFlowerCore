@@ -14,7 +14,9 @@ import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
@@ -28,7 +30,7 @@ import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 public class VrfPreBuiltContract implements PreBuiltContract {
     public static final byte[] TOTAL_KEY = "total_deposits".getBytes();
     private Account genesisAccount;
-    private Map<byte[], byte[]> genesisStorage;
+    private Map<HexBytes, HexBytes> genesisStorage;
 
     @Override
     public Account getGenesisAccount() {
@@ -44,7 +46,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
     }
 
     @Override
-    public void update(Backend backend, CallData callData) {
+    public byte[] call(Backend backend, CallData callData) {
 
         String methodName = "";
         log.info("++++++>> VrfBiosContract method {}, txn hash {}, nonce {}", methodName, callData.getTxHash().toHex(),
@@ -52,7 +54,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
 
         if (methodName.trim().isEmpty()) {
             log.error("No method name ");
-            return;
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
 
         if (methodName.equals("deposit")) {
@@ -61,7 +63,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
 //            } catch (IOException e) {
 //                e.printStackTrace();
 //            }
-            return;
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
 
         if (methodName.equals("withdraw")) {
@@ -70,18 +72,19 @@ public class VrfPreBuiltContract implements PreBuiltContract {
 //            } catch (IOException e) {
 //                e.printStackTrace();
 //            }
-            return;
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
 
         log.error("Invoking unknown contract method {}", methodName);
+        return ByteUtil.EMPTY_BYTE_ARRAY;
     }
 
     @Override
-    public Map<byte[], byte[]> getGenesisStorage() {
+    public Map<HexBytes, HexBytes> getGenesisStorage() {
         if (genesisStorage == null) {
             synchronized (VrfPreBuiltContract.class) {
                 if (genesisStorage == null) {
-                    genesisStorage = new HashMap<byte[], byte[]>();
+                    genesisStorage = new HashMap<HexBytes, HexBytes>();
                 }
             }
         }
@@ -99,7 +102,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
             return;
         }
 
-        byte[] fromAddr = transaction.getFromAddress().getBytes();
+        byte[] fromAddr = transaction.getSender();
         Account fromAccount = accounts.get(HexBytes.fromBytes(fromAddr));
         Account contractAccount = accounts.get(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR));
 
@@ -153,7 +156,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
             return;
         }
 
-        byte[] fromAddr = transaction.getFromAddress().getBytes();
+        byte[] fromAddr = transaction.getSender();
         Account fromAccount = accounts.get(HexBytes.fromBytes(fromAddr));
         Account contractAccount = accounts.get(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR));
 
@@ -185,7 +188,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
 
     private WithdrawParams parseWithdrawParams(Transaction transaction)
             throws IOException {
-        byte[] payload = transaction.getPayload().getBytes();
+        byte[] payload = transaction.getData();
         int methodNameLen = payload[0];
         int paramBytesLen = payload.length - methodNameLen - 1;
         byte[] paramBytes = new byte[paramBytesLen];
@@ -196,7 +199,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
 
     private DepositParams parseDepositParams(Transaction transaction)
             throws IOException {
-        byte[] payload = transaction.getPayload().getBytes();
+        byte[] payload = transaction.getData();
         int methodNameLen = payload[0];
         int paramBytesLen = payload.length - methodNameLen - 1;
         byte[] paramBytes = new byte[paramBytesLen];

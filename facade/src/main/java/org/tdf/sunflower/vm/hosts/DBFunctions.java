@@ -28,13 +28,13 @@ public class DBFunctions extends HostFunction {
         this.address = address;
     }
 
-    private byte[] getKey(long... longs) {
-        return (byte[]) WBI
+    private HexBytes getKey(long... longs) {
+        return (HexBytes) WBI
                 .peek(getInstance(), (int) longs[1], WbiType.BYTES);
     }
 
-    private byte[] getValue(long... longs) {
-        return (byte[]) WBI
+    private HexBytes getValue(long... longs) {
+        return (HexBytes) WBI
                 .peek(getInstance(), (int) longs[2], WbiType.BYTES);
     }
 
@@ -43,23 +43,23 @@ public class DBFunctions extends HostFunction {
         Type t = Type.values()[(int) longs[0]];
         switch (t) {
             case SET: {
-                byte[] key = getKey(longs);
-                byte[] value = getValue(longs);
+                HexBytes key = getKey(longs);
+                HexBytes value = getValue(longs);
                 this.backend.dbSet(address, key, value);
                 return 0;
             }
             case GET: {
-                byte[] key = getKey(longs);
-                byte[] value = this.backend.dbGet(address, key);
+                HexBytes key = getKey(longs);
+                HexBytes value = this.backend.dbGet(address, key);
                 return WBI
                         .mallocBytes(getInstance(), value);
             }
             case HAS: {
-                byte[] key = getKey(longs);
+                HexBytes key = getKey(longs);
                 return backend.dbHas(address, key) ? 1 : 0;
             }
             case REMOVE: {
-                byte[] key = getKey(longs);
+                HexBytes key = getKey(longs);
                 backend.dbRemove(address, key);
                 return 0;
             }

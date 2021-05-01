@@ -2,7 +2,6 @@ package org.tdf.sunflower.consensus.vrf.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.tdf.crypto.ed25519.Ed25519;
 import org.tdf.rlp.RLP;
 import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
@@ -200,7 +199,7 @@ public class VrfProof {
             return 0;
         }
 
-        VrfPublicKey publicKey = new VrfPublicKey(vrfPk, Ed25519.getAlgorithm());
+        VrfPublicKey publicKey = new VrfPublicKey(vrfPk, "");
 
         // Compose new seed with role and round
         byte[] vrfSeed = composeVrfSeed(role, round, seed);

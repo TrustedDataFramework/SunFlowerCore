@@ -6,6 +6,7 @@ import org.junit.runners.JUnit4;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.ByteArrayMapStore;
+import org.tdf.common.store.MapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.CryptoHelpers;
@@ -32,13 +33,13 @@ public class AbiTests {
                 null,
                 null,
                 Trie.<HexBytes, Account>builder().hashFunction(CryptoHelpers::keccak256).keyCodec(k).valueCodec(v).store(new ByteArrayMapStore<>()).build(),
-                Trie.<byte[], byte[]>builder().hashFunction(CryptoHelpers::keccak256).keyCodec(Codec.identity()).store(new ByteArrayMapStore<>()).valueCodec(Codec.identity()).build(),
+                Trie.<HexBytes, HexBytes>builder().hashFunction(CryptoHelpers::keccak256).keyCodec(Codecs.HEX).store(new ByteArrayMapStore<>()).valueCodec(Codecs.HEX).build(),
                 new HashMap<>(),
                 new HashMap<>(),
                 new HashMap<>(),
                 new HashMap<>(),
                 false,
-                new ByteArrayMapStore<>(),
+                new MapStore<>(),
                 new HashMap<>(),
                 new HashMap<>(),
                 0

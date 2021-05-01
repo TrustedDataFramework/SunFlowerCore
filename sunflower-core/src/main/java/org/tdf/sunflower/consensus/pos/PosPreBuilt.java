@@ -8,7 +8,9 @@ import org.tdf.common.store.PrefixStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteArrayMap;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.RLPUtil;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.state.Account;
@@ -25,8 +27,8 @@ import java.util.stream.Collectors;
 
 @Slf4j(topic = "pos")
 public class PosPreBuilt implements PreBuiltContract {
-    public static final byte[] NODE_INFO_KEY = "nodes".getBytes(StandardCharsets.US_ASCII);
-    public static final byte[] VOTE_INFO_KEY = "votes".getBytes(StandardCharsets.US_ASCII);
+    public static final HexBytes NODE_INFO_KEY = HexBytes.fromBytes("nodes".getBytes(StandardCharsets.US_ASCII));
+    public static final HexBytes VOTE_INFO_KEY = HexBytes.fromBytes("votes".getBytes(StandardCharsets.US_ASCII));
 
     private final Map<HexBytes, NodeInfo> nodes;
     @Setter
@@ -45,35 +47,35 @@ public class PosPreBuilt implements PreBuiltContract {
         return new AbstractMap.SimpleImmutableEntry<>(-1, null);
     }
 
-    private byte[] getValue(byte[] stateRoot, byte[] key) {
+    private HexBytes getValue(HexBytes stateRoot, HexBytes key) {
         Account a = accountTrie.get(stateRoot, Constants.POS_CONTRACT_ADDR);
-        Store<byte[], byte[]> db = accountTrie.getContractStorageTrie().revert(a.getStorageRoot());
+        Store<HexBytes, HexBytes> db = accountTrie.getContractStorageTrie().revert(a.getStorageRoot());
         return db.get(key);
     }
 
-    public List<HexBytes> getNodes(byte[] stateRoot) {
-        byte[] v = getValue(stateRoot, NODE_INFO_KEY);
-        return Arrays.stream(RLPCodec.decode(v, NodeInfo[].class)).map(NodeInfo::getAddress).collect(Collectors.toList());
+    public List<HexBytes> getNodes(HexBytes stateRoot) {
+        HexBytes v = getValue(stateRoot, NODE_INFO_KEY);
+        return Arrays.stream(RLPUtil.decode(v, NodeInfo[].class)).map(NodeInfo::getAddress).collect(Collectors.toList());
     }
 
-    public List<NodeInfo> getNodeInfos(byte[] stateRoot) {
-        byte[] v = getValue(stateRoot, NODE_INFO_KEY);
-        return Arrays.asList(RLPCodec.decode(
+    public List<NodeInfo> getNodeInfos(HexBytes stateRoot) {
+        HexBytes v = getValue(stateRoot, NODE_INFO_KEY);
+        return Arrays.asList(RLPUtil.decode(
                 v, NodeInfo[].class));
     }
 
-    public Optional<VoteInfo> getVoteInfo(byte[] stateRoot, byte[] txHash) {
+    public Optional<VoteInfo> getVoteInfo(HexBytes stateRoot, HexBytes txHash) {
         Account a = accountTrie.get(stateRoot, Constants.POS_CONTRACT_ADDR);
-        Store<byte[], byte[]> db = accountTrie.getContractStorageTrie().revert(a.getStorageRoot());
-        PrefixStore<byte[], VoteInfo> store = getVoteInfoStore(db);
+        Store<HexBytes, HexBytes> db = accountTrie.getContractStorageTrie().revert(a.getStorageRoot());
+        PrefixStore<HexBytes, VoteInfo> store = getVoteInfoStore(db);
         return Optional.ofNullable(store.get(txHash));
     }
 
-    public PrefixStore<byte[], VoteInfo> getVoteInfoStore(Store<byte[], byte[]> contractStore) {
+    public PrefixStore<HexBytes, VoteInfo> getVoteInfoStore(Store<HexBytes, HexBytes> contractStore) {
         return new PrefixStore<>(
                 contractStore,
                 VOTE_INFO_KEY,
-                Codec.identity(),
+                Codecs.HEX,
                 Codecs.newRLPCodec(VoteInfo.class)
         );
     }
@@ -84,32 +86,32 @@ public class PosPreBuilt implements PreBuiltContract {
     }
 
     @Override
-    public Map<byte[], byte[]> getGenesisStorage() {
-        Map<byte[], byte[]> map = new ByteArrayMap<>();
+    public Map<HexBytes, HexBytes> getGenesisStorage() {
+        Map<HexBytes, HexBytes> map = new HashMap<>();
         List<NodeInfo> nodeInfos = new ArrayList<>(this.nodes.values());
         nodeInfos.sort(NodeInfo::compareTo);
-        map.put(NODE_INFO_KEY, RLPCodec.encode(nodeInfos));
-        map.put(VOTE_INFO_KEY, RLPList.createEmpty().getEncoded());
+        map.put(NODE_INFO_KEY, RLPUtil.encode(nodeInfos));
+        map.put(VOTE_INFO_KEY, RLPUtil.encode(RLPList.createEmpty()));
         return map;
     }
 
     @Override
     @SneakyThrows
-    public void update(Backend backend, CallData callData) {
+    public byte[] call(Backend backend, CallData callData) {
         HexBytes payload = callData.getData();
         Type type = Type.values()[payload.get(0)];
         HexBytes args = payload.slice(1);
 
         List<NodeInfo> nodeInfos = new ArrayList<>(
                 Arrays.asList(
-                        RLPCodec.decode(backend.dbGet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY), NodeInfo[].class))
+                        RLPUtil.decode(backend.dbGet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY), NodeInfo[].class))
         );
 
-        PrefixStore<byte[], VoteInfo> voteInfos = getVoteInfoStore(backend.getAsStore(Constants.POS_CONTRACT_ADDR));
+        PrefixStore<HexBytes, VoteInfo> voteInfos = getVoteInfoStore(backend.getAsStore(Constants.POS_CONTRACT_ADDR));
 
         switch (type) {
             case VOTE: {
-                if (callData.getAmount().compareTo(Uint256.ZERO) == 0)
+                if (callData.getValue().compareTo(Uint256.ZERO) == 0)
                     throw new RuntimeException("amount of vote cannot be 0 ");
                 Map.Entry<Integer, NodeInfo> e =
                         findFirst(nodeInfos, x -> x.address.equals(args));
@@ -117,23 +119,23 @@ public class PosPreBuilt implements PreBuiltContract {
                 NodeInfo n = e.getKey() < 0 ? new NodeInfo(args, Uint256.ZERO, new ArrayList<>()) :
                         e.getValue();
 
-                n.vote = n.vote.safeAdd(callData.getAmount());
+                n.vote = n.vote.safeAdd(callData.getValue());
                 n.txHash.add(callData.getTxHash());
                 if (e.getKey() < 0)
                     nodeInfos.add(n);
                 else
                     nodeInfos.set(e.getKey(), n);
-                voteInfos.put(callData.getTxHash().getBytes(), new VoteInfo(
+                voteInfos.put(callData.getTxHash(), new VoteInfo(
                         callData.getTxHash(), callData.getCaller(),
-                        args, callData.getAmount()
+                        args, callData.getValue()
                 ));
                 break;
             }
             case CANCEL_VOTE:
-                if (callData.getAmount().compareTo(Uint256.ZERO) != 0)
+                if (callData.getValue().compareTo(Uint256.ZERO) != 0)
                     throw new RuntimeException("amount of cancel vote should be 0");
-                Optional<VoteInfo> o = Optional.ofNullable(voteInfos.get(args.getBytes()));
-                voteInfos.remove(args.getBytes());
+                Optional<VoteInfo> o = Optional.ofNullable(voteInfos.get(args));
+                voteInfos.remove(args);
 
                 if (!o.isPresent()) {
                     throw new RuntimeException(args + " voting business does not exist and cannot be withdrawn");
@@ -173,7 +175,8 @@ public class PosPreBuilt implements PreBuiltContract {
         }
         nodeInfos.sort(NodeInfo::compareTo);
         Collections.reverse(nodeInfos);
-        backend.dbSet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY, RLPCodec.encode(nodeInfos));
+        backend.dbSet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY, RLPUtil.encode(nodeInfos));
+        return ByteUtil.EMPTY_BYTE_ARRAY;
     }
 
     public enum Type {

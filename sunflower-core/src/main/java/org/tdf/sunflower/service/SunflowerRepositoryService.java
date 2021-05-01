@@ -19,7 +19,6 @@ import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.UnmodifiableBlock;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -48,7 +47,7 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
         b.setBody(
                 getTransactionsByBlockHash(b.getHash().getBytes())
         );
-        return UnmodifiableBlock.of(b);
+        return b;
     }
 
     protected List<Block> getBlocksFromHeaders(Collection<? extends Header> headers) {
@@ -74,7 +73,6 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
         }
         return blocks
                 .stream()
-                .map(UnmodifiableBlock::of)
                 .collect(Collectors.toList());
     }
 

@@ -29,17 +29,14 @@ public class PoSValidator extends AbstractValidator {
         }
         if (
                 !posMiner.getProposer(dependency, block.getCreatedAt())
-                        .map(x -> x.getAddress().equals(block.getBody().get(0).getTo()))
+                        .map(x -> x.getAddress().equals(block.getBody().get(0).getReceiveHex()))
                         .orElse(false)
-        ) return ValidateResult.fault("invalid proposer " + block.getBody().get(0).getFromAddress());
+        ) return ValidateResult.fault("invalid proposer " + block.getBody().get(0).getSenderHex());
         return res;
     }
 
     @Override
     public ValidateResult validate(Block dependency, Transaction transaction) {
-        if (transaction.getVersion() != PoS.TRANSACTION_VERSION) {
-            return ValidateResult.fault("transaction version not match");
-        }
         return ValidateResult.success();
     }
 }

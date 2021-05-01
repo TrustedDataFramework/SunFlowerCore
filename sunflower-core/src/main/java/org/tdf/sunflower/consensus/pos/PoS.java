@@ -44,10 +44,10 @@ public class PoS extends AbstractConsensusEngine {
     }
 
     public List<HexBytes> getMinerAddresses() {
-        return getMinerAddresses(getSunflowerRepository().getBestBlock().getStateRoot().getBytes());
+        return getMinerAddresses(getSunflowerRepository().getBestBlock().getStateRoot());
     }
 
-    public List<HexBytes> getMinerAddresses(byte[] stateRoot) {
+    public List<HexBytes> getMinerAddresses(HexBytes stateRoot) {
         return this.minerContract.getNodes(stateRoot).stream().limit(posConfig.getMaxMiners()).collect(Collectors.toList());
     }
 
@@ -98,26 +98,6 @@ public class PoS extends AbstractConsensusEngine {
 
         this.posValidator = new PoSValidator(getAccountTrie(), this.posMiner);
         setValidator(this.posValidator);
-    }
-
-    @Override
-    public Object rpcQuery(HexBytes address, JsonNode body) {
-        byte[] root = getSunflowerRepository().getBestBlock().getStateRoot().getBytes();
-        String method = body == null ? null : body.get("method").asText();
-        if (address.equals(Constants.POS_CONTRACT_ADDR)) {
-
-            switch (Objects.requireNonNull(method)) {
-                case "nodeInfos":
-                    return minerContract.getNodeInfos(root);
-                case "voteInfo": {
-                    String txHash = body.get("txHash").asText();
-                    return minerContract.getVoteInfo(root, HexBytes.decode(txHash)).orElseThrow(() -> new RuntimeException("tx hash not found"));
-                }
-                default:
-                    throw new RuntimeException(method + " not defined");
-            }
-        }
-        return UNRESOLVED;
     }
 
     @Override

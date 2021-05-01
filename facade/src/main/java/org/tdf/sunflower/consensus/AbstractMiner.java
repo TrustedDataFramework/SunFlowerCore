@@ -41,7 +41,7 @@ public abstract class AbstractMiner implements Miner {
             return Optional.of(new Proposer(minerAddresses.get(0), 0, Long.MAX_VALUE));
         }
 
-        HexBytes prev = HexBytes.fromBytes(parent.getBody().get(0).getReceiveAddress());
+        HexBytes prev = parent.getBody().get(0).getReceiveHex();
 
         int prevIndex = minerAddresses.indexOf(prev);
 
@@ -84,7 +84,7 @@ public abstract class AbstractMiner implements Miner {
 
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
         List<Transaction> transactionList = getTransactionPool().popPackable(
-                getAccountTrie().getTrie(parent.getStateRoot().getBytes()),
+                getAccountTrie().getTrie(parent.getStateRoot()),
                 minerConfig.getMaxBodySize()
         );
 
@@ -104,7 +104,7 @@ public abstract class AbstractMiner implements Miner {
 
                 // store updated result to the trie if update success
                 tmp = tmp.createChild();
-                CallData callData = CallData.fromTransaction(tx);
+                CallData callData = CallData.fromTransaction(tx, true);
                 VMExecutor vmExecutor = new VMExecutor(tmp, callData, new Limit(), 0);
                 TransactionResult res = vmExecutor.execute();
                 totalFee = totalFee.safeAdd(res.getFee());
@@ -141,13 +141,13 @@ public abstract class AbstractMiner implements Miner {
 
         // add fee to miners account
 //        coinbase.setAmount(coinbase.getAmount().safeAdd(totalFee));
-        CallData callData = CallData.fromTransaction(coinbase);
+        CallData callData = CallData.fromTransaction(coinbase, true);
         VMExecutor executor = new VMExecutor(tmp, callData, new Limit(), 0);
         executor.execute();
 
         // calculate state root
         b.setStateRoot(
-                HexBytes.fromBytes(tmp.merge())
+                tmp.merge()
         );
 
         // persist modifications of trie to database

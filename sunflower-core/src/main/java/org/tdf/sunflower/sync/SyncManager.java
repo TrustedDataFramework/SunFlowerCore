@@ -14,7 +14,6 @@ import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
-import org.tdf.sunflower.controller.WebSocket;
 import org.tdf.sunflower.events.*;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.Context;
@@ -52,8 +51,8 @@ public class SyncManager implements PeerServerListener, Closeable {
     private final StateTrie<HexBytes, Account> accountTrie;
     private final long fastSyncHeight;
     private final HexBytes fastSyncHash;
-    private final Trie<byte[], byte[]> contractStorageTrie;
-    private final Store<byte[], byte[]> contractCodeStore;
+    private final Trie<HexBytes, HexBytes> contractStorageTrie;
+    private final Store<HexBytes, HexBytes> contractCodeStore;
     private final Miner miner;
 
     private final Limiters limiters;
@@ -84,8 +83,8 @@ public class SyncManager implements PeerServerListener, Closeable {
             TransactionPool transactionPool, SyncConfig syncConfig,
             EventBus eventBus,
             AccountTrie accountTrie,
-            @Qualifier("contractStorageTrie") Trie<byte[], byte[]> contractStorageTrie,
-            @Qualifier("contractCodeStore") Store<byte[], byte[]> contractCodeStore,
+            @Qualifier("contractStorageTrie") Trie<HexBytes, HexBytes> contractStorageTrie,
+            @Qualifier("contractCodeStore") Store<HexBytes, HexBytes> contractCodeStore,
             Miner miner
     ) {
         this.peerServer = peerServer;
@@ -210,7 +209,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 if (isNotApproved(context))
                     return;
                 List<Transaction> txs = Arrays.asList(msg.getBodyAs(Transaction[].class));
-                HexBytes root = Transaction.getTransactionsRoot(txs);
+                HexBytes root = Transaction.calcTxTrie(txs);
                 if (receivedTransactions.asMap().containsKey(root))
                     return;
                 receivedTransactions.put(root, true);
@@ -223,9 +222,6 @@ public class SyncManager implements PeerServerListener, Closeable {
                     return;
                 Proposal p = msg.getBodyAs(Proposal.class);
                 Block proposal = p.getBlock();
-                for (int i = 0; i < p.getFailedTransactions().size(); i++) {
-                    WebSocket.broadcastDrop(p.getFailedTransactions().get(i), p.getReasons().get(i));
-                }
                 if (proposal == null)
                     return;
                 if (fastSyncing && !receivedProposals.asMap().containsKey(proposal.getHash())) {
@@ -319,9 +315,9 @@ public class SyncManager implements PeerServerListener, Closeable {
                         if (this.fastSyncAddresses.contains(a.getAddress()))
                             continue;
                         // validate contract code
-                        if (a.getContractHash() != null && a.getContractHash().length != 0) {
-                            byte[] key = CryptoContext.hash(sa.getContractCode());
-                            if (!FastByteComparisons.equal(key, a.getContractHash())) {
+                        if (a.getContractHash() != null && a.getContractHash().size() != 0) {
+                            HexBytes key = HexBytes.fromBytes(CryptoContext.hash(sa.getContractCode().getBytes()));
+                            if (!key.equals(a.getContractHash())) {
                                 log.error("contract hash not match");
                                 continue;
                             }
@@ -329,16 +325,16 @@ public class SyncManager implements PeerServerListener, Closeable {
                         }
 
                         // validate storage root
-                        if (a.getStorageRoot() != null && a.getStorageRoot().length != 0) {
-                            Trie<byte[], byte[]> empty = contractStorageTrie.revert();
+                        if (a.getStorageRoot() != null && a.getStorageRoot().size() != 0) {
+                            Trie<HexBytes, HexBytes> empty = contractStorageTrie.revert();
                             for (int i = 0; i < sa.getContractStorage().size() / 2; i += 1) {
-                                byte[] k = sa.getContractStorage().get(2 * i);
-                                byte[] v = sa.getContractStorage().get(2 * i + 1);
+                                HexBytes k = sa.getContractStorage().get(2 * i);
+                                HexBytes v = sa.getContractStorage().get(2 * i + 1);
                                 empty.put(k, v);
                             }
 
-                            byte[] root = empty.commit();
-                            if (!FastByteComparisons.equal(root, a.getStorageRoot())) {
+                            HexBytes root = empty.commit();
+                            if (!root.equals(a.getStorageRoot())) {
                                 log.error("storage root not match");
                                 continue;
                             }
@@ -354,7 +350,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                     if (fastSyncAddresses.size() != fastSyncTotalAccounts) {
                         return;
                     }
-                    HexBytes stateRoot = HexBytes.fromBytes(fastSyncTrie.commit());
+                    HexBytes stateRoot =fastSyncTrie.commit();
                     if (!fastSyncBlock.getStateRoot().equals(stateRoot)) {
                         clearFastSyncCache();
                         log.error("fast sync failed, state root not match, malicious node may exists in network!!!");

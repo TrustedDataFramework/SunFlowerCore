@@ -86,7 +86,9 @@ dependencies {
     compile "org.iq80.leveldb:leveldb:${leveldbVersion}"
     // for test and dev
     compile 'com.h2database:h2'
-
+    compile project(':crypto')
+    compile "com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6"
+    runtimeOnly 'javax.jws:jsr181-api:1.0-MR1'
 }
 
 task copyDependencies(type: Copy) {

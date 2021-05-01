@@ -43,11 +43,11 @@ public class VrfGenesis {
         Trie<?, ?> trie = Trie.<byte[], byte[]>builder().keyCodec(Codec.identity()).valueCodec(Codec.identity())
                 .store(new ByteArrayMapStore<>()).hashFunction(CryptoContext::hash).build();
 
-        HexBytes emptyRoot = Transaction.getTransactionsRoot(Collections.emptyList());
+        HexBytes emptyRoot = Transaction.calcTxTrie(Collections.emptyList());
 
         Header header = Header.builder().version(VrfConstants.BLOCK_VERSION).hashPrev(parentHash)
                 .transactionsRoot(emptyRoot).height(blockNum).createdAt(ByteUtil.byteArrayToLong(timestamp.getBytes()))
-                .payload(VrfConstants.ZERO_BYTES).stateRoot(HexBytes.fromBytes(trie.getNullHash())).build();
+                .payload(VrfConstants.ZERO_BYTES).stateRoot(trie.getNullHash()).build();
 
         Block block = new Block(header);
         /*

@@ -43,22 +43,22 @@ public interface Backend {
 
     Map<HexBytes, Bios> getBios();
 
-    void dbSet(HexBytes address, byte[] key, byte[] value);
+    void dbSet(HexBytes address, HexBytes key, HexBytes value);
 
     // return empty byte array if key not found
-    byte[] dbGet(HexBytes address, byte[] key);
+    HexBytes dbGet(HexBytes address, HexBytes key);
 
-    boolean dbHas(HexBytes address, byte[] key);
+    boolean dbHas(HexBytes address, HexBytes key);
 
     HexBytes getContractCreatedBy(HexBytes address);
 
     void setContractCreatedBy(HexBytes address, HexBytes createdBy);
 
-    void dbRemove(HexBytes address, byte[] key);
+    void dbRemove(HexBytes address, HexBytes key);
 
-    byte[] getCode(HexBytes address);
+    HexBytes getCode(HexBytes address);
 
-    void setCode(HexBytes address, byte[] code);
+    void setCode(HexBytes address, HexBytes code);
 
     void onEvent(HexBytes address, String eventName, RLPList eventData);
 
@@ -71,22 +71,22 @@ public interface Backend {
     Backend createChild();
 
     // merge modifications, return the new state root
-    byte[] merge();
+    HexBytes merge();
 
-    default Store<byte[], byte[]> getAsStore(HexBytes address) {
-        return new Store<byte[], byte[]>() {
+    default Store<HexBytes, HexBytes> getAsStore(HexBytes address) {
+        return new Store<HexBytes, HexBytes>() {
             @Override
-            public byte[] get(byte[] bytes) {
+            public HexBytes get(HexBytes bytes) {
                 return dbGet(address, bytes);
             }
 
             @Override
-            public void put(byte[] bytes, byte[] bytes2) {
+            public void put(HexBytes bytes, HexBytes bytes2) {
                 dbSet(address, bytes, bytes2);
             }
 
             @Override
-            public void remove(byte[] bytes) {
+            public void remove(HexBytes bytes) {
                 dbRemove(address, bytes);
             }
 

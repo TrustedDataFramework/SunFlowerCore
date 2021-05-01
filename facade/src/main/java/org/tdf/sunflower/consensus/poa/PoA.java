@@ -78,20 +78,20 @@ public class PoA extends AbstractConsensusEngine {
         if (poAConfig.isAllowUnauthorized())
             return Optional.empty();
         Block best = getSunflowerRepository().getBestBlock();
-        return Optional.of(new HashSet<>(this.authContract.getNodes(best.getStateRoot().getBytes())));
+        return Optional.of(new HashSet<>(this.authContract.getNodes(best.getStateRoot())));
     }
 
     @Override
     public List<HexBytes> getMinerAddresses() {
-        return getMinerAddresses(getSunflowerRepository().getBestBlock().getStateRoot().getBytes());
+        return getMinerAddresses(getSunflowerRepository().getBestBlock().getStateRoot());
     }
 
-    public List<HexBytes> getMinerAddresses(byte[] parentStateRoot) {
+    public List<HexBytes> getMinerAddresses(HexBytes parentStateRoot) {
         return minerContract.getNodes(parentStateRoot);
     }
 
     public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
-        List<HexBytes> minerAddresses = getMinerAddresses(parent.getStateRoot().getBytes());
+        List<HexBytes> minerAddresses = getMinerAddresses(parent.getStateRoot());
         return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, poAConfig.getBlockInterval());
     }
 
@@ -218,32 +218,6 @@ public class PoA extends AbstractConsensusEngine {
         // register dummy account
     }
 
-    @Override
-    public Object rpcQuery(HexBytes address, JsonNode body) {
-        byte[] root = getSunflowerRepository().getBestBlock().getStateRoot().getBytes();
-        String method = body == null ? null : body.get("method").asText();
-        if (address.equals(Constants.POA_AUTHENTICATION_ADDR) || address.equals(Constants.PEER_AUTHENTICATION_ADDR) || address.equals(Constants.VALIDATOR_CONTRACT_ADDR)) {
-            Authentication auth = null;
-            if (address.equals(Constants.POA_AUTHENTICATION_ADDR)) {
-                auth = minerContract;
-            }
-            if (address.equals(Constants.PEER_AUTHENTICATION_ADDR)) {
-                auth = authContract;
-            }
-            if (address.equals(Constants.VALIDATOR_CONTRACT_ADDR)) {
-                auth = validatorContract;
-            }
-            switch (Objects.requireNonNull(method)) {
-                case "nodes":
-                    return auth.getNodes(root);
-                case "pending":
-                    return auth.getPending(root);
-                default:
-                    throw new RuntimeException(method + " not defined");
-            }
-        }
-        return UNRESOLVED;
-    }
 
     @Override
     public String getName() {
@@ -251,7 +225,7 @@ public class PoA extends AbstractConsensusEngine {
     }
 
 
-    public List<HexBytes> getValidators(byte[] parentStateRoot) {
+    public List<HexBytes> getValidators(HexBytes parentStateRoot) {
         return validatorContract.getNodes(parentStateRoot);
     }
 }

@@ -4,16 +4,13 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
-import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.WBI;
 import org.tdf.sunflower.vm.abi.WbiType;
-import org.tdf.sunflower.vm.ContractABI;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 
 public class ContextHost extends HostFunction {
@@ -38,7 +35,7 @@ public class ContextHost extends HostFunction {
         switch (type) {
             case HEADER_PARENT_HASH: {
                 return WBI
-                        .mallocBytes(getInstance(), backend.getParentHash().getBytes());
+                        .mallocBytes(getInstance(), backend.getParentHash());
 
             }
             case HEADER_CREATED_AT: {
@@ -48,39 +45,33 @@ public class ContextHost extends HostFunction {
             case HEADER_HEIGHT: {
                 return backend.getHeight();
             }
-            case TX_TYPE: {
-                return callData.getTxType();
-            }
-            case TX_CREATED_AT: {
-                return callData.getTxCreatedAt();
-            }
             case TX_NONCE: {
                 return callData.getTxNonce();
             }
             case TX_ORIGIN: {
-                return WBI.mallocAddress(getInstance(), callData.getOrigin().getBytes());
+                return WBI.mallocAddress(getInstance(), callData.getOrigin());
             }
             case TX_GAS_PRICE: {
                 return WBI.malloc(getInstance(), callData.getGasPrice());
             }
             case TX_AMOUNT: {
-                return WBI.malloc(getInstance(), callData.getTxAmount());
+                return WBI.malloc(getInstance(), callData.getTxValue());
             }
             case TX_TO: {
-                return WBI.mallocAddress(getInstance(), callData.getTxTo().getBytes());
+                return WBI.mallocAddress(getInstance(), callData.getTxTo());
             }
             case TX_HASH: {
-                return WBI.mallocBytes(getInstance(), callData.getTxHash().getBytes());
+                return WBI.mallocBytes(getInstance(), callData.getTxHash());
             }
             case CONTRACT_ADDRESS: {
                 return WBI
-                        .mallocAddress(getInstance(), callData.getTo().getBytes());
+                        .mallocAddress(getInstance(), callData.getTo());
             }
             case CONTRACT_NONCE: {
                 return backend.getNonce(callData.getTo());
             }
             case CONTRACT_CREATED_BY: {
-                return WBI.mallocAddress(getInstance(), backend.getContractCreatedBy(callData.getTo()).getBytes());
+                return WBI.mallocAddress(getInstance(), backend.getContractCreatedBy(callData.getTo()));
             }
             case ACCOUNT_NONCE: {
                 byte[] addr = (byte[]) WBI
@@ -93,11 +84,11 @@ public class ContextHost extends HostFunction {
                 return WBI.malloc(getInstance(), backend.getBalance(HexBytes.fromBytes(addr)));
             }
             case MSG_SENDER: {
-                return WBI.mallocAddress(getInstance(), callData.getCaller().getBytes());
+                return WBI.mallocAddress(getInstance(), callData.getCaller());
             }
             case MSG_AMOUNT: {
                 return
-                        WBI.malloc(getInstance(), callData.getAmount());
+                        WBI.malloc(getInstance(), callData.getValue());
             }
             case CONTRACT_CODE: {
                 byte[] addr = (byte[]) WBI
@@ -113,8 +104,6 @@ public class ContextHost extends HostFunction {
         HEADER_PARENT_HASH,
         HEADER_CREATED_AT,
         HEADER_HEIGHT,
-        TX_TYPE,
-        TX_CREATED_AT,
         TX_NONCE,
         TX_ORIGIN,
         TX_GAS_PRICE,

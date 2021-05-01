@@ -152,6 +152,10 @@ public class Uint256 extends Number {
         return Arrays.copyOf(data, data.length);
     }
 
+    public HexBytes getDataHex() {
+        return HexBytes.fromBytes(getData());
+    }
+
     /**
      * Returns copy of instance data
      *

@@ -198,17 +198,17 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
         vrfMiner.setGenesis(genesis);
         vrfMiner.setTransactionPool(getTransactionPool());
         setMiner(vrfMiner);
-        vrfMiner.setContractStorageTrie(getContractStorageTrie());
+//        vrfMiner.setContractStorageTrie(getContractStorageTrie());
 
 //        setConfirmedBlocksProvider(unconfirmed -> unconfirmed);
         // ------- Need well implementation.
         AccountTrie trie = (AccountTrie) getAccountTrie();
-        ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository(), trie,
-                getContractStorageTrie(), vrfConfig);
+//        ValidatorManager validatorManager = new ValidatorManager(this.getSunflowerRepository(), trie,
+//                getContractStorageTrie(), vrfConfig);
 
-        vrfStateMachine = new VrfStateMachine(validatorManager, new PendingVrfState(validatorManager),
-                new VrfValidator(getAccountTrie()));
-        vrfMiner.setVrfStateMachine(vrfStateMachine);
+//        vrfStateMachine = new VrfStateMachine(validatorManager, new PendingVrfState(validatorManager),
+//                new VrfValidator(getAccountTrie()));
+//        vrfMiner.setVrfStateMachine(vrfStateMachine);
 
         // register miner accounts
 //        getStateRepository().register(getGenesisBlock(),
@@ -218,14 +218,14 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
 
     private void setGenesisCollateral(List<MinerInfo> miners, VrfPreBuiltContract vrfBiosContractUpdater) {
         long total = 0;
-        Map<byte[], byte[]> storage = vrfBiosContractUpdater.getGenesisStorage();
-        Account contractAccount = vrfBiosContractUpdater.getGenesisAccount();
-        for (MinerInfo miner : miners) {
-            storage.put(miner.address.getBytes(), ByteUtil.longToBytes(miner.collateral));
-            total += miner.collateral;
-            contractAccount.setBalance(contractAccount.getBalance().safeAdd(Uint256.of(miner.collateral)));
-        }
-        storage.put(VrfPreBuiltContract.TOTAL_KEY, ByteUtil.longToBytes(total));
+//        Map<byte[], byte[]> storage = vrfBiosContractUpdater.getGenesisStorage();
+//        Account contractAccount = vrfBiosContractUpdater.getGenesisAccount();
+//        for (MinerInfo miner : miners) {
+//            storage.put(miner.address.getBytes(), ByteUtil.longToBytes(miner.collateral));
+//            total += miner.collateral;
+//            contractAccount.setBalance(contractAccount.getBalance().safeAdd(Uint256.of(miner.collateral)));
+//        }
+//        storage.put(VrfPreBuiltContract.TOTAL_KEY, ByteUtil.longToBytes(total));
     }
 
     @Override

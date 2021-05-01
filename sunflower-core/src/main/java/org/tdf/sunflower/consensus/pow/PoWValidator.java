@@ -1,5 +1,6 @@
 package org.tdf.sunflower.consensus.pow;
 
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.types.Block;
@@ -23,13 +24,13 @@ public class PoWValidator extends AbstractValidator {
         if (block.getVersion() != PoW.BLOCK_VERSION) {
             return ValidateResult.fault("version not match");
         }
-        byte[] nbits = poW.getNBits(dependency.getStateRoot().getBytes());
-        if (PoW.compare(PoW.getPoWHash(block), nbits) > 0)
+        Uint256 nbits = poW.getNBits(dependency.getStateRoot());
+        if (PoW.compare(PoW.getPoWHash(block), nbits.getData()) > 0)
             return ValidateResult.fault(
                     String.format(
                             "nbits validate failed hash = %s, nbits = %s",
                             HexBytes.fromBytes(PoW.getPoWHash(block)),
-                            HexBytes.fromBytes(nbits)
+                            HexBytes.fromBytes(nbits.getData())
                     )
             );
         return res;
@@ -37,9 +38,6 @@ public class PoWValidator extends AbstractValidator {
 
     @Override
     public ValidateResult validate(Block dependency, Transaction transaction) {
-        if (transaction.getVersion() != PoW.TRANSACTION_VERSION) {
-            return ValidateResult.fault("transaction version not match");
-        }
         return ValidateResult.success();
     }
 }

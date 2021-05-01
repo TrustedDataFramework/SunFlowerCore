@@ -212,7 +212,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
             if (h > 0) {
                 getCanonicalBlock(h).get().getBody()
                         .stream().skip(1)
-                        .forEach(tx -> eventBus.publish(new TransactionConfirmed(tx.getHash())));
+                        .forEach(tx -> eventBus.publish(new TransactionConfirmed(tx.getHashHex())));
             }
         }
     }
@@ -281,7 +281,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     private void writeBlockNoReset(Block block) {
         byte[] v = accountTrie.getTrieStore().get(block.getStateRoot().getBytes());
 
-        if (!block.getStateRoot().equals(HexBytes.fromBytes(accountTrie.getTrie().getNullHash()))
+        if (!block.getStateRoot().equals(accountTrie.getTrie().getNullHash())
                 && Store.IS_NULL.test(v)
         ) {
             throw new RuntimeException("unexpected error: account trie " + block.getStateRoot() + " not synced");
@@ -292,17 +292,18 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
 
         for (Transaction t : block.getBody()) {
-            transactionsStore.put(t.getHash().getBytes(), t);
-            Set<HexBytes> headerHashes = Optional.ofNullable(transactionIncludes.get(t.getHash().getBytes()))
+            transactionsStore.put(t.getHash(), t);
+            Set<HexBytes> headerHashes = Optional.ofNullable(transactionIncludes.get(t.getHash()))
                     .map(x -> new HashSet<>(Arrays.asList(x)))
                     .orElse(new HashSet<>());
             headerHashes.add(block.getHash());
-            transactionIncludes.put(t.getHash().getBytes(), headerHashes.toArray(new HexBytes[0]));
+            transactionIncludes.put(t.getHash(), headerHashes.toArray(new HexBytes[0]));
         }
 
 
-        HexBytes[] txHashes = block.getBody().stream().map(Transaction::getHash)
+        HexBytes[] txHashes = block.getBody().stream().map(Transaction::getHashHex)
                 .toArray(HexBytes[]::new);
+
         transactionsRoot.put(
                 block.getTransactionsRoot().getBytes(),
                 txHashes

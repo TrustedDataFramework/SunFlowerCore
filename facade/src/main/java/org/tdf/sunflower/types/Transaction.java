@@ -1,19 +1,16 @@
 package org.tdf.sunflower.types;
 
 import lombok.Builder;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.crypto.ECDSASignature;
 import org.tdf.common.crypto.ECKey;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.util.BigIntegers;
-import org.tdf.common.util.ByteUtil;
-import org.tdf.common.util.HashUtil;
-import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPElement;
-import org.tdf.rlp.RLPList;
+import org.tdf.common.types.Uint256;
+import org.tdf.common.util.*;
+import org.tdf.rlp.*;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
@@ -23,8 +20,26 @@ import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.tdf.common.util.ByteUtil.ZERO_BYTE_ARRAY;
 
 @Slf4j(topic = "tx")
+@RLPEncoding(Transaction.TransactionEncoder.class)
+@RLPDecoding(Transaction.TransactionDecoder.class)
 public class Transaction {
-    public static byte[] calcTxTrie(List<Transaction> transactions) {
+    public static class TransactionEncoder implements RLPEncoder<Transaction> {
+
+        @Override
+        public RLPElement encode(@NonNull Transaction o) {
+            return RLPElement.fromEncoded(o.getEncoded());
+        }
+    }
+
+    public static class TransactionDecoder implements RLPDecoder<Transaction> {
+
+        @Override
+        public Transaction decode(@NonNull RLPElement element) {
+            return new Transaction(element.getEncoded());
+        }
+    }
+
+    public static HexBytes calcTxTrie(List<Transaction> transactions) {
         Trie<byte[], byte[]> txsState = Trie
                 .<byte[], byte[]>builder()
                 .keyCodec(Codec.identity())
@@ -33,13 +48,13 @@ public class Transaction {
                 .hashFunction(HashUtil::sha3).build();
 
         if (transactions == null || transactions.isEmpty())
-            return HashUtil.EMPTY_TRIE_HASH;
+            return HexBytes.fromBytes(HashUtil.EMPTY_TRIE_HASH);
 
         for (int i = 0; i < transactions.size(); i++) {
             txsState.put(RLPCodec.encodeInt(i), transactions.get(i).getEncoded());
         }
 
-        return txsState.getRootHash();
+        return txsState.commit();
     }
 
     public static final int HASH_LENGTH = 32;
@@ -234,7 +249,7 @@ public class Transaction {
             } else {
                 log.debug("RLP encoded tx is not signed!");
             }
-            this.hash = CryptoContext.keccak256(rlpEncoded);
+            this.hash = HashUtil.sha3(rlpEncoded);
             this.parsed = true;
         } catch (Exception e) {
             throw new RuntimeException("Error on parsing RLP", e);
@@ -272,16 +287,24 @@ public class Transaction {
         return hash;
     }
 
+    public HexBytes getHashHex() {
+        return HexBytes.fromBytes(getHash());
+    }
+
     public byte[] getRawHash() {
         rlpParse();
         if (rawHash != null) return rawHash;
         byte[] plainMsg = this.getEncodedRaw();
-        return rawHash = CryptoContext.keccak256(plainMsg);
+        return rawHash = HashUtil.sha3(plainMsg);
     }
 
     public byte[] getNonce() {
         rlpParse();
         return nonce;
+    }
+
+    public long getNonceAsLong() {
+        return ByteUtil.bytesToBigInteger(getNonce()).longValueExact();
     }
 
     protected void setNonce(byte[] nonce) {
@@ -299,6 +322,10 @@ public class Transaction {
         return value;
     }
 
+    public Uint256 getValueAsUint() {
+        return Uint256.of(getValue());
+    }
+
     protected void setValue(byte[] value) {
         this.value = value;
         parsed = true;
@@ -307,6 +334,10 @@ public class Transaction {
     public byte[] getReceiveAddress() {
         rlpParse();
         return receiveAddress;
+    }
+
+    public HexBytes getReceiveHex() {
+        return HexBytes.fromBytes(getReceiveAddress());
     }
 
     protected void setReceiveAddress(byte[] receiveAddress) {
@@ -319,6 +350,10 @@ public class Transaction {
         return gasPrice;
     }
 
+    public Uint256 getGasPriceAsU256() {
+        return Uint256.of(getGasPrice());
+    }
+
     protected void setGasPrice(byte[] gasPrice) {
         this.gasPrice = gasPrice;
         parsed = true;
@@ -327,6 +362,10 @@ public class Transaction {
     public byte[] getGasLimit() {
         rlpParse();
         return gasLimit;
+    }
+
+    public Uint256 getGasLimitAsU256() {
+        return Uint256.of(getGasLimit());
     }
 
     protected void setGasLimit(byte[] gasLimit) {
@@ -359,6 +398,10 @@ public class Transaction {
     public byte[] getData() {
         rlpParse();
         return data;
+    }
+
+    public HexBytes getDataHex() {
+        return HexBytes.fromBytes(getData());
     }
 
     protected void setData(byte[] data) {
@@ -396,6 +439,10 @@ public class Transaction {
             log.error(e.getMessage(), e);
         }
         return null;
+    }
+
+    public HexBytes getSenderHex() {
+        return HexBytes.fromBytes(getSender());
     }
 
     public Integer getChainId() {
@@ -485,13 +532,7 @@ public class Transaction {
 
         if (rlpEncoded != null) return rlpEncoded;
 
-        // parse null as 0 for nonce
-        byte[] nonce = null;
-        if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
-            nonce = RLPCodec.encodeBytes(null);
-        } else {
-            nonce = RLPCodec.encodeBytes(this.nonce);
-        }
+        byte[] nonce  = RLPCodec.encodeBytes(this.nonce);
         byte[] gasPrice = RLPCodec.encodeBytes(this.gasPrice);
         byte[] gasLimit = RLPCodec.encodeBytes(this.gasLimit);
         byte[] receiveAddress = RLPCodec.encodeBytes(this.receiveAddress);
@@ -523,7 +564,7 @@ public class Transaction {
                 receiveAddress, value, data, v, r, s)
         );
 
-        this.hash = CryptoContext.keccak256(rlpEncoded);
+        this.hash = HashUtil.sha3(rlpEncoded);
 
         return rlpEncoded;
     }

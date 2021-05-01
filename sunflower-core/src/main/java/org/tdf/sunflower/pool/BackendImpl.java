@@ -28,7 +28,7 @@ public class BackendImpl implements Backend {
     private BackendImpl parentBackend;
 
     private Trie<HexBytes, Account> trie;
-    private Trie<byte[], byte[]> contractStorageTrie;
+    private Trie<HexBytes, HexBytes> contractStorageTrie;
 
     private Map<HexBytes, Account> modifiedAccounts;
     private Map<HexBytes, Map<HexBytes, HexBytes>> modifiedStorage;
@@ -36,8 +36,8 @@ public class BackendImpl implements Backend {
     private Map<HexBytes, Bios> bios;
     private boolean isStatic;
 
-    private Store<byte[], byte[]> codeStore;
-    private Map<HexBytes, byte[]> codeCache;
+    private Store<HexBytes, HexBytes> codeStore;
+    private Map<HexBytes, HexBytes> codeCache;
     private Map<HexBytes, List<Map.Entry<String, RLPList>>> events;
     private long headerCreatedAt;
 
@@ -82,7 +82,7 @@ public class BackendImpl implements Backend {
     }
 
     @Override
-    public byte[] merge() {
+    public HexBytes merge() {
         Map<HexBytes, Account> accounts = new HashMap<>();
         Map<HexBytes, Map<HexBytes, HexBytes>> storage = new HashMap<>();
         mergeInternal(accounts, storage);
@@ -91,21 +91,21 @@ public class BackendImpl implements Backend {
         modified.addAll(accounts.keySet());
         modified.addAll(storage.keySet());
 
-        Trie<HexBytes, Account> tmpTrie = trie.revert(parent.getStateRoot().getBytes());
+        Trie<HexBytes, Account> tmpTrie = trie.revert(parent.getStateRoot());
 
         for (HexBytes addr : modified) {
             Account a = accounts.get(addr);
             if (a == null)
                 a = Account.emptyAccount(addr, Uint256.ZERO);
-            Trie<byte[], byte[]> s = contractStorageTrie.revert(a.getStorageRoot());
+            Trie<HexBytes, HexBytes> s = contractStorageTrie.revert(a.getStorageRoot());
 
             Map<HexBytes, HexBytes> map = storage.getOrDefault(addr, Collections.emptyMap());
 
             for (Map.Entry<HexBytes, HexBytes> entry : map.entrySet()) {
                 if (entry.getValue() == null || entry.getValue().size() == 0) {
-                    s.remove(entry.getKey().getBytes());
+                    s.remove(entry.getKey());
                 } else {
-                    s.put(entry.getKey().getBytes(), entry.getValue().getBytes());
+                    s.put(entry.getKey(), entry.getValue());
                 }
             }
 
@@ -113,8 +113,8 @@ public class BackendImpl implements Backend {
             tmpTrie.put(addr, a);
         }
 
-        for (Map.Entry<HexBytes, byte[]> entry : codeCache.entrySet()) {
-            codeStore.put(entry.getKey().getBytes(), entry.getValue());
+        for (Map.Entry<HexBytes, HexBytes> entry : codeCache.entrySet()) {
+            codeStore.put(entry.getKey(), entry.getValue());
         }
 
         return tmpTrie.commit();
@@ -189,26 +189,26 @@ public class BackendImpl implements Backend {
     }
 
     @Override
-    public void dbSet(HexBytes address, @NonNull byte[] key, @NonNull byte[] value) {
-        if (key.length == 0)
+    public void dbSet(HexBytes address, @NonNull HexBytes key, @NonNull HexBytes value) {
+        if (key.size() == 0)
             throw new RuntimeException("invalid key length = 0");
         modifiedStorage.putIfAbsent(address, new HashMap<>());
-        modifiedStorage.get(address).put(HexBytes.fromBytes(key), HexBytes.fromBytes(value));
+        modifiedStorage.get(address).put(key, value);
     }
 
     @Override
-    public byte[] dbGet(HexBytes address, byte[] key) {
-        if (key.length == 0)
+    public HexBytes dbGet(HexBytes address, HexBytes key) {
+        if (key.size() == 0)
             throw new RuntimeException("invalid key length = 0");
 
         // if has modified
         if (modifiedStorage.containsKey(address)) {
             // if it is delete mark
-            HexBytes val = modifiedStorage.get(address).get(HexBytes.fromBytes(key));
+            HexBytes val = modifiedStorage.get(address).get(key);
 
             if (val != null) {
                 // delete mark
-                return val.getBytes();
+                return val;
             }
 
         }
@@ -220,18 +220,18 @@ public class BackendImpl implements Backend {
         Account a = trie.get(address);
 
         if (a == null)
-            return HexBytes.EMPTY_BYTES;
+            return HexBytes.empty();
 
-        byte[] v = contractStorageTrie.revert(a.getStorageRoot()).get(key);
-        return v == null ? HexBytes.EMPTY_BYTES : v;
+        HexBytes v = contractStorageTrie.revert(a.getStorageRoot()).get(key);
+        return v == null ? HexBytes.empty() : v;
     }
 
     @Override
-    public boolean dbHas(HexBytes address, @NonNull byte[] key) {
-        if (key.length == 0)
+    public boolean dbHas(HexBytes address, @NonNull HexBytes key) {
+        if (key.size() == 0)
             throw new RuntimeException("invalid key length = 0");
-        byte[] val = dbGet(address, key);
-        return val != null && val.length != 0;
+        HexBytes val = dbGet(address, key);
+        return val != null && val.size() != 0;
     }
 
     @Override
@@ -254,35 +254,35 @@ public class BackendImpl implements Backend {
     }
 
     @Override
-    public void dbRemove(HexBytes address, @NonNull byte[] key) {
-        if (key.length == 0)
+    public void dbRemove(HexBytes address, @NonNull HexBytes key) {
+        if (key.size() == 0)
             throw new RuntimeException("invalid key length = 0");
-        dbSet(address, key, HexBytes.EMPTY_BYTES);
+        dbSet(address, key, HexBytes.empty());
     }
 
     @Override
-    public byte[] getCode(HexBytes address) {
+    public HexBytes getCode(HexBytes address) {
         Account a = modifiedAccounts.get(address);
         if (a == null)
             a = lookup(address).clone();
 
-        if (a.getContractHash() == null || a.getContractHash().length == 0)
-            return HexBytes.EMPTY_BYTES;
-        byte[] code = codeCache.get(HexBytes.fromBytes(a.getContractHash()));
-        if (code != null && code.length != 0)
+        if (a.getContractHash() == null || a.getContractHash().size() == 0)
+            return HexBytes.empty();
+        HexBytes code = codeCache.get(a.getContractHash());
+        if (code != null && code.size() != 0)
             return code;
         code = codeStore.get(a.getContractHash());
-        return code == null ? HexBytes.EMPTY_BYTES : code;
+        return code == null ? HexBytes.empty() : code;
     }
 
     @Override
-    public void setCode(HexBytes address, byte[] code) {
-        byte[] hash = CryptoContext.hash(code);
+    public void setCode(HexBytes address, HexBytes code) {
+        byte[] hash = CryptoContext.hash(code.getBytes());
         if (modifiedAccounts.containsKey(address)) {
-            modifiedAccounts.get(address).setContractHash(hash);
+            modifiedAccounts.get(address).setContractHash(HexBytes.fromBytes(hash));
         } else {
             Account a = lookup(address).clone();
-            a.setContractHash(hash);
+            a.setContractHash(HexBytes.fromBytes(hash));
             modifiedAccounts.put(address, a);
         }
         codeCache.put(HexBytes.fromBytes(hash), code);

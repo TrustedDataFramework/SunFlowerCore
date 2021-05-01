@@ -12,7 +12,6 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.TransactionPoolConfig;
-import org.tdf.sunflower.controller.WebSocket;
 import org.tdf.sunflower.events.*;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.PendingTransactionValidator;
@@ -63,22 +62,6 @@ public class TransactionPoolImpl implements TransactionPool {
         this.transactionRepository = repository;
         this.mCache = new HashMap<>();
 
-        this.eventBus.subscribe(TransactionOutput.class, e -> {
-           e.getResults().forEach((h, r) -> {
-               WebSocket.broadCastIncluded(h, e.getBlockHeight(), e.getBlockHash(), r.getGasUsed(), r.getReturns(), r.getEvents());
-           });
-           e.getReasons().forEach(WebSocket::broadcastDrop);
-           e.getEvents().forEach((addr, events) -> {
-               events.forEach(event -> {
-                   WebSocket.broadcastEvent(addr.getBytes(), event.getKey(), event.getValue());
-               });
-           });
-        });
-
-
-        this.eventBus.subscribe(TransactionConfirmed.class, (e) -> {
-            WebSocket.broadcastPendingOrConfirm(e.getTxHash(), Transaction.Status.CONFIRMED);
-        });
     }
 
     public void setEngine(ConsensusEngine engine) {
@@ -95,9 +78,8 @@ public class TransactionPoolImpl implements TransactionPool {
             Predicate<TransactionInfo> lambda =
                     info -> {
                         boolean remove = (now - info.receivedAt) / 1000 > config.getExpiredIn();
-                        if (remove && !transactionRepository.containsTransaction(info.tx.getHash().getBytes())) {
-                            WebSocket.broadcastDrop(info.tx.getHash(), "invalid nonce");
-                            dropped.put(info.tx.getHash(), info.tx);
+                        if (remove && !transactionRepository.containsTransaction(info.tx.getHash())) {
+                            dropped.put(info.tx.getHashHex(), info.tx);
                         }
                         return remove;
                     };
@@ -116,30 +98,23 @@ public class TransactionPoolImpl implements TransactionPool {
         try {
             List<Transaction> newCollected = new ArrayList<>(transactions.size());
             for (Transaction transaction : transactions) {
-                if (transaction.getGasPrice().compareTo(Uint256.of(ApplicationConstants.VM_GAS_PRICE)) < 0)
+                if (transaction.getGasPriceAsU256().compareTo(Uint256.of(ApplicationConstants.VM_GAS_PRICE)) < 0)
                     throw new RuntimeException("transaction pool: gas price of tx less than vm gas price " + ApplicationConstants.VM_GAS_PRICE);
-                if (transaction.getAmount() == null)
-                    transaction.setAmount(Uint256.ZERO);
-                if (transaction.getGasPrice() == null)
-                    transaction.setGasPrice(Uint256.ZERO);
 
                 TransactionInfo info = new TransactionInfo(System.currentTimeMillis(), transaction);
-                if (cache.contains(info) || dropped.asMap().containsKey(transaction.getHash()))
+                if (cache.contains(info) || dropped.asMap().containsKey(transaction.getHashHex()))
                     continue;
-                ValidateResult res = transaction.basicValidate();
-                if (!res.isSuccess()) {
-                    log.error(res.getReason());
-                    errors.add(res.getReason());
-                    WebSocket.broadcastDrop(transaction.getHash(), res.getReason());
+                try  { transaction.verify(); }
+                catch (Exception e) {
+                    log.error(e.getMessage());
                     continue;
                 }
-                res = validator.validate(best, transaction);
+                ValidateResult res = validator.validate(best, transaction);
                 if (res.isSuccess()) {
                     cache.add(info);
-                    mCache.put(info.tx.getHash(), info);
+                    mCache.put(info.tx.getHashHex(), info);
                     newCollected.add(transaction);
                 } else {
-                    WebSocket.broadcastDrop(transaction.getHash(), res.getReason());
                     log.error(res.getReason());
                     errors.add(res.getReason());
                 }
@@ -147,9 +122,7 @@ public class TransactionPoolImpl implements TransactionPool {
             if (!errors.isEmpty())
                 newCollected = Collections.emptyList();
 
-            for (Transaction tx : newCollected) {
-                WebSocket.broadcastPendingOrConfirm(tx.getHash(), Transaction.Status.PENDING);
-            }
+
 
             if (!newCollected.isEmpty())
                 eventBus.publish(new NewTransactionsCollected(newCollected));
@@ -171,24 +144,23 @@ public class TransactionPoolImpl implements TransactionPool {
             while (count < ((limit < 0) ? Long.MAX_VALUE : limit) && it.hasNext()) {
                 Transaction t = it.next().tx;
                 long prevNonce =
-                        nonceMap.containsKey(t.getFromAddress()) ?
-                                nonceMap.get(t.getFromAddress()) :
-                                Optional.ofNullable(accountStore.get(t.getFromAddress()))
+                        nonceMap.containsKey(t.getSenderHex()) ?
+                                nonceMap.get(t.getSenderHex()) :
+                                Optional.ofNullable(accountStore.get(t.getSenderHex()))
                                         .map(Account::getNonce)
                                         .orElse(0L);
-                if (t.getNonce() <= prevNonce) {
+                if (t.getNonceAsLong() <= prevNonce) {
                     it.remove();
-                    mCache.remove(t.getHash());
-                    if (!transactionRepository.containsTransaction(t.getHash().getBytes()))
-                        dropped.put(t.getHash(), t);
+                    mCache.remove(t.getHashHex());
+                    if (!transactionRepository.containsTransaction(t.getHash()))
+                        dropped.put(t.getHashHex(), t);
                     log.error("drop transaction {}, reason = invalid nonce", t.getHash());
-                    WebSocket.broadcastDrop(t.getHash(), "invalid nonce");
                     continue;
                 }
-                if (t.getNonce() != prevNonce + 1) {
+                if (t.getNonceAsLong() != prevNonce + 1) {
                     continue;
                 }
-                nonceMap.put(t.getFromAddress(), t.getNonce());
+                nonceMap.put(t.getSenderHex(), t.getNonceAsLong());
                 ret.add(t);
                 it.remove();
                 count++;
@@ -229,7 +201,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public void drop(Transaction transaction) {
-        dropped.asMap().put(transaction.getHash(), transaction);
+        dropped.asMap().put(transaction.getHashHex(), transaction);
     }
 
     @SneakyThrows
@@ -277,13 +249,13 @@ public class TransactionPoolImpl implements TransactionPool {
 
         @Override
         public int compareTo(TransactionInfo o) {
-            int cmp = tx.getFrom().compareTo(o.tx.getFrom());
+            int cmp = tx.getSenderHex().compareTo(o.tx.getSenderHex());
             if (cmp != 0) return cmp;
-            cmp = Long.compare(tx.getNonce(), o.tx.getNonce());
+            cmp = Long.compare(tx.getNonceAsLong(), o.tx.getNonceAsLong());
             if (cmp != 0) return cmp;
-            cmp = -tx.getGasPrice().compareTo(o.tx.getGasPrice());
+            cmp = -tx.getGasPriceAsU256().compareTo(o.tx.getGasPriceAsU256());
             if (cmp != 0) return cmp;
-            return tx.getHash().compareTo(o.tx.getHash());
+            return tx.getHashHex().compareTo(o.tx.getHashHex());
         }
     }
 }

@@ -3,6 +3,7 @@ package org.tdf.common.trie;
 import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
+import org.tdf.common.util.HexBytes;
 
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -21,7 +22,7 @@ abstract class AbstractTrie<K, V> implements Trie<K, V> {
 
     abstract void removeBytes(byte[] data);
 
-    abstract Map<byte[], byte[]> getProofInternal(byte[] key);
+    abstract Map<HexBytes, HexBytes> getProofInternal(byte[] key);
 
     @Override
     public void put(@NonNull K k, @NonNull V val) {
@@ -52,7 +53,7 @@ abstract class AbstractTrie<K, V> implements Trie<K, V> {
 
 
     @Override
-    public Map<byte[], byte[]> getProof(K k) {
+    public Map<HexBytes, HexBytes> getProof(K k) {
         return getProofInternal(getKCodec().getEncoder().apply(k));
     }
 }

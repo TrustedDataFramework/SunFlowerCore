@@ -147,7 +147,8 @@ public class PoAMiner extends AbstractMiner {
                 .data(publicKey.getBytes())
                 .receiveAddress(minerAddress.getBytes())
                 .gasPrice(EMPTY_BYTE_ARRAY)
-                .gasLimit()
+                .gasLimit(EMPTY_BYTE_ARRAY)
+                .build();
     }
 
 }

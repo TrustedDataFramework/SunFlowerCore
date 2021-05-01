@@ -117,9 +117,9 @@ public class VrfMiner extends AbstractMiner {
         if (parent.getHeight() == 0) {
             return Optional.of(new Proposer(genesis.miners.get(0).address, 0, Long.MAX_VALUE));
         }
-        if (parent.getBody() == null || parent.getBody().size() == 0 || parent.getBody().get(0).getTo() == null)
+        if (parent.getBody() == null || parent.getBody().size() == 0 || parent.getBody().get(0).getReceiveAddress() == null)
             return Optional.empty();
-        HexBytes prev = parent.getBody().get(0).getTo();
+        HexBytes prev = parent.getBody().get(0).getReceiveHex();
         int prevIndex = genesis.miners.stream().map(x -> x.address).collect(Collectors.toList()).indexOf(prev);
         if (prevIndex < 0) {
             return Optional.empty();
@@ -143,10 +143,7 @@ public class VrfMiner extends AbstractMiner {
     }
 
     public Transaction createCoinBase(long height) {
-        Transaction tx = Transaction.builder().version(PoAConstants.TRANSACTION_VERSION)
-                .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(HexBytes.EMPTY)
-                .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(HexBytes.EMPTY).to(minerAddress)
-                .signature(HexBytes.EMPTY).build();
+        Transaction tx = Transaction.builder().build();
         return tx;
     }
 

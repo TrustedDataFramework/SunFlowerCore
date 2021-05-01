@@ -2,6 +2,7 @@ package org.tdf.common.trie;
 
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
+import org.tdf.common.util.HexBytes;
 
 import java.util.Map;
 import java.util.Set;
@@ -32,12 +33,12 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public Trie<K, V> revert(byte[] rootHash, Store<byte[], byte[]> store) {
+    public Trie<K, V> revert(HexBytes rootHash, Store<byte[], byte[]> store) {
         return new SecureTrie<>(delegate.revert(rootHash, store), hashFunction);
     }
 
     @Override
-    public Trie<K, V> revert(byte[] rootHash) {
+    public Trie<K, V> revert(HexBytes rootHash) {
         return new SecureTrie<>(delegate.revert(rootHash), hashFunction);
     }
 
@@ -47,27 +48,27 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public byte[] commit() {
+    public HexBytes commit() {
         return delegate.commit();
     }
 
     @Override
-    public Set<byte[]> dumpKeys() {
+    public Set<HexBytes> dumpKeys() {
         return delegate.dumpKeys();
     }
 
     @Override
-    public Map<byte[], byte[]> dump() {
+    public Map<HexBytes, HexBytes> dump() {
         return delegate.dump();
     }
 
     @Override
-    public byte[] getRootHash() {
+    public HexBytes getRootHash() {
         return delegate.getRootHash();
     }
 
     @Override
-    public byte[] getNullHash() {
+    public HexBytes getNullHash() {
         return delegate.getNullHash();
     }
 
@@ -123,7 +124,7 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public Map<byte[], byte[]> getProofInternal(byte[] key) {
+    public Map<HexBytes, HexBytes> getProofInternal(byte[] key) {
         return delegate.getProofInternal(hashFunction.apply(key));
     }
 

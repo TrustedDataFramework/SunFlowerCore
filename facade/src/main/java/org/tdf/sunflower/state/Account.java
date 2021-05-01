@@ -1,6 +1,5 @@
 package org.tdf.sunflower.state;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,11 +8,6 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
 import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.vm.ContractABI;
-
-import java.util.Collections;
-import java.util.List;
-
 
 @AllArgsConstructor
 @Builder
@@ -34,10 +28,10 @@ public class Account {
     private HexBytes createdBy;
     // hash code of contract code
     // if the account contains none contract, contract hash will be null
-    private byte[] contractHash;
+    private HexBytes contractHash;
     // root hash of contract db
     // if the account is not contract account, this field will be null
-    private byte[] storageRoot;
+    private HexBytes storageRoot;
 
     private Account() {
 
@@ -51,7 +45,7 @@ public class Account {
      */
     public static Account emptyAccount(HexBytes address, Uint256 balance) {
         if (address.size() != ADDRESS_SIZE) throw new RuntimeException("address size should be " + ADDRESS_SIZE);
-        return new Account(address, 0, balance, HexBytes.EMPTY, HexBytes.EMPTY_BYTES, CryptoContext.getEmptyTrieRoot());
+        return new Account(address, 0, balance, HexBytes.EMPTY, HexBytes.empty(), CryptoContext.getEmptyTrieRoot());
     }
 
 

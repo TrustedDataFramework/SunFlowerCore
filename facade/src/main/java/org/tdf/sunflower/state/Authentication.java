@@ -9,8 +9,8 @@ import org.tdf.common.store.PrefixStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.RLPUtil;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
@@ -22,15 +22,17 @@ import java.util.*;
  * used for node join/exit
  */
 public class Authentication implements PreBuiltContract {
+    public static final String ABI_JSON = "";
 
-    static final byte[] NODES_KEY = "nodes".getBytes(StandardCharsets.US_ASCII);
-    static final byte[] PENDING_NODES_KEY = "pending".getBytes(StandardCharsets.US_ASCII);
+
+    static final HexBytes NODES_KEY = HexBytes.fromBytes("nodes".getBytes(StandardCharsets.US_ASCII));
+    static final HexBytes PENDING_NODES_KEY = HexBytes.fromBytes("pending".getBytes(StandardCharsets.US_ASCII));
     private final Collection<? extends HexBytes> nodes;
     private final HexBytes contractAddress;
     @Setter
     private StateTrie<HexBytes, Account> accountTrie;
     @Setter
-    private Trie<byte[], byte[]> contractStorageTrie;
+    private Trie<HexBytes, HexBytes> contractStorageTrie;
 
     public Authentication(
             @NonNull Collection<? extends HexBytes> nodes,
@@ -47,20 +49,22 @@ public class Authentication implements PreBuiltContract {
         return ret;
     }
 
-    private byte[] getValue(byte[] stateRoot, byte[] key) {
+    private HexBytes getValue(HexBytes stateRoot, HexBytes key) {
         Account a = accountTrie.get(stateRoot, this.contractAddress);
-        Store<byte[], byte[]> db = contractStorageTrie.revert(a.getStorageRoot());
+        Store<HexBytes, HexBytes> db = contractStorageTrie.revert(a.getStorageRoot());
         return db.get(key);
     }
 
-    public List<HexBytes> getNodes(byte[] stateRoot) {
-        byte[] v = getValue(stateRoot, NODES_KEY);
-        return Arrays.asList(RLPCodec.decode(v, HexBytes[].class));
+    public List<HexBytes> getNodes(HexBytes stateRoot) {
+        HexBytes v = getValue(stateRoot, NODES_KEY);
+        return Arrays.asList(
+                RLPUtil.decode(v, HexBytes[].class)
+        );
     }
 
-    public Map<HexBytes, TreeSet<HexBytes>> getPending(byte[] stateRoot) {
+    public Map<HexBytes, TreeSet<HexBytes>> getPending(HexBytes stateRoot) {
         Account a = accountTrie.get(stateRoot, contractAddress);
-        Store<byte[], byte[]> contractStorage = contractStorageTrie.revert(a.getStorageRoot());
+        Store<HexBytes, HexBytes> contractStorage = contractStorageTrie.revert(a.getStorageRoot());
         Map<HexBytes, TreeSet<HexBytes>> ret = new HashMap<>();
         for (Map.Entry<HexBytes, TreeSet<HexBytes>> entry : getPendingStore(contractStorage)) {
             ret.put(entry.getKey(), entry.getValue());
@@ -69,7 +73,7 @@ public class Authentication implements PreBuiltContract {
     }
 
     @SneakyThrows
-    public PrefixStore<HexBytes, TreeSet<HexBytes>> getPendingStore(Store<byte[], byte[]> contractStorage) {
+    public PrefixStore<HexBytes, TreeSet<HexBytes>> getPendingStore(Store<HexBytes, HexBytes> contractStorage) {
         return new PrefixStore<>(
                 contractStorage,
                 PENDING_NODES_KEY,
@@ -82,7 +86,7 @@ public class Authentication implements PreBuiltContract {
     }
 
 
-    private byte[] getByNodesKey(Backend backend) {
+    private HexBytes getByNodesKey(Backend backend) {
         return backend.dbGet(contractAddress, NODES_KEY);
     }
 
@@ -94,11 +98,13 @@ public class Authentication implements PreBuiltContract {
 
     @Override
     @SneakyThrows
-    public void update(Backend backend, CallData callData) {
+    public byte[] call(Backend backend, CallData callData) {
         HexBytes payload = callData.getData();
 
         Method m = Method.values()[callData.getData().get(0)];
-        List<HexBytes> nodes = new ArrayList<>(Arrays.asList(RLPCodec.decode(getByNodesKey(backend), HexBytes[].class)));
+        List<HexBytes> nodes = new ArrayList<>(
+                Arrays.asList(RLPCodec.decode(getByNodesKey(backend).getBytes(), HexBytes[].class))
+        );
         Store<HexBytes, TreeSet<HexBytes>> pending = getPendingStore(backend.getAsStore(contractAddress));
 
         switch (m) {
@@ -119,7 +125,7 @@ public class Authentication implements PreBuiltContract {
                 if (callData.getTo().equals(Constants.VALIDATOR_CONTRACT_ADDR)) {
                     pending.remove(toApprove);
                     nodes.add(toApprove);
-                    backend.dbSet(contractAddress, NODES_KEY, RLPCodec.encode(nodes));
+                    backend.dbSet(contractAddress, NODES_KEY, HexBytes.fromBytes(RLPCodec.encode(nodes)));
                     break;
                 }
 
@@ -144,7 +150,7 @@ public class Authentication implements PreBuiltContract {
                     pending.put(toApprove, approves);
                 }
 
-                backend.dbSet(contractAddress, NODES_KEY, RLPCodec.encode(nodes));
+                backend.dbSet(contractAddress, NODES_KEY, HexBytes.fromBytes(RLPCodec.encode(nodes)));
                 break;
             }
             case EXIT: {
@@ -156,16 +162,18 @@ public class Authentication implements PreBuiltContract {
                     throw new RuntimeException("authentication contract error: cannot exit, at least one miner");
 
                 nodes.remove(fromAddr);
-                backend.dbSet(contractAddress, NODES_KEY, RLPCodec.encode(nodes));
+                backend.dbSet(contractAddress, NODES_KEY, HexBytes.fromBytes(RLPCodec.encode(nodes)));
                 break;
             }
         }
+
+        return HexBytes.EMPTY_BYTES;
     }
 
     @Override
-    public Map<byte[], byte[]> getGenesisStorage() {
-        Map<byte[], byte[]> ret = new ByteArrayMap<>();
-        ret.put(NODES_KEY, RLPCodec.encode(this.nodes));
+    public Map<HexBytes, HexBytes> getGenesisStorage() {
+        Map<HexBytes, HexBytes> ret = new HashMap<>();
+        ret.put(NODES_KEY, HexBytes.fromBytes(RLPCodec.encode(this.nodes)));
         return ret;
     }
 

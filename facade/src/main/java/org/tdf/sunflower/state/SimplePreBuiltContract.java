@@ -12,9 +12,4 @@ public class SimplePreBuiltContract implements PreBuiltContract {
     public Account getGenesisAccount() {
         return Account.emptyAccount(SIMPLE_BIOS_CONTRACT_ADDR, Uint256.ZERO);
     }
-
-    @Override
-    public void update(Backend backend, CallData callData) {
-
-    }
 }

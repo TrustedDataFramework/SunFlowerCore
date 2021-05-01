@@ -12,6 +12,7 @@ import org.tdf.sunflower.types.Transaction;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CallData {
+
     public static CallData empty() {
         return new CallData(
                 Address.empty(),
@@ -19,43 +20,61 @@ public class CallData {
                 Uint256.ZERO,
                 Address.empty(),
                 Address.empty(),
-                0,
-                0,
+                CallType.COINBASE,
                 HexBytes.empty(),
                 Address.empty(),
                 HexBytes.empty(),
                 0,
-                0,
                 Uint256.ZERO,
-                0
+                Uint256.ZERO
         );
     }
 
-    public static CallData fromTransaction(Transaction tx) {
-        return empty();
+    public static CallData fromTransaction(Transaction tx, boolean coinbase) {
+        CallData data = new CallData(
+                tx.getSenderHex(),
+                tx.getValueAsUint(),
+                tx.getValueAsUint(),
+                tx.getReceiveHex(),
+                tx.getReceiveHex(),
+                CallType.COINBASE,
+                tx.getDataHex(),
+                tx.getSenderHex(),
+                tx.getHashHex(),
+                tx.getNonceAsLong(),
+                tx.getGasPriceAsU256(),
+                tx.getGasLimitAsU256()
+        );
+
+        if(!coinbase){
+            data.setCallType(tx.getReceiveHex().isEmpty() ? CallType.CREATE : CallType.CALL);
+        } else {
+            // for coinbase tx without v,r,s,
+            // set origin as zero address
+            data.setOrigin(Address.empty());
+            data.setCaller(Address.empty());
+        }
+        return data;
     }
 
 
     private HexBytes caller;
-    private Uint256 amount;
-    private Uint256 txAmount;
+    private Uint256 value;
+    private Uint256 txValue;
     private HexBytes to;
     private HexBytes txTo;
-    private int txType;
-    private int callType;
+    private CallType callType;
     private HexBytes data;
     private HexBytes origin;
     private HexBytes txHash;
     private long txNonce;
-    private long txCreatedAt;
     private Uint256 gasPrice;
-    private long gasLimit;
+    private Uint256 gasLimit;
 
     public CallData clone() {
         return new CallData(
-                caller, amount, txAmount, to, txTo,
-                txType, callType, data, origin, txHash,
-                txNonce, txCreatedAt,
+                caller, value, txValue, to, txTo,
+                callType, data, origin, txHash, txNonce,
                 gasPrice, gasLimit
         );
     }

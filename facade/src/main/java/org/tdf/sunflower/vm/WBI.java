@@ -3,6 +3,7 @@ package org.tdf.sunflower.vm;
 import lombok.Value;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.FastByteComparisons;
+import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.CustomSection;
 import org.tdf.lotusvm.types.Module;
@@ -48,9 +49,9 @@ public abstract class WBI {
     }
 
     // the __init section is dropped before inject
-    public static InjectResult inject(boolean create, Abi abi, ModuleInstance i, byte[] input) {
+    public static InjectResult inject(boolean create, Abi abi, ModuleInstance i, HexBytes input) {
         List<Abi.Entry.Param> params = null;
-        byte[] encoded = null;
+        HexBytes encoded = null;
         String function = null;
 
         // 2. for contract create, constructor is not necessarily
@@ -62,12 +63,12 @@ public abstract class WBI {
 
         // 3. for contract call, find function by signature
         if (!create) {
-            Abi.Function f = abi.findFunction(x -> FastByteComparisons.equal(x.encodeSignature(), Arrays.copyOfRange(input, 0 ,4)));
+            Abi.Function f = abi.findFunction(x -> FastByteComparisons.equal(x.encodeSignature(), Arrays.copyOfRange(input.getBytes(), 0 ,4)));
             Objects.requireNonNull(f);
             function = f.name;
             params = f.inputs;
             Objects.requireNonNull(params);
-            encoded = Arrays.copyOfRange(input, 4, input.length);
+            encoded = input.slice(4);
         }
 
         if (params == null)
@@ -82,16 +83,16 @@ public abstract class WBI {
                 Integer.toUnsignedLong(mallocBytes(i, encoded))
         };
 
-        byte[] bytes = (byte[]) peek(i, (int) i.execute("__abi_decode", ptrs)[0], WbiType.BYTES);
+        HexBytes bytes = (HexBytes) peek(i, (int) i.execute("__abi_decode", ptrs)[0], WbiType.BYTES);
 
         long[] ret = new long[params.size()];
         for(int j = 0; j < ret.length; j++) {
-            ret[j] = ByteBuffer.wrap(bytes, j * 8, 8).order(ByteOrder.BIG_ENDIAN).getLong();
+            ret[j] = ByteBuffer.wrap(bytes.getBytes(), j * 8, 8).order(ByteOrder.BIG_ENDIAN).getLong();
         }
         return new InjectResult(function, ret, true);
     }
 
-    // String / U256 / byte[]
+    // String / U256 / HexBytes
     public static Object peek(ModuleInstance instance, int offset, int type) {
         long t = Integer.toUnsignedLong(type);
         long startAndLen = instance.execute("__peek", offset, t)[0];
@@ -107,7 +108,7 @@ public abstract class WBI {
             }
             case WbiType.BYTES:
             case WbiType.ADDRESS: {
-                return bin;
+                return HexBytes.fromBytes(bin);
             }
         }
         throw new RuntimeException("unexpected");
@@ -136,11 +137,11 @@ public abstract class WBI {
         return mallocInternal(instance, WbiType.UINT_256, bin);
     }
 
-    public static int mallocBytes(ModuleInstance instance, byte[] bin) {
-        return mallocInternal(instance, WbiType.BYTES, bin);
+    public static int mallocBytes(ModuleInstance instance, HexBytes bin) {
+        return mallocInternal(instance, WbiType.BYTES, bin.getBytes());
     }
 
-    public static int mallocAddress(ModuleInstance instance, byte[] address) {
-        return mallocInternal(instance, WbiType.ADDRESS, address);
+    public static int mallocAddress(ModuleInstance instance, HexBytes address) {
+        return mallocInternal(instance, WbiType.ADDRESS, address.getBytes());
     }
 }

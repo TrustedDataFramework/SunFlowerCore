@@ -36,8 +36,8 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
     private Trie<HexBytes, Account> trie;
-    private final Trie<byte[], byte[]> contractStorageTrie;
-    private final Store<byte[], byte[]> contractCodeStore;
+    private final Trie<HexBytes, HexBytes> contractStorageTrie;
+    private final Store<HexBytes, HexBytes> contractCodeStore;
     private final List<PreBuiltContract> preBuiltContracts;
     private final Map<HexBytes, Bios> biosList;
     private final Map<HexBytes, Account> genesisStates;
@@ -54,7 +54,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
         return new BackendImpl(
                 parent,
                 null,
-                trie.revert(parent.getStateRoot().getBytes()),
+                trie.revert(parent.getStateRoot()),
                 contractStorageTrie,
                 new HashMap<>(),
                 new HashMap<>(),
@@ -71,8 +71,8 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
     @SneakyThrows
     public AccountTrie(
             DatabaseStore db,
-            Store<byte[], byte[]> contractCodeStore,
-            Trie<byte[], byte[]> contractStorageTrie,
+            Store<HexBytes, HexBytes> contractCodeStore,
+            Trie<HexBytes, HexBytes> contractStorageTrie,
             Map<HexBytes, Account> genesisStates,
             List<PreBuiltContract> preBuiltContracts,
             List<Bios> biosList,
@@ -106,11 +106,11 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
 
         for (CommonUpdater updater : commonUpdaters) {
             Account genesisAccount = updater.getGenesisAccount();
-            Trie<byte[], byte[]> trie = contractStorageTrie.revert();
-            for (Map.Entry<byte[], byte[]> entry : updater.getGenesisStorage().entrySet()) {
+            Trie<HexBytes, HexBytes> trie = contractStorageTrie.revert();
+            for (Map.Entry<HexBytes, HexBytes> entry : updater.getGenesisStorage().entrySet()) {
                 trie.put(entry.getKey(), entry.getValue());
             }
-            byte[] root = trie.commit();
+            HexBytes root = trie.commit();
             trie.flush();
             genesisAccount.setStorageRoot(root);
             if (updater instanceof PreBuiltContract) {
@@ -122,7 +122,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
         // sync to genesis
         Trie<HexBytes, Account> tmp = this.trie.revert();
         this.genesisStates.forEach(tmp::put);
-        this.genesisRoot = HexBytes.fromBytes(tmp.commit());
+        this.genesisRoot = tmp.commit();
         log.info("genesis states = {}", Start.MAPPER.writeValueAsString(genesisStates));
         log.info("genesis state root = " + genesisRoot);
         tmp.flush();
@@ -135,7 +135,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
     }
 
 
-    public RLPList call(Header header, HexBytes address, String method, Parameters parameters) {
+    public byte[] call(Header header, HexBytes address, String method, Parameters parameters) {
         // execute method
         CallData callData = CallData.empty();
         callData.setTo(address);

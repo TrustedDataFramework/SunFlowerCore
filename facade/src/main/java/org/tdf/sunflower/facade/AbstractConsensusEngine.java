@@ -46,9 +46,9 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     };
     protected static final Object UNRESOLVED = new Object();
     // contract storage trie
-    private Trie<byte[], byte[]> contractStorageTrie;
+    private Trie<HexBytes, HexBytes> contractStorageTrie;
     // a map between hash and wasm byte code
-    private Store<byte[], byte[]> contractCodeStore;
+    private Store<HexBytes, HexBytes> contractCodeStore;
     private SecretStore secretStore;
     // sub class should set miner explicitly when init() called
     private Miner miner;
