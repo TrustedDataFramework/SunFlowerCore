@@ -149,7 +149,7 @@ public class TransactionPoolImpl implements TransactionPool {
                                 Optional.ofNullable(accountStore.get(t.getSenderHex()))
                                         .map(Account::getNonce)
                                         .orElse(0L);
-                if (t.getNonceAsLong() <= prevNonce) {
+                if (t.getNonceAsLong() < prevNonce) {
                     it.remove();
                     mCache.remove(t.getHashHex());
                     if (!transactionRepository.containsTransaction(t.getHash()))
@@ -157,7 +157,7 @@ public class TransactionPoolImpl implements TransactionPool {
                     log.error("drop transaction {}, reason = invalid nonce", t.getHash());
                     continue;
                 }
-                if (t.getNonceAsLong() != prevNonce + 1) {
+                if (t.getNonceAsLong() != prevNonce) {
                     continue;
                 }
                 nonceMap.put(t.getSenderHex(), t.getNonceAsLong());

@@ -1,16 +1,30 @@
-package org.tdf.sunflower.controller;
+package org.tdf.sunflower.types;
 
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPElement;
-import org.tdf.rlp.RLPItem;
-import org.tdf.rlp.RLPList;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.TransactionReceipt;
+import lombok.NonNull;
+import org.tdf.rlp.*;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
+@RLPEncoding(TransactionInfo.TransactionInfoEncoder.class)
+@RLPDecoding(TransactionInfo.TransactionInfoDecoder.class)
 public class TransactionInfo {
+    public static class TransactionInfoEncoder implements RLPEncoder<TransactionInfo> {
+
+        @Override
+        public RLPElement encode(@NonNull TransactionInfo o) {
+            return RLPElement.fromEncoded(o.getEncoded());
+        }
+    }
+
+    public static class TransactionInfoDecoder implements RLPDecoder<TransactionInfo> {
+
+        @Override
+        public TransactionInfo decode(@NonNull RLPElement element) {
+            return new TransactionInfo(element.getEncoded());
+        }
+    }
+
 
     TransactionReceipt receipt;
     byte[] blockHash;
@@ -32,13 +46,12 @@ public class TransactionInfo {
     }
 
     public TransactionInfo(byte[] rlp) {
-        RLPList params = RLPElement.fromEncoded(rlp).asRLPList();
-        RLPList txInfo = (RLPList) params.get(0);
-        RLPList receiptRLP = (RLPList) txInfo.get(0);
-        RLPItem blockHashRLP = (RLPItem) txInfo.get(1);
-        RLPItem indexRLP = (RLPItem) txInfo.get(2);
+        RLPList txInfo = RLPElement.fromEncoded(rlp).asRLPList();
+        RLPList receiptRLP = txInfo.get(0).asRLPList();
+        RLPItem blockHashRLP = txInfo.get(1).asRLPItem();
+        RLPItem indexRLP =  txInfo.get(2).asRLPItem();
 
-        receipt = new TransactionReceipt(receiptRLP.asBytes());
+        receipt = new TransactionReceipt(receiptRLP.getEncoded());
         blockHash = blockHashRLP.asBytes();
         if (indexRLP.asBytes() == null)
             index = 0;

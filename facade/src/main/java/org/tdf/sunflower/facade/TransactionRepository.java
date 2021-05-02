@@ -26,11 +26,6 @@ public interface TransactionRepository {
             return Collections.emptyList();
         }
 
-        @Override
-        public BlockConfirms getConfirms(byte[] transactionHash) {
-            return null;
-        }
-
 //        @Override
 //        public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
 //
@@ -42,8 +37,6 @@ public interface TransactionRepository {
     Optional<Transaction> getTransactionByHash(byte[] hash);
 
     List<Transaction> getTransactionsByBlockHash(byte[] blockHash);
-
-    BlockConfirms getConfirms(byte[] transactionHash);
 
 //    void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser);
 }

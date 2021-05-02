@@ -247,7 +247,7 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
         if (!o.isPresent())
             return false;
         if (engine.getValidator().validate(block, o.get()).isSuccess()) {
-            repository.writeBlock(block);
+//            repository.writeBlock(block);
         }
         return true;
     }

@@ -13,7 +13,8 @@ import java.util.Map;
 public class BlockValidateResult extends ValidateResult {
     private long gas;
     private Uint256 fee;
-    private Map<HexBytes, TransactionResult> results;
+    private Map<HexBytes, VMResult> results;
+    private List<TransactionInfo> infos;
 
     private Map<HexBytes, List<Map.Entry<String, RLPList>>> events;
 

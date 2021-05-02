@@ -1,6 +1,7 @@
 package org.tdf.sunflower.controller;
 
 import org.spongycastle.util.encoders.Hex;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 
@@ -90,7 +91,13 @@ public class TypeConverter {
         return x;
     }
 
+    public static Uint256 jsonHexToU256(String x) {
+        return Uint256.of(
+                ByteUtil.hexStringToBytes(x)
+        );
+    }
+
     public static HexBytes jsonHexToHexBytes(String x){
-        return HexBytes.fromHex(jsonHexToHex(x));
+        return HexBytes.fromBytes(ByteUtil.hexStringToBytes(x));
     }
 }

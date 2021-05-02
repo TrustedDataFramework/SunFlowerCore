@@ -48,13 +48,14 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
 
     public Backend createBackend(
             Header parent,
-            long newBlockCreatedAt,
+            HexBytes root,
+            Long newBlockCreatedAt,
             boolean isStatic
     ) {
         return new BackendImpl(
                 parent,
                 null,
-                trie.revert(parent.getStateRoot()),
+                trie.revert(root),
                 contractStorageTrie,
                 new HashMap<>(),
                 new HashMap<>(),
@@ -66,6 +67,14 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
                 new HashMap<>(),
                 newBlockCreatedAt
         );
+    }
+
+    public Backend createBackend(
+            Header parent,
+            Long newBlockCreatedAt,
+            boolean isStatic
+    ) {
+       return createBackend(parent, parent.getStateRoot(), newBlockCreatedAt, isStatic);
     }
 
     @SneakyThrows
@@ -145,11 +154,9 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
 
         VMExecutor executor = new VMExecutor(
                 backend,
-                callData,
-                new Limit(0, 0, 0, 0),
-                0
+                callData
         );
 
-        return executor.execute().getReturns();
+        return executor.execute().getExecutionResult();
     }
 }

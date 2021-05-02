@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Transaction;
@@ -70,6 +71,11 @@ public class CallData {
     private long txNonce;
     private Uint256 gasPrice;
     private Uint256 gasLimit;
+
+    public byte[] getTxNonceAsBytes() {
+        return
+                ByteUtil.longToBytesNoLeadZeroes(txNonce);
+    }
 
     public CallData clone() {
         return new CallData(

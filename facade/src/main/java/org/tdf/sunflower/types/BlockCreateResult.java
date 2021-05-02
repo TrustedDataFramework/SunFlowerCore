@@ -8,10 +8,11 @@ import java.util.List;
 
 @Value
 public class BlockCreateResult {
-    public static final BlockCreateResult EMPTY = new BlockCreateResult(null, Collections.emptyList(), Collections.emptyList());
+    public static final BlockCreateResult EMPTY = new BlockCreateResult(null, Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
     Block block;
     List<HexBytes> failedTransactions;
     List<String> reasons;
+    List<TransactionInfo> infos;
 
     public static BlockCreateResult empty() {
         return EMPTY;

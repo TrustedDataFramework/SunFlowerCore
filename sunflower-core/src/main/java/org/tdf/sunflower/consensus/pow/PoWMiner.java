@@ -158,7 +158,7 @@ public class PoWMiner extends AbstractMiner {
                 if (res.getBlock() != null) {
                     log.info("mining success block: {}", res.getBlock().getHeader());
                 }
-                getEventBus().publish(new NewBlockMined(res.getBlock(), res.getFailedTransactions(), res.getReasons()));
+                getEventBus().publish(new NewBlockMined(res.getBlock(), res.getFailedTransactions(), res.getReasons(), res.getInfos()));
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {

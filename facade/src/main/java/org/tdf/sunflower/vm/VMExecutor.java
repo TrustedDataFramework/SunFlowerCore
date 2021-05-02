@@ -3,6 +3,7 @@ package org.tdf.sunflower.vm;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
@@ -10,31 +11,38 @@ import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.Module;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.Bios;
 import org.tdf.sunflower.state.PreBuiltContract;
-import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.types.Event;
-import org.tdf.sunflower.types.TransactionResult;
+import org.tdf.sunflower.types.VMResult;
 import org.tdf.sunflower.vm.abi.Abi;
+import org.tdf.sunflower.vm.abi.SolidityType;
 import org.tdf.sunflower.vm.abi.WbiType;
 import org.tdf.sunflower.vm.hosts.*;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 @NoArgsConstructor
 public class VMExecutor {
-    public VMExecutor(Backend backend, CallData callData, Limit limit, int depth) {
+
+    public VMExecutor(Backend backend, CallData callData) {
+        this(backend, callData, new Limit(0, 0, callData.getGasLimit().longValue(), 0), 0);
+    }
+
+    private VMExecutor(Backend backend, CallData callData, Limit limit, int depth) {
         this.backend = backend;
         this.callData = callData;
         this.limit = limit;
         this.depth = depth;
     }
+
 
     @Getter
     private Backend backend;
@@ -67,19 +75,26 @@ public class VMExecutor {
     }
 
 
-    public TransactionResult execute() {
+    public VMResult execute() {
 
         // 1. increase sender nonce
         long n = backend.getNonce(callData.getOrigin());
-        if (!backend.isStatic() && n + 1 != callData.getTxNonce() && callData.getCallType() != CallType.COINBASE)
+        if (!backend.isStatic() && n != callData.getTxNonce() && callData.getCallType() != CallType.COINBASE)
             throw new RuntimeException("invalid nonce");
 
+        HexBytes contractAddress = Address.empty();
 
         if (callData.getCallType() == CallType.CALL) {
             backend.setNonce(callData.getOrigin(), n + 1);
             // contract deploy nonce will increase internally
         }
 
+        if (callData.getCallType() == CallType.CREATE) {
+            contractAddress = HashUtil.calcNewAddrHex(
+                    callData.getCaller().getBytes(),
+                    callData.getTxNonceAsBytes()
+            );
+        }
 
         // 2. set initial gas by payload size
         limit.setInitialGas(backend.getInitialGas(callData.getData().size()));
@@ -90,15 +105,13 @@ public class VMExecutor {
         backend.subBalance(callData.getOrigin(), fee);
 
 
-        List<Event> events = new ArrayList<>();
-
-        for (Map.Entry<HexBytes, List<Map.Entry<String, RLPList>>> entries : backend.getEvents().entrySet()) {
-            for (Map.Entry<String, RLPList> entry : entries.getValue()) {
-                events.add(new Event(entry.getKey(), entry.getValue()));
-            }
-        }
-
-        return new TransactionResult(limit.getGas(), result, events, fee);
+        return new VMResult(
+                limit.getGas(),
+                contractAddress,
+                result,
+                Collections.emptyList(),
+                fee
+        );
     }
 
     public byte[] executeInternal() {
@@ -129,17 +142,20 @@ public class VMExecutor {
                 if (create) {
                     // increase sender nonce
                     long n = backend.getNonce(callData.getCaller());
-                    backend.setNonce(callData.getCaller(), n + 1);
                     Module tmpModule = new Module(callData.getData().getBytes());
                     code = WBI.dropInit(callData.getData().getBytes());
                     data = WBI.extractInitData(tmpModule);
 
                     // increase nonce here to avoid conflicts
-                    contractAddress = HexBytes.fromBytes(
-                            HashUtil.calcNewAddr(
-                            callData.getCaller().getBytes(), ByteUtil.longToBytesNoLeadZeroes(backend.getNonce(callData.getCaller())))
-                    )
+
+                    contractAddress =
+                            HashUtil.calcNewAddrHex(
+                                    callData.getCaller().getBytes(),
+                                    ByteUtil.longToBytesNoLeadZeroes(n)
+                            )
+
                     ;
+                    backend.setNonce(callData.getCaller(), n + 1);
                     callData.setTo(contractAddress);
                     backend.setCode(contractAddress, HexBytes.fromBytes(code));
                     backend.setContractCreatedBy(contractAddress, callData.getCaller());
@@ -184,46 +200,71 @@ public class VMExecutor {
 
                 WBI.InjectResult r = WBI.inject(create, abi, instance, HexBytes.fromBytes(data));
 
-                RLPList ret = RLPList.createEmpty();
-
                 if (!r.isExecutable())
                     return ByteUtil.EMPTY_BYTE_ARRAY;
 
                 // put parameters will not consume steps
                 long[] rets = instance.execute(r.getFunction(), r.getPointers());
 
-                Object result = null;
+                List<Object> results = new ArrayList<>();
+                List<Abi.Entry.Param> outputs;
+
+                if (create) {
+                    outputs = Optional
+                            .ofNullable(abi.findConstructor())
+                            .map(x -> x.outputs)
+                            .orElse(Collections.emptyList());
+                } else {
+                    outputs = abi.findFunction(x -> x.name.equals(r.getFunction())).outputs;
+                    if (outputs == null)
+                        outputs = Collections.emptyList();
+                }
+
+
                 // extract result
-                if (rets.length > 0) {
-                    List<Abi.Entry.Param> outputs;
-
-                    if (create) {
-                        outputs = abi.findConstructor().outputs;
-                    } else {
-                        outputs = abi.findFunction(x -> x.name.equals(r.getFunction())).outputs;
-                    }
-
-                    // outputs
-                    int outType = ByteBuffer.wrap(
-                            HashUtil.sha3(outputs.get(0).type.getName().getBytes(StandardCharsets.US_ASCII)),
-                            0,
-                            4
-                    ).order(ByteOrder.BIG_ENDIAN).getInt();
-
-                    switch (outType) {
-                        case WbiType.BYTES:
-                        case WbiType.STRING:
-                        case WbiType.ADDRESS:
-                        case WbiType.UINT_256: {
-                            result = WBI.peek(instance, (int) rets[0], outType);
+                for(int i = 0; i < rets.length; i++) {
+                    SolidityType type = outputs.get(i).type;
+                    switch (type.getName()) {
+                        case "uint8":
+                        case "uint16":
+                        case "uint32":
+                        case "uint64":{
+                            results.add(BigInteger.valueOf(rets[i]));
+                            break;
+                        }
+                        case "uint":
+                        case "uint256":{
+                            Uint256 u = (Uint256) WBI.peek(instance, (int) rets[i], WbiType.UINT_256);
+                            results.add(u.value());
+                            break;
+                        }
+                        case "string": {
+                            String s = (String) WBI.peek(instance, (int) rets[i], WbiType.STRING);
+                            results.add(s);
+                            break;
+                        }
+                        case "address": {
+                            HexBytes addr = (HexBytes) WBI.peek(instance, (int) rets[i], WbiType.ADDRESS);
+                            results.add(addr.getBytes());
                             break;
                         }
                         default: {
-                            result = rets[0];
+                            if(type.getName().endsWith("]") || type.getName().endsWith(")")) {
+                                throw new RuntimeException("array or tuple is not supported");
+                            }
+
+                            if(type.getName().startsWith("bytes")) {
+                                HexBytes bytes = (HexBytes) WBI.peek(instance, (int) rets[i], WbiType.BYTES);
+                                results.add(bytes);
+                            }
+                            break;
                         }
                     }
                 }
 
+                if(outputs.size() > 0){
+                    return Abi.Entry.Param.encodeList(outputs, results.toArray());
+                }
 
                 return ByteUtil.EMPTY_BYTE_ARRAY;
             }

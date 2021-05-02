@@ -105,7 +105,7 @@ public class PoWBios implements Bios {
             );
 
             nbits = safeTyMul(nbits, x, y);
-            backend.dbSet(Constants.POW_BIOS_ADDR, N_BITS_KEY, HexBytes.fromBytes(ByteUtil.bigIntegerToBytes(nbits)));
+            backend.dbSet(Constants.POW_BIOS_ADDR, N_BITS_KEY, HexBytes.fromBytes(BigIntegers.asUnsignedByteArray(nbits)));
             backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, HexBytes.fromBytes(RLPList.createEmpty().getEncoded()));
         } else {
             backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, RLPUtil.encode(ts));

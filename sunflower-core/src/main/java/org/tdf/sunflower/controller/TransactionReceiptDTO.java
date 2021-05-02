@@ -3,6 +3,7 @@ package org.tdf.sunflower.controller;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Value;
 import lombok.experimental.NonFinal;
+import org.tdf.sunflower.types.TransactionInfo;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.LogInfo;
 import org.tdf.sunflower.types.TransactionReceipt;
@@ -33,7 +34,7 @@ public class TransactionReceiptDTO {
         TransactionReceipt receipt = txInfo.getReceipt();
 
         transactionHash = toJsonHex(receipt.getTransaction().getHash());
-        transactionIndex = toJsonHex(new Integer(txInfo.getIndex()).longValue());
+        transactionIndex = toJsonHex(txInfo.getIndex());
         cumulativeGasUsed = toJsonHex(receipt.getCumulativeGas());
         gasUsed = toJsonHex(receipt.getGasUsed());
         contractAddress = toJsonHex(receipt.getTransaction().getContractAddress());

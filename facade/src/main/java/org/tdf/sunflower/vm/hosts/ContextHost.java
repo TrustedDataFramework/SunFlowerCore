@@ -38,9 +38,6 @@ public class ContextHost extends HostFunction {
                         .mallocBytes(getInstance(), backend.getParentHash());
 
             }
-            case HEADER_CREATED_AT: {
-                return backend.getHeaderCreatedAt();
-            }
 
             case HEADER_HEIGHT: {
                 return backend.getHeight();
@@ -102,7 +99,6 @@ public class ContextHost extends HostFunction {
 
     public enum Type {
         HEADER_PARENT_HASH,
-        HEADER_CREATED_AT,
         HEADER_HEIGHT,
         TX_NONCE,
         TX_ORIGIN,

@@ -1,11 +1,9 @@
 package org.tdf.sunflower.types;
 
+import lombok.NonNull;
 import org.spongycastle.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPElement;
-import org.tdf.rlp.RLPItem;
-import org.tdf.rlp.RLPList;
+import org.tdf.rlp.*;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +22,25 @@ import static org.tdf.common.util.ByteUtil.toHexString;
  * and the cumulative gas used in the block containing the transaction receipt
  * as of immediately after the transaction has happened,
  */
+@RLPEncoding(TransactionReceipt.TransactionReceiptEncoder.class)
+@RLPDecoding(TransactionReceipt.TransactionReceiptDecoder.class)
 public class TransactionReceipt {
+    public static class TransactionReceiptEncoder implements RLPEncoder<TransactionReceipt> {
+
+        @Override
+        public RLPElement encode(@NonNull TransactionReceipt o) {
+            return RLPElement.fromEncoded(o.getEncoded());
+        }
+    }
+
+    public static class TransactionReceiptDecoder implements RLPDecoder<TransactionReceipt> {
+
+        @Override
+        public TransactionReceipt decode(@NonNull RLPElement element) {
+            return new TransactionReceipt(element.getEncoded());
+        }
+    }
+
 
     private Transaction transaction;
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
@@ -42,16 +58,14 @@ public class TransactionReceipt {
 
 
     public TransactionReceipt(byte[] rlp) {
+        RLPList receipt = RLPElement.fromEncoded(rlp).asRLPList();
 
-        RLPList params = RLPElement.fromEncoded(rlp).asRLPList();
-        RLPList receipt = params.get(0).asRLPList();
-
-        RLPItem postTxStateRLP = (RLPItem) receipt.get(0);
-        RLPItem cumulativeGasRLP = (RLPItem) receipt.get(1);
-        RLPItem bloomRLP = (RLPItem) receipt.get(2);
-        RLPList logs = (RLPList) receipt.get(3);
-        RLPItem gasUsedRLP = (RLPItem) receipt.get(4);
-        RLPItem result = (RLPItem) receipt.get(5);
+        RLPItem postTxStateRLP = receipt.get(0).asRLPItem();
+        RLPItem cumulativeGasRLP = receipt.get(1).asRLPItem();
+        RLPItem bloomRLP = receipt.get(2).asRLPItem();
+        RLPList logs = receipt.get(3).asRLPList();
+        RLPItem gasUsedRLP = receipt.get(4).asRLPItem();
+        RLPItem result = receipt.get(5).asRLPItem();
 
         postTxState = nullToEmpty(postTxStateRLP.asBytes());
         cumulativeGas = cumulativeGasRLP.asBytes();

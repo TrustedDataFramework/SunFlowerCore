@@ -18,7 +18,7 @@ public class NewMinedBlockWriter {
             Block block = e.getBlock();
             if (block == null)
                 return;
-            repository.writeBlock(block);
+            repository.writeBlock(block, e.getInfos());
         });
     }
 }

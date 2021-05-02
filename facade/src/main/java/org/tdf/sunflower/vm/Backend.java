@@ -28,7 +28,10 @@ public interface Backend {
 
     Uint256 getBalance(HexBytes address);
 
-    long getHeaderCreatedAt();
+    // only used for bios contract
+    Long getHeaderCreatedAt();
+
+    void setHeaderCreatedAt(Long createdAt);
 
     void setBalance(HexBytes address, Uint256 balance);
 

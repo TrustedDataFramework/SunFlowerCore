@@ -220,8 +220,7 @@ public class Transaction {
     public synchronized void rlpParse() {
         if (parsed) return;
         try {
-            RLPList decodedTxList = RLPElement.fromEncoded(rlpEncoded).asRLPList();
-            RLPList transaction = (RLPList) decodedTxList.get(0);
+            RLPList transaction = RLPElement.fromEncoded(rlpEncoded).asRLPList();
 
             // Basic verification
             if (transaction.size() > 9) throw new RuntimeException("Too many RLP elements");
@@ -281,7 +280,8 @@ public class Transaction {
     }
 
     public byte[] getHash() {
-        if (hash == null || hash.length == 0) return hash;
+        if ( hash != null && hash.length != 0)
+            return hash;
         rlpParse();
         getEncoded();
         return hash;
@@ -307,11 +307,6 @@ public class Transaction {
         return ByteUtil.bytesToBigInteger(getNonce()).longValueExact();
     }
 
-    protected void setNonce(byte[] nonce) {
-        this.nonce = nonce;
-        parsed = true;
-    }
-
     public boolean isValueTx() {
         rlpParse();
         return value != null;
@@ -326,9 +321,15 @@ public class Transaction {
         return Uint256.of(getValue());
     }
 
-    protected void setValue(byte[] value) {
+    public void setValue(byte[] value) {
         this.value = value;
+        rlpEncoded = null;
+        hash = null;
         parsed = true;
+    }
+
+    public void setValue(Uint256 value) {
+        setValue(value.getNoLeadZeroesData());
     }
 
     public byte[] getReceiveAddress() {
@@ -340,10 +341,6 @@ public class Transaction {
         return HexBytes.fromBytes(getReceiveAddress());
     }
 
-    protected void setReceiveAddress(byte[] receiveAddress) {
-        this.receiveAddress = receiveAddress;
-        parsed = true;
-    }
 
     public byte[] getGasPrice() {
         rlpParse();
@@ -354,10 +351,6 @@ public class Transaction {
         return Uint256.of(getGasPrice());
     }
 
-    protected void setGasPrice(byte[] gasPrice) {
-        this.gasPrice = gasPrice;
-        parsed = true;
-    }
 
     public byte[] getGasLimit() {
         rlpParse();
@@ -368,10 +361,6 @@ public class Transaction {
         return Uint256.of(getGasLimit());
     }
 
-    protected void setGasLimit(byte[] gasLimit) {
-        this.gasLimit = gasLimit;
-        parsed = true;
-    }
 
     public long nonZeroDataBytes() {
         if (data == null) return 0;
@@ -404,10 +393,6 @@ public class Transaction {
         return HexBytes.fromBytes(getData());
     }
 
-    protected void setData(byte[] data) {
-        this.data = data;
-        parsed = true;
-    }
 
     public ECDSASignature getSignature() {
         rlpParse();
@@ -505,7 +490,7 @@ public class Transaction {
         // parse null as 0 for nonce
         byte[] nonce = null;
         if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
-            nonce = RLPCodec.encode(null);
+            nonce = RLPCodec.encodeBytes(null);
         } else {
             nonce = RLPCodec.encodeBytes(this.nonce);
         }
@@ -523,7 +508,7 @@ public class Transaction {
             v = RLPCodec.encodeInt(chainId);
             r = RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY);
             s = RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY);
-            rlpRaw = RLPCodec.encode(new Object[] {nonce, gasPrice, gasLimit, receiveAddress, value, data, v, r, s});
+            rlpRaw = RLPCodec.encodeElements(Arrays.asList(nonce, gasPrice, gasLimit, receiveAddress, value, data, v, r, s));
         }
         return rlpRaw;
     }
@@ -594,5 +579,9 @@ public class Transaction {
     @Override
     protected Transaction clone() {
         return new Transaction(getEncoded());
+    }
+
+    public static void main(String[] args) {
+
     }
 }

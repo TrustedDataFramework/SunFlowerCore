@@ -19,6 +19,7 @@ import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.TransactionInfo;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -134,7 +135,7 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
 
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void writeBlock(Block block) {
+    public void writeBlock(Block block, List<TransactionInfo> infos) {
         throw new UnsupportedOperationException();
 //        if (!accountTrie.getTrieStore().containsKey(block.getStateRoot().getBytes())) {
 //            throw new RuntimeException("unexpected error: account trie not synced");
@@ -160,7 +161,7 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
 
     @Override
     protected void writeGenesis(Block genesis) {
-        writeBlock(genesis);
+        writeBlock(genesis, Collections.emptyList());
     }
 
     @Override
@@ -182,16 +183,16 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public BlockConfirms getConfirms(byte[] transactionHash) {
-        return null;
-    }
-
     public List<Transaction> getTransactionsByBlockHeight(long height) {
         return transactionDao.findByHeight(height)
                 .stream().sorted(Comparator.comparingInt(TransactionEntity::getPosition))
                 .map(Mapping::getFromTransactionEntity)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public TransactionInfo getTransactionInfo(HexBytes transactionHash) {
+        return null;
     }
 
     @Override

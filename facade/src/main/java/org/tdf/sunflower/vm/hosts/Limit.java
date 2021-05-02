@@ -61,7 +61,7 @@ public class Limit implements Hook {
     }
 
     public long getGas() {
-        return initialGas + steps / 1024;
+        return initialGas + steps;
     }
 
     @Override

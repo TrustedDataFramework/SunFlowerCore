@@ -163,25 +163,6 @@ public class EntryController {
         return getBlockOrHeader(hashOrHeight, repository::getCanonicalHeader, repository::getHeader);
     }
 
-    @GetMapping(value = "/transaction/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Object> getTransaction(@PathVariable String hash) throws Exception {
-        Optional<Transaction> o = repository.getTransactionByHash(HexBytes.decode(hash));
-        if (o.isPresent()) {
-            Map<String, Object> m = MappingUtil.pojoToMap(o.get());
-            BlockConfirms confirms = repository.getConfirms(HexBytes.decode(hash));
-            m.put("confirms", confirms.getConfirms());
-            m.put("blockHeight", confirms.getBlockHeight());
-            m.put("blockHash", confirms.getBlockHash().toHex());
-            return m;
-        }
-        o = pool.get(HexBytes.fromHex(hash));
-        if (o.isPresent()) {
-            Map<String, Object> m = MappingUtil.pojoToMap(o.get());
-            m.put("confirms", -1);
-            return m;
-        }
-        throw new RuntimeException("transaction hash " + hash + " not found");
-    }
 
     @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)
     public AccountView getAccount(@PathVariable String addressOrPublicKey) throws Exception {

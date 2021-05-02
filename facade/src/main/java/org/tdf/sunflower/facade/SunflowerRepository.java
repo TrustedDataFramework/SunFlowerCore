@@ -7,6 +7,7 @@ import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.TransactionInfo;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,6 +17,11 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
 
 
     SunflowerRepository NONE = new SunflowerRepository() {
+
+        @Override
+        public TransactionInfo getTransactionInfo(HexBytes transactionHash) {
+            return null;
+        }
 
         @Override
         public void setProvider(ConfirmedBlocksProvider provider) {
@@ -115,11 +121,11 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
         }
 
         @Override
-        public void writeBlock(Block block) {
+        public void writeBlock(Block block, List<TransactionInfo> infos) {
 
         }
 
-//        @Override
+        //        @Override
 //        public void prune(byte[] hash) {
 //
 //        }
@@ -149,16 +155,14 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
             return Collections.emptyList();
         }
 
-        @Override
-        public BlockConfirms getConfirms(byte[] transactionHash) {
-            return null;
-        }
 
 //        @Override
 //        public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
 //
 //        }
     };
+
+    TransactionInfo getTransactionInfo(HexBytes transactionHash);
 
     void setProvider(ConfirmedBlocksProvider provider);
 

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.events.TransactionOutput;
 import org.tdf.sunflower.facade.Miner;
@@ -15,9 +16,10 @@ import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
-import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 @Slf4j(topic = "miner")
 public abstract class AbstractMiner implements Miner {
@@ -80,21 +82,26 @@ public abstract class AbstractMiner implements Miner {
 
         // get a trie at parent block's state
         // modifications to the trie will not persisted until flush() called
-        Backend tmp = accountTrie.createBackend(parent.getHeader(), header.getCreatedAt(), false);
 
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
+
+        Backend tmp = accountTrie.createBackend(parent.getHeader(), null, false);
         List<Transaction> transactionList = getTransactionPool().popPackable(
                 getAccountTrie().getTrie(parent.getStateRoot()),
                 minerConfig.getMaxBodySize()
         );
 
         transactionList.add(0, coinbase);
-        Map<HexBytes, TransactionResult> results = new HashMap<>();
+        Map<HexBytes, VMResult> results = new HashMap<>();
         Uint256 totalFee = Uint256.ZERO;
 
         List<HexBytes> failedTransactions = new ArrayList<>();
         List<String> reasons = new ArrayList<>();
         Map<HexBytes, String> failedMessages = new HashMap<>();
+
+        HexBytes currentRoot = parent.getStateRoot();
+        long currentGas = 0;
+        List<TransactionReceipt> receipts = new ArrayList<>();
 
         for (Transaction tx : transactionList.subList(1, transactionList.size())) {
             // try to fetch transaction from pool
@@ -104,13 +111,30 @@ public abstract class AbstractMiner implements Miner {
 
                 // store updated result to the trie if update success
                 tmp = tmp.createChild();
-                CallData callData = CallData.fromTransaction(tx, true);
-                VMExecutor vmExecutor = new VMExecutor(tmp, callData, new Limit(), 0);
-                TransactionResult res = vmExecutor.execute();
+                CallData callData = CallData.fromTransaction(tx, false);
+                VMExecutor vmExecutor = new VMExecutor(tmp, callData);
+                VMResult res = vmExecutor.execute();
                 totalFee = totalFee.safeAdd(res.getFee());
                 results.put(
                         HexBytes.fromBytes(tx.getHash()), res
                 );
+                currentGas += res.getGasUsed();
+
+                TransactionReceipt receipt = new TransactionReceipt(
+                        currentRoot.getBytes(),
+                        ByteUtil.longToBytesNoLeadZeroes(currentGas),
+                        new Bloom(),
+                        Collections.emptyList()
+                );
+
+
+                receipt.setGasUsed(res.getGasUsed());
+                receipt.setExecutionResult(res.getExecutionResult());
+                receipt.setTransaction(tx);
+                receipts.add(receipt);
+
+                currentRoot = tmp.merge();
+                tmp = accountTrie.createBackend(parent.getHeader(), currentRoot, null, false);
             } catch (Exception e) {
                 tmp = tmp.getParentBackend();
                 // prompt reason for failed updates
@@ -136,14 +160,27 @@ public abstract class AbstractMiner implements Miner {
                     Collections.emptyMap(),
                     failedMessages
             ));
-            return new BlockCreateResult(null, failedTransactions, reasons);
+            return new BlockCreateResult(null, failedTransactions, reasons, Collections.emptyList());
         }
 
         // add fee to miners account
-//        coinbase.setAmount(coinbase.getAmount().safeAdd(totalFee));
+        coinbase.setValue(coinbase.getValueAsUint().safeAdd(totalFee));
         CallData callData = CallData.fromTransaction(coinbase, true);
-        VMExecutor executor = new VMExecutor(tmp, callData, new Limit(), 0);
-        executor.execute();
+        tmp.setHeaderCreatedAt(System.currentTimeMillis() / 1000);
+        header.setCreatedAt(tmp.getHeaderCreatedAt());
+
+        VMExecutor executor = new VMExecutor(tmp, callData);
+        VMResult res = executor.execute();
+
+        TransactionReceipt receipt = new TransactionReceipt(
+                currentRoot.getBytes(),
+                ByteUtil.longToBytesNoLeadZeroes(currentGas + res.getGasUsed()),
+                new Bloom(),
+                Collections.emptyList()
+        );
+        receipt.setExecutionResult(res.getExecutionResult());
+        receipt.setTransaction(coinbase);
+        receipts.add(0, receipt);
 
         // calculate state root
         b.setStateRoot(
@@ -158,6 +195,11 @@ public abstract class AbstractMiner implements Miner {
             return BlockCreateResult.empty();
         }
 
+        List<TransactionInfo> infos = new ArrayList<>();
+        for (int i = 0; i < receipts.size(); i++) {
+            infos.add(new TransactionInfo(receipts.get(i), b.getHash().getBytes(), i));
+        }
+
         eventBus.publish(new TransactionOutput(
                 b.getHeight(),
                 b.getHash(),
@@ -166,6 +208,6 @@ public abstract class AbstractMiner implements Miner {
                 failedMessages
         ));
 
-        return new BlockCreateResult(b, failedTransactions, reasons);
+        return new BlockCreateResult(b, failedTransactions, reasons, infos);
     }
 }

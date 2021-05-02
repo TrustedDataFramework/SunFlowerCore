@@ -159,6 +159,10 @@ public class HashUtil {
         return sha3omit12(RLPCodec.encodeElements(Arrays.asList(encSender, encNonce)));
     }
 
+    public static HexBytes calcNewAddrHex(byte[] addr, byte[] nonce) {
+        return HexBytes.fromBytes(calcNewAddr(addr, nonce));
+    }
+
     /**
      * The way to calculate new address inside ethereum for {@link org.ethereum.vm.OpCode#CREATE2}
      * sha3(0xff ++ msg.sender ++ salt ++ sha3(init_code)))[12:]

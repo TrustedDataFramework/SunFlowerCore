@@ -7,6 +7,7 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.LogInfo;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.CallData;
+import org.tdf.sunflower.vm.CallType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +22,8 @@ public interface JsonRpc {
     String web3_sha3(String data) throws Exception;
 
     String net_version();
+
+    String eth_chainId();
 
     String net_peerCount();
 
@@ -160,23 +163,26 @@ public interface JsonRpc {
             if(to != null && !to.isEmpty()) {
                 data.setTxTo(jsonHexToHexBytes(to));
                 data.setTo(jsonHexToHexBytes(to));
+                data.setCallType(CallType.CALL);
+            } else {
+                data.setCallType(CallType.CREATE);
             }
             if(gas != null && !gas.isEmpty()) {
                 data.setGasLimit(
-                        Uint256.of(jsonHexToHex(gas))
+                        jsonHexToU256(gas)
                 );
             }
             if(gasPrice != null && !gasPrice.isEmpty()) {
                 data.setGasPrice(
-                        Uint256.of(jsonHexToHex(gas))
+                        jsonHexToU256(gasPrice)
                 );
             }
             if(value != null && !value.isEmpty()) {
                 data.setValue(
-                        Uint256.of(jsonHexToHex(value))
+                        jsonHexToU256(value)
                 );
                 data.setTxValue(
-                        Uint256.of(jsonHexToHex(value))
+                        jsonHexToU256(value)
                 );
             }
             if(this.data != null && !this.data.isEmpty()) {

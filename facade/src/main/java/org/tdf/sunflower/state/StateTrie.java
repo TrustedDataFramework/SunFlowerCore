@@ -27,9 +27,14 @@ public interface StateTrie<ID, S> {
 
     Backend createBackend(
             Header parent,
-            long newBlockCreatedAt,
+            Long newBlockCreatedAt,
             boolean isStatic
     );
 
-
+    Backend createBackend(
+            Header parent,
+            HexBytes root,
+            Long newBlockCreatedAt,
+            boolean isStatic
+    );
 }

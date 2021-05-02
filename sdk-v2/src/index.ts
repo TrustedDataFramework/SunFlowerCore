@@ -4,16 +4,15 @@ export { compileRust } from './abi'
 
 import { link } from "../linker/pkg"
 import { JsonFragment } from '@ethersproject/abi'
-import { utils } from 'ethers'
+import { utils, BytesLike } from 'ethers'
 
-export const POW_BIOS = '0x0000000000000000000000000000000000000002'
-export const POA_AUTH = "0x0000000000000000000000000000000000000004";
-export const POS_AUTH = "0x0000000000000000000000000000000000000005";
-export const FARMBASE_GATEWAY = "0x0000000000000000000000000000000000000006";
-
+export const POW_BIOS_ADDRESS = '0x0000000000000000000000000000000000000002'
+export const POA_AUTH_ADDRESS = "0x0000000000000000000000000000000000000004";
+export const POS_ADDRESS = "0x0000000000000000000000000000000000000005";
+export const FARMBASE_GATEWAY_ADDRESS = "0x0000000000000000000000000000000000000006"
 
 // inline abi and constructor arguments into webassembly bytecode
-export function inline(code: utils.BytesLike, abi: string | JsonFragment[], args: any[]): string {
+export function inline(code: utils.BytesLike, abi: string | JsonFragment[], args: any[]): BytesLike {
     if (!utils.isBytesLike(code)) {
         throw new Error('inline failed: code is not bytes like')
     }

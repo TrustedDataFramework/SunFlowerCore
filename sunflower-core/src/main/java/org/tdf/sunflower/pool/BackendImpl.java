@@ -1,9 +1,6 @@
 package org.tdf.sunflower.pool;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.*;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
@@ -15,7 +12,6 @@ import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
-import org.tdf.sunflower.vm.ContractABI;
 
 import java.util.*;
 
@@ -39,7 +35,10 @@ public class BackendImpl implements Backend {
     private Store<HexBytes, HexBytes> codeStore;
     private Map<HexBytes, HexBytes> codeCache;
     private Map<HexBytes, List<Map.Entry<String, RLPList>>> events;
-    private long headerCreatedAt;
+
+    @Setter
+    @Getter
+    private Long headerCreatedAt;
 
     // get account by parent without clone
     private Account lookup(HexBytes address) {
@@ -50,6 +49,7 @@ public class BackendImpl implements Backend {
             return a;
         return Account.emptyAccount(address, Uint256.ZERO);
     }
+
 
     public BackendImpl createChild() {
         return new BackendImpl(
@@ -91,7 +91,7 @@ public class BackendImpl implements Backend {
         modified.addAll(accounts.keySet());
         modified.addAll(storage.keySet());
 
-        Trie<HexBytes, Account> tmpTrie = trie.revert(parent.getStateRoot());
+        Trie<HexBytes, Account> tmpTrie = trie.revert(trie.getRootHash());
 
         for (HexBytes addr : modified) {
             Account a = accounts.get(addr);
@@ -139,11 +139,6 @@ public class BackendImpl implements Backend {
             return modifiedAccounts.get(address).getBalance();
         }
         return lookup(address).getBalance();
-    }
-
-    @Override
-    public long getHeaderCreatedAt() {
-        return headerCreatedAt;
     }
 
     @Override

@@ -6,9 +6,13 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.SunflowerRepository;
+import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
+import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.TransactionInfo;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
@@ -25,6 +29,7 @@ import static org.tdf.sunflower.controller.TypeConverter.*;
 public class JsonRpcImpl implements JsonRpc{
     private final AccountTrie accountTrie;
     private final SunflowerRepository repository;
+    private final TransactionPool pool;
 
     @Override
     public String web3_clientVersion() {
@@ -42,6 +47,11 @@ public class JsonRpcImpl implements JsonRpc{
         return Integer.toString(
                 102
         );
+    }
+
+    @Override
+    public String eth_chainId() {
+        return toJsonHex(102);
     }
 
     @Override
@@ -138,7 +148,8 @@ public class JsonRpcImpl implements JsonRpc{
 
     @Override
     public String eth_getTransactionCount(String address, String blockId) throws Exception {
-        return null;
+        Backend backend = getBackendByBlockId(blockId, true);
+        return toJsonHex(backend.getNonce(jsonHexToHexBytes(address)));
     }
 
     @Override
@@ -173,26 +184,33 @@ public class JsonRpcImpl implements JsonRpc{
 
     @Override
     public String eth_sendTransaction(CallArguments transactionArgs) throws Exception {
-        return null;
+        // for security issues, eth_sendTransaction is not disabled
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public String eth_sendRawTransaction(String rawData) throws Exception {
-        return null;
+        Block best = repository.getBestBlock();
+        Transaction tx = new Transaction(hexToByteArray(rawData));
+        pool.collect(best, tx);
+        return TypeConverter.toJsonHex(tx.getHash());
     }
 
     @Override
     public String eth_call(CallArguments args, String bnOrId) throws Exception {
         CallData callData = Objects.requireNonNull(args).toCallData();
         Backend backend = getBackendByBlockId(bnOrId, true);
-        VMExecutor executor = new VMExecutor(backend, callData, new Limit(), 0);
+        VMExecutor executor = new VMExecutor(backend, callData);
 
-        return toJsonHex(executor.execute().getReturns());
+        return toJsonHex(executor.execute().getExecutionResult());
     }
 
     @Override
     public String eth_estimateGas(CallArguments args) throws Exception {
-        return null;
+        CallData callData = Objects.requireNonNull(args).toCallData();
+        Backend backend = getBackendByBlockId("latest", true);
+        VMExecutor executor = new VMExecutor(backend, callData);
+        return toJsonHex(executor.execute().getGasUsed());
     }
 
     @Override
@@ -222,12 +240,19 @@ public class JsonRpcImpl implements JsonRpc{
 
     @Override
     public TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception {
-        return null;
+        HexBytes hash = jsonHexToHexBytes(transactionHash);
+        TransactionInfo info = repository.getTransactionInfo(hash);
+        Transaction tx = repository.getTransactionByHash(hash.getBytes()).orElse(null);
+        Block b = info == null ? null : repository.getBlock(info.getBlockHash()).orElse(null);
+        if(info == null || tx == null || b == null)
+            return null;
+        info.setTransaction(tx);
+        return new TransactionReceiptDTO(b, info);
     }
 
     @Override
     public TransactionReceiptDTOExt ethj_getTransactionReceipt(String transactionHash) throws Exception {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override

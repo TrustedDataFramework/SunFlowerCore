@@ -2,6 +2,8 @@ package org.tdf.sunflower.vm;
 
 import lombok.Value;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.BigIntegers;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
@@ -11,6 +13,7 @@ import org.tdf.sunflower.vm.abi.Abi;
 import org.tdf.sunflower.vm.abi.WbiType;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -75,19 +78,48 @@ public abstract class WBI {
             return new InjectResult(function, new long[0], false);
 
         // malloc param types
-        String joined = params.stream().map(x -> x.type.getName()).collect(Collectors.joining(","));
-
-        // convert to pointers
-        long[] ptrs = new long[] {
-                Integer.toUnsignedLong(malloc(i, joined)),
-                Integer.toUnsignedLong(mallocBytes(i, encoded))
-        };
-
-        HexBytes bytes = (HexBytes) peek(i, (int) i.execute("__abi_decode", ptrs)[0], WbiType.BYTES);
-
+        List<?> inputs = Abi.Entry.Param.decodeList(params, encoded.getBytes());
         long[] ret = new long[params.size()];
-        for(int j = 0; j < ret.length; j++) {
-            ret[j] = ByteBuffer.wrap(bytes.getBytes(), j * 8, 8).order(ByteOrder.BIG_ENDIAN).getLong();
+
+        for(int j = 0; j < inputs.size() ; j++) {
+            Abi.Entry.Param p = params.get(j);
+
+            switch (p.type.getName()) {
+                case "uint8":
+                case "uint16":
+                case "uint32":
+                case "uint64":{
+                    ret[j] = ((BigInteger) inputs.get(j)).longValueExact();
+                    break;
+                }
+                case "uint":
+                case "uint256":{
+                    BigInteger b = (BigInteger) inputs.get(j);
+                    ret[j] = WBI.malloc(i, Uint256.of(BigIntegers.asUnsignedByteArray(b)));
+                    break;
+                }
+                case "string": {
+                    String s = (String) inputs.get(j);
+                    ret[j] = WBI.malloc(i, s);
+                    break;
+                }
+                case "address": {
+                    byte[] addr = (byte[]) inputs.get(j);
+                    ret[j] = WBI.mallocAddress(i, HexBytes.fromBytes(addr));
+                    break;
+                }
+                default: {
+                    if(p.type.getName().endsWith("]") || p.type.getName().endsWith(")")) {
+                        throw new RuntimeException("array or tuple is not supported");
+                    }
+
+                    if(p.type.getName().startsWith("bytes")) {
+                        byte[] data = (byte[]) inputs.get(j);
+                        ret[j] = WBI.mallocBytes(i, HexBytes.fromBytes(data));
+                    }
+                    break;
+                }
+            }
         }
         return new InjectResult(function, ret, true);
     }

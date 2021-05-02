@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Value;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.TransactionInfo;
 
 import java.util.List;
 
@@ -14,4 +15,5 @@ public class NewBlockMined {
     Block block;
     List<HexBytes> failedTransactions;
     List<String> reasons;
+    List<TransactionInfo> infos;
 }

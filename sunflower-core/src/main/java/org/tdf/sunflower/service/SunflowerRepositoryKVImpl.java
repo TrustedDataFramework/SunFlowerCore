@@ -6,10 +6,11 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
-import org.tdf.common.types.BlockConfirms;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
+import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.ApplicationConstants;
+import org.tdf.sunflower.types.TransactionInfo;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.TransactionConfirmed;
 import org.tdf.sunflower.exception.ApplicationException;
@@ -48,8 +49,9 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     // "best" -> best header, "prune" -> pruned header
     private final Store<String, Header> status;
 
-    // transaction hash -> block hashes which includes this transaction
-    private final Store<byte[], HexBytes[]> transactionIncludes;
+
+    // transaction hash -> receipts
+    private final Store<HexBytes, TransactionInfo[]> transactionInfos;
 
     private Header pruned;
 
@@ -84,10 +86,11 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
                 Codecs.newRLPCodec(Long.class),
                 Codec.identity()
         );
-        this.transactionIncludes = new StoreWrapper<>(
-                factory.create("transaction-includes"),
-                Codec.identity(),
-                Codecs.newRLPCodec(HexBytes[].class)
+
+        this.transactionInfos = new StoreWrapper<>(
+                factory.create("transaction-infos"),
+                Codecs.HEX,
+                Codecs.newRLPCodec(TransactionInfo[].class)
         );
     }
 
@@ -191,8 +194,8 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
 
     @Override
-    public void writeBlock(Block block) {
-        writeBlockNoReset(block);
+    public void writeBlock(Block block, List<TransactionInfo> infos) {
+        writeBlockNoReset(block, infos);
         Block best = getBestBlock();
         if (Block.BEST_COMPARATOR.compare(best, block) < 0) {
             status.put(BEST_HEADER, block.getHeader());
@@ -237,25 +240,25 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         return getBlock(blockHash).map(Block::getBody).orElse(Collections.emptyList());
     }
 
-    @Override
-    public BlockConfirms getConfirms(byte[] transactionHash) {
-        HexBytes[] blockHashes =
-                transactionIncludes.get(transactionHash);
-
-        if (blockHashes == null)
-            blockHashes = new HexBytes[0];
-
-        // 确认数
-        if (blockHashes.length == 0)
-            return new BlockConfirms(-1, null, null);
-        for (HexBytes hash : blockHashes) {
-            Header h = headerStore.get(hash.getBytes());
-            if (h == null) continue;
-            if (isCanonical(hash.getBytes()))
-                return new BlockConfirms(getBestHeader().getHeight() - h.getHeight(), h.getHash(), h.getHeight());
-        }
-        return new BlockConfirms(-1, null, null);
-    }
+//    @Override
+//    public BlockConfirms getConfirms(byte[] transactionHash) {
+//        HexBytes[] blockHashes =
+//                transactionIncludes.get(transactionHash);
+//
+//        if (blockHashes == null)
+//            blockHashes = new HexBytes[0];
+//
+//        // 确认数
+//        if (blockHashes.length == 0)
+//            return new BlockConfirms(-1, null, null);
+//        for (HexBytes hash : blockHashes) {
+//            Header h = headerStore.get(hash.getBytes());
+//            if (h == null) continue;
+//            if (isCanonical(hash.getBytes()))
+//                return new BlockConfirms(getBestHeader().getHeight() - h.getHeight(), h.getHash(), h.getHeight());
+//        }
+//        return new BlockConfirms(-1, null, null);
+//    }
 
     private boolean isCanonical(Header h) {
         byte[] hash = canonicalIndex.get(h.getHeight());
@@ -274,11 +277,11 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
     @Override
     protected void writeGenesis(Block genesis) {
-        writeBlockNoReset(genesis);
+        writeBlockNoReset(genesis, Collections.emptyList());
         canonicalIndex.put(0L, genesis.getHash().getBytes());
     }
 
-    private void writeBlockNoReset(Block block) {
+    private void writeBlockNoReset(Block block, List<TransactionInfo> infos) {
         byte[] v = accountTrie.getTrieStore().get(block.getStateRoot().getBytes());
 
         if (!block.getStateRoot().equals(accountTrie.getTrie().getNullHash())
@@ -291,13 +294,21 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         headerStore.put(block.getHash().getBytes(), block.getHeader());
 
 
-        for (Transaction t : block.getBody()) {
+        for (int i = 0; i < block.getBody().size(); i++) {
+            Transaction t = block.getBody().get(i);
             transactionsStore.put(t.getHash(), t);
-            Set<HexBytes> headerHashes = Optional.ofNullable(transactionIncludes.get(t.getHash()))
-                    .map(x -> new HashSet<>(Arrays.asList(x)))
-                    .orElse(new HashSet<>());
-            headerHashes.add(block.getHash());
-            transactionIncludes.put(t.getHash(), headerHashes.toArray(new HexBytes[0]));
+            TransactionInfo info = infos.get(i);
+
+            TransactionInfo[] found = this.transactionInfos.get(t.getHashHex());
+            if(found == null) {
+                found = new TransactionInfo[0];
+            }
+            List<TransactionInfo> founds = new ArrayList<>(Arrays.asList(found));
+            if(founds.stream().noneMatch(x -> FastByteComparisons.equal(x.getBlockHash(), info.getBlockHash()))) {
+                founds.add(info);
+            }
+
+            this.transactionInfos.put(t.getHashHex(), founds.toArray(new TransactionInfo[0]));
         }
 
 
@@ -424,4 +435,20 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 //    public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
 //        transactionsStore.traverse(traverser);
 //    }
+
+
+    @Override
+    public TransactionInfo getTransactionInfo(HexBytes transactionHash) {
+        TransactionInfo[] infos = transactionInfos.get(transactionHash);
+        if(infos == null || infos.length == 0)
+            return null;
+
+        for (TransactionInfo info : infos) {
+            Header h = headerStore.get(info.getBlockHash());
+            if (h == null) continue;
+            if (isCanonical(info.getBlockHash()))
+               return info;
+        }
+        return null;
+    }
 }

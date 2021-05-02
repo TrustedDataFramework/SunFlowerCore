@@ -1,7 +1,6 @@
-import { utils } from 'ethers'
 import { JsonFragment, JsonFragmentType } from '@ethersproject/abi'
 
-export const POW_BIOS = [
+export const POW_BIOS_ABI = [
   {
       "inputs": [],
       "name": "nbits",
