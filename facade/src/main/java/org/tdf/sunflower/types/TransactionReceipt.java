@@ -3,6 +3,7 @@ package org.tdf.sunflower.types;
 import lombok.NonNull;
 import org.spongycastle.util.BigIntegers;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
@@ -151,6 +152,10 @@ public class TransactionReceipt {
 
     public byte[] getGasUsed() {
         return gasUsed;
+    }
+
+    public Uint256 getGasUsedAsU256() {
+        return Uint256.of(getGasUsed());
     }
 
     public void setGasUsed(byte[] gasUsed) {

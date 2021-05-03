@@ -152,7 +152,7 @@ public class PoA extends AbstractConsensusEngine {
                                 );
                                 if (!getSunflowerRepository().containsTransaction(tx.getHash())) {
                                     Block best = getSunflowerRepository().getBestBlock();
-                                    getTransactionPool().collect(best, tx);
+                                    getTransactionPool().collect(tx);
                                 }
                             }
                         } catch (Exception e) {

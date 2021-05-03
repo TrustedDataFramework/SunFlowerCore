@@ -146,7 +146,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 this::sendStatus, 0,
                 syncConfig.getHeartRate(), TimeUnit.SECONDS
         );
-        eventBus.subscribe(NewBlockMined.class, (e) -> broadcastToApproved(SyncMessage.encode(SyncMessage.PROPOSAL, new Proposal(e.getBlock(), e.getFailedTransactions(), e.getReasons()))));
+        eventBus.subscribe(NewBlockMined.class, (e) -> broadcastToApproved(SyncMessage.encode(SyncMessage.PROPOSAL, new Proposal(e.getBlock()))));
         eventBus.subscribe(NewTransactionsCollected.class,
                 (e) -> broadcastToApproved(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransactions()))
         );
@@ -210,7 +210,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 if (receivedTransactions.asMap().containsKey(root))
                     return;
                 receivedTransactions.put(root, true);
-                transactionPool.collect(bestBlock, txs);
+                transactionPool.collect(txs);
                 context.relay();
                 return;
             }
@@ -574,12 +574,6 @@ public class SyncManager implements PeerServerListener, Closeable {
                 }
                 it.remove();
                 BlockValidateResult rs = ((BlockValidateResult) res);
-                eventBus.publish(new TransactionOutput(
-                        b.getHeight(),
-                        b.getHash(),
-                        rs.getResults(),
-                        Collections.emptyMap()
-                ));
                 repository.writeBlock(b, rs.getInfos());
             }
         } finally {

@@ -34,7 +34,12 @@ public class BackendImpl implements Backend {
 
     private Store<HexBytes, HexBytes> codeStore;
     private Map<HexBytes, HexBytes> codeCache;
-    private Map<HexBytes, List<Map.Entry<String, RLPList>>> events;
+
+    private void clearCache() {
+        this.codeCache = new HashMap<>();
+        this.modifiedAccounts = new HashMap<>();
+        this.modifiedStorage = new HashMap<>();
+    }
 
     @Setter
     @Getter
@@ -64,7 +69,6 @@ public class BackendImpl implements Backend {
                 isStatic,
                 codeStore,
                 codeCache,
-                events,
                 headerCreatedAt
         );
     }
@@ -79,6 +83,17 @@ public class BackendImpl implements Backend {
             storage.putIfAbsent(entries.getKey(), new HashMap<>());
             storage.get(entries.getKey()).putAll(entries.getValue());
         }
+    }
+
+    @Override
+    public HexBytes getTrieRoot() {
+        return trie.getRootHash();
+    }
+
+    public Backend getRoot() {
+        if(parentBackend == null)
+            return this;
+        return parentBackend.getRoot();
     }
 
     @Override

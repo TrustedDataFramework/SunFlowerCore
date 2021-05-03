@@ -13,6 +13,4 @@ import java.util.List;
 @AllArgsConstructor
 public class Proposal {
     private Block block;
-    private List<HexBytes> failedTransactions;
-    private List<String> reasons;
 }

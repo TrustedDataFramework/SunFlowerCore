@@ -20,10 +20,7 @@ import org.tdf.sunflower.vm.VMExecutor;
 import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static org.tdf.sunflower.controller.TypeConverter.*;
 
@@ -208,9 +205,10 @@ public class JsonRpcImpl implements JsonRpc{
 
     @Override
     public String eth_sendRawTransaction(String rawData) throws Exception {
-        Block best = repository.getBestBlock();
         Transaction tx = new Transaction(hexToByteArray(rawData));
-        pool.collect(best, tx);
+        Map<HexBytes, String> errors = pool.collect(tx);
+        if(errors.get(tx.getHashHex()) != null)
+            throw new RuntimeException(errors.get(tx.getHashHex()));
         return TypeConverter.toJsonHex(tx.getHash());
     }
 

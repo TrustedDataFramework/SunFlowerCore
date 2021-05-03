@@ -13,7 +13,5 @@ import java.util.List;
 @AllArgsConstructor
 public class NewBlockMined {
     Block block;
-    List<HexBytes> failedTransactions;
-    List<String> reasons;
     List<TransactionInfo> infos;
 }

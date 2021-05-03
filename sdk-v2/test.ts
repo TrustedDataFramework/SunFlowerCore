@@ -12,7 +12,7 @@ let bin = '0x' + fs.readFileSync(wasm).toString('hex')
 let code = inline(bin, abi, ['hello world'])
 
 
-const provider = new providers.JsonRpcProvider('http://localhost:7011')
+const provider = new providers.JsonRpcProvider('http://localhost:7010')
 const wallet = new Wallet(process.env.PRIVATE_KEY, provider)
 
 async function deploy() {

@@ -77,7 +77,7 @@ public class PoAValidator extends AbstractValidator {
 
     // validate pre-pending transaction
     @Override
-    public ValidateResult validate(Block dependency, Transaction transaction) {
+    public ValidateResult validate(Header dependency, Transaction transaction) {
         if(!poA.getPoAConfig().isControlled())
             return ValidateResult.success();
 

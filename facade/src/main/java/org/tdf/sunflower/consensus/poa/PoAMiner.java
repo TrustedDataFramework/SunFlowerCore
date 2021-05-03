@@ -147,7 +147,7 @@ public class PoAMiner extends AbstractMiner {
             if (b.getBlock() != null) {
                 log.info("mining success block: {}", b.getBlock().getHeader());
             }
-            getEventBus().publish(new NewBlockMined(b.getBlock(), b.getFailedTransactions(), b.getReasons(), b.getInfos()));
+            getEventBus().publish(new NewBlockMined(b.getBlock(), b.getInfos()));
         } catch (Exception e) {
             e.printStackTrace();
         }

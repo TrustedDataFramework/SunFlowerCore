@@ -5,10 +5,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.BlockValidateResult;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.ValidateResult;
+import org.tdf.sunflower.types.*;
 
 @Setter
 public class PoSValidator extends AbstractValidator {
@@ -33,7 +30,7 @@ public class PoSValidator extends AbstractValidator {
     }
 
     @Override
-    public ValidateResult validate(Block dependency, Transaction transaction) {
+    public ValidateResult validate(Header dependency, Transaction transaction) {
         return ValidateResult.success();
     }
 }

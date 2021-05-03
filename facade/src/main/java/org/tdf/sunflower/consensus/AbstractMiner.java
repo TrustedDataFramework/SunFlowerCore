@@ -7,7 +7,6 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.events.TransactionOutput;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
@@ -18,8 +17,6 @@ import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
 
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 @Slf4j(topic = "miner")
 public abstract class AbstractMiner implements Miner {
@@ -74,7 +71,10 @@ public abstract class AbstractMiner implements Miner {
 
     // TODO:  2. 增加打包超时时间
     protected BlockCreateResult createBlock(Block parent) {
-        if (!minerConfig.isAllowEmptyBlock() && getTransactionPool().size() == 0)
+        PendingData p =
+            getTransactionPool().pop(parent.getHeader());
+
+        if (!minerConfig.isAllowEmptyBlock() && p.getPending().isEmpty() )
             return BlockCreateResult.empty();
 
         Header header = createHeader(parent);
@@ -85,82 +85,15 @@ public abstract class AbstractMiner implements Miner {
 
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
 
-        Backend tmp = accountTrie.createBackend(parent.getHeader(), null, false);
-        List<Transaction> transactionList = getTransactionPool().popPackable(
-                getAccountTrie().getTrie(parent.getStateRoot()),
-                minerConfig.getMaxBodySize()
-        );
-
-        transactionList.add(0, coinbase);
-        Map<HexBytes, VMResult> results = new HashMap<>();
-        Uint256 totalFee = Uint256.ZERO;
-
-        List<HexBytes> failedTransactions = new ArrayList<>();
-        List<String> reasons = new ArrayList<>();
-        Map<HexBytes, String> failedMessages = new HashMap<>();
-
-        HexBytes currentRoot = parent.getStateRoot();
-        long currentGas = 0;
-        List<TransactionReceipt> receipts = new ArrayList<>();
-
-        for (Transaction tx : transactionList.subList(1, transactionList.size())) {
-            // try to fetch transaction from pool
-            try {
-
-                // get all account related to this transaction in the trie
-
-                // store updated result to the trie if update success
-                tmp = tmp.createChild();
-                CallData callData = CallData.fromTransaction(tx, false);
-                VMExecutor vmExecutor = new VMExecutor(tmp, callData);
-                VMResult res = vmExecutor.execute();
-                totalFee = totalFee.safeAdd(res.getFee());
-                results.put(
-                        HexBytes.fromBytes(tx.getHash()), res
-                );
-                currentGas += res.getGasUsed();
-
-                TransactionReceipt receipt = new TransactionReceipt(
-                        currentRoot.getBytes(),
-                        ByteUtil.longToBytesNoLeadZeroes(currentGas),
-                        new Bloom(),
-                        Collections.emptyList()
-                );
-
-
-                receipt.setGasUsed(res.getGasUsed());
-                receipt.setExecutionResult(res.getExecutionResult());
-                receipt.setTransaction(tx);
-                receipts.add(receipt);
-
-                currentRoot = tmp.merge();
-                tmp = accountTrie.createBackend(parent.getHeader(), currentRoot, null, false);
-            } catch (Exception e) {
-                tmp = tmp.getParentBackend();
-                // prompt reason for failed updates
-                e.printStackTrace();
-                HexBytes h = HexBytes.fromBytes(tx.getHash());
-                failedTransactions.add(h);
-                reasons.add(e.getMessage());
-                failedMessages.put(h, e.getMessage());
-                log.error("execute transaction " + h + " failed, reason = " + e.getMessage());
-                getTransactionPool().drop(tx);
-                continue;
-            }
-            b.getBody().add(tx);
-        }
-
+        Backend tmp = accountTrie.createBackend(parent.getHeader(), p.getTrieRoot(),null, false);
+        List<Transaction> transactionList = p.getPending();
+        b.setBody(transactionList);
         b.getBody().add(0, coinbase);
-        // transactions may failed to execute
-        if (b.getBody().size() == 1 && !minerConfig.isAllowEmptyBlock()) {
-            eventBus.publish(new TransactionOutput(
-                    b.getHeight(),
-                    b.getHash(),
-                    Collections.emptyMap(),
-                    failedMessages
-            ));
-            return new BlockCreateResult(null, failedTransactions, reasons, Collections.emptyList());
-        }
+
+        Uint256 totalFee =
+            p.getReceipts().stream()
+                .map(x -> x.getTransaction().getGasPriceAsU256().safeMul(x.getGasUsedAsU256()))
+                .reduce(Uint256.ZERO, Uint256::safeAdd);
 
         // add fee to miners account
         coinbase.setValue(coinbase.getValueAsUint().safeAdd(totalFee));
@@ -171,22 +104,28 @@ public abstract class AbstractMiner implements Miner {
         VMExecutor executor = new VMExecutor(tmp, callData);
         VMResult res = executor.execute();
 
+        long lastGas =
+            p.getReceipts().isEmpty() ? 0 :
+                p.getReceipts().get(p.getReceipts().size() - 1).getCumulativeGasLong();
+
         TransactionReceipt receipt = new TransactionReceipt(
-                currentRoot.getBytes(),
-                ByteUtil.longToBytesNoLeadZeroes(currentGas + res.getGasUsed()),
+                p.getTrieRoot().getBytes()
+                ,
+                // coinbase consume none gas
+                ByteUtil.longToBytesNoLeadZeroes(res.getGasUsed() + lastGas),
                 new Bloom(),
                 Collections.emptyList()
         );
         receipt.setExecutionResult(res.getExecutionResult());
         receipt.setTransaction(coinbase);
-        receipts.add(0, receipt);
+        p.getReceipts().add(0, receipt);
 
         // calculate state root and receipts root
         b.setStateRoot(
                 tmp.merge()
         );
 
-        b.setReceiptTrieRoot(TransactionReceipt.calcReceiptsTrie(receipts));
+        b.setReceiptTrieRoot(TransactionReceipt.calcReceiptsTrie(p.getReceipts()));
         // persist modifications of trie to database
         b.resetTransactionsRoot();
 
@@ -196,17 +135,10 @@ public abstract class AbstractMiner implements Miner {
         }
 
         List<TransactionInfo> infos = new ArrayList<>();
-        for (int i = 0; i < receipts.size(); i++) {
-            infos.add(new TransactionInfo(receipts.get(i), b.getHash().getBytes(), i));
+        for (int i = 0; i < p.getReceipts().size(); i++) {
+            infos.add(new TransactionInfo(p.getReceipts().get(i), b.getHash().getBytes(), i));
         }
 
-        eventBus.publish(new TransactionOutput(
-                b.getHeight(),
-                b.getHash(),
-                results,
-                failedMessages
-        ));
-
-        return new BlockCreateResult(b, failedTransactions, reasons, infos);
+        return new BlockCreateResult(b, infos);
     }
 }

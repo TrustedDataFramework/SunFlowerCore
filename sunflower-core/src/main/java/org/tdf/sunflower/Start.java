@@ -361,10 +361,10 @@ public class Start {
 
         repositoryService.setProvider(engine.getConfirmedBlocksProvider());
         repositoryService.setAccountTrie(engine.getAccountTrie());
+        repositoryService.saveGenesis(engine.getGenesisBlock());
 
         transactionPool.setEngine(engine);
         if (engine == AbstractConsensusEngine.NONE) return engine;
-        repositoryService.saveGenesis(engine.getGenesisBlock());
 //        if (syncConfig.getPruneHash().length > 0) {
 //            repositoryService.prune(syncConfig.getPruneHash());
 //        }

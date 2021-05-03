@@ -3,10 +3,7 @@ package org.tdf.sunflower.consensus.pow;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.BlockValidateResult;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.ValidateResult;
+import org.tdf.sunflower.types.*;
 
 public class PoWValidator extends AbstractValidator {
     private final PoW poW;
@@ -34,7 +31,7 @@ public class PoWValidator extends AbstractValidator {
     }
 
     @Override
-    public ValidateResult validate(Block dependency, Transaction transaction) {
+    public ValidateResult validate(Header dependency, Transaction transaction) {
         return ValidateResult.success();
     }
 }

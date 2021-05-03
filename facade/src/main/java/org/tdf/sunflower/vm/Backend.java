@@ -24,6 +24,10 @@ public interface Backend {
 
     long getHeight();
 
+    Backend getRoot();
+
+    HexBytes getTrieRoot();
+
     HexBytes getParentHash();
 
     Uint256 getBalance(HexBytes address);

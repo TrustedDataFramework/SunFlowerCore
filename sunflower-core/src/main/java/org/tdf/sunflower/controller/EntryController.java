@@ -115,7 +115,7 @@ public class EntryController {
                 .averageBlockInterval(rd.getBlockInterval()).height(best.getHeight())
                 .mining(blocks.stream().anyMatch(
                         x -> x.getBody().size() > 0 && x.getBody().get(0).getReceiveHex().equals(miner.getMinerAddress())))
-                .currentDifficulty(diff).transactionPoolSize(pool.size())
+                .currentDifficulty(diff).transactionPoolSize(0)
                 .blocksPerDay(o.map(h -> best.getHeight() - h.getHeight() + 1).orElse(0L))
                 .consensus(consensusEngine.getName())
                 .genesis(rd.getGenesis())
@@ -189,34 +189,6 @@ public class EntryController {
         return syncManager.getOrphans();
     }
 
-    @GetMapping(value = "/pool", produces = MediaType.APPLICATION_JSON_VALUE)
-    public PagedView<Transaction> getPool(@ModelAttribute PoolQuery poolQuery) {
-        switch (poolQuery.getStatus()) {
-            case "pending":
-                return pool.get(poolQuery);
-            case "dropped":
-                return pool.getDropped(poolQuery);
-            default:
-                throw new RuntimeException("unknown status " + poolQuery.getStatus());
-        }
-    }
-
-    @PostMapping(value = "/transaction", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Response<List<?>> sendTransaction(@RequestBody JsonNode node) {
-        Block best = repository.getBestBlock();
-        List<Transaction> ts;
-        if (node.isArray()) {
-            ts = Arrays.asList(objectMapper.convertValue(node, Transaction[].class));
-        } else {
-            ts = Collections.singletonList(objectMapper.convertValue(node, Transaction.class));
-        }
-        List<String> errors = pool.collect(best, ts);
-        Response<List<?>> errResp = Response.newFailed(Response.Code.INTERNAL_ERROR, String.join("\n", errors));
-        if (!errors.isEmpty())
-            return errResp;
-
-        return Response.newSuccessFul(ts.stream().map(Transaction::getHash).collect(Collectors.toList()));
-    }
 
     @GetMapping(value = "/contract/{address}/abi", produces = MediaType.APPLICATION_JSON_VALUE)
     public Object getABI(@PathVariable("address") final String address) {

@@ -64,7 +64,6 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
                 isStatic,
                 contractCodeStore,
                 new HashMap<>(),
-                new HashMap<>(),
                 newBlockCreatedAt
         );
     }
