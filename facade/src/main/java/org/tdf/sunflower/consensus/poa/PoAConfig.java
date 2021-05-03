@@ -29,10 +29,6 @@ public class PoAConfig implements MinerConfig {
     @JsonProperty("farm-base-admin")
     private String farmBaseAdmin;
 
-    // your role, thread or gateway
-    @JsonProperty("role") //
-    private String role;
-
     // your thread id,
     @JsonProperty("thread-id") //
     private int threadId;

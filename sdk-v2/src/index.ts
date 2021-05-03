@@ -27,3 +27,4 @@ export function inline(code: utils.BytesLike, abi: string | JsonFragment[], args
     // and encoded as rlp
     return '0x' + link(utils.hexlify(code).substring(2), <any> abi, encoded.substring(2))
 }
+

@@ -9,6 +9,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.RLPUtil;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.EconomicModel;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 // poa is a minimal non-trivial consensus engine
 @Slf4j(topic = "poa")
 public class PoA extends AbstractConsensusEngine {
+    public static final int GATEWAY_ID = 1339;
     EconomicModel economicModel;
 
     @Getter
@@ -137,7 +139,7 @@ public class PoA extends AbstractConsensusEngine {
         setPeerServerListener(PeerServerListener.NONE);
         // create state repository
 
-        if (poAConfig.getRole().equals("thread")) {
+        if (poAConfig.getThreadId() != GATEWAY_ID) {
             int core = Runtime.getRuntime().availableProcessors();
             executorService = Executors.newScheduledThreadPool(
                     core > 1 ? core / 2 : core,
@@ -153,8 +155,12 @@ public class PoA extends AbstractConsensusEngine {
                             connection.setRequestProperty("accept", "application/json");
                             InputStream responseStream = connection.getInputStream();
                             JsonNode n = objectMapper.readValue(responseStream, JsonNode.class);
-                            Transaction[] txs = objectMapper.convertValue(n.get("data"), Transaction[].class);
-                            for (Transaction tx : txs) {
+                            n = n.get("data");
+                            for(int i = 0; i < n.size(); i ++) {
+                                Transaction tx = RLPUtil.decode(
+                                    HexBytes.fromHex(n.get(i).textValue()),
+                                    Transaction.class
+                                );
                                 if (!getSunflowerRepository().containsTransaction(tx.getHash())) {
                                     Block best = getSunflowerRepository().getBestBlock();
                                     getTransactionPool().collect(best, tx);
@@ -216,6 +222,10 @@ public class PoA extends AbstractConsensusEngine {
         // register dummy account
     }
 
+    @Override
+    public int getChainId() {
+        return poAConfig.getThreadId();
+    }
 
     @Override
     public String getName() {

@@ -170,7 +170,7 @@ public class VMExecutor {
                 backend.subBalance(callData.getCaller(), callData.getValue());
 
                 if (code.length == 0)
-                    throw new RuntimeException("contract not found or is not a ccontract address");
+                    return ByteUtil.EMPTY_BYTE_ARRAY;
 
                 DBFunctions dbFunctions = new DBFunctions(backend, callData.getTo());
 

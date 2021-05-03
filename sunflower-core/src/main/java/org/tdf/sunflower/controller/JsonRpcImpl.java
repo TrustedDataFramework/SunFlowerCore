@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.AccountTrie;
@@ -30,6 +31,7 @@ public class JsonRpcImpl implements JsonRpc{
     private final AccountTrie accountTrie;
     private final SunflowerRepository repository;
     private final TransactionPool pool;
+    private final ConsensusEngine engine;
 
     @Override
     public String web3_clientVersion() {
@@ -45,13 +47,13 @@ public class JsonRpcImpl implements JsonRpc{
     @Override
     public String net_version() {
         return Integer.toString(
-                102
+                engine.getChainId()
         );
     }
 
     @Override
     public String eth_chainId() {
-        return toJsonHex(102);
+        return toJsonHex(engine.getChainId());
     }
 
     @Override

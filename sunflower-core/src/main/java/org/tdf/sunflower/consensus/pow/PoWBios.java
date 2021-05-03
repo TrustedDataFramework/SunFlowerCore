@@ -53,7 +53,7 @@ public class PoWBios implements Bios {
     @Override
     @SneakyThrows
     public byte[] call(Backend backend, CallData callData) {
-        byte[] selector = callData.getData().slice(0 ,4).getBytes();
+        byte[] selector = callData.getSelector();
         Abi.Function func = Objects.requireNonNull(
                 ABI.findFunction(x -> FastByteComparisons.equal(x.encodeSignature(), selector))
         );

@@ -3,9 +3,12 @@ package org.tdf.sunflower.consensus.poa;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.crypto.ECDSASignature;
+import org.tdf.common.crypto.ECKey;
 import org.tdf.common.event.EventBus;
-import org.tdf.common.types.Uint256;
+import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.RLPUtil;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.Proposer;
@@ -24,7 +27,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.tdf.common.util.ByteUtil.*;
+import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.tdf.common.util.ByteUtil.longToBytesNoLeadZeroes;
 
 
 @Slf4j(topic = "miner")
@@ -54,17 +58,33 @@ public class PoAMiner extends AbstractMiner {
 
     @Override
     protected Header createHeader(Block parent) {
-        return Header.builder()
-                .build();
+        return Header
+            .builder()
+            .height(parent.getHeight() + 1)
+            .createdAt(System.currentTimeMillis() / 1000)
+            .coinbase(minerAddress)
+            .hashPrev(parent.getHash())
+            .gasLimit(parent.getGasLimit())
+            .build();
     }
 
     @Override
     protected boolean finalizeBlock(Block parent, Block block) {
-        byte[] plain = PoA.getSignaturePlain(block);
-        byte[] sig = CryptoContext.sign(privateKey.getBytes(), plain);
-//        block.setPayload(HexBytes.fromBytes(sig));
+        byte[] rawHash = PoaUtils.getRawHash(block.getHeader());
+        ECKey key = ECKey.fromPrivate(privateKey.getBytes());
+        ECDSASignature sig = key.sign(rawHash);
 
-        if (poAConfig.getRole().equals("gateway")) {
+        block.setExtraData(
+            RLPUtil.encode(
+                new Object[]{
+                    Byte.toUnsignedInt(sig.v),
+                    BigIntegers.asUnsignedByteArray(sig.r),
+                    BigIntegers.asUnsignedByteArray(sig.s)}
+            )
+        );
+
+
+        if (poAConfig.getThreadId() == PoA.GATEWAY_ID) {
             for (int i = 1; i < block.getBody().size(); i++) {
                 poA.farmBaseTransactions.add(block.getBody().get(i));
             }
@@ -75,12 +95,12 @@ public class PoAMiner extends AbstractMiner {
     public void setPoAConfig(PoAConfig poAConfig) {
         this.poAConfig = poAConfig;
         this.privateKey = (poA.getSecretStore() != SecretStore.NONE) ?
-                poA.getSecretStore().getPrivateKey() :
-                HexBytes.fromHex(poAConfig.getPrivateKey());
+            poA.getSecretStore().getPrivateKey() :
+            HexBytes.fromHex(poAConfig.getPrivateKey());
 
         this.publicKey = HexBytes.fromBytes(CryptoContext.getPkFromSk(privateKey.getBytes()));
         this.minerAddress = Address.fromPublicKey(
-                CryptoContext.getPkFromSk(privateKey.getBytes())
+            CryptoContext.getPkFromSk(privateKey.getBytes())
         );
     }
 
@@ -119,8 +139,8 @@ public class PoAMiner extends AbstractMiner {
         Block best = blockRepository.getBestBlock();
         // 判断是否轮到自己出块
         Optional<Proposer> o = poA.getProposer(
-                best,
-                OffsetDateTime.now().toEpochSecond()
+            best,
+            OffsetDateTime.now().toEpochSecond()
         ).filter(p -> p.getAddress().equals(minerAddress));
         if (!o.isPresent()) return;
         log.debug("try to mining at height " + (best.getHeight() + 1));
@@ -137,14 +157,14 @@ public class PoAMiner extends AbstractMiner {
 
     protected Transaction createCoinBase(long height) {
         return Transaction.builder()
-                .nonce(longToBytesNoLeadZeroes(height))
-                .data(publicKey.getBytes())
-                .value(poA.economicModel.getConsensusRewardAtHeight(height).getNoLeadZeroesData())
-                .data(publicKey.getBytes())
-                .receiveAddress(minerAddress.getBytes())
-                .gasPrice(EMPTY_BYTE_ARRAY)
-                .gasLimit(EMPTY_BYTE_ARRAY)
-                .build();
+            .nonce(longToBytesNoLeadZeroes(height))
+            .data(publicKey.getBytes())
+            .value(poA.economicModel.getConsensusRewardAtHeight(height).getNoLeadZeroesData())
+            .data(publicKey.getBytes())
+            .receiveAddress(minerAddress.getBytes())
+            .gasPrice(EMPTY_BYTE_ARRAY)
+            .gasLimit(EMPTY_BYTE_ARRAY)
+            .build();
     }
 
 }

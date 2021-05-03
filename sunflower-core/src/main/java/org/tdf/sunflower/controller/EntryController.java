@@ -17,6 +17,7 @@ import org.tdf.common.types.BlockConfirms;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
+import org.tdf.common.util.RLPUtil;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.ApplicationConstants;
@@ -259,9 +260,9 @@ public class EntryController {
     // if thread node not receive farm base transaciont and gateway node restarted
     // needs to construct the transaction
     @GetMapping(value = "/farmBaseTransactions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<Transaction> farmBaseTransactions() {
+    public List<HexBytes> farmBaseTransactions() {
         PoA poa = (PoA) consensusEngine;
-        return poa.farmBaseTransactions;
+        return poa.farmBaseTransactions.stream().map(RLPUtil::encode).collect(Collectors.toList());
     }
 
     // get the nearest block after or equals to the timestamp

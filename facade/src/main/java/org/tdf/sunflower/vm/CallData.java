@@ -84,4 +84,8 @@ public class CallData {
                 gasPrice, gasLimit
         );
     }
+
+    public byte[] getSelector() {
+       return getData().slice(0 ,4).getBytes();
+    }
 }

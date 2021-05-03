@@ -40,4 +40,8 @@ public interface ConsensusEngine {
     default ValidateResult validateHeader(String header) {
         return ValidateResult.success();
     }
+
+    default int getChainId() {
+        return 102;
+    }
 }

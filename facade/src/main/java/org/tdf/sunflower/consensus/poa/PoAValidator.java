@@ -12,6 +12,7 @@ import java.util.Objects;
 
 @Setter
 public class PoAValidator extends AbstractValidator {
+
     public static final HexBytes FARM_BASE_ADMIN = HexBytes.fromHex("");
 
     private final PoA poA;
@@ -49,13 +50,14 @@ public class PoAValidator extends AbstractValidator {
     public ValidateResult validate(Block dependency, Transaction transaction) {
         HexBytes farmBaseAdmin = HexBytes.fromHex(poA.getPoAConfig().getFarmBaseAdmin());
 
-        switch (poA.getPoAConfig().getRole()) {
-            case "gateway": {
-                // for farm base node, only accept transaction from farm-base admin
-                if (Objects.requireNonNull(transaction.getChainId()) != 0 || !transaction.getSenderHex().equals(farmBaseAdmin)) {
+        switch (poA.getPoAConfig().getThreadId()) {
+            case PoA.GATEWAY_ID: {
+                // for gateway node, only accept transaction from farm-base admin
+                if (Objects.requireNonNull(transaction.getChainId()) != PoA.GATEWAY_ID || !transaction.getSenderHex().equals(farmBaseAdmin)) {
                     return ValidateResult.fault(
                             String.format(
-                                    "farmbase only accept admin transaction with network id = 0, while from = %s, network id = %s",
+                                    "farmbase only accept admin transaction with network id = %s, while from = %s, network id = %s",
+                                    PoA.GATEWAY_ID,
                                     transaction.getSenderHex(),
                                     transaction.getChainId()
                             )
@@ -65,8 +67,8 @@ public class PoAValidator extends AbstractValidator {
             }
 
             // for thread node, only accept transaction with thread id or zero
-            case "thread": {
-                if (transaction.getChainId() != 0 && transaction.getChainId() != poA.getPoAConfig().getThreadId()) {
+            default: {
+                if (transaction.getChainId() != PoA.GATEWAY_ID && transaction.getChainId() != poA.getPoAConfig().getThreadId()) {
                     return ValidateResult.fault(
                             String.format(
                                     "this thread only accept transaction with thread id = %s, while id = %s received",
@@ -76,14 +78,11 @@ public class PoAValidator extends AbstractValidator {
                     );
                 }
 
-                if (transaction.getChainId() == 0 && !transaction.getSenderHex().equals(farmBaseAdmin)) {
+                if (transaction.getChainId() == PoA.GATEWAY_ID && !transaction.getSenderHex().equals(farmBaseAdmin)) {
                     return ValidateResult.fault("transaction with zero version should received from farmbase");
                 }
 
                 break;
-            }
-            default: {
-                throw new RuntimeException("invalid role");
             }
         }
 

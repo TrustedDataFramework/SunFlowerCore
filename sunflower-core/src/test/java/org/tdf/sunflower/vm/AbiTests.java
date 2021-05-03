@@ -13,12 +13,15 @@ import org.tdf.crypto.CryptoHelpers;
 import org.tdf.sunflower.pool.BackendImpl;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
+import org.tdf.sunflower.state.Authentication;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.vm.abi.Abi;
 import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 
 @RunWith(JUnit4.class)
@@ -73,4 +76,11 @@ public class AbiTests {
 //        executor = new VMExecutor(backend, callData, new Limit(), 0);
 //        executor.execute();
 //    }
+
+    @Test
+    public void test1() {
+        Abi.Function func = Authentication.ABI.findFunction(x -> x.name.equals("approved"));
+
+        Abi.Entry.Param.encodeList(func.outputs, Collections.singletonList(Address.empty().getBytes()));
+    }
 }

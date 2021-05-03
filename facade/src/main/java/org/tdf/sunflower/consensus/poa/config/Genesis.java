@@ -3,14 +3,10 @@ package org.tdf.sunflower.consensus.poa.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import org.tdf.common.util.HashUtil;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.consensus.poa.PoAConstants;
-import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,12 +20,16 @@ public class Genesis {
     public List<MinerInfo> miners;
     public Map<String, Long> alloc;
     public List<ValidatorInfo> validator;
+    public long gasLimit;
 
     @JsonIgnore
     public Block getBlock() {
         Header h = Header.builder()
-                .createdAt(timestamp)
-                .build();
+            .gasLimit(
+                HexBytes.fromBytes(ByteUtil.longToBytesNoLeadZeroes(gasLimit))
+            )
+            .createdAt(timestamp)
+            .build();
 
         return new Block(h);
     }

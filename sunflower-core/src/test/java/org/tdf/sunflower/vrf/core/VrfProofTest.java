@@ -81,11 +81,11 @@ public class VrfProofTest {
         nonce[coinbase.length + 3] = (byte) (index & 0xFF);
         long time = System.currentTimeMillis() / 1000;
 
-        Header header = Header.builder().hashPrev(HexBytes.fromBytes(recentHash)).createdAt(System.currentTimeMillis())
-                .version(1).height(index).build();
-        VrfUtil.setSeed(header, nonce);
-        VrfUtil.setPriority(header, emptyArray);
-        VrfUtil.setMiner(header, coinbase);
+        Header header = Header.builder().hashPrev(HexBytes.fromBytes(recentHash)).createdAt(System.currentTimeMillis()).build();
+//                .version(1).height(index).build();
+//        VrfUtil.setSeed(header, nonce);
+//        VrfUtil.setPriority(header, emptyArray);
+//        VrfUtil.setMiner(header, coinbase);
         // header.setHash(HexBytes.fromBytes(PoAUtils.getHash(header)));
 
         return header;
