@@ -26,6 +26,7 @@ public class HashUtil {
     public static final byte[] EMPTY_LIST_HASH;
     public static final byte[] EMPTY_TRIE_HASH;
     public static final HexBytes EMPTY_TRIE_HASH_HEX;
+    public static final HexBytes EMPTY_DATA_HASH_HEX;
 
 
     private static final Logger LOG = LoggerFactory.getLogger(HashUtil.class);
@@ -44,6 +45,7 @@ public class HashUtil {
         EMPTY_LIST_HASH = sha3(RLPCodec.encodeElements(Collections.emptyList()));
         EMPTY_TRIE_HASH = sha3(RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY));
         EMPTY_TRIE_HASH_HEX = HexBytes.fromBytes(EMPTY_TRIE_HASH);
+        EMPTY_DATA_HASH_HEX = HexBytes.fromBytes(EMPTY_DATA_HASH);
     }
 
     public static final HashFunction sha3 = new HashFunction(HashUtil::sha3);

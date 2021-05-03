@@ -28,7 +28,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
-import static org.tdf.sunflower.state.Account.ADDRESS_SIZE;
+import static org.tdf.sunflower.types.Transaction.ADDRESS_LENGTH;
 
 
 @Slf4j(topic = "miner")
@@ -98,7 +98,7 @@ public class PoSMiner extends AbstractMiner {
         if (!posConfig.isEnableMining() || stopped) {
             return;
         }
-        if (posConfig.getMinerCoinBase() == null || posConfig.getMinerCoinBase().size() != ADDRESS_SIZE) {
+        if (posConfig.getMinerCoinBase() == null || posConfig.getMinerCoinBase().size() != ADDRESS_LENGTH) {
             log.warn("pos miner: invalid coinbase address {}", posConfig.getMinerCoinBase());
             return;
         }

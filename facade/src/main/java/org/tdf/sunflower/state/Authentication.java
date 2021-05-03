@@ -195,6 +195,11 @@ public class Authentication implements PreBuiltContract {
     }
 
     @Override
+    public Abi getAbi() {
+        return ABI;
+    }
+
+    @Override
     public Map<HexBytes, HexBytes> getGenesisStorage() {
         Map<HexBytes, HexBytes> ret = new HashMap();
         ret.put(NODES_KEY, HexBytes.fromBytes(RLPCodec.encode(this.nodes)));

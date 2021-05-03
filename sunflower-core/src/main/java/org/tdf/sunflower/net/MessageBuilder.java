@@ -3,6 +3,7 @@ package org.tdf.sunflower.net;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import lombok.Getter;
+import org.tdf.common.crypto.ECKey;
 import org.tdf.sunflower.proto.*;
 import org.tdf.sunflower.types.CryptoContext;
 
@@ -97,6 +98,7 @@ public class MessageBuilder {
                 .setRemotePeer(self.encodeURI())
                 .setNonce(nonce.incrementAndGet())
                 .setTtl(message.getTtl() - 1);
+
         byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }

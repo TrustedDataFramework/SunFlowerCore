@@ -3,18 +3,18 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 interface Authentication {
-    // approve another node
+    // approve another miner
     function approve(address dst) external;
     
-    // try to join, wait for approve
+    // try to join as miner, wait for approves >= 2/3 approved
     function join() external;
     
     // exit 
     function exit() external;
     
-    // get approved addresses
+    // get approved miners
     function approved() external view returns (address[] memory);
 
-    // returns approves for this pending 
+    // returns approved for this pending 
     function pending(address dst)  external view returns (address[] memory); 
 }

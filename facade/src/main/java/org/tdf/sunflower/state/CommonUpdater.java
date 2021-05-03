@@ -3,6 +3,7 @@ package org.tdf.sunflower.state;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
+import org.tdf.sunflower.vm.abi.Abi;
 
 import java.util.Collections;
 import java.util.List;
@@ -18,4 +19,6 @@ public interface CommonUpdater {
     default byte[] call(Backend backend, CallData callData) {
         return HexBytes.EMPTY_BYTES;
     }
+
+    Abi getAbi();
 }

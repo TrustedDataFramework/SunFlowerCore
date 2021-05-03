@@ -29,6 +29,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.tdf.sunflower.types.Transaction.ADDRESS_LENGTH;
+
 @NoArgsConstructor
 public class VMExecutor {
 
@@ -63,7 +65,7 @@ public class VMExecutor {
     }
 
     public static void assertContractAddress(HexBytes address) {
-        if (address.size() != Account.ADDRESS_SIZE)
+        if (address.size() != ADDRESS_LENGTH)
             throw new RuntimeException("invalid address size " + address.size());
 
         // address starts with 18 zero is reversed

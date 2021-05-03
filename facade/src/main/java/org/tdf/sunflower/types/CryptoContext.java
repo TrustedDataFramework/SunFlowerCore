@@ -1,9 +1,11 @@
 package org.tdf.sunflower.types;
 
 import lombok.Setter;
+import org.tdf.common.crypto.ECKey;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.ECDH;
 
@@ -45,7 +47,7 @@ public class CryptoContext {
     }
 
     public static byte[] hash(byte[] data) {
-        return hashFunction.apply(data);
+        return HashUtil.sha3(data);
     }
 
     public static boolean verify(byte[] pk, byte[] msg, byte[] sig) {
@@ -53,7 +55,7 @@ public class CryptoContext {
     }
 
     public static byte[] getPkFromSk(byte[] sk) {
-        return getPkFromSk.apply(sk);
+        return ECKey.fromPrivate(sk).getPubKey();
     }
 
     public static HexBytes getEmptyTrieRoot() {
@@ -68,7 +70,7 @@ public class CryptoContext {
     }
 
     public static byte[] generateSecretKey() {
-        return secretKeyGenerator.get();
+        return new ECKey().getPrivKeyBytes();
     }
 
     public static byte[] sign(byte[] sk, byte[] msg) {
@@ -85,11 +87,11 @@ public class CryptoContext {
 
 
     public static byte[] ecdh(boolean initiator, byte[] sk, byte[] pk) {
-        return ecdh.exchange(initiator, sk, pk);
+        return HexBytes.EMPTY_BYTES;
     }
 
     public static byte[] ecdh(byte[] sk, byte[] pk) {
-        return ecdh.exchange(sk, pk);
+        return HexBytes.EMPTY_BYTES;
     }
 
     public static Function<byte[], byte[]> keccak256 = null;

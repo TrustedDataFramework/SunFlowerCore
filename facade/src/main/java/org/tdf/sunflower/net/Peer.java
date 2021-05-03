@@ -41,10 +41,6 @@ public interface Peer {
     // the id is typically an ecc public key
     HexBytes getID();
 
-    default HexBytes getAddress() {
-        return Address.fromPublicKey(getID());
-    }
-
     // encode the remote peer as uri
     String encodeURI();
 

@@ -119,6 +119,10 @@ public class Header implements Chained {
         return getHash(false);
     }
 
+    public void resetHash() {
+        this.hash = null;
+    }
+
     private HexBytes getHash(boolean forceReHash) {
         if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
@@ -132,57 +136,67 @@ public class Header implements Chained {
 
     public void setHashPrev(HexBytes hashPrev) {
         this.hashPrev = hashPrev;
-        getHash(true);
+        resetHash();
     }
 
     public void setTransactionsRoot(HexBytes transactionsRoot) {
         this.transactionsRoot = transactionsRoot;
-        getHash(true);
+        resetHash();
     }
 
     public void setStateRoot(HexBytes stateRoot) {
         this.stateRoot = stateRoot;
-        getHash(true);
+        resetHash();
     }
 
     public void setHeight(long height) {
         this.height = height;
-        getHash(true);
+        resetHash();
     }
 
     public void setCreatedAt(long createdAt) {
         this.createdAt = createdAt;
-        getHash(true);
+        resetHash();
     }
 
 
     public void setCoinbase(HexBytes coinbase) {
         this.coinbase = coinbase;
-        getHash(true);
+        resetHash();
     }
 
     public void setGasLimit(HexBytes gasLimit) {
         this.gasLimit = gasLimit;
-        getHash(true);
+        resetHash();
     }
 
     public void setGasUsed(long gasUsed) {
         this.gasUsed = gasUsed;
-        getHash(true);
+        resetHash();
     }
 
     public void setExtraData(HexBytes extraData) {
         this.extraData = extraData;
-        getHash(true);
+        resetHash();
     }
 
     public void setMixHash(HexBytes mixHash) {
         this.mixHash = mixHash;
-        getHash(true);
+        resetHash();
     }
 
     public void setNonce(HexBytes nonce) {
         this.nonce = nonce;
-        getHash(true);
+        resetHash();
+    }
+
+    public void setReceiptTrieRoot(HexBytes receiptTrieRoot) {
+        this.receiptTrieRoot = receiptTrieRoot;
+        resetHash();
+    }
+
+    public void setLogsBloom(HexBytes logsBloom) {
+        this.logsBloom = logsBloom;
+        resetHash();
     }
 }

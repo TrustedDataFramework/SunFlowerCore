@@ -181,11 +181,12 @@ public abstract class AbstractMiner implements Miner {
         receipt.setTransaction(coinbase);
         receipts.add(0, receipt);
 
-        // calculate state root
+        // calculate state root and receipts root
         b.setStateRoot(
                 tmp.merge()
         );
 
+        b.setReceiptTrieRoot(TransactionReceipt.calcReceiptsTrie(receipts));
         // persist modifications of trie to database
         b.resetTransactionsRoot();
 

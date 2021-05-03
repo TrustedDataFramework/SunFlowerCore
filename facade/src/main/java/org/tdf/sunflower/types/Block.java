@@ -173,4 +173,13 @@ public class Block implements Chained {
     public void setNonce(HexBytes nonce) {
         header.setNonce(nonce);
     }
+
+
+    public void setReceiptTrieRoot(HexBytes receiptTrieRoot) {
+        header.setReceiptTrieRoot(receiptTrieRoot);
+    }
+
+    public void setLogsBloom(HexBytes logsBloom) {
+        header.setLogsBloom(logsBloom);
+    }
 }

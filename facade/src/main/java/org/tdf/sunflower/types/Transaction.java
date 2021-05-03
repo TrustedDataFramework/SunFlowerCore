@@ -2,6 +2,7 @@ package org.tdf.sunflower.types;
 
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.crypto.ECDSASignature;
 import org.tdf.common.crypto.ECKey;
@@ -253,6 +254,13 @@ public class Transaction {
         } catch (Exception e) {
             throw new RuntimeException("Error on parsing RLP", e);
         }
+    }
+
+    @SneakyThrows
+    public boolean verifySig() {
+        ECKey key = ECKey.signatureToKey(getRawHash(), getSignature());
+        // verify signature
+        return key.verify(getRawHash(), getSignature());
     }
 
     private void validate() {

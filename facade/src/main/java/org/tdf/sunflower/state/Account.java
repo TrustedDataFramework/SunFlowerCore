@@ -5,15 +5,16 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
 import org.tdf.sunflower.types.CryptoContext;
+import org.tdf.sunflower.types.Transaction;
 
 @AllArgsConstructor
 @Builder
 @Data
 public class Account {
-    public static final int ADDRESS_SIZE = 20;
     private HexBytes address;
     // for normal account this field is continuous integer
     // for contract account this field is nonce of deploy transaction
@@ -44,8 +45,8 @@ public class Account {
      * @return a fresh new account
      */
     public static Account emptyAccount(HexBytes address, Uint256 balance) {
-        if (address.size() != ADDRESS_SIZE) throw new RuntimeException("address size should be " + ADDRESS_SIZE);
-        return new Account(address, 0, balance, HexBytes.EMPTY, HexBytes.empty(), CryptoContext.getEmptyTrieRoot());
+        if (address.size() != Transaction.ADDRESS_LENGTH) throw new RuntimeException("address size should be " + Transaction.ADDRESS_LENGTH);
+        return new Account(address, 0, balance, Address.empty(), HashUtil.EMPTY_DATA_HASH_HEX, HashUtil.EMPTY_TRIE_HASH_HEX);
     }
 
 

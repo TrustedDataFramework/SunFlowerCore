@@ -99,9 +99,7 @@ public class PoAMiner extends AbstractMiner {
             HexBytes.fromHex(poAConfig.getPrivateKey());
 
         this.publicKey = HexBytes.fromBytes(CryptoContext.getPkFromSk(privateKey.getBytes()));
-        this.minerAddress = Address.fromPublicKey(
-            CryptoContext.getPkFromSk(privateKey.getBytes())
-        );
+        this.minerAddress = Address.fromPrivate(privateKey);
     }
 
 

@@ -3,6 +3,7 @@ package org.tdf.sunflower.net;
 import lombok.Value;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.CryptoContext;
+import org.tdf.sunflower.types.Transaction;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,7 +15,7 @@ class PeersCache {
     private static final int PEER_SCORE = 32;
     private static final int EVIL_SCORE = -(1 << 31);
     private final PeerServerConfig config;
-    private final Bucket[] peers = new Bucket[CryptoContext.getPublicKeySize() * 8];
+    private final Bucket[] peers = new Bucket[Transaction.ADDRESS_LENGTH * 8];
     private final PeerImpl self;
     Map<PeerImpl, Boolean> bootstraps = new ConcurrentHashMap<>();
     Map<PeerImpl, Boolean> blocked = new ConcurrentHashMap<>();

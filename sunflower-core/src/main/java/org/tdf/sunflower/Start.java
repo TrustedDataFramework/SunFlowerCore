@@ -459,7 +459,7 @@ public class Start {
                         SecretStoreImpl.class);
                 byte[] plain = sk.decrypt(secretStore.getCipherText().getBytes());
                 if (plain.length == sk.getEncoded().length) {
-                    HexBytes address = Address.fromPublicKey(CryptoContext.getPkFromSk(plain));
+                    HexBytes address = Address.fromPrivate(HexBytes.fromBytes(plain));
                     log.info("load secret store success your address = " + address);
                     return () -> HexBytes.fromBytes(plain);
                 }

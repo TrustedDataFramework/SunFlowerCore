@@ -19,7 +19,7 @@ import java.util.Random;
 import java.util.concurrent.*;
 
 import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
-import static org.tdf.sunflower.state.Account.ADDRESS_SIZE;
+import static org.tdf.sunflower.types.Transaction.ADDRESS_LENGTH;
 
 @Slf4j(topic = "pow-miner")
 public class PoWMiner extends AbstractMiner {
@@ -139,7 +139,7 @@ public class PoWMiner extends AbstractMiner {
         if (!poWConfig.isEnableMining() || stopped) {
             return;
         }
-        if (poWConfig.getMinerCoinBase() == null || poWConfig.getMinerCoinBase().size() != ADDRESS_SIZE) {
+        if (poWConfig.getMinerCoinBase() == null || poWConfig.getMinerCoinBase().size() != ADDRESS_LENGTH) {
             log.warn("pow miner: invalid coinbase address {}", poWConfig.getMinerCoinBase());
             return;
         }

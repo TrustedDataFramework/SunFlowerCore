@@ -12,6 +12,7 @@ import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
+import org.tdf.sunflower.vm.abi.Abi;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -77,6 +78,11 @@ public class VrfPreBuiltContract implements PreBuiltContract {
 
         log.error("Invoking unknown contract method {}", methodName);
         return ByteUtil.EMPTY_BYTE_ARRAY;
+    }
+
+    @Override
+    public Abi getAbi() {
+        return Abi.fromJson("[]");
     }
 
     @Override

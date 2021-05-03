@@ -19,6 +19,7 @@ import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
+import org.tdf.sunflower.vm.abi.Abi;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -177,6 +178,11 @@ public class PosPreBuilt implements PreBuiltContract {
         Collections.reverse(nodeInfos);
         backend.dbSet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY, RLPUtil.encode(nodeInfos));
         return ByteUtil.EMPTY_BYTE_ARRAY;
+    }
+
+    @Override
+    public Abi getAbi() {
+        return Abi.fromJson("[]");
     }
 
     public enum Type {

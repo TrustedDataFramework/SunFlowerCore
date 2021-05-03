@@ -32,15 +32,20 @@ public abstract class AbstractValidator implements Validator {
             return BlockValidateResult.fault("block coinbase not equalt to coinbase tx receiver");
         }
 
-        for (Transaction t : block.getBody().subList(1, block.getBody().size())) {
+        boolean isCoinbase = true;
+        for (Transaction t : block.getBody()) {
             // validate transaction signature
-            if(t.getSignature() == null)
+            if(!isCoinbase && t.getSignature() == null)
                 return BlockValidateResult.fault("unsigned transaction is not allowed here");
             try {
                 t.verify();
             }catch (Exception e) {
                 return BlockValidateResult.fault(e.getMessage());
             }
+            if(!isCoinbase && !t.verifySig()) {
+                return BlockValidateResult.fault("verify signature failed");
+            }
+            isCoinbase = false;
         }
         if (!parent.isParentOf(block) || parent.getHeight() + 1 != block.getHeight()) {
             return BlockValidateResult.fault("dependency is not parent of block");
@@ -75,7 +80,6 @@ public abstract class AbstractValidator implements Validator {
                 VMResult r = executor.execute();
                 results.put(HexBytes.fromBytes(tx.getHash()), r);
                 totalFee = totalFee.safeAdd(r.getFee());
-
 
                 currentGas += r.getGasUsed();
                 TransactionReceipt receipt = new TransactionReceipt(

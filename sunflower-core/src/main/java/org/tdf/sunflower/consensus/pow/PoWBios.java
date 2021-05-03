@@ -114,6 +114,11 @@ public class PoWBios implements Bios {
         return HexBytes.EMPTY_BYTES;
     }
 
+    @Override
+    public Abi getAbi() {
+        return ABI;
+    }
+
     private BigInteger safeTyMul(BigInteger i, long x, long y) {
         i = i.multiply(BigInteger.valueOf(x));
         if (i.compareTo(MAX_UINT_256) > 0) {

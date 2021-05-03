@@ -30,4 +30,4 @@ async function transfer() {
     await wallet.sendTransaction({ to: '0x4Ad950B0B049ac9bA9A1982758cb44C2A1e9C52D', value: BigNumber.from('1000000') })
 }
 
-transfer()
+logAddress()

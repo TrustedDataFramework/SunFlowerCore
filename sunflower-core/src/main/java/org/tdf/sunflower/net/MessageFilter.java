@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.FastByteComparisons;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.proto.Code;
@@ -121,16 +122,17 @@ public class MessageFilter implements Plugin {
             context.exit();
             return;
         }
-        HexBytes k = HexBytes.fromBytes(context.message.getSignature().toByteArray());
+        HexBytes hash = HexBytes.fromBytes(HashUtil.sha3(Util.getRawForSign(context.message)));
+
         // filter message had been received
-        if (cache.asMap().containsKey(k)) {
+        if (cache.asMap().containsKey(hash)) {
             context.exit();
         }
         log.debug("receive " + context.message.getCode()
                 + " from " +
                 context.remote.getHost() + ":" + context.remote.getPort()
         );
-        cache.put(k, true);
+        cache.put(hash, true);
     }
 
     @Override
@@ -181,7 +183,7 @@ public class MessageFilter implements Plugin {
                     CryptoContext.hash(total),
                     multiParts[0].getSignature().toByteArray())
             ) {
-                throw new RuntimeException("合并失败");
+                throw new RuntimeException("merge failed");
             }
 
             return Message.parseFrom(total);
