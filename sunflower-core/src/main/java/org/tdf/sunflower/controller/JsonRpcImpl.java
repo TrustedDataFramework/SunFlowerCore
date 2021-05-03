@@ -20,6 +20,8 @@ import org.tdf.sunflower.vm.VMExecutor;
 import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,6 +34,19 @@ public class JsonRpcImpl implements JsonRpc{
     private final SunflowerRepository repository;
     private final TransactionPool pool;
     private final ConsensusEngine engine;
+
+    private Block getByJsonBlockId(String id) {
+        if ("earliest".equalsIgnoreCase(id)) {
+            return repository.getCanonicalBlock(0).orElse(null);
+        } else if ("latest".equalsIgnoreCase(id)) {
+            return repository.getBestBlock();
+        } else if ("pending".equalsIgnoreCase(id)) {
+            return null;
+        } else {
+            long blockNumber = hexToBigInteger(id).longValue();
+            return repository.getCanonicalBlock(blockNumber).orElse(null);
+        }
+    }
 
     @Override
     public String web3_clientVersion() {
@@ -166,22 +181,23 @@ public class JsonRpcImpl implements JsonRpc{
 
     @Override
     public String eth_getUncleCountByBlockHash(String blockHash) throws Exception {
-        return null;
+        return toJsonHex(0);
     }
 
     @Override
     public String eth_getUncleCountByBlockNumber(String bnOrId) throws Exception {
-        return null;
+        return toJsonHex(0);
     }
 
     @Override
     public String eth_getCode(String addr, String bnOrId) throws Exception {
-        return null;
+        HexBytes code = getBackendByBlockId(bnOrId, true).getCode(jsonHexToHexBytes(addr));
+        return toJsonHex(code);
     }
 
     @Override
     public String eth_sign(String addr, String data) throws Exception {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -217,12 +233,14 @@ public class JsonRpcImpl implements JsonRpc{
 
     @Override
     public BlockResult eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception {
-        return null;
+        Block b = getByJsonBlockId(blockHash);
+        return getBlockResult(b, fullTransactionObjects);
     }
 
     @Override
     public BlockResult eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) throws Exception {
-        return null;
+        Block b = getByJsonBlockId(bnOrId);
+        return getBlockResult(b, fullTransactionObjects);
     }
 
     @Override
@@ -320,5 +338,49 @@ public class JsonRpcImpl implements JsonRpc{
     @Override
     public String personal_signAndSendTransaction(CallArguments tx, String password) {
         return null;
+    }
+
+    protected BlockResult getBlockResult(Block block, boolean fullTx) {
+        if (block == null)
+            return null;
+        BlockResult br = new BlockResult();
+        boolean isPending = false;
+
+        br.number = isPending ? null : toJsonHex(block.getHeight());
+        br.hash = isPending ? null : toJsonHex(block.getHash());
+        br.parentHash = toJsonHex(block.getHashPrev());
+        br.nonce = isPending ? null : toJsonHex(block.getNonce());
+        br.sha3Uncles= toJsonHex(block.getUnclesHash());
+        br.logsBloom = isPending ? null : toJsonHex(block.getLogsBloom());
+        br.transactionsRoot = toJsonHex(block.getTransactionsRoot());
+        br.stateRoot = toJsonHex(block.getStateRoot());
+        br.receiptsRoot = toJsonHex(block.getReceiptTrieRoot());
+        br.miner = isPending ? null : toJsonHex(block.getCoinbase());
+        br.difficulty = toJsonHex(new BigInteger(1, block.getDifficulty().getBytes()));
+        br.totalDifficulty = toJsonHex(BigInteger.ZERO);
+        if (block.getExtraData() != null)
+            br.extraData = toJsonHex(block.getExtraData());
+        // TODO: estimate size
+        br.size = null;
+        br.gasLimit = toJsonHex(block.getGasLimit());
+        br.gasUsed = toJsonHex(block.getGasUsed());
+        br.timestamp = toJsonHex(block.getCreatedAt());
+
+        List<Object> txes = new ArrayList<>();
+        if (fullTx) {
+            for (int i = 0; i < block.getBody().size(); i++) {
+                txes.add(new TransactionResultDTO(block, i, block.getBody().get(i)));
+            }
+        } else {
+            for (Transaction tx : block.getBody()) {
+                txes.add(toJsonHex(tx.getHash()));
+            }
+        }
+        br.transactions = txes.toArray();
+
+        List<String> ul = Collections.emptyList();
+        br.uncles = ul.toArray(new String[0]);
+
+        return br;
     }
 }

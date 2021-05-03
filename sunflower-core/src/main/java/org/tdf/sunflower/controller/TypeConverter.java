@@ -46,6 +46,10 @@ public class TypeConverter {
         return x == null || x.length == 0 ? null : "0x" + Hex.toHexString(x);
     }
 
+    public static String toJsonHex(HexBytes x) {
+        return x == null || x.size() == 0 ? null : "0x" + x.toHex();
+    }
+
     public static String toJsonHexNumber(byte[] x) {
         if (x == null) {
             return "0x0";
