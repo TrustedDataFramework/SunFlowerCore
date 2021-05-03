@@ -14,6 +14,7 @@ import org.tdf.sunflower.types.BlockCreateResult;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.*;
 
@@ -72,13 +73,10 @@ public class PoWMiner extends AbstractMiner {
     @Override
     protected Header createHeader(Block parent) {
         return Header.builder()
-                .height(parent.getHeight() + 1)
-                .version(parent.getVersion())
-                .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
+                .hashPrev(parent.getHash())
+                .coinbase(poWConfig.getMinerCoinBase())
                 .createdAt(System.currentTimeMillis() / 1000)
-                .payload(
-                        poW.getNBits(parent.getStateRoot()).getDataHex()
-                )
+                .height(parent.getHeight() + 1)
                 .build();
     }
 
@@ -86,16 +84,17 @@ public class PoWMiner extends AbstractMiner {
     protected boolean finalizeBlock(Block parent, Block block) {
         Uint256 nbits = poW.getNBits(parent.getStateRoot());
         Random rd = new Random();
-        log.info("start finish pow target = {}", nbits);
+        byte[] nonce = new byte[8];
+        rd.nextBytes(nonce);
+        log.info("start finish pow target = {}", nbits.getDataHex());
         this.working = true;
         while (PoW.compare(PoW.getPoWHash(block), nbits.getData()) > 0) {
             if (!working) {
                 log.info("mining canceled");
                 return false;
             }
-            byte[] nonce = new byte[32];
             rd.nextBytes(nonce);
-            block.setPayload(HexBytes.fromBytes(nonce));
+            block.setNonce(HexBytes.fromBytes(Arrays.copyOfRange(nonce, 0, nonce.length)));
         }
         log.info("pow success");
         this.working = false;

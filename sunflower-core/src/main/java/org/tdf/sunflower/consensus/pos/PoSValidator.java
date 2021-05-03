@@ -24,9 +24,6 @@ public class PoSValidator extends AbstractValidator {
         BlockValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
 
-        if (block.getVersion() != PoS.BLOCK_VERSION) {
-            return ValidateResult.fault("version not match");
-        }
         if (
                 !posMiner.getProposer(dependency, block.getCreatedAt())
                         .map(x -> x.getAddress().equals(block.getBody().get(0).getReceiveHex()))

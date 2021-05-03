@@ -22,16 +22,8 @@ public class Genesis {
 
     @JsonIgnore
     public Block getBlock() {
-
-        HexBytes emptyRoot = Transaction.calcTxTrie(Collections.emptyList());
-
         Header h = Header.builder()
-                .version(PoS.BLOCK_VERSION)
                 .hashPrev(parentHash)
-                .stateRoot(CryptoContext.getEmptyTrieRoot())
-                .transactionsRoot(emptyRoot)
-                .height(0)
-                .payload(HexBytes.EMPTY)
                 .createdAt(timestamp)
                 .build();
         return new Block(h);

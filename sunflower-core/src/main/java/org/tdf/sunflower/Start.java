@@ -78,12 +78,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-@EnableAsync
-@EnableScheduling
 @SpringBootApplication
-@EnableTransactionManagement
 @Slf4j(topic = "init")
-@EnableWebSocket
 // use SPRING_CONFIG_LOCATION environment to locate spring config
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 public class Start {

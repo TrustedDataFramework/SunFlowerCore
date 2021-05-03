@@ -26,10 +26,7 @@ import org.tdf.sunflower.util.ByteUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.tdf.sunflower.consensus.vrf.util.VrfConstants.VRF_KEYSTORE_PASSWORD;
 
@@ -52,12 +49,15 @@ public class VrfUtil {
     }
 
     public static byte[] getMiner(Header header) {
-        return getMiner(header.getPayload());
+//        return getMiner(header.getPayload());
+        return new byte[20];
     }
 
     public static byte[] getMiner(Block block) {
-        return getMiner(block.getPayload());
+//        return getMiner(block.getPayload());
+        return new byte[20];
     }
+
 
     public static ProposalProof getProposalProof(HexBytes payload) {
         byte[] encoded = payload.getBytes();
@@ -66,11 +66,13 @@ public class VrfUtil {
     }
 
     public static ProposalProof getProposalProof(Header header) {
-        return getProposalProof(header.getPayload());
+//        return getProposalProof(header.getPayload());
+        return null;
     }
 
     public static ProposalProof getProposalProof(Block block) {
-        return getProposalProof(block.getPayload());
+//        return getProposalProof(block.getPayload());
+        return null;
     }
 
     public static byte[] getSeed(HexBytes payload) {
@@ -80,11 +82,13 @@ public class VrfUtil {
     }
 
     public static byte[] getSeed(Header header) {
-        return getSeed(header.getPayload());
+//        return getSeed(header.getPayload());
+        return null;
     }
 
     public static byte[] getSeed(Block block) {
-        return getSeed(block.getPayload());
+//        return getSeed(block.getPayload());
+        return null;
     }
 
     public static byte[] getSeed(VrfBlockWrapper blockWrapper) {
@@ -98,20 +102,22 @@ public class VrfUtil {
     }
 
     public static byte[] getPriority(Header header) {
-        return getPriority(header.getPayload());
+//        return getPriority(header.getPayload());
+        return null;
     }
 
     public static byte[] getPriority(Block block) {
-        return getPriority(block.getPayload());
+//        return getPriority(block.getPayload());
+        return null;
     }
 
     public static void setSeed(Header header, byte[] seed) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setSeed(seed);
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setSeed(seed);
 
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setSeed(Block block, byte[] seed) {
@@ -127,12 +133,12 @@ public class VrfUtil {
     }
 
     public static void setMiner(Header header, byte[] miner) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setMiner(miner);
-
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setMiner(miner);
+//
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setMiner(Block block, HexBytes miner) {
@@ -148,12 +154,12 @@ public class VrfUtil {
     }
 
     public static void setPriority(Header header, byte[] priority) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setPriority(priority);
-
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setPriority(priority);
+//
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setPriority(Block block, byte[] priority) {
@@ -169,12 +175,12 @@ public class VrfUtil {
     }
 
     public static void setProposalProof(Header header, ProposalProof proposalProof) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setProposalProof(RLPCodec.encode(proposalProof));
-
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setProposalProof(RLPCodec.encode(proposalProof));
+//
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setProposalProof(Block block, ProposalProof proposalProof) {
@@ -403,12 +409,12 @@ public class VrfUtil {
     }
 
     public static void setParentReductionCommitProofs(Header header, String parentReductionCommitProofs) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setParentReductionCommitProofs(parentReductionCommitProofs);
-
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setParentReductionCommitProofs(parentReductionCommitProofs);
+//
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setParentReductionCommitProofs(Block block, String parentReductionCommitProofs) {
@@ -416,12 +422,12 @@ public class VrfUtil {
     }
 
     public static void setParentFinalCommitProofs(Header header, String parentFinalCommitProofs) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setParentFinalCommitProofs(parentFinalCommitProofs);
-
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setParentFinalCommitProofs(parentFinalCommitProofs);
+//
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setParentFinalCommitProofs(Block block, String parentFinalCommitProofs) {
@@ -435,11 +441,13 @@ public class VrfUtil {
     }
 
     public static String getParentReductionCommitProofs(Header header) {
-        return getParentReductionCommitProofs(header.getPayload());
+//        return getParentReductionCommitProofs(header.getPayload());
+        return null;
     }
 
     public static String getParentReductionCommitProofs(Block block) {
-        return getParentReductionCommitProofs(block.getPayload());
+//        return getParentReductionCommitProofs(block.getPayload());
+        return null;
     }
 
     public static String getParentFinalCommitProofs(HexBytes payload) {
@@ -449,11 +457,13 @@ public class VrfUtil {
     }
 
     public static String getParentFinalCommitProofs(Header header) {
-        return getParentFinalCommitProofs(header.getPayload());
+//        return getParentFinalCommitProofs(header.getPayload());
+        return null;
     }
 
     public static String getParentFinalCommitProofs(Block block) {
-        return getParentFinalCommitProofs(block.getPayload());
+//        return getParentFinalCommitProofs(block.getPayload());
+        return null;
     }
 
     /**
@@ -480,11 +490,13 @@ public class VrfUtil {
     }
 
     public static List<CommitProof> getParentReductionCommitProofList(Header header) {
-        return getParentReductionCommitProofList(header.getPayload());
+//        return getParentReductionCommitProofList(header.getPayload());
+        return Collections.emptyList();
     }
 
     public static List<CommitProof> getParentReductionCommitProofList(Block block) {
-        return getParentReductionCommitProofList(block.getPayload());
+//        return getParentReductionCommitProofList(block.getPayload());
+        return Collections.emptyList();
     }
 
     public static List<CommitProof> getParentFinalCommitProofList(HexBytes payload) {
@@ -492,11 +504,13 @@ public class VrfUtil {
     }
 
     public static List<CommitProof> getParentFinalCommitProofList(Header header) {
-        return getParentFinalCommitProofList(header.getPayload());
+//        return getParentFinalCommitProofList(header.getPayload());
+        return Collections.emptyList();
     }
 
     public static List<CommitProof> getParentFinalCommitProofList(Block block) {
-        return getParentFinalCommitProofList(block.getPayload());
+//        return getParentFinalCommitProofList(block.getPayload());
+        return Collections.emptyList();
     }
 
     public static String commitProofListToCommaSepStr(List<CommitProof> list) {

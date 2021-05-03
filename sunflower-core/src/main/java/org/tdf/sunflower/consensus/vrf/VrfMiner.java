@@ -150,18 +150,19 @@ public class VrfMiner extends AbstractMiner {
     @Override
     @SneakyThrows
     protected Header createHeader(Block parent) {
-        Header header = Header.builder().version(parent.getVersion()).hashPrev(parent.getHash())
-                .transactionsRoot(PoAConstants.ZERO_BYTES).height(parent.getHeight() + 1)
-                .createdAt(System.currentTimeMillis() / 1000).build();
+        Header header = null;
+//                Header.builder().version(parent.getVersion()).hashPrev(parent.getHash())
+//                .transactionsRoot(PoAConstants.ZERO_BYTES).height(parent.getHeight() + 1)
+//                .createdAt(System.currentTimeMillis() / 1000).build();
 //                .payload(VrfConstants.ZERO_BYTES)
 //                .hash(new HexBytes(BigEndian.encodeInt64(parent.getHeight() + 1))).build();
-
-        byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
-        byte[] payLoadBytes = VrfUtil.genPayload(header.getHeight(), this.vrfStateMachine.getVrfRound().getRound(),
-                vrfSeed, this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk,
-                vrfPk, vrfConfig);
-        HexBytes payload = HexBytes.fromBytes(payLoadBytes);
-        header.setPayload(payload);
+//
+//        byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
+//        byte[] payLoadBytes = VrfUtil.genPayload(header.getHeight(), this.vrfStateMachine.getVrfRound().getRound(),
+//                vrfSeed, this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk,
+//                vrfPk, vrfConfig);
+//        HexBytes payload = HexBytes.fromBytes(payLoadBytes);
+//        header.setPayload(payload);
         return header;
     }
 

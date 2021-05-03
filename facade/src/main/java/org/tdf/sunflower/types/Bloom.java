@@ -1,11 +1,12 @@
 package org.tdf.sunflower.types;
 
 import org.tdf.common.util.ByteUtil;
+import org.tdf.common.util.HexBytes;
 
 import java.util.Arrays;
 
 public class Bloom {
-
+    public static final HexBytes EMPTY = HexBytes.fromBytes(new byte[256]);
     public static final long MEM_SIZE = 256 + 16;
 
     final static int _8STEPS = 8;

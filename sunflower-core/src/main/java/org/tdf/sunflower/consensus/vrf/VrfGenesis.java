@@ -45,9 +45,10 @@ public class VrfGenesis {
 
         HexBytes emptyRoot = Transaction.calcTxTrie(Collections.emptyList());
 
-        Header header = Header.builder().version(VrfConstants.BLOCK_VERSION).hashPrev(parentHash)
-                .transactionsRoot(emptyRoot).height(blockNum).createdAt(ByteUtil.byteArrayToLong(timestamp.getBytes()))
-                .payload(VrfConstants.ZERO_BYTES).stateRoot(trie.getNullHash()).build();
+        Header header = null;
+//                Header.builder().version(VrfConstants.BLOCK_VERSION).hashPrev(parentHash)
+//                .transactionsRoot(emptyRoot).height(blockNum).createdAt(ByteUtil.byteArrayToLong(timestamp.getBytes()))
+//                .payload(VrfConstants.ZERO_BYTES).stateRoot(trie.getNullHash()).build();
 
         Block block = new Block(header);
         /*
@@ -68,7 +69,7 @@ public class VrfGenesis {
         byte[] payloadBytes = VrfUtil.genPayload(blockNum, round, seed, coinbase, difficulty, block.getHash(), vrfSk,
                 vrfPk, vrfConfig);
         HexBytes payload = HexBytes.fromBytes(payloadBytes);
-        block.setPayload(payload);
+//        block.setPayload(payload);
     }
 
     public static class MinerInfo {

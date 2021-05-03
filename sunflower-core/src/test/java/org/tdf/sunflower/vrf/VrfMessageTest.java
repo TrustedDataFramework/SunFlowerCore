@@ -19,7 +19,7 @@ public class VrfMessageTest {
         long blockNum = 1234;
         String payloadStr = "12abcd";
         String blockHashStr = "abcdef";
-        block.setPayload(HexBytes.fromBytes(ByteUtil.hexStringToBytes(payloadStr)));
+//        block.setPayload(HexBytes.fromBytes(ByteUtil.hexStringToBytes(payloadStr)));
         block.setHashPrev(HexBytes.fromBytes(ByteUtil.hexStringToBytes(blockHashStr)));
         block.setHeight(blockNum);
 

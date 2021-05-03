@@ -68,9 +68,7 @@ public class PoA extends AbstractConsensusEngine {
     }
 
     static byte[] getSignaturePlain(Block b) {
-        Header nh = b.getHeader().clone();
-        nh.setPayload(HexBytes.EMPTY);
-        return RLPCodec.encode(nh);
+        return new byte[0];
     }
 
     @Override

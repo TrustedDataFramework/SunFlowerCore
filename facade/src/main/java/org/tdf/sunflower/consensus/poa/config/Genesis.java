@@ -6,6 +6,7 @@ import lombok.Getter;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.poa.PoAConstants;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
@@ -26,18 +27,10 @@ public class Genesis {
 
     @JsonIgnore
     public Block getBlock() {
-
-        HexBytes emptyRoot = HexBytes.fromBytes(HashUtil.EMPTY_TRIE_HASH);
-
         Header h = Header.builder()
-                .version(PoAConstants.BLOCK_VERSION)
-                .hashPrev(PoAConstants.ZERO_BYTES)
-                .stateRoot(CryptoContext.getEmptyTrieRoot())
-                .transactionsRoot(emptyRoot)
-                .height(0)
-                .payload(HexBytes.EMPTY)
                 .createdAt(timestamp)
                 .build();
+
         return new Block(h);
     }
 

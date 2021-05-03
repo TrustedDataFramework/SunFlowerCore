@@ -39,7 +39,7 @@ public class EventHost extends HostFunction {
                 .peek(getInstance(), (int) parameters[1], WbiType.BYTES);
 
         RLPList li = RLPElement.fromEncoded(y).asRLPList();
-        backend.onEvent(address, x, li);
+//        backend.onEvent(address, x, li);
         return 0;
     }
 }

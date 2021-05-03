@@ -287,11 +287,8 @@ public class BackendImpl implements Backend {
     }
 
     @Override
-    public void onEvent(HexBytes address, String eventName, RLPList eventData) {
-        if (isStatic)
-            return;
-        events.putIfAbsent(address, new ArrayList<>());
-        events.get(address).add(new AbstractMap.SimpleImmutableEntry<>(eventName, eventData));
+    public void onEvent(HexBytes address, List<Uint256> topics, byte[] data) {
+
     }
 
     @Override

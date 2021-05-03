@@ -54,10 +54,6 @@ public class PoSMiner extends AbstractMiner {
     @Override
     protected Header createHeader(Block parent) {
         return Header.builder()
-                .version(parent.getVersion())
-                .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
-                .createdAt(System.currentTimeMillis() / 1000)
-                .payload(HexBytes.EMPTY)
                 .build();
     }
 

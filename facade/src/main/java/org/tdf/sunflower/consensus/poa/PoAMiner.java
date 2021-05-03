@@ -55,10 +55,6 @@ public class PoAMiner extends AbstractMiner {
     @Override
     protected Header createHeader(Block parent) {
         return Header.builder()
-                .version(parent.getVersion())
-                .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
-                .createdAt(System.currentTimeMillis() / 1000)
-                .payload(HexBytes.EMPTY)
                 .build();
     }
 
@@ -66,7 +62,7 @@ public class PoAMiner extends AbstractMiner {
     protected boolean finalizeBlock(Block parent, Block block) {
         byte[] plain = PoA.getSignaturePlain(block);
         byte[] sig = CryptoContext.sign(privateKey.getBytes(), plain);
-        block.setPayload(HexBytes.fromBytes(sig));
+//        block.setPayload(HexBytes.fromBytes(sig));
 
         if (poAConfig.getRole().equals("gateway")) {
             for (int i = 1; i < block.getBody().size(); i++) {

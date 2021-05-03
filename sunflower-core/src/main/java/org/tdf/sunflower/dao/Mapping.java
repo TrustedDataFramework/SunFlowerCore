@@ -13,16 +13,16 @@ import java.util.stream.Stream;
 
 public class Mapping {
     public static Header getFromHeaderEntity(HeaderEntity header) {
-        Header ret = Header.builder()
-                .version(header.getVersion())
-                .hashPrev(HexBytes.fromBytes(header.getHashPrev()))
-                .transactionsRoot(HexBytes.fromBytes(header.getTransactionsRoot()))
-                .stateRoot(HexBytes.fromBytes(header.getStateRoot()))
-                .height(header.getHeight())
-                .createdAt(header.getCreatedAt())
-                .payload(HexBytes.fromBytes(header.getPayload()))
-                .build();
-        return ret;
+//        Header ret = Header.builder()
+//                .version(header.getVersion())
+//                .hashPrev(HexBytes.fromBytes(header.getHashPrev()))
+//                .transactionsRoot(HexBytes.fromBytes(header.getTransactionsRoot()))
+//                .stateRoot(HexBytes.fromBytes(header.getStateRoot()))
+//                .height(header.getHeight())
+//                .createdAt(header.getCreatedAt())
+//                .payload(HexBytes.fromBytes(header.getPayload()))
+//                .build();
+        return null;
     }
 
     public static List<Header> getFromHeaderEntities(Collection<? extends HeaderEntity> headers) {
@@ -41,15 +41,16 @@ public class Mapping {
     }
 
     public static HeaderEntity getEntityFromHeader(Header header) {
-        return HeaderEntity
-                .builder().hash(header.getHash().getBytes())
-                .version(header.getVersion())
-                .hashPrev(header.getHashPrev().getBytes())
-                .transactionsRoot(header.getTransactionsRoot().getBytes())
-                .stateRoot(header.getStateRoot().getBytes())
-                .height(header.getHeight())
-                .createdAt(header.getCreatedAt())
-                .payload(header.getPayload().getBytes()).build();
+//        return HeaderEntity
+//                .builder().hash(header.getHash().getBytes())
+//                .version(header.getVersion())
+//                .hashPrev(header.getHashPrev().getBytes())
+//                .transactionsRoot(header.getTransactionsRoot().getBytes())
+//                .stateRoot(header.getStateRoot().getBytes())
+//                .height(header.getHeight())
+//                .createdAt(header.getCreatedAt())
+//                .payload(header.getPayload().getBytes()).build();
+        return null;
     }
 
     public static Stream<TransactionEntity> getTransactionEntitiesFromBlock(Block block) {

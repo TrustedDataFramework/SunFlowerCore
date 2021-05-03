@@ -29,9 +29,6 @@ public class PoAValidator extends AbstractValidator {
         if (!fee.safeAdd(poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1)).equals(block.getBody().get(0).getValueAsUint())) {
             return ValidateResult.fault("reward of coin base transaction should be " + poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1));
         }
-        if (block.getVersion() != PoAConstants.BLOCK_VERSION) {
-            return ValidateResult.fault("version not match");
-        }
 
         // TODO: validate signature here
 
