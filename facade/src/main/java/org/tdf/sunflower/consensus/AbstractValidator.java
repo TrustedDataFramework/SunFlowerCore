@@ -27,8 +27,13 @@ public abstract class AbstractValidator implements Validator {
 
         // a block should contains exactly one coin base transaction
 
-        for (Transaction t : block.getBody()) {
-            // TODO: transaction basic validte
+        // validate coinbase
+        if(!block.getCoinbase().equals(block.getBody().get(0).getReceiveHex())) {
+            return BlockValidateResult.fault("block coinbase not equalt to coinbase tx receiver");
+        }
+
+        for (Transaction t : block.getBody().subList(1, block.getBody().size())) {
+            // validate transaction signature
             if(t.getSignature() == null)
                 return BlockValidateResult.fault("unsigned transaction is not allowed here");
             try {
@@ -70,7 +75,7 @@ public abstract class AbstractValidator implements Validator {
                 VMResult r = executor.execute();
                 results.put(HexBytes.fromBytes(tx.getHash()), r);
                 totalFee = totalFee.safeAdd(r.getFee());
-                // todo:
+
 
                 currentGas += r.getGasUsed();
                 TransactionReceipt receipt = new TransactionReceipt(
@@ -103,9 +108,14 @@ public abstract class AbstractValidator implements Validator {
 
             HexBytes rootHash = tmp.merge();
             if (!rootHash.equals(block.getStateRoot())) {
-                return BlockValidateResult.fault("state root not match");
+                return BlockValidateResult.fault("state trie root not match");
             }
-            success.setEvents(tmp.getEvents());
+
+            // validate receipt trie root
+            if(!TransactionReceipt.calcReceiptsTrie(receipts).equals(block.getReceiptTrieRoot())) {
+                return BlockValidateResult.fault("receipts trie root not match");
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
             return BlockValidateResult.fault("contract evaluation failed or " + e.getMessage());

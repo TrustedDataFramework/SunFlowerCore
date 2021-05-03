@@ -1,7 +1,9 @@
 package org.tdf.common.trie;
 
 import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.Store;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 
 import java.util.*;
@@ -158,6 +160,15 @@ public interface Trie<K, V> extends Store<K, V> {
     void traverse(BiFunction<? super K, ? super V, Boolean> traverser);
 
     void traverseValue(Function<? super V, Boolean> traverser);
+
+    static Trie<byte[], byte[]> getDefault() {
+        return Trie.<byte[], byte[]>builder()
+            .store(new ByteArrayMapStore<>())
+            .keyCodec(Codec.identity())
+            .valueCodec(Codec.identity())
+            .hashFunction(HashUtil::sha3)
+            .build();
+    }
 
     class Builder<K, V> {
         private Function<byte[], byte[]> hashFunction;

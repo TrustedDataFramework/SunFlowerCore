@@ -292,11 +292,6 @@ public class BackendImpl implements Backend {
     }
 
     @Override
-    public Map<HexBytes, List<Map.Entry<String, RLPList>>> getEvents() {
-        return events;
-    }
-
-    @Override
     public boolean isStatic() {
         return isStatic;
     }

@@ -2,7 +2,10 @@ package org.tdf.sunflower.types;
 
 import lombok.NonNull;
 import org.spongycastle.util.BigIntegers;
+import org.tdf.common.trie.Trie;
 import org.tdf.common.util.ByteUtil;
+import org.tdf.common.util.HashUtil;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.*;
 
 import java.math.BigInteger;
@@ -25,6 +28,19 @@ import static org.tdf.common.util.ByteUtil.toHexString;
 @RLPEncoding(TransactionReceipt.TransactionReceiptEncoder.class)
 @RLPDecoding(TransactionReceipt.TransactionReceiptDecoder.class)
 public class TransactionReceipt {
+
+    public static HexBytes calcReceiptsTrie(List<TransactionReceipt> receipts) {
+        Trie<byte[], byte[]> receiptsTrie = Trie.getDefault();
+
+        if (receipts == null || receipts.isEmpty())
+            return HashUtil.EMPTY_TRIE_HASH_HEX;
+
+        for (int i = 0; i < receipts.size(); i++) {
+            receiptsTrie.put(RLPCodec.encodeInt(i), receipts.get(i).getReceiptTrieEncoded());
+        }
+        return receiptsTrie.commit();
+    }
+
     public static class TransactionReceiptEncoder implements RLPEncoder<TransactionReceipt> {
 
         @Override
@@ -201,6 +217,7 @@ public class TransactionReceipt {
     public byte[] getReceiptTrieEncoded() {
         return getEncoded(true);
     }
+
 
     /**
      * Used for serialization, contains all the receipt data encoded

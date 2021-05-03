@@ -65,8 +65,6 @@ public interface Backend {
 
     void onEvent(HexBytes address, List<Uint256> topics, byte[] data);
 
-    Map<HexBytes, List<Map.Entry<String, RLPList>>> getEvents();
-
     boolean isStatic();
 
     Backend getParentBackend();

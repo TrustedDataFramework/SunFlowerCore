@@ -128,7 +128,7 @@ public class PoA extends AbstractConsensusEngine {
         setPeerServerListener(PeerServerListener.NONE);
         // create state repository
 
-        if (poAConfig.getThreadId() != GATEWAY_ID) {
+        if (poAConfig.getThreadId() != 0 && poAConfig.getThreadId() != GATEWAY_ID) {
             int core = Runtime.getRuntime().availableProcessors();
             executorService = Executors.newScheduledThreadPool(
                     core > 1 ? core / 2 : core,
@@ -175,15 +175,15 @@ public class PoA extends AbstractConsensusEngine {
         );
 
 
+
         this.validatorContract = new Authentication(genesis.validator == null ? Collections.emptyList() :
-                genesis.filtersValidators(),
-                Constants.VALIDATOR_CONTRACT_ADDR
+            genesis.filtersValidators(),
+            Constants.VALIDATOR_CONTRACT_ADDR
         );
 
-
+        preBuiltContracts.add(this.validatorContract);
         preBuiltContracts.add(this.authContract);
         preBuiltContracts.add(this.minerContract);
-        preBuiltContracts.add(this.validatorContract);
 
         initStateTrie();
 
@@ -195,8 +195,6 @@ public class PoA extends AbstractConsensusEngine {
         this.minerContract.setAccountTrie(trie);
         this.minerContract.setContractStorageTrie(getContractStorageTrie());
 
-        this.validatorContract.setAccountTrie(trie);
-        this.validatorContract.setContractStorageTrie(getContractStorageTrie());
 
         poaMiner = new PoAMiner(getAccountTrie(), getEventBus(), poAConfig, this);
         poaMiner.setBlockRepository(this.getSunflowerRepository());
@@ -213,7 +211,7 @@ public class PoA extends AbstractConsensusEngine {
 
     @Override
     public int getChainId() {
-        return poAConfig.getThreadId();
+        return poAConfig.getThreadId() == 0 ? super.getChainId() : poAConfig.getThreadId();
     }
 
     @Override

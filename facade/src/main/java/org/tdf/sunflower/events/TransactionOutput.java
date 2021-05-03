@@ -13,6 +13,5 @@ public class TransactionOutput {
     long blockHeight;
     HexBytes blockHash;
     Map<HexBytes, VMResult> results;
-    Map<HexBytes, List<Map.Entry<String, RLPList>>> events;
     Map<HexBytes, String> reasons; // failed transactions
 }

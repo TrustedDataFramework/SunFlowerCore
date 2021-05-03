@@ -16,8 +16,6 @@ public class BlockValidateResult extends ValidateResult {
     private Map<HexBytes, VMResult> results;
     private List<TransactionInfo> infos;
 
-    private Map<HexBytes, List<Map.Entry<String, RLPList>>> events;
-
     public BlockValidateResult(boolean success, @NonNull String reason) {
         super(success, reason);
     }

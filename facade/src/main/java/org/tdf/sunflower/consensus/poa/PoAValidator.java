@@ -26,14 +26,13 @@ public class PoAValidator extends AbstractValidator {
     public ValidateResult validate(Block block, Block dependency) {
         BlockValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
+
         Uint256 fee = res.getFee();
         if (!fee.safeAdd(poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1)).equals(block.getBody().get(0).getValueAsUint())) {
             return ValidateResult.fault("reward of coin base transaction should be " + poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1));
         }
 
         // TODO: validate signature here
-
-
         ValidateResult res0 = validateCoinBase(dependency, block.getBody().get(0));
         if (!res0.isSuccess())
             return res0;
@@ -48,6 +47,9 @@ public class PoAValidator extends AbstractValidator {
 
     @Override
     public ValidateResult validate(Block dependency, Transaction transaction) {
+        if(!poA.getPoAConfig().isControlled())
+            return ValidateResult.success();
+
         HexBytes farmBaseAdmin = HexBytes.fromHex(poA.getPoAConfig().getFarmBaseAdmin());
 
         switch (poA.getPoAConfig().getThreadId()) {
@@ -100,7 +102,6 @@ public class PoAValidator extends AbstractValidator {
     }
 
     private ValidateResult validateCoinBase(Block parent, Transaction coinBase) {
-
         if (coinBase.getNonceAsLong() != parent.getHeight() + 1)
             return ValidateResult.fault("nonce of coin base should be " + parent.getHeight() + 1);
 

@@ -59,7 +59,7 @@ public class Genesis {
         return ret;
     }
 
-    // 去重后的验证者公钥
+    // 去重后的验证者地址
     public List<HexBytes> filtersValidators() {
         if (validator == null || validator.isEmpty())
             return Collections.emptyList();

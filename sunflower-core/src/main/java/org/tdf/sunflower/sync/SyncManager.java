@@ -578,7 +578,6 @@ public class SyncManager implements PeerServerListener, Closeable {
                         b.getHeight(),
                         b.getHash(),
                         rs.getResults(),
-                        rs.getEvents(),
                         Collections.emptyMap()
                 ));
                 repository.writeBlock(b, rs.getInfos());

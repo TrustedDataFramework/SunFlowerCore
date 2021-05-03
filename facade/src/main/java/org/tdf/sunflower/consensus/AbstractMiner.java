@@ -157,7 +157,6 @@ public abstract class AbstractMiner implements Miner {
                     b.getHeight(),
                     b.getHash(),
                     Collections.emptyMap(),
-                    Collections.emptyMap(),
                     failedMessages
             ));
             return new BlockCreateResult(null, failedTransactions, reasons, Collections.emptyList());
@@ -204,7 +203,6 @@ public abstract class AbstractMiner implements Miner {
                 b.getHeight(),
                 b.getHash(),
                 results,
-                tmp.getEvents(),
                 failedMessages
         ));
 

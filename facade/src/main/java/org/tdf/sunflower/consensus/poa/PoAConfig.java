@@ -1,5 +1,6 @@
 package org.tdf.sunflower.consensus.poa;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,9 +30,14 @@ public class PoAConfig implements MinerConfig {
     @JsonProperty("farm-base-admin")
     private String farmBaseAdmin;
 
-    // your thread id,
+    // your thread id, when thread-id = 0, gateway control is disabled
     @JsonProperty("thread-id") //
     private int threadId;
+
+    @JsonIgnore
+    public boolean isControlled() {
+        return threadId != 0;
+    }
 
     // your thread id,
     @JsonProperty("gateway-node") //
