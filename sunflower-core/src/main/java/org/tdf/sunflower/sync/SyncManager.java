@@ -114,23 +114,20 @@ public class SyncManager implements PeerServerListener, Closeable {
 
     private boolean isNotApproved(Context context) {
         // filter nodes not auth
-        Optional<Set<HexBytes>> nodes = engine.getApprovedNodes();
-        if (nodes.isPresent() && !nodes.get().contains(Address.fromPublicKey(context.getRemote().getID()))) {
-            context.exit();
-            log.error("invalid node " + context.getRemote().getID() + " not approved");
-            return true;
-        }
+//        Optional<Set<HexBytes>> nodes = engine.getApprovedNodes();
+//        if (nodes.isPresent() && !nodes.get().contains(Address.fromPublicKey(context.getRemote().getID()))) {
+//            context.exit();
+//            log.error("invalid node " + context.getRemote().getID() + " not approved");
+//            return true;
+//        }
         return false;
     }
 
     private void broadcastToApproved(byte[] body) {
         List<Peer> peers = peerServer.getPeers();
-        Optional<Set<HexBytes>> nodes = engine.getApprovedNodes();
-        if (nodes.isPresent()) {
-            peers = peers.stream()
-                    .filter(p -> nodes.get().contains(Address.fromPublicKey(p.getID())))
+        peers = peers.stream()
+                    .filter(engine::isAllow)
                     .collect(Collectors.toList());
-        }
 
         for (Peer p : peers) {
             peerServer.dial(p, body);

@@ -69,17 +69,6 @@ public class PoA extends AbstractConsensusEngine {
         this.economicModel = economicModel;
     }
 
-    static byte[] getSignaturePlain(Block b) {
-        return new byte[0];
-    }
-
-    @Override
-    public Optional<Set<HexBytes>> getApprovedNodes() {
-        if (poAConfig.isAllowUnauthorized())
-            return Optional.empty();
-        Block best = getSunflowerRepository().getBestBlock();
-        return Optional.of(new HashSet<>(this.authContract.getNodes(best.getStateRoot())));
-    }
 
     @Override
     public List<HexBytes> getMinerAddresses() {

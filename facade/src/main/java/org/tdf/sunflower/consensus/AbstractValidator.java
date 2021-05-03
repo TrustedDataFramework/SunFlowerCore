@@ -4,7 +4,6 @@ import lombok.NonNull;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.common.util.SafeMath;
 import org.tdf.sunflower.facade.Validator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
@@ -30,8 +29,13 @@ public abstract class AbstractValidator implements Validator {
 
         for (Transaction t : block.getBody()) {
             // TODO: transaction basic validte
-//            ValidateResult res = t.basicValidate();
-//            if (!res.isSuccess()) return BlockValidateResult.fault(res.getReason());
+            if(t.getSignature() == null)
+                return BlockValidateResult.fault("unsigned transaction is not allowed here");
+            try {
+                t.verify();
+            }catch (Exception e) {
+                return BlockValidateResult.fault(e.getMessage());
+            }
         }
         if (!parent.isParentOf(block) || parent.getHeight() + 1 != block.getHeight()) {
             return BlockValidateResult.fault("dependency is not parent of block");

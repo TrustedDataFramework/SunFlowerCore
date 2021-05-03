@@ -52,11 +52,6 @@ public class PoS extends AbstractConsensusEngine {
     }
 
     @Override
-    public Optional<Set<HexBytes>> getApprovedNodes() {
-        return Optional.empty();
-    }
-
-    @Override
     public List<Account> getGenesisStates() {
         return genesis.alloc == null ? Collections.emptyList() :
                 genesis.alloc.entrySet().stream()

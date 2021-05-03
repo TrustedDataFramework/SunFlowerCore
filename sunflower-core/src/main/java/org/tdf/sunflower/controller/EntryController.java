@@ -173,12 +173,7 @@ public class EntryController {
             a = Account.emptyAccount(addressHex, Uint256.ZERO);
         return AccountView.fromAccount(a);
     }
-
-    @GetMapping(value = "/approved")
-    public List<HexBytes> getApproved() {
-        return consensusEngine.getApprovedNodes().map(ArrayList::new).orElse(null);
-    }
-
+    
     @GetMapping(value = "/peers", produces = MediaType.APPLICATION_JSON_VALUE)
     public PeersInfo peers() {
         return new PeersInfo(peerServer.getPeers(), peerServer.getBootStraps());

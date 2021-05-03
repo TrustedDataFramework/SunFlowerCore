@@ -2,6 +2,7 @@ package org.tdf.sunflower.facade;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
@@ -24,8 +25,8 @@ public interface ConsensusEngine {
 
     PeerServerListener getPeerServerListener();
 
-    default Optional<Set<HexBytes>> getApprovedNodes() {
-        return Optional.empty();
+    default boolean isAllow(Peer peer) {
+        return true;
     }
 
     // inject configurations, throw exception if configuration is invalid
