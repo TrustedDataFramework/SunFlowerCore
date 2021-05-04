@@ -155,6 +155,10 @@ public class EntryController {
         return HeaderV1.fromV2(getBlockOrHeader(hashOrHeight, repository::getCanonicalHeader, repository::getHeader));
     }
 
+    @GetMapping(value = "/transaction/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public TransactionV1 getTransaction(@PathVariable String hash) {
+        return repository.getTransactionByHash(HexBytes.decode(hash)).map(TransactionV1::fromV2).get();
+    }
 
     @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)
     public AccountView getAccount(@PathVariable String addressOrPublicKey) throws Exception {
