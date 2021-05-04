@@ -1,4 +1,4 @@
-package org.tdf.common.types;
+package org.tdf.sunflower.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import org.tdf.common.types.Chained;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
@@ -14,9 +15,14 @@ import org.tdf.rlp.RLP;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class BlockV1 implements Chained {
-
+    public static BlockV1 fromV2(Block b){
+        BlockV1 r = new BlockV1(HeaderV1.fromV2(b.getHeader()));
+        r.body = b.getBody().stream().map(TransactionV1::fromV2).collect(Collectors.toList());
+        return r;
+    }
 
     // extend from header
     @Getter

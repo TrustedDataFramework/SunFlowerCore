@@ -13,19 +13,15 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.types.BlockConfirms;
+import org.tdf.sunflower.types.TransactionV1;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.consensus.poa.PoA;
 import org.tdf.sunflower.consensus.pow.PoW;
-import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
-import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.SunflowerRepository;
@@ -38,16 +34,11 @@ import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.util.EnvReader;
-import org.tdf.sunflower.util.MappingUtil;
-import org.tdf.sunflower.vm.ContractABI;
-import org.tdf.sunflower.vm.abi.ContractCallPayload;
 
 import java.lang.management.ManagementFactory;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
 
 @RestController
 @AllArgsConstructor
@@ -155,13 +146,13 @@ public class EntryController {
     }
 
     @GetMapping(value = "/block/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Block getBlock(@PathVariable String hashOrHeight) {
-        return getBlockOrHeader(hashOrHeight, repository::getCanonicalBlock, repository::getBlock);
+    public BlockV1 getBlock(@PathVariable String hashOrHeight) {
+        return BlockV1.fromV2(getBlockOrHeader(hashOrHeight, repository::getCanonicalBlock, repository::getBlock));
     }
 
     @GetMapping(value = "/header/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Header getHeaders(@PathVariable String hashOrHeight) {
-        return getBlockOrHeader(hashOrHeight, repository::getCanonicalHeader, repository::getHeader);
+    public HeaderV1 getHeaders(@PathVariable String hashOrHeight) {
+        return HeaderV1.fromV2(getBlockOrHeader(hashOrHeight, repository::getCanonicalHeader, repository::getHeader));
     }
 
 
@@ -187,6 +178,11 @@ public class EntryController {
     @GetMapping(value = "/orphan", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Block> orphans() {
         return syncManager.getOrphans();
+    }
+
+    @GetMapping(value = "/pool", produces = MediaType.APPLICATION_JSON_VALUE)
+    public PagedView<TransactionV1> getPool(@ModelAttribute PoolQuery poolQuery) {
+        return PagedView.empty();
     }
 
 

@@ -2,12 +2,17 @@ package org.tdf.sunflower.types;
 
 import lombok.Value;
 
+import java.util.Collections;
 import java.util.List;
 
 @Value
 public class PagedView<T> {
-    private int page;
-    private int size;
-    private int total;
-    private List<T> records;
+    int page;
+    int size;
+    int total;
+    List<T> records;
+
+    public static <T>  PagedView<T> empty() {
+        return new PagedView<>(0, 0, 0, Collections.emptyList());
+    }
 }

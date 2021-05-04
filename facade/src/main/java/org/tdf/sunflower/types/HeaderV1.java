@@ -1,9 +1,10 @@
-package org.tdf.common.types;
+package org.tdf.sunflower.types;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
+import org.tdf.common.types.Chained;
 import org.tdf.common.util.*;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
@@ -13,6 +14,20 @@ import org.tdf.rlp.RLPIgnored;
 @ToString
 @NoArgsConstructor
 public class HeaderV1 implements Chained {
+    public static HeaderV1 fromV2(Header header) {
+        HeaderV1 r = new HeaderV1(
+            1,
+            header.getHashPrev(),
+            header.transactionsRoot,
+            header.stateRoot,
+            header.height,
+            header.createdAt,
+            header.extraData
+        );
+        r.hash = header.getHash();
+        return r;
+    }
+
     /**
      * magic version number
      */
@@ -80,12 +95,6 @@ public class HeaderV1 implements Chained {
     }
 
     private HexBytes getHash(boolean forceReHash) {
-        if (forceReHash || this.hash == null) {
-            this.hash = HexBytes.fromBytes(
-                HashUtil.sha3(RLPCodec.encode(this))
-            );
-            return this.hash;
-        }
         return this.hash;
     }
 

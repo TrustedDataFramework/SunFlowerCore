@@ -1,10 +1,11 @@
-package org.tdf.common.types;
+package org.tdf.sunflower.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.*;
 import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
@@ -21,6 +22,26 @@ import java.util.stream.Collectors;
 public class TransactionV1 {
     public static final long TRANSFER_GAS = 10;
     public static final long BUILTIN_CALL_GAS = 10;
+
+    public static final HexBytes EMPTY_SIG = HexBytes.fromBytes(new byte[64]);
+
+    public static TransactionV1 fromV2(Transaction t) {
+        TransactionV1 r = new TransactionV1(
+            1,
+            t.getReceiveHex().isEmpty() ? Type.CONTRACT_DEPLOY.code : (t.getDataHex().isEmpty() ? Type.TRANSFER.code : Type.CONTRACT_CALL.code),
+            System.currentTimeMillis() / 1000,
+            t.getNonceAsLong(),
+            t.getSenderHex(),
+            t.getGasLimitAsU256().longValue(),
+            t.getGasPriceAsU256(),
+            t.getValueAsUint(),
+            t.getDataHex(),
+            t.getReceiveHex(),
+            EMPTY_SIG
+        );
+        r.hash = t.getHashHex();
+        return r;
+    }
 
 
     @RLP(0)
@@ -120,12 +141,6 @@ public class TransactionV1 {
     }
 
     private HexBytes getHash(boolean forceReHash) {
-        if (forceReHash || this.hash == null) {
-            this.hash = HexBytes.fromBytes(
-                HashUtil.sha3(getSignaturePlain())
-            );
-            return this.hash;
-        }
         return this.hash;
     }
 
