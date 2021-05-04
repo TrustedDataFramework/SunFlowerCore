@@ -257,7 +257,7 @@ public class VMExecutor {
 
                             if(type.getName().startsWith("bytes")) {
                                 HexBytes bytes = (HexBytes) WBI.peek(instance, (int) rets[i], WbiType.BYTES);
-                                results.add(bytes);
+                                results.add(bytes.getBytes());
                             }
                             break;
                         }
