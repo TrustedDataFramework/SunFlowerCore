@@ -3,7 +3,6 @@ package org.tdf.sunflower.net;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Transaction;
@@ -50,10 +49,10 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         }
         p.host = u.getHost();
         if (u.getRawUserInfo() == null || u.getRawUserInfo().isEmpty())
-            throw new ApplicationException("parse peer failed: missing public key");
+            throw new RuntimeException("parse peer failed: missing public key");
         p.ID = HexBytes.fromHex(u.getRawUserInfo());
         if (p.ID.size() != Transaction.ADDRESS_LENGTH) {
-            throw new ApplicationException("peer " + url + " address should be " + Transaction.ADDRESS_LENGTH);
+            throw new RuntimeException("peer " + url + " address should be " + Transaction.ADDRESS_LENGTH);
         }
         return p;
     }

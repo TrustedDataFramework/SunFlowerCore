@@ -1,11 +1,11 @@
 package org.tdf.sunflower.facade;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.ValidateResult;
 
 import java.util.*;
@@ -30,7 +30,7 @@ public interface ConsensusEngine {
     }
 
     // inject configurations, throw exception if configuration is invalid
-    void init(Properties properties);
+    void init(ConsensusConfig config);
 
     String getName();
 

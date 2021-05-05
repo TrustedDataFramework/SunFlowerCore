@@ -16,7 +16,6 @@ import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
 import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.facade.SunflowerRepository;
@@ -27,6 +26,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
@@ -157,25 +157,25 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
     }
 
     @Override
-    public void init(Properties properties) throws ConsensusEngineInitException {
+    public void init(ConsensusConfig properties) {
         ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
-        vrfConfig = MappingUtil.propertiesToPojo(properties, VrfConfig.class);
+        vrfConfig = null;
         InputStream in;
         try {
             in = FileUtils.getInputStream(vrfConfig.getGenesis());
         } catch (Exception e) {
-            throw new ConsensusEngineInitException(e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
         try {
             genesis = objectMapper.readValue(in, VrfGenesis.class);
         } catch (Exception e) {
-            throw new ConsensusEngineInitException("failed to parse genesis: " + e.getMessage());
+            throw new RuntimeException("failed to parse genesis: " + e.getMessage());
         }
 
         try {
             setGenesisBlock(genesis.getBlock(vrfConfig));
         } catch (IOException e) {
-            throw new ConsensusEngineInitException(e);
+            throw new RuntimeException(e);
         }
 
         setPeerServerListener(this);
@@ -192,7 +192,8 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
 
         setValidator(new VrfValidator(getAccountTrie()));
 
-        vrfMiner = new VrfMiner(getAccountTrie(), getEventBus(), vrfConfig);
+//        vrfMiner = new VrfMiner(getAccountTrie(), getEventBus(), vrfConfig);
+
         vrfMiner.setBlockRepository(this.getSunflowerRepository());
         vrfMiner.setConfig(vrfConfig);
         vrfMiner.setGenesis(genesis);

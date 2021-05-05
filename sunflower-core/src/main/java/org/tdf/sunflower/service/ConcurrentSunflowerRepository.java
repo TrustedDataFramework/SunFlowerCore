@@ -1,10 +1,7 @@
 package org.tdf.sunflower.service;
 
 import lombok.RequiredArgsConstructor;
-import org.tdf.common.types.BlockConfirms;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.exception.GenesisConflictsException;
-import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.facade.ConfirmedBlocksProvider;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.state.Account;
@@ -40,7 +37,7 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
     }
 
     @Override
-    public void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
+    public void saveGenesis(Block block) {
         lock.writeLock().lock();
         try {
             delegate.saveGenesis(block);

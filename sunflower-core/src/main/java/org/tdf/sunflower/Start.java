@@ -48,7 +48,6 @@ import org.tdf.sunflower.consensus.vrf.HashUtil;
 import org.tdf.sunflower.consensus.vrf.VrfEngine;
 import org.tdf.sunflower.controller.JsonRpc;
 import org.tdf.sunflower.controller.JsonRpcFilter;
-import org.tdf.sunflower.exception.ApplicationException;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.net.PeerServerImpl;
@@ -61,6 +60,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.util.EnvReader;
 import org.tdf.sunflower.util.FileUtils;
@@ -210,7 +210,7 @@ public class Start {
                 CryptoContext.setHashFunction(CryptoHelpers::sha3256);
                 break;
             default:
-                throw new ApplicationException("unknown hash function: " + reader.getHash());
+                throw new RuntimeException("unknown hash function: " + reader.getHash());
         }
         switch (reader.getEC().toLowerCase()) {
             case "ed25519":
@@ -229,7 +229,7 @@ public class Start {
                 CryptoContext.setEcdh((initiator, sk, pk) -> SM2.calculateShareKey(initiator, sk, sk, pk, pk, SM2Util.WITH_ID));
                 break;
             default:
-                throw new ApplicationException("unknown ec curve " + reader.getEC());
+                throw new RuntimeException("unknown ec curve " + reader.getEC());
         }
         CryptoContext.setPublicKeySize(CryptoContext.getPkFromSk(CryptoContext.generateSecretKey()).length);
         CryptoContext.setEncrypt(CryptoHelpers.ENCRYPT);
@@ -348,7 +348,7 @@ public class Start {
         }
         injectApplicationContext(context, (AbstractConsensusEngine) engine);
 
-        engine.init(consensusProperties);
+        engine.init(new ConsensusConfig(consensusProperties));
 
         String[] nonNullFields = new String[]{"Miner", "Validator", "AccountTrie", "GenesisBlock", "ConfirmedBlocksProvider", "PeerServerListener"};
 

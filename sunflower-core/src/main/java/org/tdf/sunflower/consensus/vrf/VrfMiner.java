@@ -12,7 +12,6 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
-import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.consensus.vrf.core.*;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
@@ -20,7 +19,6 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.events.NewBlocksReceived;
-import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.PeerServer;
@@ -72,8 +70,8 @@ public class VrfMiner extends AbstractMiner {
     // contract storage trie
     private Trie<byte[], byte[]> contractStorageTrie;
 
-    public VrfMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig) {
-        super(accountTrie, eventBus, minerConfig);
+    public VrfMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus) {
+        super(accountTrie, eventBus, null);
     }
 
 
@@ -81,7 +79,7 @@ public class VrfMiner extends AbstractMiner {
         this.genesis = genesis;
     }
 
-    public void setConfig(VrfConfig vrfConfig) throws ConsensusEngineInitException {
+    public void setConfig(VrfConfig vrfConfig) {
         this.vrfConfig = vrfConfig;
         this.minerAddress = HexBytes.fromHex(vrfConfig.getMinerCoinBase());
         this.minerCoinbase = this.minerAddress.getBytes();

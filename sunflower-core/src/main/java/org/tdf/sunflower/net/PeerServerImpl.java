@@ -3,7 +3,6 @@ package org.tdf.sunflower.net;
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.JsonStore;
-import org.tdf.sunflower.exception.PeerServerInitException;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.facade.SecretStore;
@@ -103,7 +102,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     }
 
     @Override
-    public void init(Properties properties) throws PeerServerInitException {
+    public void init(Properties properties) {
         JavaPropsMapper mapper = new JavaPropsMapper();
         try {
             config = mapper.readPropertiesAs(properties, PeerServerConfig.class);
@@ -123,7 +122,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
                 ).toString();
             } catch (Exception ignored) {
             }
-            throw new PeerServerInitException(
+            throw new RuntimeException(
                     "load properties failed :" + properties.toString() + " expecting " + schema
             );
         }
@@ -141,7 +140,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             resolveSelf();
         } catch (Exception e) {
             e.printStackTrace();
-            throw new PeerServerInitException("failed to load peer server invalid address " + config.getAddress());
+            throw new RuntimeException("failed to load peer server invalid address " + config.getAddress());
         }
         builder = new MessageBuilder(self, config);
         if ("grpc".equals(config.getName().trim().toLowerCase())) {

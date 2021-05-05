@@ -5,9 +5,7 @@ import lombok.SneakyThrows;
 import org.tdf.common.crypto.ECDSASignature;
 import org.tdf.common.crypto.ECKey;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.common.util.RLPUtil;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.consensus.AbstractValidator;
@@ -15,7 +13,6 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 
-import java.math.BigInteger;
 import java.util.Objects;
 
 @Setter
@@ -78,12 +75,12 @@ public class PoAValidator extends AbstractValidator {
     // validate pre-pending transaction
     @Override
     public ValidateResult validate(Header dependency, Transaction transaction) {
-        if(!poA.getPoAConfig().isControlled())
+        if(!poA.getConfig().isControlled())
             return ValidateResult.success();
 
-        HexBytes farmBaseAdmin = HexBytes.fromHex(poA.getPoAConfig().getFarmBaseAdmin());
+        HexBytes farmBaseAdmin = poA.getConfig().getFarmBaseAdmin();
 
-        if (poA.getPoAConfig().getThreadId() == PoA.GATEWAY_ID) {// for gateway node, only accept transaction from farm-base admin
+        if (poA.getConfig().getThreadId() == PoA.GATEWAY_ID) {// for gateway node, only accept transaction from farm-base admin
             if (Objects.requireNonNull(transaction.getChainId()) != PoA.GATEWAY_ID || !transaction.getSenderHex().equals(farmBaseAdmin)) {
                 return ValidateResult.fault(
                     String.format(
@@ -97,11 +94,11 @@ public class PoAValidator extends AbstractValidator {
 
             // for thread node, only accept transaction with thread id or gateway id
         } else {
-            if (transaction.getChainId() != PoA.GATEWAY_ID && transaction.getChainId() != poA.getPoAConfig().getThreadId()) {
+            if (transaction.getChainId() != PoA.GATEWAY_ID && transaction.getChainId() != poA.getConfig().getThreadId()) {
                 return ValidateResult.fault(
                     String.format(
                         "this thread only accept transaction with thread id = %s, while id = %s received",
-                        poA.getPoAConfig().getThreadId(),
+                        poA.getConfig().getThreadId(),
                         transaction.getChainId()
                     )
                 );

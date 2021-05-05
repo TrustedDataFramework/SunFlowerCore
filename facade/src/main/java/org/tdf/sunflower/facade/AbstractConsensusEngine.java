@@ -11,6 +11,7 @@ import org.tdf.sunflower.state.Bios;
 import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.ConsensusConfig;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,7 +24,7 @@ import java.util.function.Function;
 public abstract class AbstractConsensusEngine implements ConsensusEngine {
     public static final AbstractConsensusEngine NONE = new AbstractConsensusEngine() {
         @Override
-        public void init(Properties properties) {
+        public void init(ConsensusConfig config) {
             if (getTransactionPool() == null)
                 throw new RuntimeException("transaction pool not injected");
             if (getSunflowerRepository() == null)
@@ -44,7 +45,7 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
             return "none";
         }
     };
-    protected static final Object UNRESOLVED = new Object();
+
     // contract storage trie
     private Trie<HexBytes, HexBytes> contractStorageTrie;
     // a map between hash and wasm byte code

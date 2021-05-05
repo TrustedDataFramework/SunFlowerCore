@@ -1,30 +1,31 @@
 package org.tdf.sunflower.consensus.pow;
 
-import lombok.Data;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.types.AbstractGenesis;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 
-import java.util.Map;
+public class Genesis extends AbstractGenesis {
+    public Genesis(JsonNode parsed) {
+        super(parsed);
+    }
 
-@Data
-public class Genesis {
-    private HexBytes parentHash;
+    public HexBytes getNbits() {
+        JsonNode n = parsed.get("nbits");
+        return n == null ?
+            HexBytes.fromHex("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff") :
+            HexBytes.fromHex(n.asText());
+    }
 
-    private long timestamp;
-
-    private HexBytes nbits;
-
-    private Map<String, Long> alloc;
-
-    public Block get() {
-        if (nbits.size() != 32)
+    public Block getBlock() {
+        if (getNbits().size() != 32)
             throw new RuntimeException("invalid nbits size should be 32");
 
         Header h = Header.builder()
-                .hashPrev(parentHash)
-                .createdAt(timestamp)
-                .build();
+            .hashPrev(getParentHash())
+            .createdAt(getTimestamp())
+            .build();
 
         return new Block(h);
     }

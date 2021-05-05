@@ -17,7 +17,6 @@ import org.tdf.sunflower.types.TransactionInfo;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
-import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.math.BigInteger;
 import java.util.*;

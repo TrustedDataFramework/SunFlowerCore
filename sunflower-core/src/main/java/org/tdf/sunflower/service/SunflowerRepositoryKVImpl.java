@@ -8,14 +8,10 @@ import org.tdf.common.store.Store;
 import org.tdf.common.store.StoreWrapper;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.types.TransactionInfo;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.TransactionConfirmed;
-import org.tdf.sunflower.exception.ApplicationException;
-import org.tdf.sunflower.exception.GenesisConflictsException;
-import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.facade.ConfirmedBlocksProvider;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.types.Block;
@@ -96,7 +92,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
 
 
     @Override
-    public void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
+    public void saveGenesis(Block block) {
         super.saveGenesis(block);
         if (status.get(BEST_HEADER) == null) {
             status.put(BEST_HEADER, block.getHeader());
@@ -108,12 +104,12 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         HexBytes[] txHashes = transactionsRoot
                 .get(header.getTransactionsRoot().getBytes());
         if (txHashes == null)
-            throw new ApplicationException("transactions of header " + header + " not found");
+            throw new RuntimeException("transactions of header " + header + " not found");
         List<Transaction> body = new ArrayList<>(txHashes.length);
         for (HexBytes hash : txHashes) {
             Transaction t = transactionsStore.get(hash.getBytes());
             if (t == null)
-                throw new ApplicationException("transaction " + hash + " not found");
+                throw new RuntimeException("transaction " + hash + " not found");
             body.add(t);
         }
         Block ret = new Block(header);

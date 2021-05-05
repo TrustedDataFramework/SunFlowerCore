@@ -42,9 +42,6 @@ public class DatabaseStoreFactoryImpl implements DatabaseStoreFactory {
             case "leveldb-iq80":
                 store = new LevelDb(Iq80DBFactory.factory, config.getDirectory(), name);
                 break;
-//            case "rocksdb":
-//                store = new RocksDb(config.getDirectory(), name);
-//                break;
             case "memory":
                 store = new MemoryDatabaseStore();
                 break;

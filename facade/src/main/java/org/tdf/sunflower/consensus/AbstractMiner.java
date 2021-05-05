@@ -24,10 +24,10 @@ public abstract class AbstractMiner implements Miner {
     private final StateTrie<HexBytes, Account> accountTrie;
     @Getter(AccessLevel.PROTECTED)
     private final EventBus eventBus;
-    private final MinerConfig minerConfig;
+    private final ConsensusConfig config;
 
-    public AbstractMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig) {
-        this.minerConfig = minerConfig;
+    public AbstractMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, ConsensusConfig config) {
+        this.config = config;
         this.accountTrie = accountTrie;
         this.eventBus = eventBus;
     }
@@ -74,7 +74,7 @@ public abstract class AbstractMiner implements Miner {
         PendingData p =
             getTransactionPool().pop(parent.getHeader());
 
-        if (!minerConfig.isAllowEmptyBlock() && p.getPending().isEmpty() )
+        if (!config.allowEmptyBlock() && p.getPending().isEmpty() )
             return BlockCreateResult.empty();
 
         Header header = createHeader(parent);

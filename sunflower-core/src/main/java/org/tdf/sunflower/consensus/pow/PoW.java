@@ -1,11 +1,8 @@
 package org.tdf.sunflower.consensus.pow;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.Start;
@@ -14,23 +11,18 @@ import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Bios;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.util.FileUtils;
-import org.tdf.sunflower.util.MappingUtil;
 
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 
 import static org.tdf.sunflower.consensus.pow.PoWBios.N_BITS_KEY;
 
 @Slf4j(topic = "pow")
 public class PoW extends AbstractConsensusEngine {
-    public static final int BLOCK_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
     private Genesis genesis;
-    private PoWConfig config;
+    private ConsensusConfig config;
 
     public PoW() {
 
@@ -54,28 +46,16 @@ public class PoW extends AbstractConsensusEngine {
     }
 
     public Uint256 getNBits(
-           HexBytes stateRoot) {
+        HexBytes stateRoot) {
         Account a = getAccountTrie().get(stateRoot, PoWBios.ADDRESS);
         HexBytes bytes = getContractStorageTrie().revert(a.getStorageRoot())
-                .get(N_BITS_KEY);
+            .get(N_BITS_KEY);
         return Uint256.of(bytes.getBytes());
     }
 
     @Override
     public List<Account> getGenesisStates() {
-        if (genesis.getAlloc() == null)
-            return Collections.emptyList();
-
-        List<Account> accounts = new ArrayList<>();
-
-        if (genesis.getAlloc() != null) {
-            genesis.getAlloc().forEach((k, v) -> {
-                Account a = Account.emptyAccount(HexBytes.fromHex(k), Uint256.of(v));
-                accounts.add(a);
-            });
-        }
-
-        return accounts;
+        return genesis.getAlloc();
     }
 
     @Override
@@ -86,13 +66,11 @@ public class PoW extends AbstractConsensusEngine {
 
     @Override
     @SneakyThrows
-    public void init(Properties properties) {
-        ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
-        config = MappingUtil.propertiesToPojo(properties, PoWConfig.class);
-        InputStream in = FileUtils.getInputStream(config.getGenesis());
-        genesis = objectMapper.readValue(in, Genesis.class);
+    public void init(ConsensusConfig config) {
+        this.config = config;
+        genesis = new Genesis(config.getGenesisJson());
 
-        setGenesisBlock(genesis.get());
+        setGenesisBlock(genesis.getBlock());
         initStateTrie();
 
         setValidator(new PoWValidator(this));

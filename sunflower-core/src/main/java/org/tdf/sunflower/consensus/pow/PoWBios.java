@@ -9,6 +9,7 @@ import org.tdf.sunflower.Start;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Bios;
 import org.tdf.sunflower.state.Constants;
+import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.CallType;
@@ -38,9 +39,9 @@ public class PoWBios implements Bios {
     static final BigInteger MAX_UINT_256 = new BigInteger("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
     private final Uint256 genesisNbits;
 
-    private final PoWConfig config;
+    private final ConsensusConfig config;
 
-    public PoWBios(HexBytes nbits, PoWConfig config) {
+    public PoWBios(HexBytes nbits, ConsensusConfig config) {
         this.genesisNbits = Uint256.of(nbits.getBytes());
         this.config = config;
     }

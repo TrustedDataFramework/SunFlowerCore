@@ -6,8 +6,6 @@ import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.exception.GenesisConflictsException;
-import org.tdf.sunflower.exception.WriteGenesisFailedException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
 import org.tdf.sunflower.state.Account;
@@ -54,7 +52,7 @@ public abstract class AbstractBlockRepository implements BlockRepository {
 
 
     @Override
-    public void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
+    public void saveGenesis(Block block) {
         this.genesis = block;
         List<Block> o = getBlocksByHeight(0);
         if (o.isEmpty()) {
@@ -62,7 +60,7 @@ public abstract class AbstractBlockRepository implements BlockRepository {
             return;
         }
         if (o.size() > 1 || o.stream().anyMatch(x -> !x.getHash().equals(block.getHash()))) {
-            throw new GenesisConflictsException("genesis in db not equals to genesis in configuration");
+            throw new RuntimeException("genesis in db not equals to genesis in configuration");
         }
     }
 

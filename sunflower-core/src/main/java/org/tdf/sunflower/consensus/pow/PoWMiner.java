@@ -9,10 +9,7 @@ import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Address;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.BlockCreateResult;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.*;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -24,7 +21,7 @@ import static org.tdf.sunflower.types.Transaction.ADDRESS_LENGTH;
 @Slf4j(topic = "pow-miner")
 public class PoWMiner extends AbstractMiner {
     private final TransactionPool transactionPool;
-    private final PoWConfig poWConfig;
+    private final ConsensusConfig config;
     private final PoW poW;
     private final ForkJoinPool threadPool = (ForkJoinPool) Executors.newWorkStealingPool();
     private ScheduledExecutorService minerExecutor;
@@ -35,13 +32,13 @@ public class PoWMiner extends AbstractMiner {
     private Future<?> task;
 
     public PoWMiner(
-            PoWConfig minerConfig,
+            ConsensusConfig config,
             TransactionPool tp,
             PoW pow
     ) {
-        super(pow.getAccountTrie(), pow.getEventBus(), minerConfig);
+        super(pow.getAccountTrie(), pow.getEventBus(), config);
         this.transactionPool = tp;
-        this.poWConfig = minerConfig;
+        this.config = config;
         this.poW = pow;
 
         getEventBus().subscribe(NewBestBlock.class, e -> {
@@ -74,7 +71,7 @@ public class PoWMiner extends AbstractMiner {
     protected Header createHeader(Block parent) {
         return Header.builder()
                 .hashPrev(parent.getHash())
-                .coinbase(poWConfig.getMinerCoinBase())
+                .coinbase(config.getMinerCoinBase())
                 .createdAt(System.currentTimeMillis() / 1000)
                 .height(parent.getHeight() + 1)
                 .build();
@@ -111,7 +108,7 @@ public class PoWMiner extends AbstractMiner {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }, 0, Math.max(1, poWConfig.getBlockInterval() / 4), TimeUnit.SECONDS);
+        }, 0, Math.max(1, config.getBlockInterval() / 4), TimeUnit.SECONDS);
     }
 
     @Override
@@ -132,15 +129,15 @@ public class PoWMiner extends AbstractMiner {
 
     @Override
     public HexBytes getMinerAddress() {
-        return poWConfig.getMinerCoinBase();
+        return config.getMinerCoinBase();
     }
 
     public void tryMine() {
-        if (!poWConfig.isEnableMining() || stopped) {
+        if (!config.enableMining() || stopped) {
             return;
         }
-        if (poWConfig.getMinerCoinBase() == null || poWConfig.getMinerCoinBase().size() != ADDRESS_LENGTH) {
-            log.warn("pow miner: invalid coinbase address {}", poWConfig.getMinerCoinBase());
+        if (config.getMinerCoinBase() == null || config.getMinerCoinBase().size() != ADDRESS_LENGTH) {
+            log.warn("pow miner: invalid coinbase address {}", config.getMinerCoinBase());
             return;
         }
         if (working || task != null) return;

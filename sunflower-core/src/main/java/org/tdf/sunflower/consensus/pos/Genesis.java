@@ -1,38 +1,49 @@
 package org.tdf.sunflower.consensus.pos;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
+import com.fasterxml.jackson.databind.JsonNode;
+import lombok.Value;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.types.AbstractGenesis;
 import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
-public class Genesis {
-    public HexBytes parentHash;
-
-    public long timestamp;
+public class Genesis extends AbstractGenesis {
     public List<MinerInfo> miners;
-    public Map<String, Long> alloc;
+
+    public Genesis(JsonNode parsed) {
+        super(parsed);
+    }
+
 
     @JsonIgnore
     public Block getBlock() {
         Header h = Header.builder()
-                .hashPrev(parentHash)
-                .createdAt(timestamp)
-                .build();
+            .hashPrev(getParentHash())
+            .createdAt(getTimestamp())
+            .build();
         return new Block(h);
     }
 
-    @Getter
+    @Value
     public static class MinerInfo {
-        @JsonProperty("addr")
-        public HexBytes address;
-        public long vote;
+        HexBytes address;
+        long vote;
+    }
+
+    private static MinerInfo fromJson(JsonNode n) {
+        return new MinerInfo(
+            HexBytes.fromHex(n.get("address").asText()),
+            n.get("vote").asLong()
+        );
+    }
+
+    public List<MinerInfo> getMiners() {
+        return getArray("miners").stream()
+            .map(Genesis::fromJson)
+            .collect(Collectors.toList());
     }
 }

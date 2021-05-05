@@ -1,28 +1,24 @@
 package org.tdf.sunflower.consensus.poa;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.EconomicModel;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
+import org.tdf.sunflower.consensus.poa.config.PoAConfig;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.*;
 import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.util.FileUtils;
-import org.tdf.sunflower.util.MappingUtil;
 
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -31,16 +27,17 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 // poa is a minimal non-trivial consensus engine
 @Slf4j(topic = "poa")
 public class PoA extends AbstractConsensusEngine {
+    private ObjectMapper objectMapper = new ObjectMapper();
+
     public static final int GATEWAY_ID = 1339;
     EconomicModel economicModel;
 
     @Getter
-    private PoAConfig poAConfig;
+    private PoAConfig config;
 
     private Genesis genesis;
     private PoAMiner poaMiner;
@@ -81,18 +78,12 @@ public class PoA extends AbstractConsensusEngine {
 
     public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
         List<HexBytes> minerAddresses = getMinerAddresses(parent.getStateRoot());
-        return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, poAConfig.getBlockInterval());
+        return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, config.getBlockInterval());
     }
 
     @Override
     public List<Account> getGenesisStates() {
-        return genesis.alloc == null ? Collections.emptyList() :
-                genesis.alloc.entrySet().stream()
-                        .map(e -> Account.emptyAccount(
-                                HexBytes.fromHex(e.getKey()),
-                                Uint256.of(e.getValue()))
-                        )
-                        .collect(Collectors.toList());
+        return genesis.getAlloc();
     }
 
     @Override
@@ -104,31 +95,17 @@ public class PoA extends AbstractConsensusEngine {
 
 
     @Override
-    public void init(Properties properties) {
+    public void init(ConsensusConfig config) {
+        this.config = PoAConfig.from(config);
+        genesis = new Genesis(config.getGenesisJson());
 
-
-        ObjectMapper objectMapper = new ObjectMapper()
-                .enable(JsonParser.Feature.ALLOW_COMMENTS);
-        poAConfig = MappingUtil.propertiesToPojo(properties, PoAConfig.class);
-        InputStream in;
-        try {
-            in = FileUtils.getInputStream(poAConfig.getGenesis());
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
-        try {
-            genesis = objectMapper.readValue(in, Genesis.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("failed to parse genesis");
-        }
         setGenesisBlock(genesis.getBlock());
 
         // broadcast farm-base transaction periodically
         setPeerServerListener(PeerServerListener.NONE);
         // create state repository
 
-        if (poAConfig.getThreadId() != 0 && poAConfig.getThreadId() != GATEWAY_ID) {
+        if (this.config.getThreadId() != 0 && this.config.getThreadId() != GATEWAY_ID) {
             int core = Runtime.getRuntime().availableProcessors();
             executorService = Executors.newScheduledThreadPool(
                     core > 1 ? core / 2 : core,
@@ -138,7 +115,7 @@ public class PoA extends AbstractConsensusEngine {
             executorService.scheduleAtFixedRate(() ->
                     {
                         try {
-                            URL url = new URL(poAConfig.getGatewayNode());
+                            URL url = new URL(this.config.getGatewayNode());
                             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
                             connection.setRequestProperty("accept", "application/json");
@@ -164,20 +141,19 @@ public class PoA extends AbstractConsensusEngine {
         }
 
         this.authContract = new Authentication(
-                genesis.miners == null ? Collections.emptyList() :
-                        genesis.filterMiners(),
+                genesis.getMiners(),
                 Constants.PEER_AUTHENTICATION_ADDR
         );
 
-        this.minerContract = new Authentication(genesis.miners == null ? Collections.emptyList() :
-                genesis.filterMiners(),
+        this.minerContract = new Authentication(
+                genesis.getMiners(),
                 Constants.POA_AUTHENTICATION_ADDR
         );
 
 
 
-        this.validatorContract = new Authentication(genesis.validator == null ? Collections.emptyList() :
-            genesis.filtersValidators(),
+        this.validatorContract = new Authentication(
+            genesis.getValidators(),
             Constants.VALIDATOR_CONTRACT_ADDR
         );
 
@@ -191,14 +167,13 @@ public class PoA extends AbstractConsensusEngine {
 
         this.authContract.setAccountTrie(trie);
         this.authContract.setContractStorageTrie(getContractStorageTrie());
-
         this.minerContract.setAccountTrie(trie);
         this.minerContract.setContractStorageTrie(getContractStorageTrie());
+        this.validatorContract.setAccountTrie(trie);
+        this.validatorContract.setContractStorageTrie(getContractStorageTrie());
 
-
-        poaMiner = new PoAMiner(getAccountTrie(), getEventBus(), poAConfig, this);
+        poaMiner = new PoAMiner(getAccountTrie(), getEventBus(), this.config, this);
         poaMiner.setBlockRepository(this.getSunflowerRepository());
-        poaMiner.setPoAConfig(poAConfig);
         poaMiner.setTransactionPool(getTransactionPool());
 
         setMiner(poaMiner);
@@ -211,7 +186,7 @@ public class PoA extends AbstractConsensusEngine {
 
     @Override
     public int getChainId() {
-        return poAConfig.getThreadId() == 0 ? super.getChainId() : poAConfig.getThreadId();
+        return config.getThreadId() == 0 ? super.getChainId() : config.getThreadId();
     }
 
     @Override

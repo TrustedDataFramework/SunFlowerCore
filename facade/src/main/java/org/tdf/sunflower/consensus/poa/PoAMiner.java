@@ -10,16 +10,17 @@ import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
 import org.tdf.sunflower.consensus.AbstractMiner;
-import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.Proposer;
+import org.tdf.sunflower.consensus.poa.config.PoAConfig;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.types.*;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.BlockCreateResult;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -35,13 +36,11 @@ import static org.tdf.common.util.ByteUtil.longToBytesNoLeadZeroes;
 public class PoAMiner extends AbstractMiner {
     public static final int MAX_SHUTDOWN_WAITING = 5;
     private final PoA poA;
-    @Getter
-    public HexBytes minerAddress;
 
     HexBytes privateKey;
 
     HexBytes publicKey;
-    private PoAConfig poAConfig;
+    private PoAConfig config;
     @Setter
     private BlockRepository blockRepository;
     private volatile boolean stopped;
@@ -50,8 +49,8 @@ public class PoAMiner extends AbstractMiner {
     @Getter
     private TransactionPool transactionPool;
 
-    public PoAMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig, PoA poA) {
-        super(accountTrie, eventBus, minerConfig);
+    public PoAMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, PoAConfig config, PoA poA) {
+        super(accountTrie, eventBus, config);
         this.poA = poA;
     }
 
@@ -62,7 +61,7 @@ public class PoAMiner extends AbstractMiner {
             .builder()
             .height(parent.getHeight() + 1)
             .createdAt(System.currentTimeMillis() / 1000)
-            .coinbase(minerAddress)
+            .coinbase(config.getMinerCoinBase())
             .hashPrev(parent.getHash())
             .gasLimit(parent.getGasLimit())
             .build();
@@ -84,22 +83,12 @@ public class PoAMiner extends AbstractMiner {
         );
 
 
-        if (poAConfig.getThreadId() == PoA.GATEWAY_ID) {
+        if (config.getThreadId() == PoA.GATEWAY_ID) {
             for (int i = 1; i < block.getBody().size(); i++) {
                 poA.farmBaseTransactions.add(block.getBody().get(i));
             }
         }
         return true;
-    }
-
-    public void setPoAConfig(PoAConfig poAConfig) {
-        this.poAConfig = poAConfig;
-        this.privateKey = (poA.getSecretStore() != SecretStore.NONE) ?
-            poA.getSecretStore().getPrivateKey() :
-            HexBytes.fromHex(poAConfig.getPrivateKey());
-
-        this.publicKey = HexBytes.fromBytes(CryptoContext.getPkFromSk(privateKey.getBytes()));
-        this.minerAddress = Address.fromPrivate(privateKey);
     }
 
 
@@ -113,7 +102,7 @@ public class PoAMiner extends AbstractMiner {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }, 0, poAConfig.getBlockInterval(), TimeUnit.SECONDS);
+        }, 0, config.getBlockInterval(), TimeUnit.SECONDS);
     }
 
     @Override
@@ -130,7 +119,7 @@ public class PoAMiner extends AbstractMiner {
     }
 
     public void tryMine() {
-        if (!poAConfig.isEnableMining() || stopped) {
+        if (!config.enableMining() || stopped) {
             return;
         }
 
@@ -139,7 +128,7 @@ public class PoAMiner extends AbstractMiner {
         Optional<Proposer> o = poA.getProposer(
             best,
             OffsetDateTime.now().toEpochSecond()
-        ).filter(p -> p.getAddress().equals(minerAddress));
+        ).filter(p -> p.getAddress().equals(config.getMinerCoinBase()));
         if (!o.isPresent()) return;
         log.debug("try to mining at height " + (best.getHeight() + 1));
         try {
@@ -159,7 +148,7 @@ public class PoAMiner extends AbstractMiner {
             .data(publicKey.getBytes())
             .value(poA.economicModel.getConsensusRewardAtHeight(height).getNoLeadZeroesData())
             .data(publicKey.getBytes())
-            .receiveAddress(minerAddress.getBytes())
+            .receiveAddress(config.getMinerCoinBase().getBytes())
             .gasPrice(EMPTY_BYTE_ARRAY)
             .gasLimit(EMPTY_BYTE_ARRAY)
             .build();

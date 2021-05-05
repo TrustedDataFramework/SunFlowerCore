@@ -4,21 +4,15 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
-import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
-import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.BlockCreateResult;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.*;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -37,7 +31,7 @@ public class PoSMiner extends AbstractMiner {
     private final PoS pos;
     @Getter
     public HexBytes minerAddress;
-    private PoSConfig posConfig;
+    private ConsensusConfig config;
     @Setter
     private BlockRepository blockRepository;
     private volatile boolean stopped;
@@ -46,8 +40,8 @@ public class PoSMiner extends AbstractMiner {
     @Getter
     private TransactionPool transactionPool;
 
-    public PoSMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig, PoS pos) {
-        super(accountTrie, eventBus, minerConfig);
+    public PoSMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, ConsensusConfig config, PoS pos) {
+        super(accountTrie, eventBus, config);
         this.pos = pos;
     }
 
@@ -62,11 +56,6 @@ public class PoSMiner extends AbstractMiner {
         return true;
     }
 
-    public void setPoSConfig(PoSConfig posConfig) throws ConsensusEngineInitException {
-        this.posConfig = posConfig;
-        this.minerAddress = posConfig.getMinerCoinBase();
-    }
-
 
     @Override
     public void start() {
@@ -78,7 +67,7 @@ public class PoSMiner extends AbstractMiner {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }, 0, posConfig.getBlockInterval(), TimeUnit.SECONDS);
+        }, 0, config.getBlockInterval(), TimeUnit.SECONDS);
     }
 
     @Override
@@ -95,11 +84,11 @@ public class PoSMiner extends AbstractMiner {
     }
 
     public void tryMine() {
-        if (!posConfig.isEnableMining() || stopped) {
+        if (!config.enableMining() || stopped) {
             return;
         }
-        if (posConfig.getMinerCoinBase() == null || posConfig.getMinerCoinBase().size() != ADDRESS_LENGTH) {
-            log.warn("pos miner: invalid coinbase address {}", posConfig.getMinerCoinBase());
+        if (config.getMinerCoinBase() == null || config.getMinerCoinBase().size() != ADDRESS_LENGTH) {
+            log.warn("pos miner: invalid coinbase address {}", config.getMinerCoinBase());
             return;
         }
         Block best = blockRepository.getBestBlock();
@@ -124,7 +113,7 @@ public class PoSMiner extends AbstractMiner {
 
     public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
         List<HexBytes> minerAddresses = pos.getMinerAddresses(parent.getStateRoot());
-        return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, posConfig.getBlockInterval());
+        return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, config.getBlockInterval());
     }
 
 

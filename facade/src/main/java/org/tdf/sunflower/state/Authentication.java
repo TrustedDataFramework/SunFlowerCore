@@ -61,6 +61,8 @@ public class Authentication implements PreBuiltContract {
 
     public List<HexBytes> getNodes(HexBytes stateRoot) {
         HexBytes v = getValue(stateRoot, NODES_KEY);
+        if(v == null)
+            return Collections.emptyList();
         return Arrays.asList(
                 RLPUtil.decode(v, HexBytes[].class)
         );
