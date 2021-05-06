@@ -1,8 +1,6 @@
 package org.tdf.sunflower;
 
 public class ApplicationConstants {
-    public static final String CONSENSUS_NAME_PROPERTY = "sunflower.consensus.name";
-
     public static final String CONSENSUS_POA = "poa";
 
     public static final String CONSENSUS_NONE = "none";
@@ -12,9 +10,6 @@ public class ApplicationConstants {
     public static final String CONSENSUS_POS = "pos";
     public static final String CONSENSUS_VRF = "vrf";
     public static final long MAX_SHUTDOWN_WAITING = 5;
-
-
-    public static long MAX_CONTRACT_CALL_DEPTH = 0;
 
     public static long TRANSACTION_CONFIRMS = 0;
 }
