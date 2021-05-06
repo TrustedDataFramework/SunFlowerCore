@@ -26,8 +26,6 @@ public class TransactionReceiptDTO {
     public JsonRpc.LogFilterElement[] logs;         // Array of log objects, which this transaction generated.
     public String logsBloom;                       // 256 Bytes - Bloom filter for light clients to quickly retrieve related logs.
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String root;  // 32 bytes of post-transaction stateroot (pre Byzantium)
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String status;  //  either 1 (success) or 0 (failure) (post Byzantium)
 
     public TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
@@ -57,7 +55,6 @@ public class TransactionReceiptDTO {
         }
         logsBloom = toJsonHex(receipt.getBloomFilter().getData());
         status = "0x1";
-        root = toJsonHex(receipt.getPostTxState());
 
 //        if (receipt.hasTxStatus()) { // post Byzantium
 //            root = null;

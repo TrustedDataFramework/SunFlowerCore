@@ -99,8 +99,6 @@ public abstract class AbstractMiner implements Miner {
                 p.getReceipts().get(p.getReceipts().size() - 1).getCumulativeGasLong();
 
         TransactionReceipt receipt = new TransactionReceipt(
-            p.getTrieRoot().getBytes()
-            ,
             // coinbase consume none gas
             ByteUtil.longToBytesNoLeadZeroes(res.getGasUsed() + lastGas),
             new Bloom(),

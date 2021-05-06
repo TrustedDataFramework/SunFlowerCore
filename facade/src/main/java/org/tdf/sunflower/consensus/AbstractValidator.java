@@ -83,7 +83,6 @@ public abstract class AbstractValidator implements Validator {
 
                 currentGas += r.getGasUsed();
                 TransactionReceipt receipt = new TransactionReceipt(
-                    currentRoot.getBytes(),
                     ByteUtil.longToBytesNoLeadZeroes(currentGas),
                     new Bloom(),
                     Collections.emptyList()
@@ -101,7 +100,6 @@ public abstract class AbstractValidator implements Validator {
             currentGas += r.getGasUsed();
 
             TransactionReceipt receipt = new TransactionReceipt(
-                currentRoot.getBytes(),
                 ByteUtil.longToBytesNoLeadZeroes(currentGas),
                 new Bloom(),
                 Collections.emptyList()

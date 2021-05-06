@@ -220,7 +220,6 @@ public class TransactionPoolImpl implements TransactionPool {
                         ByteUtil.byteArrayToLong(pendingReceipts.get(pendingReceipts.size() - 1).getCumulativeGas()) : 0;
 
                 TransactionReceipt receipt = new TransactionReceipt(
-                    current.getTrieRoot().getBytes(),
                     ByteUtil.longToBytesNoLeadZeroes(currentGas + res.getGasUsed()),
                     new Bloom(),
                     Collections.emptyList()

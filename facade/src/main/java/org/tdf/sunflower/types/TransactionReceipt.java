@@ -103,9 +103,9 @@ public class TransactionReceipt {
         rlpEncoded = rlp;
     }
 
-    public TransactionReceipt(byte[] postTxState, byte[] cumulativeGas,
+    public TransactionReceipt(byte[] cumulativeGas,
                               Bloom bloomFilter, List<LogInfo> logInfoList) {
-        this.postTxState = postTxState;
+        setTxStatus(true);
         this.cumulativeGas = cumulativeGas;
         this.bloomFilter = bloomFilter;
         this.logInfoList = logInfoList;
