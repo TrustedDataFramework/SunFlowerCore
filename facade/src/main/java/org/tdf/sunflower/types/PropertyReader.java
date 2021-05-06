@@ -2,7 +2,6 @@ package org.tdf.sunflower.types;
 
 import lombok.Value;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.PropertyLike;
 

@@ -8,7 +8,6 @@ import org.springframework.util.ClassUtils;
 import org.tdf.common.store.JsonStore;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.util.FileUtils;
 
 import java.nio.charset.StandardCharsets;

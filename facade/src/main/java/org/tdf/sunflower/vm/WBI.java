@@ -2,7 +2,6 @@ package org.tdf.sunflower.vm;
 
 import lombok.Value;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
