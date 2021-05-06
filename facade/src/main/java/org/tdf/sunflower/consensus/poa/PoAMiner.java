@@ -5,7 +5,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.crypto.ECDSASignature;
 import org.tdf.common.crypto.ECKey;
-import org.tdf.common.event.EventBus;
 import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
@@ -15,15 +14,14 @@ import org.tdf.sunflower.consensus.poa.config.PoAConfig;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.TransactionPool;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.BlockCreateResult;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import java.time.OffsetDateTime;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -36,11 +34,8 @@ import static org.tdf.common.util.ByteUtil.longToBytesNoLeadZeroes;
 public class PoAMiner extends AbstractMiner {
     public static final int MAX_SHUTDOWN_WAITING = 5;
     private final PoA poA;
+    private final PoAConfig config;
 
-    HexBytes privateKey;
-
-    HexBytes publicKey;
-    private PoAConfig config;
     @Setter
     private BlockRepository blockRepository;
     private volatile boolean stopped;
@@ -49,8 +44,9 @@ public class PoAMiner extends AbstractMiner {
     @Getter
     private TransactionPool transactionPool;
 
-    public PoAMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, PoAConfig config, PoA poA) {
-        super(accountTrie, eventBus, config);
+    public PoAMiner(PoA poA) {
+        super(poA.getAccountTrie(), poA.getEventBus(), poA.getConfig());
+        this.config = poA.getConfig();
         this.poA = poA;
     }
 
@@ -70,7 +66,7 @@ public class PoAMiner extends AbstractMiner {
     @Override
     protected boolean finalizeBlock(Block parent, Block block) {
         byte[] rawHash = PoaUtils.getRawHash(block.getHeader());
-        ECKey key = ECKey.fromPrivate(privateKey.getBytes());
+        ECKey key = ECKey.fromPrivate(config.getPrivateKey().getBytes());
         ECDSASignature sig = key.sign(rawHash);
 
         block.setExtraData(
@@ -124,15 +120,21 @@ public class PoAMiner extends AbstractMiner {
         }
 
         Block best = blockRepository.getBestBlock();
+        long now = OffsetDateTime.now().toEpochSecond();
+
         // 判断是否轮到自己出块
-        Optional<Proposer> o = poA.getProposer(
-            best,
-            OffsetDateTime.now().toEpochSecond()
-        ).filter(p -> p.getAddress().equals(config.getMinerCoinBase()));
-        if (!o.isPresent()) return;
+        Proposer p = poA.getMinerContract().getProposer(
+            best.getHash(),
+            now
+        );
+
+        if (!p.getAddress().equals(config.getMinerCoinBase())) return;
         log.debug("try to mining at height " + (best.getHeight() + 1));
+        Map<String, Long> args = new HashMap<>();
+        args.put("createdAt", now);
+
         try {
-            BlockCreateResult b = createBlock(blockRepository.getBestBlock());
+            BlockCreateResult b = createBlock(blockRepository.getBestBlock(), args);
             if (b.getBlock() != null) {
                 log.info("mining success block: {}", b.getBlock().getHeader());
             }
@@ -145,9 +147,7 @@ public class PoAMiner extends AbstractMiner {
     protected Transaction createCoinBase(long height) {
         return Transaction.builder()
             .nonce(longToBytesNoLeadZeroes(height))
-            .data(publicKey.getBytes())
             .value(poA.economicModel.getConsensusRewardAtHeight(height).getNoLeadZeroesData())
-            .data(publicKey.getBytes())
             .receiveAddress(config.getMinerCoinBase().getBytes())
             .gasPrice(EMPTY_BYTE_ARRAY)
             .gasLimit(EMPTY_BYTE_ARRAY)

@@ -2,6 +2,7 @@ package org.tdf.sunflower.consensus;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.types.Uint256;
@@ -16,6 +17,7 @@ import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
 
+import java.lang.reflect.Method;
 import java.util.*;
 
 @Slf4j(topic = "miner")
@@ -32,34 +34,7 @@ public abstract class AbstractMiner implements Miner {
         this.eventBus = eventBus;
     }
 
-    public static Optional<Proposer> getProposer(Block parent, long currentEpochSeconds, List<HexBytes> minerAddresses, long blockInterval) {
-        if (currentEpochSeconds - parent.getCreatedAt() < blockInterval) {
-            return Optional.empty();
-        }
-        if (parent.getHeight() == 0) {
-            return Optional.of(new Proposer(minerAddresses.get(0), 0, Long.MAX_VALUE));
-        }
 
-        HexBytes prev = parent.getBody().get(0).getReceiveHex();
-
-        int prevIndex = minerAddresses.indexOf(prev);
-
-        if (prevIndex < 0)
-            prevIndex += minerAddresses.size();
-
-        long step = (currentEpochSeconds - parent.getCreatedAt())
-                / blockInterval;
-
-        int currentIndex = (int) ((prevIndex + step) % minerAddresses.size());
-        long startTime = parent.getCreatedAt() + step * blockInterval;
-        long endTime = startTime + blockInterval;
-
-        return Optional.of(new Proposer(
-                minerAddresses.get(currentIndex),
-                startTime,
-                endTime
-        ));
-    }
 
     protected abstract TransactionPool getTransactionPool();
 
@@ -70,14 +45,27 @@ public abstract class AbstractMiner implements Miner {
     protected abstract boolean finalizeBlock(Block parent, Block block);
 
     // TODO:  2. 增加打包超时时间
-    protected BlockCreateResult createBlock(Block parent) {
+    @SneakyThrows
+    protected BlockCreateResult createBlock(Block parent, Map<String, ?> headerArgs) {
         PendingData p =
             getTransactionPool().pop(parent.getHeader());
 
-        if (!config.allowEmptyBlock() && p.getPending().isEmpty() )
+        if (!config.allowEmptyBlock() && p.getPending().isEmpty())
             return BlockCreateResult.empty();
 
         Header header = createHeader(parent);
+
+        for (Map.Entry<String, ?> entry : headerArgs.entrySet()) {
+            String field = entry.getKey();
+            Method setter =
+                header.getClass()
+                    .getMethod(
+                        "set" + field.substring(0, 1).toUpperCase() + field.substring(1),
+                        entry.getValue().getClass()
+                    );
+            setter.invoke(header, entry.getValue());
+        }
+
         Block b = new Block(header);
 
         // get a trie at parent block's state
@@ -85,7 +73,7 @@ public abstract class AbstractMiner implements Miner {
 
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
 
-        Backend tmp = accountTrie.createBackend(parent.getHeader(), p.getTrieRoot(),null, false);
+        Backend tmp = accountTrie.createBackend(parent.getHeader(), p.getTrieRoot(), null, false);
         List<Transaction> transactionList = p.getPending();
         b.setBody(transactionList);
         b.getBody().add(0, coinbase);
@@ -109,12 +97,12 @@ public abstract class AbstractMiner implements Miner {
                 p.getReceipts().get(p.getReceipts().size() - 1).getCumulativeGasLong();
 
         TransactionReceipt receipt = new TransactionReceipt(
-                p.getTrieRoot().getBytes()
-                ,
-                // coinbase consume none gas
-                ByteUtil.longToBytesNoLeadZeroes(res.getGasUsed() + lastGas),
-                new Bloom(),
-                Collections.emptyList()
+            p.getTrieRoot().getBytes()
+            ,
+            // coinbase consume none gas
+            ByteUtil.longToBytesNoLeadZeroes(res.getGasUsed() + lastGas),
+            new Bloom(),
+            Collections.emptyList()
         );
         receipt.setExecutionResult(res.getExecutionResult());
         receipt.setTransaction(coinbase);
@@ -122,7 +110,7 @@ public abstract class AbstractMiner implements Miner {
 
         // calculate state root and receipts root
         b.setStateRoot(
-                tmp.merge()
+            tmp.merge()
         );
 
         b.setReceiptTrieRoot(TransactionReceipt.calcReceiptsTrie(p.getReceipts()));

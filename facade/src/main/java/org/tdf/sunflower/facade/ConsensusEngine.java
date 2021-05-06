@@ -1,7 +1,6 @@
 package org.tdf.sunflower.facade;
 
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
@@ -25,18 +24,10 @@ public interface ConsensusEngine {
 
     PeerServerListener getPeerServerListener();
 
-    default boolean isAllow(Peer peer) {
-        return true;
-    }
-
     // inject configurations, throw exception if configuration is invalid
     void init(ConsensusConfig config);
 
     String getName();
-
-    default List<HexBytes> getMinerAddresses() {
-        return Collections.emptyList();
-    }
 
     default ValidateResult validateHeader(String header) {
         return ValidateResult.success();

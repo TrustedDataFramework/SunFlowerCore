@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.store.JsonStore;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.proto.Message;
 import org.tdf.sunflower.types.CryptoContext;
 
@@ -21,7 +20,6 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     // if non-database provided, use memory database
     final JsonStore peerStore;
     final ConsensusEngine consensusEngine;
-    final SecretStore secretStore;
     private final List<Plugin> plugins = new CopyOnWriteArrayList<>();
     private PeerServerConfig config;
     private Client client;
@@ -29,10 +27,9 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     private MessageBuilder builder;
     private NetLayer netLayer;
 
-    public PeerServerImpl(JsonStore peerStore, ConsensusEngine consensusEngine, SecretStore secretStore) {
+    public PeerServerImpl(JsonStore peerStore, ConsensusEngine consensusEngine) {
         this.peerStore = peerStore;
         this.consensusEngine = consensusEngine;
-        this.secretStore = secretStore;
     }
 
     @Override
@@ -108,9 +105,6 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             config = mapper.readPropertiesAs(properties, PeerServerConfig.class);
             if (config.getMaxTTL() <= 0) config.setMaxTTL(PeerServerConfig.DEFAULT_MAX_TTL);
             if (config.getMaxPeers() <= 0) config.setMaxPeers(PeerServerConfig.DEFAULT_MAX_PEERS);
-            if (secretStore != SecretStore.NONE)
-                config.setPrivateKey(secretStore.getPrivateKey());
-
         } catch (Exception e) {
             String schema = "";
             try {

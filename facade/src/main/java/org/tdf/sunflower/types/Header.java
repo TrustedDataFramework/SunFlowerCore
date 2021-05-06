@@ -9,6 +9,8 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
 import org.tdf.sunflower.state.Address;
 
+import java.util.Objects;
+
 
 @Getter
 @ToString
@@ -149,13 +151,13 @@ public class Header implements Chained {
         resetHash();
     }
 
-    public void setHeight(long height) {
-        this.height = height;
+    public void setHeight(Long height) {
+        this.height = Objects.requireNonNull(height);
         resetHash();
     }
 
-    public void setCreatedAt(long createdAt) {
-        this.createdAt = createdAt;
+    public void setCreatedAt(Long createdAt) {
+        this.createdAt = Objects.requireNonNull(createdAt);
         resetHash();
     }
 
@@ -170,8 +172,8 @@ public class Header implements Chained {
         resetHash();
     }
 
-    public void setGasUsed(long gasUsed) {
-        this.gasUsed = gasUsed;
+    public void setGasUsed(Long gasUsed) {
+        this.gasUsed = Objects.requireNonNull(gasUsed);
         resetHash();
     }
 

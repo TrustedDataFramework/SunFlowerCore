@@ -24,7 +24,7 @@ import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.PreBuiltContract;
+import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.util.ByteUtil;
@@ -45,14 +45,14 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
 
     private PeerServer peerServer;
     private VrfMiner vrfMiner;
-    private List<PreBuiltContract> contractList = new ArrayList<>();
+    private List<BuiltinContract> contractList = new ArrayList<>();
 
     public VrfEngine() {
 
     }
 
     @Override
-    public List<Account> getGenesisStates() {
+    public List<Account> getAlloc() {
         List<Account> ret = new ArrayList<>();
         if (genesis.alloc != null) {
             genesis.alloc.forEach((k, v) -> {
@@ -64,8 +64,8 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
     }
 
     @Override
-    public List<PreBuiltContract> getPreBuiltContracts() {
-        return contractList;
+    public List<BuiltinContract> getBuiltins() {
+        return Collections.emptyList();
     }
 //    private ConsortiumRepository blockRepository;
 

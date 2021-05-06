@@ -7,7 +7,7 @@ import org.tdf.common.util.*;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Bios;
+import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.vm.Backend;
@@ -27,7 +27,7 @@ interface PowBios {
 }
  */
 @Slf4j(topic = "pow")
-public class PoWBios implements Bios {
+public class PoWBios implements BuiltinContract {
     public static final String ABI_JSON = "[{\"inputs\":[],\"name\":\"nbits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"update\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]";
     public static final Abi ABI = Abi.fromJson(ABI_JSON);
     public static final Abi.Function UPDATE = ABI.findFunction(f -> f.name.equals("update"));
@@ -47,17 +47,15 @@ public class PoWBios implements Bios {
     }
 
     @Override
-    public Account getGenesisAccount() {
-        return Account.emptyAccount(ADDRESS, Uint256.ZERO);
+    public HexBytes getAddress() {
+        return ADDRESS;
     }
 
     @Override
     @SneakyThrows
     public byte[] call(Backend backend, CallData callData) {
-        byte[] selector = callData.getSelector();
-        Abi.Function func = Objects.requireNonNull(
-                ABI.findFunction(x -> FastByteComparisons.equal(x.encodeSignature(), selector))
-        );
+//        byte[] selector = callData.getSelector();
+        Abi.Function func = null;
 
         if(func.name.equals("nbits")) {
             HexBytes nbits = backend.dbGet(Constants.POW_BIOS_ADDR, N_BITS_KEY);

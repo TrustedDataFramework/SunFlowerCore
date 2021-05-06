@@ -7,16 +7,13 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Bios;
-import org.tdf.sunflower.state.PreBuiltContract;
+import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
-import java.util.function.Function;
 
 
 @Getter
@@ -50,7 +47,6 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     private Trie<HexBytes, HexBytes> contractStorageTrie;
     // a map between hash and wasm byte code
     private Store<HexBytes, HexBytes> contractCodeStore;
-    private SecretStore secretStore;
     // sub class should set miner explicitly when init() called
     private Miner miner;
     // sub class should set validator explicitly when init() called
@@ -69,29 +65,24 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     private ConfirmedBlocksProvider confirmedBlocksProvider = x -> x;
     // sub class should set peer server listener explicitly when init() called
     private PeerServerListener peerServerListener;
-    // set before init()
-    private Function<AbstractConsensusEngine, StateTrie<HexBytes, Account>> stateTrieProvider;
+
 
     public AbstractConsensusEngine() {
     }
 
-    public List<Account> getGenesisStates() {
+    public List<Account> getAlloc() {
         return Collections.emptyList();
     }
 
-    public List<PreBuiltContract> getPreBuiltContracts() {
+    public List<BuiltinContract> getBuiltins() {
         return Collections.emptyList();
     }
 
-    public List<Bios> getBios() {
+    public List<BuiltinContract> getBios() {
         return Collections.emptyList();
     }
 
     protected void initStateTrie() {
-        StateTrie<HexBytes, Account> trie = stateTrieProvider.apply(this);
-        setAccountTrie(trie);
-        Block b = getGenesisBlock();
-        b.setStateRoot(trie.getGenesisRoot());
-        setGenesisBlock(b);
+
     }
 }

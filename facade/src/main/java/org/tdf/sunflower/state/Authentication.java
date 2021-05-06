@@ -1,49 +1,73 @@
 package org.tdf.sunflower.state;
 
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.SneakyThrows;
-import org.tdf.common.serialize.Codec;
-import org.tdf.common.serialize.Codecs;
-import org.tdf.common.store.PrefixStore;
-import org.tdf.common.store.Store;
-import org.tdf.common.trie.Trie;
-import org.tdf.common.types.Uint256;
-import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
-import org.tdf.common.util.RLPUtil;
 import org.tdf.rlp.RLPCodec;
+import org.tdf.sunflower.consensus.Proposer;
+import org.tdf.sunflower.facade.SunflowerRepository;
+import org.tdf.sunflower.types.ConsensusConfig;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.StorageWrapper;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.abi.Abi;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * used for node join/exit
  */
-public class Authentication implements PreBuiltContract {
-    public static final String ABI_JSON = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"dst\",\"type\":\"address\"}],\"name\":\"approve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"approved\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"exit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"join\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"dst\",\"type\":\"address\"}],\"name\":\"pending\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]";
-    public static final Abi ABI = Abi.fromJson(ABI_JSON);
+public class Authentication extends AbstractBuiltIn {
+    private static Optional<Proposer> getProposerInternal(Header parent, long currentEpochSeconds, List<HexBytes> minerAddresses, long blockInterval) {
+        if (currentEpochSeconds - parent.getCreatedAt() < blockInterval) {
+            return Optional.empty();
+        }
+        if (parent.getHeight() == 0) {
+            return Optional.of(new Proposer(minerAddresses.get(0), 0, Long.MAX_VALUE));
+        }
 
+        HexBytes prev = parent.getCoinbase();
+
+        int prevIndex = minerAddresses.indexOf(prev);
+
+        if (prevIndex < 0)
+            prevIndex += minerAddresses.size();
+
+        long step = (currentEpochSeconds - parent.getCreatedAt())
+            / blockInterval;
+
+        int currentIndex = (int) ((prevIndex + step) % minerAddresses.size());
+        long startTime = parent.getCreatedAt() + step * blockInterval;
+        long endTime = startTime + blockInterval;
+
+        return Optional.of(new Proposer(
+            minerAddresses.get(currentIndex),
+            startTime,
+            endTime
+        ));
+    }
+
+    public static final String ABI_JSON = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"dst\",\"type\":\"address\"}],\"name\":\"approve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"approved\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"exit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"getProposer\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"start\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"end\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"join\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"dst\",\"type\":\"address\"}],\"name\":\"pending\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]";
+    public static final Abi ABI = Abi.fromJson(ABI_JSON);
 
     static final HexBytes NODES_KEY = HexBytes.fromBytes("nodes".getBytes(StandardCharsets.US_ASCII));
     static final HexBytes PENDING_NODES_KEY = HexBytes.fromBytes("pending".getBytes(StandardCharsets.US_ASCII));
     private final Collection<? extends HexBytes> nodes;
-    private final HexBytes contractAddress;
-    @Setter
-    private StateTrie<HexBytes, Account> accountTrie;
-    @Setter
-    private Trie<HexBytes, HexBytes> contractStorageTrie;
+    private final ConsensusConfig config;
 
     public Authentication(
-            @NonNull Collection<? extends HexBytes> nodes,
-            @NonNull HexBytes contractAddress
+        @NonNull Collection<? extends HexBytes> nodes,
+        @NonNull HexBytes contractAddress,
+        StateTrie<HexBytes, Account> accounts,
+        SunflowerRepository repo,
+        ConsensusConfig config
     ) {
+        super(contractAddress, accounts, repo);
+        this.config = config;
         this.nodes = nodes;
-        this.contractAddress = contractAddress;
     }
 
     static int divideAndCeil(int a, int b) {
@@ -53,84 +77,32 @@ public class Authentication implements PreBuiltContract {
         return ret;
     }
 
-    private HexBytes getValue(HexBytes stateRoot, HexBytes key) {
-        Account a = accountTrie.get(stateRoot, this.contractAddress);
-        Store<HexBytes, HexBytes> db = contractStorageTrie.revert(a.getStorageRoot());
-        return db.get(key);
-    }
-
-    public List<HexBytes> getNodes(HexBytes stateRoot) {
-        HexBytes v = getValue(stateRoot, NODES_KEY);
-        if(v == null)
-            return Collections.emptyList();
-        return Arrays.asList(
-                RLPUtil.decode(v, HexBytes[].class)
-        );
-    }
-
-    public Map<HexBytes, TreeSet<HexBytes>> getPending(HexBytes stateRoot) {
-        Account a = accountTrie.get(stateRoot, contractAddress);
-        Store<HexBytes, HexBytes> contractStorage = contractStorageTrie.revert(a.getStorageRoot());
-        Map<HexBytes, TreeSet<HexBytes>> ret = new HashMap<>();
-        for (Map.Entry<HexBytes, TreeSet<HexBytes>> entry : getPendingStore(contractStorage)) {
-            ret.put(entry.getKey(), entry.getValue());
-        }
-        return ret;
-    }
-
-    @SneakyThrows
-    public PrefixStore<HexBytes, TreeSet<HexBytes>> getPendingStore(Store<HexBytes, HexBytes> contractStorage) {
-        return new PrefixStore<>(
-                contractStorage,
-                PENDING_NODES_KEY,
-                Codecs.newRLPCodec(HexBytes.class),
-                Codec.newInstance(
-                        RLPCodec::encode,
-                        x -> new TreeSet<>(Arrays.asList(RLPCodec.decode(x, HexBytes[].class)))
-                )
-        );
-    }
-
-
-    private HexBytes getByNodesKey(Backend backend) {
-        return backend.dbGet(contractAddress, NODES_KEY);
-    }
-
-
-    @Override
-    public Account getGenesisAccount() {
-        return Account.emptyAccount(this.contractAddress, Uint256.ZERO);
-    }
 
     @Override
     @SneakyThrows
-    public byte[] call(Backend backend, CallData callData) {
-        byte[] selector = callData.getSelector();
-        Abi.Function func = Objects.requireNonNull(
-                ABI.findFunction(x -> FastByteComparisons.equal(x.encodeSignature(), selector))
-        );
+    public List<?> call(Backend backend, CallData callData, String method, Object... args) {
 
-        List<HexBytes> nodes = new ArrayList<>(
-                Arrays.asList(RLPCodec.decode(getByNodesKey(backend).getBytes(), HexBytes[].class))
-        );
-        Store<HexBytes, TreeSet<HexBytes>> pending = getPendingStore(backend.getAsStore(contractAddress));
 
-        switch (func.name) {
+        StorageWrapper wrapper = new StorageWrapper(backend.getAsStore(address));
+        List<HexBytes> nodes = wrapper.getList(NODES_KEY, HexBytes.class, new ArrayList<>());
+
+        StorageWrapper
+            pending = new StorageWrapper(PENDING_NODES_KEY, backend.getAsStore(address));
+
+        switch (method) {
             case "approved": {
-                return Abi.Entry.Param.encodeList(
-                        func.outputs,
-                        nodes.stream().map(HexBytes::getBytes).collect(Collectors.toList())
+                return Collections.singletonList(
+                    nodes.stream().map(HexBytes::getBytes).toArray()
                 );
             }
             case "pending": {
-                byte[] dstBytes = (byte[]) func.decode(callData.getData().getBytes()).get(0);
+                byte[] dstBytes = (byte[]) args[0];
                 HexBytes dst = HexBytes.fromBytes(dstBytes);
-                Set<HexBytes> r = pending.get(dst);
-                if(r == null)
+                Set<HexBytes> r = pending.getSet(dst, HexBytes.class, new TreeSet<>());
+                if (r == null)
                     r = Collections.emptySet();
-                return Abi.Entry.Param.encodeList(
-                        func.outputs,
-                        r.stream().map(HexBytes::getBytes).collect(Collectors.toList())
+                return Collections.singletonList(
+                    r.stream().map(HexBytes::getBytes).toArray()
                 );
             }
             case "join": {
@@ -138,28 +110,31 @@ public class Authentication implements PreBuiltContract {
                 if (nodes.contains(fromAddr))
                     throw new RuntimeException("authentication contract error: " + fromAddr + " has already in nodes");
 
-                if (pending.get(fromAddr) == null)
+                Set<HexBytes> s = pending.getSet(fromAddr, HexBytes.class, null);
+                if(s != null) {
                     throw new RuntimeException("authentication contract error: " + fromAddr + " has already in pending");
-
-                pending.put(fromAddr, new TreeSet<>());
-                return HexBytes.EMPTY_BYTES;
+                }
+                pending.save(fromAddr, new TreeSet<>());
+                return Collections.emptyList();
             }
             case "approve": {
-                byte[] toApproveBytes = (byte[]) (func.decode(callData.getData().getBytes()).get(0));
+                byte[] toApproveBytes = (byte[]) args[0];
                 HexBytes toApprove = HexBytes.fromBytes(toApproveBytes);
 
                 if (callData.getTo().equals(Constants.VALIDATOR_CONTRACT_ADDR)) {
+                    if(nodes.contains(toApprove))
+                        return Collections.emptyList();
                     pending.remove(toApprove);
                     nodes.add(toApprove);
-                    backend.dbSet(contractAddress, NODES_KEY, HexBytes.fromBytes(RLPCodec.encode(nodes)));
-                    return HexBytes.EMPTY_BYTES;
+                    wrapper.save(NODES_KEY, nodes);
+                    return Collections.emptyList();
                 }
 
                 if (!nodes.contains(callData.getCaller())) {
                     throw new RuntimeException("authentication contract error: cannot approve " + callData.getCaller() + " is not in nodes list");
                 }
 
-                TreeSet<HexBytes> approves = pending.get(toApprove);
+                Set<HexBytes> approves = pending.getSet(toApprove, HexBytes.class, null);
                 if (approves == null)
                     throw new RuntimeException("authentication contract error: cannot approve " + toApprove + " not in pending");
 
@@ -173,11 +148,11 @@ public class Authentication implements PreBuiltContract {
                     pending.remove(toApprove);
                     nodes.add(toApprove);
                 } else {
-                    pending.put(toApprove, approves);
+                    pending.save(toApprove, approves);
                 }
 
-                backend.dbSet(contractAddress, NODES_KEY, HexBytes.fromBytes(RLPCodec.encode(nodes)));
-                return HexBytes.EMPTY_BYTES;
+                wrapper.save(NODES_KEY, nodes);
+                return Collections.emptyList();
             }
             case "exit": {
 
@@ -188,12 +163,45 @@ public class Authentication implements PreBuiltContract {
                     throw new RuntimeException("authentication contract error: cannot exit, at least one miner");
 
                 nodes.remove(fromAddr);
-                backend.dbSet(contractAddress, NODES_KEY, HexBytes.fromBytes(RLPCodec.encode(nodes)));
-                return HexBytes.EMPTY_BYTES;
+                wrapper.save(NODES_KEY, nodes);
+                return Collections.emptyList();
+            }
+            case "getProposer": {
+                Header parent = repository.getHeader(backend.getParentHash().getBytes()).get();
+                Optional<Proposer> o = Authentication.getProposerInternal(parent, ((BigInteger) args[0]).longValue(), nodes, this.config.getBlockInterval());
+                Proposer p = o.orElse(new Proposer(Address.empty(), 0, 0));
+                return Arrays.asList(
+                    p.getAddress().getBytes(),
+                    BigInteger.valueOf(p.getStartTimeStamp()),
+                    BigInteger.valueOf(p.getEndTimeStamp())
+                );
             }
             default:
                 throw new RuntimeException("method not found");
         }
+    }
+
+    public Proposer getProposer(HexBytes parentHash, long now) {
+        List<?> li = view(parentHash, "getProposer", BigInteger.valueOf(now));
+        byte[] address = (byte[]) li.get(0);
+        BigInteger start = (BigInteger) li.get(1);
+        BigInteger end = (BigInteger) li.get(2);
+        return new Proposer(
+            HexBytes.fromBytes(address),
+            start.longValue(),
+            end.longValue()
+        );
+    }
+
+    public List<HexBytes> getApproved(HexBytes parentHash) {
+        List<?> li = view(parentHash, "approved");
+        Object[] addresses = (Object[]) li.get(0);
+        List<HexBytes> r = new ArrayList<>();
+
+        for (Object bytes : addresses) {
+            r.add(HexBytes.fromBytes((byte[]) bytes));
+        }
+        return r;
     }
 
     @Override
@@ -203,7 +211,7 @@ public class Authentication implements PreBuiltContract {
 
     @Override
     public Map<HexBytes, HexBytes> getGenesisStorage() {
-        Map<HexBytes, HexBytes> ret = new HashMap();
+        HashMap<HexBytes, HexBytes> ret = new HashMap<>();
         ret.put(NODES_KEY, HexBytes.fromBytes(RLPCodec.encode(this.nodes)));
         return ret;
     }

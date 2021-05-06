@@ -5,10 +5,8 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Bios;
-import org.tdf.sunflower.state.PreBuiltContract;
+import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
@@ -28,8 +26,8 @@ public class BackendImpl implements Backend {
 
     private Map<HexBytes, Account> modifiedAccounts;
     private Map<HexBytes, Map<HexBytes, HexBytes>> modifiedStorage;
-    private Map<HexBytes, PreBuiltContract> preBuiltContracts;
-    private Map<HexBytes, Bios> bios;
+    private Map<HexBytes, BuiltinContract> preBuiltContracts;
+    private Map<HexBytes, BuiltinContract> bios;
     private boolean isStatic;
 
     private Store<HexBytes, HexBytes> codeStore;
@@ -192,12 +190,12 @@ public class BackendImpl implements Backend {
     }
 
     @Override
-    public Map<HexBytes, PreBuiltContract> getPreBuiltContracts() {
+    public Map<HexBytes, BuiltinContract> getBuiltins() {
         return preBuiltContracts;
     }
 
     @Override
-    public Map<HexBytes, Bios> getBios() {
+    public Map<HexBytes, BuiltinContract> getBios() {
         return bios;
     }
 

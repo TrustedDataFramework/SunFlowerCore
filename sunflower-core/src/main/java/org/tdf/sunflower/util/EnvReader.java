@@ -12,7 +12,6 @@ import java.io.InputStream;
 public class EnvReader {
     private final Environment env;
 
-    // 哈希算法
     public String getHash() {
         String hash = env.getProperty("sunflower.crypto.hash");
         hash = (hash == null || hash.isEmpty()) ? "sm3" : hash;
@@ -20,7 +19,6 @@ public class EnvReader {
         return hash;
     }
 
-    // 签名算法
     public String getEC() {
         String ec = env.getProperty("sunflower.crypto.ec");
         ec = (ec == null || ec.isEmpty()) ? "sm2" : ec;
@@ -28,7 +26,6 @@ public class EnvReader {
         return ec;
     }
 
-    // 对称加密算法
     public String getAE() {
         return "sm4";
     }

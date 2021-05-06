@@ -12,6 +12,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.AppConfig;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
 import org.tdf.sunflower.events.*;
@@ -57,10 +58,10 @@ public class SyncManager implements PeerServerListener, Closeable {
 
     private final Limiters limiters;
     private final Cache<HexBytes, Boolean> receivedTransactions = CacheBuilder.newBuilder()
-            .maximumSize(ApplicationConstants.P2P_TRANSACTION_CACHE_SIZE)
+            .maximumSize(AppConfig.get().getP2pTransactionCacheSize())
             .build();
     private final Cache<HexBytes, Boolean> receivedProposals = CacheBuilder.newBuilder()
-            .maximumSize(ApplicationConstants.P2P_PROPOSAL_CACHE_SIZE)
+            .maximumSize(AppConfig.get().getP2pProposalCacheSize())
             .build();
     private final Lock blockQueueLock = new ReentrantLock();
     // lock when accounts received, avoid concurrent handling
@@ -125,9 +126,6 @@ public class SyncManager implements PeerServerListener, Closeable {
 
     private void broadcastToApproved(byte[] body) {
         List<Peer> peers = peerServer.getPeers();
-        peers = peers.stream()
-                    .filter(engine::isAllow)
-                    .collect(Collectors.toList());
 
         for (Peer p : peers) {
             peerServer.dial(p, body);

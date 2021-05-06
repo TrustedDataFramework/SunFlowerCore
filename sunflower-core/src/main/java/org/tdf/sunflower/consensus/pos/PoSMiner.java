@@ -15,6 +15,7 @@ import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -101,7 +102,7 @@ public class PoSMiner extends AbstractMiner {
         if (!o.isPresent()) return;
         log.debug("try to mining at height " + (best.getHeight() + 1));
         try {
-            BlockCreateResult res = createBlock(blockRepository.getBestBlock());
+            BlockCreateResult res = createBlock(blockRepository.getBestBlock(), Collections.emptyMap());
             if (res.getBlock() != null) {
                 log.info("mining success block: {}", res.getBlock().getHeader());
             }
@@ -112,8 +113,7 @@ public class PoSMiner extends AbstractMiner {
     }
 
     public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
-        List<HexBytes> minerAddresses = pos.getMinerAddresses(parent.getStateRoot());
-        return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, config.getBlockInterval());
+        return Optional.empty();
     }
 
 

@@ -2,17 +2,16 @@ package org.tdf.sunflower.consensus.poa.config;
 
 import org.tdf.common.crypto.ECKey;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.facade.PropertyLike;
 import org.tdf.sunflower.types.ConsensusConfig;
-
-import java.util.Properties;
 
 public class PoAConfig extends ConsensusConfig {
     public static PoAConfig from(ConsensusConfig c) {
-        return new PoAConfig(c.getParsed());
+        return new PoAConfig(c.getProperties());
     }
 
-    public PoAConfig(Properties parsed) {
-        super(parsed);
+    public PoAConfig(PropertyLike properties) {
+        super(properties);
     }
 
     private Integer threadId;

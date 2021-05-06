@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
@@ -43,52 +42,28 @@ public class PoA extends AbstractConsensusEngine {
     private PoAMiner poaMiner;
     private PoAValidator poAValidator;
 
-    private Authentication authContract;
+    @Getter
     private Authentication minerContract;
+    @Getter
     private Authentication validatorContract;
 
-    private List<PreBuiltContract> preBuiltContracts;
+    private List<BuiltinContract> builtins;
 
     private ScheduledExecutorService executorService;
 
     public PoA() {
-        this.preBuiltContracts = new ArrayList<>();
+        this.builtins = new ArrayList<>();
         this.economicModel = new PoAEconomicModel();
     }
 
-    public PoA(List<PreBuiltContract> preBuiltContracts) {
-        this(preBuiltContracts, new PoAEconomicModel());
-    }
-
-    public PoA(List<PreBuiltContract> preBuiltContracts, @NonNull EconomicModel economicModel) {
-        this();
-        this.preBuiltContracts.addAll(preBuiltContracts);
-        this.economicModel = economicModel;
-    }
-
-
     @Override
-    public List<HexBytes> getMinerAddresses() {
-        return getMinerAddresses(getSunflowerRepository().getBestBlock().getStateRoot());
-    }
-
-    public List<HexBytes> getMinerAddresses(HexBytes parentStateRoot) {
-        return minerContract.getNodes(parentStateRoot);
-    }
-
-    public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
-        List<HexBytes> minerAddresses = getMinerAddresses(parent.getStateRoot());
-        return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, config.getBlockInterval());
-    }
-
-    @Override
-    public List<Account> getGenesisStates() {
+    public List<Account> getAlloc() {
         return genesis.getAlloc();
     }
 
     @Override
-    public List<PreBuiltContract> getPreBuiltContracts() {
-        return preBuiltContracts;
+    public List<BuiltinContract> getBuiltins() {
+        return builtins;
     }
 
     public List<Transaction> farmBaseTransactions = new Vector<>();
@@ -140,39 +115,29 @@ public class PoA extends AbstractConsensusEngine {
             );
         }
 
-        this.authContract = new Authentication(
-                genesis.getMiners(),
-                Constants.PEER_AUTHENTICATION_ADDR
-        );
-
         this.minerContract = new Authentication(
                 genesis.getMiners(),
-                Constants.POA_AUTHENTICATION_ADDR
+                Constants.POA_AUTHENTICATION_ADDR,
+                getAccountTrie(),
+                getSunflowerRepository(),
+                this.getConfig()
         );
-
 
 
         this.validatorContract = new Authentication(
             genesis.getValidators(),
-            Constants.VALIDATOR_CONTRACT_ADDR
+            Constants.VALIDATOR_CONTRACT_ADDR,
+            getAccountTrie(),
+            getSunflowerRepository(),
+            this.config
         );
 
-        preBuiltContracts.add(this.validatorContract);
-        preBuiltContracts.add(this.authContract);
-        preBuiltContracts.add(this.minerContract);
-
-        initStateTrie();
+        builtins.add(this.validatorContract);
+        builtins.add(this.minerContract);
 
         StateTrie<HexBytes, Account> trie = getAccountTrie();
 
-        this.authContract.setAccountTrie(trie);
-        this.authContract.setContractStorageTrie(getContractStorageTrie());
-        this.minerContract.setAccountTrie(trie);
-        this.minerContract.setContractStorageTrie(getContractStorageTrie());
-        this.validatorContract.setAccountTrie(trie);
-        this.validatorContract.setContractStorageTrie(getContractStorageTrie());
-
-        poaMiner = new PoAMiner(getAccountTrie(), getEventBus(), this.config, this);
+        poaMiner = new PoAMiner(this);
         poaMiner.setBlockRepository(this.getSunflowerRepository());
         poaMiner.setTransactionPool(getTransactionPool());
 
@@ -180,8 +145,6 @@ public class PoA extends AbstractConsensusEngine {
 
         poAValidator = new PoAValidator(getAccountTrie(), this);
         setValidator(poAValidator);
-
-        // register dummy account
     }
 
     @Override
@@ -192,10 +155,5 @@ public class PoA extends AbstractConsensusEngine {
     @Override
     public String getName() {
         return "poa";
-    }
-
-
-    public List<HexBytes> getValidators(HexBytes parentStateRoot) {
-        return validatorContract.getNodes(parentStateRoot);
     }
 }

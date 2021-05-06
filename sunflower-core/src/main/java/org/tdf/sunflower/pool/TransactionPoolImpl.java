@@ -11,6 +11,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.AppConfig;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.TransactionPoolConfig;
 import org.tdf.sunflower.events.NewBestBlock;
@@ -145,11 +146,12 @@ public class TransactionPoolImpl implements TransactionPool {
     public Map<HexBytes, String> collect(Collection<? extends Transaction> transactions) {
         Map<HexBytes, String> errors = new HashMap<>();
         this.cacheLock.writeLock().lock();
+        AppConfig c = AppConfig.get();
         try {
             List<Transaction> newCollected = new ArrayList<>(transactions.size());
             for (Transaction transaction : transactions) {
-                if (transaction.getGasPriceAsU256().compareTo(Uint256.of(ApplicationConstants.VM_GAS_PRICE)) < 0)
-                    throw new RuntimeException("transaction pool: gas price of tx less than vm gas price " + ApplicationConstants.VM_GAS_PRICE);
+                if (transaction.getGasPriceAsU256().compareTo(c.getVmGasPrice()) < 0)
+                    throw new RuntimeException("transaction pool: gas price of tx less than vm gas price " + c.getVmGasPrice());
 
                 TransactionInfo info = new TransactionInfo(System.currentTimeMillis(), transaction);
                 if (cache.contains(info) || dropped.asMap().containsKey(transaction.getHashHex()))

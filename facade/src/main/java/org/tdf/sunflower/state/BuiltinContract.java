@@ -1,5 +1,6 @@
 package org.tdf.sunflower.state;
 
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
@@ -9,16 +10,24 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public interface CommonUpdater {
-    Account getGenesisAccount();
+public interface BuiltinContract {
+    HexBytes getAddress();
 
     default Map<HexBytes, HexBytes> getGenesisStorage() {
         return Collections.emptyMap();
     }
 
     default byte[] call(Backend backend, CallData callData) {
-        return HexBytes.EMPTY_BYTES;
+        return ByteUtil.EMPTY_BYTE_ARRAY;
+    }
+
+    default List<?> call(Backend backend, CallData callData, String method, Object... args) {
+        return Collections.emptyList();
     }
 
     Abi getAbi();
+
+    default Object view(HexBytes blockHash, String method, Object...args) {
+        return null;
+    }
 }

@@ -8,7 +8,7 @@ import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.PreBuiltContract;
+import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.types.ConsensusConfig;
 
 import java.util.*;
@@ -41,12 +41,12 @@ public class PoS extends AbstractConsensusEngine {
     }
 
     @Override
-    public List<Account> getGenesisStates() {
+    public List<Account> getAlloc() {
         return genesis.getAlloc();
     }
 
     @Override
-    public List<PreBuiltContract> getPreBuiltContracts() {
+    public List<BuiltinContract> getBuiltins() {
         return Collections.singletonList(minerContract);
     }
 

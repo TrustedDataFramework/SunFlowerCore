@@ -2,7 +2,6 @@ package org.tdf.sunflower;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.spring.JsonServiceExporter;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -16,15 +15,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
-import org.springframework.web.socket.config.annotation.EnableWebSocket;
-import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 import org.tdf.common.event.EventBus;
-import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.JsonStore;
 import org.tdf.common.store.NoDeleteBatchStore;
@@ -56,16 +48,15 @@ import org.tdf.sunflower.service.ConcurrentSunflowerRepository;
 import org.tdf.sunflower.service.HttpService;
 import org.tdf.sunflower.service.SunflowerRepositoryKVImpl;
 import org.tdf.sunflower.service.SunflowerRepositoryService;
-import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
+import org.tdf.sunflower.types.AbstractGenesis;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.util.EnvReader;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
-import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.io.File;
 import java.net.URL;
@@ -73,10 +64,6 @@ import java.net.URLClassLoader;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 @SpringBootApplication
 @Slf4j(topic = "init")
@@ -84,34 +71,19 @@ import java.util.stream.Collectors;
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 public class Start {
     public static final byte[] TRIVIAL_KEY = new byte[]{
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 1
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 1
     };
     public static final ObjectMapper MAPPER = MappingUtil.OBJECT_MAPPER;
-    @Getter
-    private static boolean enableAssertion;
+
     private static ClassLoader customClassLoader = ClassUtils.getDefaultClassLoader();
 
     public static ClassLoader getCustomClassLoader() {
         return customClassLoader;
     }
 
-    public static void devAssert(boolean truth, String error) {
-        if (!enableAssertion) return;
-        Assert.isTrue(truth, error);
-    }
-
-    public static void devAssert(Supplier<Boolean> supplier, String error) {
-        if (!enableAssertion) return;
-        Assert.isTrue(supplier.get(), error);
-    }
-
-    public static <T> void devAssert(T thing, Predicate<T> predicate, String error) {
-        if (!enableAssertion) return;
-        Assert.isTrue(predicate.test(thing), error);
-    }
 
     @SneakyThrows
     private static Properties loadDefaultConfig() {
@@ -126,45 +98,7 @@ public class Start {
     }
 
     public static void loadConstants(Environment env) {
-        String constant = env.getProperty("sunflower.cache.trie");
-        if (constant != null && !constant.isEmpty()) {
-            ApplicationConstants.TRIE_CACHE_SIZE = Integer.parseInt(constant);
-        }
-        constant = env.getProperty("sunflower.cache.p2p.transaction");
-        if (constant != null && !constant.isEmpty()) {
-            ApplicationConstants.P2P_TRANSACTION_CACHE_SIZE = Integer.parseInt(constant);
-        }
-        constant = env.getProperty("sunflower.cache.p2p.proposal");
-        if (constant != null && !constant.isEmpty()) {
-            ApplicationConstants.P2P_PROPOSAL_CACHE_SIZE = Integer.parseInt(constant);
-        }
-        constant = env.getProperty("sunflower.assert");
-        if (constant != null && !constant.isEmpty()) {
-            if (!constant.toLowerCase().matches("true|false")) throw new IllegalArgumentException("sunflower.assert");
-            enableAssertion = constant.equals("true");
-        }
-        constant = env.getProperty("sunflower.vm.step-limit");
-        if (constant != null && !constant.isEmpty())
-            Limit.setVMStepLimit(Long.parseLong(constant));
-
-        constant = env.getProperty("sunflower.validate");
-        if (constant != null && constant.trim().toLowerCase().equals("true")) {
-            ApplicationConstants.VALIDATE = true;
-        }
-        constant = env.getProperty("sunflower.vm.max-frames");
-        if (constant != null && !constant.isEmpty())
-            Limit.setMaxFrames(Long.parseLong(constant));
-
-        constant = env.getProperty("sunflower.vm.max-contract-call-depth");
-        if (constant != null && !constant.isEmpty())
-            ApplicationConstants.MAX_CONTRACT_CALL_DEPTH = Long.parseLong(constant);
-
-        constant = env.getProperty("sunflower.vm.gas-price");
-        if (constant != null && !constant.isEmpty())
-            ApplicationConstants.VM_GAS_PRICE = Long.parseLong(constant);
-        constant = env.getProperty("sunflowr.consensus.allow-empty-block");
-        if (constant != null && "true".equals(constant.toLowerCase()))
-            ApplicationConstants.ALLOW_EMPTY_BLOCK = true;
+        AppConfig.INSTANCE = new AppConfig(env);
     }
 
     @SneakyThrows
@@ -259,7 +193,7 @@ public class Start {
 
     @Bean
     public SunflowerRepository sunflowerRepository(
-            ApplicationContext context
+        ApplicationContext context
     ) {
         String type = context.getEnvironment().getProperty("sunflower.database.block-store");
         type = (type == null || type.isEmpty()) ? "rdbms" : type;
@@ -282,9 +216,9 @@ public class Start {
 
     @Bean
     public Miner miner(
-            ConsensusEngine engine,
-            // this dependency asserts the peer server had been initialized
-            PeerServer peerServer
+        ConsensusEngine engine,
+        // this dependency asserts the peer server had been initialized
+        PeerServer peerServer
     ) {
         Miner miner = engine.getMiner();
         miner.start();
@@ -292,22 +226,32 @@ public class Start {
     }
 
     @Bean
-    public AccountTrie accountTrie(ConsensusEngine consensusEngine) {
-        return (AccountTrie) consensusEngine.getAccountTrie();
+    public AccountTrie accountTrie(
+        DatabaseStoreFactory databaseStoreFactory,
+        @Qualifier("contractStorageTrie") Trie<HexBytes, HexBytes> contractStorageTrie,
+        @Qualifier("contractCodeStore") Store<HexBytes, HexBytes> contractCodeStore
+        ) {
+        AppConfig c = AppConfig.get();
+        return new AccountTrie(
+            databaseStoreFactory.create("account-trie"),
+            contractCodeStore,
+            contractStorageTrie,
+            c.isTrieSecure()
+        );
     }
 
     @Bean
     public ConsensusEngine consensusEngine(
-            ConsensusProperties consensusProperties,
-            SunflowerRepository repositoryService,
-            TransactionPoolImpl transactionPool,
-            DatabaseStoreFactory databaseStoreFactory,
-            EventBus eventBus,
-            SyncConfig syncConfig,
-            ApplicationContext context,
-            @Qualifier("contractStorageTrie") Trie<HexBytes, HexBytes> contractStorageTrie,
-            @Qualifier("contractCodeStore") Store<HexBytes, HexBytes> contractCodeStore,
-            SecretStore secretStore
+        ConsensusProperties consensusProperties,
+        SunflowerRepository repositoryService,
+        TransactionPoolImpl transactionPool,
+        DatabaseStoreFactory databaseStoreFactory,
+        EventBus eventBus,
+        SyncConfig syncConfig,
+        AccountTrie accountTrie,
+        ApplicationContext context,
+        @Qualifier("contractStorageTrie") Trie<HexBytes, HexBytes> contractStorageTrie,
+        @Qualifier("contractCodeStore") Store<HexBytes, HexBytes> contractCodeStore
     ) throws Exception {
         String name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME);
         name = name == null ? "" : name;
@@ -340,8 +284,8 @@ public class Start {
                 } catch (Exception e) {
                     e.printStackTrace();
                     log.error(
-                            "none available consensus configured by sunflower.consensus.name=" + name +
-                                    " please provide available consensus engine");
+                        "none available consensus configured by sunflower.consensus.name=" + name +
+                            " please provide available consensus engine");
                     log.error("roll back to poa consensus");
                     engine = new PoA();
                 }
@@ -361,7 +305,13 @@ public class Start {
 
         repositoryService.setProvider(engine.getConfirmedBlocksProvider());
         repositoryService.setAccountTrie(engine.getAccountTrie());
-        repositoryService.saveGenesis(engine.getGenesisBlock());
+
+        // init accountTrie and genesis block
+        AbstractConsensusEngine abstractEngine = ((AbstractConsensusEngine) engine);
+        HexBytes root = accountTrie.init(abstractEngine.getAlloc(), abstractEngine.getBios(), abstractEngine.getBuiltins());
+        Block g = engine.getGenesisBlock();
+        g.setStateRoot(root);
+        repositoryService.saveGenesis(g);
 
         transactionPool.setEngine(engine);
         if (engine == AbstractConsensusEngine.NONE) return engine;
@@ -376,10 +326,9 @@ public class Start {
     // create peer server from properties
     @Bean
     public PeerServer peerServer(
-            PeerServerProperties properties,
-            ConsensusEngine engine,
-            DatabaseStoreFactory factory,
-            SecretStore secretStore
+        PeerServerProperties properties,
+        ConsensusEngine engine,
+        DatabaseStoreFactory factory
     ) throws Exception {
         String name = properties.getProperty("name");
         name = name == null ? "" : name;
@@ -390,9 +339,9 @@ public class Start {
         persist = (persist == null) ? "" : persist.trim().toLowerCase();
 
         JsonStore store = "true".equals(persist) && !"memory".equals(factory.getName()) ?
-                new JsonStore(Paths.get(factory.getDirectory(), "peers.json").toString(), MAPPER)
-                : new JsonStore("$memory", MAPPER);
-        PeerServer peerServer = new PeerServerImpl(store, engine, SecretStore.NONE);
+            new JsonStore(Paths.get(factory.getDirectory(), "peers.json").toString(), MAPPER)
+            : new JsonStore("$memory", MAPPER);
+        PeerServer peerServer = new PeerServerImpl(store, engine);
         peerServer.init(properties);
         peerServer.addListeners(engine.getPeerServerListener());
         peerServer.start();
@@ -409,25 +358,25 @@ public class Start {
     @Bean
     public Trie<HexBytes, HexBytes> contractStorageTrie(DatabaseStoreFactory factory) {
         return Trie.<HexBytes, HexBytes>builder()
-                .hashFunction(CryptoContext::hash)
-                .keyCodec(Codecs.HEX)
-                .valueCodec(Codecs.HEX)
-                .store(
-                        new NoDeleteBatchStore<>(
-                                factory.create("contract-storage-trie"),
-                                Store.IS_NULL
-                        )
+            .hashFunction(CryptoContext::hash)
+            .keyCodec(Codecs.HEX)
+            .valueCodec(Codecs.HEX)
+            .store(
+                new NoDeleteBatchStore<>(
+                    factory.create("contract-storage-trie"),
+                    Store.IS_NULL
                 )
-                .build();
+            )
+            .build();
     }
 
     // contract hash code -> contract binary
     @Bean
     public Store<HexBytes, HexBytes> contractCodeStore(DatabaseStoreFactory factory) {
         return new StoreWrapper<>(
-                factory.create("contract-code"),
-                Codecs.HEX,
-                Codecs.HEX
+            factory.create("contract-code"),
+            Codecs.HEX,
+            Codecs.HEX
         );
     }
 
@@ -449,14 +398,14 @@ public class Start {
             String resp = null;
             try {
                 resp = httpService.get(
-                        HttpHeaders.EMPTY,
-                        ksLocation,
-                        query
+                    HttpHeaders.EMPTY,
+                    ksLocation,
+                    query
                 );
 
                 SecretStoreImpl secretStore = MAPPER.readValue(
-                        resp,
-                        SecretStoreImpl.class);
+                    resp,
+                    SecretStoreImpl.class);
                 byte[] plain = sk.decrypt(secretStore.getCipherText().getBytes());
                 if (plain.length == sk.getEncoded().length) {
                     HexBytes address = Address.fromPrivate(HexBytes.fromBytes(plain));
@@ -478,33 +427,18 @@ public class Start {
 
     }
 
-    private void injectApplicationContext(ApplicationContext context, AbstractConsensusEngine engine) {
+    // inject application context into consensus engine
+    private void injectApplicationContext(
+        ApplicationContext context,
+        AbstractConsensusEngine engine
+    ) {
         engine.setEventBus(context.getBean(EventBus.class));
         engine.setTransactionPool(context.getBean(TransactionPool.class));
         DatabaseStoreFactory databaseStoreFactory = (context.getBean(DatabaseStoreFactory.class));
         engine.setSunflowerRepository(context.getBean(SunflowerRepository.class));
         engine.setContractStorageTrie(context.getBean("contractStorageTrie", Trie.class));
         engine.setContractCodeStore(context.getBean("contractCodeStore", Store.class));
-        engine.setSecretStore(context.getBean(SecretStore.class));
-        engine.setStateTrieProvider(e -> {
-
-            Boolean bool = context.getEnvironment().getProperty("sunflower.trie.secure", Boolean.class);
-
-            AccountTrie trie = new AccountTrie(
-                    databaseStoreFactory.create("account-trie"),
-                    e.getContractCodeStore(),
-                    e.getContractStorageTrie(),
-                    e.getGenesisStates().stream().collect(Collectors.toMap(Account::getAddress, Function.identity())),
-                    e.getPreBuiltContracts(), e.getBios(),
-                    bool != null && bool
-            );
-
-            e.setAccountTrie(trie);
-            Block b = e.getGenesisBlock();
-            b.setStateRoot(trie.getGenesisRoot());
-            e.setGenesisBlock(b);
-            return trie;
-        });
+        engine.setAccountTrie(context.getBean(AccountTrie.class));
     }
 
     @Bean(name = "/")
@@ -518,7 +452,7 @@ public class Start {
     @Bean
     public FilterRegistrationBean<JsonRpcFilter> loggingFilter(JsonRpcFilter filter) {
         FilterRegistrationBean<JsonRpcFilter> registrationBean
-                = new FilterRegistrationBean<>();
+            = new FilterRegistrationBean<>();
         registrationBean.setFilter(filter);
         registrationBean.addUrlPatterns("/");
         return registrationBean;

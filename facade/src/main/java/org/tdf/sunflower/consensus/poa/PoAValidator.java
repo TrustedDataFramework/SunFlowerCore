@@ -43,9 +43,11 @@ public class PoAValidator extends AbstractValidator {
             return res0;
 
         if (
-                !poA.getProposer(dependency, block.getCreatedAt())
-                        .map(x -> x.getAddress().equals(block.getBody().get(0).getReceiveHex()))
-                        .orElse(false)
+            !poA.getMinerContract().getProposer(
+                dependency.getHash(),
+                block.getCreatedAt()
+            ).equals(block.getBody().get(0).getReceiveHex())
+
         ) return ValidateResult.fault("invalid proposer " + block.getBody().get(0).getSenderHex());
 
         // validate signature
@@ -59,13 +61,13 @@ public class PoAValidator extends AbstractValidator {
         // validate signer
         HexBytes signer = HexBytes.fromBytes(ECKey.signatureToAddress(rawHash, signature));
 
-        if(!signer.equals(block.getCoinbase())) {
+        if (!signer.equals(block.getCoinbase())) {
             return ValidateResult.fault("signer not equals to coinbase");
         }
 
         ECKey key = ECKey.signatureToKey(rawHash, signature);
         // verify signature
-        if(!key.verify(rawHash, signature)) {
+        if (!key.verify(rawHash, signature)) {
             return ValidateResult.fault("verify signature failed");
         }
 
@@ -75,7 +77,7 @@ public class PoAValidator extends AbstractValidator {
     // validate pre-pending transaction
     @Override
     public ValidateResult validate(Header dependency, Transaction transaction) {
-        if(!poA.getConfig().isControlled())
+        if (!poA.getConfig().isControlled())
             return ValidateResult.success();
 
         HexBytes farmBaseAdmin = poA.getConfig().getFarmBaseAdmin();
@@ -111,10 +113,11 @@ public class PoAValidator extends AbstractValidator {
 
 
         if (!transaction.getSenderHex().equals(farmBaseAdmin)
-                && !poA.getValidators(
-                dependency.getStateRoot())
-                .contains(transaction.getSenderHex()
-                )
+            && !poA.getValidatorContract()
+                .getApproved(
+                dependency.getHash())
+            .contains(transaction.getSenderHex()
+            )
         )
             return ValidateResult.fault("from address is not approved");
 

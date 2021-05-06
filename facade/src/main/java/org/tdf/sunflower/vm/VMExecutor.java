@@ -3,17 +3,13 @@ package org.tdf.sunflower.vm;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.Module;
-import org.tdf.rlp.RLPList;
-import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
-import org.tdf.sunflower.state.Bios;
-import org.tdf.sunflower.state.PreBuiltContract;
+import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.types.VMResult;
 import org.tdf.sunflower.vm.abi.Abi;
 import org.tdf.sunflower.vm.abi.SolidityType;
@@ -21,8 +17,6 @@ import org.tdf.sunflower.vm.abi.WbiType;
 import org.tdf.sunflower.vm.hosts.*;
 
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,7 +114,7 @@ public class VMExecutor {
         switch (callData.getCallType()) {
             case COINBASE: {
                 backend.addBalance(callData.getTxTo(), callData.getTxValue());
-                for (Bios bios : backend.getBios().values()) {
+                for (BuiltinContract bios : backend.getBios().values()) {
                     return bios.call(backend, callData);
                 }
                 return ByteUtil.EMPTY_BYTE_ARRAY;
@@ -128,10 +122,10 @@ public class VMExecutor {
             case CALL:
             case CREATE: {
                 // is prebuilt
-                if (backend.getPreBuiltContracts().containsKey(callData.getTo())) {
+                if (backend.getBuiltins().containsKey(callData.getTo())) {
                     backend.addBalance(callData.getTo(), callData.getValue());
                     backend.subBalance(callData.getCaller(), callData.getValue());
-                    PreBuiltContract updater = backend.getPreBuiltContracts().get(callData.getTo());
+                    BuiltinContract updater = backend.getBuiltins().get(callData.getTo());
                     return updater.call(backend, callData);
                 }
 

@@ -12,6 +12,7 @@ import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.*;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.*;
 
@@ -150,7 +151,9 @@ public class PoWMiner extends AbstractMiner {
             return;
         Runnable task = () -> {
             try {
-                BlockCreateResult res = createBlock(poW.getSunflowerRepository().getBestBlock());
+                BlockCreateResult res = createBlock(
+                    poW.getSunflowerRepository().getBestBlock(),
+                    Collections.emptyMap());
                 if (res.getBlock() != null) {
                     log.info("mining success block: {}", res.getBlock().getHeader());
                 }

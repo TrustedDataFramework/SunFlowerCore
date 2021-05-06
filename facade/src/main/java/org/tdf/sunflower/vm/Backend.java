@@ -3,9 +3,7 @@ package org.tdf.sunflower.vm;
 import org.tdf.common.store.Store;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPList;
-import org.tdf.sunflower.state.Bios;
-import org.tdf.sunflower.state.PreBuiltContract;
+import org.tdf.sunflower.state.BuiltinContract;
 
 import java.util.List;
 import java.util.Map;
@@ -46,9 +44,9 @@ public interface Backend {
     long getInitialGas(int payloadSize);
 
 
-    Map<HexBytes, PreBuiltContract> getPreBuiltContracts();
+    Map<HexBytes, BuiltinContract> getBuiltins();
 
-    Map<HexBytes, Bios> getBios();
+    Map<HexBytes, BuiltinContract> getBios();
 
     void dbSet(HexBytes address, HexBytes key, HexBytes value);
 

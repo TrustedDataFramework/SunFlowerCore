@@ -13,6 +13,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.tdf.common.trie.Trie;
+import org.tdf.sunflower.AppConfig;
 import org.tdf.sunflower.types.TransactionV1;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
@@ -72,6 +73,8 @@ public class EntryController {
 
     @SneakyThrows
     private Stat createState() {
+        AppConfig c = AppConfig.get();
+
         Stat.StatBuilder builder = Stat.builder();
         OperatingSystemMXBean osMxBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
         Block best = repository.getBestBlock();
@@ -118,8 +121,7 @@ public class EntryController {
                 .blocksPerEra(rd.getBlocksPerEra())
                 .maxMiners(rd.getMaxMiners())
                 .allowUnauthorized(rd.isAllowUnauthorized())
-                .gasPrice(ApplicationConstants.VM_GAS_PRICE)
-                .allowEmptyBlock(ApplicationConstants.ALLOW_EMPTY_BLOCK)
+                .gasPrice(c.getVmGasPrice().longValue())
                 .build()
                 ;
     }
@@ -176,7 +178,7 @@ public class EntryController {
 
     @GetMapping(value = "/miners", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<HexBytes> miners() {
-        return consensusEngine.getMinerAddresses();
+        return Collections.emptyList();
     }
 
     @GetMapping(value = "/orphan", produces = MediaType.APPLICATION_JSON_VALUE)

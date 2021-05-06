@@ -9,7 +9,7 @@ import org.tdf.sunflower.Start;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Bios;
+import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.CryptoContext;
@@ -54,12 +54,12 @@ public class PoW extends AbstractConsensusEngine {
     }
 
     @Override
-    public List<Account> getGenesisStates() {
+    public List<Account> getAlloc() {
         return genesis.getAlloc();
     }
 
     @Override
-    public List<Bios> getBios() {
+    public List<BuiltinContract> getBios() {
         PoWBios bios = new PoWBios(genesis.getNbits(), config);
         return Collections.singletonList(bios);
     }

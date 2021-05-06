@@ -11,12 +11,11 @@ import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
+import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.state.Constants;
-import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.abi.Abi;
@@ -27,7 +26,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Slf4j(topic = "pos")
-public class PosPreBuilt implements PreBuiltContract {
+public class PosPreBuilt implements BuiltinContract {
     public static final HexBytes NODE_INFO_KEY = HexBytes.fromBytes("nodes".getBytes(StandardCharsets.US_ASCII));
     public static final HexBytes VOTE_INFO_KEY = HexBytes.fromBytes("votes".getBytes(StandardCharsets.US_ASCII));
 
@@ -82,8 +81,8 @@ public class PosPreBuilt implements PreBuiltContract {
     }
 
     @Override
-    public Account getGenesisAccount() {
-        return Account.emptyAccount(Constants.POS_CONTRACT_ADDR, Uint256.ZERO);
+    public HexBytes getAddress() {
+        return Constants.POS_CONTRACT_ADDR;
     }
 
     @Override

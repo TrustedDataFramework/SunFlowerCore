@@ -6,6 +6,8 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
 
+import java.util.List;
+
 /**
  * state storage
  *
@@ -16,8 +18,12 @@ public interface StateTrie<ID, S> {
     // get an optional state at a root hash
     S get(HexBytes rootHash, ID id);
 
-    HexBytes getGenesisRoot();
-
+    // init genesis states
+    HexBytes init(
+        List<Account> alloc,
+        List<BuiltinContract> bios,
+        List<BuiltinContract> builtins
+    );
 
     Trie<ID, S> getTrie();
 
@@ -25,11 +31,13 @@ public interface StateTrie<ID, S> {
 
     Store<byte[], byte[]> getTrieStore();
 
-    Backend createBackend(
+    default Backend createBackend(
             Header parent,
             Long newBlockCreatedAt,
             boolean isStatic
-    );
+    ) {
+        return createBackend(parent, parent.getStateRoot(), newBlockCreatedAt, isStatic);
+    }
 
     Backend createBackend(
             Header parent,

@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.facade.PropertiesWrapper;
+import org.tdf.sunflower.facade.PropertyLike;
 import org.tdf.sunflower.util.FileUtils;
 
 import java.io.InputStream;
@@ -14,14 +16,17 @@ import java.util.Properties;
 
 public class ConsensusConfig {
     @Getter
-    protected final Properties parsed;
+    protected final PropertyLike properties;
     protected final PropertyReader reader;
 
 
+    public ConsensusConfig(Properties properties){
+        this(new PropertiesWrapper(properties));
+    }
 
-    public ConsensusConfig(Properties parsed) {
-        this.parsed = parsed;
-        this.reader = new PropertyReader(parsed);
+    public ConsensusConfig(PropertyLike properties) {
+        this.properties = properties;
+        this.reader = new PropertyReader(properties);
     }
 
     private String name;
@@ -97,7 +102,7 @@ public class ConsensusConfig {
             .enable(JsonParser.Feature.ALLOW_COMMENTS);
 
         InputStream in = FileUtils.getInputStream(
-            Objects.requireNonNull(parsed.getProperty("genesis"))
+            Objects.requireNonNull(properties.getProperty("genesis"))
         );
 
         return objectMapper.readValue(in, JsonNode.class);

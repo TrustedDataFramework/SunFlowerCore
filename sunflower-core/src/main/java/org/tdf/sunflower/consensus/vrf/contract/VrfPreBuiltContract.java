@@ -6,8 +6,8 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.state.Constants;
-import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.vm.Backend;
@@ -28,21 +28,14 @@ import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
  */
 
 @Slf4j
-public class VrfPreBuiltContract implements PreBuiltContract {
+public class VrfPreBuiltContract implements BuiltinContract {
     public static final byte[] TOTAL_KEY = "total_deposits".getBytes();
     private Account genesisAccount;
     private Map<HexBytes, HexBytes> genesisStorage;
 
     @Override
-    public Account getGenesisAccount() {
-        if (genesisAccount == null) {
-            synchronized (VrfPreBuiltContract.class) {
-                if (genesisAccount == null) {
-                    genesisAccount = Account.emptyAccount(Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES, Uint256.ZERO);
-                }
-            }
-        }
-        return genesisAccount;
+    public HexBytes getAddress() {
+       return Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES;
 
     }
 
