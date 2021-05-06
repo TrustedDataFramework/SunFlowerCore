@@ -87,8 +87,8 @@ public class VMExecutor {
 
         if (callData.getCallType() == CallType.CREATE) {
             contractAddress = HashUtil.calcNewAddrHex(
-                    callData.getCaller().getBytes(),
-                    callData.getTxNonceAsBytes()
+                callData.getCaller().getBytes(),
+                callData.getTxNonceAsBytes()
             );
         }
 
@@ -102,11 +102,11 @@ public class VMExecutor {
 
 
         return new VMResult(
-                limit.getGas(),
-                contractAddress,
-                result,
-                Collections.emptyList(),
-                fee
+            limit.getGas(),
+            contractAddress,
+            result,
+            Collections.emptyList(),
+            fee
         );
     }
 
@@ -145,10 +145,10 @@ public class VMExecutor {
                     // increase nonce here to avoid conflicts
 
                     contractAddress =
-                            HashUtil.calcNewAddrHex(
-                                    callData.getCaller().getBytes(),
-                                    ByteUtil.longToBytesNoLeadZeroes(n)
-                            )
+                        HashUtil.calcNewAddrHex(
+                            callData.getCaller().getBytes(),
+                            ByteUtil.longToBytesNoLeadZeroes(n)
+                        )
 
                     ;
                     backend.setNonce(callData.getCaller(), n + 1);
@@ -171,28 +171,28 @@ public class VMExecutor {
                 DBFunctions dbFunctions = new DBFunctions(backend, callData.getTo());
 
                 Hosts hosts = new Hosts()
-                        .withTransfer(
-                                backend,
-                                callData.getTo()
-                        )
-                        .withReflect(new Reflect(this))
-                        .withContext(new ContextHost(backend, callData))
-                        .withDB(dbFunctions)
-                        .withEvent(backend, callData.getTo());
+                    .withTransfer(
+                        backend,
+                        callData.getTo()
+                    )
+                    .withReflect(new Reflect(this))
+                    .withContext(new ContextHost(backend, callData))
+                    .withDB(dbFunctions)
+                    .withEvent(backend, callData.getTo());
 
                 Module m = new Module(code);
                 Abi abi = m.getCustomSections()
-                        .stream().filter(x -> x.getName().equals("__abi"))
-                        .findFirst()
-                        .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
-                        .get();
+                    .stream().filter(x -> x.getName().equals("__abi"))
+                    .findFirst()
+                    .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
+                    .get();
 
                 ModuleInstance instance = ModuleInstance
-                        .builder()
-                        .module(m)
-                        .hooks(Collections.singleton(limit))
-                        .hostFunctions(hosts.getAll())
-                        .build();
+                    .builder()
+                    .module(m)
+                    .hooks(Collections.singleton(limit))
+                    .hostFunctions(hosts.getAll())
+                    .build();
 
                 WBI.InjectResult r = WBI.inject(create, abi, instance, HexBytes.fromBytes(data));
 
@@ -207,9 +207,9 @@ public class VMExecutor {
 
                 if (create) {
                     outputs = Optional
-                            .ofNullable(abi.findConstructor())
-                            .map(x -> x.outputs)
-                            .orElse(Collections.emptyList());
+                        .ofNullable(abi.findConstructor())
+                        .map(x -> x.outputs)
+                        .orElse(Collections.emptyList());
                 } else {
                     outputs = abi.findFunction(x -> x.name.equals(r.getFunction())).outputs;
                     if (outputs == null)
@@ -218,18 +218,18 @@ public class VMExecutor {
 
 
                 // extract result
-                for(int i = 0; i < rets.length; i++) {
+                for (int i = 0; i < rets.length; i++) {
                     SolidityType type = outputs.get(i).type;
                     switch (type.getName()) {
                         case "uint8":
                         case "uint16":
                         case "uint32":
-                        case "uint64":{
+                        case "uint64": {
                             results.add(BigInteger.valueOf(rets[i]));
                             break;
                         }
                         case "uint":
-                        case "uint256":{
+                        case "uint256": {
                             Uint256 u = (Uint256) WBI.peek(instance, (int) rets[i], WbiType.UINT_256);
                             results.add(u.value());
                             break;
@@ -245,11 +245,11 @@ public class VMExecutor {
                             break;
                         }
                         default: {
-                            if(type.getName().endsWith("]") || type.getName().endsWith(")")) {
+                            if (type.getName().endsWith("]") || type.getName().endsWith(")")) {
                                 throw new RuntimeException("array or tuple is not supported");
                             }
 
-                            if(type.getName().startsWith("bytes")) {
+                            if (type.getName().startsWith("bytes")) {
                                 HexBytes bytes = (HexBytes) WBI.peek(instance, (int) rets[i], WbiType.BYTES);
                                 results.add(bytes.getBytes());
                             }
@@ -258,7 +258,7 @@ public class VMExecutor {
                     }
                 }
 
-                if(outputs.size() > 0){
+                if (outputs.size() > 0) {
                     return Abi.Entry.Param.encodeList(outputs, results.toArray());
                 }
 

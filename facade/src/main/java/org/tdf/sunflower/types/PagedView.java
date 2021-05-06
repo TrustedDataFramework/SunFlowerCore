@@ -12,7 +12,7 @@ public class PagedView<T> {
     int total;
     List<T> records;
 
-    public static <T>  PagedView<T> empty() {
+    public static <T> PagedView<T> empty() {
         return new PagedView<>(0, 0, 0, Collections.emptyList());
     }
 }

@@ -51,8 +51,8 @@ public class ECDSASigner {
             }
             long kInv = zq.inverse(k);
             long s = zq.add(
-                    shaModQ(msg),
-                    zq.mul(sk, r));
+                shaModQ(msg),
+                zq.mul(sk, r));
             s = zq.mul(kInv, s);
             if (s == 0) {
                 k--;
@@ -79,7 +79,7 @@ public class ECDSASigner {
     @SneakyThrows
     private long shaModQ(byte[] msg) {
         MessageDigest sha =
-                MessageDigest.getInstance("SHA");
+            MessageDigest.getInstance("SHA");
         BigInteger b = new BigInteger(1, sha.digest(msg));
         return b.mod(BigInteger.valueOf(q)).longValue();
     }

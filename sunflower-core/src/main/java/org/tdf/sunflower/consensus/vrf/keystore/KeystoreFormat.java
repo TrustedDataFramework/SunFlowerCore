@@ -119,9 +119,9 @@ public class KeystoreFormat {
             }
 
             byte[] privateKey = decryptAes(
-                    Hex.decode(keystore.getCrypto().getCipherparams().getIv()),
-                    cipherKey,
-                    Hex.decode(keystore.getCrypto().getCiphertext())
+                Hex.decode(keystore.getCrypto().getCipherparams().getIv()),
+                cipherKey,
+                Hex.decode(keystore.getCrypto().getCiphertext())
             );
 
             return new Ed25519PrivateKey(privateKey);

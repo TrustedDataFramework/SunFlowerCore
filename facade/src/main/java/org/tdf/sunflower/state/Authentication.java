@@ -111,7 +111,7 @@ public class Authentication extends AbstractBuiltIn {
                     throw new RuntimeException("authentication contract error: " + fromAddr + " has already in nodes");
 
                 Set<HexBytes> s = pending.getSet(fromAddr, HexBytes.class, null);
-                if(s != null) {
+                if (s != null) {
                     throw new RuntimeException("authentication contract error: " + fromAddr + " has already in pending");
                 }
                 pending.save(fromAddr, new TreeSet<>());
@@ -122,7 +122,7 @@ public class Authentication extends AbstractBuiltIn {
                 HexBytes toApprove = HexBytes.fromBytes(toApproveBytes);
 
                 if (callData.getTo().equals(Constants.VALIDATOR_CONTRACT_ADDR)) {
-                    if(nodes.contains(toApprove))
+                    if (nodes.contains(toApprove))
                         return Collections.emptyList();
                     pending.remove(toApprove);
                     nodes.add(toApprove);

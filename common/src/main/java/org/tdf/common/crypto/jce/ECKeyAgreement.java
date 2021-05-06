@@ -27,7 +27,7 @@ public final class ECKeyAgreement {
     public static final String ALGORITHM = "ECDH";
 
     private static final String algorithmAssertionMsg =
-            "Assumed the JRE supports EC key agreement";
+        "Assumed the JRE supports EC key agreement";
 
     private ECKeyAgreement() {
     }

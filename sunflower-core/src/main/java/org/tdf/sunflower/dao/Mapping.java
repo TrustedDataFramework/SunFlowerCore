@@ -1,10 +1,10 @@
 package org.tdf.sunflower.dao;
 
-import org.tdf.common.types.Uint256;
-import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.entity.HeaderEntity;
 import org.tdf.sunflower.entity.TransactionEntity;
-import org.tdf.sunflower.types.*;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
 
 import java.util.Collection;
 import java.util.List;
@@ -35,9 +35,9 @@ public class Mapping {
 
     public static List<Transaction> getFromTransactionEntities(Collection<TransactionEntity> transactions) {
         return transactions.stream()
-                .sorted((x, y) -> x.getPosition() - y.getPosition())
-                .map(Mapping::getFromTransactionEntity)
-                .collect(Collectors.toList());
+            .sorted((x, y) -> x.getPosition() - y.getPosition())
+            .map(Mapping::getFromTransactionEntity)
+            .collect(Collectors.toList());
     }
 
     public static HeaderEntity getEntityFromHeader(Header header) {

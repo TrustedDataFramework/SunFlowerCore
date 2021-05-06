@@ -256,14 +256,14 @@ public class TransactionReceipt {
         }
 
         return receiptTrie ?
-                RLPCodec.encodeElements(Arrays.asList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP)) :
-                RLPCodec.encodeElements(
-                        Arrays.asList(
-                        postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP,
-                        RLPCodec.encodeBytes(gasUsed), RLPCodec.encodeBytes(executionResult),
-                        RLPCodec.encodeBytes(error.getBytes(StandardCharsets.UTF_8))
-                        )
-                );
+            RLPCodec.encodeElements(Arrays.asList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP)) :
+            RLPCodec.encodeElements(
+                Arrays.asList(
+                    postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP,
+                    RLPCodec.encodeBytes(gasUsed), RLPCodec.encodeBytes(executionResult),
+                    RLPCodec.encodeBytes(error.getBytes(StandardCharsets.UTF_8))
+                )
+            );
 
     }
 
@@ -296,15 +296,15 @@ public class TransactionReceipt {
         // todo: fix that
 
         return "TransactionReceipt[" +
-                "\n  , " + (hasTxStatus() ? ("txStatus=" + (isTxStatusOK() ? "OK" : "FAILED"))
-                : ("postTxState=" + toHexString(postTxState))) +
-                "\n  , cumulativeGas=" + toHexString(cumulativeGas) +
-                "\n  , gasUsed=" + toHexString(gasUsed) +
-                "\n  , error=" + error +
-                "\n  , executionResult=" + toHexString(executionResult) +
-                "\n  , bloom=" + bloomFilter.toString() +
-                "\n  , logs=" + logInfoList +
-                ']';
+            "\n  , " + (hasTxStatus() ? ("txStatus=" + (isTxStatusOK() ? "OK" : "FAILED"))
+            : ("postTxState=" + toHexString(postTxState))) +
+            "\n  , cumulativeGas=" + toHexString(cumulativeGas) +
+            "\n  , gasUsed=" + toHexString(gasUsed) +
+            "\n  , error=" + error +
+            "\n  , executionResult=" + toHexString(executionResult) +
+            "\n  , bloom=" + bloomFilter.toString() +
+            "\n  , logs=" + logInfoList +
+            ']';
     }
 
 }

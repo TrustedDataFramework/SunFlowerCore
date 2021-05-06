@@ -4,8 +4,8 @@
 package org.tdf.sunflower.proto;
 
 public interface PeersOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:Peers)
-        com.google.protobuf.MessageOrBuilder {
+    // @@protoc_insertion_point(interface_extends:Peers)
+    com.google.protobuf.MessageOrBuilder {
 
     /**
      * <code>repeated string peers = 1;</code>

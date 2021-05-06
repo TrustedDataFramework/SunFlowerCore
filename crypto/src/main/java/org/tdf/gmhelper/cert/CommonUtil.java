@@ -53,7 +53,7 @@ public class CommonUtil {
                                                        String signAlgo) throws OperatorCreationException {
         PKCS10CertificationRequestBuilder csrBuilder = new JcaPKCS10CertificationRequestBuilder(subject, pubKey);
         ContentSigner signerBuilder = new JcaContentSignerBuilder(signAlgo)
-                .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(priKey);
+            .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(priKey);
         return csrBuilder.build(signerBuilder);
     }
 

@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
-import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.BuiltinContract;
@@ -65,9 +64,7 @@ public class PoS extends AbstractConsensusEngine {
         }
 
         this.minerContract = new PosPreBuilt(nodesMap);
-        initStateTrie();
         this.minerContract.setAccountTrie((AccountTrie) getAccountTrie());
-        setPeerServerListener(PeerServerListener.NONE);
 
         this.posMiner = new PoSMiner(getAccountTrie(), getEventBus(), this.config, this);
         this.posMiner.setBlockRepository(this.getSunflowerRepository());

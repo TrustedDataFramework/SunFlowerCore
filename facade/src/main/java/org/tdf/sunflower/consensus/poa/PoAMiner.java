@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.crypto.ECDSASignature;
 import org.tdf.common.crypto.ECKey;
 import org.tdf.common.util.BigIntegers;
-import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.Proposer;

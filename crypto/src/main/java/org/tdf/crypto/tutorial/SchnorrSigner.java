@@ -29,7 +29,7 @@ public class SchnorrSigner {
         if (k == 0)
             k = 1;
         long gamma = Integer.toUnsignedLong(
-                Objects.hash(x, d.power(alpha, k))
+            Objects.hash(x, d.power(alpha, k))
         ) % q;
         long delta = d.add(k, d.mul(sk, gamma));
         return new long[]{gamma, delta};
@@ -37,14 +37,14 @@ public class SchnorrSigner {
 
     public boolean verify(long[] sig, long x, long beta) {
         return sig[0]
-                ==
-                Integer.toUnsignedLong(Objects.hash(
-                        x,
-                        d.mul(
-                                d.power(alpha, sig[1]),
-                                d.inverse(d.power(beta, sig[0]))
-                        )
-                )) % q;
+            ==
+            Integer.toUnsignedLong(Objects.hash(
+                x,
+                d.mul(
+                    d.power(alpha, sig[1]),
+                    d.inverse(d.power(beta, sig[0]))
+                )
+            )) % q;
     }
 
     public long getBeta(long a) {

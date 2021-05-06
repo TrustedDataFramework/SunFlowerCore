@@ -23,11 +23,11 @@ public final class Address {
         throw new RuntimeException("invalid hex, not an address");
     }
 
-    public static HexBytes fromPrivate(HexBytes privateK){
+    public static HexBytes fromPrivate(HexBytes privateK) {
         return fromPrivate(privateK.getBytes());
     }
 
-    public static HexBytes fromPrivate(byte[] privateK){
+    public static HexBytes fromPrivate(byte[] privateK) {
         return HexBytes.fromBytes(ECKey.fromPrivate(privateK).getAddress());
     }
 

@@ -23,20 +23,20 @@ import javax.annotation.PostConstruct;
 // test cache
 @SpringBootConfiguration
 @EnableAutoConfiguration(exclude = {
-        SpringShellAutoConfiguration.class,
-        JLineShellAutoConfiguration.class,
-        // Various Resolvers
-        JCommanderParameterResolverAutoConfiguration.class,
-        LegacyAdapterAutoConfiguration.class,
-        StandardAPIAutoConfiguration.class,
-        // Built-In Commands
-        StandardCommandsAutoConfiguration.class,
-        // Allows ${} support
-        PropertyPlaceholderAutoConfiguration.class,
+    SpringShellAutoConfiguration.class,
+    JLineShellAutoConfiguration.class,
+    // Various Resolvers
+    JCommanderParameterResolverAutoConfiguration.class,
+    LegacyAdapterAutoConfiguration.class,
+    StandardAPIAutoConfiguration.class,
+    // Built-In Commands
+    StandardCommandsAutoConfiguration.class,
+    // Allows ${} support
+    PropertyPlaceholderAutoConfiguration.class,
 })
 @EnableWebSocket
 @ComponentScan(excludeFilters = {@ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
-        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)})
+    @ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)})
 public class TestContext {
     @Autowired
     private ApplicationContext context;

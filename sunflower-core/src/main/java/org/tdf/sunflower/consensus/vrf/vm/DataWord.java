@@ -438,8 +438,8 @@ public final class DataWord implements Comparable<DataWord> {
     public int compareTo(DataWord o) {
         if (o == null) return -1;
         int result = FastByteComparisons.compareTo(
-                data, 0, data.length,
-                o.data, 0, o.data.length);
+            data, 0, data.length,
+            o.data, 0, o.data.length);
         // Convert result into -1, 0 or 1 as is the convention
         return (int) Math.signum(result);
     }

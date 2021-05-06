@@ -18,7 +18,10 @@ import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j(topic = "miner")
 public abstract class AbstractMiner implements Miner {
@@ -33,7 +36,6 @@ public abstract class AbstractMiner implements Miner {
         this.accountTrie = accountTrie;
         this.eventBus = eventBus;
     }
-
 
 
     protected abstract TransactionPool getTransactionPool();

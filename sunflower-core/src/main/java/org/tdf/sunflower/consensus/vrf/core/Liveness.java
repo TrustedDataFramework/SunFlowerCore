@@ -127,7 +127,7 @@ public class Liveness {
             if (hitsness.getHits() < hitsExpected) {
                 ++misses;
                 logger.warn("Detect a hit miss, weight {}, total weight {}, hit cycle {}, hit span {}, total hit {}, hits expected {}, hits {}",
-                        weight, totalWeight, activeCycle, liveSpan, totalHits, hitsExpected, hitsness.getHits());
+                    weight, totalWeight, activeCycle, liveSpan, totalHits, hitsExpected, hitsness.getHits());
             }
         }
 

@@ -56,18 +56,18 @@ public class BackendImpl implements Backend {
 
     public BackendImpl createChild() {
         return new BackendImpl(
-                parent,
-                this,
-                trie,
-                contractStorageTrie,
-                new HashMap<>(),
-                new HashMap<>(),
-                preBuiltContracts,
-                bios,
-                isStatic,
-                codeStore,
-                codeCache,
-                headerCreatedAt
+            parent,
+            this,
+            trie,
+            contractStorageTrie,
+            new HashMap<>(),
+            new HashMap<>(),
+            preBuiltContracts,
+            bios,
+            isStatic,
+            codeStore,
+            codeCache,
+            headerCreatedAt
         );
     }
 
@@ -89,7 +89,7 @@ public class BackendImpl implements Backend {
     }
 
     public Backend getRoot() {
-        if(parentBackend == null)
+        if (parentBackend == null)
             return this;
         return parentBackend.getRoot();
     }

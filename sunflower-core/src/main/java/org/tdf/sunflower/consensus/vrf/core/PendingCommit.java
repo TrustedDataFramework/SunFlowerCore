@@ -81,7 +81,7 @@ public class PendingCommit {
         // Require new VRF round should be bigger than old one
         if (compared < 0) {
             logger.warn("The new VRF Round should not be less than old one [" + " new VRF Round: " + vrfRound
-                    + ", old VRF Round: " + this.vrfRound + " ]");
+                + ", old VRF Round: " + this.vrfRound + " ]");
         }
 
         vrfRound.setVrfRound(this, newVrfRound);
@@ -123,7 +123,7 @@ public class PendingCommit {
         final long round = commitProof.getRound();
         if (blockNum != vrfRound.getBlockNum() || round != vrfRound.getRound()) {
             logger.warn("VRF Round is NOT equal, commit proof<{}:{}> - pending<{}:{}>, skip adding", blockNum, round,
-                    vrfRound.getBlockNum(), vrfRound.getRound());
+                vrfRound.getBlockNum(), vrfRound.getRound());
             return false;
         }
 
@@ -132,7 +132,7 @@ public class PendingCommit {
         CommitProof coinbaseProof = commitProofs.get(commitProof.getCoinbase());
         if (coinbaseProof != null) {
             logger.warn("The new coming commit proof is already added, new one {}, coinbase one {}", commitProof,
-                    coinbaseProof);
+                coinbaseProof);
             return false;
         }
 
@@ -144,7 +144,7 @@ public class PendingCommit {
         }
 
         logger.info("addCommitProof, Get Priority {}, weight {} / {}", priority,
-                validatorManager.getWeight(commitProof), validatorManager.getTotalWeight());
+            validatorManager.getWeight(commitProof), validatorManager.getTotalWeight());
 
         // Get the proposal proof by its identifier
         ProposalProof proposalProof = pendingProposal.getPendingProposalByIdentifier(blockIdentifier);
@@ -152,8 +152,8 @@ public class PendingCommit {
         // it as a proposed block
         if (proposalProof == null) {
             logger.error(
-                    "This Block Identifier is not proposed in Pending Proposal, hash 0x{}, can not prove as a proposed block, ignore it",
-                    Hex.toHexString(blockIdentifier.getHash(), 0, 3));
+                "This Block Identifier is not proposed in Pending Proposal, hash 0x{}, can not prove as a proposed block, ignore it",
+                Hex.toHexString(blockIdentifier.getHash(), 0, 3));
             return false;
         }
 
@@ -195,8 +195,8 @@ public class PendingCommit {
             if (weights.weights > bestCommittedWeights) {
                 if (bestCommittedWeights >= ValidatorManager.EXPECTED_BFT_THRESHOLD) {
                     logger.error(
-                            "!!! Fatal Error, Sub Optimum ∑{} is reach 2/3 threshold when sorting Best Committed Identifier, PLEASE HELP ME",
-                            bestCommittedWeights);
+                        "!!! Fatal Error, Sub Optimum ∑{} is reach 2/3 threshold when sorting Best Committed Identifier, PLEASE HELP ME",
+                        bestCommittedWeights);
                 }
                 bestCommittedWeights = weights.weights;
                 bestIdentifierEncoded = entry.getKey();
@@ -208,12 +208,12 @@ public class PendingCommit {
         }
 
         logger.info("Best committed proposer proof: [expected threshold: {}, committed weights: {}, identifier: {}]",
-                ValidatorManager.EXPECTED_PROPOSER_THRESHOLD, bestCommittedWeights, bestIdentifier);
+            ValidatorManager.EXPECTED_PROPOSER_THRESHOLD, bestCommittedWeights, bestIdentifier);
 
         if (bestCommittedWeights < ValidatorManager.EXPECTED_BFT_THRESHOLD) {
             logger.warn(
-                    "Commited weights does not reach the threshold, expected threshold: {}, committed weights: {}, identifier: {}",
-                    ValidatorManager.EXPECTED_PROPOSER_THRESHOLD, bestCommittedWeights, bestIdentifier);
+                "Commited weights does not reach the threshold, expected threshold: {}, committed weights: {}, identifier: {}",
+                ValidatorManager.EXPECTED_PROPOSER_THRESHOLD, bestCommittedWeights, bestIdentifier);
 
             return null;
         }
@@ -252,7 +252,7 @@ public class PendingCommit {
         int bestProposalPriority = pendingProposal.getBestPendingPriority();
         if (priority < bestProposalPriority) {
             logger.error("This is NOT the best block arrived. My priority: {}, Best priority: {}", priority,
-                    bestProposalPriority);
+                bestProposalPriority);
             return ProofValidationResult.NOT_BEST_BLOCK;
         }
 
@@ -263,7 +263,7 @@ public class PendingCommit {
             return ProofValidationResult.NO_BEST_IDENTIFIER;
         } else if (!Arrays.equals(bestIdentifier.getHash(), proof.getBlockIdentifier().getHash())) {
             logger.error("This is NOT the best block arrived, [proposal identifier: {} -> best identifier: {}]",
-                    proof.getBlockIdentifier(), bestIdentifier);
+                proof.getBlockIdentifier(), bestIdentifier);
             return ProofValidationResult.PROOF_AND_BEST_IDENTIFIER_NOT_MATCH;
         }
 

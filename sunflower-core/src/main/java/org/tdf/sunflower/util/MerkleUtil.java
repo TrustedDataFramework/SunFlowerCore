@@ -15,11 +15,11 @@ public class MerkleUtil {
         int i = 0;
 
         Trie<Integer, byte[]> trie = Trie.<Integer, byte[]>builder()
-                .hashFunction(hashFunction)
-                .keyCodec(Codec.newInstance(RLPCodec::encodeInt, RLPCodec::decodeInt))
-                .valueCodec(Codec.identity())
-                .store(new ByteArrayMapStore<>())
-                .build();
+            .hashFunction(hashFunction)
+            .keyCodec(Codec.newInstance(RLPCodec::encodeInt, RLPCodec::decodeInt))
+            .valueCodec(Codec.identity())
+            .store(new ByteArrayMapStore<>())
+            .build();
 
         for (Hashed n : nodes) {
             trie.put(i, n.getHash().getBytes());

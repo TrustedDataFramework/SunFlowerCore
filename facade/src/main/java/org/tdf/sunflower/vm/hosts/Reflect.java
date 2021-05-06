@@ -8,13 +8,11 @@ import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPItem;
-import org.tdf.rlp.RLPList;
-import org.tdf.sunflower.vm.WBI;
-import org.tdf.sunflower.vm.abi.WbiType;
 import org.tdf.sunflower.vm.ContractABI;
+import org.tdf.sunflower.vm.WBI;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
 import org.tdf.sunflower.vm.abi.ContractDeployPayload;
+import org.tdf.sunflower.vm.abi.WbiType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,12 +20,12 @@ import java.util.Collections;
 public class Reflect extends HostFunction {
     private final org.tdf.sunflower.vm.VMExecutor VMExecutor;
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
-            // offset, length, offset
-            Arrays.asList(
-                    ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64,
-                    ValueType.I64, ValueType.I64
-            ),
-            Collections.singletonList(ValueType.I64)
+        // offset, length, offset
+        Arrays.asList(
+            ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64,
+            ValueType.I64, ValueType.I64
+        ),
+        Collections.singletonList(ValueType.I64)
     );
 
     public Reflect(org.tdf.sunflower.vm.VMExecutor VMExecutor) {
@@ -64,8 +62,8 @@ public class Reflect extends HostFunction {
                 HexBytes abi = (HexBytes) WBI.peek(getInstance(), (int) longs[5], WbiType.BYTES);
                 params = RLPUtil.decode(parameters, Parameters.class);
                 payload = RLPCodec.encode(new ContractDeployPayload(
-                        binary, params,
-                        Arrays.asList(RLPUtil.decode(abi, ContractABI[].class))
+                    binary, params,
+                    Arrays.asList(RLPUtil.decode(abi, ContractABI[].class))
                 ));
                 amount = (Uint256) WBI.peek(getInstance(), (int) longs[4], WbiType.UINT_256);
                 break;

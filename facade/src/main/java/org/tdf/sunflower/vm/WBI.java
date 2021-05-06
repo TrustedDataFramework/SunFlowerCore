@@ -3,7 +3,6 @@ package org.tdf.sunflower.vm;
 import lombok.Value;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigIntegers;
-import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
@@ -14,13 +13,10 @@ import org.tdf.sunflower.vm.abi.WbiType;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public abstract class WBI {
 
@@ -48,7 +44,7 @@ public abstract class WBI {
 
     public static byte[] extractInitData(Module m) {
         return m.getCustomSections().stream().filter(x -> x.getName().equals("__init")).findFirst()
-                .map(CustomSection::getData).orElse(new byte[0]);
+            .map(CustomSection::getData).orElse(new byte[0]);
     }
 
     // the __init section is dropped before inject
@@ -66,7 +62,7 @@ public abstract class WBI {
 
         // 3. for contract call, find function by signature
         if (!create) {
-            Abi.Function f = abi.findFunction(x -> FastByteComparisons.equal(x.encodeSignature(), Arrays.copyOfRange(input.getBytes(), 0 ,4)));
+            Abi.Function f = abi.findFunction(x -> FastByteComparisons.equal(x.encodeSignature(), Arrays.copyOfRange(input.getBytes(), 0, 4)));
             Objects.requireNonNull(f);
             function = f.name;
             params = f.inputs;
@@ -81,19 +77,19 @@ public abstract class WBI {
         List<?> inputs = Abi.Entry.Param.decodeList(params, encoded.getBytes());
         long[] ret = new long[params.size()];
 
-        for(int j = 0; j < inputs.size() ; j++) {
+        for (int j = 0; j < inputs.size(); j++) {
             Abi.Entry.Param p = params.get(j);
 
             switch (p.type.getName()) {
                 case "uint8":
                 case "uint16":
                 case "uint32":
-                case "uint64":{
+                case "uint64": {
                     ret[j] = ((BigInteger) inputs.get(j)).longValueExact();
                     break;
                 }
                 case "uint":
-                case "uint256":{
+                case "uint256": {
                     BigInteger b = (BigInteger) inputs.get(j);
                     ret[j] = WBI.malloc(i, Uint256.of(BigIntegers.asUnsignedByteArray(b)));
                     break;
@@ -109,11 +105,11 @@ public abstract class WBI {
                     break;
                 }
                 default: {
-                    if(p.type.getName().endsWith("]") || p.type.getName().endsWith(")")) {
+                    if (p.type.getName().endsWith("]") || p.type.getName().endsWith(")")) {
                         throw new RuntimeException("array or tuple is not supported");
                     }
 
-                    if(p.type.getName().startsWith("bytes")) {
+                    if (p.type.getName().startsWith("bytes")) {
                         byte[] data = (byte[]) inputs.get(j);
                         ret[j] = WBI.mallocBytes(i, HexBytes.fromBytes(data));
                     }
@@ -156,7 +152,6 @@ public abstract class WBI {
             throw new RuntimeException("malloc failed: pointer is negative");
         return r;
     }
-
 
 
     public static int malloc(ModuleInstance instance, String s) {

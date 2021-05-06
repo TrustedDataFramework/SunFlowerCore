@@ -10,19 +10,19 @@ import org.springframework.stereotype.Component;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.AppConfig;
 import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.SyncConfig;
-import org.tdf.sunflower.events.*;
+import org.tdf.sunflower.events.NewBlockMined;
+import org.tdf.sunflower.events.NewBlocksReceived;
+import org.tdf.sunflower.events.NewTransactionsCollected;
 import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.Context;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 
@@ -34,7 +34,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 /**
  * sync manager for full-nodes
@@ -58,11 +57,11 @@ public class SyncManager implements PeerServerListener, Closeable {
 
     private final Limiters limiters;
     private final Cache<HexBytes, Boolean> receivedTransactions = CacheBuilder.newBuilder()
-            .maximumSize(AppConfig.get().getP2pTransactionCacheSize())
-            .build();
+        .maximumSize(AppConfig.get().getP2pTransactionCacheSize())
+        .build();
     private final Cache<HexBytes, Boolean> receivedProposals = CacheBuilder.newBuilder()
-            .maximumSize(AppConfig.get().getP2pProposalCacheSize())
-            .build();
+        .maximumSize(AppConfig.get().getP2pProposalCacheSize())
+        .build();
     private final Lock blockQueueLock = new ReentrantLock();
     // lock when accounts received, avoid concurrent handling
     private final Lock fastSyncAddressesLock = new ReentrantLock();
@@ -79,14 +78,14 @@ public class SyncManager implements PeerServerListener, Closeable {
     private volatile Set<HexBytes> fastSyncAddresses;
 
     public SyncManager(
-            PeerServer peerServer, ConsensusEngine engine,
-            SunflowerRepository repository,
-            TransactionPool transactionPool, SyncConfig syncConfig,
-            EventBus eventBus,
-            AccountTrie accountTrie,
-            @Qualifier("contractStorageTrie") Trie<HexBytes, HexBytes> contractStorageTrie,
-            @Qualifier("contractCodeStore") Store<HexBytes, HexBytes> contractCodeStore,
-            Miner miner
+        PeerServer peerServer, ConsensusEngine engine,
+        SunflowerRepository repository,
+        TransactionPool transactionPool, SyncConfig syncConfig,
+        EventBus eventBus,
+        AccountTrie accountTrie,
+        @Qualifier("contractStorageTrie") Trie<HexBytes, HexBytes> contractStorageTrie,
+        @Qualifier("contractCodeStore") Store<HexBytes, HexBytes> contractCodeStore,
+        Miner miner
     ) {
         this.peerServer = peerServer;
         this.engine = engine;
@@ -95,7 +94,7 @@ public class SyncManager implements PeerServerListener, Closeable {
         this.syncConfig = syncConfig;
         this.eventBus = eventBus;
         this.fastSyncing = syncConfig.getFastSyncHeight() > 0
-                && repository.getBestHeader().getHeight() == 0;
+            && repository.getBestHeader().getHeight() == 0;
         this.fastSyncHash = HexBytes.fromBytes(syncConfig.getFastSyncHash());
         this.fastSyncHeight = syncConfig.getFastSyncHeight();
         this.accountTrie = accountTrie;
@@ -106,8 +105,8 @@ public class SyncManager implements PeerServerListener, Closeable {
         int core = Runtime.getRuntime().availableProcessors();
 
         executorService = Executors.newScheduledThreadPool(
-                core > 1 ? core / 2 : core,
-                new ThreadFactoryBuilder().setNameFormat("sync-manger-thread-%d").build()
+            core > 1 ? core / 2 : core,
+            new ThreadFactoryBuilder().setNameFormat("sync-manger-thread-%d").build()
         );
         if (this.fastSyncing)
             this.miner.stop();
@@ -137,16 +136,16 @@ public class SyncManager implements PeerServerListener, Closeable {
         // TODO: don't send status, proposal and transaction to peer not approved
         peerServer.addListeners(this);
         executorService.scheduleWithFixedDelay(
-                this::tryWrite, 0,
-                syncConfig.getBlockWriteRate(), TimeUnit.SECONDS);
+            this::tryWrite, 0,
+            syncConfig.getBlockWriteRate(), TimeUnit.SECONDS);
 
         executorService.scheduleWithFixedDelay(
-                this::sendStatus, 0,
-                syncConfig.getHeartRate(), TimeUnit.SECONDS
+            this::sendStatus, 0,
+            syncConfig.getHeartRate(), TimeUnit.SECONDS
         );
         eventBus.subscribe(NewBlockMined.class, (e) -> broadcastToApproved(SyncMessage.encode(SyncMessage.PROPOSAL, new Proposal(e.getBlock()))));
         eventBus.subscribe(NewTransactionsCollected.class,
-                (e) -> broadcastToApproved(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransactions()))
+            (e) -> broadcastToApproved(SyncMessage.encode(SyncMessage.TRANSACTION, e.getTransactions()))
         );
         eventBus.subscribe(NewBlocksReceived.class, (e) -> onBlocks(e.getBlocks()));
     }
@@ -192,10 +191,10 @@ public class SyncManager implements PeerServerListener, Closeable {
                 if (fastSyncing) return;
                 GetBlocks getBlocks = msg.getBodyAs(GetBlocks.class);
                 List<Block> blocks = repository.getBlocksBetween(
-                        getBlocks.getStartHeight(),
-                        getBlocks.getStopHeight(),
-                        Math.min(syncConfig.getMaxBlocksTransfer(), getBlocks.getLimit()),
-                        getBlocks.isDescend()
+                    getBlocks.getStartHeight(),
+                    getBlocks.getStopHeight(),
+                    Math.min(syncConfig.getMaxBlocksTransfer(), getBlocks.getLimit()),
+                    getBlocks.isDescend()
                 );
                 context.response(SyncMessage.encode(SyncMessage.BLOCKS, blocks));
                 return;
@@ -345,7 +344,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                     if (fastSyncAddresses.size() != fastSyncTotalAccounts) {
                         return;
                     }
-                    HexBytes stateRoot =fastSyncTrie.commit();
+                    HexBytes stateRoot = fastSyncTrie.commit();
                     if (!fastSyncBlock.getStateRoot().equals(stateRoot)) {
                         clearFastSyncCache();
                         log.error("fast sync failed, state root not match, malicious node may exists in network!!!");
@@ -416,8 +415,8 @@ public class SyncManager implements PeerServerListener, Closeable {
     private void onStatus(Context ctx, PeerServer server, Status s) {
         if (fastSyncing) {
             boolean fastSyncEnabled =
-                    s.getPrunedHeight() < fastSyncHeight
-                            || s.getPrunedHash().equals(fastSyncHash);
+                s.getPrunedHeight() < fastSyncHeight
+                    || s.getPrunedHash().equals(fastSyncHash);
             if (!fastSyncEnabled && server.isFull()) {
                 log.info("cannot fast sync by peer " + ctx.getRemote() + " block him");
                 ctx.block();
@@ -426,16 +425,16 @@ public class SyncManager implements PeerServerListener, Closeable {
             if (!fastSyncEnabled) return;
             if (fastSyncBlock == null) {
                 ctx.response(
-                        SyncMessage.encode(
-                                SyncMessage.GET_BLOCKS,
-                                new GetBlocks(fastSyncHeight, fastSyncHeight, false, syncConfig.getMaxBlocksTransfer())
-                        ));
+                    SyncMessage.encode(
+                        SyncMessage.GET_BLOCKS,
+                        new GetBlocks(fastSyncHeight, fastSyncHeight, false, syncConfig.getMaxBlocksTransfer())
+                    ));
                 log.info("fetch fast sync block at height {}", fastSyncHeight);
             }
             if (fastSyncBlock != null && fastSyncAddresses == null) {
                 ctx.response(SyncMessage.encode(
-                        SyncMessage.GET_ACCOUNTS,
-                        new GetAccounts(fastSyncBlock.getStateRoot(), syncConfig.getMaxAccountsTransfer())
+                    SyncMessage.GET_ACCOUNTS,
+                    new GetAccounts(fastSyncBlock.getStateRoot(), syncConfig.getMaxAccountsTransfer())
                 ));
                 log.info("fast syncing: fetch accounts... ");
             }
@@ -454,15 +453,15 @@ public class SyncManager implements PeerServerListener, Closeable {
 
         for (Block b : orphans) {
             if (b != null
-                    && s.getBestBlockHeight() >= b.getHeight()
-                    && b.getHeight() > s.getPrunedHeight()
-                    && !repository.containsHeader(b.getHashPrev().getBytes())
+                && s.getBestBlockHeight() >= b.getHeight()
+                && b.getHeight() > s.getPrunedHeight()
+                && !repository.containsHeader(b.getHashPrev().getBytes())
             ) {
                 log.debug("try to fetch orphans, head height {} hash {}", b.getHeight(), b.getHash());
                 // remote: prune < b <= best
                 GetBlocks getBlocks = new GetBlocks(
-                        s.getPrunedHeight(), b.getHeight(), true,
-                        syncConfig.getMaxBlocksTransfer()
+                    s.getPrunedHeight(), b.getHeight(), true,
+                    syncConfig.getMaxBlocksTransfer()
                 ).clip();
 
                 ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks));
@@ -470,9 +469,9 @@ public class SyncManager implements PeerServerListener, Closeable {
         }
         if (s.getBestBlockHeight() >= best.getHeight() && !s.getBestBlockHash().equals(best.getHash())) {
             GetBlocks getBlocks = new GetBlocks(
-                    Math.max(s.getPrunedHeight(), best.getHeight()),
-                    s.getBestBlockHeight(), false,
-                    syncConfig.getMaxBlocksTransfer()
+                Math.max(s.getPrunedHeight(), best.getHeight()),
+                s.getBestBlockHeight(), false,
+                syncConfig.getMaxBlocksTransfer()
             ).clip();
             ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks));
         }
@@ -584,11 +583,11 @@ public class SyncManager implements PeerServerListener, Closeable {
         Header best = repository.getBestHeader();
         Block genesis = repository.getGenesis();
         Status status = new Status(
-                best.getHeight(),
-                best.getHash(),
-                genesis.getHash(),
-                0,
-                null
+            best.getHeight(),
+            best.getHash(),
+            genesis.getHash(),
+            0,
+            null
 //                repository.getPrunedHeight(),
 //                repository.getPrunedHash()
         );

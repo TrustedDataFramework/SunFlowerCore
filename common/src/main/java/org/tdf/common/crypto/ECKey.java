@@ -144,8 +144,8 @@ public class ECKey implements Serializable {
             pub = extractPublicKey((ECPublicKey) pubKey);
         } else {
             throw new AssertionError(
-                    "Expected Provider " + provider.getName() +
-                            " to produce a subtype of ECPublicKey, found " + pubKey.getClass());
+                "Expected Provider " + provider.getName() +
+                    " to produce a subtype of ECPublicKey, found " + pubKey.getClass());
         }
     }
 
@@ -172,9 +172,9 @@ public class ECKey implements Serializable {
             this.privKey = privKey;
         } else {
             throw new IllegalArgumentException(
-                    "Expected EC private key, given a private key object with class " +
-                            privKey.getClass().toString() +
-                            " and algorithm " + privKey.getAlgorithm());
+                "Expected EC private key, given a private key object with class " +
+                    privKey.getClass().toString() +
+                    " and algorithm " + privKey.getAlgorithm());
         }
 
         if (pub == null) {
@@ -195,9 +195,9 @@ public class ECKey implements Serializable {
      */
     public ECKey(BigInteger priv, ECPoint pub) {
         this(
-                SpongyCastleProvider.getInstance(),
-                privateKeyFromBigInteger(priv),
-                pub
+            SpongyCastleProvider.getInstance(),
+            privateKeyFromBigInteger(priv),
+            pub
         );
     }
 
@@ -229,8 +229,8 @@ public class ECKey implements Serializable {
         } else {
             try {
                 return ECKeyFactory
-                        .getInstance(SpongyCastleProvider.getInstance())
-                        .generatePrivate(new ECPrivateKeySpec(priv, CURVE_SPEC));
+                    .getInstance(SpongyCastleProvider.getInstance())
+                    .generatePrivate(new ECPrivateKeySpec(priv, CURVE_SPEC));
             } catch (InvalidKeySpecException ex) {
                 throw new AssertionError("Assumed correct key spec statically");
             }
@@ -354,7 +354,7 @@ public class ECKey implements Serializable {
      */
     public static byte[] computeAddress(byte[] pubBytes) {
         return HashUtil.sha3omit12(
-                Arrays.copyOfRange(pubBytes, 1, pubBytes.length));
+            Arrays.copyOfRange(pubBytes, 1, pubBytes.length));
     }
 
     /**
@@ -416,11 +416,11 @@ public class ECKey implements Serializable {
             throw new SignatureException("Signature truncated, expected 65 bytes and got " + signatureEncoded.length);
 
         return signatureToKeyBytes(
-                messageHash,
-                ECDSASignature.fromComponents(
-                        Arrays.copyOfRange(signatureEncoded, 1, 33),
-                        Arrays.copyOfRange(signatureEncoded, 33, 65),
-                        (byte) (signatureEncoded[0] & 0xFF)));
+            messageHash,
+            ECDSASignature.fromComponents(
+                Arrays.copyOfRange(signatureEncoded, 1, 33),
+                Arrays.copyOfRange(signatureEncoded, 33, 65),
+                (byte) (signatureEncoded[0] & 0xFF)));
     }
 
     public static byte[] signatureToKeyBytes(byte[] messageHash, ECDSASignature sig) throws SignatureException {
@@ -863,9 +863,9 @@ public class ECKey implements Serializable {
                 final KeyAgreement agreement = ECKeyAgreement.getInstance(this.provider);
                 agreement.init(this.privKey);
                 agreement.doPhase(
-                        ECKeyFactory.getInstance(this.provider)
-                                .generatePublic(new ECPublicKeySpec(otherParty, CURVE_SPEC)),
-                        /* lastPhase */ true);
+                    ECKeyFactory.getInstance(this.provider)
+                        .generatePublic(new ECPublicKeySpec(otherParty, CURVE_SPEC)),
+                    /* lastPhase */ true);
                 return new BigInteger(1, agreement.generateSecret());
             } catch (IllegalStateException | InvalidKeyException | InvalidKeySpecException ex) {
                 throw new RuntimeException("ECDH key agreement failure", ex);

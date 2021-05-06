@@ -51,8 +51,8 @@ public class DatabaseStoreFactoryImpl implements DatabaseStoreFactory {
         }
 
         store.init(DBSettings.newInstance()
-                .withMaxOpenFiles(config.getMaxOpenFiles())
-                .withMaxThreads(Math.max(1, Runtime.getRuntime().availableProcessors() / 2)));
+            .withMaxOpenFiles(config.getMaxOpenFiles())
+            .withMaxThreads(Math.max(1, Runtime.getRuntime().availableProcessors() / 2)));
         STORES_LIST.add(store);
         if (config.isReset()) {
             store.clear();

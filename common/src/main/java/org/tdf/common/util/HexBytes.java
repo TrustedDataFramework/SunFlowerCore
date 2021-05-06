@@ -124,8 +124,8 @@ public final class HexBytes implements Comparable<HexBytes>, Serializable {
     @Override
     public int compareTo(HexBytes o) {
         return FastByteComparisons.compareTo(
-                bytes, 0, bytes.length,
-                o.getBytes(), 0, o.getBytes().length);
+            bytes, 0, bytes.length,
+            o.getBytes(), 0, o.getBytes().length);
     }
 
     @Override

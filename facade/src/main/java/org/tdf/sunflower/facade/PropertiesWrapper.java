@@ -5,7 +5,7 @@ import lombok.Value;
 import java.util.Properties;
 
 @Value
-public class PropertiesWrapper implements PropertyLike{
+public class PropertiesWrapper implements PropertyLike {
     Properties properties;
 
     @Override

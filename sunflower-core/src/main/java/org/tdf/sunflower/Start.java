@@ -56,6 +56,7 @@ import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.util.EnvReader;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
+import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.io.File;
 import java.net.URL;
@@ -98,6 +99,8 @@ public class Start {
 
     public static void loadConstants(Environment env) {
         AppConfig.INSTANCE = new AppConfig(env);
+        Limit.setVMStepLimit(AppConfig.get().getStepLimit());
+        Limit.setMaxFrames(AppConfig.get().getMaxFrames());
     }
 
     @SneakyThrows
@@ -229,7 +232,7 @@ public class Start {
         DatabaseStoreFactory databaseStoreFactory,
         @Qualifier("contractStorageTrie") Trie<HexBytes, HexBytes> contractStorageTrie,
         @Qualifier("contractCodeStore") Store<HexBytes, HexBytes> contractCodeStore
-        ) {
+    ) {
         AppConfig c = AppConfig.get();
         return new AccountTrie(
             databaseStoreFactory.create("account-trie"),
@@ -312,12 +315,6 @@ public class Start {
         repositoryService.saveGenesis(g);
 
         transactionPool.setEngine(engine);
-        if (engine == AbstractConsensusEngine.NONE) return engine;
-//        if (syncConfig.getPruneHash().length > 0) {
-//            repositoryService.prune(syncConfig.getPruneHash());
-//        }
-
-        // validate trie
         return engine;
     }
 

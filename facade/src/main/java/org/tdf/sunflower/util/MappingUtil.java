@@ -12,12 +12,12 @@ import java.util.Properties;
 
 public class MappingUtil {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .enable(JsonParser.Feature.ALLOW_COMMENTS)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        .enable(SerializationFeature.INDENT_OUTPUT)
+        .enable(JsonParser.Feature.ALLOW_COMMENTS)
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     public static final JavaPropsMapper PROPS_MAPPER = (JavaPropsMapper)
-            new JavaPropsMapper()
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        new JavaPropsMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     public static Map<String, Object> pojoToMap(Object pojo) {
         return OBJECT_MAPPER.convertValue(pojo, new TypeReference<Map<String, Object>>() {
@@ -37,7 +37,7 @@ public class MappingUtil {
 
             }
             throw new RuntimeException(
-                    "load properties failed :" + properties.toString() + " expecting " + schema
+                "load properties failed :" + properties.toString() + " expecting " + schema
             );
         }
     }

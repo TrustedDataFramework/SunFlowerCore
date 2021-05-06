@@ -18,9 +18,9 @@ public class RLPHost extends HostFunction {
     private byte[] elementsEncoded;
 
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
-            // offset, length, offset
-            Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),
-            Collections.singletonList(ValueType.I64));
+        // offset, length, offset
+        Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64, ValueType.I64),
+        Collections.singletonList(ValueType.I64));
 
     public RLPHost() {
         super("_rlp", FUNCTION_TYPE);
@@ -53,8 +53,8 @@ public class RLPHost extends HostFunction {
             case RLP_LIST_SET: {
                 put = false;
                 this.list = RLPElement
-                        .fromEncoded(loadMemory((int) longs[1], (int) longs[2]))
-                        .asRLPList();
+                    .fromEncoded(loadMemory((int) longs[1], (int) longs[2]))
+                    .asRLPList();
                 break;
             }
             case RLP_LIST_CLEAR: {

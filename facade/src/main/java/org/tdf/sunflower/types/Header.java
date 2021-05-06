@@ -93,10 +93,10 @@ public class Header implements Chained {
 
     @Builder
     public Header(
-            HexBytes hashPrev, HexBytes coinbase, HexBytes stateRoot,
-            HexBytes transactionsRoot, HexBytes receiptTrieRoot,
-            HexBytes logsBloom, long height, HexBytes gasLimit,
-            long gasUsed, long createdAt, HexBytes extraData
+        HexBytes hashPrev, HexBytes coinbase, HexBytes stateRoot,
+        HexBytes transactionsRoot, HexBytes receiptTrieRoot,
+        HexBytes logsBloom, long height, HexBytes gasLimit,
+        long gasUsed, long createdAt, HexBytes extraData
     ) {
         this.coinbase = coinbase == null ? Address.empty() : coinbase;
         this.receiptTrieRoot = receiptTrieRoot == null ? HashUtil.EMPTY_TRIE_HASH_HEX : receiptTrieRoot;
@@ -128,7 +128,7 @@ public class Header implements Chained {
     private HexBytes getHash(boolean forceReHash) {
         if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
-                    CryptoContext.hash(RLPCodec.encode(this))
+                CryptoContext.hash(RLPCodec.encode(this))
             );
             return this.hash;
         }

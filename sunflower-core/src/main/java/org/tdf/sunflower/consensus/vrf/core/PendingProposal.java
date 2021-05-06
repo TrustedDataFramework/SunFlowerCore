@@ -66,8 +66,8 @@ public class PendingProposal {
         // Require new VRF round should be bigger than old one
         if (compared < 0) {
             logger.warn("The new VRF Round should not be less than old one ["
-                    + " new VRF Round: " + vrfRound + ", old VRF Round: " + this.vrfRound
-                    + " ]");
+                + " new VRF Round: " + vrfRound + ", old VRF Round: " + this.vrfRound
+                + " ]");
         }
 
         vrfRound.setVrfRound(this, newVrfRound);
@@ -107,7 +107,7 @@ public class PendingProposal {
         long round = proposalProof.getRound();
         if (blockNum != vrfRound.getBlockNum() || round != vrfRound.getRound()) {
             logger.warn("VRF Round is NOT equal, proposal proof<{}:{}> - pending<{}:{}>, skip adding",
-                    blockNum, round, vrfRound.getBlockNum(), vrfRound.getRound());
+                blockNum, round, vrfRound.getBlockNum(), vrfRound.getRound());
             return false;
         }
 

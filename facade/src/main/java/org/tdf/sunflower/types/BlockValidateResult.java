@@ -1,9 +1,10 @@
 package org.tdf.sunflower.types;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPList;
 
 import java.util.List;
 import java.util.Map;

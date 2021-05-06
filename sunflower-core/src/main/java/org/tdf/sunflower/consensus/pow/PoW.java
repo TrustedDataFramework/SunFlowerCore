@@ -2,12 +2,9 @@ package org.tdf.sunflower.consensus.pow;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.common.types.Uint256;
-import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
-import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.types.Block;
@@ -17,12 +14,12 @@ import org.tdf.sunflower.types.CryptoContext;
 import java.util.Collections;
 import java.util.List;
 
-import static org.tdf.sunflower.consensus.pow.PoWBios.N_BITS_KEY;
 
 @Slf4j(topic = "pow")
 public class PoW extends AbstractConsensusEngine {
     private Genesis genesis;
     private ConsensusConfig config;
+    PoWBios bios;
 
     public PoW() {
 
@@ -45,14 +42,6 @@ public class PoW extends AbstractConsensusEngine {
         return 0;
     }
 
-    public Uint256 getNBits(
-        HexBytes stateRoot) {
-        Account a = getAccountTrie().get(stateRoot, PoWBios.ADDRESS);
-        HexBytes bytes = getContractStorageTrie().revert(a.getStorageRoot())
-            .get(N_BITS_KEY);
-        return Uint256.of(bytes.getBytes());
-    }
-
     @Override
     public List<Account> getAlloc() {
         return genesis.getAlloc();
@@ -60,7 +49,6 @@ public class PoW extends AbstractConsensusEngine {
 
     @Override
     public List<BuiltinContract> getBios() {
-        PoWBios bios = new PoWBios(genesis.getNbits(), config);
         return Collections.singletonList(bios);
     }
 
@@ -69,12 +57,9 @@ public class PoW extends AbstractConsensusEngine {
     public void init(ConsensusConfig config) {
         this.config = config;
         genesis = new Genesis(config.getGenesisJson());
-
         setGenesisBlock(genesis.getBlock());
-        initStateTrie();
 
         setValidator(new PoWValidator(this));
-        setPeerServerListener(PeerServerListener.NONE);
 
         setMiner(new PoWMiner(config, getTransactionPool(), this));
         log.info("genesis = {}", Start.MAPPER.writeValueAsString(getGenesisBlock()));

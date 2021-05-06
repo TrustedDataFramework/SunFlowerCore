@@ -14,7 +14,6 @@ public class ApplicationConstants {
     public static final long MAX_SHUTDOWN_WAITING = 5;
 
 
-
     public static long MAX_CONTRACT_CALL_DEPTH = 0;
 
     public static long TRANSACTION_CONFIRMS = 0;

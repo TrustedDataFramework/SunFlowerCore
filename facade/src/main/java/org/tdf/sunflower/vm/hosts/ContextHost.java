@@ -17,11 +17,11 @@ public class ContextHost extends HostFunction {
     private final Backend backend;
     private final CallData callData;
     public static final FunctionType FUNCTION_TYPE = new FunctionType(Arrays.asList(ValueType.I64, ValueType.I64),
-            Collections.singletonList(ValueType.I64));
+        Collections.singletonList(ValueType.I64));
 
     public ContextHost(
-            Backend backend,
-            CallData callData
+        Backend backend,
+        CallData callData
     ) {
         super("_context", FUNCTION_TYPE);
         this.backend = backend;
@@ -41,7 +41,7 @@ public class ContextHost extends HostFunction {
             }
             case MSG_VALUE: {
                 return
-                        WBI.malloc(getInstance(), callData.getValue());
+                    WBI.malloc(getInstance(), callData.getValue());
             }
             default:
                 throw new RuntimeException("unexpected type " + type);

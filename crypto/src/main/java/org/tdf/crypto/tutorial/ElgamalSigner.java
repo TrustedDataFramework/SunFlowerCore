@@ -63,8 +63,8 @@ public class ElgamalSigner {
         long gamma = sig[0];
         long delta = sig[1];
         return d.mul(
-                d.power(beta, gamma),
-                d.power(gamma, delta)
+            d.power(beta, gamma),
+            d.power(gamma, delta)
         ) == d.power(alpha, x);
     }
 }

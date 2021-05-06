@@ -16,7 +16,7 @@ public class NoDeleteBatchStore<K, V> extends NoDeleteStore<K, V> implements Bat
     @Override
     public void putAll(Collection<? extends Map.Entry<? extends K, ? extends V>> rows) {
         delegate.putAll(rows.stream()
-                .filter(x -> !isNull.test(x.getValue()))
-                .collect(Collectors.toList()));
+            .filter(x -> !isNull.test(x.getValue()))
+            .collect(Collectors.toList()));
     }
 }

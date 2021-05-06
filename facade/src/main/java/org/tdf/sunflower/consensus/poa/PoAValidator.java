@@ -114,7 +114,7 @@ public class PoAValidator extends AbstractValidator {
 
         if (!transaction.getSenderHex().equals(farmBaseAdmin)
             && !poA.getValidatorContract()
-                .getApproved(
+            .getApproved(
                 dependency.getHash())
             .contains(transaction.getSenderHex()
             )

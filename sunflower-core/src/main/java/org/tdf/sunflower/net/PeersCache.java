@@ -2,7 +2,6 @@ package org.tdf.sunflower.net;
 
 import lombok.Value;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.*;
@@ -22,8 +21,8 @@ class PeersCache {
     Map<PeerImpl, Boolean> trusted = new ConcurrentHashMap<>();
 
     PeersCache(
-            PeerImpl self,
-            PeerServerConfig config
+        PeerImpl self,
+        PeerServerConfig config
     ) {
         this.self = self;
         this.config = config;
@@ -31,9 +30,9 @@ class PeersCache {
 
     int size() {
         return Stream.of(peers)
-                .filter(Objects::nonNull)
-                .map(ConcurrentHashMap::size)
-                .reduce(0, Integer::sum);
+            .filter(Objects::nonNull)
+            .map(ConcurrentHashMap::size)
+            .reduce(0, Integer::sum);
     }
 
     boolean contains(PeerImpl peer) {
@@ -53,8 +52,8 @@ class PeersCache {
 
         // if the peer already had been put
         Optional<PeerImpl> o =
-                Optional.ofNullable(peers[idx])
-                        .map(x -> x.get(peer.getID())).map(x -> x.peer);
+            Optional.ofNullable(peers[idx])
+                .map(x -> x.get(peer.getID())).map(x -> x.peer);
 
         // increase its score
         if (o.isPresent()) {
@@ -81,8 +80,8 @@ class PeersCache {
         // 2. exists some bucket which contains more than one peer
         // find the maximum bucket
         Optional<Bucket> bucket = Stream.of(peers)
-                .filter(Objects::nonNull)
-                .max(Comparator.comparingInt(Map::size));
+            .filter(Objects::nonNull)
+            .max(Comparator.comparingInt(Map::size));
 
         // if the maximum bucket contains less or equals to one element
         // the buckets is ideal, no need to evict
@@ -94,8 +93,8 @@ class PeersCache {
         // the conditions above are both filled
         // evict one and add new peer
         bucket.get().keySet()
-                .stream().findAny()
-                .ifPresent(x -> remove(x, "the new node " + peer + " has more priority than " + x));
+            .stream().findAny()
+            .ifPresent(x -> remove(x, "the new node " + peer + " has more priority than " + x));
 
         peers[idx].put(peer.getID(), newPeerChannel);
     }
@@ -125,9 +124,9 @@ class PeersCache {
 
     Stream<PeerImpl> getPeers() {
         return Stream.of(peers)
-                .filter(Objects::nonNull)
-                .flatMap(x -> x.values().stream())
-                .map(b -> b.peer);
+            .filter(Objects::nonNull)
+            .flatMap(x -> x.values().stream())
+            .map(b -> b.peer);
     }
 
     void block(PeerImpl peer) {
@@ -139,8 +138,8 @@ class PeersCache {
         // reset the score of this peer as EVIL_SCORE
         if (blocked.containsKey(peer)) {
             blocked.keySet().stream()
-                    .filter(p -> p.equals(peer))
-                    .forEach(x -> x.setScore(EVIL_SCORE));
+                .filter(p -> p.equals(peer))
+                .forEach(x -> x.setScore(EVIL_SCORE));
             return;
         }
         // remove the peer and disconnect to it
@@ -154,34 +153,34 @@ class PeersCache {
         int idx = self.subTree(peer);
         if (peers[idx] == null) return;
         Optional.ofNullable(
-                peers[idx]
-                        .get(peer.getID())
+            peers[idx]
+                .get(peer.getID())
         ).map(b -> b.peer).filter(p -> {
             p.score -= p.score < 8 ? p.score : 8;
             p.score /= 2;
             return p.score == 0;
         })
-                .ifPresent(x -> remove(x.getID(), " the score of " + x + " is 0"));
+            .ifPresent(x -> remove(x.getID(), " the score of " + x + " is 0"));
     }
 
     // decrease score of all peer
     void half() {
         List<PeerImpl> toRemoves = Stream.of(peers)
-                .filter(Objects::nonNull)
-                .flatMap(x -> x.values().stream())
-                .filter(b -> {
-                    PeerImpl p = b.peer;
-                    p.score -= p.score < 8 ? p.score : 8;
-                    p.score /= 2;
-                    return p.score == 0 || b.channel.isClosed();
-                }).map(b -> b.peer).collect(Collectors.toList());
+            .filter(Objects::nonNull)
+            .flatMap(x -> x.values().stream())
+            .filter(b -> {
+                PeerImpl p = b.peer;
+                p.score -= p.score < 8 ? p.score : 8;
+                p.score /= 2;
+                return p.score == 0 || b.channel.isClosed();
+            }).map(b -> b.peer).collect(Collectors.toList());
         toRemoves.forEach(x -> remove(x.getID(), " the score of " + x + " is 0"));
         List<PeerImpl> toRestores
-                = blocked.keySet().stream()
-                .filter(p -> {
-                    p.score /= 2;
-                    return p.score == 0;
-                }).collect(Collectors.toList());
+            = blocked.keySet().stream()
+            .filter(p -> {
+                p.score /= 2;
+                return p.score == 0;
+            }).collect(Collectors.toList());
         toRestores.forEach(p -> blocked.remove(p));
     }
 
@@ -192,12 +191,12 @@ class PeersCache {
     // get all connected channels
     Stream<Channel> getChannels() {
         return Arrays.stream(peers).filter(Objects::nonNull)
-                .flatMap(x ->
-                        x.values()
-                                .stream()
-                ).map(bucket -> bucket.channel)
-                .filter(Channel::isAlive)
-                ;
+            .flatMap(x ->
+                x.values()
+                    .stream()
+            ).map(bucket -> bucket.channel)
+            .filter(Channel::isAlive)
+            ;
     }
 
     // get channel of the peer
@@ -209,10 +208,10 @@ class PeersCache {
     Optional<Channel> getChannel(HexBytes id) {
         int idx = self.subTree(id.getBytes());
         return Optional.ofNullable(peers[idx])
-                .map(x -> x.get(id))
-                .map(x -> x.channel)
-                .filter(Channel::isAlive)
-                ;
+            .map(x -> x.get(id))
+            .map(x -> x.channel)
+            .filter(Channel::isAlive)
+            ;
     }
 
     boolean hasBlocked(PeerImpl peer) {

@@ -2,7 +2,6 @@ package org.tdf.sunflower.events;
 
 import lombok.AllArgsConstructor;
 import lombok.Value;
-import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.TransactionInfo;
 

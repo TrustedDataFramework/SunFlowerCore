@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 public class JsonRpcFilter implements Filter {
 
     private static final List<String> EXCLUDE_LOGS = Arrays.asList("eth_getLogs", "eth_getFilterLogs",
-            "personal_newAccount", "personal_importRawKey", "personal_unlockAccount", "personal_signAndSendTransaction");
+        "personal_newAccount", "personal_importRawKey", "personal_unlockAccount", "personal_signAndSendTransaction");
 
 
     final ObjectMapper mapper = new ObjectMapper();
@@ -45,7 +45,7 @@ public class JsonRpcFilter implements Filter {
 
                 try {
                     final ResettableStreamHttpServletRequest wrappedRequest = new ResettableStreamHttpServletRequest(
-                            httpRequest);
+                        httpRequest);
 
                     final String body = IOUtils.toString(wrappedRequest.getReader());
 
@@ -101,7 +101,7 @@ public class JsonRpcFilter implements Filter {
             final List<JsonNode> params = new ArrayList<>();
             if (requestJson.has("params")) {
                 requestJson.get("params")
-                        .forEach(n -> params.add(n));
+                    .forEach(n -> params.add(n));
             }
 
             final String responseText = mapper.writeValueAsString(responseJson);
@@ -110,8 +110,8 @@ public class JsonRpcFilter implements Filter {
                 // passwords could be sent here
                 if (!EXCLUDE_LOGS.contains(methodName)) {
                     log.info(methodName + "(" + params.stream()
-                            .map(n -> n.asText())
-                            .collect(Collectors.joining(", ")) + "): " + responseText);
+                        .map(n -> n.asText())
+                        .collect(Collectors.joining(", ")) + "): " + responseText);
                 } else {
                     // logging is handled manually in service
                 }
@@ -140,7 +140,7 @@ public class JsonRpcFilter implements Filter {
 
 
     private static class ResettableStreamHttpServletRequest extends
-            HttpServletRequestWrapper {
+        HttpServletRequestWrapper {
 
         private final HttpServletRequest request;
         private byte[] rawData;

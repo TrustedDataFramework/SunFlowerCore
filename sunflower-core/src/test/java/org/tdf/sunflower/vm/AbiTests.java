@@ -3,26 +3,11 @@ package org.tdf.sunflower.vm;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.serialize.Codec;
-import org.tdf.common.serialize.Codecs;
-import org.tdf.common.store.ByteArrayMapStore;
-import org.tdf.common.store.MapStore;
-import org.tdf.common.trie.Trie;
-import org.tdf.common.util.HexBytes;
-import org.tdf.crypto.CryptoHelpers;
-import org.tdf.sunflower.pool.BackendImpl;
-import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.Authentication;
-import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.vm.abi.Abi;
-import org.tdf.sunflower.vm.hosts.Limit;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.HashMap;
 
 @RunWith(JUnit4.class)
 public class AbiTests {

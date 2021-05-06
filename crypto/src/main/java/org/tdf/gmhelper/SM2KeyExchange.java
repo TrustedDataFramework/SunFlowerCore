@@ -100,7 +100,7 @@ public class SM2KeyExchange {
     }
 
     public void init(
-            CipherParameters privParam) {
+        CipherParameters privParam) {
         SM2KeyExchangePrivateParameters baseParam;
 
         if (privParam instanceof ParametersWithID) {
@@ -141,10 +141,10 @@ public class SM2KeyExchange {
         byte[] rv;
         if (initiator) {
             rv = KDF(digest, join(U.getXCoord().getEncoded(),
-                    U.getYCoord().getEncoded(), za, zb), kLen);
+                U.getYCoord().getEncoded(), za, zb), kLen);
         } else {
             rv = KDF(digest, join(U.getXCoord().getEncoded(),
-                    U.getYCoord().getEncoded(), zb, za), kLen);
+                U.getYCoord().getEncoded(), zb, za), kLen);
         }
 
         return rv;
@@ -174,7 +174,7 @@ public class SM2KeyExchange {
         byte[] rv;
         if (initiator) {
             rv = KDF(digest, join(U.getXCoord().getEncoded(),
-                    U.getYCoord().getEncoded(), za, zb), kLen);
+                U.getYCoord().getEncoded(), za, zb), kLen);
             // A9
             byte[] inner = calculateInnerHash(digest, U, za, zb, ephemeralPubPoint, otherPub.getEphemeralPublicKey().getQ());
 
@@ -187,7 +187,7 @@ public class SM2KeyExchange {
             return new byte[][]{rv, S2(digest, U, inner)};
         } else {
             rv = KDF(digest, join(U.getXCoord().getEncoded(),
-                    U.getYCoord().getEncoded(), zb, za), kLen);
+                U.getYCoord().getEncoded(), zb, za), kLen);
             // B10
             byte[] inner = calculateInnerHash(digest, U, zb, za, otherPub.getEphemeralPublicKey().getQ(), ephemeralPubPoint);
             byte[] s2 = S2(digest, U, inner);

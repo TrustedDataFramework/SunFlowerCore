@@ -24,11 +24,9 @@ import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
 import org.tdf.sunflower.vm.abi.ContractCallPayload;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Getter
 @Slf4j(topic = "trie")
@@ -43,43 +41,43 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
     private final Store<byte[], byte[]> trieStore;
 
     public Backend createBackend(
-            Header parent,
-            HexBytes root,
-            Long newBlockCreatedAt,
-            boolean isStatic
+        Header parent,
+        HexBytes root,
+        Long newBlockCreatedAt,
+        boolean isStatic
     ) {
         return new BackendImpl(
-                parent,
-                null,
-                trie.revert(root),
-                contractStorageTrie,
-                new HashMap<>(),
-                new HashMap<>(),
-                builtins,
+            parent,
+            null,
+            trie.revert(root),
+            contractStorageTrie,
+            new HashMap<>(),
+            new HashMap<>(),
+            builtins,
             bios,
-                isStatic,
-                contractCodeStore,
-                new HashMap<>(),
-                newBlockCreatedAt
+            isStatic,
+            contractCodeStore,
+            new HashMap<>(),
+            newBlockCreatedAt
         );
     }
 
     @SneakyThrows
     public AccountTrie(
-            DatabaseStore db,
-            Store<HexBytes, HexBytes> contractCodeStore,
-            Trie<HexBytes, HexBytes> contractStorageTrie,
-            boolean secure
+        DatabaseStore db,
+        Store<HexBytes, HexBytes> contractCodeStore,
+        Trie<HexBytes, HexBytes> contractStorageTrie,
+        boolean secure
     ) {
         this.db = db;
         this.trieStore = new NoDeleteBatchStore<>(db, Store.IS_NULL);
 
         this.trie = Trie.<HexBytes, Account>builder()
-                .hashFunction(CryptoContext::hash)
-                .store(trieStore)
-                .keyCodec(Codecs.newRLPCodec(HexBytes.class))
-                .valueCodec(Codecs.newRLPCodec(Account.class))
-                .build();
+            .hashFunction(CryptoContext::hash)
+            .store(trieStore)
+            .keyCodec(Codecs.newRLPCodec(HexBytes.class))
+            .valueCodec(Codecs.newRLPCodec(Account.class))
+            .build();
 
         if (secure)
             trie = new SecureTrie<>(trie, CryptoContext::hash);
@@ -146,8 +144,8 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
         Backend backend = createBackend(header, System.currentTimeMillis() / 1000, true);
 
         VMExecutor executor = new VMExecutor(
-                backend,
-                callData
+            backend,
+            callData
         );
 
         return executor.execute().getExecutionResult();

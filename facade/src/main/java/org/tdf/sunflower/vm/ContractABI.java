@@ -18,10 +18,10 @@ public class ContractABI {
 
     public ContractABIJson toJSON() {
         return new ContractABIJson(
-                name,
-                type == 0 ? "function" : "event",
-                map(inputs),
-                map(outputs)
+            name,
+            type == 0 ? "function" : "event",
+            map(inputs),
+            map(outputs)
         );
     }
 

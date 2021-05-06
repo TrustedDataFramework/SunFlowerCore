@@ -187,7 +187,7 @@ public class VrfProof {
     public int getPriority(int expected, long weight, long totalWeight) {
         if (expected <= 0 || weight <= 0 || totalWeight <= 0) {
             logger.error("Big Problem, Invalid VRF priority parameters [" + " expected: " + expected + ", weight: "
-                    + weight + ", totalWeight:" + totalWeight + " ]");
+                + weight + ", totalWeight:" + totalWeight + " ]");
             return 0;
         }
 
@@ -195,7 +195,7 @@ public class VrfProof {
 
         if (isNullOrZeroArray(vrfPk) || isNullOrZeroArray(seed) || vrfResult == null) {
             logger.error("Big Problem, Invalid VRF priority parameters [" + " vrfPk: " + vrfPk + " seed: " + seed
-                    + " vrfResult: " + vrfResult + " ]");
+                + " vrfResult: " + vrfResult + " ]");
             return 0;
         }
 

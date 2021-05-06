@@ -2,7 +2,6 @@ package org.tdf.common.trie;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.HexBytes;
 
 import java.util.HashMap;
@@ -17,8 +16,8 @@ class Dump implements ScannerAction {
     public Boolean apply(TrieKey path, Node node) {
         if (node.getHash() != null) {
             pairs.put(
-                    HexBytes.fromBytes(node.getHash()),
-                    HexBytes.fromBytes(Objects.requireNonNull(node.rlp).getEncoded())
+                HexBytes.fromBytes(node.getHash()),
+                HexBytes.fromBytes(Objects.requireNonNull(node.rlp).getEncoded())
             );
         }
         return true;

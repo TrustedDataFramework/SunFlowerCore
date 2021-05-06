@@ -47,18 +47,18 @@ public class BCECUtil {
     public static AsymmetricCipherKeyPair generateKeyPairParameter(ECDomainParameters domainParameters,
                                                                    SecureRandom random) {
         ECKeyGenerationParameters keyGenerationParams = new ECKeyGenerationParameters(domainParameters,
-                random);
+            random);
         ECKeyPairGenerator keyGen = new ECKeyPairGenerator();
         keyGen.init(keyGenerationParams);
         return keyGen.generateKeyPair();
     }
 
     public static KeyPair generateKeyPair(ECDomainParameters domainParameters, SecureRandom random)
-            throws NoSuchProviderException, NoSuchAlgorithmException,
-            InvalidAlgorithmParameterException {
+        throws NoSuchProviderException, NoSuchAlgorithmException,
+        InvalidAlgorithmParameterException {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(ALGO_NAME_EC, BouncyCastleProvider.PROVIDER_NAME);
         ECParameterSpec parameterSpec = new ECParameterSpec(domainParameters.getCurve(), domainParameters.getG(),
-                domainParameters.getN(), domainParameters.getH());
+            domainParameters.getN(), domainParameters.getH());
         kpg.initialize(parameterSpec, random);
         return kpg.generateKeyPair();
     }
@@ -98,7 +98,7 @@ public class BCECUtil {
     public static ECPublicKeyParameters createECPublicKeyParameters(String xHex, String yHex,
                                                                     ECCurve curve, ECDomainParameters domainParameters) {
         return createECPublicKeyParameters(ByteUtils.fromHexString(xHex), ByteUtils.fromHexString(yHex),
-                curve, domainParameters);
+            curve, domainParameters);
     }
 
     public static ECPublicKeyParameters createECPublicKeyParameters(byte[] xBytes, byte[] yBytes,
@@ -121,19 +121,19 @@ public class BCECUtil {
     public static ECPrivateKeyParameters convertPrivateKeyToParameters(BCECPrivateKey ecPriKey) {
         ECParameterSpec parameterSpec = ecPriKey.getParameters();
         ECDomainParameters domainParameters = new ECDomainParameters(parameterSpec.getCurve(), parameterSpec.getG(),
-                parameterSpec.getN(), parameterSpec.getH());
+            parameterSpec.getN(), parameterSpec.getH());
         return new ECPrivateKeyParameters(ecPriKey.getD(), domainParameters);
     }
 
     public static ECPublicKeyParameters convertPublicKeyToParameters(BCECPublicKey ecPubKey) {
         ECParameterSpec parameterSpec = ecPubKey.getParameters();
         ECDomainParameters domainParameters = new ECDomainParameters(parameterSpec.getCurve(), parameterSpec.getG(),
-                parameterSpec.getN(), parameterSpec.getH());
+            parameterSpec.getN(), parameterSpec.getH());
         return new ECPublicKeyParameters(ecPubKey.getQ(), domainParameters);
     }
 
     public static BCECPublicKey createPublicKeyFromSubjectPublicKeyInfo(SubjectPublicKeyInfo subPubInfo) throws NoSuchProviderException,
-            NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+        NoSuchAlgorithmException, InvalidKeySpecException, IOException {
         return BCECUtil.convertX509ToECPublicKey(subPubInfo.toASN1Primitive().getEncoded(ASN1Encoding.DER));
     }
 
@@ -148,14 +148,14 @@ public class BCECUtil {
                                                     ECPublicKeyParameters pubKey) {
         ECDomainParameters domainParams = priKey.getParameters();
         ECParameterSpec spec = new ECParameterSpec(domainParams.getCurve(), domainParams.getG(),
-                domainParams.getN(), domainParams.getH());
+            domainParams.getN(), domainParams.getH());
         BCECPublicKey publicKey = null;
         if (pubKey != null) {
             publicKey = new BCECPublicKey(ALGO_NAME_EC, pubKey, spec,
-                    BouncyCastleProvider.CONFIGURATION);
+                BouncyCastleProvider.CONFIGURATION);
         }
         BCECPrivateKey privateKey = new BCECPrivateKey(ALGO_NAME_EC, priKey, publicKey,
-                spec, BouncyCastleProvider.CONFIGURATION);
+            spec, BouncyCastleProvider.CONFIGURATION);
         return privateKey.getEncoded();
     }
 
@@ -169,7 +169,7 @@ public class BCECUtil {
      * @throws InvalidKeySpecException
      */
     public static BCECPrivateKey convertPKCS8ToECPrivateKey(byte[] pkcs8Key)
-            throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
+        throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
         PKCS8EncodedKeySpec peks = new PKCS8EncodedKeySpec(pkcs8Key);
         KeyFactory kf = KeyFactory.getInstance(ALGO_NAME_EC, BouncyCastleProvider.PROVIDER_NAME);
         return (BCECPrivateKey) kf.generatePrivate(peks);
@@ -251,7 +251,7 @@ public class BCECUtil {
      * @throws IOException
      */
     public static BCECPrivateKey convertSEC1ToBCECPrivateKey(byte[] sec1Key)
-            throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException, IOException {
+        throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException, IOException {
         PKCS8EncodedKeySpec peks = new PKCS8EncodedKeySpec(convertECPrivateKeySEC1ToPKCS8(sec1Key));
         KeyFactory kf = KeyFactory.getInstance(ALGO_NAME_EC, BouncyCastleProvider.PROVIDER_NAME);
         return (BCECPrivateKey) kf.generatePrivate(peks);
@@ -269,7 +269,7 @@ public class BCECUtil {
      * @throws InvalidKeySpecException
      */
     public static ECPrivateKeyParameters convertSEC1ToECPrivateKey(byte[] sec1Key)
-            throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException, IOException {
+        throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException, IOException {
         BCECPrivateKey privateKey = convertSEC1ToBCECPrivateKey(sec1Key);
         return convertPrivateKeyToParameters(privateKey);
     }
@@ -283,9 +283,9 @@ public class BCECUtil {
     public static byte[] convertECPublicKeyToX509(ECPublicKeyParameters pubKey) {
         ECDomainParameters domainParams = pubKey.getParameters();
         ECParameterSpec spec = new ECParameterSpec(domainParams.getCurve(), domainParams.getG(),
-                domainParams.getN(), domainParams.getH());
+            domainParams.getN(), domainParams.getH());
         BCECPublicKey publicKey = new BCECPublicKey(ALGO_NAME_EC, pubKey, spec,
-                BouncyCastleProvider.CONFIGURATION);
+            BouncyCastleProvider.CONFIGURATION);
         return publicKey.getEncoded();
     }
 
@@ -299,7 +299,7 @@ public class BCECUtil {
      * @throws InvalidKeySpecException
      */
     public static BCECPublicKey convertX509ToECPublicKey(byte[] x509Bytes) throws NoSuchProviderException,
-            NoSuchAlgorithmException, InvalidKeySpecException {
+        NoSuchAlgorithmException, InvalidKeySpecException {
         X509EncodedKeySpec eks = new X509EncodedKeySpec(x509Bytes);
         KeyFactory kf = KeyFactory.getInstance("EC", BouncyCastleProvider.PROVIDER_NAME);
         return (BCECPublicKey) kf.generatePublic(eks);
@@ -386,11 +386,11 @@ public class BCECUtil {
             ECCurve curve = EC5Util.convertCurve(ecSpec.getCurve());
 
             X9ECParameters ecP = new X9ECParameters(
-                    curve,
-                    EC5Util.convertPoint(curve, ecSpec.getGenerator(), withCompression),
-                    ecSpec.getOrder(),
-                    BigInteger.valueOf(ecSpec.getCofactor()),
-                    ecSpec.getCurve().getSeed());
+                curve,
+                EC5Util.convertPoint(curve, ecSpec.getGenerator(), withCompression),
+                ecSpec.getOrder(),
+                BigInteger.valueOf(ecSpec.getCofactor()),
+                ecSpec.getCurve().getSeed());
 
             params = new X962Parameters(ecP);
         }

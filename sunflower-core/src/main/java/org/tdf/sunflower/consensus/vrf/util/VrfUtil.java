@@ -205,7 +205,7 @@ public class VrfUtil {
         String[] pubkeys = fileSystemKeystore.listStoredKeys();
         if (pubkeys.length == 0) {
             log.info("There is no Vrf SK exist, create a new one and save it in keystore, {}",
-                    fileSystemKeystore.getKeyStoreLocation().toAbsolutePath());
+                fileSystemKeystore.getKeyStoreLocation().toAbsolutePath());
 
             key = new VrfPrivateKey(Ed25519.getAlgorithm()).getSigner();
             fileSystemKeystore.storeKey(key, VRF_KEYSTORE_PASSWORD);
@@ -214,13 +214,13 @@ public class VrfUtil {
             key = fileSystemKeystore.loadStoredKey(pubkeys[0], VRF_KEYSTORE_PASSWORD);
             if (key == null) {
                 log.error("Fail to load Vrf SK from keystore, create a new one and save it in keystore, {}",
-                        fileSystemKeystore.getKeyStoreLocation().toAbsolutePath());
+                    fileSystemKeystore.getKeyStoreLocation().toAbsolutePath());
 
                 key = new VrfPrivateKey(Ed25519.getAlgorithm()).getSigner();
                 fileSystemKeystore.storeKey(key, VRF_KEYSTORE_PASSWORD);
             } else {
                 log.info("Vrf Sk is loaded from keystore, {}, pubkey {}",
-                        fileSystemKeystore.getKeyStoreLocation().toAbsolutePath(), pubkeys[0]);
+                    fileSystemKeystore.getKeyStoreLocation().toAbsolutePath(), pubkeys[0]);
             }
         }
 
@@ -240,7 +240,7 @@ public class VrfUtil {
 
     public static byte[] genPayload(long blockNum, int round, String seedStr, String minerCoinbaseStr,
                                     String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
-            throws IOException {
+        throws IOException {
         byte[] priority = ByteUtil.hexStringToBytes(priorityStr);
         byte[] seed = ByteUtil.hexStringToBytes(seedStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
@@ -251,7 +251,7 @@ public class VrfUtil {
     public static byte[] genPayload(long blockNum, int round, byte[] seed, byte[] minerCoinbase, byte[] priority,
                                     byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig) throws IOException {
         VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, seed, minerCoinbase, priority, blockHash, vrfSk, vrfPk,
-                vrfConfig);
+            vrfConfig);
 
         byte[] encoded = RLPCodec.encode(vbf1);
         return encoded;
@@ -260,7 +260,7 @@ public class VrfUtil {
     public static byte[] genPayload(long blockNum, int round, HexBytes seed, HexBytes minerCoinbase, HexBytes priority,
                                     HexBytes blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig) throws IOException {
         VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, seed.getBytes(), minerCoinbase.getBytes(),
-                priority.getBytes(), blockHash.getBytes(), vrfSk, vrfPk, vrfConfig);
+            priority.getBytes(), blockHash.getBytes(), vrfSk, vrfPk, vrfConfig);
 
         byte[] encoded = RLPCodec.encode(vbf1);
         return encoded;
@@ -268,7 +268,7 @@ public class VrfUtil {
 
     public static VrfBlockFields genVrfBlockFields(long blockNum, int round, String seedStr, String minerCoinbaseStr,
                                                    String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
-            throws IOException {
+        throws IOException {
         byte[] priority = ByteUtil.hexStringToBytes(priorityStr);
         byte[] seed = ByteUtil.hexStringToBytes(seedStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
@@ -279,7 +279,7 @@ public class VrfUtil {
 
     public static VrfBlockFields genVrfBlockFields(long blockNum, int round, byte[] seed, byte[] minerCoinbase,
                                                    byte[] priority, byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
-            throws IOException {
+        throws IOException {
 
         ProposalProof proposalProof = genProposalProof(blockNum, round, seed, minerCoinbase, blockHash, vrfSk, vrfPk);
         String parentReductionCommitProofs = null;
@@ -290,8 +290,8 @@ public class VrfUtil {
         }
 
         VrfBlockFields vbf1 = VrfBlockFields.builder().seed(seed).priority(priority).miner(minerCoinbase)
-                .proposalProof(RLPCodec.encode(proposalProof)).parentReductionCommitProofs(parentReductionCommitProofs)
-                .parentFinalCommitProofs(parentFinalCommitProofs).build();
+            .proposalProof(RLPCodec.encode(proposalProof)).parentReductionCommitProofs(parentReductionCommitProofs)
+            .parentFinalCommitProofs(parentFinalCommitProofs).build();
         return vbf1;
     }
 
@@ -389,7 +389,7 @@ public class VrfUtil {
     }
 
     public static void writeCommitProofsToFile(HashMapDB<CommitProof> commitProofs, String filePath)
-            throws IOException {
+        throws IOException {
         File file = new File(filePath);
         file.getParentFile().mkdirs();
         String proofsString = commitProofMapToCommaSepEncodedStr(commitProofs);
@@ -397,13 +397,13 @@ public class VrfUtil {
     }
 
     public static void writeReductionCommitProofsToFile(HashMapDB<CommitProof> commitProofs, VrfConfig vrfConfig)
-            throws IOException {
+        throws IOException {
         String filePath = getReductionCommitProofCachePath(vrfConfig);
         writeCommitProofsToFile(commitProofs, filePath);
     }
 
     public static void writeFinalCommitProofsToFile(HashMapDB<CommitProof> commitProofs, VrfConfig vrfConfig)
-            throws IOException {
+        throws IOException {
         String filePath = getFinalCommitProofCachePath(vrfConfig);
         writeCommitProofsToFile(commitProofs, filePath);
     }

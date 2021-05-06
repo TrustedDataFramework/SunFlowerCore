@@ -3,12 +3,17 @@ package org.tdf.sunflower.consensus.pow;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.*;
+import org.tdf.common.util.BigIntegers;
+import org.tdf.common.util.ByteUtil;
+import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.RLPUtil;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.Start;
+import org.tdf.sunflower.facade.SunflowerRepository;
+import org.tdf.sunflower.state.AbstractBuiltIn;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.state.Constants;
+import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
@@ -27,7 +32,7 @@ interface PowBios {
 }
  */
 @Slf4j(topic = "pow")
-public class PoWBios implements BuiltinContract {
+public class PoWBios extends AbstractBuiltIn {
     public static final String ABI_JSON = "[{\"inputs\":[],\"name\":\"nbits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"update\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]";
     public static final Abi ABI = Abi.fromJson(ABI_JSON);
     public static final Abi.Function UPDATE = ABI.findFunction(f -> f.name.equals("update"));
@@ -41,44 +46,47 @@ public class PoWBios implements BuiltinContract {
 
     private final ConsensusConfig config;
 
-    public PoWBios(HexBytes nbits, ConsensusConfig config) {
+    public PoWBios(HexBytes nbits, ConsensusConfig config,
+                   StateTrie<HexBytes, Account> accounts,
+                   SunflowerRepository repository) {
+        super(Constants.POW_BIOS_ADDR, accounts, repository);
         this.genesisNbits = Uint256.of(nbits.getBytes());
         this.config = config;
     }
 
-    @Override
-    public HexBytes getAddress() {
-        return ADDRESS;
+    public Uint256 getNBits(
+        HexBytes parentHash) {
+        List<?> r = view(parentHash, "nbits");
+        return Uint256.of((byte[]) r.get(0));
     }
 
     @Override
     @SneakyThrows
-    public byte[] call(Backend backend, CallData callData) {
-//        byte[] selector = callData.getSelector();
-        Abi.Function func = null;
+    public List<?> call(Backend backend, CallData callData, String method, Object... args) {
 
-        if(func.name.equals("nbits")) {
+
+        if (method.equals("nbits")) {
             HexBytes nbits = backend.dbGet(Constants.POW_BIOS_ADDR, N_BITS_KEY);
-            return Abi.Entry.Param.encodeList(func.outputs, ByteUtil.bytesToBigInteger(
-                    nbits.getBytes()
-            ));
+            return Collections.singletonList(
+                ByteUtil.bytesToBigInteger(nbits.getBytes())
+            );
         }
 
-        if(!func.name.equals("update")){
+        if (!method.equals("update")) {
             throw new RuntimeException("call to bios failed, method not found");
         }
 
-        if(callData.getCallType() != CallType.COINBASE){
+        if (callData.getCallType() != CallType.COINBASE) {
             throw new RuntimeException("update should be called in coinbase transaction");
         }
 
         // find function by selector
         List<Long> ts = new ArrayList<>(
-                Arrays.asList(
-                        RLPUtil.decode(
-                                backend.dbGet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY), Long[].class
-                        )
+            Arrays.asList(
+                RLPUtil.decode(
+                    backend.dbGet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY), Long[].class
                 )
+            )
         );
 
         ts.add(backend.getHeaderCreatedAt());
@@ -88,19 +96,19 @@ public class PoWBios implements BuiltinContract {
             long y = config.getBlockInterval() * (ts.size() - 1);
 
             // x > y * 16 -> x/y > 16
-            if(x > y * MAX_ADJUST_RATE) {
+            if (x > y * MAX_ADJUST_RATE) {
                 x = MAX_ADJUST_RATE;
                 y = 1;
             }
 
             // x/y < 1 / 16 <=> x < y / 16 <=> 16 * x < y
-            if( 16 * x < y) {
+            if (16 * x < y) {
                 x = 1;
                 y = MAX_ADJUST_RATE;
             }
 
             BigInteger nbits = ByteUtil.bytesToBigInteger(
-                    backend.dbGet(Constants.POW_BIOS_ADDR, N_BITS_KEY).getBytes()
+                backend.dbGet(Constants.POW_BIOS_ADDR, N_BITS_KEY).getBytes()
             );
 
             nbits = safeTyMul(nbits, x, y);
@@ -110,7 +118,7 @@ public class PoWBios implements BuiltinContract {
             backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, RLPUtil.encode(ts));
         }
 
-        return HexBytes.EMPTY_BYTES;
+        return Collections.emptyList();
     }
 
     @Override

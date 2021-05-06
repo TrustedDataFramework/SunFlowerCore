@@ -19,10 +19,10 @@ public class LRUMapTests {
     public void before() {
         evicted = new ArrayList<>();
         lruMap = LRUMap
-                .<String, String>builder()
-                .maximumSize(2)
-                .hook((k, v) -> evicted.add(k))
-                .build();
+            .<String, String>builder()
+            .maximumSize(2)
+            .hook((k, v) -> evicted.add(k))
+            .build();
         lruMap.put("1", "2");
         lruMap.put("2", "3");
     }

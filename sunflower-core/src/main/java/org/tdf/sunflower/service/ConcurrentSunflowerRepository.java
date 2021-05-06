@@ -2,7 +2,6 @@ package org.tdf.sunflower.service;
 
 import lombok.RequiredArgsConstructor;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.facade.ConfirmedBlocksProvider;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;

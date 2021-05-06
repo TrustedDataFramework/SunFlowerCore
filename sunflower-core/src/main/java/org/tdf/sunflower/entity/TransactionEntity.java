@@ -6,16 +6,16 @@ import javax.persistence.*;
 
 @Entity
 @Table(name = "transaction", indexes = {
-        @Index(name = "tx_block_hash_index", columnList = TransactionEntity.COLUMN_BLOCK_HASH),
-        @Index(name = "tx_block_height_index", columnList = TransactionEntity.COLUMN_BLOCK_HEIGHT),
-        @Index(name = "tx_hash_index", columnList = TransactionEntity.COLUMN_TX_HASH),
-        @Index(name = "tx_type_index", columnList = TransactionEntity.COLUMN_TX_TYPE),
-        @Index(name = "tx_created_at_index", columnList = TransactionEntity.COLUMN_TX_CREATED_AT),
-        @Index(name = "tx_nonce_index", columnList = TransactionEntity.COLUMN_TX_NONCE),
-        @Index(name = "tx_from_index", columnList = TransactionEntity.COLUMN_TX_FROM),
-        @Index(name = "tx_amount_index", columnList = TransactionEntity.COLUMN_TX_AMOUNT),
-        @Index(name = "tx_to_index", columnList = TransactionEntity.COLUMN_TX_TO),
-        @Index(name = "tx_position_index", columnList = TransactionEntity.COLUMN_TX_POSITION),
+    @Index(name = "tx_block_hash_index", columnList = TransactionEntity.COLUMN_BLOCK_HASH),
+    @Index(name = "tx_block_height_index", columnList = TransactionEntity.COLUMN_BLOCK_HEIGHT),
+    @Index(name = "tx_hash_index", columnList = TransactionEntity.COLUMN_TX_HASH),
+    @Index(name = "tx_type_index", columnList = TransactionEntity.COLUMN_TX_TYPE),
+    @Index(name = "tx_created_at_index", columnList = TransactionEntity.COLUMN_TX_CREATED_AT),
+    @Index(name = "tx_nonce_index", columnList = TransactionEntity.COLUMN_TX_NONCE),
+    @Index(name = "tx_from_index", columnList = TransactionEntity.COLUMN_TX_FROM),
+    @Index(name = "tx_amount_index", columnList = TransactionEntity.COLUMN_TX_AMOUNT),
+    @Index(name = "tx_to_index", columnList = TransactionEntity.COLUMN_TX_TO),
+    @Index(name = "tx_position_index", columnList = TransactionEntity.COLUMN_TX_POSITION),
 })
 @Getter
 @Setter

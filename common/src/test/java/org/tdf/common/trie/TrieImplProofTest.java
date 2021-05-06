@@ -8,10 +8,10 @@ public class TrieImplProofTest extends ProofTest {
     @Override
     Trie<String, String> supplyTrie() {
         return Trie.<String, String>builder()
-                .store(new ByteArrayMapStore<>())
-                .valueCodec(Codecs.STRING)
-                .keyCodec(Codecs.STRING)
-                .hashFunction(HashUtil::sha3)
-                .build();
+            .store(new ByteArrayMapStore<>())
+            .valueCodec(Codecs.STRING)
+            .keyCodec(Codecs.STRING)
+            .hashFunction(HashUtil::sha3)
+            .build();
     }
 }

@@ -30,32 +30,32 @@ public class SM2PfxMaker {
      * @throws PKCSException
      */
     public PKCS12PfxPdu makePfx(PrivateKey privKey, PublicKey pubKey, X509Certificate[] chain, String passwd)
-            throws NoSuchAlgorithmException, IOException, PKCSException {
+        throws NoSuchAlgorithmException, IOException, PKCSException {
         JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
 
         PKCS12SafeBagBuilder taCertBagBuilder = new JcaPKCS12SafeBagBuilder(chain[2]);
         taCertBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName,
-                new DERBMPString("Primary Certificate"));
+            new DERBMPString("Primary Certificate"));
 
         PKCS12SafeBagBuilder caCertBagBuilder = new JcaPKCS12SafeBagBuilder(chain[1]);
         caCertBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName,
-                new DERBMPString("Intermediate Certificate"));
+            new DERBMPString("Intermediate Certificate"));
 
         PKCS12SafeBagBuilder eeCertBagBuilder = new JcaPKCS12SafeBagBuilder(chain[0]);
         eeCertBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName,
-                new DERBMPString("User Key"));
+            new DERBMPString("User Key"));
         eeCertBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_localKeyId,
-                extUtils.createSubjectKeyIdentifier(pubKey));
+            extUtils.createSubjectKeyIdentifier(pubKey));
 
         char[] passwdChars = passwd.toCharArray();
         PKCS12SafeBagBuilder keyBagBuilder = new JcaPKCS12SafeBagBuilder(privKey,
-                new BcPKCS12PBEOutputEncryptorBuilder(
-                        PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC,
-                        new CBCBlockCipher(new DESedeEngine())).build(passwdChars));
+            new BcPKCS12PBEOutputEncryptorBuilder(
+                PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC,
+                new CBCBlockCipher(new DESedeEngine())).build(passwdChars));
         keyBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName,
-                new DERBMPString("User Key"));
+            new DERBMPString("User Key"));
         keyBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_localKeyId,
-                extUtils.createSubjectKeyIdentifier(pubKey));
+            extUtils.createSubjectKeyIdentifier(pubKey));
 
         PKCS12PfxPduBuilder pfxPduBuilder = new PKCS12PfxPduBuilder();
         PKCS12SafeBag[] certs = new PKCS12SafeBag[3];
@@ -63,9 +63,9 @@ public class SM2PfxMaker {
         certs[1] = caCertBagBuilder.build();
         certs[2] = taCertBagBuilder.build();
         pfxPduBuilder.addEncryptedData(new BcPKCS12PBEOutputEncryptorBuilder(
-                        PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC2_CBC,
-                        new CBCBlockCipher(new RC2Engine())).build(passwdChars),
-                certs);
+                PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC2_CBC,
+                new CBCBlockCipher(new RC2Engine())).build(passwdChars),
+            certs);
         pfxPduBuilder.addData(keyBagBuilder.build());
         return pfxPduBuilder.build(new BcPKCS12MacCalculatorBuilder(), passwdChars);
     }
@@ -81,32 +81,32 @@ public class SM2PfxMaker {
      * @throws PKCSException
      */
     public PKCS12PfxPdu makePfx(PrivateKey privKey, PublicKey pubKey, X509Certificate cert, String passwd)
-            throws NoSuchAlgorithmException, IOException, PKCSException {
+        throws NoSuchAlgorithmException, IOException, PKCSException {
         JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
 
         PKCS12SafeBagBuilder eeCertBagBuilder = new JcaPKCS12SafeBagBuilder(cert);
         eeCertBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName,
-                new DERBMPString("User Key"));
+            new DERBMPString("User Key"));
         eeCertBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_localKeyId,
-                extUtils.createSubjectKeyIdentifier(pubKey));
+            extUtils.createSubjectKeyIdentifier(pubKey));
 
         char[] passwdChars = passwd.toCharArray();
         PKCS12SafeBagBuilder keyBagBuilder = new JcaPKCS12SafeBagBuilder(privKey,
-                new BcPKCS12PBEOutputEncryptorBuilder(
-                        PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC,
-                        new CBCBlockCipher(new DESedeEngine())).build(passwdChars));
+            new BcPKCS12PBEOutputEncryptorBuilder(
+                PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC,
+                new CBCBlockCipher(new DESedeEngine())).build(passwdChars));
         keyBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName,
-                new DERBMPString("User Key"));
+            new DERBMPString("User Key"));
         keyBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_localKeyId,
-                extUtils.createSubjectKeyIdentifier(pubKey));
+            extUtils.createSubjectKeyIdentifier(pubKey));
 
         PKCS12PfxPduBuilder pfxPduBuilder = new PKCS12PfxPduBuilder();
         PKCS12SafeBag[] certs = new PKCS12SafeBag[1];
         certs[0] = eeCertBagBuilder.build();
         pfxPduBuilder.addEncryptedData(new BcPKCS12PBEOutputEncryptorBuilder(
-                        PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC2_CBC,
-                        new CBCBlockCipher(new RC2Engine())).build(passwdChars),
-                certs);
+                PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC2_CBC,
+                new CBCBlockCipher(new RC2Engine())).build(passwdChars),
+            certs);
         pfxPduBuilder.addData(keyBagBuilder.build());
         return pfxPduBuilder.build(new BcPKCS12MacCalculatorBuilder(), passwdChars);
     }

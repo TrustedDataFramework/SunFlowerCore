@@ -12,11 +12,11 @@ public class TriePerformanceTest {
     public static void main(String[] args) {
         int n = 10_000_000;
         Trie<byte[], byte[]> trie = Trie.<byte[], byte[]>builder().
-                hashFunction(HashUtil::sha256)
-                .store(new ByteArrayMapStore<>())
-                .keyCodec(Codec.identity())
-                .valueCodec(Codec.identity())
-                .build();
+            hashFunction(HashUtil::sha256)
+            .store(new ByteArrayMapStore<>())
+            .keyCodec(Codec.identity())
+            .valueCodec(Codec.identity())
+            .build();
         byte[] dummy = new byte[]{1};
         SecureRandom sr = new SecureRandom();
         long start = System.currentTimeMillis();

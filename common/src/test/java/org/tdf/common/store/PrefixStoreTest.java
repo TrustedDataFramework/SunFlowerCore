@@ -17,10 +17,10 @@ public class PrefixStoreTest {
     public void test0() {
         Store<HexBytes, HexBytes> s = new MapStore<>();
         PrefixStore<String, String> p = new PrefixStore<>(
-                s,
-                HexBytes.fromBytes("aaa".getBytes(StandardCharsets.US_ASCII)),
-                Codecs.newRLPCodec(String.class),
-                Codecs.newRLPCodec(String.class)
+            s,
+            HexBytes.fromBytes("aaa".getBytes(StandardCharsets.US_ASCII)),
+            Codecs.newRLPCodec(String.class),
+            Codecs.newRLPCodec(String.class)
         );
 
         p.put("aaa", "bbb");

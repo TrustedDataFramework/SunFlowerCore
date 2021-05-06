@@ -140,13 +140,13 @@ public class ECDSASignature {
 
     public byte[] toByteArray() {
         final byte fixedV = this.v >= 27
-                ? (byte) (this.v - 27)
-                : this.v;
+            ? (byte) (this.v - 27)
+            : this.v;
 
         return ByteUtil.merge(
-                bigIntegerToBytes(this.r, 32),
-                bigIntegerToBytes(this.s, 32),
-                new byte[]{fixedV});
+            bigIntegerToBytes(this.r, 32),
+            bigIntegerToBytes(this.s, 32),
+            new byte[]{fixedV});
     }
 
     public String toHex() {

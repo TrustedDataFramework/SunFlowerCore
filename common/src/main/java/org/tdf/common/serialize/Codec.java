@@ -13,8 +13,8 @@ public interface Codec<K> {
     }
 
     static <K> Codec<K> newInstance(
-            Function<? super K, byte[]> encoder,
-            Function<byte[], ? extends K> decoder
+        Function<? super K, byte[]> encoder,
+        Function<byte[], ? extends K> decoder
     ) {
         return new Codec<K>() {
             @Override

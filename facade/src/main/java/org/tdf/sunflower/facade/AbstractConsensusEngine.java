@@ -34,7 +34,6 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
             setValidator(Validator.NONE);
             setGenesisBlock(new Block());
             setPeerServerListener(PeerServerListener.NONE);
-            initStateTrie();
         }
 
         @Override
@@ -63,7 +62,7 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     private SunflowerRepository sunflowerRepository;
 
     // sub class should set peer server listener explicitly when init() called
-    private PeerServerListener peerServerListener;
+    private PeerServerListener peerServerListener = PeerServerListener.NONE;
 
 
     public AbstractConsensusEngine() {
@@ -79,9 +78,5 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
 
     public List<BuiltinContract> getBios() {
         return Collections.emptyList();
-    }
-
-    protected void initStateTrie() {
-
     }
 }

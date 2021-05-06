@@ -20,7 +20,7 @@ public class NodeTest {
     public void test1() {
         Node n = Node.newLeaf(TrieKey.fromNormal("test".getBytes()), "test".getBytes(), new HashFunction(HashUtil::sha256));
         Arrays.asList("toaster", "toasting", "slow", "slowly")
-                .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
+            .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
 
         for (String s : Arrays.asList("toaster", "toasting", "slow", "slowly")
         ) {
@@ -176,16 +176,16 @@ public class NodeTest {
     @Test
     public void test9() {
         Node n = Node.newLeaf(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a711355), 4, 8)
+            Arrays.copyOfRange(BigEndian.encodeInt64(0x0a711355), 4, 8)
         ).shift(), "45.0ETH".getBytes(), HashUtil.sha3);
         n.insert(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d337), 4, 8)
+            Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d337), 4, 8)
         ).shift(), "1.00WEI".getBytes());
         n.insert(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a7f9365), 4, 8)
+            Arrays.copyOfRange(BigEndian.encodeInt64(0x0a7f9365), 4, 8)
         ).shift(), "1.00WEI".getBytes());
         n.insert(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d397), 4, 8)
+            Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d397), 4, 8)
         ).shift(), "1.00WEI".getBytes());
     }
 
@@ -206,7 +206,7 @@ public class NodeTest {
     public void test11() {
         Node n = Node.newLeaf(TrieKey.fromNormal("test".getBytes()), "test".getBytes(), new HashFunction(HashUtil::sha256));
         Arrays.asList("toaster", "toasting", "slow", "slowly")
-                .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
+            .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
         Store<byte[], byte[]> s = new ByteArrayMapStore<>();
         RLPElement element = n.commit(s, true);
         Node n2 = Node.fromEncoded(element.getEncoded(), s, new HashFunction(HashUtil::sha256));

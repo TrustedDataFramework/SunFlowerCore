@@ -9,7 +9,10 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Account;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 @AllArgsConstructor
 public abstract class AbstractGenesis {
@@ -19,7 +22,7 @@ public abstract class AbstractGenesis {
 
     public long getTimestamp() {
         JsonNode n = parsed.get("timestamp");
-        return n == null ? 0: n.asLong();
+        return n == null ? 0 : n.asLong();
     }
 
     public HexBytes getParentHash() {
@@ -39,7 +42,7 @@ public abstract class AbstractGenesis {
     public List<Account> getAlloc() {
         JsonNode alloc = parsed.get("alloc");
 
-        if(alloc == null)
+        if (alloc == null)
             return Collections.emptyList();
 
         List<Account> r = new ArrayList<>();
@@ -55,12 +58,12 @@ public abstract class AbstractGenesis {
 
     protected List<JsonNode> getArray(String field) {
         JsonNode n = parsed.get(field);
-        if(n == null || n.isNull())
+        if (n == null || n.isNull())
             return Collections.emptyList();
 
         List<JsonNode> li = new ArrayList<>();
 
-        for(int i = 0; i < n.size(); i++) {
+        for (int i = 0; i < n.size(); i++) {
             li.add(n.get(i));
         }
 

@@ -16,38 +16,38 @@ public class CallData {
 
     public static CallData empty() {
         return new CallData(
-                Address.empty(),
-                Uint256.ZERO,
-                Uint256.ZERO,
-                Address.empty(),
-                Address.empty(),
-                CallType.COINBASE,
-                HexBytes.empty(),
-                Address.empty(),
-                HexBytes.empty(),
-                0,
-                Uint256.ZERO,
-                Uint256.ZERO
+            Address.empty(),
+            Uint256.ZERO,
+            Uint256.ZERO,
+            Address.empty(),
+            Address.empty(),
+            CallType.COINBASE,
+            HexBytes.empty(),
+            Address.empty(),
+            HexBytes.empty(),
+            0,
+            Uint256.ZERO,
+            Uint256.ZERO
         );
     }
 
     public static CallData fromTransaction(Transaction tx, boolean coinbase) {
         CallData data = new CallData(
-                tx.getSenderHex(),
-                tx.getValueAsUint(),
-                tx.getValueAsUint(),
-                tx.getReceiveHex(),
-                tx.getReceiveHex(),
-                CallType.COINBASE,
-                tx.getDataHex(),
-                tx.getSenderHex(),
-                tx.getHashHex(),
-                tx.getNonceAsLong(),
-                tx.getGasPriceAsU256(),
-                tx.getGasLimitAsU256()
+            tx.getSenderHex(),
+            tx.getValueAsUint(),
+            tx.getValueAsUint(),
+            tx.getReceiveHex(),
+            tx.getReceiveHex(),
+            CallType.COINBASE,
+            tx.getDataHex(),
+            tx.getSenderHex(),
+            tx.getHashHex(),
+            tx.getNonceAsLong(),
+            tx.getGasPriceAsU256(),
+            tx.getGasLimitAsU256()
         );
 
-        if(!coinbase){
+        if (!coinbase) {
             data.setCallType(tx.getReceiveHex().isEmpty() ? CallType.CREATE : CallType.CALL);
         } else {
             // for coinbase tx without v,r,s,
@@ -74,14 +74,14 @@ public class CallData {
 
     public byte[] getTxNonceAsBytes() {
         return
-                ByteUtil.longToBytesNoLeadZeroes(txNonce);
+            ByteUtil.longToBytesNoLeadZeroes(txNonce);
     }
 
     public CallData clone() {
         return new CallData(
-                caller, value, txValue, to, txTo,
-                callType, data, origin, txHash, txNonce,
-                gasPrice, gasLimit
+            caller, value, txValue, to, txTo,
+            callType, data, origin, txHash, txNonce,
+            gasPrice, gasLimit
         );
     }
 }

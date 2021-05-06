@@ -147,10 +147,10 @@ public class ByteArrayMap<V> implements Map<byte[], V> {
 
         private Entry<HexBytes, V> mapToEntry(Object o) {
             return new HashMap.SimpleEntry<>(
-                    HexBytes.fromBytes(
-                            ((Entry<byte[], V>) o).getKey()
-                    )
-                    , ((Entry<byte[], V>) o).getValue()
+                HexBytes.fromBytes(
+                    ((Entry<byte[], V>) o).getKey()
+                )
+                , ((Entry<byte[], V>) o).getValue()
             );
         }
 
@@ -199,15 +199,15 @@ public class ByteArrayMap<V> implements Map<byte[], V> {
         @Override
         public Object[] toArray() {
             return delegate
-                    .stream()
-                    .map(BytesEntry::new).toArray();
+                .stream()
+                .map(BytesEntry::new).toArray();
         }
 
         @Override
         public <T> T[] toArray(T[] a) {
             return (T[]) delegate
-                    .stream()
-                    .map(BytesEntry::new).toArray();
+                .stream()
+                .map(BytesEntry::new).toArray();
         }
 
         @Override
@@ -227,7 +227,7 @@ public class ByteArrayMap<V> implements Map<byte[], V> {
         @Override
         public boolean add(Entry<byte[], V> entry) {
             return
-                    delegate.add(mapToEntry(entry));
+                delegate.add(mapToEntry(entry));
         }
 
         @Override

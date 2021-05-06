@@ -1,6 +1,5 @@
 package org.tdf.sunflower.facade;
 
-import org.tdf.common.types.BlockConfirms;
 import org.tdf.sunflower.types.Transaction;
 
 import java.util.Collections;

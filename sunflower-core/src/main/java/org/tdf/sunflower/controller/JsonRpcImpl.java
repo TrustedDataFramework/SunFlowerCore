@@ -25,7 +25,7 @@ import static org.tdf.sunflower.controller.TypeConverter.*;
 
 @Service
 @RequiredArgsConstructor
-public class JsonRpcImpl implements JsonRpc{
+public class JsonRpcImpl implements JsonRpc {
     private final AccountTrie accountTrie;
     private final SunflowerRepository repository;
     private final TransactionPool pool;
@@ -58,7 +58,7 @@ public class JsonRpcImpl implements JsonRpc{
     @Override
     public String net_version() {
         return Integer.toString(
-                engine.getChainId()
+            engine.getChainId()
         );
     }
 
@@ -206,7 +206,7 @@ public class JsonRpcImpl implements JsonRpc{
     public String eth_sendRawTransaction(String rawData) throws Exception {
         Transaction tx = new Transaction(hexToByteArray(rawData));
         Map<HexBytes, String> errors = pool.collect(tx);
-        if(errors.get(tx.getHashHex()) != null)
+        if (errors.get(tx.getHashHex()) != null)
             throw new RuntimeException(errors.get(tx.getHashHex()));
         return TypeConverter.toJsonHex(tx.getHash());
     }
@@ -261,7 +261,7 @@ public class JsonRpcImpl implements JsonRpc{
         TransactionInfo info = repository.getTransactionInfo(hash);
         Transaction tx = repository.getTransactionByHash(hash.getBytes()).orElse(null);
         Block b = info == null ? null : repository.getBlock(info.getBlockHash()).orElse(null);
-        if(info == null || tx == null || b == null)
+        if (info == null || tx == null || b == null)
             return null;
         info.setTransaction(tx);
         return new TransactionReceiptDTO(b, info);
@@ -347,7 +347,7 @@ public class JsonRpcImpl implements JsonRpc{
         br.hash = isPending ? null : toJsonHex(block.getHash());
         br.parentHash = toJsonHex(block.getHashPrev());
         br.nonce = isPending ? null : toJsonHex(block.getNonce());
-        br.sha3Uncles= toJsonHex(block.getUnclesHash());
+        br.sha3Uncles = toJsonHex(block.getUnclesHash());
         br.logsBloom = isPending ? null : toJsonHex(block.getLogsBloom());
         br.transactionsRoot = toJsonHex(block.getTransactionsRoot());
         br.stateRoot = toJsonHex(block.getStateRoot());

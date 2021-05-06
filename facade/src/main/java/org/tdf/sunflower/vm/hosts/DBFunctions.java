@@ -18,8 +18,8 @@ public class DBFunctions extends HostFunction {
     private final HexBytes address;
 
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
-            Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
-            Collections.singletonList(ValueType.I64)
+        Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
+        Collections.singletonList(ValueType.I64)
     );
 
     public DBFunctions(Backend backend, HexBytes address) {
@@ -30,12 +30,12 @@ public class DBFunctions extends HostFunction {
 
     private HexBytes getKey(long... longs) {
         return (HexBytes) WBI
-                .peek(getInstance(), (int) longs[1], WbiType.BYTES);
+            .peek(getInstance(), (int) longs[1], WbiType.BYTES);
     }
 
     private HexBytes getValue(long... longs) {
         return (HexBytes) WBI
-                .peek(getInstance(), (int) longs[2], WbiType.BYTES);
+            .peek(getInstance(), (int) longs[2], WbiType.BYTES);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class DBFunctions extends HostFunction {
                 HexBytes key = getKey(longs);
                 HexBytes value = this.backend.dbGet(address, key);
                 return WBI
-                        .mallocBytes(getInstance(), value);
+                    .mallocBytes(getInstance(), value);
             }
             case HAS: {
                 HexBytes key = getKey(longs);

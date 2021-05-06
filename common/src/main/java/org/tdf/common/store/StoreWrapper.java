@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  */
 @AllArgsConstructor
 public class StoreWrapper<K, V, U, R>
-        implements BatchStore<K, V> {
+    implements BatchStore<K, V> {
 
     @Getter
     private Store<byte[], byte[]> store;
@@ -55,11 +55,11 @@ public class StoreWrapper<K, V, U, R>
     @Override
     public void putAll(Collection<? extends Map.Entry<? extends K, ? extends V>> rows) {
         ((BatchStore<byte[], byte[]>) store).putAll(
-                rows.stream().map(e -> new AbstractMap.SimpleEntry<>(
-                        keyCodec.getEncoder().apply(e.getKey()),
-                        valueCodec.getEncoder().apply(e.getValue())
-                ))
-                        .collect(Collectors.toList())
+            rows.stream().map(e -> new AbstractMap.SimpleEntry<>(
+                keyCodec.getEncoder().apply(e.getKey()),
+                valueCodec.getEncoder().apply(e.getValue())
+            ))
+                .collect(Collectors.toList())
         );
     }
 }

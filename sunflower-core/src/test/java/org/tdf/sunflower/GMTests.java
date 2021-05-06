@@ -62,7 +62,7 @@ public class GMTests {
             byte[] pkhash = SM3Util.hash(kp.getPublicKey().getEncoded());
             String address = Hex.encodeHexString(Arrays.copyOfRange(pkhash, pkhash.length - 20, pkhash.length));
             System.out.println(
-                    String.format("accounts sk: %s pk: %s address %s", sk, pk, address)
+                String.format("accounts sk: %s pk: %s address %s", sk, pk, address)
             );
         }
     }
@@ -86,8 +86,8 @@ public class GMTests {
 //    @Ignore
     public void test5() {
         Cache<HexBytes, byte[]> cache = CacheBuilder.newBuilder()
-                .maximumSize(1024)
-                .build();
+            .maximumSize(1024)
+            .build();
 
         KeyPair kp1 = SM2.generateKeyPair();
         KeyPair kp2 = SM2.generateKeyPair();
@@ -110,10 +110,10 @@ public class GMTests {
         HexBytes one = HexBytes.fromHex("0000000000000000000000000000000000000000000000000000000000000001");
 
         HexBytes expectedPk = HexBytes.fromBytes(new SM2PrivateKey(sk.getBytes())
-                .generatePublicKey().getEncoded());
+            .generatePublicKey().getEncoded());
 
         HexBytes GX = HexBytes.fromBytes(new SM2PrivateKey(one.getBytes())
-                .generatePublicKey().getEncoded());
+            .generatePublicKey().getEncoded());
 
         System.out.println(pk);
         System.out.println(expectedPk);

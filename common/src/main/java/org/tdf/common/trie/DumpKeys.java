@@ -2,7 +2,6 @@ package org.tdf.common.trie;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import org.tdf.common.util.ByteArraySet;
 import org.tdf.common.util.HexBytes;
 
 import java.util.HashSet;

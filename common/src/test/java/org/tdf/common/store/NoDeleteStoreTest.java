@@ -31,8 +31,8 @@ public abstract class NoDeleteStoreTest {
         assert Objects.requireNonNull(store.get("a".getBytes())).length != 0;
 
         assert FastByteComparisons.equal(
-                Objects.requireNonNull(store.get("a".getBytes())),
-                "1".getBytes()
+            Objects.requireNonNull(store.get("a".getBytes())),
+            "1".getBytes()
         );
 
         store.flush();
@@ -44,8 +44,8 @@ public abstract class NoDeleteStoreTest {
         store.remove("a".getBytes());
         store.put("a".getBytes(), "11".getBytes());
         assert FastByteComparisons.equal(
-                Objects.requireNonNull(store.get("a".getBytes())),
-                "11".getBytes()
+            Objects.requireNonNull(store.get("a".getBytes())),
+            "11".getBytes()
         );
     }
 }

@@ -1,7 +1,6 @@
 package org.tdf.sunflower.types;
 
 import lombok.Value;
-import org.tdf.common.util.HexBytes;
 
 import java.util.Collections;
 import java.util.List;

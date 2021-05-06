@@ -20,9 +20,9 @@ public class U256Host extends HostFunction {
     }
 
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
-            // offset, length, offset
-            Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
-            Collections.singletonList(ValueType.I64));
+        // offset, length, offset
+        Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
+        Collections.singletonList(ValueType.I64));
 
     public U256Host() {
         super("_u256", FUNCTION_TYPE);

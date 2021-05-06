@@ -20,7 +20,7 @@ public class ConsensusConfig {
     protected final PropertyReader reader;
 
 
-    public ConsensusConfig(Properties properties){
+    public ConsensusConfig(Properties properties) {
         this(new PropertiesWrapper(properties));
     }
 
@@ -40,42 +40,42 @@ public class ConsensusConfig {
 
 
     public String getName() {
-        if(name != null)
+        if (name != null)
             return name;
         name = reader.getAsLowerCased("name");
         return name;
     }
 
     public int getBlockInterval() {
-        if(blockInterval != null)
+        if (blockInterval != null)
             return blockInterval;
         blockInterval = reader.getAsInt("block-interval");
         return blockInterval;
     }
 
     public boolean enableMining() {
-        if(enableMining != null)
+        if (enableMining != null)
             return enableMining;
         enableMining = reader.getAsBool("enable-mining");
         return enableMining;
     }
 
     public HexBytes getPrivateKey() {
-        if(privateKey != null)
+        if (privateKey != null)
             return privateKey;
         privateKey = reader.getAsPrivate("private-key");
         return privateKey;
     }
 
     public boolean allowEmptyBlock() {
-        if(allowEmptyBlock != null)
+        if (allowEmptyBlock != null)
             return allowEmptyBlock;
         allowEmptyBlock = reader.getAsBool("allow-empty-block");
         return allowEmptyBlock;
     }
 
     public HexBytes getMinerCoinBase() {
-        if(minerCoinBase != null)
+        if (minerCoinBase != null)
             return minerCoinBase;
 
         minerCoinBase = reader.getAsAddress("miner-coin-base");
@@ -83,14 +83,14 @@ public class ConsensusConfig {
     }
 
     public int getBlocksPerEra() {
-        if(blocksPerEra != null)
+        if (blocksPerEra != null)
             return blocksPerEra;
         blocksPerEra = reader.getAsInt("blocks-per-era");
         return blocksPerEra;
     }
 
     public int getMaxMiners() {
-        if(maxMiners != null)
+        if (maxMiners != null)
             return maxMiners;
         maxMiners = reader.getAsInt("max-miners");
         return maxMiners;

@@ -2,7 +2,6 @@ package org.tdf.sunflower.controller;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.tdf.common.types.Uint256;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.LogInfo;
 import org.tdf.sunflower.types.Transaction;
@@ -11,7 +10,6 @@ import org.tdf.sunflower.vm.CallType;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import static org.tdf.sunflower.controller.TypeConverter.*;
 
@@ -156,41 +154,41 @@ public interface JsonRpc {
         @SneakyThrows
         public CallData toCallData() {
             CallData data = CallData.empty();
-            if(from != null && !from.isEmpty()){
+            if (from != null && !from.isEmpty()) {
                 data.setCaller(jsonHexToHexBytes(from));
                 data.setOrigin(jsonHexToHexBytes(from));
             }
-            if(to != null && !to.isEmpty()) {
+            if (to != null && !to.isEmpty()) {
                 data.setTxTo(jsonHexToHexBytes(to));
                 data.setTo(jsonHexToHexBytes(to));
                 data.setCallType(CallType.CALL);
             } else {
                 data.setCallType(CallType.CREATE);
             }
-            if(gas != null && !gas.isEmpty()) {
+            if (gas != null && !gas.isEmpty()) {
                 data.setGasLimit(
-                        jsonHexToU256(gas)
+                    jsonHexToU256(gas)
                 );
             }
-            if(gasPrice != null && !gasPrice.isEmpty()) {
+            if (gasPrice != null && !gasPrice.isEmpty()) {
                 data.setGasPrice(
-                        jsonHexToU256(gasPrice)
+                    jsonHexToU256(gasPrice)
                 );
             }
-            if(value != null && !value.isEmpty()) {
+            if (value != null && !value.isEmpty()) {
                 data.setValue(
-                        jsonHexToU256(value)
+                    jsonHexToU256(value)
                 );
                 data.setTxValue(
-                        jsonHexToU256(value)
+                    jsonHexToU256(value)
                 );
             }
-            if(this.data != null && !this.data.isEmpty()) {
+            if (this.data != null && !this.data.isEmpty()) {
                 data.setData(
-                        jsonHexToHexBytes(this.data)
+                    jsonHexToHexBytes(this.data)
                 );
             }
-            if(nonce != null && !nonce.isEmpty()) {
+            if (nonce != null && !nonce.isEmpty()) {
                 data.setTxNonce(jsonHexToLong(nonce));
             }
             return data;
@@ -199,14 +197,14 @@ public interface JsonRpc {
         @Override
         public String toString() {
             return "CallArguments{" +
-                    "from='" + from + '\'' +
-                    ", to='" + to + '\'' +
-                    ", gas='" + gas + '\'' +
-                    ", gasPrice='" + gasPrice + '\'' +
-                    ", value='" + value + '\'' +
-                    ", data='" + data + '\'' +
-                    ", nonce='" + nonce + '\'' +
-                    '}';
+                "from='" + from + '\'' +
+                ", to='" + to + '\'' +
+                ", gas='" + gas + '\'' +
+                ", gasPrice='" + gasPrice + '\'' +
+                ", value='" + value + '\'' +
+                ", data='" + data + '\'' +
+                ", nonce='" + nonce + '\'' +
+                '}';
         }
     }
 
@@ -234,26 +232,26 @@ public interface JsonRpc {
         @Override
         public String toString() {
             return "BlockResult{" +
-                    "number='" + number + '\'' +
-                    ", hash='" + hash + '\'' +
-                    ", parentHash='" + parentHash + '\'' +
-                    ", nonce='" + nonce + '\'' +
-                    ", sha3Uncles='" + sha3Uncles + '\'' +
-                    ", logsBloom='" + logsBloom + '\'' +
-                    ", transactionsRoot='" + transactionsRoot + '\'' +
-                    ", stateRoot='" + stateRoot + '\'' +
-                    ", receiptsRoot='" + receiptsRoot + '\'' +
-                    ", miner='" + miner + '\'' +
-                    ", difficulty='" + difficulty + '\'' +
-                    ", totalDifficulty='" + totalDifficulty + '\'' +
-                    ", extraData='" + extraData + '\'' +
-                    ", size='" + size + '\'' +
-                    ", gas='" + gasLimit + '\'' +
-                    ", gasUsed='" + gasUsed + '\'' +
-                    ", timestamp='" + timestamp + '\'' +
-                    ", transactions=" + Arrays.toString(transactions) +
-                    ", uncles=" + Arrays.toString(uncles) +
-                    '}';
+                "number='" + number + '\'' +
+                ", hash='" + hash + '\'' +
+                ", parentHash='" + parentHash + '\'' +
+                ", nonce='" + nonce + '\'' +
+                ", sha3Uncles='" + sha3Uncles + '\'' +
+                ", logsBloom='" + logsBloom + '\'' +
+                ", transactionsRoot='" + transactionsRoot + '\'' +
+                ", stateRoot='" + stateRoot + '\'' +
+                ", receiptsRoot='" + receiptsRoot + '\'' +
+                ", miner='" + miner + '\'' +
+                ", difficulty='" + difficulty + '\'' +
+                ", totalDifficulty='" + totalDifficulty + '\'' +
+                ", extraData='" + extraData + '\'' +
+                ", size='" + size + '\'' +
+                ", gas='" + gasLimit + '\'' +
+                ", gasUsed='" + gasUsed + '\'' +
+                ", timestamp='" + timestamp + '\'' +
+                ", transactions=" + Arrays.toString(transactions) +
+                ", uncles=" + Arrays.toString(uncles) +
+                '}';
         }
     }
 
@@ -267,12 +265,12 @@ public interface JsonRpc {
         @Override
         public String toString() {
             return "FilterRequest{" +
-                    "fromBlock='" + fromBlock + '\'' +
-                    ", toBlock='" + toBlock + '\'' +
-                    ", address=" + address +
-                    ", topics=" + Arrays.toString(topics) +
-                    ", blockHash='" + blockHash + '\'' +
-                    '}';
+                "fromBlock='" + fromBlock + '\'' +
+                ", toBlock='" + toBlock + '\'' +
+                ", address=" + address +
+                ", topics=" + Arrays.toString(topics) +
+                ", blockHash='" + blockHash + '\'' +
+                '}';
         }
     }
 
@@ -303,15 +301,15 @@ public interface JsonRpc {
         @Override
         public String toString() {
             return "LogFilterElement{" +
-                    "logIndex='" + logIndex + '\'' +
-                    ", blockNumber='" + blockNumber + '\'' +
-                    ", blockHash='" + blockHash + '\'' +
-                    ", transactionHash='" + transactionHash + '\'' +
-                    ", transactionIndex='" + transactionIndex + '\'' +
-                    ", address='" + address + '\'' +
-                    ", data='" + data + '\'' +
-                    ", topics=" + Arrays.toString(topics) +
-                    '}';
+                "logIndex='" + logIndex + '\'' +
+                ", blockNumber='" + blockNumber + '\'' +
+                ", blockHash='" + blockHash + '\'' +
+                ", transactionHash='" + transactionHash + '\'' +
+                ", transactionIndex='" + transactionIndex + '\'' +
+                ", address='" + address + '\'' +
+                ", data='" + data + '\'' +
+                ", topics=" + Arrays.toString(topics) +
+                '}';
         }
     }
 }

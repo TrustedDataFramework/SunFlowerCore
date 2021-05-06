@@ -18,14 +18,14 @@ public class PoWValidator extends AbstractValidator {
         BlockValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
 
-        Uint256 nbits = poW.getNBits(dependency.getStateRoot());
+        Uint256 nbits = poW.bios.getNBits(dependency.getStateRoot());
         if (PoW.compare(PoW.getPoWHash(block), nbits.getData()) > 0)
             return ValidateResult.fault(
-                    String.format(
-                            "nbits validate failed hash = %s, nbits = %s",
-                            HexBytes.fromBytes(PoW.getPoWHash(block)),
-                            HexBytes.fromBytes(nbits.getData())
-                    )
+                String.format(
+                    "nbits validate failed hash = %s, nbits = %s",
+                    HexBytes.fromBytes(PoW.getPoWHash(block)),
+                    HexBytes.fromBytes(nbits.getData())
+                )
             );
         return res;
     }

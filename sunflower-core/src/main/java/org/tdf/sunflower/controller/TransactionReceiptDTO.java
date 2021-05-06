@@ -3,9 +3,9 @@ package org.tdf.sunflower.controller;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Value;
 import lombok.experimental.NonFinal;
-import org.tdf.sunflower.types.TransactionInfo;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.LogInfo;
+import org.tdf.sunflower.types.TransactionInfo;
 import org.tdf.sunflower.types.TransactionReceipt;
 
 import static org.tdf.sunflower.controller.TypeConverter.toJsonHex;
@@ -52,7 +52,7 @@ public class TransactionReceiptDTO {
         for (int i = 0; i < logs.length; i++) {
             LogInfo logInfo = receipt.getLogInfoList().get(i);
             logs[i] = new JsonRpc.LogFilterElement(logInfo, block, txInfo.getIndex(),
-                    txInfo.getReceipt().getTransaction(), i);
+                txInfo.getReceipt().getTransaction(), i);
         }
         logsBloom = toJsonHex(receipt.getBloomFilter().getData());
 

@@ -7,7 +7,6 @@ import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
-import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.CryptoContext;
@@ -41,7 +40,7 @@ public class VrfGenesis {
         long blockNum = ByteUtil.byteArrayToLong(number.getBytes());
 
         Trie<?, ?> trie = Trie.<byte[], byte[]>builder().keyCodec(Codec.identity()).valueCodec(Codec.identity())
-                .store(new ByteArrayMapStore<>()).hashFunction(CryptoContext::hash).build();
+            .store(new ByteArrayMapStore<>()).hashFunction(CryptoContext::hash).build();
 
         HexBytes emptyRoot = Transaction.calcTxTrie(Collections.emptyList());
 
@@ -67,7 +66,7 @@ public class VrfGenesis {
         byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
         int round = 0;
         byte[] payloadBytes = VrfUtil.genPayload(blockNum, round, seed, coinbase, difficulty, block.getHash(), vrfSk,
-                vrfPk, vrfConfig);
+            vrfPk, vrfConfig);
         HexBytes payload = HexBytes.fromBytes(payloadBytes);
 //        block.setPayload(payload);
     }

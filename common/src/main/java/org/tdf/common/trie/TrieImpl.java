@@ -34,19 +34,19 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     private Node root;
 
     static <K, V> TrieImpl<K, V> newInstance(
-            @NonNull Function<byte[], byte[]> hashFunction,
-            @NonNull Store<byte[], byte[]> store,
-            @NonNull Codec<K> keyCodec,
-            @NonNull Codec<V> valueCodec
+        @NonNull Function<byte[], byte[]> hashFunction,
+        @NonNull Store<byte[], byte[]> store,
+        @NonNull Codec<K> keyCodec,
+        @NonNull Codec<V> valueCodec
     ) {
 
         return new TrieImpl<>(
-                HexBytes.fromBytes(hashFunction.apply(RLPItem.NULL.getEncoded())),
-                new HashFunction(hashFunction),
-                store,
-                keyCodec,
-                valueCodec,
-                null
+            HexBytes.fromBytes(hashFunction.apply(RLPItem.NULL.getEncoded())),
+            new HashFunction(hashFunction),
+            store,
+            keyCodec,
+            valueCodec,
+            null
         );
     }
 
@@ -106,14 +106,14 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     public TrieImpl<K, V> revert(@NonNull HexBytes rootHash, Store<byte[], byte[]> store) {
         if (FastByteComparisons.equal(rootHash.getBytes(), nullHash.getBytes()))
             return new TrieImpl<>(nullHash, function, store,
-                    kCodec, vCodec, null);
+                kCodec, vCodec, null);
         byte[] v = store.get(rootHash.getBytes());
         if (v == null || v.length == 0) throw new RuntimeException("rollback failed, root hash not exists");
         return new TrieImpl<>(
-                nullHash,
-                function,
-                store, kCodec, vCodec,
-                Node.fromRootHash(rootHash.getBytes(), ReadOnlyStore.of(store), function)
+            nullHash,
+            function,
+            store, kCodec, vCodec,
+            Node.fromRootHash(rootHash.getBytes(), ReadOnlyStore.of(store), function)
         );
     }
 
@@ -159,10 +159,10 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     @Override
     public TrieImpl<K, V> revert() {
         return new TrieImpl<>(
-                nullHash,
-                function,
-                store, kCodec, vCodec,
-                null
+            nullHash,
+            function,
+            store, kCodec, vCodec,
+            null
         );
     }
 
@@ -179,10 +179,10 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
 
     public Map<HexBytes, HexBytes> getProofInternal(byte[] key) {
         return root == null ?
-                Collections.emptyMap() :
-                root.getProof(
-                        TrieKey.fromNormal(key),
-                        new HashMap<>()
-                );
+            Collections.emptyMap() :
+            root.getProof(
+                TrieKey.fromNormal(key),
+                new HashMap<>()
+            );
     }
 }

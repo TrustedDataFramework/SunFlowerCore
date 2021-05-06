@@ -14,12 +14,12 @@ import java.nio.charset.StandardCharsets;
 public class Util {
     public static byte[] getRawForSign(Message msg) {
         return Bytes.concat(
-                BigEndian.encodeInt32(msg.getCode().getNumber()),
-                BigEndian.encodeInt64(msg.getCreatedAt().getSeconds()),
-                msg.getRemotePeer().getBytes(StandardCharsets.UTF_8),
-                BigEndian.encodeInt64(msg.getTtl()),
-                BigEndian.encodeInt64(msg.getNonce()),
-                msg.getBody().toByteArray()
+            BigEndian.encodeInt32(msg.getCode().getNumber()),
+            BigEndian.encodeInt64(msg.getCreatedAt().getSeconds()),
+            msg.getRemotePeer().getBytes(StandardCharsets.UTF_8),
+            BigEndian.encodeInt64(msg.getTtl()),
+            BigEndian.encodeInt64(msg.getNonce()),
+            msg.getBody().toByteArray()
         );
     }
 
@@ -47,7 +47,7 @@ public class Util {
      */
     static String externalIp() throws Exception {
         BufferedReader in = new BufferedReader(new InputStreamReader(
-                new URL("http://checkip.amazonaws.com").openStream()));
+            new URL("http://checkip.amazonaws.com").openStream()));
         String externalIp = in.readLine();
         if (externalIp == null || externalIp.trim().isEmpty()) {
             throw new IOException("Invalid address: '" + externalIp + "'");

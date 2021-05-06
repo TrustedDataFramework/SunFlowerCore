@@ -4,8 +4,8 @@
 package org.tdf.sunflower.proto;
 
 public interface MultiPartOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:MultiPart)
-        com.google.protobuf.MessageOrBuilder {
+    // @@protoc_insertion_point(interface_extends:MultiPart)
+    com.google.protobuf.MessageOrBuilder {
 
     /**
      * <code>bytes hash = 1;</code>

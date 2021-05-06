@@ -28,21 +28,21 @@ public abstract class AbstractValidator implements Validator {
         // a block should contains exactly one coin base transaction
 
         // validate coinbase
-        if(!block.getCoinbase().equals(block.getBody().get(0).getReceiveHex())) {
+        if (!block.getCoinbase().equals(block.getBody().get(0).getReceiveHex())) {
             return BlockValidateResult.fault("block coinbase not equalt to coinbase tx receiver");
         }
 
         boolean isCoinbase = true;
         for (Transaction t : block.getBody()) {
             // validate transaction signature
-            if(!isCoinbase && t.getSignature() == null)
+            if (!isCoinbase && t.getSignature() == null)
                 return BlockValidateResult.fault("unsigned transaction is not allowed here");
             try {
                 t.verify();
-            }catch (Exception e) {
+            } catch (Exception e) {
                 return BlockValidateResult.fault(e.getMessage());
             }
-            if(!isCoinbase && !t.verifySig()) {
+            if (!isCoinbase && !t.verifySig()) {
                 return BlockValidateResult.fault("verify signature failed");
             }
             isCoinbase = false;
@@ -52,11 +52,11 @@ public abstract class AbstractValidator implements Validator {
         }
         if (parent.getCreatedAt() >= block.getCreatedAt()) {
             return BlockValidateResult.fault(
-                    String.format("invalid timestamp %d at block height %d", block.getCreatedAt(), block.getHeight())
+                String.format("invalid timestamp %d at block height %d", block.getCreatedAt(), block.getHeight())
             );
         }
         if (!Transaction.calcTxTrie(block.getBody()).equals(
-                block.getTransactionsRoot()
+            block.getTransactionsRoot()
         )) {
             return BlockValidateResult.fault("transactions root not match");
         }
@@ -83,10 +83,10 @@ public abstract class AbstractValidator implements Validator {
 
                 currentGas += r.getGasUsed();
                 TransactionReceipt receipt = new TransactionReceipt(
-                        currentRoot.getBytes(),
-                        ByteUtil.longToBytesNoLeadZeroes(currentGas),
-                        new Bloom(),
-                        Collections.emptyList()
+                    currentRoot.getBytes(),
+                    ByteUtil.longToBytesNoLeadZeroes(currentGas),
+                    new Bloom(),
+                    Collections.emptyList()
                 );
                 receipt.setGasUsed(r.getGasUsed());
                 receipt.setExecutionResult(r.getExecutionResult());
@@ -101,10 +101,10 @@ public abstract class AbstractValidator implements Validator {
             currentGas += r.getGasUsed();
 
             TransactionReceipt receipt = new TransactionReceipt(
-                    currentRoot.getBytes(),
-                    ByteUtil.longToBytesNoLeadZeroes(currentGas),
-                    new Bloom(),
-                    Collections.emptyList()
+                currentRoot.getBytes(),
+                ByteUtil.longToBytesNoLeadZeroes(currentGas),
+                new Bloom(),
+                Collections.emptyList()
             );
             receipt.setGasUsed(r.getGasUsed());
             receipt.setExecutionResult(r.getExecutionResult());
@@ -116,7 +116,7 @@ public abstract class AbstractValidator implements Validator {
             }
 
             // validate receipt trie root
-            if(!TransactionReceipt.calcReceiptsTrie(receipts).equals(block.getReceiptTrieRoot())) {
+            if (!TransactionReceipt.calcReceiptsTrie(receipts).equals(block.getReceiptTrieRoot())) {
                 return BlockValidateResult.fault("receipts trie root not match");
             }
 

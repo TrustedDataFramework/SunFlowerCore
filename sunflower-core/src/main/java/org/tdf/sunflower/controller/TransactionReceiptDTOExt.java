@@ -1,7 +1,7 @@
 package org.tdf.sunflower.controller;
 
-import org.tdf.sunflower.types.TransactionInfo;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.TransactionInfo;
 
 import static org.tdf.sunflower.controller.TypeConverter.toJsonHex;
 

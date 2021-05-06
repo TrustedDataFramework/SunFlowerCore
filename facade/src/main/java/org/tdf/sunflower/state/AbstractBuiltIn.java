@@ -12,7 +12,7 @@ import org.tdf.sunflower.vm.abi.Abi;
 import java.util.List;
 import java.util.Objects;
 
-public abstract class AbstractBuiltIn implements BuiltinContract{
+public abstract class AbstractBuiltIn implements BuiltinContract {
     protected StateTrie<HexBytes, Account> accounts;
     protected SunflowerRepository repository;
 
@@ -30,7 +30,7 @@ public abstract class AbstractBuiltIn implements BuiltinContract{
     }
 
     protected byte[] getSelector(HexBytes data) {
-        return data.slice(0 ,4).getBytes();
+        return data.slice(0, 4).getBytes();
     }
 
     @Override

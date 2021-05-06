@@ -23,7 +23,7 @@ public class PrefixStore<K, V> implements IterableStore<K, V> {
         byte[] encoded = kCodec.getEncoder().apply(k);
         HexBytes withPrefix = verifyAndPrefix(encoded);
         HexBytes v = contractStorage.get(
-                withPrefix
+            withPrefix
         );
         return (v == null || v.size() == 0) ? null : vCodec.getDecoder().apply(v.getBytes());
     }
@@ -45,10 +45,10 @@ public class PrefixStore<K, V> implements IterableStore<K, V> {
     private TreeSet<HexBytes> keySet() {
         HexBytes keys = contractStorage.get(prefix);
         TreeSet<HexBytes> keySet = keys == null || keys.size() == 0 ?
-                new TreeSet<>() :
-                new TreeSet<>(
-                        Arrays.asList(RLPUtil.decode(keys, HexBytes[].class))
-                );
+            new TreeSet<>() :
+            new TreeSet<>(
+                Arrays.asList(RLPUtil.decode(keys, HexBytes[].class))
+            );
         return keySet;
     }
 
@@ -82,12 +82,12 @@ public class PrefixStore<K, V> implements IterableStore<K, V> {
         Map<K, V> map = new HashMap<>();
         for (HexBytes key : keySet()) {
             map.put(
-                    kCodec.getDecoder().apply(key.getBytes()),
-                    vCodec.getDecoder().apply(
-                            contractStorage.get(
-                                    verifyAndPrefix(key.getBytes())
-                            ).getBytes()
-                    )
+                kCodec.getDecoder().apply(key.getBytes()),
+                vCodec.getDecoder().apply(
+                    contractStorage.get(
+                        verifyAndPrefix(key.getBytes())
+                    ).getBytes()
+                )
             );
         }
         return map.entrySet().iterator();

@@ -12,7 +12,6 @@ import org.apache.commons.collections4.Predicate;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.tdf.common.util.HashUtil;
-import org.tdf.sunflower.types.CryptoContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,18 +26,16 @@ public class Abi extends ArrayList<Abi.Entry> {
      * @param arrays - arrays to merge
      * @return - merged array
      */
-    public static byte[] merge(byte[]... arrays)
-    {
+    public static byte[] merge(byte[]... arrays) {
         int count = 0;
-        for (byte[] array: arrays)
-        {
+        for (byte[] array : arrays) {
             count += array.length;
         }
 
         // Create new array and copy all array contents
         byte[] mergedArray = new byte[count];
         int start = 0;
-        for (byte[] array: arrays) {
+        for (byte[] array : arrays) {
             System.arraycopy(array, 0, mergedArray, start, array.length);
             start += array.length;
         }
@@ -47,8 +44,8 @@ public class Abi extends ArrayList<Abi.Entry> {
 
 
     private final static ObjectMapper DEFAULT_MAPPER = new ObjectMapper()
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
 
     public static Abi fromJson(String json) {
         try {
@@ -146,8 +143,8 @@ public class Abi extends ArrayList<Abi.Entry> {
                 int offset = 0;
                 for (Param param : params) {
                     Object decoded = param.type.isDynamicType()
-                            ? param.type.decode(encoded, SolidityType.IntType.decodeInt(encoded, offset).intValue())
-                            : param.type.decode(encoded, offset);
+                        ? param.type.decode(encoded, SolidityType.IntType.decodeInt(encoded, offset).intValue())
+                        : param.type.decode(encoded, offset);
                     result.add(decoded);
 
                     offset += param.type.getFixedSize();

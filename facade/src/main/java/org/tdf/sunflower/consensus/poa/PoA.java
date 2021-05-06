@@ -11,8 +11,10 @@ import org.tdf.sunflower.consensus.EconomicModel;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.consensus.poa.config.PoAConfig;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
-import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.state.*;
+import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.Authentication;
+import org.tdf.sunflower.state.BuiltinContract;
+import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.Transaction;
@@ -76,9 +78,6 @@ public class PoA extends AbstractConsensusEngine {
 
         setGenesisBlock(genesis.getBlock());
 
-        // broadcast farm-base transaction periodically
-        setPeerServerListener(PeerServerListener.NONE);
-        // create state repository
 
         if (this.config.getThreadId() != 0 && this.config.getThreadId() != GATEWAY_ID) {
             int core = Runtime.getRuntime().availableProcessors();

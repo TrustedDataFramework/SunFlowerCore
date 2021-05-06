@@ -45,17 +45,17 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
     @Override
     public void dial(Peer peer, byte[] message) {
         builder.buildAnother(message, 1, peer)
-                .forEach(m -> client.dial(peer, m));
+            .forEach(m -> client.dial(peer, m));
     }
 
     @Override
     public void broadcast(byte[] message) {
         client.peersCache.getChannels()
-                .filter(ch -> ch.getRemote().isPresent())
-                .forEach(ch ->
-                        builder.buildAnother(message, config.getMaxTTL(), ch.getRemote().get())
-                                .forEach(ch::write)
-                );
+            .filter(ch -> ch.getRemote().isPresent())
+            .forEach(ch ->
+                builder.buildAnother(message, config.getMaxTTL(), ch.getRemote().get())
+                    .forEach(ch::write)
+            );
     }
 
     @Override
@@ -82,7 +82,7 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         netLayer.start();
         resolveHost();
         log.info("peer server is listening on " +
-                self.encodeURI());
+            self.encodeURI());
         if (config.getBootstraps() != null) {
             client.bootstrap(config.getBootstraps());
         }
@@ -110,25 +110,25 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             try {
                 // create a example properties for error log
                 schema = mapper.writeValueAsProperties(
-                        PeerServerConfig.builder()
-                                .bootstraps(Collections.singletonList(new URI("node://localhost:9955")))
-                                .build()
+                    PeerServerConfig.builder()
+                        .bootstraps(Collections.singletonList(new URI("node://localhost:9955")))
+                        .build()
                 ).toString();
             } catch (Exception ignored) {
             }
             throw new RuntimeException(
-                    "load properties failed :" + properties.toString() + " expecting " + schema
+                "load properties failed :" + properties.toString() + " expecting " + schema
             );
         }
 
 
         if (!config.isEnableDiscovery() &&
-                Stream.of(config.getBootstraps(), config.getTrusted())
-                        .filter(Objects::nonNull)
-                        .map(List::size).reduce(0, Integer::sum) == 0
+            Stream.of(config.getBootstraps(), config.getTrusted())
+                .filter(Objects::nonNull)
+                .map(List::size).reduce(0, Integer::sum) == 0
         ) {
             log.warn("cannot connect to any peer for the discovery " +
-                    "is disabled and none bootstraps and trusted provided");
+                "is disabled and none bootstraps and trusted provided");
         }
         try {
             resolveSelf();
@@ -176,11 +176,11 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
             throw new RuntimeException("failed to parse peer");
         }
         ContextImpl context = ContextImpl.builder()
-                .channel(channel)
-                .client(client)
-                .message(message)
-                .builder(builder)
-                .remote(peer.get()).build();
+            .channel(channel)
+            .client(client)
+            .message(message)
+            .builder(builder)
+            .remote(peer.get()).build();
         for (Plugin plugin : plugins) {
             if (context.exited)
                 break;
@@ -241,8 +241,8 @@ public class PeerServerImpl implements ChannelListener, PeerServer {
         plugins.forEach(x -> x.onStop(this));
 
         client.peersCache
-                .getChannels()
-                .forEach(x -> x.close("application will shutdown"));
+            .getChannels()
+            .forEach(x -> x.close("application will shutdown"));
         try {
             netLayer.close();
         } catch (IOException e) {

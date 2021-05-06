@@ -32,17 +32,17 @@ public interface StateTrie<ID, S> {
     Store<byte[], byte[]> getTrieStore();
 
     default Backend createBackend(
-            Header parent,
-            Long newBlockCreatedAt,
-            boolean isStatic
+        Header parent,
+        Long newBlockCreatedAt,
+        boolean isStatic
     ) {
         return createBackend(parent, parent.getStateRoot(), newBlockCreatedAt, isStatic);
     }
 
     Backend createBackend(
-            Header parent,
-            HexBytes root,
-            Long newBlockCreatedAt,
-            boolean isStatic
+        Header parent,
+        HexBytes root,
+        Long newBlockCreatedAt,
+        boolean isStatic
     );
 }

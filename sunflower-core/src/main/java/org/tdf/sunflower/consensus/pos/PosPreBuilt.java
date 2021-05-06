@@ -2,12 +2,10 @@ package org.tdf.sunflower.consensus.pos;
 
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.PrefixStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
@@ -61,7 +59,7 @@ public class PosPreBuilt implements BuiltinContract {
     public List<NodeInfo> getNodeInfos(HexBytes stateRoot) {
         HexBytes v = getValue(stateRoot, NODE_INFO_KEY);
         return Arrays.asList(RLPUtil.decode(
-                v, NodeInfo[].class));
+            v, NodeInfo[].class));
     }
 
     public Optional<VoteInfo> getVoteInfo(HexBytes stateRoot, HexBytes txHash) {
@@ -73,10 +71,10 @@ public class PosPreBuilt implements BuiltinContract {
 
     public PrefixStore<HexBytes, VoteInfo> getVoteInfoStore(Store<HexBytes, HexBytes> contractStore) {
         return new PrefixStore<>(
-                contractStore,
-                VOTE_INFO_KEY,
-                Codecs.HEX,
-                Codecs.newRLPCodec(VoteInfo.class)
+            contractStore,
+            VOTE_INFO_KEY,
+            Codecs.HEX,
+            Codecs.newRLPCodec(VoteInfo.class)
         );
     }
 
@@ -103,8 +101,8 @@ public class PosPreBuilt implements BuiltinContract {
         HexBytes args = payload.slice(1);
 
         List<NodeInfo> nodeInfos = new ArrayList<>(
-                Arrays.asList(
-                        RLPUtil.decode(backend.dbGet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY), NodeInfo[].class))
+            Arrays.asList(
+                RLPUtil.decode(backend.dbGet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY), NodeInfo[].class))
         );
 
         PrefixStore<HexBytes, VoteInfo> voteInfos = getVoteInfoStore(backend.getAsStore(Constants.POS_CONTRACT_ADDR));
@@ -114,10 +112,10 @@ public class PosPreBuilt implements BuiltinContract {
                 if (callData.getValue().compareTo(Uint256.ZERO) == 0)
                     throw new RuntimeException("amount of vote cannot be 0 ");
                 Map.Entry<Integer, NodeInfo> e =
-                        findFirst(nodeInfos, x -> x.address.equals(args));
+                    findFirst(nodeInfos, x -> x.address.equals(args));
 
                 NodeInfo n = e.getKey() < 0 ? new NodeInfo(args, Uint256.ZERO, new ArrayList<>()) :
-                        e.getValue();
+                    e.getValue();
 
                 n.vote = n.vote.safeAdd(callData.getValue());
                 n.txHash.add(callData.getTxHash());
@@ -126,8 +124,8 @@ public class PosPreBuilt implements BuiltinContract {
                 else
                     nodeInfos.set(e.getKey(), n);
                 voteInfos.put(callData.getTxHash(), new VoteInfo(
-                        callData.getTxHash(), callData.getCaller(),
-                        args, callData.getValue()
+                    callData.getTxHash(), callData.getCaller(),
+                    args, callData.getValue()
                 ));
                 break;
             }
@@ -146,7 +144,7 @@ public class PosPreBuilt implements BuiltinContract {
                 }
 
                 Map.Entry<Integer, NodeInfo> e2 =
-                        findFirst(nodeInfos, x -> x.address.equals(voteInfo.to));
+                    findFirst(nodeInfos, x -> x.address.equals(voteInfo.to));
 
                 if (e2.getKey() < 0) {
                     throw new RuntimeException(voteInfo.getTo() + " abnormal withdrawal of vote");

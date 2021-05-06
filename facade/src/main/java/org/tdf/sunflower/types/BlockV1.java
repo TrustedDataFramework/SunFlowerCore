@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BlockV1 implements Chained {
-    public static BlockV1 fromV2(Block b){
+    public static BlockV1 fromV2(Block b) {
         BlockV1 r = new BlockV1(HeaderV1.fromV2(b.getHeader()));
         r.body = b.getBody().stream().map(TransactionV1::fromV2).collect(Collectors.toList());
         return r;

@@ -11,7 +11,9 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
 import org.tdf.sunflower.consensus.vrf.VrfGenesis.MinerInfo;
 import org.tdf.sunflower.consensus.vrf.contract.VrfPreBuiltContract;
-import org.tdf.sunflower.consensus.vrf.core.*;
+import org.tdf.sunflower.consensus.vrf.core.CommitProof;
+import org.tdf.sunflower.consensus.vrf.core.ProposalProof;
+import org.tdf.sunflower.consensus.vrf.core.VrfBlockWrapper;
 import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil.VrfMessageCodeAndBytes;
@@ -29,11 +31,13 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.util.FileUtils;
-import org.tdf.sunflower.util.MappingUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 @Getter
 @Setter
@@ -73,7 +77,7 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
     public void onMessage(Context context, PeerServer server) {
         byte[] messageBytes = context.getMessage();
         if (RLPElement.fromEncoded(messageBytes).asRLPList().get(0).asInt() > VrfMessageCode.NEW_MINED_BLOCK
-                .ordinal()) {
+            .ordinal()) {
             return;
         }
         VrfMessageCodeAndBytes codeAndBytes = VrfUtil.parseMessageBytes(messageBytes);
@@ -98,7 +102,7 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
     private void processNewMinedBlockMsg(byte[] bodyBytes) {
         Block blockNew = RLPCodec.decode(bodyBytes, Block.class);
         log.info("New mined block received from peer. Num #{}, Hash {}", blockNew.getHeight(),
-                blockNew.getHash().toString());
+            blockNew.getHash().toString());
         // merged into org.tdf.sunflower.service.NewMinedBlockWriter
         // saveBlock(blockNew, this.getSunflowerRepository(), this);
         vrfMiner.stop();
@@ -108,16 +112,16 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
     private void processCommitProofMsg(byte[] bodyBytes) {
         CommitProof commitProof = RLPCodec.decode(bodyBytes, CommitProof.class);
         log.info("VRF CommitProof received. Round #{}, miner {}, block hash {}", commitProof.getRound(),
-                ByteUtil.toHexString(commitProof.getCoinbase()),
-                ByteUtil.toHexString(commitProof.getBlockIdentifier().getHash()));
+            ByteUtil.toHexString(commitProof.getCoinbase()),
+            ByteUtil.toHexString(commitProof.getBlockIdentifier().getHash()));
         vrfStateMachine.addProof(commitProof, true);
     }
 
     private void processVrfProposalProofMsg(byte[] bodyBytes) {
         ProposalProof proposalProof = RLPCodec.decode(bodyBytes, ProposalProof.class);
         log.info("VRF ProposalProof received. Round #{}, miner {}, block hash {}", proposalProof.getRound(),
-                ByteUtil.toHexString(proposalProof.getCoinbase()),
-                ByteUtil.toHexString(proposalProof.getBlockIdentifier().getHash()));
+            ByteUtil.toHexString(proposalProof.getCoinbase()),
+            ByteUtil.toHexString(proposalProof.getBlockIdentifier().getHash()));
         vrfStateMachine.addProof(proposalProof, true);
     }
 
@@ -136,7 +140,7 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
         getEventBus().subscribe(NewBlockMined.class, (e) -> {
             Block block = e.getBlock();
             log.info("!!! Wow, new block mined. #{}, {}", block.getHeight(),
-                    ByteUtil.toHexString(block.getHash().getBytes()));
+                ByteUtil.toHexString(block.getHash().getBytes()));
 //                byte[] encoded = RLPSerializer.SERIALIZER.serialize(block);
 //                Message message = messageBuilder.buildMessage(Code.NEW_MINED_BLOCK, VrfConstants.MESSAGE_TTL, encoded);
             byte[] encoded = VrfUtil.buildMessageBytes(VrfMessageCode.NEW_MINED_BLOCK, block);
@@ -187,8 +191,6 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
         // Set collaterals from genesis
         setGenesisCollateral(genesis.miners, vrfContract);
         contractList.add(vrfContract);
-
-        initStateTrie();
 
         setValidator(new VrfValidator(getAccountTrie()));
 

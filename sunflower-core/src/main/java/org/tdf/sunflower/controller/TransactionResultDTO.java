@@ -40,17 +40,17 @@ public class TransactionResultDTO {
     @Override
     public String toString() {
         return "TransactionResultDTO{" +
-                "hash='" + hash + '\'' +
-                ", nonce='" + nonce + '\'' +
-                ", blockHash='" + blockHash + '\'' +
-                ", blockNumber='" + blockNumber + '\'' +
-                ", transactionIndex='" + transactionIndex + '\'' +
-                ", from='" + from + '\'' +
-                ", to='" + to + '\'' +
-                ", gas='" + gas + '\'' +
-                ", gasPrice='" + gasPrice + '\'' +
-                ", value='" + value + '\'' +
-                ", input='" + input + '\'' +
-                '}';
+            "hash='" + hash + '\'' +
+            ", nonce='" + nonce + '\'' +
+            ", blockHash='" + blockHash + '\'' +
+            ", blockNumber='" + blockNumber + '\'' +
+            ", transactionIndex='" + transactionIndex + '\'' +
+            ", from='" + from + '\'' +
+            ", to='" + to + '\'' +
+            ", gas='" + gas + '\'' +
+            ", gasPrice='" + gasPrice + '\'' +
+            ", value='" + value + '\'' +
+            ", input='" + input + '\'' +
+            '}';
     }
 }

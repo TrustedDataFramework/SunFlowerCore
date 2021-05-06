@@ -97,11 +97,11 @@ public class TypeConverter {
 
     public static Uint256 jsonHexToU256(String x) {
         return Uint256.of(
-                ByteUtil.hexStringToBytes(x)
+            ByteUtil.hexStringToBytes(x)
         );
     }
 
-    public static HexBytes jsonHexToHexBytes(String x){
+    public static HexBytes jsonHexToHexBytes(String x) {
         return HexBytes.fromBytes(ByteUtil.hexStringToBytes(x));
     }
 }

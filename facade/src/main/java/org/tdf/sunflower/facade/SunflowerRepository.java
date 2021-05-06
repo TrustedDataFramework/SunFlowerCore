@@ -1,6 +1,5 @@
 package org.tdf.sunflower.facade;
 
-import org.tdf.common.types.BlockConfirms;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;

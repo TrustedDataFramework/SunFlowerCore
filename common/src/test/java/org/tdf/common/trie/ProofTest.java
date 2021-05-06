@@ -32,7 +32,7 @@ public abstract class ProofTest {
     private String stoopingly = "stoopingly";
 
     private List<String> proofKeys = Arrays.asList(
-            "demoralize", "estivating", "impanelled", "acrogynous", "hamantasch", "prepotency"
+        "demoralize", "estivating", "impanelled", "acrogynous", "hamantasch", "prepotency"
     );
 
     private int fileSize;
@@ -44,14 +44,14 @@ public abstract class ProofTest {
         trie = supplyTrie();
 
         URL url = ClassLoader
-                .getSystemResource("trie/massive-upload.dmp");
+            .getSystemResource("trie/massive-upload.dmp");
         fileSize = url.openStream().available();
         Files.lines(Paths.get(url.toURI()))
-                .forEach(s -> {
-                    String[] kv = s.split("=");
-                    if (kv[0].equals("*") || kv[0].equals(stoopingly)) return;
-                    trie.put(kv[0], kv[1]);
-                });
+            .forEach(s -> {
+                String[] kv = s.split("=");
+                if (kv[0].equals("*") || kv[0].equals(stoopingly)) return;
+                trie.put(kv[0], kv[1]);
+            });
 
         trie.commit();
     }
@@ -68,9 +68,9 @@ public abstract class ProofTest {
         merklePath.forEach((k, v) -> store.put(k.getBytes(), v.getBytes()));
 
         assert trie
-                .revert(root, store)
-                .get(paramnesia)
-                .equals(val);
+            .revert(root, store)
+            .get(paramnesia)
+            .equals(val);
 
         merklePath = trie.getProof(stoopingly);
         Store<byte[], byte[]> store2 = new ByteArrayMapStore<>();
@@ -92,9 +92,9 @@ public abstract class ProofTest {
 
         HexBytes root = trie.revert(trie.getNullHash(), store).getRootHash();
         assert
-                empty.getNullHash().equals(
+            empty.getNullHash().equals(
                 root
-                );
+            );
     }
 
     @Test
@@ -102,14 +102,14 @@ public abstract class ProofTest {
         Map<HexBytes, HexBytes> rlpElement = trie.getProof(proofKeys);
 
         System.out.println(
-                "proof size = " + getProofSize(rlpElement)
+            "proof size = " + getProofSize(rlpElement)
         );
 
         Store<byte[], byte[]> store = new ByteArrayMapStore<>();
         rlpElement.forEach((k, v) -> store.put(k.getBytes(), v.getBytes()));
 
         Trie<String, String> merkleProof =
-                trie.revert(trie.getRootHash(), store);
+            trie.revert(trie.getRootHash(), store);
 
         for (String k : proofKeys) {
             String actual = merkleProof.get(k);
@@ -126,30 +126,30 @@ public abstract class ProofTest {
         String path = "C:\\Users\\Sal\\Desktop\\dumps\\blocks\\genesis.800040.rlp";
 
         Trie<byte[], RLPElement> accountTrie =
-                Trie.<byte[], RLPElement>builder()
-                        .hashFunction(HashUtil::sha3)
-                        .keyCodec(Codec.identity())
-                        .valueCodec(
-                                Codec.newInstance(RLPElement::getEncoded, RLPElement::fromEncoded)
-                        )
-                        .store(new ByteArrayMapStore<>())
-                        .build();
+            Trie.<byte[], RLPElement>builder()
+                .hashFunction(HashUtil::sha3)
+                .keyCodec(Codec.identity())
+                .valueCodec(
+                    Codec.newInstance(RLPElement::getEncoded, RLPElement::fromEncoded)
+                )
+                .store(new ByteArrayMapStore<>())
+                .build();
 
         byte[] binaryFile = Files.readAllBytes(Paths.get(path));
 
         System.out.println("file size = " + binaryFile.length);
 
         RLPElement el =
-                RLPElement.fromEncoded(binaryFile);
+            RLPElement.fromEncoded(binaryFile);
 
         RLPList accounts = el.get(1).asRLPList();
 
         List<byte[]> bigAccounts =
-                accounts
-                        .stream().sorted((x, y) -> y.getEncoded().length - x.getEncoded().length)
-                        .limit(100)
-                        .map(a -> a.get(0).get(1).asBytes())
-                        .collect(Collectors.toList());
+            accounts
+                .stream().sorted((x, y) -> y.getEncoded().length - x.getEncoded().length)
+                .limit(100)
+                .map(a -> a.get(0).get(1).asBytes())
+                .collect(Collectors.toList());
 
         for (RLPElement account : accounts) {
             byte[] key = account.get(0).get(1).asBytes();
@@ -167,28 +167,28 @@ public abstract class ProofTest {
 
         for (byte[] bigAccount : bigAccounts) {
             assert FastByteComparisons.equal(proofTrie.get(bigAccount)
-                    .getEncoded(), accountTrie.get(bigAccount).getEncoded());
+                .getEncoded(), accountTrie.get(bigAccount).getEncoded());
         }
 
         System.out.println("proof size = " + getProofSize(proof));
 
         System.out.println("accounts size = " +
-                bigAccounts.stream().map(accountTrie::get)
-                        .map(e -> e.getEncoded().length)
-                        .reduce(0, Integer::sum)
+            bigAccounts.stream().map(accountTrie::get)
+                .map(e -> e.getEncoded().length)
+                .reduce(0, Integer::sum)
         );
 
         System.out.println("proofs size = " + bigAccounts.stream()
-                .map(Collections::singleton)
-                .map(accountTrie::getProof)
-                .map(this::getProofSize)
-                .reduce(0, Integer::sum)
+            .map(Collections::singleton)
+            .map(accountTrie::getProof)
+            .map(this::getProofSize)
+            .reduce(0, Integer::sum)
         );
 
     }
 
     protected int getProofSize(Map<HexBytes, HexBytes> proof) {
         return proof.entrySet().stream().map(e -> e.getKey().size() + e.getValue().size())
-                .reduce(0, Integer::sum);
+            .reduce(0, Integer::sum);
     }
 }

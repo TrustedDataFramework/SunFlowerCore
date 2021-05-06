@@ -49,7 +49,7 @@ public class TransactionInfo {
         RLPList txInfo = RLPElement.fromEncoded(rlp).asRLPList();
         RLPList receiptRLP = txInfo.get(0).asRLPList();
         RLPItem blockHashRLP = txInfo.get(1).asRLPItem();
-        RLPItem indexRLP =  txInfo.get(2).asRLPItem();
+        RLPItem indexRLP = txInfo.get(2).asRLPItem();
 
         receipt = new TransactionReceipt(receiptRLP.getEncoded());
         blockHash = blockHashRLP.asBytes();

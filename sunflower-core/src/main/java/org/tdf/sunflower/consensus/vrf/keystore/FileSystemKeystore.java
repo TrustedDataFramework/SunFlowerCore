@@ -53,9 +53,9 @@ public class FileSystemKeystore implements Keystore {
     @Override
     public void removeKey(String pubkey) {
         getFiles().stream()
-                .filter(f -> hasPubkeyInName(pubkey, f))
-                .findFirst()
-                .ifPresent(f -> f.delete());
+            .filter(f -> hasPubkeyInName(pubkey, f))
+            .findFirst()
+            .ifPresent(f -> f.delete());
     }
 
     @Override
@@ -63,7 +63,7 @@ public class FileSystemKeystore implements Keystore {
         final String pubkey = Hex.toHexString(key.generatePublicKey().getEncoded());
         if (hasStoredKey(pubkey)) {
             throw new RuntimeException("Keystore is already exist for pubkey: " + pubkey +
-                    " Please remove old one first if you want to add with new password.");
+                " Please remove old one first if you want to add with new password.");
         }
 
         final File keysFolder = getKeyStoreLocation().toFile();
@@ -90,11 +90,11 @@ public class FileSystemKeystore implements Keystore {
     public String[] listStoredKeys() {
         final List<File> files = getFiles();
         return files.stream()
-                .filter(f -> !f.isDirectory())
-                .map(f -> f.getName().split("--"))
-                .filter(n -> n != null && n.length == 3)
-                .map(a -> "0x" + a[2])
-                .toArray(size -> new String[size]);
+            .filter(f -> !f.isDirectory())
+            .map(f -> f.getName().split("--"))
+            .filter(n -> n != null && n.length == 3)
+            .map(a -> "0x" + a[2])
+            .toArray(size -> new String[size]);
     }
 
     /**
@@ -103,19 +103,19 @@ public class FileSystemKeystore implements Keystore {
     @Override
     public PrivateKey loadStoredKey(String pubkey, String password) throws RuntimeException {
         return getFiles().stream()
-                .filter(f -> hasPubkeyInName(pubkey, f))
-                .map(f -> {
-                    try {
-                        return Files.readAllLines(f.toPath())
-                                .stream()
-                                .collect(Collectors.joining(""));
-                    } catch (IOException e) {
-                        throw new RuntimeException("Problem reading keystore file for pubkey:" + pubkey);
-                    }
-                })
-                .map(content -> keystoreFormat.fromKeystore(content, password))
-                .findFirst()
-                .orElse(null);
+            .filter(f -> hasPubkeyInName(pubkey, f))
+            .map(f -> {
+                try {
+                    return Files.readAllLines(f.toPath())
+                        .stream()
+                        .collect(Collectors.joining(""));
+                } catch (IOException e) {
+                    throw new RuntimeException("Problem reading keystore file for pubkey:" + pubkey);
+                }
+            })
+            .map(content -> keystoreFormat.fromKeystore(content, password))
+            .findFirst()
+            .orElse(null);
     }
 
     private boolean hasPubkeyInName(String pubkey, File file) {
@@ -132,9 +132,9 @@ public class FileSystemKeystore implements Keystore {
     @Override
     public boolean hasStoredKey(String pubkey) {
         return getFiles().stream()
-                .filter(f -> hasPubkeyInName(pubkey, f))
-                .findFirst()
-                .isPresent();
+            .filter(f -> hasPubkeyInName(pubkey, f))
+            .findFirst()
+            .isPresent();
     }
 
     private List<File> getFiles() {

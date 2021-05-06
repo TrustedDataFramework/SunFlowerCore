@@ -13,16 +13,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.tdf.common.trie.Trie;
-import org.tdf.sunflower.AppConfig;
-import org.tdf.sunflower.types.TransactionV1;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.sunflower.ApplicationConstants;
+import org.tdf.sunflower.AppConfig;
 import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.consensus.poa.PoA;
-import org.tdf.sunflower.consensus.pow.PoW;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.Miner;
 import org.tdf.sunflower.facade.SunflowerRepository;
@@ -37,7 +34,10 @@ import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.util.EnvReader;
 
 import java.lang.management.ManagementFactory;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -83,7 +83,6 @@ public class EntryController {
         Uint256 totalGasPrice = Uint256.ZERO;
         long totalTransactions = 0;
         for (Block b : blocks) {
-            boolean isCoinbase = true;
             for (int i = 0; i < b.getBody().size(); i++) {
                 if (i == 0)
                     continue;
@@ -95,35 +94,33 @@ public class EntryController {
         long yesterday = System.currentTimeMillis() / 1000 - (24 * 60 * 60);
         Optional<Header> o = binarySearch(yesterday, 0, best.getHeight());
 
-        String diff = consensusEngine.getName().equals("pow")
-                ? ((PoW) consensusEngine).getNBits(best.getStateRoot()).getDataHex().toHex()
-                : "";
+        String diff = "";
 
         EnvReader rd = new EnvReader(ctx.getEnvironment());
         return builder
-                .cpu(osMxBean.getSystemLoadAverage())
-                .memoryUsed(osMxBean.getTotalPhysicalMemorySize() - osMxBean.getFreePhysicalMemorySize())
-                .totalMemory(osMxBean.getTotalPhysicalMemorySize())
-                .averageGasPrice(
-                        totalTransactions == 0 ? Uint256.ZERO : totalGasPrice.div(Uint256.of(totalTransactions)))
-                .averageBlockInterval(rd.getBlockInterval()).height(best.getHeight())
-                .mining(blocks.stream().anyMatch(
-                        x -> x.getBody().size() > 0 && x.getBody().get(0).getReceiveHex().equals(miner.getMinerAddress())))
-                .currentDifficulty(diff).transactionPoolSize(0)
-                .blocksPerDay(o.map(h -> best.getHeight() - h.getHeight() + 1).orElse(0L))
-                .consensus(consensusEngine.getName())
-                .genesis(rd.getGenesis())
-                .ec(rd.getEC())
-                .hash(rd.getHash())
-                .ae(rd.getAE())
-                .blockInterval(rd.getBlockInterval())
-                .p2pAddress(peerServer.getSelf().encodeURI())
-                .blocksPerEra(rd.getBlocksPerEra())
-                .maxMiners(rd.getMaxMiners())
-                .allowUnauthorized(rd.isAllowUnauthorized())
-                .gasPrice(c.getVmGasPrice().longValue())
-                .build()
-                ;
+            .cpu(osMxBean.getSystemLoadAverage())
+            .memoryUsed(osMxBean.getTotalPhysicalMemorySize() - osMxBean.getFreePhysicalMemorySize())
+            .totalMemory(osMxBean.getTotalPhysicalMemorySize())
+            .averageGasPrice(
+                totalTransactions == 0 ? Uint256.ZERO : totalGasPrice.div(Uint256.of(totalTransactions)))
+            .averageBlockInterval(rd.getBlockInterval()).height(best.getHeight())
+            .mining(blocks.stream().anyMatch(
+                x -> x.getBody().size() > 0 && x.getBody().get(0).getReceiveHex().equals(miner.getMinerAddress())))
+            .currentDifficulty(diff).transactionPoolSize(0)
+            .blocksPerDay(o.map(h -> best.getHeight() - h.getHeight() + 1).orElse(0L))
+            .consensus(consensusEngine.getName())
+            .genesis(rd.getGenesis())
+            .ec(rd.getEC())
+            .hash(rd.getHash())
+            .ae(rd.getAE())
+            .blockInterval(rd.getBlockInterval())
+            .p2pAddress(peerServer.getSelf().encodeURI())
+            .blocksPerEra(rd.getBlocksPerEra())
+            .maxMiners(rd.getMaxMiners())
+            .allowUnauthorized(rd.isAllowUnauthorized())
+            .gasPrice(c.getVmGasPrice().longValue())
+            .build()
+            ;
     }
 
     private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func,
@@ -141,10 +138,10 @@ public class EntryController {
         if (height != null) {
             final long finalHeight = height;
             return func.apply(height)
-                    .orElseThrow(() -> new RuntimeException("block at height " + finalHeight + " not found"));
+                .orElseThrow(() -> new RuntimeException("block at height " + finalHeight + " not found"));
         }
         return func1.apply(HexBytes.decode(hashOrHeight))
-                .orElseThrow(() -> new RuntimeException("block of hash " + hashOrHeight + " not found"));
+            .orElseThrow(() -> new RuntimeException("block of hash " + hashOrHeight + " not found"));
     }
 
     @GetMapping(value = "/block/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -170,7 +167,7 @@ public class EntryController {
             a = Account.emptyAccount(addressHex, Uint256.ZERO);
         return AccountView.fromAccount(a);
     }
-    
+
     @GetMapping(value = "/peers", produces = MediaType.APPLICATION_JSON_VALUE)
     public PeersInfo peers() {
         return new PeersInfo(peerServer.getPeers(), peerServer.getBootStraps());
@@ -301,8 +298,8 @@ public class EntryController {
 
         static AccountView fromAccount(Account account) {
             return new AccountView(account.getAddress(), account.getNonce(), account.getBalance(),
-                    account.getCreatedBy(), account.getContractHash(),
-                    account.getStorageRoot());
+                account.getCreatedBy(), account.getContractHash(),
+                account.getStorageRoot());
         }
     }
 }

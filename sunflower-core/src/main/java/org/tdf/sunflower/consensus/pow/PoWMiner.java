@@ -33,9 +33,9 @@ public class PoWMiner extends AbstractMiner {
     private Future<?> task;
 
     public PoWMiner(
-            ConsensusConfig config,
-            TransactionPool tp,
-            PoW pow
+        ConsensusConfig config,
+        TransactionPool tp,
+        PoW pow
     ) {
         super(pow.getAccountTrie(), pow.getEventBus(), config);
         this.transactionPool = tp;
@@ -59,28 +59,28 @@ public class PoWMiner extends AbstractMiner {
     @Override
     protected Transaction createCoinBase(long height) {
         return Transaction.builder()
-                .gasLimit(ByteUtil.EMPTY_BYTE_ARRAY)
-                .receiveAddress(Address.empty().getBytes())
-                .data(PoWBios.UPDATE.encode())
-                .value(ByteUtil.EMPTY_BYTE_ARRAY)
-                .gasPrice(ByteUtil.EMPTY_BYTE_ARRAY)
-                .nonce(ByteUtil.longToBytesNoLeadZeroes(height))
-                .build();
+            .gasLimit(ByteUtil.EMPTY_BYTE_ARRAY)
+            .receiveAddress(Address.empty().getBytes())
+            .data(PoWBios.UPDATE.encode())
+            .value(ByteUtil.EMPTY_BYTE_ARRAY)
+            .gasPrice(ByteUtil.EMPTY_BYTE_ARRAY)
+            .nonce(ByteUtil.longToBytesNoLeadZeroes(height))
+            .build();
     }
 
     @Override
     protected Header createHeader(Block parent) {
         return Header.builder()
-                .hashPrev(parent.getHash())
-                .coinbase(config.getMinerCoinBase())
-                .createdAt(System.currentTimeMillis() / 1000)
-                .height(parent.getHeight() + 1)
-                .build();
+            .hashPrev(parent.getHash())
+            .coinbase(config.getMinerCoinBase())
+            .createdAt(System.currentTimeMillis() / 1000)
+            .height(parent.getHeight() + 1)
+            .build();
     }
 
     @Override
     protected boolean finalizeBlock(Block parent, Block block) {
-        Uint256 nbits = poW.getNBits(parent.getStateRoot());
+        Uint256 nbits = poW.bios.getNBits(parent.getStateRoot());
         Random rd = new Random();
         byte[] nonce = new byte[8];
         rd.nextBytes(nonce);

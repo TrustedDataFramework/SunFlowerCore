@@ -4,7 +4,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.spongycastle.util.encoders.Hex;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.NoDeleteStore;
@@ -18,7 +17,10 @@ import java.io.File;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RunWith(JUnit4.class)
 public class TrieRollbackTest {
@@ -42,10 +44,10 @@ public class TrieRollbackTest {
         database = new NoDoubleDeleteStore<>(noDelete, Store.IS_NULL);
 
         trie = Trie.<String, String>builder().hashFunction(HashUtil::sha3)
-                .store(database)
-                .keyCodec(Codecs.STRING)
-                .valueCodec(Codecs.STRING)
-                .build();
+            .store(database)
+            .keyCodec(Codecs.STRING)
+            .valueCodec(Codecs.STRING)
+            .build();
 
         roots = new ArrayList<>();
 
@@ -54,7 +56,7 @@ public class TrieRollbackTest {
         nodes = new ArrayList<>();
 
         URL massiveUpload_1 = ClassLoader
-                .getSystemResource("trie/massive-upload.dmp");
+            .getSystemResource("trie/massive-upload.dmp");
 
         File file = new File(massiveUpload_1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);

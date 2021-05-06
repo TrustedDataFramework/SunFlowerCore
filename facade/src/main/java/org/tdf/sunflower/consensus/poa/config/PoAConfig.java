@@ -20,28 +20,28 @@ public class PoAConfig extends ConsensusConfig {
     private HexBytes minerAddress;
 
     public int getThreadId() {
-        if(threadId != null)
+        if (threadId != null)
             return threadId;
         threadId = reader.getAsInt("thread-id", 0);
         return threadId;
     }
 
     public HexBytes getFarmBaseAdmin() {
-        if(farmBaseAdmin != null)
+        if (farmBaseAdmin != null)
             return farmBaseAdmin;
         farmBaseAdmin = reader.getAsAddress("farm-base-admin");
         return farmBaseAdmin;
     }
 
     public String getGatewayNode() {
-        if(gatewayNode != null)
+        if (gatewayNode != null)
             return gatewayNode;
         gatewayNode = reader.getAsNonNull("gateway-node");
         return gatewayNode;
     }
 
     public HexBytes getMinerCoinBase() {
-        if(minerAddress != null)
+        if (minerAddress != null)
             return minerAddress;
         ECKey key = ECKey.fromPrivate(getPrivateKey().getBytes());
         minerAddress = HexBytes.fromBytes(key.getAddress());

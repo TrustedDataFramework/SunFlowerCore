@@ -1,7 +1,6 @@
 package org.tdf.sunflower.net;
 
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.state.Address;
 
 // Peer is a p2p node could be connected
 public interface Peer {

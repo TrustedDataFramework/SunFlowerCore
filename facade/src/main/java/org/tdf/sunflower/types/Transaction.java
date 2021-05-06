@@ -10,12 +10,16 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.*;
+import org.tdf.common.util.BigIntegers;
+import org.tdf.common.util.ByteUtil;
+import org.tdf.common.util.HashUtil;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.*;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.tdf.common.util.ByteUtil.ZERO_BYTE_ARRAY;
@@ -42,11 +46,11 @@ public class Transaction {
 
     public static HexBytes calcTxTrie(List<Transaction> transactions) {
         Trie<byte[], byte[]> txsState = Trie
-                .<byte[], byte[]>builder()
-                .keyCodec(Codec.identity())
-                .valueCodec(Codec.identity())
-                .store(new ByteArrayMapStore<>())
-                .hashFunction(HashUtil::sha3).build();
+            .<byte[], byte[]>builder()
+            .keyCodec(Codec.identity())
+            .valueCodec(Codec.identity())
+            .store(new ByteArrayMapStore<>())
+            .hashFunction(HashUtil::sha3).build();
 
         if (transactions == null || transactions.isEmpty())
             return HexBytes.fromBytes(HashUtil.EMPTY_TRIE_HASH);
@@ -171,22 +175,22 @@ public class Transaction {
     @Deprecated
     public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit) {
         return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
-                BigIntegers.asUnsignedByteArray(gasPrice),
-                BigIntegers.asUnsignedByteArray(gasLimit),
-                HexBytes.decode(to),
-                BigIntegers.asUnsignedByteArray(amount),
-                null);
+            BigIntegers.asUnsignedByteArray(gasPrice),
+            BigIntegers.asUnsignedByteArray(gasLimit),
+            HexBytes.decode(to),
+            BigIntegers.asUnsignedByteArray(amount),
+            null);
     }
 
     public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice,
                                      BigInteger gasLimit, Integer chainId) {
         return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
-                BigIntegers.asUnsignedByteArray(gasPrice),
-                BigIntegers.asUnsignedByteArray(gasLimit),
-                HexBytes.decode(to),
-                BigIntegers.asUnsignedByteArray(amount),
-                null,
-                chainId);
+            BigIntegers.asUnsignedByteArray(gasPrice),
+            BigIntegers.asUnsignedByteArray(gasLimit),
+            HexBytes.decode(to),
+            BigIntegers.asUnsignedByteArray(amount),
+            null,
+            chainId);
     }
 
     private Integer extractChainIdFromRawSignature(BigInteger bv, byte[] r, byte[] s) {
@@ -288,7 +292,7 @@ public class Transaction {
     }
 
     public byte[] getHash() {
-        if ( hash != null && hash.length != 0)
+        if (hash != null && hash.length != 0)
             return hash;
         rlpParse();
         getEncoded();
@@ -470,20 +474,20 @@ public class Transaction {
             dataS = ByteUtil.toHexString(data);
         } else {
             dataS = ByteUtil.toHexString(Arrays.copyOfRange(data, 0, maxDataSize)) +
-                    "... (" + data.length + " bytes)";
+                "... (" + data.length + " bytes)";
         }
         return "TransactionData [" + "hash=" + ByteUtil.toHexString(hash) +
-                "  nonce=" + ByteUtil.toHexString(nonce) +
-                ", gasPrice=" + ByteUtil.toHexString(gasPrice) +
-                ", gas=" + ByteUtil.toHexString(gasLimit) +
-                ", receiveAddress=" + ByteUtil.toHexString(receiveAddress) +
-                ", sendAddress=" + ByteUtil.toHexString(getSender()) +
-                ", value=" + ByteUtil.toHexString(value) +
-                ", data=" + dataS +
-                ", signatureV=" + (signature == null ? "" : signature.v) +
-                ", signatureR=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.r))) +
-                ", signatureS=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.s))) +
-                "]";
+            "  nonce=" + ByteUtil.toHexString(nonce) +
+            ", gasPrice=" + ByteUtil.toHexString(gasPrice) +
+            ", gas=" + ByteUtil.toHexString(gasLimit) +
+            ", receiveAddress=" + ByteUtil.toHexString(receiveAddress) +
+            ", sendAddress=" + ByteUtil.toHexString(getSender()) +
+            ", value=" + ByteUtil.toHexString(value) +
+            ", data=" + dataS +
+            ", signatureV=" + (signature == null ? "" : signature.v) +
+            ", signatureR=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.r))) +
+            ", signatureS=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.s))) +
+            "]";
     }
 
     /**
@@ -525,7 +529,7 @@ public class Transaction {
 
         if (rlpEncoded != null) return rlpEncoded;
 
-        byte[] nonce  = RLPCodec.encodeBytes(this.nonce);
+        byte[] nonce = RLPCodec.encodeBytes(this.nonce);
         byte[] gasPrice = RLPCodec.encodeBytes(this.gasPrice);
         byte[] gasLimit = RLPCodec.encodeBytes(this.gasLimit);
         byte[] receiveAddress = RLPCodec.encodeBytes(this.receiveAddress);
@@ -553,7 +557,7 @@ public class Transaction {
         }
 
         this.rlpEncoded = RLPCodec.encodeElements(
-                Arrays.asList(nonce, gasPrice, gasLimit,
+            Arrays.asList(nonce, gasPrice, gasLimit,
                 receiveAddress, value, data, v, r, s)
         );
 

@@ -16,7 +16,6 @@ import org.tdf.sunflower.types.*;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -49,7 +48,7 @@ public class PoSMiner extends AbstractMiner {
     @Override
     protected Header createHeader(Block parent) {
         return Header.builder()
-                .build();
+            .build();
     }
 
     @Override
@@ -95,8 +94,8 @@ public class PoSMiner extends AbstractMiner {
         Block best = blockRepository.getBestBlock();
         // 判断是否轮到自己出块
         Optional<Proposer> o = getProposer(
-                best,
-                OffsetDateTime.now().toEpochSecond()
+            best,
+            OffsetDateTime.now().toEpochSecond()
         ).filter(p -> p.getAddress().equals(minerAddress));
 
         if (!o.isPresent()) return;

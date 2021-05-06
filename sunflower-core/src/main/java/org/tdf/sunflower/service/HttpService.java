@@ -22,7 +22,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class HttpService {
     private final RestTemplate restTemplate = new RestTemplate(Collections.singletonList(
-            new StringHttpMessageConverter(StandardCharsets.UTF_8)
+        new StringHttpMessageConverter(StandardCharsets.UTF_8)
     ));
 
 
@@ -35,9 +35,9 @@ public class HttpService {
      * @return 响应体
      */
     public String get(
-            HttpHeaders httpHeaders,
-            @NonNull String uri,
-            Map<String, String> parameters) {
+        HttpHeaders httpHeaders,
+        @NonNull String uri,
+        Map<String, String> parameters) {
         return request(HttpMethod.GET, httpHeaders, uri, parameters, "");
     }
 
@@ -52,20 +52,20 @@ public class HttpService {
      * @return 响应体
      */
     public String request(
-            HttpMethod method,
-            HttpHeaders httpHeaders,
-            String uri,
-            Map<String, String> query,
-            String body
+        HttpMethod method,
+        HttpHeaders httpHeaders,
+        String uri,
+        Map<String, String> query,
+        String body
     ) {
         RequestEntity<String> req = RequestEntity
-                .method(method, buildURI(uri, query))
-                .headers(httpHeaders)
-                .body(body);
+            .method(method, buildURI(uri, query))
+            .headers(httpHeaders)
+            .body(body);
 
         return restTemplate
-                .exchange(req, String.class)
-                .getBody();
+            .exchange(req, String.class)
+            .getBody();
     }
 
     public URI buildURI(String uri, Map<String, String> query) {
@@ -73,9 +73,9 @@ public class HttpService {
         query.forEach((x, y) -> multiMap.put(x, Collections.singletonList(y)));
 
         UriComponentsBuilder builder = UriComponentsBuilder
-                .newInstance()
-                .uri(URI.create(uri))
-                .queryParams(new LinkedMultiValueMap<>(multiMap));
+            .newInstance()
+            .uri(URI.create(uri))
+            .queryParams(new LinkedMultiValueMap<>(multiMap));
         return builder.build().toUri();
     }
 }

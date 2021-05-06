@@ -7,12 +7,9 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.tdf.common.event.EventBus;
-import org.tdf.common.store.Store;
-import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.AppConfig;
-import org.tdf.sunflower.ApplicationConstants;
 import org.tdf.sunflower.TransactionPoolConfig;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewTransactionsCollected;
@@ -34,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 @Slf4j(topic = "txPool")
 @Component
@@ -189,7 +185,7 @@ public class TransactionPoolImpl implements TransactionPool {
     @SneakyThrows
     private void execute(Map<HexBytes, String> errors) {
         Iterator<TransactionInfo> it = cache.iterator();
-        if(this.parentHeader == null)
+        if (this.parentHeader == null)
             return;
 
         Backend current = trie.createBackend(parentHeader, currentRoot, null, false);
@@ -250,7 +246,7 @@ public class TransactionPoolImpl implements TransactionPool {
     public PendingData pop(Header parentHeader) {
         this.cacheLock.writeLock().lock();
         try {
-            if(this.parentHeader != null && !parentHeader.getHash().equals(this.parentHeader.getHash())) {
+            if (this.parentHeader != null && !parentHeader.getHash().equals(this.parentHeader.getHash())) {
                 this.clearPending();
                 log.warn("parent header is not equal, drop pending");
             }
@@ -270,7 +266,7 @@ public class TransactionPoolImpl implements TransactionPool {
     public void onNewBestBlock(NewBestBlock event) {
         this.cacheLock.writeLock().tryLock();
         try {
-            if(event.getBlock().getStateRoot().equals(this.parentHeader.getStateRoot()))
+            if (event.getBlock().getStateRoot().equals(this.parentHeader.getStateRoot()))
                 return;
 
             this.parentHeader = event.getBlock().getHeader();

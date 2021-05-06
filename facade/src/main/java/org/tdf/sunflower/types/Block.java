@@ -109,7 +109,7 @@ public class Block implements Chained {
 
     public void resetTransactionsRoot() {
         setTransactionsRoot(
-                Transaction.calcTxTrie(getBody())
+            Transaction.calcTxTrie(getBody())
         );
     }
 

@@ -120,7 +120,7 @@ public class ValidatorManager {
     public synchronized int getPriority(ProposalProof proof, int expected) {
         if (proof == null || expected <= 0) {
             logger.error("Big Problem, Invalid VRF priority parameters for Proposer Proof [" + " Proof: " + proof
-                    + " expected: " + expected + " ]");
+                + " expected: " + expected + " ]");
             return 0;
         }
 
@@ -167,7 +167,7 @@ public class ValidatorManager {
     public synchronized int getPriority(CommitProof proof, int expected) {
         if (proof == null || expected <= 0) {
             logger.error("Big Problem, Invalid VRF priority parameters for Commit Proof [" + " Proof: " + proof
-                    + " expected: " + expected + " ]");
+                + " expected: " + expected + " ]");
             return 0;
         }
 
@@ -282,7 +282,7 @@ public class ValidatorManager {
 
         if (vdrDeposit < Validator.DEPOSIT_MIN_VALUE) {
             logger.error("Storage Deposit does not reach DEPOSIT_MIN_VALUE, {} <- {}", Validator.DEPOSIT_MIN_VALUE,
-                    vdrDeposit);
+                vdrDeposit);
             return null;
         }
 
@@ -304,7 +304,7 @@ public class ValidatorManager {
         long totalWeight = validSize.longValueExact();
         if (totalWeight < ValidatorManager.WEIGHT_MIN_VALUE && totalWeight > 0) {
             logger.error("Storage Valid Size does not reach DEPOSIT_MIN_VALUE, {} <- {}", Validator.DEPOSIT_MIN_VALUE,
-                    totalWeight);
+                totalWeight);
             return 0;
         }
 
@@ -313,15 +313,15 @@ public class ValidatorManager {
 
     public long getDeposit(byte[] address) {
         long collateral = ByteUtil
-                .byteArrayToLong(VrfUtil.getFromContractStorage(HexBytes.fromHex(Constants.VRF_BIOS_CONTRACT_ADDR),
-                        repository.getBestHeader(), address, accountTrie, contractStorageTrie));
+            .byteArrayToLong(VrfUtil.getFromContractStorage(HexBytes.fromHex(Constants.VRF_BIOS_CONTRACT_ADDR),
+                repository.getBestHeader(), address, accountTrie, contractStorageTrie));
         return collateral;
     }
 
     public long getDepositTotal() {
         long collateral = ByteUtil.byteArrayToLong(VrfUtil.getFromContractStorage(
-                HexBytes.fromHex(Constants.VRF_BIOS_CONTRACT_ADDR), repository.getBestHeader(),
-                VrfPreBuiltContract.TOTAL_KEY, accountTrie, contractStorageTrie));
+            HexBytes.fromHex(Constants.VRF_BIOS_CONTRACT_ADDR), repository.getBestHeader(),
+            VrfPreBuiltContract.TOTAL_KEY, accountTrie, contractStorageTrie));
         return collateral;
     }
 

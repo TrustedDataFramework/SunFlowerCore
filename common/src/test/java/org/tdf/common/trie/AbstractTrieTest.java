@@ -51,14 +51,14 @@ public abstract class AbstractTrieTest {
     public void test1() {
         Trie<byte[], byte[]> trie = newBytesTrie();
         Arrays.asList("test", "toaster", "toasting", "slow", "slowly")
-                .forEach(x -> trie.put(x.getBytes(), x.getBytes()));
+            .forEach(x -> trie.put(x.getBytes(), x.getBytes()));
 
         Set<byte[]> keys = trie.stream()
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toCollection(ByteArraySet::new));
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toCollection(ByteArraySet::new));
         Set<byte[]> values = trie.stream()
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toCollection(ByteArraySet::new));
+            .map(Map.Entry::getValue)
+            .collect(Collectors.toCollection(ByteArraySet::new));
         for (String s : Arrays.asList("test", "toaster", "toasting", "slow", "slowly")
         ) {
             assert keys.contains(s.getBytes());
@@ -445,7 +445,7 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trieSingle = newStringTrie();
 
         URL massiveUpload_1 = ClassLoader
-                .getSystemResource("trie/massive-upload.dmp");
+            .getSystemResource("trie/massive-upload.dmp");
 
         File file = new File(massiveUpload_1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
@@ -508,10 +508,10 @@ public abstract class AbstractTrieTest {
         int n = 1000000;
         if (!performance) return;
         TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(
-                HashUtil::sha256,
-                new NoDoubleDeleteStore(),
-                Codec.identity(),
-                Codec.identity()
+            HashUtil::sha256,
+            new NoDoubleDeleteStore(),
+            Codec.identity(),
+            Codec.identity()
         );
         byte[] dummy = new byte[]{1};
         SecureRandom sr = new SecureRandom();
@@ -567,18 +567,18 @@ public abstract class AbstractTrieTest {
         }
 
         assertArrayEquals(Objects.requireNonNull(trie.get(Hex.decode("6e929251b981389774af84a07585724c432e2db487381810719c3dd913192ae2"))),
-                Hex.decode("00000000000000000000000000000000000000000000000000000000000000be"));
+            Hex.decode("00000000000000000000000000000000000000000000000000000000000000be"));
 
         assertArrayEquals(Objects.requireNonNull(trie.get(Hex.decode("6e92718d00dae27b2a96f6853a0bf11ded08bc658b2e75904ca0344df5aff9ae"))),
-                Hex.decode("00000000000000000000000000000000000000000000002f0000000000000000"));
+            Hex.decode("00000000000000000000000000000000000000000000002f0000000000000000"));
 
         trie.remove(Hex.decode("6e9286c946c6dd1f5d97f35683732dc8a70dc511133a43d416892f527dfcd243"));
 
         assertArrayEquals(Objects.requireNonNull(trie.get(Hex.decode("6e929251b981389774af84a07585724c432e2db487381810719c3dd913192ae2"))),
-                Hex.decode("00000000000000000000000000000000000000000000000000000000000000be"));
+            Hex.decode("00000000000000000000000000000000000000000000000000000000000000be"));
 
         assertArrayEquals(Objects.requireNonNull(trie.get(Hex.decode("6e92718d00dae27b2a96f6853a0bf11ded08bc658b2e75904ca0344df5aff9ae"))),
-                Hex.decode("00000000000000000000000000000000000000000000002f0000000000000000"));
+            Hex.decode("00000000000000000000000000000000000000000000002f0000000000000000"));
     }
 
     @Test
@@ -617,11 +617,11 @@ public abstract class AbstractTrieTest {
 
         Trie<byte[], byte[]> trie = newBytesTrie();
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000011133"),
-                Hex.decode("0000000000000000000000000000000000000000000000000000000000000033"));
+            Hex.decode("0000000000000000000000000000000000000000000000000000000000000033"));
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000021244"),
-                Hex.decode("0000000000000000000000000000000000000000000000000000000000000044"));
+            Hex.decode("0000000000000000000000000000000000000000000000000000000000000044"));
         trie.put(Hex.decode("0000000000000000000000000000000000000000000000000000000000011255"),
-                Hex.decode("0000000000000000000000000000000000000000000000000000000000000055"));
+            Hex.decode("0000000000000000000000000000000000000000000000000000000000000055"));
 
         trie.remove(Hex.decode("0000000000000000000000000000000000000000000000000000000000011255"));
 
@@ -641,12 +641,12 @@ public abstract class AbstractTrieTest {
         public String toString() {
             StringBuffer buffer = new StringBuffer();
             getMap().
-                    forEach((k, v) -> {
-                        buffer.append(Hex.toHexString(k));
-                        buffer.append(" = ");
-                        buffer.append(Hex.toHexString(v));
-                        buffer.append("\n");
-                    });
+                forEach((k, v) -> {
+                    buffer.append(Hex.toHexString(k));
+                    buffer.append(" = ");
+                    buffer.append(Hex.toHexString(v));
+                    buffer.append("\n");
+                });
             return buffer.toString();
         }
     }

@@ -232,7 +232,7 @@ public class SM2PreprocessSigner implements ECConstants {
     }
 
     protected BigInteger[] derDecode(byte[] encoding)
-            throws IOException {
+        throws IOException {
         ASN1Sequence seq = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(encoding));
         if (seq.size() != 2) {
             return null;
@@ -250,7 +250,7 @@ public class SM2PreprocessSigner implements ECConstants {
     }
 
     protected byte[] derEncode(BigInteger r, BigInteger s)
-            throws IOException {
+        throws IOException {
 
         ASN1EncodableVector v = new ASN1EncodableVector();
         v.add(new ASN1Integer(r));

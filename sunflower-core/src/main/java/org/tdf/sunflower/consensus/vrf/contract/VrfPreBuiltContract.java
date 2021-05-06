@@ -15,9 +15,7 @@ import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.abi.Abi;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
@@ -35,7 +33,7 @@ public class VrfPreBuiltContract implements BuiltinContract {
 
     @Override
     public HexBytes getAddress() {
-       return Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES;
+        return Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES;
 
     }
 
@@ -44,7 +42,7 @@ public class VrfPreBuiltContract implements BuiltinContract {
 
         String methodName = "";
         log.info("++++++>> VrfBiosContract method {}, txn hash {}, nonce {}", methodName, callData.getTxHash().toHex(),
-                callData.getTxNonce());
+            callData.getTxNonce());
 
         if (methodName.trim().isEmpty()) {
             log.error("No method name ");
@@ -107,7 +105,7 @@ public class VrfPreBuiltContract implements BuiltinContract {
 
         if (fromAccount.getBalance().compareTo(Uint256.of(amount)) < 0) {
             log.error("Deposit amount {} is less than account {} balance {}", amount, fromAddr,
-                    fromAccount.getBalance());
+                fromAccount.getBalance());
             return;
         }
 
@@ -186,7 +184,7 @@ public class VrfPreBuiltContract implements BuiltinContract {
     }
 
     private WithdrawParams parseWithdrawParams(Transaction transaction)
-            throws IOException {
+        throws IOException {
         byte[] payload = transaction.getData();
         int methodNameLen = payload[0];
         int paramBytesLen = payload.length - methodNameLen - 1;
@@ -197,7 +195,7 @@ public class VrfPreBuiltContract implements BuiltinContract {
     }
 
     private DepositParams parseDepositParams(Transaction transaction)
-            throws IOException {
+        throws IOException {
         byte[] payload = transaction.getData();
         int methodNameLen = payload[0];
         int paramBytesLen = payload.length - methodNameLen - 1;

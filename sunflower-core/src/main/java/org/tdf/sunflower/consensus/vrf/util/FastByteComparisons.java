@@ -28,7 +28,7 @@ public abstract class FastByteComparisons {
      */
     public static int compareTo(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
         return LexicographicalComparerHolder.BEST_COMPARER.compareTo(
-                b1, s1, l1, b2, s2, l2);
+            b1, s1, l1, b2, s2, l2);
     }
 
     private static Comparer<byte[]> lexicographicalComparerJavaImpl() {
@@ -46,7 +46,7 @@ public abstract class FastByteComparisons {
      */
     private static class LexicographicalComparerHolder {
         static final String UNSAFE_COMPARER_NAME =
-                LexicographicalComparerHolder.class.getName() + "$UnsafeComparer";
+            LexicographicalComparerHolder.class.getName() + "$UnsafeComparer";
 
         static final Comparer<byte[]> BEST_COMPARER = getBestComparer();
 
@@ -61,7 +61,7 @@ public abstract class FastByteComparisons {
                 // yes, UnsafeComparer does implement Comparer<byte[]>
                 @SuppressWarnings("unchecked")
                 Comparer<byte[]> comparer =
-                        (Comparer<byte[]>) theClass.getEnumConstants()[0];
+                    (Comparer<byte[]>) theClass.getEnumConstants()[0];
                 return comparer;
             } catch (Throwable t) { // ensure we really catch *everything*
                 return lexicographicalComparerJavaImpl();

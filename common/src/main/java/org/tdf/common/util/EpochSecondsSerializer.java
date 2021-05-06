@@ -19,7 +19,7 @@ public class EpochSecondsSerializer extends JsonSerializer<Long> {
     @Override
     public void serialize(Long value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         gen.writeString(FORMATTER.format(Instant.ofEpochMilli(
-                TimeUnit.MILLISECONDS.convert(value, TimeUnit.SECONDS))
+            TimeUnit.MILLISECONDS.convert(value, TimeUnit.SECONDS))
         ));
     }
 }

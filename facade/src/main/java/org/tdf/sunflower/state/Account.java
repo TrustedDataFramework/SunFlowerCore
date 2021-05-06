@@ -8,7 +8,6 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
-import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Transaction;
 
 @AllArgsConstructor
@@ -45,7 +44,8 @@ public class Account {
      * @return a fresh new account
      */
     public static Account emptyAccount(HexBytes address, Uint256 balance) {
-        if (address.size() != Transaction.ADDRESS_LENGTH) throw new RuntimeException("address size should be " + Transaction.ADDRESS_LENGTH);
+        if (address.size() != Transaction.ADDRESS_LENGTH)
+            throw new RuntimeException("address size should be " + Transaction.ADDRESS_LENGTH);
         return new Account(address, 0, balance, Address.empty(), HashUtil.EMPTY_DATA_HASH_HEX, HashUtil.EMPTY_TRIE_HASH_HEX);
     }
 

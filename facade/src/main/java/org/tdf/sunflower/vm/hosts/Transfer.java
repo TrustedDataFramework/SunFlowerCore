@@ -16,11 +16,11 @@ public class Transfer extends HostFunction {
     private final Backend backend;
     private final HexBytes contractAddress;
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
-            Arrays.asList(
-                    ValueType.I64, ValueType.I64,
-                    ValueType.I64
-            ),
-            Collections.emptyList()
+        Arrays.asList(
+            ValueType.I64, ValueType.I64,
+            ValueType.I64
+        ),
+        Collections.emptyList()
     );
 
     public Transfer(Backend backend, HexBytes contractAddress) {

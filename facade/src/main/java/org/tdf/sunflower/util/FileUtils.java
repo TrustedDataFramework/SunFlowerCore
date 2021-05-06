@@ -123,7 +123,7 @@ public class FileUtils {
      * @since 1.3
      */
     public static long copyLarge(final InputStream input, final OutputStream output)
-            throws IOException {
+        throws IOException {
 
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
         long count = 0;

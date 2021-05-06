@@ -27,7 +27,7 @@ public interface BuiltinContract {
 
     Abi getAbi();
 
-    default Object view(HexBytes blockHash, String method, Object...args) {
+    default Object view(HexBytes blockHash, String method, Object... args) {
         return null;
     }
 }

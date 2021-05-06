@@ -19,7 +19,7 @@ public class CryptoContext {
     public static BiFunction<byte[], byte[], byte[]> signer = (a, b) -> HexBytes.EMPTY_BYTES;
     @Setter
     private static Function<byte[], byte[]> hashFunction
-            = Function.identity();
+        = Function.identity();
     @Setter
     private static SignatureVerifier signatureVerifier = (pk, msg, sig) -> true;
     @Setter
@@ -60,11 +60,11 @@ public class CryptoContext {
 
     public static HexBytes getEmptyTrieRoot() {
         Trie<?, ?> trie = Trie.<byte[], byte[]>builder()
-                .keyCodec(Codec.identity())
-                .valueCodec(Codec.identity())
-                .store(new ByteArrayMapStore<>())
-                .hashFunction(hashFunction)
-                .build();
+            .keyCodec(Codec.identity())
+            .valueCodec(Codec.identity())
+            .store(new ByteArrayMapStore<>())
+            .hashFunction(hashFunction)
+            .build();
 
         return trie.getNullHash();
     }

@@ -12,7 +12,6 @@ import org.tdf.sunflower.db.DatabaseStoreFactoryImpl;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
 import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.facade.SecretStore;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -56,8 +55,8 @@ public class P2PDebugTool {
         }
         properties.setProperty("max-peers", "32");
         properties.setProperty(
-                "enable-discovery",
-                Optional.ofNullable(System.getenv("X_ENABLE_DISCOVERY")).orElse("false")
+            "enable-discovery",
+            Optional.ofNullable(System.getenv("X_ENABLE_DISCOVERY")).orElse("false")
         );
         properties.setProperty("name", Optional.ofNullable(System.getenv("X_NAME")).orElse("gRPC"));
         server.init(properties);
@@ -120,11 +119,11 @@ public class P2PDebugTool {
             }
             if (line.startsWith("connect")) {
                 String[] hostPort = line.substring("connect".length()).trim()
-                        .split("\\s|:");
+                    .split("\\s|:");
                 server.getClient().dial(hostPort[0], Integer.parseInt(hostPort[1]),
-                        server.getClient()
-                                .messageBuilder
-                                .buildPing());
+                    server.getClient()
+                        .messageBuilder
+                        .buildPing());
                 continue;
             }
             if (line.equals("bootstraps")) {
@@ -133,7 +132,7 @@ public class P2PDebugTool {
             }
             if (line.startsWith("broadcast")) {
                 server.broadcast(line.substring("broadcast".length())
-                        .trim().getBytes(StandardCharsets.UTF_8));
+                    .trim().getBytes(StandardCharsets.UTF_8));
                 continue;
             }
             List<String> arguments = Arrays.asList(line.split("\\s"));
@@ -141,8 +140,8 @@ public class P2PDebugTool {
             for (Peer p : server.getPeers()) {
                 if (p.getID().toString().startsWith(arguments.get(0))) {
                     server.dial(p,
-                            String.join(" ", arguments.subList(1, arguments.size()))
-                                    .getBytes(StandardCharsets.UTF_8)
+                        String.join(" ", arguments.subList(1, arguments.size()))
+                            .getBytes(StandardCharsets.UTF_8)
                     );
                 }
             }

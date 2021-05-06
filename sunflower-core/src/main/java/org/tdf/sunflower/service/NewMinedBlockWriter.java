@@ -11,8 +11,8 @@ import org.tdf.sunflower.types.Block;
 @Slf4j
 public class NewMinedBlockWriter {
     public NewMinedBlockWriter(
-            SunflowerRepository repository,
-            EventBus eventBus
+        SunflowerRepository repository,
+        EventBus eventBus
     ) {
         eventBus.subscribe(NewBlockMined.class, (e) -> {
             Block block = e.getBlock();

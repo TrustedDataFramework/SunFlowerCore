@@ -9,7 +9,6 @@ import org.tdf.rlp.RLPList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.tdf.common.util.ByteUtil.toHexString;
@@ -75,10 +74,10 @@ public class LogInfo {
 
         byte[] dataEncoded = RLPCodec.encodeBytes(data);
         return RLPCodec.encodeElements(
-                Arrays.asList(
-                        addressEncoded,
-                        RLPCodec.encodeElements(Arrays.asList(topicsEncoded)), dataEncoded
-                )
+            Arrays.asList(
+                addressEncoded,
+                RLPCodec.encodeElements(Arrays.asList(topicsEncoded)), dataEncoded
+            )
         );
     }
 
@@ -105,10 +104,10 @@ public class LogInfo {
 
 
         return "LogInfo{" +
-                "address=" + toHexString(address) +
-                ", topics=" + topicsStr +
-                ", data=" + toHexString(data) +
-                '}';
+            "address=" + toHexString(address) +
+            ", topics=" + topicsStr +
+            ", data=" + toHexString(data) +
+            '}';
     }
 }
 
