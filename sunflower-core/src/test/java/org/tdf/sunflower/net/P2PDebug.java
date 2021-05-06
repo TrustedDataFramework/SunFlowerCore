@@ -36,7 +36,7 @@ public class P2PDebug {
         });
 
         // port listening on
-        PeerServerImpl server = new PeerServerImpl(new JsonStore("$memory", new ObjectMapper()), AbstractConsensusEngine.NONE, SecretStore.NONE);
+        PeerServerImpl server = new PeerServerImpl(new JsonStore("$memory", new ObjectMapper()), AbstractConsensusEngine.NONE);
         Properties properties = new Properties();
         FileUtils.setClassLoader(ClassUtils.getDefaultClassLoader());
         properties.load(FileUtils.getInputStream("p2p/node3.properties"));

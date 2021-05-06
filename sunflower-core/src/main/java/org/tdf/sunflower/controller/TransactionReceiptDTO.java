@@ -35,12 +35,13 @@ public class TransactionReceiptDTO {
 
         transactionHash = toJsonHex(receipt.getTransaction().getHash());
         transactionIndex = toJsonHex(txInfo.getIndex());
-        cumulativeGasUsed = toJsonHex(receipt.getCumulativeGas());
-        gasUsed = toJsonHex(receipt.getGasUsed());
+        cumulativeGasUsed = toJsonHex(receipt.getCumulativeGas(), "0x0");
+        gasUsed = toJsonHex(receipt.getGasUsed(), "0x0");
         contractAddress = toJsonHex(receipt.getTransaction().getContractAddress());
         from = toJsonHex(receipt.getTransaction().getSender());
         to = toJsonHex(receipt.getTransaction().getReceiveAddress());
         logs = new JsonRpc.LogFilterElement[receipt.getLogInfoList().size()];
+        
         if (block != null) {
             blockNumber = toJsonHex(block.getHeight());
             blockHash = toJsonHex(txInfo.getBlockHash());
@@ -55,14 +56,16 @@ public class TransactionReceiptDTO {
                 txInfo.getReceipt().getTransaction(), i);
         }
         logsBloom = toJsonHex(receipt.getBloomFilter().getData());
+        status = "0x1";
+        root = toJsonHex(receipt.getPostTxState());
 
-        if (receipt.hasTxStatus()) { // post Byzantium
-            root = null;
-            status = receipt.isTxStatusOK() ? "0x1" : "0x0";
-        } else { // pre Byzantium
-            root = toJsonHex(receipt.getPostTxState());
-            status = null;
-        }
+//        if (receipt.hasTxStatus()) { // post Byzantium
+//            root = null;
+//            status = receipt.isTxStatusOK() ? "0x1" : "0x0";
+//            root = toJsonHex(receipt.getPostTxState());
+//        } else { // pre Byzantium
+//            status = null;
+//        }
     }
 }
 
