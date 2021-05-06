@@ -3,7 +3,6 @@ package org.tdf.sunflower.types;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Account;

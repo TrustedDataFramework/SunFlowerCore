@@ -41,7 +41,7 @@ public class TransactionReceiptDTO {
         from = toJsonHex(receipt.getTransaction().getSender());
         to = toJsonHex(receipt.getTransaction().getReceiveAddress());
         logs = new JsonRpc.LogFilterElement[receipt.getLogInfoList().size()];
-        
+
         if (block != null) {
             blockNumber = toJsonHex(block.getHeight());
             blockHash = toJsonHex(txInfo.getBlockHash());
