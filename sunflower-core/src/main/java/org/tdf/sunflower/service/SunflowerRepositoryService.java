@@ -195,11 +195,6 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
         return null;
     }
 
-    @Override
-    public void setProvider(ConfirmedBlocksProvider provider) {
-
-    }
-
 //    @Override
 //    public void prune(byte[] hash) {
 //

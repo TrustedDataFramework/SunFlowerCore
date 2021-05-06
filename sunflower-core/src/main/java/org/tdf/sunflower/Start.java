@@ -50,7 +50,6 @@ import org.tdf.sunflower.service.SunflowerRepositoryKVImpl;
 import org.tdf.sunflower.service.SunflowerRepositoryService;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
-import org.tdf.sunflower.types.AbstractGenesis;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.CryptoContext;
@@ -294,7 +293,7 @@ public class Start {
 
         engine.init(new ConsensusConfig(consensusProperties));
 
-        String[] nonNullFields = new String[]{"Miner", "Validator", "AccountTrie", "GenesisBlock", "ConfirmedBlocksProvider", "PeerServerListener"};
+        String[] nonNullFields = new String[]{"Miner", "Validator", "AccountTrie", "GenesisBlock", "PeerServerListener"};
 
         for (String field : nonNullFields) {
             String method = "get" + field;
@@ -303,8 +302,7 @@ public class Start {
             }
         }
 
-        repositoryService.setProvider(engine.getConfirmedBlocksProvider());
-        repositoryService.setAccountTrie(engine.getAccountTrie());
+        repositoryService.setAccountTrie(accountTrie);
 
         // init accountTrie and genesis block
         AbstractConsensusEngine abstractEngine = ((AbstractConsensusEngine) engine);

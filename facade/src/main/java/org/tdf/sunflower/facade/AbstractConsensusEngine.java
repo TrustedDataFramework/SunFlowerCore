@@ -51,7 +51,7 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     private Miner miner;
     // sub class should set validator explicitly when init() called
     private Validator validator;
-    // sub class should set account stateTrie explicitly when init() called
+    // account stateTrie will be injected before init() called
     private StateTrie<HexBytes, Account> accountTrie;
     // sub class should set genesis block explicitly when init() called
     private Block genesisBlock;
@@ -61,8 +61,7 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     private TransactionPool transactionPool;
     // sunflowerRepository will be injected before init() called
     private SunflowerRepository sunflowerRepository;
-    // sub class should set confirmedBlocksProvider explicitly when init() called
-    private ConfirmedBlocksProvider confirmedBlocksProvider = x -> x;
+
     // sub class should set peer server listener explicitly when init() called
     private PeerServerListener peerServerListener;
 

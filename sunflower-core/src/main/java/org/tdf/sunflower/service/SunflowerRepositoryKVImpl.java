@@ -217,11 +217,6 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     }
 
     @Override
-    public void setProvider(ConfirmedBlocksProvider provider) {
-
-    }
-
-    @Override
     public boolean containsTransaction(byte[] hash) {
         return transactionsStore.get(hash) != null;
     }

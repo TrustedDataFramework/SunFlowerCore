@@ -7,9 +7,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.EconomicModel;
-import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.consensus.poa.config.PoAConfig;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
@@ -22,7 +20,9 @@ import org.tdf.sunflower.types.Transaction;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -83,44 +83,44 @@ public class PoA extends AbstractConsensusEngine {
         if (this.config.getThreadId() != 0 && this.config.getThreadId() != GATEWAY_ID) {
             int core = Runtime.getRuntime().availableProcessors();
             executorService = Executors.newScheduledThreadPool(
-                    core > 1 ? core / 2 : core,
-                    new ThreadFactoryBuilder().setNameFormat("poa-thread-%d").build()
+                core > 1 ? core / 2 : core,
+                new ThreadFactoryBuilder().setNameFormat("poa-thread-%d").build()
             );
 
             executorService.scheduleAtFixedRate(() ->
-                    {
-                        try {
-                            URL url = new URL(this.config.getGatewayNode());
-                            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                {
+                    try {
+                        URL url = new URL(this.config.getGatewayNode());
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-                            connection.setRequestProperty("accept", "application/json");
-                            InputStream responseStream = connection.getInputStream();
-                            JsonNode n = objectMapper.readValue(responseStream, JsonNode.class);
-                            n = n.get("data");
-                            for(int i = 0; i < n.size(); i ++) {
-                                Transaction tx = RLPUtil.decode(
-                                    HexBytes.fromHex(n.get(i).textValue()),
-                                    Transaction.class
-                                );
-                                if (!getSunflowerRepository().containsTransaction(tx.getHash())) {
-                                    Block best = getSunflowerRepository().getBestBlock();
-                                    getTransactionPool().collect(tx);
-                                }
+                        connection.setRequestProperty("accept", "application/json");
+                        InputStream responseStream = connection.getInputStream();
+                        JsonNode n = objectMapper.readValue(responseStream, JsonNode.class);
+                        n = n.get("data");
+                        for (int i = 0; i < n.size(); i++) {
+                            Transaction tx = RLPUtil.decode(
+                                HexBytes.fromHex(n.get(i).textValue()),
+                                Transaction.class
+                            );
+                            if (!getSunflowerRepository().containsTransaction(tx.getHash())) {
+                                Block best = getSunflowerRepository().getBestBlock();
+                                getTransactionPool().collect(tx);
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
                         }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
-                    }, 0, 30, TimeUnit.SECONDS
+                }, 0, 30, TimeUnit.SECONDS
             );
         }
 
         this.minerContract = new Authentication(
-                genesis.getMiners(),
-                Constants.POA_AUTHENTICATION_ADDR,
-                getAccountTrie(),
-                getSunflowerRepository(),
-                this.getConfig()
+            genesis.getMiners(),
+            Constants.POA_AUTHENTICATION_ADDR,
+            getAccountTrie(),
+            getSunflowerRepository(),
+            this.getConfig()
         );
 
 
@@ -134,8 +134,6 @@ public class PoA extends AbstractConsensusEngine {
 
         builtins.add(this.validatorContract);
         builtins.add(this.minerContract);
-
-        StateTrie<HexBytes, Account> trie = getAccountTrie();
 
         poaMiner = new PoAMiner(this);
         poaMiner.setBlockRepository(this.getSunflowerRepository());

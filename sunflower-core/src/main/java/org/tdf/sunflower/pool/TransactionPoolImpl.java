@@ -80,9 +80,11 @@ public class TransactionPoolImpl implements TransactionPool {
     public TransactionPoolImpl(
         EventBus eventBus,
         TransactionPoolConfig config,
-        SunflowerRepository repository
+        SunflowerRepository repository,
+        StateTrie<HexBytes, Account> trie
     ) {
         this.eventBus = eventBus;
+        this.trie = trie;
         eventBus.subscribe(NewBestBlock.class, this::onNewBestBlock);
         cache = new TreeSet<>();
         this.config = config;
@@ -104,7 +106,6 @@ public class TransactionPoolImpl implements TransactionPool {
 
     public void setEngine(ConsensusEngine engine) {
         this.validator = engine.getValidator();
-        this.trie = engine.getAccountTrie();
         Header best = repository.getBestHeader();
         this.parentHeader = best;
         this.currentRoot = best.getStateRoot();

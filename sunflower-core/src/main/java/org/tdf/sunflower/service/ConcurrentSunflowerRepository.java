@@ -246,11 +246,6 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
         }
     }
 
-    @Override
-    public void setProvider(ConfirmedBlocksProvider provider) {
-
-    }
-
 //    @Override
 //    public void prune(byte[] hash) {
 //        lock.writeLock().lock();

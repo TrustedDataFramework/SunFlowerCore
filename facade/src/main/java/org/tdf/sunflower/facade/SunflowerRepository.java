@@ -23,10 +23,6 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
             return null;
         }
 
-        @Override
-        public void setProvider(ConfirmedBlocksProvider provider) {
-
-        }
 
         @Override
         public void setAccountTrie(StateTrie<HexBytes, Account> accountTrie) {
@@ -163,8 +159,6 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
     };
 
     TransactionInfo getTransactionInfo(HexBytes transactionHash);
-
-    void setProvider(ConfirmedBlocksProvider provider);
 
     void setAccountTrie(StateTrie<HexBytes, Account> accountTrie);
 }
