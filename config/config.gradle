@@ -22,4 +22,5 @@ ext {
     springShellVersion = '2.0.0.RELEASE'
     slf4jVersion = '1.7.28'
     fastjsonVersion = "1.2.62"
+    kotlinVersion = '1.5.0'
 }
