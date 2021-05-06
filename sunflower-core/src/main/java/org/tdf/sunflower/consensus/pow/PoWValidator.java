@@ -18,7 +18,7 @@ public class PoWValidator extends AbstractValidator {
         BlockValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
 
-        Uint256 nbits = poW.bios.getNBits(dependency.getStateRoot());
+        Uint256 nbits = poW.bios.getNBits(dependency.getHash());
         if (PoW.compare(PoW.getPoWHash(block), nbits.getData()) > 0)
             return ValidateResult.fault(
                 String.format(

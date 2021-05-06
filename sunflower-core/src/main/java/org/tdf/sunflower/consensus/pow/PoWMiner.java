@@ -80,7 +80,7 @@ public class PoWMiner extends AbstractMiner {
 
     @Override
     protected boolean finalizeBlock(Block parent, Block block) {
-        Uint256 nbits = poW.bios.getNBits(parent.getStateRoot());
+        Uint256 nbits = poW.bios.getNBits(parent.getHash());
         Random rd = new Random();
         byte[] nonce = new byte[8];
         rd.nextBytes(nonce);

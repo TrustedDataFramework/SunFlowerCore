@@ -41,7 +41,7 @@ public class PropertyReader {
         }
         s = s.trim().toLowerCase();
         BigInteger b = s.startsWith("0x") ? new BigInteger(s.substring(2), 16) : new BigInteger(s);
-        return Uint256.of(BigIntegers.asUnsignedByteArray(b));
+        return Uint256.of(b);
     }
 
     public int getAsInt(String property, int defaultValue) {

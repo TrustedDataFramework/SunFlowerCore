@@ -91,7 +91,7 @@ public abstract class WBI {
                 case "uint":
                 case "uint256": {
                     BigInteger b = (BigInteger) inputs.get(j);
-                    ret[j] = WBI.malloc(i, Uint256.of(BigIntegers.asUnsignedByteArray(b)));
+                    ret[j] = WBI.malloc(i, Uint256.of(b));
                     break;
                 }
                 case "string": {

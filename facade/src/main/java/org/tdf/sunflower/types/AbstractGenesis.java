@@ -50,7 +50,7 @@ public abstract class AbstractGenesis {
             String k = it.next();
             String v = alloc.get(k).asText();
             BigInteger b = v.startsWith("0x") ? new BigInteger(v.substring(2), 16) : new BigInteger(v);
-            Uint256 balance = Uint256.of(BigIntegers.asUnsignedByteArray(b));
+            Uint256 balance = Uint256.of(b);
             r.add(Account.emptyAccount(HexBytes.fromHex(k), balance));
         }
         return r;

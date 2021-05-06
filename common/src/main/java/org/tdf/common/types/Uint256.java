@@ -10,10 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import lombok.NonNull;
-import org.tdf.common.util.ByteUtil;
-import org.tdf.common.util.FastByteComparisons;
-import org.tdf.common.util.HexBytes;
-import org.tdf.common.util.IntSerializer;
+import org.tdf.common.util.*;
 import org.tdf.rlp.*;
 
 import java.io.IOException;
@@ -58,6 +55,10 @@ public class Uint256 extends Number {
         if (i.compareTo(BigInteger.ZERO) < 0 || i.compareTo(MAX_VALUE) > 0)
             throw new RuntimeException(pattern + " overflow");
         return of(ByteUtil.bigIntegerToBytes(i, 32));
+    }
+
+    public static Uint256 of(BigInteger val) {
+        return of(BigIntegers.asUnsignedByteArray(val));
     }
 
     public static Uint256 of(byte[] data) {

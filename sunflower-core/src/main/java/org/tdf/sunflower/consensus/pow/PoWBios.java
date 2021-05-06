@@ -55,9 +55,10 @@ public class PoWBios extends AbstractBuiltIn {
     }
 
     public Uint256 getNBits(
-        HexBytes parentHash) {
+        HexBytes parentHash
+    ) {
         List<?> r = view(parentHash, "nbits");
-        return Uint256.of((byte[]) r.get(0));
+        return Uint256.of((BigInteger) r.get(0));
     }
 
     @Override
