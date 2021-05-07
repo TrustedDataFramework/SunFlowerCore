@@ -314,7 +314,7 @@ class Uint256 private constructor(data: ByteArray) : Number() {
      * @param data Byte Array[32] which is guaranteed to be immutable
      */
     init {
-        if (data == null || data.size != 32) throw RuntimeException("Input byte array should have 32 bytes in it!")
+        if (data.size != 32) throw RuntimeException("Input byte array should have 32 bytes in it!")
         this.data = data
     }
 }

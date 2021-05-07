@@ -66,7 +66,7 @@ class TransactionPoolImpl(
     private val pendingReceipts: MutableList<TransactionReceipt> = mutableListOf()
     private var current: Backend? = null
 
-    private fun reset(best: Header) {
+    private fun resetInternal(best: Header) {
         parentHeader = best
         pending.clear()
         pendingReceipts.clear()
@@ -75,7 +75,7 @@ class TransactionPoolImpl(
 
     fun setEngine(engine: ConsensusEngine) {
         validator = engine.validator
-        reset(repository.bestHeader)
+        resetInternal(repository.bestHeader)
     }
 
     private fun clearPending() {
@@ -196,21 +196,33 @@ class TransactionPoolImpl(
                 log.warn("parent header is not equal, drop pending")
             }
 
-            return PendingData(
+            val r = PendingData(
                 pending.toMutableList(),
                 pendingReceipts.toMutableList(),
-                current?.merge() ?: parentHeader.stateRoot
+                current
             )
+            clearPending()
+            return r
         } finally {
             lock.writeLock().unlock()
         }
+    }
+
+    override fun reset(parent: Header) {
+        lock.writeLock().tryLock()
+        try {
+            resetInternal(parent)
+        } finally {
+            lock.writeLock().unlock()
+        }
+
     }
 
     fun onNewBestBlock(event: NewBestBlock) {
         lock.writeLock().tryLock()
         try {
             if (event.block.stateRoot == this.parentHeader?.stateRoot) return
-            reset(event.block.header)
+            resetInternal(event.block.header)
         } finally {
             lock.writeLock().unlock()
         }

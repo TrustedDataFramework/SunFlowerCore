@@ -52,8 +52,10 @@ public abstract class AbstractMiner implements Miner {
         PendingData p =
             getTransactionPool().pop(parent.getHeader());
 
-        if (!config.allowEmptyBlock() && p.getPending().isEmpty())
+        if (!config.allowEmptyBlock() && p.getPending().isEmpty()) {
+            getTransactionPool().reset(parent.getHeader());
             return BlockCreateResult.empty();
+        }
 
         Header header = createHeader(parent);
 
@@ -74,8 +76,9 @@ public abstract class AbstractMiner implements Miner {
         // modifications to the trie will not persisted until flush() called
 
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
-        HexBytes root = p.getCurrent();
-        Backend tmp = accountTrie.createBackend(parent.getHeader(), root, null, false);
+        Backend tmp = p.getCurrent() == null ?
+            accountTrie.createBackend(parent.getHeader(), parent.getStateRoot(), null, false)
+            : p.getCurrent();
         List<Transaction> transactionList = p.getPending();
         b.setBody(transactionList);
         b.getBody().add(0, coinbase);

@@ -110,7 +110,7 @@ public class JsonRpcFilter implements Filter {
                 // passwords could be sent here
                 if (!EXCLUDE_LOGS.contains(methodName)) {
                     log.info(methodName + "(" + params.stream()
-                        .map(n -> n.asText())
+                        .map(JsonNode::asText)
                         .collect(Collectors.joining(", ")) + "): " + responseText);
                 } else {
                     // logging is handled manually in service

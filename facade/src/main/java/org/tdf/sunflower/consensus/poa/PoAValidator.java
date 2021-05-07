@@ -38,6 +38,9 @@ public class PoAValidator extends AbstractValidator {
             return ValidateResult.fault("reward of coin base transaction should be " + poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1));
         }
 
+        if(!block.getCoinbase().equals(block.getBody().get(0).getReceiveHex()))
+            return ValidateResult.fault("block coinbase not equals to coinbase transaction receiver");
+
         ValidateResult res0 = validateCoinBase(dependency, block.getBody().get(0));
         if (!res0.isSuccess())
             return res0;
@@ -46,7 +49,7 @@ public class PoAValidator extends AbstractValidator {
             !poA.getMinerContract().getProposer(
                 dependency.getHash(),
                 block.getCreatedAt()
-            ).equals(block.getBody().get(0).getReceiveHex())
+            ).getAddress().equals(block.getBody().get(0).getReceiveHex())
 
         ) return ValidateResult.fault("invalid proposer " + block.getBody().get(0).getSenderHex());
 
