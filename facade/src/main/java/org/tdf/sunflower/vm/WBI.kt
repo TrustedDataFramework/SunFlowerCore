@@ -99,9 +99,8 @@ object WBI {
 
     // String / U256 / HexBytes
     @JvmStatic
-    fun peek(instance: ModuleInstance, offset: Int, type: Int): Any {
-        val t = Integer.toUnsignedLong(type)
-        val startAndLen = instance.execute("__peek", offset.toLong(), t)[0]
+    fun peek(instance: ModuleInstance, offset: Int, type: Long): Any {
+        val startAndLen = instance.execute("__peek", offset.toLong(), type)[0]
         val start = (startAndLen ushr 32).toInt()
         val len = startAndLen.toInt()
         val bin = instance.memory.loadN(start, len)
@@ -119,11 +118,10 @@ object WBI {
         throw RuntimeException("unexpected")
     }
 
-    private fun mallocInternal(instance: ModuleInstance, type: Int, bin: ByteArray): Int {
-        val t = Integer.toUnsignedLong(type)
+    private fun mallocInternal(instance: ModuleInstance, type: Long, bin: ByteArray): Int {
         val ptr = instance.execute("__malloc", bin.size.toLong())[0]
         instance.memory.put(ptr.toInt(), bin)
-        val p = instance.execute("__change_t", t, ptr, bin.size.toLong())[0]
+        val p = instance.execute("__change_t", type, ptr, bin.size.toLong())[0]
         val r = p.toInt()
         if (r < 0) throw RuntimeException("malloc failed: pointer is negative")
         return r
