@@ -44,6 +44,7 @@ repositories {
 
 dependencies {
     // dependency without version number are configured by spring dependency management automatically
+    compile "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
     compile 'org.springframework.boot:spring-boot-starter-actuator'
     compile 'org.springframework.boot:spring-boot-starter-web'
     compile 'org.postgresql:postgresql'
