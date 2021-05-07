@@ -86,7 +86,7 @@ public class EntryController {
             for (int i = 0; i < b.getBody().size(); i++) {
                 if (i == 0)
                     continue;
-                totalGasPrice = totalGasPrice.safeAdd(b.getBody().get(i).getGasPriceAsU256());
+                totalGasPrice = totalGasPrice.plus(b.getBody().get(i).getGasPriceAsU256());
                 totalTransactions++;
             }
         }

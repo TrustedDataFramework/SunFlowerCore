@@ -1,11 +1,13 @@
 package org.tdf.sunflower.vm.abi;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.Predicate;
@@ -44,8 +46,9 @@ public class Abi extends ArrayList<Abi.Entry> {
 
 
     private final static ObjectMapper DEFAULT_MAPPER = new ObjectMapper()
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
+//        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+//        .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
+        ;
 
     public static Abi fromJson(String json) {
         try {
@@ -86,6 +89,7 @@ public class Abi extends ArrayList<Abi.Entry> {
 
 
     @JsonInclude(Include.NON_NULL)
+    @RequiredArgsConstructor
     public static abstract class Entry {
 
         public enum Type {
@@ -95,11 +99,19 @@ public class Abi extends ArrayList<Abi.Entry> {
             fallback
         }
 
+        public enum StateMutability {
+            view,  // specified to not read blockchain state
+            pure, // specified to not modify the blockchain state
+            nonpayable, // function does not accept Ether
+            payable, // function accepts Ether
+        }
+
         @JsonInclude(Include.NON_NULL)
         public static class Param {
             public Boolean indexed;
             public String name;
             public SolidityType type;
+            public String internalType;
 
             public static byte[] encodeList(List<Param> inputs, Object... args) {
                 if (args.length > inputs.size())
@@ -166,16 +178,11 @@ public class Abi extends ArrayList<Abi.Entry> {
         public final List<Param> outputs;
         public final Type type;
         public final Boolean payable;
+        public final StateMutability stateMutability;
 
-
-        public Entry(Boolean anonymous, Boolean constant, String name, List<Param> inputs, List<Param> outputs, Type type, Boolean payable) {
-            this.anonymous = anonymous;
-            this.constant = constant;
-            this.name = name;
-            this.inputs = inputs;
-            this.outputs = outputs;
-            this.type = type;
-            this.payable = payable;
+        @JsonIgnore
+        public boolean isPayable() {
+            return stateMutability != null && stateMutability == StateMutability.payable;
         }
 
         public String formatSignature() {
@@ -202,18 +209,21 @@ public class Abi extends ArrayList<Abi.Entry> {
                                    @JsonProperty("inputs") List<Param> inputs,
                                    @JsonProperty("outputs") List<Param> outputs,
                                    @JsonProperty("type") Type type,
-                                   @JsonProperty(value = "payable", required = false, defaultValue = "false") Boolean payable) {
+                                   @JsonProperty(value = "payable", required = false, defaultValue = "false") Boolean payable,
+                                   @JsonProperty(value = "stateMutability") StateMutability stateMutability
+
+        ) {
             Entry result = null;
             switch (type) {
                 case constructor:
-                    result = new Constructor(inputs, outputs);
+                    result = new Constructor(inputs, outputs, stateMutability);
                     break;
                 case function:
                 case fallback:
-                    result = new Function(constant, name, inputs, outputs, payable);
+                    result = new Function(constant, name, inputs, outputs, payable, stateMutability);
                     break;
                 case event:
-                    result = new Event(anonymous, name, inputs, outputs);
+                    result = new Event(anonymous, name, inputs, outputs, stateMutability);
                     break;
             }
 
@@ -223,8 +233,8 @@ public class Abi extends ArrayList<Abi.Entry> {
 
     public static class Constructor extends Entry {
 
-        public Constructor(List<Param> inputs, List<Param> outputs) {
-            super(null, null, "", inputs, outputs, Type.constructor, false);
+        public Constructor(List<Param> inputs, List<Param> outputs, StateMutability stateMutability) {
+            super(null, null, "", inputs, outputs, Type.constructor, false, stateMutability);
         }
 
         public List<?> decode(byte[] encoded) {
@@ -240,8 +250,8 @@ public class Abi extends ArrayList<Abi.Entry> {
 
         private static final int ENCODED_SIGN_LENGTH = 4;
 
-        public Function(boolean constant, String name, List<Param> inputs, List<Param> outputs, Boolean payable) {
-            super(null, constant, name, inputs, outputs, Type.function, payable);
+        public Function(boolean constant, String name, List<Param> inputs, List<Param> outputs, Boolean payable, StateMutability stateMutability) {
+            super(null, constant, name, inputs, outputs, Type.function, payable, stateMutability);
         }
 
         public byte[] encode(Object... args) {
@@ -289,8 +299,8 @@ public class Abi extends ArrayList<Abi.Entry> {
 
     public static class Event extends Entry {
 
-        public Event(boolean anonymous, String name, List<Param> inputs, List<Param> outputs) {
-            super(anonymous, null, name, inputs, outputs, Type.event, false);
+        public Event(boolean anonymous, String name, List<Param> inputs, List<Param> outputs, StateMutability stateMutability) {
+            super(anonymous, null, name, inputs, outputs, Type.event, false, stateMutability);
         }
 
         public List<?> decode(byte[] data, byte[][] topics) {

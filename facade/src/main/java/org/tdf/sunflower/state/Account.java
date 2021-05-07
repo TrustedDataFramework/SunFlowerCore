@@ -56,12 +56,12 @@ public class Account {
     }
 
     public void addBalance(Uint256 amount) {
-        this.balance = this.balance.safeAdd(amount);
+        this.balance = this.balance.plus(amount);
     }
 
     public void subBalance(Uint256 amount) {
         if (balance.compareTo(amount) < 0)
             throw new RuntimeException("balance of " + address + " is not enougth");
-        this.balance = this.balance.safeSub(amount);
+        this.balance = this.balance.minus(amount);
     }
 }

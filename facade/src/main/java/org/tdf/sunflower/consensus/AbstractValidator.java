@@ -79,7 +79,7 @@ public abstract class AbstractValidator implements Validator {
                 VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(tx, false));
                 VMResult r = executor.execute();
                 results.put(HexBytes.fromBytes(tx.getHash()), r);
-                totalFee = totalFee.safeAdd(r.getFee());
+                totalFee = totalFee.plus(r.getFee());
 
                 currentGas += r.getGasUsed();
                 TransactionReceipt receipt = new TransactionReceipt(

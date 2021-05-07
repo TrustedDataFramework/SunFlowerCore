@@ -37,19 +37,19 @@ public class U256Host extends HostFunction {
         Uint256 res;
         switch (op) {
             case SUM:
-                res = l.add(r);
+                res = l.uncheckedPlus(r);
                 break;
             case SUB:
-                res = l.sub(r);
+                res = l.uncheckedMinus(r);
                 break;
             case MUL:
-                res = l.mul(r);
+                res = l.uncheckedTimes(r);
                 break;
             case DIV:
-                res = l.div(r);
+                res = l.uncheckedDiv(r);
                 break;
             case MOD:
-                res = l.mod(r);
+                res = l.uncheckedRem(r);
                 break;
             default:
                 throw new UnsupportedOperationException();

@@ -117,7 +117,7 @@ public class PosPreBuilt implements BuiltinContract {
                 NodeInfo n = e.getKey() < 0 ? new NodeInfo(args, Uint256.ZERO, new ArrayList<>()) :
                     e.getValue();
 
-                n.vote = n.vote.safeAdd(callData.getValue());
+                n.vote = n.vote.plus(callData.getValue());
                 n.txHash.add(callData.getTxHash());
                 if (e.getKey() < 0)
                     nodeInfos.add(n);
@@ -154,7 +154,7 @@ public class PosPreBuilt implements BuiltinContract {
 
                 if (!ninfo.txHash.contains(args))
                     throw new RuntimeException("vote " + args + " not exists");
-                ninfo.vote = ninfo.vote.safeSub(voteInfo.amount);
+                ninfo.vote = ninfo.vote.minus(voteInfo.amount);
                 ninfo.txHash.remove(args);
 
                 if (ninfo.vote.compareTo(Uint256.ZERO) == 0) {
@@ -165,10 +165,10 @@ public class PosPreBuilt implements BuiltinContract {
 
 
                 Uint256 callerBalance = backend.getBalance(callData.getCaller());
-                backend.setBalance(callData.getCaller(), callerBalance.add(voteInfo.amount));
+                backend.setBalance(callData.getCaller(), callerBalance.plus(voteInfo.amount));
 
                 Uint256 thisBalance = backend.getBalance(Constants.POS_CONTRACT_ADDR);
-                backend.setBalance(Constants.POS_CONTRACT_ADDR, thisBalance.safeSub(voteInfo.amount));
+                backend.setBalance(Constants.POS_CONTRACT_ADDR, thisBalance.minus(voteInfo.amount));
                 break;
         }
         nodeInfos.sort(NodeInfo::compareTo);

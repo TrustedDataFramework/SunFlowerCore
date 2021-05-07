@@ -43,14 +43,14 @@ object WBI {
     // the __init section is dropped before inject
     @JvmStatic
     fun inject(create: Boolean, abi: Abi, i: ModuleInstance, input: HexBytes): InjectResult {
-        var params: List<Abi.Entry.Param>? = null
-        var encoded: HexBytes? = null
         var function: String? = null
+        var entry: Abi.Entry? = null
+        var encoded: HexBytes? = null
 
         // 2. for contract create, constructor is not necessarily
         if (create && abi.findConstructor() != null) {
+            entry = abi.findConstructor()
             function = "init"
-            params = abi.findConstructor().inputs
             encoded = input
         }
 
@@ -58,21 +58,21 @@ object WBI {
         if (!create) {
             val sig = input.slice(0, 4).bytes
             val f = abi.findFunction { x: Abi.Function -> x.encodeSignature().contentEquals(sig) }!!
+            entry = f
             function = f.name
-            params = f.inputs
             // drop signature parts
             encoded = input.slice(4)
         }
 
         // params == null -> abi not found
-        if (params == null)
-            return InjectResult(function ?: "", LongArray(0), false)
+        if (entry == null)
+            return InjectResult( function ?: "", entry, LongArray(0), false)
 
         // malloc param types
-        val inputs = Abi.Entry.Param.decodeList(params, encoded!!.bytes)
-        val ret = LongArray(params.size)
+        val inputs = Abi.Entry.Param.decodeList(entry.inputs, encoded!!.bytes)
+        val ret = LongArray(entry.inputs.size)
         for (j in inputs.indices) {
-            val p = params[j]
+            val p = entry.inputs[j]
             when (p.type.name) {
                 "uint8", "uint16", "uint32", "uint64" -> {
                     ret[j] = (inputs[j] as BigInteger).longValueExact()
@@ -100,7 +100,7 @@ object WBI {
                 }
             }
         }
-        return InjectResult(function!!, ret, true)
+        return InjectResult(function!!, entry, ret, true)
     }
 
     // String / U256 / HexBytes
@@ -154,5 +154,5 @@ object WBI {
         return mallocInternal(instance, WbiType.ADDRESS, address.bytes)
     }
 
-    data class InjectResult(val function: String, val pointers: LongArray, val executable: Boolean);
+    data class InjectResult(val name: String, val entry: Abi.Entry?, val pointers: LongArray, val executable: Boolean);
 }

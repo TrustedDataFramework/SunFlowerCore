@@ -26,6 +26,10 @@ object ModuleValidator {
             throw RuntimeException("too many __init sections")
 
         val constructor = abi.findConstructor()
+        // when __init section found, constructor should exists
+        if(inits.isNotEmpty() && constructor == null)
+            throw RuntimeException("constructor not found")
+
         if(constructor != null && inits.isEmpty() && !update) {
             // when update __init section will be dropped
             throw RuntimeException("constructor found, while __init section not found")
@@ -62,6 +66,8 @@ object ModuleValidator {
 
         for (entry in abiFunctions) {
             val md = moduleFunctions[entry.key]!!
+            if(entry.value.second > 1 || md.second > 1)
+                throw RuntimeException("wasm function should return at most one output")
             if(md != entry.value){
                 throw RuntimeException("""arity not equal for function name ${entry.key} abi = ${entry.value} module = $md""")
             }

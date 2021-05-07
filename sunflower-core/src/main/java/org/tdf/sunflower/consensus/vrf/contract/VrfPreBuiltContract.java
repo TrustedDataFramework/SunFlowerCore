@@ -133,8 +133,8 @@ public class VrfPreBuiltContract implements BuiltinContract {
         }
 
         // Update account balance
-        fromAccount.setBalance(fromAccount.getBalance().safeSub(Uint256.of(amount)));
-        contractAccount.setBalance(contractAccount.getBalance().safeAdd(Uint256.of(amount)));
+        fromAccount.setBalance(fromAccount.getBalance().minus(Uint256.of(amount)));
+        contractAccount.setBalance(contractAccount.getBalance().plus(Uint256.of(amount)));
 
         // Update contract storage
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
@@ -176,8 +176,8 @@ public class VrfPreBuiltContract implements BuiltinContract {
         total -= amount;
 
         // Update account balance
-        fromAccount.setBalance(fromAccount.getBalance().safeAdd(Uint256.of(amount)));
-        contractAccount.setBalance(contractAccount.getBalance().safeSub(Uint256.of(amount)));
+        fromAccount.setBalance(fromAccount.getBalance().plus(Uint256.of(amount)));
+        contractAccount.setBalance(contractAccount.getBalance().minus(Uint256.of(amount)));
 
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
         contractStorage.put(TOTAL_KEY, ByteUtil.longToBytes(total));

@@ -34,7 +34,7 @@ public class PoAValidator extends AbstractValidator {
         if (!res.isSuccess()) return res;
 
         Uint256 fee = res.getFee();
-        if (!fee.safeAdd(poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1)).equals(block.getBody().get(0).getValueAsUint())) {
+        if (!fee.plus(poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1)).equals(block.getBody().get(0).getValueAsUint())) {
             return ValidateResult.fault("reward of coin base transaction should be " + poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1));
         }
 

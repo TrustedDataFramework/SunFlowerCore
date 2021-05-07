@@ -1,6 +1,5 @@
 package org.tdf.sunflower.vm;
 
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
@@ -22,8 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import static org.tdf.sunflower.types.Transaction.ADDRESS_LENGTH;
 
 @NoArgsConstructor
 public class VMExecutor {
@@ -64,19 +61,6 @@ public class VMExecutor {
         return new VMExecutor(backend, callData.clone(), limit, depth + 1);
     }
 
-    public static void assertContractAddress(HexBytes address) {
-        if (address.size() != ADDRESS_LENGTH)
-            throw new RuntimeException("invalid address size " + address.size());
-
-        // address starts with 18 zero is reversed
-        for (int i = 0; i < 18; i++) {
-            if (address.get(i) != 0)
-                return;
-        }
-        throw new RuntimeException("cannot call reversed address " + address);
-    }
-
-
     public VMResult execute() {
 
         // 1. increase sender nonce
@@ -103,7 +87,7 @@ public class VMExecutor {
         byte[] result = executeInternal();
 
         // 3. calculate fee and
-        Uint256 fee = Uint256.of(limit.getGas()).mul(callData.getGasPrice());
+        Uint256 fee = Uint256.of(limit.getGas()).times(callData.getGasPrice());
         backend.subBalance(callData.getOrigin(), fee);
 
 
@@ -168,10 +152,16 @@ public class VMExecutor {
                 } else {
                     contractAddress = callData.getTo();
                     code = backend.getCode(contractAddress).getBytes();
+                    // call a non-contract account
+                    if(code.length == 0 && !callData.getData().isEmpty())
+                        throw new RuntimeException("call receiver not a contract");
+                    // transfer to a contract account
+                    if(code.length != 0 && callData.getData().isEmpty()) {
+                        throw new RuntimeException("transfer to a contract");
+                    }
                     data = callData.getData().getBytes();
                 }
 
-                // is wasm call
                 backend.addBalance(contractAddress, callData.getValue());
                 backend.subBalance(callData.getCaller(), callData.getValue());
 
@@ -191,11 +181,13 @@ public class VMExecutor {
                     .withEvent(backend, callData.getTo());
 
                 Module m = new Module(code);
+
                 Abi abi = m.getCustomSections()
-                    .stream().filter(x -> x.getName().equals("__abi"))
+                    .stream().filter(x -> x.getName().equals(WBI.ABI_SECTION_NAME))
                     .findFirst()
                     .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
                     .get();
+
 
                 ModuleInstance instance = ModuleInstance
                     .builder()
@@ -206,11 +198,15 @@ public class VMExecutor {
 
                 WBI.InjectResult r = WBI.inject(create, abi, instance, HexBytes.fromBytes(data));
 
+                // payable check
+                boolean payable = r.getEntry() != null && r.getEntry().isPayable();
+                if(!payable && !callData.getValue().isZero())
+                    throw new RuntimeException("function " + r.getName() + " is not payable");
+
                 if (!r.getExecutable())
                     return ByteUtil.EMPTY_BYTE_ARRAY;
 
-                // put parameters will not consume steps
-                long[] rets = instance.execute(r.getFunction(), r.getPointers());
+                long[] rets = instance.execute(r.getName(), r.getPointers());
 
                 List<Object> results = new ArrayList<>();
                 List<Abi.Entry.Param> outputs;
@@ -221,7 +217,7 @@ public class VMExecutor {
                         .map(x -> x.outputs)
                         .orElse(Collections.emptyList());
                 } else {
-                    outputs = abi.findFunction(x -> x.name.equals(r.getFunction())).outputs;
+                    outputs = abi.findFunction(x -> x.name.equals(r.getName())).outputs;
                     if (outputs == null)
                         outputs = Collections.emptyList();
                 }

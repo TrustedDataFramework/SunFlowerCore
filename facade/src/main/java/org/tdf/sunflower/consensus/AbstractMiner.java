@@ -74,19 +74,19 @@ public abstract class AbstractMiner implements Miner {
         // modifications to the trie will not persisted until flush() called
 
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
-
-        Backend tmp = accountTrie.createBackend(parent.getHeader(), p.getTrieRoot(), null, false);
+        HexBytes root = p.getCurrent();
+        Backend tmp = accountTrie.createBackend(parent.getHeader(), root, null, false);
         List<Transaction> transactionList = p.getPending();
         b.setBody(transactionList);
         b.getBody().add(0, coinbase);
 
         Uint256 totalFee =
             p.getReceipts().stream()
-                .map(x -> x.getTransaction().getGasPriceAsU256().safeMul(x.getGasUsedAsU256()))
-                .reduce(Uint256.ZERO, Uint256::safeAdd);
+                .map(x -> x.getTransaction().getGasPriceAsU256().times(x.getGasUsedAsU256()))
+                .reduce(Uint256.ZERO, Uint256::plus);
 
         // add fee to miners account
-        coinbase.setValue(coinbase.getValueAsUint().safeAdd(totalFee));
+        coinbase.setValue(coinbase.getValueAsUint().plus(totalFee));
         CallData callData = CallData.fromTransaction(coinbase, true);
         tmp.setHeaderCreatedAt(System.currentTimeMillis() / 1000);
         header.setCreatedAt(tmp.getHeaderCreatedAt());

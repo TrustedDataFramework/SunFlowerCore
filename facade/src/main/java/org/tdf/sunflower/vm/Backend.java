@@ -13,11 +13,11 @@ public interface Backend {
     default void subBalance(HexBytes addr, Uint256 amount) {
         if (getBalance(addr).compareTo(amount) < 0)
             throw new RuntimeException(String.format("balance of account %s less than %s", addr, amount.value().toString(10)));
-        setBalance(addr, getBalance(addr).safeSub(amount));
+        setBalance(addr, getBalance(addr).minus(amount));
     }
 
     default void addBalance(HexBytes addr, Uint256 amount) {
-        setBalance(addr, getBalance(addr).safeAdd(amount));
+        setBalance(addr, getBalance(addr).plus(amount));
     }
 
     long getHeight();
@@ -75,6 +75,11 @@ public interface Backend {
 
     // merge modifications, return the new state root
     HexBytes merge();
+
+    default boolean isContract(HexBytes address) {
+        HexBytes code = getCode(address);
+        return code != null && code.size() > 0;
+    }
 
     default Store<HexBytes, HexBytes> getAsStore(HexBytes address) {
         return new Store<HexBytes, HexBytes>() {

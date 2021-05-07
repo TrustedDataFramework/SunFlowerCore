@@ -37,9 +37,9 @@ public class Transfer extends HostFunction {
         HexBytes toAddr = HexBytes.fromBytes((byte[]) WBI.peek(getInstance(), (int) parameters[1], WbiType.ADDRESS));
         Uint256 amount = (Uint256) WBI.peek(getInstance(), (int) parameters[2], WbiType.UINT_256);
         Uint256 contractBalance = backend.getBalance(contractAddress);
-        backend.setBalance(contractAddress, contractBalance.safeSub(amount));
+        backend.setBalance(contractAddress, contractBalance.minus(amount));
         Uint256 toBalance = backend.getBalance(toAddr);
-        backend.setBalance(toAddr, toBalance.safeAdd(amount));
+        backend.setBalance(toAddr, toBalance.plus(amount));
         return 0;
     }
 }

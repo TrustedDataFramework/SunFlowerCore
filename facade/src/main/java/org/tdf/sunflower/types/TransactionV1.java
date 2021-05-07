@@ -163,7 +163,7 @@ public class TransactionV1 {
         if (type == Type.COIN_BASE.code)
             return Uint256.ZERO;
         if (type == Type.TRANSFER.code)
-            return Uint256.of(TRANSFER_GAS).mul(getGasPrice());
+            return Uint256.of(TRANSFER_GAS).times(getGasPrice());
         return Uint256.ZERO;
     }
 
