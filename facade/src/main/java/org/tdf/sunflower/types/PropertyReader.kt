@@ -7,6 +7,7 @@ import java.math.BigInteger
 
 class PropertyReader(val properties: PropertyLike) {
     fun getAsLowerCased(property: String): String {
+
         val s = properties.getProperty(property)
         return (s ?: "").trim { it <= ' ' }.toLowerCase()
     }

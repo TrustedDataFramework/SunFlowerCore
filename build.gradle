@@ -1,1 +1,52 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.5.0"
+}
+
+
+
+repositories {
+    mavenCentral()
+}
+
 apply from: 'config/config.gradle'
+
+
+allprojects {
+    group 'org.tdf'
+    version '1.0.4'
+}
+
+subprojects {
+    repositories {
+        mavenLocal()
+        jcenter()
+        mavenCentral()
+
+        maven {
+            name = "lotusvm"
+            url = uri("https://maven.pkg.github.com/TrustedDataFramework/LotusVM")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+
+        maven {
+            name = "java-rlp"
+            url = uri("https://maven.pkg.github.com/TrustedDataFramework/java-rlp")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+
+    apply plugin: 'java'
+    apply plugin: "org.jetbrains.kotlin.jvm"
+
+    dependencies {
+        implementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
+        implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}"
+        implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinVersion}"
+    }
+}
