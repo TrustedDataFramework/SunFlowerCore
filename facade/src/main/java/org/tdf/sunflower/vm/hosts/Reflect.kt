@@ -7,6 +7,8 @@ import org.tdf.lotusvm.types.ValueType
 import org.tdf.sunflower.vm.VMExecutor
 import org.tdf.sunflower.vm.WBI
 import org.tdf.sunflower.vm.abi.WbiType
+import org.tdf.lotusvm.types.Module
+import org.tdf.sunflower.vm.ModuleValidator
 
 class Reflect(private val executor: VMExecutor) : HostFunction("_reflect", FUNCTION_TYPE) {
     override fun execute(vararg longs: Long): Long {
@@ -21,6 +23,9 @@ class Reflect(private val executor: VMExecutor) : HostFunction("_reflect", FUNCT
             }
             UPDATE -> {
                 val code = WBI.peek(instance, longs[3].toInt(), WbiType.BYTES) as HexBytes
+                // validate code
+                val m = Module(code.bytes)
+                ModuleValidator.validate(m, true)
                 // drop init code
                 executor
                     .backend

@@ -9,7 +9,7 @@ class PropertyReader(val properties: PropertyLike) {
     fun getAsLowerCased(property: String): String {
 
         val s = properties.getProperty(property)
-        return (s ?: "").trim { it <= ' ' }.toLowerCase()
+        return (s ?: "").trim { it <= ' ' }.lowercase()
     }
 
     fun getAsNonNull(property: String): String {
@@ -32,7 +32,7 @@ class PropertyReader(val properties: PropertyLike) {
         if (s == null || s.trim { it <= ' ' }.isEmpty()) {
             return defaultValue
         }
-        s = s.trim { it <= ' ' }.toLowerCase()
+        s = s.trim { it <= ' ' }.lowercase()
         val b = if (s.startsWith("0x")) BigInteger(s.substring(2), 16) else BigInteger(s)
         return Uint256.of(b)
     }

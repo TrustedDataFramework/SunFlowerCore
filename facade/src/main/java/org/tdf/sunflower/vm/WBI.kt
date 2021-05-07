@@ -12,6 +12,12 @@ import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
 object WBI {
+    const val ABI_SECTION_NAME = "__abi";
+    const val INIT_SECTION_NAME = "__init"
+    const val WBI_MALLOC = "__malloc"
+    const val WBI_PEEK = "__peek"
+    const val WBI_CHANGE_TYPE = "__change_t"
+
     @JvmStatic
     fun dropInit(code: ByteArray): ByteArray {
         val m = Module(code)
@@ -19,7 +25,7 @@ object WBI {
         // drop __init sections
         var now = 0
         for (section in m.customSections) {
-            if (section.name == "__init") {
+            if (section.name == INIT_SECTION_NAME) {
                 out.write(code, now, section.offset - now)
                 now = section.limit
             }
@@ -30,7 +36,7 @@ object WBI {
 
     @JvmStatic
     fun extractInitData(m: Module): ByteArray {
-        return m.customSections.stream().filter { x: CustomSection -> x.name == "__init" }.findFirst()
+        return m.customSections.stream().filter { x: CustomSection -> x.name == INIT_SECTION_NAME }.findFirst()
             .map { obj: CustomSection -> obj.data }.orElse(ByteArray(0))
     }
 
@@ -100,7 +106,7 @@ object WBI {
     // String / U256 / HexBytes
     @JvmStatic
     fun peek(instance: ModuleInstance, offset: Int, type: Long): Any {
-        val startAndLen = instance.execute("__peek", offset.toLong(), type)[0]
+        val startAndLen = instance.execute(WBI_PEEK, offset.toLong(), type)[0]
         val start = (startAndLen ushr 32).toInt()
         val len = startAndLen.toInt()
         val bin = instance.memory.loadN(start, len)
@@ -119,9 +125,9 @@ object WBI {
     }
 
     private fun mallocInternal(instance: ModuleInstance, type: Long, bin: ByteArray): Int {
-        val ptr = instance.execute("__malloc", bin.size.toLong())[0]
+        val ptr = instance.execute(WBI_MALLOC, bin.size.toLong())[0]
         instance.memory.put(ptr.toInt(), bin)
-        val p = instance.execute("__change_t", type, ptr, bin.size.toLong())[0]
+        val p = instance.execute(WBI_CHANGE_TYPE, type, ptr, bin.size.toLong())[0]
         val r = p.toInt()
         if (r < 0) throw RuntimeException("malloc failed: pointer is negative")
         return r

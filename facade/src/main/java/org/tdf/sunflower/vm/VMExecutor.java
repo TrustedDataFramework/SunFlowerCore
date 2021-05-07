@@ -145,6 +145,10 @@ public class VMExecutor {
                     // increase sender nonce
                     long n = backend.getNonce(callData.getCaller());
                     Module tmpModule = new Module(callData.getData().getBytes());
+
+                    // validate module
+                    ModuleValidator.INSTANCE.validate(tmpModule, false);
+
                     code = WBI.dropInit(callData.getData().getBytes());
                     data = WBI.extractInitData(tmpModule);
 
