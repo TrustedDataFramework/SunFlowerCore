@@ -28,7 +28,9 @@ class EventBus : CoroutineScope{
             // copy when write, avoid concurrent modifications
             val copied = copy(listeners)
             copied.putIfAbsent(eventType, ArrayList())
-            copied[eventType]!!.add(listener as Consumer<Any>)
+            copied[eventType]!!.add(
+                listener as Consumer<Any>
+            )
             listeners = copied
         }
     }
@@ -41,7 +43,7 @@ class EventBus : CoroutineScope{
     fun publish(event: Any) {
         val consumers: List<Consumer<Any>> = listeners.getOrDefault(event.javaClass, emptyList())
         for (consumer in consumers) {
-            this.launch {
+            launch {
                 try {
                     consumer.accept(event)
                 } catch (e: Exception) {

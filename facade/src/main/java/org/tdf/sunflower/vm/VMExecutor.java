@@ -196,7 +196,7 @@ public class VMExecutor {
 
                 WBI.InjectResult r = WBI.inject(create, abi, instance, HexBytes.fromBytes(data));
 
-                if (!r.isExecutable())
+                if (!r.getExecutable())
                     return ByteUtil.EMPTY_BYTE_ARRAY;
 
                 // put parameters will not consume steps

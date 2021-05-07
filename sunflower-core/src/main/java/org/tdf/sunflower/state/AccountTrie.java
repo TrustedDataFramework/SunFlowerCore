@@ -11,7 +11,6 @@ import org.tdf.common.store.NoDeleteBatchStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.types.Parameters;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
@@ -20,9 +19,6 @@ import org.tdf.sunflower.pool.BackendImpl;
 import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
-import org.tdf.sunflower.vm.CallData;
-import org.tdf.sunflower.vm.VMExecutor;
-import org.tdf.sunflower.vm.abi.ContractCallPayload;
 
 import java.util.HashMap;
 import java.util.List;
@@ -132,22 +128,5 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
     @Override
     DatabaseStore getDB() {
         return this.db;
-    }
-
-
-    public byte[] call(Header header, HexBytes address, String method, Parameters parameters) {
-        // execute method
-        CallData callData = CallData.empty();
-        callData.setTo(address);
-        callData.setData(HexBytes.fromBytes(RLPCodec.encode(new ContractCallPayload(method, parameters))));
-
-        Backend backend = createBackend(header, System.currentTimeMillis() / 1000, true);
-
-        VMExecutor executor = new VMExecutor(
-            backend,
-            callData
-        );
-
-        return executor.execute().getExecutionResult();
     }
 }
