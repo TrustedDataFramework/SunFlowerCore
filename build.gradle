@@ -48,5 +48,11 @@ subprojects {
         implementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
         implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}"
         implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinVersion}"
+
+        compileOnly "org.projectlombok:lombok:${lombokVersion}"
+        annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+        testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+        testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     }
 }

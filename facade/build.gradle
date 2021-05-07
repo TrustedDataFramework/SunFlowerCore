@@ -8,9 +8,6 @@ dependencies {
     compileOnly "org.tdf:rlp:${rlpVersion}"
     testImplementation "org.tdf:rlp:${rlpVersion}"
 
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
-    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-
     testImplementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     compileOnly "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"

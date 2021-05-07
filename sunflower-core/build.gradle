@@ -15,13 +15,11 @@ dependencies {
     testImplementation "junit:junit"
 
 
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
-    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+
     compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
     implementation project(':common')
     implementation project(':facade')
-    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     implementation "com.google.guava:guava:${guavaVersion}"
     implementation "commons-cli:commons-cli:${commonsCliVersion}"

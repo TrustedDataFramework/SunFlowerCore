@@ -15,8 +15,6 @@ dependencies {
     api "com.madgag.spongycastle:prov:${scastleVersion}"
     api "commons-codec:commons-codec:${commonsCodecVersion}"
     testImplementation "commons-codec:commons-codec:${commonsCodecVersion}"
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
-    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
     compileOnly "org.rocksdb:rocksdbjni:${rocksdbVersion}"
     compileOnly "org.iq80.leveldb:leveldb-api:${leveldbVersion}"

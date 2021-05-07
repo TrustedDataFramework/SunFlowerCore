@@ -39,11 +39,17 @@ public class VMExecutor {
         this.depth = depth;
     }
 
+    public Backend getBackend() {
+        return backend;
+    }
 
-    @Getter
-    private Backend backend;
-    @Getter
-    private CallData callData;
+    public CallData getCallData() {
+        return callData;
+    }
+
+    Backend backend;
+
+    CallData callData;
 
 
     // gas limit hook

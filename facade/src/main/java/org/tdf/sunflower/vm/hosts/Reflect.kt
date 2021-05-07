@@ -21,16 +21,18 @@ class Reflect(private val executor: VMExecutor) : HostFunction("_reflect", FUNCT
             }
             UPDATE -> {
                 val code = WBI.peek(instance, longs[3].toInt(), WbiType.BYTES) as HexBytes
+                // drop init code
                 executor
                     .backend
                     .setCode(
                         executor.callData.to,
-                        code
+                        HexBytes.fromBytes(WBI.dropInit(code.bytes))
                     )
+                return 0
             }
             else -> throw RuntimeException("reflect failed: unexpected $t")
         }
-        throw RuntimeException("unexpected $t")
+
     }
 
 
