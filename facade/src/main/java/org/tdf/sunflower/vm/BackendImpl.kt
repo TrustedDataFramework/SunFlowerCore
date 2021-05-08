@@ -1,4 +1,4 @@
-package org.tdf.sunflower.pool
+package org.tdf.sunflower.vm
 
 import org.tdf.common.store.Store
 import org.tdf.common.trie.Trie
@@ -8,11 +8,10 @@ import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.BuiltinContract
 import org.tdf.sunflower.types.CryptoContext
 import org.tdf.sunflower.types.Header
-import org.tdf.sunflower.vm.Backend
-import java.util.*
+import java.util.HashMap
 
 // backend for mining
-class BackendImpl(
+open class BackendImpl(
     private val parent: Header,
     override val parentBackend: BackendImpl? = null,
     private val trie: Trie<HexBytes, Account>,
@@ -35,7 +34,7 @@ class BackendImpl(
 
     // get account by parent without clone
     private fun lookup(address: HexBytes): Account {
-        if (parentBackend != null) return parentBackend.lookup(address)
+        if (parentBackend != null) return parentBackend!!.lookup(address)
         val a = trie[address]
         return a ?: Account.emptyAccount(address, Uint256.ZERO)
     }
@@ -106,6 +105,10 @@ class BackendImpl(
         return tmpTrie.commit()
     }
 
+    override fun close() {
+
+    }
+
     override val height: Long
         get() = parent.height + 1
     override val parentHash: HexBytes
@@ -166,7 +169,7 @@ class BackendImpl(
             }
         }
         if (parentBackend != null) {
-            return parentBackend.dbGet(address, key)
+            return parentBackend!!.dbGet(address, key)
         }
         val a = trie[address] ?: return HexBytes.empty()
         val v = contractStorageTrie.revert(a.storageRoot)[key]

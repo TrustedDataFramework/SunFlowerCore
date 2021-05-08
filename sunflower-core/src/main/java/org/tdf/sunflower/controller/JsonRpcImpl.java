@@ -125,9 +125,10 @@ public class JsonRpcImpl implements JsonRpc {
 
         switch (blockId) {
             case "latest":
-            case "pending":
                 header = repository.getBestHeader();
                 break;
+            case "pending":
+                return pool.current();
             case "earliest":
                 header = repository.getGenesis().getHeader();
                 break;
@@ -142,11 +143,12 @@ public class JsonRpcImpl implements JsonRpc {
     @Override
     public String eth_getBalance(String address, String block) throws Exception {
         Objects.requireNonNull(address, "address is required");
-        Backend repo = getBackendByBlockId(block, true);
 
-        byte[] addressAsByteArray = hexToByteArray(address);
-        Uint256 balance = repo.getBalance(HexBytes.fromBytes(addressAsByteArray));
-        return toJsonHex(balance.value());
+        try (Backend repo = getBackendByBlockId(block, true)) {
+            byte[] addressAsByteArray = hexToByteArray(address);
+            Uint256 balance = repo.getBalance(HexBytes.fromBytes(addressAsByteArray));
+            return toJsonHex(balance.value());
+        }
     }
 
     @Override
@@ -161,8 +163,11 @@ public class JsonRpcImpl implements JsonRpc {
 
     @Override
     public String eth_getTransactionCount(String address, String blockId) throws Exception {
-        Backend backend = getBackendByBlockId(blockId, true);
-        return toJsonHex(backend.getNonce(jsonHexToHexBytes(address)));
+        try (
+            Backend backend = getBackendByBlockId(blockId, true);
+        ) {
+            return toJsonHex(backend.getNonce(jsonHexToHexBytes(address)));
+        }
     }
 
     @Override
@@ -187,8 +192,10 @@ public class JsonRpcImpl implements JsonRpc {
 
     @Override
     public String eth_getCode(String addr, String bnOrId) throws Exception {
-        HexBytes code = getBackendByBlockId(bnOrId, true).getCode(jsonHexToHexBytes(addr));
-        return toJsonHex(code);
+        try (Backend backend = getBackendByBlockId(bnOrId, true)) {
+            HexBytes code = backend.getCode(jsonHexToHexBytes(addr));
+            return toJsonHex(code);
+        }
     }
 
     @Override
@@ -214,18 +221,22 @@ public class JsonRpcImpl implements JsonRpc {
     @Override
     public String eth_call(CallArguments args, String bnOrId) throws Exception {
         CallData callData = Objects.requireNonNull(args).toCallData();
-        Backend backend = getBackendByBlockId(bnOrId, true);
-        VMExecutor executor = new VMExecutor(backend, callData);
+        try (
+            Backend backend = getBackendByBlockId(bnOrId, true);
+        ) {
+            VMExecutor executor = new VMExecutor(backend, callData);
+            return toJsonHex(executor.execute().getExecutionResult());
+        }
 
-        return toJsonHex(executor.execute().getExecutionResult());
     }
 
     @Override
     public String eth_estimateGas(CallArguments args) throws Exception {
         CallData callData = Objects.requireNonNull(args).toCallData();
-        Backend backend = getBackendByBlockId("latest", true);
-        VMExecutor executor = new VMExecutor(backend, callData);
-        return toJsonHex(executor.execute().getGasUsed());
+        try (Backend backend = getBackendByBlockId("latest", true)) {
+            VMExecutor executor = new VMExecutor(backend, callData);
+            return toJsonHex(executor.execute().getGasUsed());
+        }
     }
 
     @Override

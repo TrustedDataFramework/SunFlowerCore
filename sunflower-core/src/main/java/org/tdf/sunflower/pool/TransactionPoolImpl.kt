@@ -22,6 +22,7 @@ import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallData.Companion.fromTransaction
+import org.tdf.sunflower.vm.LockableBackend
 import org.tdf.sunflower.vm.VMExecutor
 import java.util.*
 import java.util.concurrent.Executors
@@ -216,6 +217,21 @@ class TransactionPoolImpl(
             lock.writeLock().unlock()
         }
 
+    }
+
+    override fun current(): Backend {
+        lock.readLock().lock()
+        try {
+            return if (current != null) {
+                this.lock.readLock().lock()
+                LockableBackend(current!!.createChild(), this.lock)
+            } else {
+                val best = repository.bestHeader
+                trie.createBackend(best, best.stateRoot, null, false)
+            }
+        } finally {
+            this.lock.readLock().unlock()
+        }
     }
 
     fun onNewBestBlock(event: NewBestBlock) {

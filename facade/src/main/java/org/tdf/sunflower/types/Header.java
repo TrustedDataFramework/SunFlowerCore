@@ -12,7 +12,6 @@ import org.tdf.sunflower.state.Address;
 import java.util.Objects;
 
 
-@Getter
 @ToString
 @NoArgsConstructor
 public class Header implements Chained {
@@ -200,5 +199,66 @@ public class Header implements Chained {
     public void setLogsBloom(HexBytes logsBloom) {
         this.logsBloom = logsBloom;
         resetHash();
+    }
+
+    @Override
+    public HexBytes getHashPrev() {
+        return hashPrev;
+    }
+
+    public HexBytes getUnclesHash() {
+        return unclesHash;
+    }
+
+    public HexBytes getCoinbase() {
+        return coinbase;
+    }
+
+    public HexBytes getStateRoot() {
+        return stateRoot;
+    }
+
+    public HexBytes getTransactionsRoot() {
+        return transactionsRoot;
+    }
+
+    public HexBytes getReceiptTrieRoot() {
+        return receiptTrieRoot;
+    }
+
+    public HexBytes getLogsBloom() {
+        return logsBloom;
+    }
+
+    public HexBytes getDifficulty() {
+        return difficulty;
+    }
+
+    public long getHeight() {
+        return height;
+    }
+
+    public HexBytes getGasLimit() {
+        return gasLimit;
+    }
+
+    public long getGasUsed() {
+        return gasUsed;
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public HexBytes getExtraData() {
+        return extraData;
+    }
+
+    public HexBytes getMixHash() {
+        return mixHash;
+    }
+
+    public HexBytes getNonce() {
+        return nonce;
     }
 }

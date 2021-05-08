@@ -1,19 +1,17 @@
 package org.tdf.sunflower.state;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
 import org.tdf.sunflower.types.Transaction;
 
-@AllArgsConstructor
-@Builder
-@Data
 public class Account {
+    public Account() {
+
+    }
+
     private HexBytes address;
     // for normal account this field is continuous integer
     // for contract account this field is nonce of deploy transaction
@@ -33,8 +31,13 @@ public class Account {
     // if the account is not contract account, this field will be null
     private HexBytes storageRoot;
 
-    private Account() {
-
+    public Account(HexBytes address, long nonce, Uint256 balance, HexBytes createdBy, HexBytes contractHash, HexBytes storageRoot) {
+        this.address = address;
+        this.nonce = nonce;
+        this.balance = balance;
+        this.createdBy = createdBy;
+        this.contractHash = contractHash;
+        this.storageRoot = storageRoot;
     }
 
     /**
@@ -63,5 +66,53 @@ public class Account {
         if (balance.compareTo(amount) < 0)
             throw new RuntimeException("balance of " + address + " is not enougth");
         this.balance = this.balance.minus(amount);
+    }
+
+    public void setAddress(HexBytes address) {
+        this.address = address;
+    }
+
+    public void setNonce(long nonce) {
+        this.nonce = nonce;
+    }
+
+    public void setBalance(Uint256 balance) {
+        this.balance = balance;
+    }
+
+    public void setCreatedBy(HexBytes createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public void setContractHash(HexBytes contractHash) {
+        this.contractHash = contractHash;
+    }
+
+    public void setStorageRoot(HexBytes storageRoot) {
+        this.storageRoot = storageRoot;
+    }
+
+    public HexBytes getAddress() {
+        return address;
+    }
+
+    public long getNonce() {
+        return nonce;
+    }
+
+    public Uint256 getBalance() {
+        return balance;
+    }
+
+    public HexBytes getCreatedBy() {
+        return createdBy;
+    }
+
+    public HexBytes getContractHash() {
+        return contractHash;
+    }
+
+    public HexBytes getStorageRoot() {
+        return storageRoot;
     }
 }

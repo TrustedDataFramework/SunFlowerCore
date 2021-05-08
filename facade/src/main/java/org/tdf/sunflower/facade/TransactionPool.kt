@@ -4,6 +4,7 @@ import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.types.PendingData
 import org.tdf.sunflower.types.Transaction
+import org.tdf.sunflower.vm.Backend
 
 interface TransactionPool {
     // collect transactions into transaction pool, return errors
@@ -18,4 +19,6 @@ interface TransactionPool {
 
     // recollect pending data
     fun reset(parent: Header)
+
+    fun current(): Backend
 }
