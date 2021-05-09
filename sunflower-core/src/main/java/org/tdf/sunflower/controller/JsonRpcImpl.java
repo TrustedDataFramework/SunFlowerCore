@@ -16,6 +16,7 @@ import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.TransactionInfo;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
+import org.tdf.sunflower.vm.StackResourcePool;
 import org.tdf.sunflower.vm.VMExecutor;
 
 import java.math.BigInteger;
@@ -30,6 +31,7 @@ public class JsonRpcImpl implements JsonRpc {
     private final SunflowerRepository repository;
     private final TransactionPool pool;
     private final ConsensusEngine engine;
+    private final StackResourcePool stackResourcePool;
 
     private Block getByJsonBlockId(String id) {
         if ("earliest".equalsIgnoreCase(id)) {
@@ -221,21 +223,28 @@ public class JsonRpcImpl implements JsonRpc {
     @Override
     public String eth_call(CallArguments args, String bnOrId) throws Exception {
         CallData callData = Objects.requireNonNull(args).toCallData();
+        long start = System.currentTimeMillis();
         try (
             Backend backend = getBackendByBlockId(bnOrId, true);
         ) {
-            VMExecutor executor = new VMExecutor(backend, callData);
+            VMExecutor executor = new VMExecutor(backend, callData, stackResourcePool);
             return toJsonHex(executor.execute().getExecutionResult());
+        }finally {
+            long end = System.currentTimeMillis();
+            System.out.println("eth call use " + (end - start) + " ms");
         }
-
     }
 
     @Override
     public String eth_estimateGas(CallArguments args) throws Exception {
         CallData callData = Objects.requireNonNull(args).toCallData();
+        long start = System.currentTimeMillis();
         try (Backend backend = getBackendByBlockId("latest", true)) {
-            VMExecutor executor = new VMExecutor(backend, callData);
+            VMExecutor executor = new VMExecutor(backend, callData, stackResourcePool);
             return toJsonHex(executor.execute().getGasUsed());
+        } finally {
+            long end = System.currentTimeMillis();
+            System.out.println("eth estimate gas use " + (end - start) + " ms");
         }
     }
 

@@ -13,9 +13,7 @@ import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
-import org.tdf.sunflower.vm.Backend;
-import org.tdf.sunflower.vm.CallData;
-import org.tdf.sunflower.vm.VMExecutor;
+import org.tdf.sunflower.vm.*;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -30,6 +28,7 @@ public abstract class AbstractMiner implements Miner {
     @Getter(AccessLevel.PROTECTED)
     private final EventBus eventBus;
     private final ConsensusConfig config;
+    private static final StackResourcePool POOL = new SequentialStackResourcePool(VMExecutor.MAX_CALL_DEPTH);
 
     public AbstractMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, ConsensusConfig config) {
         this.config = config;
@@ -94,8 +93,12 @@ public abstract class AbstractMiner implements Miner {
         tmp.setHeaderCreatedAt(System.currentTimeMillis() / 1000);
         header.setCreatedAt(tmp.getHeaderCreatedAt());
 
-        VMExecutor executor = new VMExecutor(tmp, callData);
-        VMResult res = executor.execute();
+        VMResult res;
+        synchronized (POOL) {
+            VMExecutor executor = new VMExecutor(tmp, callData, POOL);
+            res = executor.execute();
+        }
+
 
         long lastGas =
             p.getReceipts().isEmpty() ? 0 :

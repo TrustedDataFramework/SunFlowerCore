@@ -8,13 +8,13 @@ import org.tdf.sunflower.facade.Validator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
-import org.tdf.sunflower.vm.Backend;
-import org.tdf.sunflower.vm.CallData;
-import org.tdf.sunflower.vm.VMExecutor;
+import org.tdf.sunflower.vm.*;
 
 import java.util.*;
 
 public abstract class AbstractValidator implements Validator {
+    private static final StackResourcePool POOL = new SequentialStackResourcePool(VMExecutor.MAX_CALL_DEPTH);
+
     protected final StateTrie<HexBytes, Account> accountTrie;
 
     public AbstractValidator(StateTrie<HexBytes, Account> accountTrie) {
@@ -76,8 +76,11 @@ public abstract class AbstractValidator implements Validator {
 
 
             for (Transaction tx : block.getBody().subList(1, block.getBody().size())) {
-                VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(tx, false));
-                VMResult r = executor.execute();
+                VMResult r;
+                synchronized (POOL) {
+                    VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(tx, false), POOL);
+                    r = executor.execute();
+                }
                 results.put(HexBytes.fromBytes(tx.getHash()), r);
                 totalFee = totalFee.plus(r.getFee());
 
@@ -95,7 +98,7 @@ public abstract class AbstractValidator implements Validator {
             }
 
             tmp.setHeaderCreatedAt(block.getCreatedAt());
-            VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(coinbase, true));
+            VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(coinbase, true), POOL);
             VMResult r = executor.execute();
             currentGas += r.getGasUsed();
 

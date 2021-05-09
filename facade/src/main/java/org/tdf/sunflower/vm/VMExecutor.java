@@ -24,16 +24,21 @@ import java.util.Optional;
 
 @NoArgsConstructor
 public class VMExecutor {
+    public static final int MAX_FRAMES = 16384;
+    public static final int MAX_STACK_SIZE = MAX_FRAMES * 64;
+    public static final int MAX_LABELS = MAX_FRAMES * 64;
+    public static final int MAX_CALL_DEPTH = 8;
 
-    public VMExecutor(Backend backend, CallData callData) {
-        this(backend, callData, new Limit(0, 0, callData.getGasLimit().longValue(), 0), 0);
+    public VMExecutor(Backend backend, CallData callData, StackResourcePool pool) {
+        this(backend, callData, pool, new Limit(0, 0, callData.getGasLimit().longValue(), 0, 0, 0), 0);
     }
 
-    private VMExecutor(Backend backend, CallData callData, Limit limit, int depth) {
+    private VMExecutor(Backend backend, CallData callData, StackResourcePool pool, Limit limit, int depth) {
         this.backend = backend;
         this.callData = callData;
         this.limit = limit;
         this.depth = depth;
+        this.pool = pool;
     }
 
     public Backend getBackend() {
@@ -48,6 +53,8 @@ public class VMExecutor {
 
     CallData callData;
 
+    StackResourcePool pool;
+
 
     // gas limit hook
     private Limit limit;
@@ -56,9 +63,9 @@ public class VMExecutor {
 
 
     public VMExecutor clone() {
-        if (depth == 63)
+        if (depth + 1 == MAX_CALL_DEPTH)
             throw new RuntimeException("vm call depth overflow");
-        return new VMExecutor(backend, callData.clone(), limit, depth + 1);
+        return new VMExecutor(backend, callData.clone(), pool, limit, depth + 1);
     }
 
     public VMResult execute() {
@@ -153,10 +160,10 @@ public class VMExecutor {
                     contractAddress = callData.getTo();
                     code = backend.getCode(contractAddress).getBytes();
                     // call a non-contract account
-                    if(code.length == 0 && !callData.getData().isEmpty())
+                    if (code.length == 0 && !callData.getData().isEmpty())
                         throw new RuntimeException("call receiver not a contract");
                     // transfer to a contract account
-                    if(code.length != 0 && callData.getData().isEmpty()) {
+                    if (code.length != 0 && callData.getData().isEmpty()) {
                         throw new RuntimeException("transfer to a contract");
                     }
                     data = callData.getData().getBytes();
@@ -189,24 +196,32 @@ public class VMExecutor {
                     .get();
 
 
-                ModuleInstance instance = ModuleInstance
-                    .builder()
-                    .module(m)
-                    .hooks(Collections.singleton(limit))
-                    .hostFunctions(hosts.getAll())
-                    .build();
+                long[] rets;
+                ModuleInstance instance;
+                WBI.InjectResult r;
 
-                WBI.InjectResult r = WBI.inject(create, abi, instance, HexBytes.fromBytes(data));
+                try (StackResource stack = pool.tryGet()) {
+                    instance = ModuleInstance
+                        .builder()
+                        // TODO: stack providers share in memory pool
+                        .stackProvider(stack)
+                        .module(m)
+                        .hooks(Collections.singleton(limit))
+                        .hostFunctions(hosts.getAll())
+                        .build();
 
-                // payable check
-                boolean payable = r.getEntry() != null && r.getEntry().isPayable();
-                if(!payable && !callData.getValue().isZero())
-                    throw new RuntimeException("function " + r.getName() + " is not payable");
+                    r = WBI.inject(create, abi, instance, HexBytes.fromBytes(data));
 
-                if (!r.getExecutable())
-                    return ByteUtil.EMPTY_BYTE_ARRAY;
+                    // payable check
+                    boolean payable = r.getEntry() != null && r.getEntry().isPayable();
+                    if (!payable && !callData.getValue().isZero())
+                        throw new RuntimeException("function " + r.getName() + " is not payable");
 
-                long[] rets = instance.execute(r.getName(), r.getPointers());
+                    if (!r.getExecutable())
+                        return ByteUtil.EMPTY_BYTE_ARRAY;
+
+                    rets = instance.execute(r.getName(), r.getPointers());
+                }
 
                 List<Object> results = new ArrayList<>();
                 List<Abi.Entry.Param> outputs;

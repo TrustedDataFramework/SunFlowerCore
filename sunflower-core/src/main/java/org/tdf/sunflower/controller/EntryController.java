@@ -32,6 +32,7 @@ import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.util.EnvReader;
+import org.tdf.sunflower.vm.WBI;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -52,6 +53,7 @@ public class EntryController {
     private final Trie<HexBytes, HexBytes> contractStorageTrie;
 
     private final GlobalConfig config;
+
 
     private final PeerServer peerServer;
 
@@ -187,6 +189,13 @@ public class EntryController {
     public PagedView<TransactionV1> getPool(@ModelAttribute PoolQuery poolQuery) {
         return PagedView.empty();
     }
+
+
+    @GetMapping(value = "/ints", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Double getInts() {
+        return WBI.INSTANCE.getBytes().longValue() * 1.0 / 1024 / 1024;
+    }
+
 
 
     @GetMapping(value = "/contract/{address}/abi", produces = MediaType.APPLICATION_JSON_VALUE)

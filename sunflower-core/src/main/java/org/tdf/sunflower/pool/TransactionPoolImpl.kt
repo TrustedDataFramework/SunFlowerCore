@@ -20,10 +20,8 @@ import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
-import org.tdf.sunflower.vm.Backend
+import org.tdf.sunflower.vm.*
 import org.tdf.sunflower.vm.CallData.Companion.fromTransaction
-import org.tdf.sunflower.vm.LockableBackend
-import org.tdf.sunflower.vm.VMExecutor
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -66,6 +64,7 @@ class TransactionPoolImpl(
     private val pending: MutableList<Transaction> = mutableListOf()
     private val pendingReceipts: MutableList<TransactionReceipt> = mutableListOf()
     private var current: Backend? = null
+    private val stackPool: StackResourcePool = SequentialStackResourcePool(VMExecutor.MAX_CALL_DEPTH)
 
     private fun resetInternal(best: Header) {
         parentHeader = best
@@ -163,7 +162,7 @@ class TransactionPoolImpl(
             try {
                 val child = current!!.createChild()
                 val callData = fromTransaction(t, false)
-                val vmExecutor = VMExecutor(child, callData)
+                val vmExecutor = VMExecutor(child, callData, stackPool)
                 val res = vmExecutor.execute()
 
                 // execute successfully

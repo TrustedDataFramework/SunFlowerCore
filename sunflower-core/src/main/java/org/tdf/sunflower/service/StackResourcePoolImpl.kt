@@ -1,0 +1,45 @@
+package org.tdf.sunflower.service
+
+import org.springframework.stereotype.Service
+import org.tdf.lotusvm.runtime.LimitedStackProvider
+import org.tdf.lotusvm.runtime.StackProvider
+import org.tdf.sunflower.vm.LockedStackResource
+import org.tdf.sunflower.vm.StackResourcePool
+import org.tdf.sunflower.vm.VMExecutor
+import java.util.concurrent.locks.Lock
+import java.util.concurrent.locks.ReentrantLock
+
+@Service
+class StackResourcePoolImpl : StackResourcePool {
+    private val resources = arrayOfNulls<StackProvider>(MAX_POOL_SIZE)
+    private val locks: List<Lock>
+
+    init {
+        val locks = mutableListOf<Lock>()
+        for(i in (0..MAX_POOL_SIZE)) {
+            locks.add(ReentrantLock())
+        }
+        this.locks = locks
+    }
+
+    override fun tryGet(): LockedStackResource {
+        for (i in (0..locks.size)) {
+            if(!locks[i].tryLock())
+                continue
+            if (resources[i] == null)
+                resources[i] =
+                LimitedStackProvider(
+                    VMExecutor.MAX_STACK_SIZE,
+                    VMExecutor.MAX_FRAMES,
+                    VMExecutor.MAX_LABELS
+                )
+
+            return LockedStackResource(resources[i]!!, locks[i])
+        }
+        throw RuntimeException("busy...")
+    }
+
+    companion object {
+        const val MAX_POOL_SIZE = 256
+    }
+}
