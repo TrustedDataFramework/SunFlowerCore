@@ -169,9 +169,7 @@ public class JsonRpcImpl implements JsonRpc {
         try (
             Backend backend = getBackendByBlockId(blockId, true);
         ) {
-            System.out.println(backend);
             long n = backend.getNonce(jsonHexToHexBytes(address));
-            System.out.println(n);
             return toJsonHex(n);
         }
     }

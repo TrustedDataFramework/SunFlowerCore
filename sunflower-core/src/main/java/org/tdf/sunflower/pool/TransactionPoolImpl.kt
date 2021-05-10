@@ -224,7 +224,8 @@ class TransactionPoolImpl(
     }
 
     override fun reset(parent: Header) {
-        lock.writeLock().tryLock()
+        if(!lock.writeLock().tryLock())
+            return
         try {
             resetInternal(parent)
         } finally {
@@ -234,7 +235,6 @@ class TransactionPoolImpl(
     }
 
     override fun current(): Backend {
-        val caller = HexBytes.fromHex("0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1")
         lock.readLock().lock()
         try {
             return if (current != null) {
@@ -251,8 +251,10 @@ class TransactionPoolImpl(
         }
     }
 
-    fun onNewBestBlock(event: NewBestBlock) {
-        lock.writeLock().tryLock()
+    private fun onNewBestBlock(event: NewBestBlock) {
+        if(!lock.writeLock().tryLock()) {
+            return
+        }
         try {
             if (event.block.stateRoot == this.parentHeader?.stateRoot) return
             resetInternal(event.block.header)
