@@ -1,7 +1,6 @@
 package org.tdf.sunflower.net;
 
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.state.Address;
 
 // Peer is a p2p node could be connected
 public interface Peer {
@@ -40,10 +39,6 @@ public interface Peer {
 
     // the id is typically an ecc public key
     HexBytes getID();
-
-    default HexBytes getAddress() {
-        return Address.fromPublicKey(getID());
-    }
 
     // encode the remote peer as uri
     String encodeURI();

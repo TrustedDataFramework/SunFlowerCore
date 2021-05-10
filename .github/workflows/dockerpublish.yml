@@ -12,7 +12,6 @@ on:
 
 
 env:
-  # TODO: Change variable to your image's name.
   IMAGE_NAME: registry.cn-hangzhou.aliyuncs.com/tdf_hangzhou/sunflower
   GITHUB_USERNAME: ${{ github.actor }}
   GITHUB_TOKEN: ${{ secrets.PROJECT_TOKEN }} 

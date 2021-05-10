@@ -2,6 +2,7 @@ package org.tdf.sunflower.facade;
 
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.TransactionInfo;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +45,7 @@ public interface BlockRepository {
 
     Optional<Header> getCanonicalHeader(long height);
 
-    void writeBlock(Block block);
+    void writeBlock(Block block, List<TransactionInfo> infos);
 
     // delete all header and transactions until this height(inclusive), exclude this block
 //    void prune(byte[] hash);

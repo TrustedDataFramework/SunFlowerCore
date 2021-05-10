@@ -25,10 +25,10 @@ public class RuntimeTest {
         String filename = System.getenv("FILE_PATH");
         if (filename == null || "".equals(filename.trim())) return;
         ModuleInstance instance =
-                ModuleInstance.builder()
-                        .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
-                        .hostFunctions(new Hosts().getAll())
-                        .build();
+            ModuleInstance.builder()
+                .binary(TestUtils.readClassPathFileAsByteArray(WASM_FILE_PATH))
+                .hostFunctions(new Hosts().getAll())
+                .build();
         Exception e = null;
         try {
             instance.execute("testException");

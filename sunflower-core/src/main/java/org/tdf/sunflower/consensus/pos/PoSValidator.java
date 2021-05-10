@@ -5,10 +5,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.BlockValidateResult;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.ValidateResult;
+import org.tdf.sunflower.types.*;
 
 @Setter
 public class PoSValidator extends AbstractValidator {
@@ -24,22 +21,16 @@ public class PoSValidator extends AbstractValidator {
         BlockValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
 
-        if (block.getVersion() != PoS.BLOCK_VERSION) {
-            return ValidateResult.fault("version not match");
-        }
         if (
-                !posMiner.getProposer(dependency, block.getCreatedAt())
-                        .map(x -> x.getAddress().equals(block.getBody().get(0).getTo()))
-                        .orElse(false)
-        ) return ValidateResult.fault("invalid proposer " + block.getBody().get(0).getFromAddress());
+            !posMiner.getProposer(dependency, block.getCreatedAt())
+                .map(x -> x.getAddress().equals(block.getBody().get(0).getReceiveHex()))
+                .orElse(false)
+        ) return ValidateResult.fault("invalid proposer " + block.getBody().get(0).getSenderHex());
         return res;
     }
 
     @Override
-    public ValidateResult validate(Block dependency, Transaction transaction) {
-        if (transaction.getVersion() != PoS.TRANSACTION_VERSION) {
-            return ValidateResult.fault("transaction version not match");
-        }
+    public ValidateResult validate(Header dependency, Transaction transaction) {
         return ValidateResult.success();
     }
 }

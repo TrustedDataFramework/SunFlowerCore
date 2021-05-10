@@ -3,6 +3,7 @@ package org.tdf.sunflower.sync;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Account;
 
 import java.util.List;
@@ -14,7 +15,7 @@ public class SyncAccount {
     // the account itself
     private Account account;
     // contract code of contract account
-    private byte[] contractCode;
+    private HexBytes contractCode;
     // the contract storage of the account
-    private List<byte[]> contractStorage;
+    private List<HexBytes> contractStorage;
 }

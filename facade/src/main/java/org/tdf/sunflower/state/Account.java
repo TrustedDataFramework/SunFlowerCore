@@ -1,25 +1,17 @@
 package org.tdf.sunflower.state;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
-import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.vm.ContractABI;
+import org.tdf.sunflower.types.Transaction;
 
-import java.util.Collections;
-import java.util.List;
-
-
-@AllArgsConstructor
-@Builder
-@Data
 public class Account {
-    public static final int ADDRESS_SIZE = 20;
+    public Account() {
+
+    }
+
     private HexBytes address;
     // for normal account this field is continuous integer
     // for contract account this field is nonce of deploy transaction
@@ -34,17 +26,18 @@ public class Account {
     private HexBytes createdBy;
     // hash code of contract code
     // if the account contains none contract, contract hash will be null
-    private byte[] contractHash;
+    private HexBytes contractHash;
     // root hash of contract db
     // if the account is not contract account, this field will be null
-    private byte[] storageRoot;
+    private HexBytes storageRoot;
 
-    // contract abis
-    @JsonIgnore
-    private List<ContractABI> contractABIs;
-
-    private Account() {
-
+    public Account(HexBytes address, long nonce, Uint256 balance, HexBytes createdBy, HexBytes contractHash, HexBytes storageRoot) {
+        this.address = address;
+        this.nonce = nonce;
+        this.balance = balance;
+        this.createdBy = createdBy;
+        this.contractHash = contractHash;
+        this.storageRoot = storageRoot;
     }
 
     /**
@@ -54,23 +47,72 @@ public class Account {
      * @return a fresh new account
      */
     public static Account emptyAccount(HexBytes address, Uint256 balance) {
-        if (address.size() != ADDRESS_SIZE) throw new RuntimeException("address size should be " + ADDRESS_SIZE);
-        return new Account(address, 0, balance, HexBytes.EMPTY, HexBytes.EMPTY_BYTES, CryptoContext.getEmptyTrieRoot(), Collections.emptyList());
+        if (address.size() != Transaction.ADDRESS_LENGTH)
+            throw new RuntimeException("address size should be " + Transaction.ADDRESS_LENGTH);
+        return new Account(address, 0, balance, Address.empty(), HashUtil.EMPTY_DATA_HASH_HEX, HashUtil.EMPTY_TRIE_HASH_HEX);
     }
 
 
     @Override
     public Account clone() {
-        return new Account(address, nonce, balance, createdBy, contractHash, storageRoot, contractABIs);
+        return new Account(address, nonce, balance, createdBy, contractHash, storageRoot);
     }
 
     public void addBalance(Uint256 amount) {
-        this.balance = this.balance.safeAdd(amount);
+        this.balance = this.balance.plus(amount);
     }
 
     public void subBalance(Uint256 amount) {
         if (balance.compareTo(amount) < 0)
             throw new RuntimeException("balance of " + address + " is not enougth");
-        this.balance = this.balance.safeSub(amount);
+        this.balance = this.balance.minus(amount);
+    }
+
+    public void setAddress(HexBytes address) {
+        this.address = address;
+    }
+
+    public void setNonce(long nonce) {
+        this.nonce = nonce;
+    }
+
+    public void setBalance(Uint256 balance) {
+        this.balance = balance;
+    }
+
+    public void setCreatedBy(HexBytes createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public void setContractHash(HexBytes contractHash) {
+        this.contractHash = contractHash;
+    }
+
+    public void setStorageRoot(HexBytes storageRoot) {
+        this.storageRoot = storageRoot;
+    }
+
+    public HexBytes getAddress() {
+        return address;
+    }
+
+    public long getNonce() {
+        return nonce;
+    }
+
+    public Uint256 getBalance() {
+        return balance;
+    }
+
+    public HexBytes getCreatedBy() {
+        return createdBy;
+    }
+
+    public HexBytes getContractHash() {
+        return contractHash;
+    }
+
+    public HexBytes getStorageRoot() {
+        return storageRoot;
     }
 }

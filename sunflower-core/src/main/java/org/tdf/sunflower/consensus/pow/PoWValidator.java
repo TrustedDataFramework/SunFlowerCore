@@ -1,11 +1,9 @@
 package org.tdf.sunflower.consensus.pow;
 
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.BlockValidateResult;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.ValidateResult;
+import org.tdf.sunflower.types.*;
 
 public class PoWValidator extends AbstractValidator {
     private final PoW poW;
@@ -20,26 +18,20 @@ public class PoWValidator extends AbstractValidator {
         BlockValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
 
-        if (block.getVersion() != PoW.BLOCK_VERSION) {
-            return ValidateResult.fault("version not match");
-        }
-        byte[] nbits = poW.getNBits(dependency.getStateRoot().getBytes());
-        if (PoW.compare(PoW.getPoWHash(block), nbits) > 0)
+        Uint256 nbits = poW.bios.getNBits(dependency.getHash());
+        if (PoW.compare(PoW.getPoWHash(block), nbits.getData()) > 0)
             return ValidateResult.fault(
-                    String.format(
-                            "nbits validate failed hash = %s, nbits = %s",
-                            HexBytes.fromBytes(PoW.getPoWHash(block)),
-                            HexBytes.fromBytes(nbits)
-                    )
+                String.format(
+                    "nbits validate failed hash = %s, nbits = %s",
+                    HexBytes.fromBytes(PoW.getPoWHash(block)),
+                    HexBytes.fromBytes(nbits.getData())
+                )
             );
         return res;
     }
 
     @Override
-    public ValidateResult validate(Block dependency, Transaction transaction) {
-        if (transaction.getVersion() != PoW.TRANSACTION_VERSION) {
-            return ValidateResult.fault("transaction version not match");
-        }
+    public ValidateResult validate(Header dependency, Transaction transaction) {
         return ValidateResult.success();
     }
 }

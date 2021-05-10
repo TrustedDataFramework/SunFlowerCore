@@ -48,8 +48,8 @@ public abstract class DBTests {
         rows.put("2".getBytes(), "2".getBytes());
         databaseStore.putAll(rows.entrySet());
         assert FastByteComparisons.equal(
-                Objects.requireNonNull(databaseStore.get("1".getBytes())),
-                "1".getBytes()
+            Objects.requireNonNull(databaseStore.get("1".getBytes())),
+            "1".getBytes()
         );
 
 

@@ -33,10 +33,10 @@ public class SM2CertUtil {
         ECPublicKey pubKey = (ECPublicKey) sm2Cert.getPublicKey();
         ECPoint q = pubKey.getQ();
         ECParameterSpec parameterSpec = new ECParameterSpec(SM2Util.CURVE, SM2Util.G_POINT,
-                SM2Util.SM2_ECC_N, SM2Util.SM2_ECC_H);
+            SM2Util.SM2_ECC_N, SM2Util.SM2_ECC_H);
         ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(q, parameterSpec);
         return new BCECPublicKey(pubKey.getAlgorithm(), pubKeySpec,
-                BouncyCastleProvider.CONFIGURATION);
+            BouncyCastleProvider.CONFIGURATION);
     }
 
     /**
@@ -56,7 +56,7 @@ public class SM2CertUtil {
     }
 
     public static X509Certificate getX509Certificate(String certFilePath) throws IOException, CertificateException,
-            NoSuchProviderException {
+        NoSuchProviderException {
         InputStream is = null;
         try {
             is = new FileInputStream(certFilePath);
@@ -69,19 +69,19 @@ public class SM2CertUtil {
     }
 
     public static X509Certificate getX509Certificate(byte[] certBytes) throws CertificateException,
-            NoSuchProviderException {
+        NoSuchProviderException {
         ByteArrayInputStream bais = new ByteArrayInputStream(certBytes);
         return getX509Certificate(bais);
     }
 
     public static X509Certificate getX509Certificate(InputStream is) throws CertificateException,
-            NoSuchProviderException {
+        NoSuchProviderException {
         CertificateFactory cf = CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME);
         return (X509Certificate) cf.generateCertificate(is);
     }
 
     public static CertPath getCertificateChain(String certChainPath) throws IOException, CertificateException,
-            NoSuchProviderException {
+        NoSuchProviderException {
         InputStream is = null;
         try {
             is = new FileInputStream(certChainPath);
@@ -94,7 +94,7 @@ public class SM2CertUtil {
     }
 
     public static CertPath getCertificateChain(byte[] certChainBytes) throws CertificateException,
-            NoSuchProviderException {
+        NoSuchProviderException {
         ByteArrayInputStream bais = new ByteArrayInputStream(certChainBytes);
         return getCertificateChain(bais);
     }
@@ -109,14 +109,14 @@ public class SM2CertUtil {
     }
 
     public static CertPath getCertificateChain(List<X509Certificate> certs) throws CertificateException,
-            NoSuchProviderException {
+        NoSuchProviderException {
         CertificateFactory cf = CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME);
         return cf.generateCertPath(certs);
     }
 
     public static X509Certificate getX509CertificateFromPfx(byte[] pfxDER, String passwd) throws Exception {
         InputDecryptorProvider inputDecryptorProvider = new JcePKCSPBEInputDecryptorProviderBuilder()
-                .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(passwd.toCharArray());
+            .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(passwd.toCharArray());
         PKCS12PfxPdu pfx = new PKCS12PfxPdu(pfxDER);
 
         ContentInfo[] infos = pfx.getContentInfos();
@@ -142,7 +142,7 @@ public class SM2CertUtil {
 
     public static BCECPrivateKey getPrivateKeyFromPfx(byte[] pfxDER, String passwd) throws Exception {
         InputDecryptorProvider inputDecryptorProvider = new JcePKCSPBEInputDecryptorProviderBuilder()
-                .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(passwd.toCharArray());
+            .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(passwd.toCharArray());
         PKCS12PfxPdu pfx = new PKCS12PfxPdu(pfxDER);
 
         ContentInfo[] infos = pfx.getContentInfos();

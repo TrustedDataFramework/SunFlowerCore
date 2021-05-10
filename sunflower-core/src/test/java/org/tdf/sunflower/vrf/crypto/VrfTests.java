@@ -26,7 +26,7 @@ public class VrfTests {
     private static final int rounds = 100;
     private static final Random rand = new Random();
     private static final BigInteger maxUint256 = new BigInteger(
-            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
+        "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
 
     @Test
     public void testrand() {
@@ -321,7 +321,7 @@ public class VrfTests {
         }
 
         System.out.println("maxPriority = " + maxPriority + ", maxPriorities = " + maxPriorities + ", minPriorities = "
-                + minPriorities);
+            + minPriorities);
     }
 
     @Ignore
@@ -401,7 +401,7 @@ public class VrfTests {
         }
 
         System.out.println("maxPriority = " + maxPriority + ", maxPriorities = " + maxPriorities + ", minPriorities = "
-                + minPriorities);
+            + minPriorities);
     }
 
     @Ignore
@@ -515,8 +515,8 @@ public class VrfTests {
         }
 
         System.out.println("minProposers1 = " + minProposers1 + ", maxProposers1 = " + maxProposers1
-                + ", minPriorities1 = " + minPriorities1 + ", maxPriorities1 = " + maxPriorities1);
+            + ", minPriorities1 = " + minPriorities1 + ", maxPriorities1 = " + maxPriorities1);
         System.out.println("minProposers2 = " + minProposers2 + ", maxProposers2 = " + maxProposers2
-                + ", minPriorities2 = " + minPriorities2 + ", maxPriorities2 = " + maxPriorities2);
+            + ", minPriorities2 = " + minPriorities2 + ", maxPriorities2 = " + maxPriorities2);
     }
 }

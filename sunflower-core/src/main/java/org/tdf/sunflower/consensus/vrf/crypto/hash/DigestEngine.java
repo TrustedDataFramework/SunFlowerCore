@@ -181,7 +181,7 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
             if (copyLen > len)
                 copyLen = len;
             System.arraycopy(input, offset, inputBuf, inputLen,
-                    copyLen);
+                copyLen);
             offset += copyLen;
             inputLen += copyLen;
             len -= copyLen;
@@ -260,11 +260,11 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
         dest.inputLen = inputLen;
         dest.blockCount = blockCount;
         System.arraycopy(inputBuf, 0, dest.inputBuf, 0,
-                inputBuf.length);
+            inputBuf.length);
         adjustDigestLen();
         dest.adjustDigestLen();
         System.arraycopy(outputBuf, 0, dest.outputBuf, 0,
-                outputBuf.length);
+            outputBuf.length);
         return dest;
     }
 }

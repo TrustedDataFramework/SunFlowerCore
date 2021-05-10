@@ -24,9 +24,9 @@ public interface Chained extends Hashed {
     static <T extends Chained> List<T> getFork(Collection<T> col, HexBytes leaf) {
         List<T> ret = getAncestorsOf(col, leaf);
         col.stream()
-                .filter(x -> x.getHash().equals(leaf))
-                .findAny()
-                .ifPresent(ret::add);
+            .filter(x -> x.getHash().equals(leaf))
+            .findAny()
+            .ifPresent(ret::add);
         return ret;
     }
 
@@ -39,14 +39,14 @@ public interface Chained extends Hashed {
         Set<T> ret = new TreeSet<>(Comparator.comparing(Hashed::getHash));
 
         col.stream()
-                .filter(x -> x.isChildOf(hash) || x.getHash().equals(hash))
-                .forEach(stack::add);
+            .filter(x -> x.isChildOf(hash) || x.getHash().equals(hash))
+            .forEach(stack::add);
 
         while (!stack.isEmpty()) {
             T first = stack.poll();
             ret.add(first);
             col.stream().filter(x -> x.isChildOf(first))
-                    .forEach(stack::add);
+                .forEach(stack::add);
         }
 
         ret.removeIf(x -> x.getHash().equals(hash));

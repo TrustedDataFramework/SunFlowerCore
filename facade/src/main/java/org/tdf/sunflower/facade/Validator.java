@@ -1,6 +1,7 @@
 package org.tdf.sunflower.facade;
 
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.types.ValidateResult;
 
@@ -12,7 +13,7 @@ public interface Validator extends BlockValidator, PendingTransactionValidator {
         }
 
         @Override
-        public ValidateResult validate(Block dependency, Transaction transaction) {
+        public ValidateResult validate(Header dependency, Transaction transaction) {
             return ValidateResult.success();
         }
     };

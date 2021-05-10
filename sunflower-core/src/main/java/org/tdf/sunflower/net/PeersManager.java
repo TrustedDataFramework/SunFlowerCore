@@ -45,17 +45,17 @@ public class PeersManager implements Plugin {
                 return;
             case LOOK_UP:
                 context.channel.write(
-                        builder.buildPeers(server.getPeers())
+                    builder.buildPeers(server.getPeers())
                 );
                 return;
             case PEERS:
                 if (!config.isEnableDiscovery()) return;
                 Peers.parseFrom(context.message.getBody()).getPeersList().stream()
-                        .map(PeerImpl::parse)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .filter(x -> !cache.contains(x) && !x.equals(server.getSelf()) && x.getProtocol().equals(server.getSelf().getProtocol()))
-                        .forEach(x -> pending.put(x, true));
+                    .map(PeerImpl::parse)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .filter(x -> !cache.contains(x) && !x.equals(server.getSelf()) && x.getProtocol().equals(server.getSelf().getProtocol()))
+                    .forEach(x -> pending.put(x, true));
                 return;
             case DISCONNECT:
                 String reason = Disconnect.parseFrom(context.message.getBody()).getReason();
@@ -76,40 +76,40 @@ public class PeersManager implements Plugin {
         // keep self alive
         int core = Runtime.getRuntime().availableProcessors();
         executorService = Executors.newScheduledThreadPool(
-                core > 1 ? core / 2 : core,
-                new ThreadFactoryBuilder().setNameFormat("peers-manger-thread-%d").build()
+            core > 1 ? core / 2 : core,
+            new ThreadFactoryBuilder().setNameFormat("peers-manger-thread-%d").build()
         );
 
         executorService.scheduleWithFixedDelay(() -> client.broadcast(
-                builder.buildPing()
+            builder.buildPing()
         ), 0, config.getDiscoverRate(), TimeUnit.SECONDS);
 
         executorService
-                .scheduleWithFixedDelay(() -> {
+            .scheduleWithFixedDelay(() -> {
 
-                    ((BatchStore<String, JsonNode>) server.peerStore)
-                            .putAll(
-                                    client.peersCache.getPeers()
-                                            .map(p -> new AbstractMap.SimpleEntry<>(p.getID().toHex(), new TextNode(p.encodeURI())))
-                                            .collect(Collectors.toList())
-                            );
+                ((BatchStore<String, JsonNode>) server.peerStore)
+                    .putAll(
+                        client.peersCache.getPeers()
+                            .map(p -> new AbstractMap.SimpleEntry<>(p.getID().toHex(), new TextNode(p.encodeURI())))
+                            .collect(Collectors.toList())
+                    );
 
-                    lookup();
-                    cache.half();
-                    if (!config.isEnableDiscovery()) return;
+                lookup();
+                cache.half();
+                if (!config.isEnableDiscovery()) return;
 
-                    pending.keySet()
-                            .stream()
-                            .filter(x -> !cache.contains(x))
-                            .limit(config.getMaxPeers())
-                            .forEach(
-                                    p -> {
-                                        log.info("try to connect to peer " + p);
-                                        client.dial(p, builder.buildPing());
-                                    }
-                            );
-                    pending.clear();
-                }, 0, config.getDiscoverRate(), TimeUnit.SECONDS);
+                pending.keySet()
+                    .stream()
+                    .filter(x -> !cache.contains(x))
+                    .limit(config.getMaxPeers())
+                    .forEach(
+                        p -> {
+                            log.info("try to connect to peer " + p);
+                            client.dial(p, builder.buildPing());
+                        }
+                    );
+                pending.clear();
+            }, 0, config.getDiscoverRate(), TimeUnit.SECONDS);
     }
 
     private void lookup() {
@@ -120,9 +120,9 @@ public class PeersManager implements Plugin {
         if (!config.isEnableDiscovery()) {
             // keep channel to bootstraps and trusted alive
             Stream.of(cache.bootstraps.keySet().stream(), cache.trusted.keySet().stream())
-                    .flatMap(Functions.identity())
-                    .filter(x -> !cache.contains(x))
-                    .forEach(x -> server.getClient().dial(x, builder.buildPing()));
+                .flatMap(Functions.identity())
+                .filter(x -> !cache.contains(x))
+                .forEach(x -> server.getClient().dial(x, builder.buildPing()));
             return;
         }
         // query for neighbours when neighbours is not empty
@@ -133,8 +133,8 @@ public class PeersManager implements Plugin {
         }
         // query for peers from bootstraps and trusted when neighbours is empty
         Stream.of(cache.bootstraps, cache.trusted)
-                .flatMap(x -> x.keySet().stream())
-                .forEach(p -> client.dial(p, builder.buildLookup()));
+            .flatMap(x -> x.keySet().stream())
+            .forEach(p -> client.dial(p, builder.buildLookup()));
     }
 
     @Override

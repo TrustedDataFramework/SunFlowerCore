@@ -27,13 +27,13 @@ public class EpochSecondDeserializer extends JsonDeserializer<Long> {
         }
         try {
             return OffsetDateTime.parse(encoded)
-                    .toEpochSecond();
+                .toEpochSecond();
         } catch (Exception ignored) {
 
         }
         throw new EpochSecondDeserializeException("unknown time format "
-                + encoded + " expect format " +
-                DateTimeFormatter.ISO_OFFSET_DATE_TIME.toString()
+            + encoded + " expect format " +
+            DateTimeFormatter.ISO_OFFSET_DATE_TIME.toString()
         );
     }
 

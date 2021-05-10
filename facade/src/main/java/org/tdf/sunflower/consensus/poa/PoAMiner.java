@@ -3,39 +3,38 @@ package org.tdf.sunflower.consensus.poa;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.common.event.EventBus;
-import org.tdf.common.types.Uint256;
-import org.tdf.common.util.HexBytes;
+import org.tdf.common.crypto.ECDSASignature;
+import org.tdf.common.crypto.ECKey;
+import org.tdf.common.util.BigIntegers;
+import org.tdf.common.util.RLPUtil;
 import org.tdf.sunflower.consensus.AbstractMiner;
-import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.Proposer;
+import org.tdf.sunflower.consensus.poa.config.PoAConfig;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.facade.BlockRepository;
-import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.facade.TransactionPool;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Address;
-import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.types.*;
+import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.BlockCreateResult;
+import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.types.Transaction;
 
 import java.time.OffsetDateTime;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.tdf.common.util.ByteUtil.longToBytesNoLeadZeroes;
 
 
 @Slf4j(topic = "miner")
 public class PoAMiner extends AbstractMiner {
     public static final int MAX_SHUTDOWN_WAITING = 5;
     private final PoA poA;
-    @Getter
-    public HexBytes minerAddress;
+    private final PoAConfig config;
 
-    HexBytes privateKey;
-
-    HexBytes publicKey;
-    private PoAConfig poAConfig;
     @Setter
     private BlockRepository blockRepository;
     private volatile boolean stopped;
@@ -44,46 +43,47 @@ public class PoAMiner extends AbstractMiner {
     @Getter
     private TransactionPool transactionPool;
 
-    public PoAMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig, PoA poA) {
-        super(accountTrie, eventBus, minerConfig);
+    public PoAMiner(PoA poA) {
+        super(poA.getAccountTrie(), poA.getEventBus(), poA.getConfig());
+        this.config = poA.getConfig();
         this.poA = poA;
     }
 
 
     @Override
     protected Header createHeader(Block parent) {
-        return Header.builder()
-                .version(parent.getVersion())
-                .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
-                .createdAt(System.currentTimeMillis() / 1000)
-                .payload(HexBytes.EMPTY)
-                .build();
+        return Header
+            .builder()
+            .height(parent.getHeight() + 1)
+            .createdAt(System.currentTimeMillis() / 1000)
+            .coinbase(config.getMinerCoinBase())
+            .hashPrev(parent.getHash())
+            .gasLimit(parent.getGasLimit())
+            .build();
     }
 
     @Override
     protected boolean finalizeBlock(Block parent, Block block) {
-        byte[] plain = PoA.getSignaturePlain(block);
-        byte[] sig = CryptoContext.sign(privateKey.getBytes(), plain);
-        block.setPayload(HexBytes.fromBytes(sig));
+        byte[] rawHash = PoaUtils.getRawHash(block.getHeader());
+        ECKey key = ECKey.fromPrivate(config.getPrivateKey().getBytes());
+        ECDSASignature sig = key.sign(rawHash);
 
-        if (poAConfig.getRole().equals("gateway")) {
+        block.setExtraData(
+            RLPUtil.encode(
+                new Object[]{
+                    Byte.toUnsignedInt(sig.v),
+                    BigIntegers.asUnsignedByteArray(sig.r),
+                    BigIntegers.asUnsignedByteArray(sig.s)}
+            )
+        );
+
+
+        if (config.getThreadId() == PoA.GATEWAY_ID) {
             for (int i = 1; i < block.getBody().size(); i++) {
                 poA.farmBaseTransactions.add(block.getBody().get(i));
             }
         }
         return true;
-    }
-
-    public void setPoAConfig(PoAConfig poAConfig) {
-        this.poAConfig = poAConfig;
-        this.privateKey = (poA.getSecretStore() != SecretStore.NONE) ?
-                poA.getSecretStore().getPrivateKey() :
-                HexBytes.fromHex(poAConfig.getPrivateKey());
-
-        this.publicKey = HexBytes.fromBytes(CryptoContext.getPkFromSk(privateKey.getBytes()));
-        this.minerAddress = Address.fromPublicKey(
-                CryptoContext.getPkFromSk(privateKey.getBytes())
-        );
     }
 
 
@@ -97,7 +97,7 @@ public class PoAMiner extends AbstractMiner {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }, 0, poAConfig.getBlockInterval(), TimeUnit.SECONDS);
+        }, 0, config.getBlockInterval(), TimeUnit.SECONDS);
     }
 
     @Override
@@ -114,24 +114,30 @@ public class PoAMiner extends AbstractMiner {
     }
 
     public void tryMine() {
-        if (!poAConfig.isEnableMining() || stopped) {
+        if (!config.enableMining() || stopped) {
             return;
         }
 
         Block best = blockRepository.getBestBlock();
+        long now = OffsetDateTime.now().toEpochSecond();
+
         // 判断是否轮到自己出块
-        Optional<Proposer> o = poA.getProposer(
-                best,
-                OffsetDateTime.now().toEpochSecond()
-        ).filter(p -> p.getAddress().equals(minerAddress));
-        if (!o.isPresent()) return;
+        Proposer p = poA.getMinerContract().getProposer(
+            best.getHash(),
+            now
+        );
+
+        if (!p.getAddress().equals(config.getMinerCoinBase())) return;
         log.debug("try to mining at height " + (best.getHeight() + 1));
+        Map<String, Long> args = new HashMap<>();
+        args.put("createdAt", now);
+
         try {
-            BlockCreateResult b = createBlock(blockRepository.getBestBlock());
+            BlockCreateResult b = createBlock(blockRepository.getBestBlock(), args);
             if (b.getBlock() != null) {
                 log.info("mining success block: {}", b.getBlock().getHeader());
             }
-            getEventBus().publish(new NewBlockMined(b.getBlock(), b.getFailedTransactions(), b.getReasons()));
+            getEventBus().publish(new NewBlockMined(b.getBlock(), b.getInfos()));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -139,15 +145,12 @@ public class PoAMiner extends AbstractMiner {
 
     protected Transaction createCoinBase(long height) {
         return Transaction.builder()
-                .version(PoAConstants.TRANSACTION_VERSION)
-                .createdAt(System.currentTimeMillis() / 1000)
-                .nonce(height)
-                .from(HexBytes.EMPTY)
-                .amount(poA.economicModel.getConsensusRewardAtHeight(height))
-                .payload(publicKey)
-                .to(minerAddress)
-                .gasPrice(Uint256.ZERO)
-                .signature(HexBytes.EMPTY).build();
+            .nonce(longToBytesNoLeadZeroes(height))
+            .value(poA.economicModel.getConsensusRewardAtHeight(height).getNoLeadZeroesData())
+            .receiveAddress(config.getMinerCoinBase().getBytes())
+            .gasPrice(EMPTY_BYTE_ARRAY)
+            .gasLimit(EMPTY_BYTE_ARRAY)
+            .build();
     }
 
 }

@@ -5,16 +5,16 @@ import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.vm.WBI;
-import org.tdf.sunflower.vm.abi.AbiDataType;
+import org.tdf.sunflower.vm.abi.WbiType;
 
 import java.util.Collections;
 
 @Slf4j(topic = "vm")
 public class Log extends HostFunction {
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
-            // offset, length, offset
-            Collections.singletonList(ValueType.I64),
-            Collections.emptyList()
+        // offset, length, offset
+        Collections.singletonList(ValueType.I64),
+        Collections.emptyList()
     );
 
     public Log() {
@@ -24,7 +24,7 @@ public class Log extends HostFunction {
     @Override
     public long execute(long... parameters) {
         log.info(
-                (String) WBI.peek(getInstance(), (int) parameters[0], AbiDataType.STRING)
+            (String) WBI.peek(getInstance(), (int) parameters[0], WbiType.STRING)
         );
         return 0;
     }

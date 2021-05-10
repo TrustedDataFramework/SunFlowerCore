@@ -7,7 +7,7 @@ import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.WBI;
-import org.tdf.sunflower.vm.abi.AbiDataType;
+import org.tdf.sunflower.vm.abi.WbiType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,8 +18,8 @@ public class DBFunctions extends HostFunction {
     private final HexBytes address;
 
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
-            Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
-            Collections.singletonList(ValueType.I64)
+        Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
+        Collections.singletonList(ValueType.I64)
     );
 
     public DBFunctions(Backend backend, HexBytes address) {
@@ -28,14 +28,14 @@ public class DBFunctions extends HostFunction {
         this.address = address;
     }
 
-    private byte[] getKey(long... longs) {
-        return (byte[]) WBI
-                .peek(getInstance(), (int) longs[1], AbiDataType.BYTES);
+    private HexBytes getKey(long... longs) {
+        return (HexBytes) WBI
+            .peek(getInstance(), (int) longs[1], WbiType.BYTES);
     }
 
-    private byte[] getValue(long... longs) {
-        return (byte[]) WBI
-                .peek(getInstance(), (int) longs[2], AbiDataType.BYTES);
+    private HexBytes getValue(long... longs) {
+        return (HexBytes) WBI
+            .peek(getInstance(), (int) longs[2], WbiType.BYTES);
     }
 
     @Override
@@ -43,23 +43,23 @@ public class DBFunctions extends HostFunction {
         Type t = Type.values()[(int) longs[0]];
         switch (t) {
             case SET: {
-                byte[] key = getKey(longs);
-                byte[] value = getValue(longs);
+                HexBytes key = getKey(longs);
+                HexBytes value = getValue(longs);
                 this.backend.dbSet(address, key, value);
                 return 0;
             }
             case GET: {
-                byte[] key = getKey(longs);
-                byte[] value = this.backend.dbGet(address, key);
+                HexBytes key = getKey(longs);
+                HexBytes value = this.backend.dbGet(address, key);
                 return WBI
-                        .mallocBytes(getInstance(), value);
+                    .mallocBytes(getInstance(), value);
             }
             case HAS: {
-                byte[] key = getKey(longs);
+                HexBytes key = getKey(longs);
                 return backend.dbHas(address, key) ? 1 : 0;
             }
             case REMOVE: {
-                byte[] key = getKey(longs);
+                HexBytes key = getKey(longs);
                 backend.dbRemove(address, key);
                 return 0;
             }

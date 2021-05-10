@@ -172,8 +172,8 @@ public class VrfPublicKey {
 
         private static BigFraction C(int n, int r) {
             return new BigFraction(
-                    factorial(BigInteger.valueOf(n)),
-                    factorial(BigInteger.valueOf(r)).multiply(factorial(BigInteger.valueOf(n - r)))
+                factorial(BigInteger.valueOf(n)),
+                factorial(BigInteger.valueOf(r)).multiply(factorial(BigInteger.valueOf(n - r)))
             );
         }
 
@@ -182,7 +182,7 @@ public class VrfPublicKey {
                 return BigInteger.ONE;
             }
             return n.multiply(
-                    factorial(n.subtract(BigInteger.ONE))
+                factorial(n.subtract(BigInteger.ONE))
             );
         }
 
@@ -213,7 +213,7 @@ public class VrfPublicKey {
                 return cbs[k];
             }
             cbs[k] = prob(k).add(
-                    cumulativeProbability(k - 1)
+                cumulativeProbability(k - 1)
             );
             return cbs[k];
         }

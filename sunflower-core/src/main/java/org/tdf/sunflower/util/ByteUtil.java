@@ -219,10 +219,10 @@ public class ByteUtil {
     public static byte[] calcPacketLength(byte[] msg) {
         int msgLen = msg.length;
         return new byte[]{
-                (byte) ((msgLen >> 24) & 0xFF),
-                (byte) ((msgLen >> 16) & 0xFF),
-                (byte) ((msgLen >> 8) & 0xFF),
-                (byte) ((msgLen) & 0xFF)};
+            (byte) ((msgLen >> 24) & 0xFF),
+            (byte) ((msgLen >> 16) & 0xFF),
+            (byte) ((msgLen >> 8) & 0xFF),
+            (byte) ((msgLen) & 0xFF)};
     }
 
     /**

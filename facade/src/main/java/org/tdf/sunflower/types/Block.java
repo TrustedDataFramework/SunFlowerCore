@@ -1,23 +1,16 @@
 package org.tdf.sunflower.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.tdf.common.types.Chained;
-import org.tdf.common.util.EpochSecondDeserializer;
-import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLP;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class Block implements Chained {
     public static final Comparator<Block> FAT_COMPARATOR = (a, b) -> {
@@ -60,101 +53,133 @@ public class Block implements Chained {
         body = new ArrayList<>();
     }
 
-    @JsonSerialize(using = EpochSecondsSerializer.class)
-    @JsonDeserialize(using = EpochSecondDeserializer.class)
     public long getCreatedAt() {
         return header.getCreatedAt();
     }
 
-    public void setCreatedAt(long createdAt) {
-        header.setCreatedAt(createdAt);
+    public HexBytes getExtraData() {
+        return header.getExtraData();
     }
 
-    public Block clone() {
-        Block b = new Block(header.clone());
-        b.setBody(body.stream().map(Transaction::clone).collect(Collectors.toList()));
-        return b;
+    public HexBytes getMixHash() {
+        return header.getMixHash();
     }
 
-    // serialization only
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY, value = "size")
-    public int size() {
-        return header.size() + bodySize();
-    }
-
-    private int bodySize() {
-        return body == null ? 0 : body.stream()
-                .map(Transaction::size)
-                .reduce(0, Integer::sum);
+    public HexBytes getNonce() {
+        return header.getNonce();
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Block block = (Block) o;
-        return Objects.equals(header, block.header) &&
-                Objects.equals(body, block.body);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(header, body);
-    }
-
-    public int getVersion() {
-        return header.getVersion();
-    }
-
-    public void setVersion(int version) {
-        header.setVersion(version);
-    }
-
-    public HexBytes getHashPrev() {
-        return header.getHashPrev();
+    public HexBytes getHash() {
+        return header.getHash();
     }
 
     public void setHashPrev(HexBytes hashPrev) {
         header.setHashPrev(hashPrev);
     }
 
-    public HexBytes getTransactionsRoot() {
-        return header.getTransactionsRoot();
-    }
-
     public void setTransactionsRoot(HexBytes transactionsRoot) {
         header.setTransactionsRoot(transactionsRoot);
-    }
-
-    public void resetTransactionsRoot() {
-        setTransactionsRoot(Transaction.getTransactionsRoot(getBody()));
-    }
-
-    public HexBytes getStateRoot() {
-        return header.getStateRoot();
     }
 
     public void setStateRoot(HexBytes stateRoot) {
         header.setStateRoot(stateRoot);
     }
 
-    public long getHeight() {
-        return header.getHeight();
-    }
-
     public void setHeight(long height) {
         header.setHeight(height);
     }
 
-    public HexBytes getPayload() {
-        return header.getPayload();
+    public void setCreatedAt(long createdAt) {
+        header.setCreatedAt(createdAt);
     }
 
-    public void setPayload(HexBytes payload) {
-        header.setPayload(payload);
+    public void setCoinbase(HexBytes coinbase) {
+        header.setCoinbase(coinbase);
     }
 
-    public HexBytes getHash() {
-        return header.getHash();
+    public void setGasLimit(HexBytes gasLimit) {
+        header.setGasLimit(gasLimit);
+    }
+
+    public void setGasUsed(long gasUsed) {
+        header.setGasUsed(gasUsed);
+    }
+
+
+    public void resetTransactionsRoot() {
+        setTransactionsRoot(
+            Transaction.calcTxTrie(getBody())
+        );
+    }
+
+    @Override
+    public HexBytes getHashPrev() {
+        return header.getHashPrev();
+    }
+
+    public HexBytes getUnclesHash() {
+        return header.getUnclesHash();
+    }
+
+    public HexBytes getCoinbase() {
+        return header.getCoinbase();
+    }
+
+    public HexBytes getStateRoot() {
+        return header.getStateRoot();
+    }
+
+    public HexBytes getTransactionsRoot() {
+        return header.getTransactionsRoot();
+    }
+
+    public HexBytes getReceiptTrieRoot() {
+        return header.getReceiptTrieRoot();
+    }
+
+    public HexBytes getLogsBloom() {
+        return header.getLogsBloom();
+    }
+
+    public HexBytes getDifficulty() {
+        return header.getDifficulty();
+    }
+
+    public long getHeight() {
+        return header.getHeight();
+    }
+
+    public HexBytes getGasLimit() {
+        return header.getGasLimit();
+    }
+
+    public long getGasUsed() {
+        return header.getGasUsed();
+    }
+
+    public static Header.HeaderBuilder builder() {
+        return Header.builder();
+    }
+
+    public void setExtraData(HexBytes extraData) {
+        header.setExtraData(extraData);
+    }
+
+    public void setMixHash(HexBytes mixHash) {
+        header.setMixHash(mixHash);
+    }
+
+    public void setNonce(HexBytes nonce) {
+        header.setNonce(nonce);
+    }
+
+
+    public void setReceiptTrieRoot(HexBytes receiptTrieRoot) {
+        header.setReceiptTrieRoot(receiptTrieRoot);
+    }
+
+    public void setLogsBloom(HexBytes logsBloom) {
+        header.setLogsBloom(logsBloom);
     }
 }

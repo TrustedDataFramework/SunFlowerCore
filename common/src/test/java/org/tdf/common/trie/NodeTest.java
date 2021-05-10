@@ -3,10 +3,10 @@ package org.tdf.common.trie;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.HashUtil;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.BigEndian;
+import org.tdf.common.util.HashUtil;
 import org.tdf.rlp.RLPElement;
 
 import java.nio.charset.StandardCharsets;
@@ -18,9 +18,9 @@ public class NodeTest {
 
     @Test
     public void test1() {
-        Node n = Node.newLeaf(TrieKey.fromNormal("test".getBytes()), "test".getBytes(), HashUtil.sha3);
+        Node n = Node.newLeaf(TrieKey.fromNormal("test".getBytes()), "test".getBytes(), new HashFunction(HashUtil::sha256));
         Arrays.asList("toaster", "toasting", "slow", "slowly")
-                .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
+            .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
 
         for (String s : Arrays.asList("toaster", "toasting", "slow", "slowly")
         ) {
@@ -46,7 +46,7 @@ public class NodeTest {
 
     @Test
     public void test3() {
-        Node n = Node.newLeaf(TrieKey.fromNormal("do".getBytes()), "verb".getBytes(), HashUtil.sha3);
+        Node n = Node.newLeaf(TrieKey.fromNormal("do".getBytes()), "verb".getBytes(), new HashFunction(HashUtil::sha3));
         List<String> li = Arrays.asList("dog", "puppy", "doge", "coin", "horse", "stallion");
         for (int i = 0; i < li.size(); i += 2) {
             String key = li.get(i);
@@ -176,16 +176,16 @@ public class NodeTest {
     @Test
     public void test9() {
         Node n = Node.newLeaf(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a711355), 4, 8)
+            Arrays.copyOfRange(BigEndian.encodeInt64(0x0a711355), 4, 8)
         ).shift(), "45.0ETH".getBytes(), HashUtil.sha3);
         n.insert(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d337), 4, 8)
+            Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d337), 4, 8)
         ).shift(), "1.00WEI".getBytes());
         n.insert(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a7f9365), 4, 8)
+            Arrays.copyOfRange(BigEndian.encodeInt64(0x0a7f9365), 4, 8)
         ).shift(), "1.00WEI".getBytes());
         n.insert(TrieKey.fromNormal(
-                Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d397), 4, 8)
+            Arrays.copyOfRange(BigEndian.encodeInt64(0x0a77d397), 4, 8)
         ).shift(), "1.00WEI".getBytes());
     }
 
@@ -204,12 +204,12 @@ public class NodeTest {
 
     @Test
     public void test11() {
-        Node n = Node.newLeaf(TrieKey.fromNormal("test".getBytes()), "test".getBytes(), HashUtil.sha256);
+        Node n = Node.newLeaf(TrieKey.fromNormal("test".getBytes()), "test".getBytes(), new HashFunction(HashUtil::sha256));
         Arrays.asList("toaster", "toasting", "slow", "slowly")
-                .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
+            .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
         Store<byte[], byte[]> s = new ByteArrayMapStore<>();
         RLPElement element = n.commit(s, true);
-        Node n2 = Node.fromEncoded(element.getEncoded(), s, HashUtil.sha256);
+        Node n2 = Node.fromEncoded(element.getEncoded(), s, new HashFunction(HashUtil::sha256));
         for (String s2 : Arrays.asList("toaster", "toasting", "slow", "slowly")
         ) {
             assert Arrays.equals(n2.get(TrieKey.fromNormal(s2.getBytes())), s2.getBytes());

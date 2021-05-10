@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.FastByteComparisons;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.proto.Code;
@@ -34,20 +35,20 @@ public class MessageFilter implements Plugin {
 
     MessageFilter(PeerServerConfig config, ConsensusEngine consensusEngine) {
         this.cache = CacheBuilder.newBuilder()
-                .maximumSize(config.getMaxPeers() * 8).build();
+            .maximumSize(config.getMaxPeers() * 8).build();
         this.config = config;
         Executors.newSingleThreadScheduledExecutor()
-                .scheduleWithFixedDelay(() -> {
-                    multiPartCacheLock.lock();
-                    long now = System.currentTimeMillis() / 1000;
-                    try {
-                        multiPartCache.entrySet().removeIf(
-                                entry -> now - entry.getValue().writeAt > config.getCacheExpiredAfter()
-                        );
-                    } finally {
-                        multiPartCacheLock.unlock();
-                    }
-                }, config.getCacheExpiredAfter(), config.getCacheExpiredAfter(), TimeUnit.SECONDS);
+            .scheduleWithFixedDelay(() -> {
+                multiPartCacheLock.lock();
+                long now = System.currentTimeMillis() / 1000;
+                try {
+                    multiPartCache.entrySet().removeIf(
+                        entry -> now - entry.getValue().writeAt > config.getCacheExpiredAfter()
+                    );
+                } finally {
+                    multiPartCacheLock.unlock();
+                }
+            }, config.getCacheExpiredAfter(), config.getCacheExpiredAfter(), TimeUnit.SECONDS);
         this.consensusEngine = consensusEngine;
     }
 
@@ -65,14 +66,14 @@ public class MessageFilter implements Plugin {
             HexBytes key = HexBytes.fromBytes(context.message.getSignature().toByteArray());
             try {
                 Messages messages =
-                        multiPartCache.getOrDefault(
-                                key,
-                                new Messages(
-                                        new Message[(int) context.message.getTtl()],
-                                        (int) context.message.getTtl(),
-                                        now
-                                )
-                        );
+                    multiPartCache.getOrDefault(
+                        key,
+                        new Messages(
+                            new Message[(int) context.message.getTtl()],
+                            (int) context.message.getTtl(),
+                            now
+                        )
+                    );
                 messages.multiParts[(int) context.message.getNonce()] = context.message;
                 multiPartCache.put(key, messages);
                 if (messages.size() == messages.total) {
@@ -88,9 +89,9 @@ public class MessageFilter implements Plugin {
 
         // filter invalid signatures
         if (!CryptoContext.verify(
-                context.getRemote().getID().getBytes(),
-                Util.getRawForSign(context.message),
-                context.message.getSignature().toByteArray()
+            context.getRemote().getID().getBytes(),
+            Util.getRawForSign(context.message),
+            context.message.getSignature().toByteArray()
         )) {
             log.error("invalid signature received from " + context.remote);
             context.exit();
@@ -121,16 +122,17 @@ public class MessageFilter implements Plugin {
             context.exit();
             return;
         }
-        HexBytes k = HexBytes.fromBytes(context.message.getSignature().toByteArray());
+        HexBytes hash = HexBytes.fromBytes(HashUtil.sha3(Util.getRawForSign(context.message)));
+
         // filter message had been received
-        if (cache.asMap().containsKey(k)) {
+        if (cache.asMap().containsKey(hash)) {
             context.exit();
         }
         log.debug("receive " + context.message.getCode()
-                + " from " +
-                context.remote.getHost() + ":" + context.remote.getPort()
+            + " from " +
+            context.remote.getHost() + ":" + context.remote.getPort()
         );
-        cache.put(k, true);
+        cache.put(hash, true);
     }
 
     @Override
@@ -166,7 +168,7 @@ public class MessageFilter implements Plugin {
         @SneakyThrows
         public Message merge() {
             int byteArraySize = Arrays.stream(multiParts).map(x -> x.getBody().size())
-                    .reduce(0, Integer::sum);
+                .reduce(0, Integer::sum);
 
             byte[] total = new byte[byteArraySize];
 
@@ -178,10 +180,10 @@ public class MessageFilter implements Plugin {
             }
 
             if (!FastByteComparisons.equal(
-                    CryptoContext.hash(total),
-                    multiParts[0].getSignature().toByteArray())
+                CryptoContext.hash(total),
+                multiParts[0].getSignature().toByteArray())
             ) {
-                throw new RuntimeException("合并失败");
+                throw new RuntimeException("merge failed");
             }
 
             return Message.parseFrom(total);

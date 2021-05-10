@@ -19,7 +19,7 @@ public class IntSerializer extends StdSerializer<Number> {
     @Override
     public void serialize(Number value, JsonGenerator gen, SerializerProvider provider) throws IOException {
         if (value instanceof Uint256)
-            value = ((Uint256) value).value();
+            value = ((Uint256) value).getValue();
         if (value instanceof Long || value instanceof Integer || value instanceof Byte || value instanceof Short)
             value = BigInteger.valueOf((long) value);
 

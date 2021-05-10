@@ -57,7 +57,7 @@ public final class HexBytes implements Comparable<HexBytes>, Serializable {
 
     public static HexBytes fromHex(@NonNull String hex) throws RuntimeException {
         try {
-            return fromBytes(Hex.decodeHex(hex));
+            return fromBytes(Hex.decodeHex(hex.startsWith("0x") ? hex.substring(2) : hex));
         } catch (Exception e) {
             throw new RuntimeException("invalid hex string " + hex);
         }
@@ -124,8 +124,8 @@ public final class HexBytes implements Comparable<HexBytes>, Serializable {
     @Override
     public int compareTo(HexBytes o) {
         return FastByteComparisons.compareTo(
-                bytes, 0, bytes.length,
-                o.getBytes(), 0, o.getBytes().length);
+            bytes, 0, bytes.length,
+            o.getBytes(), 0, o.getBytes().length);
     }
 
     @Override

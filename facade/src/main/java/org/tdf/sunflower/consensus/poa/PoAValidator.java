@@ -1,16 +1,23 @@
 package org.tdf.sunflower.consensus.poa;
 
 import lombok.Setter;
+import lombok.SneakyThrows;
+import org.tdf.common.crypto.ECDSASignature;
+import org.tdf.common.crypto.ECKey;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
+import org.tdf.rlp.RLPElement;
+import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 
+import java.util.Objects;
+
 @Setter
 public class PoAValidator extends AbstractValidator {
+
     public static final HexBytes FARM_BASE_ADMIN = HexBytes.fromHex("");
 
     private final PoA poA;
@@ -21,84 +28,99 @@ public class PoAValidator extends AbstractValidator {
     }
 
     @Override
+    @SneakyThrows
     public ValidateResult validate(Block block, Block dependency) {
         BlockValidateResult res = super.commonValidate(block, dependency);
         if (!res.isSuccess()) return res;
+
         Uint256 fee = res.getFee();
-        if (!fee.safeAdd(poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1)).equals(block.getBody().get(0).getAmount())) {
+        if (!fee.plus(poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1)).equals(block.getBody().get(0).getValueAsUint())) {
             return ValidateResult.fault("reward of coin base transaction should be " + poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1));
         }
-        if (block.getVersion() != PoAConstants.BLOCK_VERSION) {
-            return ValidateResult.fault("version not match");
-        }
 
-        byte[] plain =
-                PoA.getSignaturePlain(block);
-        byte[] pk = block.getBody().get(0).getPayload().getBytes();
-
-        if (!CryptoContext.verify(pk, plain, block.getPayload().getBytes()))
-            return ValidateResult.fault("verify signature failed");
+        if(!block.getCoinbase().equals(block.getBody().get(0).getReceiveHex()))
+            return ValidateResult.fault("block coinbase not equals to coinbase transaction receiver");
 
         ValidateResult res0 = validateCoinBase(dependency, block.getBody().get(0));
         if (!res0.isSuccess())
             return res0;
 
         if (
-                !poA.getProposer(dependency, block.getCreatedAt())
-                        .map(x -> x.getAddress().equals(block.getBody().get(0).getTo()))
-                        .orElse(false)
-        ) return ValidateResult.fault("invalid proposer " + block.getBody().get(0).getFromAddress());
+            !poA.getMinerContract().getProposer(
+                dependency.getHash(),
+                block.getCreatedAt()
+            ).getAddress().equals(block.getBody().get(0).getReceiveHex())
+
+        ) return ValidateResult.fault("invalid proposer " + block.getBody().get(0).getSenderHex());
+
+        // validate signature
+        RLPList vrs = RLPElement.fromEncoded(block.getExtraData().getBytes()).asRLPList();
+        byte v = vrs.get(0).asByte();
+        byte[] r = vrs.get(1).asBytes();
+        byte[] s = vrs.get(2).asBytes();
+        ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
+
+        byte[] rawHash = PoaUtils.getRawHash(block.getHeader());
+        // validate signer
+        HexBytes signer = HexBytes.fromBytes(ECKey.signatureToAddress(rawHash, signature));
+
+        if (!signer.equals(block.getCoinbase())) {
+            return ValidateResult.fault("signer not equals to coinbase");
+        }
+
+        ECKey key = ECKey.signatureToKey(rawHash, signature);
+        // verify signature
+        if (!key.verify(rawHash, signature)) {
+            return ValidateResult.fault("verify signature failed");
+        }
+
         return res;
     }
 
+    // validate pre-pending transaction
     @Override
-    public ValidateResult validate(Block dependency, Transaction transaction) {
-        HexBytes farmBaseAdmin = HexBytes.fromHex(poA.getPoAConfig().getFarmBaseAdmin());
+    public ValidateResult validate(Header dependency, Transaction transaction) {
+        if (!poA.getConfig().isControlled())
+            return ValidateResult.success();
 
-        switch (poA.getPoAConfig().getRole()) {
-            case "gateway": {
-                // for farm base node, only accept transaction from farm-base admin
-                if (transaction.getVersion() != 0 || !transaction.getFromAddress().equals(farmBaseAdmin)) {
-                    return ValidateResult.fault(
-                            String.format(
-                                    "farmbase only accept admin transaction with network id = 0, while from = %s, network id = %s",
-                                    transaction.getFromAddress(),
-                                    transaction.getVersion()
-                            )
-                    );
-                }
-                break;
+        HexBytes farmBaseAdmin = poA.getConfig().getFarmBaseAdmin();
+
+        if (poA.getConfig().getThreadId() == PoA.GATEWAY_ID) {// for gateway node, only accept transaction from farm-base admin
+            if (Objects.requireNonNull(transaction.getChainId()) != PoA.GATEWAY_ID || !transaction.getSenderHex().equals(farmBaseAdmin)) {
+                return ValidateResult.fault(
+                    String.format(
+                        "farmbase only accept admin transaction with network id = %s, while from = %s, network id = %s",
+                        PoA.GATEWAY_ID,
+                        transaction.getSenderHex(),
+                        transaction.getChainId()
+                    )
+                );
             }
 
-            // for thread node, only accept transaction with thread id or zero
-            case "thread": {
-                if (transaction.getVersion() != 0 && transaction.getVersion() != poA.getPoAConfig().getThreadId()) {
-                    return ValidateResult.fault(
-                            String.format(
-                                    "this thread only accept transaction with thread id = %s, while id = %s received",
-                                    poA.getPoAConfig().getThreadId(),
-                                    transaction.getVersion()
-                            )
-                    );
-                }
-
-                if (transaction.getVersion() == 0 && !transaction.getFromAddress().equals(farmBaseAdmin)) {
-                    return ValidateResult.fault("transaction with zero version should received from farmbase");
-                }
-
-                break;
+            // for thread node, only accept transaction with thread id or gateway id
+        } else {
+            if (transaction.getChainId() != PoA.GATEWAY_ID && transaction.getChainId() != poA.getConfig().getThreadId()) {
+                return ValidateResult.fault(
+                    String.format(
+                        "this thread only accept transaction with thread id = %s, while id = %s received",
+                        poA.getConfig().getThreadId(),
+                        transaction.getChainId()
+                    )
+                );
             }
-            default: {
-                throw new RuntimeException("invalid role");
+
+            if (transaction.getChainId() == PoA.GATEWAY_ID && !transaction.getSenderHex().equals(farmBaseAdmin)) {
+                return ValidateResult.fault("transaction with zero version should received from farmbase");
             }
         }
 
 
-        if (!transaction.getFromAddress().equals(farmBaseAdmin)
-                && !poA.getValidators(
-                dependency.getStateRoot().getBytes())
-                .contains(transaction.getFromAddress()
-                )
+        if (!transaction.getSenderHex().equals(farmBaseAdmin)
+            && !poA.getValidatorContract()
+            .getApproved(
+                dependency.getHash())
+            .contains(transaction.getSenderHex()
+            )
         )
             return ValidateResult.fault("from address is not approved");
 
@@ -107,12 +129,14 @@ public class PoAValidator extends AbstractValidator {
     }
 
     private ValidateResult validateCoinBase(Block parent, Transaction coinBase) {
-        if (!Address.fromPublicKey(coinBase.getPayload()).equals(coinBase.getTo()))
-            return ValidateResult.fault("payload is not equals to public key of address " + coinBase.getTo());
-
-        if (coinBase.getNonce() != parent.getHeight() + 1)
+        if (coinBase.getNonceAsLong() != parent.getHeight() + 1)
             return ValidateResult.fault("nonce of coin base should be " + parent.getHeight() + 1);
 
         return ValidateResult.success();
+    }
+
+    @Override
+    public long getBlockGasLimit() {
+        return poA.getConfig().getBlockGasLimit();
     }
 }

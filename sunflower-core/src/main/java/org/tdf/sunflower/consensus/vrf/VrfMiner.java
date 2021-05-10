@@ -12,17 +12,13 @@ import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
-import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.Proposer;
-import org.tdf.sunflower.consensus.poa.PoAConstants;
 import org.tdf.sunflower.consensus.vrf.core.*;
 import org.tdf.sunflower.consensus.vrf.struct.VrfPrivateKey;
 import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
-import org.tdf.sunflower.consensus.vrf.util.VrfConstants;
 import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.events.NewBlocksReceived;
-import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.PeerServer;
@@ -74,8 +70,8 @@ public class VrfMiner extends AbstractMiner {
     // contract storage trie
     private Trie<byte[], byte[]> contractStorageTrie;
 
-    public VrfMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig) {
-        super(accountTrie, eventBus, minerConfig);
+    public VrfMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus) {
+        super(accountTrie, eventBus, null);
     }
 
 
@@ -83,7 +79,7 @@ public class VrfMiner extends AbstractMiner {
         this.genesis = genesis;
     }
 
-    public void setConfig(VrfConfig vrfConfig) throws ConsensusEngineInitException {
+    public void setConfig(VrfConfig vrfConfig) {
         this.vrfConfig = vrfConfig;
         this.minerAddress = HexBytes.fromHex(vrfConfig.getMinerCoinBase());
         this.minerCoinbase = this.minerAddress.getBytes();
@@ -117,9 +113,9 @@ public class VrfMiner extends AbstractMiner {
         if (parent.getHeight() == 0) {
             return Optional.of(new Proposer(genesis.miners.get(0).address, 0, Long.MAX_VALUE));
         }
-        if (parent.getBody() == null || parent.getBody().size() == 0 || parent.getBody().get(0).getTo() == null)
+        if (parent.getBody() == null || parent.getBody().size() == 0 || parent.getBody().get(0).getReceiveAddress() == null)
             return Optional.empty();
-        HexBytes prev = parent.getBody().get(0).getTo();
+        HexBytes prev = parent.getBody().get(0).getReceiveHex();
         int prevIndex = genesis.miners.stream().map(x -> x.address).collect(Collectors.toList()).indexOf(prev);
         if (prevIndex < 0) {
             return Optional.empty();
@@ -143,28 +139,26 @@ public class VrfMiner extends AbstractMiner {
     }
 
     public Transaction createCoinBase(long height) {
-        Transaction tx = Transaction.builder().version(PoAConstants.TRANSACTION_VERSION)
-                .createdAt(System.currentTimeMillis() / 1000).nonce(height).from(HexBytes.EMPTY)
-                .amount(EconomicModelImpl.getConsensusRewardAtHeight(height)).payload(HexBytes.EMPTY).to(minerAddress)
-                .signature(HexBytes.EMPTY).build();
+        Transaction tx = Transaction.builder().build();
         return tx;
     }
 
     @Override
     @SneakyThrows
     protected Header createHeader(Block parent) {
-        Header header = Header.builder().version(parent.getVersion()).hashPrev(parent.getHash())
-                .transactionsRoot(PoAConstants.ZERO_BYTES).height(parent.getHeight() + 1)
-                .createdAt(System.currentTimeMillis() / 1000).build();
+        Header header = null;
+//                Header.builder().version(parent.getVersion()).hashPrev(parent.getHash())
+//                .transactionsRoot(PoAConstants.ZERO_BYTES).height(parent.getHeight() + 1)
+//                .createdAt(System.currentTimeMillis() / 1000).build();
 //                .payload(VrfConstants.ZERO_BYTES)
 //                .hash(new HexBytes(BigEndian.encodeInt64(parent.getHeight() + 1))).build();
-
-        byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
-        byte[] payLoadBytes = VrfUtil.genPayload(header.getHeight(), this.vrfStateMachine.getVrfRound().getRound(),
-                vrfSeed, this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk,
-                vrfPk, vrfConfig);
-        HexBytes payload = HexBytes.fromBytes(payLoadBytes);
-        header.setPayload(payload);
+//
+//        byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
+//        byte[] payLoadBytes = VrfUtil.genPayload(header.getHeight(), this.vrfStateMachine.getVrfRound().getRound(),
+//                vrfSeed, this.minerCoinbase, VrfConstants.ZERO_BYTES.getBytes(), parent.getHash().getBytes(), vrfSk,
+//                vrfPk, vrfConfig);
+//        HexBytes payload = HexBytes.fromBytes(payLoadBytes);
+//        header.setPayload(payload);
         return header;
     }
 
@@ -187,7 +181,7 @@ public class VrfMiner extends AbstractMiner {
 
         if (vrfSk == null || isNullOrZeroArray(minerCoinbase)) {
             log.error("Empty vrfSk {} or coinbase {}, quit startVrfStateMachine.",
-                    ByteUtil.toHexString(vrfSk.getEncoded()), ByteUtil.toHexString(minerCoinbase));
+                ByteUtil.toHexString(vrfSk.getEncoded()), ByteUtil.toHexString(minerCoinbase));
             return;
         }
 
@@ -199,13 +193,13 @@ public class VrfMiner extends AbstractMiner {
         final byte[] vrfPk = vrfSk.generatePublicKey().getEncoded();
         if (!vrfStateMachine.registered(minerCoinbase, vrfPk)) {
             log.error(
-                    "!!! Miner is not registered as a validator, Please deposit your balance to Native Deposit Contract");
+                "!!! Miner is not registered as a validator, Please deposit your balance to Native Deposit Contract");
             log.error("Miner has not Deposit to participate in VRF consensus, minerCoinbase 0x{}, vrfPk 0x{}",
-                    Hex.toHexString(minerCoinbase, 0, 6), Hex.toHexString(vrfPk, 0, 6));
+                Hex.toHexString(minerCoinbase, 0, 6), Hex.toHexString(vrfPk, 0, 6));
         }
 
         log.info("VrfStateMachine is startup, minerCoinbase 0x{}, VrfPk 0x{}", Hex.toHexString(minerCoinbase, 0, 6),
-                Hex.toHexString(vrfPk, 0, 6));
+            Hex.toHexString(vrfPk, 0, 6));
 
         final Block bestPendingState = blockRepository.getBestBlock();
 
@@ -230,7 +224,7 @@ public class VrfMiner extends AbstractMiner {
 
         if (vrfSk == null || isNullOrZeroArray(minerCoinbase)) {
             log.error("Empty vrfSk {} or coinbase {}, quit stopVrfStateMachine.",
-                    ByteUtil.toHexString(vrfSk.getEncoded()), ByteUtil.toHexString(minerCoinbase));
+                ByteUtil.toHexString(vrfSk.getEncoded()), ByteUtil.toHexString(minerCoinbase));
             return;
         }
 
@@ -281,17 +275,17 @@ public class VrfMiner extends AbstractMiner {
                         // ethereum.getBlockchain()).tryToConnect(finalBlock.getBlock());
                         if (importResult.isSuccessful()) {
                             log.info("Final Block is Imported as {} one, hash 0x{}",
-                                    importResult == ImportResult.IMPORTED_BEST ? "BEST" : "NOT best",
-                                    Hex.toHexString(finalBlock.getHash(), 0, 3));
+                                importResult == ImportResult.IMPORTED_BEST ? "BEST" : "NOT best",
+                                Hex.toHexString(finalBlock.getHash(), 0, 3));
                             return true;
                         } else {
                             log.error("Final Block is NOT Imported, ImportResult {}, hash 0x{}", importResult,
-                                    Hex.toHexString(finalBlock.getHash(), 0, 3));
+                                Hex.toHexString(finalBlock.getHash(), 0, 3));
                         }
                     } else {
                         if (finalBlock.getNodeId() != null) {
                             log.warn("In blockSyncing state, add Final Block to sync queue, hash 0x{}",
-                                    Hex.toHexString(finalBlock.getHash(), 0, 3));
+                                Hex.toHexString(finalBlock.getHash(), 0, 3));
                             // Clear block header magic before add it to sync queue
 //                            finalBlock.getHeader().clearMagic();
                             clearMagic(finalBlock.getBlock());
@@ -300,7 +294,7 @@ public class VrfMiner extends AbstractMiner {
                                 return true;
                             } else {
                                 log.error("Fail to do validateAndAddNewBlock for Final Block, hash 0x{}",
-                                        Hex.toHexString(finalBlock.getHash(), 0, 3));
+                                    Hex.toHexString(finalBlock.getHash(), 0, 3));
                             }
                         } else {
                             log.error("In blockSyncing state, Final Block is a self mined one, PLEASE FIX ME !!!");
@@ -322,9 +316,9 @@ public class VrfMiner extends AbstractMiner {
         vrfSeed = VrfUtil.getSeed(bestPendingState);
 
         log.debug("getNewBlockForMining best blocks: PendingState: " + bestPendingState.getHeight() + ", Blockchain: "
-                + bestBlock.getHeight());
+            + bestBlock.getHeight());
 
-        Block newMiningBlock = createBlock(bestBlock).getBlock();// blockchain.createNewBlock(bestPendingState,
+        Block newMiningBlock = createBlock(bestBlock, Collections.emptyMap()).getBlock();// blockchain.createNewBlock(bestPendingState,
         if (newMiningBlock == null)
             return null;
         // getAllPendingTransactions(), getUncles(bestPendingState));
@@ -374,7 +368,7 @@ public class VrfMiner extends AbstractMiner {
             proof = new ProposalProof(vrfProof, minerCoinbase, blockIdentifier, vrfSk.getSigner());
 
             log.info("New Proposal Proof, priority {}, hash 0x{}, identifier {}", priority,
-                    Hex.toHexString(proof.getHash(), 0, 3), proof.getBlockIdentifier());
+                Hex.toHexString(proof.getHash(), 0, 3), proof.getBlockIdentifier());
             // Set proposal proof to block header, and it will not change value of block
             // hash
             VrfUtil.setProposalProof(newBlock, proof);
@@ -402,7 +396,7 @@ public class VrfMiner extends AbstractMiner {
         // Must use VrfProof Util to proof with Role Code
         VrfResult vrfResult = VrfProof.Util.prove(VrfProof.ROLE_CODES_REDUCTION_COMMIT, round, vrfSk, vrfSeed);
         VrfProof vrfProof = VrfProof.Util.vrfProof(VrfProof.ROLE_CODES_REDUCTION_COMMIT, round, vrfPk, vrfSeed,
-                vrfResult);
+            vrfResult);
 
         CommitProof proof = new CommitProof(vrfProof, minerCoinbase, blockIdentifier, vrfSk.getSigner());
 
@@ -410,7 +404,7 @@ public class VrfMiner extends AbstractMiner {
         int priority = vrfStateMachine.getValidPriority(proof);
         if (priority > 0) {
             log.info("New Commit Proof, priority {}, hash 0x{}, identifier {}", priority,
-                    Hex.toHexString(proof.getHash(), 0, 3), proof.getBlockIdentifier());
+                Hex.toHexString(proof.getHash(), 0, 3), proof.getBlockIdentifier());
             return proof;
         }
 
@@ -440,7 +434,7 @@ public class VrfMiner extends AbstractMiner {
         int priority = vrfStateMachine.getValidPriority(proof);
         if (priority > 0) {
             log.info("New Final Proof, priority {}, hash 0x{}, identifier {}", priority,
-                    Hex.toHexString(proof.getHash(), 0, 3), proof.getBlockIdentifier());
+                Hex.toHexString(proof.getHash(), 0, 3), proof.getBlockIdentifier());
             return proof;
         }
 
@@ -467,8 +461,8 @@ public class VrfMiner extends AbstractMiner {
         // So let it setup new VrfRound from latest block number.
         if (minedBlockNum > blockNum) {
             log.error(
-                    "New mined block number is larger than VrfRound told, Setup new VrfRound: #{},{} <- #{},{} for starting its own VRF consensus logic in blockSyncing state",
-                    minedBlockNum, 0, blockNum, round);
+                "New mined block number is larger than VrfRound told, Setup new VrfRound: #{},{} <- #{},{} for starting its own VRF consensus logic in blockSyncing state",
+                minedBlockNum, 0, blockNum, round);
 
             // setup VrfRound as new mined block told
             vrfRound.setBlockNum(vrfStateMachine, minedBlockNum);
@@ -480,8 +474,8 @@ public class VrfMiner extends AbstractMiner {
             blockSyncing = true;
         } else if (minedBlockNum < blockNum) {
             log.error(
-                    "FATAL ERROR, New mined block number is smaller than VrfRound told, #{} <- #{}, quit from proposal proof",
-                    minedBlockNum, blockNum);
+                "FATAL ERROR, New mined block number is smaller than VrfRound told, #{} <- #{}, quit from proposal proof",
+                minedBlockNum, blockNum);
             return;
         }
 
@@ -495,7 +489,7 @@ public class VrfMiner extends AbstractMiner {
             ProposalProof proposalProof = blockProof.getProof();
             if (vrfStateMachine.addProof(proposalProof, false)) {
                 log.info("Try to broadcast a new proposal for block, block header {}",
-                        newBlock.getHeader().getHash().toHex());
+                    newBlock.getHeader().getHash().toHex());
 
                 // Broadcast proposal to other peers
                 // ethereum.getChannelManager().sendProposalProof(proposalProof, null);
@@ -505,13 +499,13 @@ public class VrfMiner extends AbstractMiner {
                 VrfBlockWrapper blockWrapper = new VrfBlockWrapper(newBlock, null);
                 if (!vrfStateMachine.addNewBlock(blockWrapper)) {
                     log.info("Fail to add new proposed block to Vrf State Machine, hash 0x{}",
-                            Hex.toHexString(newBlock.getHash().getBytes(), 0, 3));
+                        Hex.toHexString(newBlock.getHash().getBytes(), 0, 3));
                 }
 
                 // Check if we can broadcast new block earlier
                 if (blockProof.getPriority() >= VRF_BLOCK_EARLY_BROADCAST_PRIORITY) {
                     log.info("Try to broadcast new block, #{}, hash 0x{}, priority {}", newBlock.getHeight(),
-                            Hex.toHexString(newBlock.getHash().getBytes(), 0, 3), blockProof.getPriority());
+                        Hex.toHexString(newBlock.getHash().getBytes(), 0, 3), blockProof.getPriority());
                     // Broadcast block to other peers as proposed one
                     if (setupMagic(newBlock)) {
                         // ethereum.getChannelManager().sendNewBlock(newBlock);
@@ -549,9 +543,9 @@ public class VrfMiner extends AbstractMiner {
                 VrfBlockWrapper winnerBlock = vrfStateMachine.getWinnerBlock();
                 if (!blockBroadcast && winnerBlock != null) {
                     if (Arrays.equals(winnerBlock.getCoinbase(), minerCoinbase)
-                            && Arrays.equals(bestProproserProof.getCoinbase(), minerCoinbase)) {
+                        && Arrays.equals(bestProproserProof.getCoinbase(), minerCoinbase)) {
                         log.info("Try to broadcast my own new best block, hash 0x{}",
-                                Hex.toHexString(winnerBlock.getHash(), 0, 6));
+                            Hex.toHexString(winnerBlock.getHash(), 0, 6));
                         // Broadcast block to other peers as new proposal block
                         if (setupMagic(winnerBlock.getBlock())/* winnerBlock.getHeader().setupMagic() */) {
                             // ethereum.getChannelManager().sendNewBlock(winnerBlock.getBlock());
@@ -559,7 +553,7 @@ public class VrfMiner extends AbstractMiner {
                             blockBroadcast = true;
                         } else {
                             log.error("Fail to setup magic for new proposed block, give up broadcast, blockSyncing {}",
-                                    blockSyncing);
+                                blockSyncing);
                         }
                     }
                 }
@@ -574,11 +568,11 @@ public class VrfMiner extends AbstractMiner {
                         sendCommitProof(commitProof);
                     } else {
                         log.error("Fail to add reduction commit proof to Vrf State Machine, blockSyncing {}",
-                                blockSyncing);
+                            blockSyncing);
                     }
                 } else {
                     log.warn("Not get reduction commit proof, give up Proposal Comit Prove, blockSyncing {}",
-                            blockSyncing);
+                        blockSyncing);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -600,10 +594,10 @@ public class VrfMiner extends AbstractMiner {
         BlockIdentifier reachCommitIdentifier = vrfStateMachine.reachCommitBlockIdentifier();
         if (reachCommitIdentifier == null) {
             log.error("NOT reach reduction commit agreement, give up Final Commit Proof, blockSyncing {}",
-                    blockSyncing);
+                blockSyncing);
         } else if (winnerBlock == null) {
             log.error("Empty winner block, give up Final Commit Proof, reach commit identifier {}, blockSyncing {}",
-                    reachCommitIdentifier, blockSyncing);
+                reachCommitIdentifier, blockSyncing);
 
             // !!!!!!!!!!! -----> Need to fix, should not be true.
 //        } else if (!Arrays.equals(winnerBlock.getHash(), reachCommitIdentifier.getHash())
@@ -616,18 +610,18 @@ public class VrfMiner extends AbstractMiner {
         } else {
 
             if (!Arrays.equals(winnerBlock.getHash(), reachCommitIdentifier.getHash())
-                    || winnerBlock.getNumber() != reachCommitIdentifier.getNumber()) {
+                || winnerBlock.getNumber() != reachCommitIdentifier.getNumber()) {
                 log.error(
-                        "Identifier is NOT matched, winner block {}, committed identifier {}, give up Final Commit Proof, blockSyncing {} -----> Need to fix, should not be true.",
-                        Hex.toHexString(winnerBlock.getHash(), 0, 6),
-                        Hex.toHexString(reachCommitIdentifier.getHash(), 0, 6), blockSyncing);
+                    "Identifier is NOT matched, winner block {}, committed identifier {}, give up Final Commit Proof, blockSyncing {} -----> Need to fix, should not be true.",
+                    Hex.toHexString(winnerBlock.getHash(), 0, 6),
+                    Hex.toHexString(reachCommitIdentifier.getHash(), 0, 6), blockSyncing);
                 log.error("PLEASE configure VrfStateMachine for longer broadcast time of new block in the network");
             }
 
             // Check the best proposal and committed proposal
             ProposalProof bestProproserProof = vrfStateMachine.getBestProposalProof();
             if (!Arrays.equals(bestProproserProof.getBlockIdentifier().getHash(), reachCommitIdentifier.getHash())
-                    || bestProproserProof.getBlockIdentifier().getNumber() != reachCommitIdentifier.getNumber()) {
+                || bestProproserProof.getBlockIdentifier().getNumber() != reachCommitIdentifier.getNumber()) {
                 log.warn("Not matched between best proposal and committed proposal, blockSyncing {}", blockSyncing);
             }
 
@@ -656,7 +650,7 @@ public class VrfMiner extends AbstractMiner {
         log.info("new VrfRound is arrived for Vrf Miner: <{}>, <{}>", blockNum, round);
         if (round == 0) {
             log.info("!!! Reach VRF consensus agreement, try to check Final Block #{} and propose a new block",
-                    blockNum - 1);
+                blockNum - 1);
 
             VrfBlockWrapper finalBlock = vrfStateMachine.getFinalBlock();
 
@@ -665,8 +659,8 @@ public class VrfMiner extends AbstractMiner {
                 // 1. State aligned, we lost final block
                 // 2. We could not get the final commit block from network in time.
                 log.error(
-                        "Fail to get #{} Final Block, Waiting for it being synced, Try to check block broadcast time, blockSyncing {}",
-                        blockNum - 1, blockSyncing);
+                    "Fail to get #{} Final Block, Waiting for it being synced, Try to check block broadcast time, blockSyncing {}",
+                    blockNum - 1, blockSyncing);
             }
         } else {
             log.info("### NOT reach VRF consensus agreement, try to propose a new block in next round");

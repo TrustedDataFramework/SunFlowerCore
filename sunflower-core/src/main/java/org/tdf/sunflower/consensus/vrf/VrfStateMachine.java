@@ -219,8 +219,8 @@ public class VrfStateMachine {
             // Check if proof owner is a registered validator
             if (!isRegisteredOwner(proposalProof)) {
                 logger.error(
-                        "Owner of new Proposal Proof is not registered in Native Deposit Contract, throw it away, coinbse {}",
-                        Hex.toHexString(proposalProof.getCoinbase(), 0, 3));
+                    "Owner of new Proposal Proof is not registered in Native Deposit Contract, throw it away, coinbse {}",
+                    Hex.toHexString(proposalProof.getCoinbase(), 0, 3));
                 return false;
             }
 
@@ -238,7 +238,7 @@ public class VrfStateMachine {
             byte[] bestPendingNonce = VrfUtil.getSeed(bestBlock);
             if (!ByteUtils.equals(proofSeed, bestPendingNonce)) {
                 logger.error("Proposal proof seed {} not match best pending nonce {}", ByteUtils.toHexString(proofSeed),
-                        ByteUtils.toHexString(bestPendingNonce));
+                    ByteUtils.toHexString(bestPendingNonce));
                 return false;
             }
 
@@ -311,7 +311,7 @@ public class VrfStateMachine {
             byte[] bestPendingNonce = VrfUtil.getSeed(bestHeader);
             if (!ByteUtils.equals(proofSeed, bestPendingNonce)) {
                 logger.error("Commit proof seed {} not match best pending nonce {}", ByteUtils.toHexString(proofSeed),
-                        ByteUtils.toHexString(bestPendingNonce));
+                    ByteUtils.toHexString(bestPendingNonce));
                 return false;
             }
 
@@ -399,18 +399,18 @@ public class VrfStateMachine {
             Header header = newBlock.getHeader();
             if (header != null) {
                 priority = validatorManager.getPriority(VrfUtil.getProposalProof(header),
-                        ValidatorManager.EXPECTED_PROPOSER_THRESHOLD);
+                    ValidatorManager.EXPECTED_PROPOSER_THRESHOLD);
             }
 
             logger.error(
-                    "New block is NOT the same block number, vrf #{} <- new #{}, skip adding, new block hash 0x{} priority {}",
-                    vrfRound.getBlockNum(), newBlock.getNumber(), Hex.toHexString(newBlock.getHash(), 0, 3), priority);
+                "New block is NOT the same block number, vrf #{} <- new #{}, skip adding, new block hash 0x{} priority {}",
+                vrfRound.getBlockNum(), newBlock.getNumber(), Hex.toHexString(newBlock.getHash(), 0, 3), priority);
             return false;
         }
 
         if (!pendingVrfState.validateBestProposalBlock(newBlock.getHeader())) {
             logger.info("New block is NOT the best proposal block, hash 0x{}, skip adding",
-                    Hex.toHexString(newBlock.getHash(), 0, 3));
+                Hex.toHexString(newBlock.getHash(), 0, 3));
             return false;
         }
 
@@ -430,7 +430,7 @@ public class VrfStateMachine {
         winnerBlock = newBlock;
 
         logger.info("New Block is added as Winner, #{}, hash 0x{}", winnerBlock.getNumber(),
-                Hex.toHexString(winnerBlock.getHash(), 0, 3));
+            Hex.toHexString(winnerBlock.getHash(), 0, 3));
 
         return true;
     }
@@ -533,20 +533,20 @@ public class VrfStateMachine {
                             try {
                                 if (!finalizeNewBlock(vrfRound, finalBlock)) {
                                     logger.error("Fail to finalize new block, Vrf Round {}, hash 0x{}", vrfRound,
-                                            Hex.toHexString(finalBlock.getHash(), 0, 3));
+                                        Hex.toHexString(finalBlock.getHash(), 0, 3));
                                     finalBlock = null;
                                 }
                             } catch (Exception ex) {
                                 logger.error("Unexpected Exception: {}", ex);
                                 logger.error("Fail to finalize new block, Vrf Round {}, hash 0x{}", vrfRound,
-                                        Hex.toHexString(finalBlock.getHash(), 0, 3));
+                                    Hex.toHexString(finalBlock.getHash(), 0, 3));
                                 finalBlock = null;
                             }
                         } else {
                             logger.error(
-                                    "!!! Does NOT receive the Final Block, Winner Block is NOT the final committed identifier, reach {} <- winner {}, Empty the Final Block",
-                                    Hex.toHexString(blockIdentifier.getHash(), 0, 3),
-                                    Hex.toHexString(winnerBlock.getHash(), 0, 3));
+                                "!!! Does NOT receive the Final Block, Winner Block is NOT the final committed identifier, reach {} <- winner {}, Empty the Final Block",
+                                Hex.toHexString(blockIdentifier.getHash(), 0, 3),
+                                Hex.toHexString(winnerBlock.getHash(), 0, 3));
                             finalBlock = null;
                         }
 
@@ -652,7 +652,7 @@ public class VrfStateMachine {
             logger.info("Align state {} -> {} as Proposer Proof <{}> tell", oldState, newState, vrfRound);
         } else if (compared > 0) {
             logger.warn("Delayed Proposal Proof is coming to VrfRound: <{}> <- <{},{}>, ignore it", vrfRound, blockNum,
-                    round);
+                round);
             return false;
         }
 
@@ -710,7 +710,7 @@ public class VrfStateMachine {
             return true;
         } else if (compared > 0) {
             logger.warn("Delayed Commit Proof is coming to VrfRound: <{}> <- <{},{}>, ignore it", vrfRound, blockNum,
-                    round);
+                round);
             return false;
         }
 
@@ -736,7 +736,7 @@ public class VrfStateMachine {
             int oldState = state;
             newState = forceTransit(newState);
             logger.info("Align state {} -> {} as Proof Role<{}> tell", oldState, newState,
-                    proof.getVrfProof().getRole());
+                proof.getVrfProof().getRole());
         }
 
         return true;

@@ -15,8 +15,8 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
     protected Predicate<V> isNull;
 
     public NoDeleteStore(
-            Store<K, V> delegate,
-            Predicate<V> isNull
+        Store<K, V> delegate,
+        Predicate<V> isNull
     ) {
         this.delegate = delegate;
         this.isNull = isNull;

@@ -58,7 +58,7 @@ public class ContextImpl implements Context {
         if (exited || blocked || disconnected) return;
         for (byte[] msg : messages) {
             builder.buildAnother(msg, 1, remote)
-                    .forEach(channel::write);
+                .forEach(channel::write);
         }
     }
 
@@ -75,8 +75,8 @@ public class ContextImpl implements Context {
             if (decrypted != null)
                 return decrypted;
             decrypted = CryptoContext.decrypt(
-                    CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), remote.getID().getBytes()),
-                    message.getBody().toByteArray());
+                CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), remote.getID().getBytes()),
+                message.getBody().toByteArray());
             return decrypted;
         }
         return message.getBody().toByteArray();

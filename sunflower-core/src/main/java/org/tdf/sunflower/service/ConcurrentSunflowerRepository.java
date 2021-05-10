@@ -1,17 +1,14 @@
 package org.tdf.sunflower.service;
 
 import lombok.RequiredArgsConstructor;
-import org.tdf.common.types.BlockConfirms;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.exception.GenesisConflictsException;
-import org.tdf.sunflower.exception.WriteGenesisFailedException;
-import org.tdf.sunflower.facade.ConfirmedBlocksProvider;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.TransactionInfo;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +36,7 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
     }
 
     @Override
-    public void saveGenesis(Block block) throws GenesisConflictsException, WriteGenesisFailedException {
+    public void saveGenesis(Block block) {
         lock.writeLock().lock();
         try {
             delegate.saveGenesis(block);
@@ -199,10 +196,10 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
     }
 
     @Override
-    public void writeBlock(Block block) {
+    public void writeBlock(Block block, List<TransactionInfo> infos) {
         lock.writeLock().lock();
         try {
-            delegate.writeBlock(block);
+            delegate.writeBlock(block, infos);
         } finally {
             lock.writeLock().unlock();
         }
@@ -239,18 +236,13 @@ public class ConcurrentSunflowerRepository implements SunflowerRepository {
     }
 
     @Override
-    public BlockConfirms getConfirms(byte[] transactionHash) {
+    public TransactionInfo getTransactionInfo(HexBytes transactionHash) {
         lock.readLock().lock();
         try {
-            return delegate.getConfirms(transactionHash);
+            return delegate.getTransactionInfo(transactionHash);
         } finally {
             lock.readLock().unlock();
         }
-    }
-
-    @Override
-    public void setProvider(ConfirmedBlocksProvider provider) {
-
     }
 
 //    @Override

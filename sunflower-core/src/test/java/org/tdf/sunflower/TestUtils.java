@@ -18,19 +18,19 @@ public class TestUtils {
 
     static Block getBlock(long height) {
         HeaderEntity h = new HeaderEntity(
-                BigEndian.encodeInt64(height), 1, height == 0 ? BYTES : BigEndian.encodeInt64(height - 1),
-                BYTES, BYTES, height, System.currentTimeMillis() / 1000, BYTES
+            BigEndian.encodeInt64(height), 1, height == 0 ? BYTES : BigEndian.encodeInt64(height - 1),
+            BYTES, BYTES, height, System.currentTimeMillis() / 1000, BYTES
         );
         TransactionEntity.TransactionEntityBuilder builder =
-                TransactionEntity.builder().blockHash(BigEndian.encodeInt64(height))
-                        .height(height)
-                        .from(BYTES).payload(BYTES).to(BYTES)
-                        .signature(BYTES);
+            TransactionEntity.builder().blockHash(BigEndian.encodeInt64(height))
+                .height(height)
+                .from(BYTES).payload(BYTES).to(BYTES)
+                .signature(BYTES);
         Block b = new Block(Mapping.getFromHeaderEntity(h));
         b.setBody(Arrays.asList(
-                builder.position(0).hash((height + "" + 0).getBytes()).build(),
-                builder.position(1).hash((height + "" + 1).getBytes()).build(),
-                builder.position(2).hash((height + "" + 2).getBytes()).build()
+            builder.position(0).hash((height + "" + 0).getBytes()).build(),
+            builder.position(1).hash((height + "" + 1).getBytes()).build(),
+            builder.position(2).hash((height + "" + 2).getBytes()).build()
         ).stream().map(Mapping::getFromTransactionEntity).collect(Collectors.toList()));
         return b;
     }

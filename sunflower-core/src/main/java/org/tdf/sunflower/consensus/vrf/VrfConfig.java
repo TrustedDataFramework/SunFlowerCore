@@ -5,13 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.tdf.sunflower.consensus.MinerConfig;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class VrfConfig implements MinerConfig {
+public class VrfConfig {
     private String name;
     private String genesis;
     @JsonProperty("block-interval")

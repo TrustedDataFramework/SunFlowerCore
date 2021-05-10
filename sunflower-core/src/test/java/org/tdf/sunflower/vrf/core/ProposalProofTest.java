@@ -40,7 +40,7 @@ public class ProposalProofTest {
     private static final byte[] coinbase = Hex.decode("6dE5E8820def9F49BBd01EC07fFc2D931CD15a85");
 
     private static final byte[] seed = "We are the free man in the world, but we try to test the world with our code"
-            .getBytes();
+        .getBytes();
 
     @Test
     public void testRlpEncode() {
@@ -63,19 +63,19 @@ public class ProposalProofTest {
         ProposalProof prove2 = new ProposalProof(rlpEncoded);
 
         assertEquals(Hex.toHexString(prove1.getVrfProof().getVrfPk()),
-                Hex.toHexString(prove2.getVrfProof().getVrfPk()));
+            Hex.toHexString(prove2.getVrfProof().getVrfPk()));
         assertEquals(Hex.toHexString(prove1.getVrfProof().getSeed()), Hex.toHexString(prove2.getVrfProof().getSeed()));
 
         assertEquals(Hex.toHexString(prove1.getVrfProof().getVrfResult().getR()),
-                Hex.toHexString(prove2.getVrfProof().getVrfResult().getR()));
+            Hex.toHexString(prove2.getVrfProof().getVrfResult().getR()));
         assertEquals(Hex.toHexString(prove1.getVrfProof().getVrfResult().getProof()),
-                Hex.toHexString(prove2.getVrfProof().getVrfResult().getProof()));
+            Hex.toHexString(prove2.getVrfProof().getVrfResult().getProof()));
 
         assertEquals(Hex.toHexString(prove1.getCoinbase()), Hex.toHexString(prove2.getCoinbase()));
 
         assertTrue(prove1.getBlockIdentifier().getNumber() == prove2.getBlockIdentifier().getNumber());
         assertEquals(Hex.toHexString(prove1.getBlockIdentifier().getHash()),
-                Hex.toHexString(prove2.getBlockIdentifier().getHash()));
+            Hex.toHexString(prove2.getBlockIdentifier().getHash()));
 
         assertTrue(prove2.verify());
     }

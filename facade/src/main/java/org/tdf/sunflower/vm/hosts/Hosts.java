@@ -36,8 +36,8 @@ public class Hosts {
     }
 
     public Hosts withTransfer(
-            Backend backend,
-            HexBytes contractAddress
+        Backend backend,
+        HexBytes contractAddress
     ) {
         this.transfer = new Transfer(backend, contractAddress);
         return this;
@@ -45,9 +45,9 @@ public class Hosts {
 
     public Set<HostFunction> getAll() {
         Set<HostFunction> all = new HashSet<>(
-                Arrays.asList(
-                        new Log(), new Nop()
-                )
+            Arrays.asList(
+                new Log(), new Nop()
+            )
         );
 
         if (u256Host != null)
@@ -85,9 +85,9 @@ public class Hosts {
 
     public static class Nop extends HostFunction {
         static final FunctionType FUNCTION_TYPE = new FunctionType(
-                Arrays.asList
-                        (ValueType.I64, ValueType.I64),
-                Collections.emptyList()
+            Arrays.asList
+                (ValueType.I64, ValueType.I64),
+            Collections.emptyList()
         );
 
         public Nop() {

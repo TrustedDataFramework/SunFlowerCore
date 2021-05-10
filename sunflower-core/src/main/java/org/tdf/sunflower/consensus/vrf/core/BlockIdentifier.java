@@ -93,7 +93,7 @@ public class BlockIdentifier {
 
         // Compare two block hash as Big Endian order
         int compare = FastByteComparisons.compareTo(this.blockHash, 0, this.blockHash.length, other.blockHash, 0,
-                other.blockHash.length);
+            other.blockHash.length);
 
         return compare;
     }

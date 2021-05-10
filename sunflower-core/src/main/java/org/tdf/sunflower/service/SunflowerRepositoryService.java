@@ -7,19 +7,17 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
-import org.tdf.common.types.BlockConfirms;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.dao.HeaderDao;
 import org.tdf.sunflower.dao.Mapping;
 import org.tdf.sunflower.dao.TransactionDao;
 import org.tdf.sunflower.entity.TransactionEntity;
-import org.tdf.sunflower.facade.ConfirmedBlocksProvider;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.UnmodifiableBlock;
+import org.tdf.sunflower.types.TransactionInfo;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,7 +29,7 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
     private final TransactionDao transactionDao;
 
     public SunflowerRepositoryService(
-            ApplicationContext context
+        ApplicationContext context
     ) {
         super(context);
         this.headerDao = context.getBean(HeaderDao.class);
@@ -46,14 +44,14 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
     protected Block getBlockFromHeader(Header header) {
         Block b = new Block(header);
         b.setBody(
-                getTransactionsByBlockHash(b.getHash().getBytes())
+            getTransactionsByBlockHash(b.getHash().getBytes())
         );
-        return UnmodifiableBlock.of(b);
+        return b;
     }
 
     protected List<Block> getBlocksFromHeaders(Collection<? extends Header> headers) {
         List<TransactionEntity> transactions = transactionDao.findByBlockHashIn(
-                headers.stream().map(h -> h.getHash().getBytes()).collect(Collectors.toList())
+            headers.stream().map(h -> h.getHash().getBytes()).collect(Collectors.toList())
         );
 
         Map<String, List<TransactionEntity>> transactionLists = new HashMap<>();
@@ -73,9 +71,8 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
             b.setBody(list.stream().map(Mapping::getFromTransactionEntity).collect(Collectors.toList()));
         }
         return blocks
-                .stream()
-                .map(UnmodifiableBlock::of)
-                .collect(Collectors.toList());
+            .stream()
+            .collect(Collectors.toList());
     }
 
     @Override
@@ -99,19 +96,19 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
         if (limit == 0) return new ArrayList<>();
         if (limit < 0) limit = Integer.MAX_VALUE;
         return Mapping.getFromHeaderEntities(headerDao
-                .findByHeightGreaterThanEqual(startHeight, PageRequest.of(0, limit)));
+            .findByHeightGreaterThanEqual(startHeight, PageRequest.of(0, limit)));
     }
 
 
     @Override
     public List<Header> getHeadersBetween(long startHeight, long stopHeight, int limit, boolean descend) {
         return Mapping.getFromHeaderEntities(
-                headerDao.findByHeightBetween(
-                        startHeight, stopHeight,
-                        PageRequest.of(0, limit,
-                                descend ? Sort.Direction.DESC : Sort.Direction.ASC, "height"
-                        )
+            headerDao.findByHeightBetween(
+                startHeight, stopHeight,
+                PageRequest.of(0, limit,
+                    descend ? Sort.Direction.DESC : Sort.Direction.ASC, "height"
                 )
+            )
         );
     }
 
@@ -127,16 +124,16 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
         Optional<Header> header = getHeader(hash);
         int finalLimit = limit;
         return header.map(h ->
-                getHeadersBetween(
-                        header.get().getHeight() - finalLimit + 1, h.getHeight(), finalLimit)
+            getHeadersBetween(
+                header.get().getHeight() - finalLimit + 1, h.getHeight(), finalLimit)
         )
-                .map(li -> Chained.getAncestorsOf(li, HexBytes.fromBytes(hash)))
-                .orElse(new ArrayList<>());
+            .map(li -> Chained.getAncestorsOf(li, HexBytes.fromBytes(hash)))
+            .orElse(new ArrayList<>());
     }
 
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void writeBlock(Block block) {
+    public void writeBlock(Block block, List<TransactionInfo> infos) {
         throw new UnsupportedOperationException();
 //        if (!accountTrie.getTrieStore().containsKey(block.getStateRoot().getBytes())) {
 //            throw new RuntimeException("unexpected error: account trie not synced");
@@ -162,7 +159,7 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
 
     @Override
     protected void writeGenesis(Block genesis) {
-        writeBlock(genesis);
+        writeBlock(genesis, Collections.emptyList());
     }
 
     @Override
@@ -179,26 +176,21 @@ public class SunflowerRepositoryService extends AbstractBlockRepository implemen
     @Override
     public List<Transaction> getTransactionsByBlockHash(byte[] blockHash) {
         return transactionDao.findByBlockHash(blockHash)
-                .stream().sorted(Comparator.comparingInt(TransactionEntity::getPosition))
-                .map(Mapping::getFromTransactionEntity)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public BlockConfirms getConfirms(byte[] transactionHash) {
-        return null;
+            .stream().sorted(Comparator.comparingInt(TransactionEntity::getPosition))
+            .map(Mapping::getFromTransactionEntity)
+            .collect(Collectors.toList());
     }
 
     public List<Transaction> getTransactionsByBlockHeight(long height) {
         return transactionDao.findByHeight(height)
-                .stream().sorted(Comparator.comparingInt(TransactionEntity::getPosition))
-                .map(Mapping::getFromTransactionEntity)
-                .collect(Collectors.toList());
+            .stream().sorted(Comparator.comparingInt(TransactionEntity::getPosition))
+            .map(Mapping::getFromTransactionEntity)
+            .collect(Collectors.toList());
     }
 
     @Override
-    public void setProvider(ConfirmedBlocksProvider provider) {
-
+    public TransactionInfo getTransactionInfo(HexBytes transactionHash) {
+        return null;
     }
 
 //    @Override

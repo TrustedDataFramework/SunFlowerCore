@@ -6,12 +6,13 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.state.Constants;
-import org.tdf.sunflower.state.PreBuiltContract;
 import org.tdf.sunflower.types.Transaction;
 import org.tdf.sunflower.util.ByteUtil;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
+import org.tdf.sunflower.vm.abi.Abi;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -25,34 +26,27 @@ import static org.tdf.sunflower.state.Constants.VRF_BIOS_CONTRACT_ADDR;
  */
 
 @Slf4j
-public class VrfPreBuiltContract implements PreBuiltContract {
+public class VrfPreBuiltContract implements BuiltinContract {
     public static final byte[] TOTAL_KEY = "total_deposits".getBytes();
     private Account genesisAccount;
-    private Map<byte[], byte[]> genesisStorage;
+    private Map<HexBytes, HexBytes> genesisStorage;
 
     @Override
-    public Account getGenesisAccount() {
-        if (genesisAccount == null) {
-            synchronized (VrfPreBuiltContract.class) {
-                if (genesisAccount == null) {
-                    genesisAccount = Account.emptyAccount(Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES, Uint256.ZERO);
-                }
-            }
-        }
-        return genesisAccount;
+    public HexBytes getAddress() {
+        return Constants.VRF_BIOS_CONTRACT_ADDR_HEX_BYTES;
 
     }
 
     @Override
-    public void update(Backend backend, CallData callData) {
+    public byte[] call(Backend backend, CallData callData) {
 
         String methodName = "";
         log.info("++++++>> VrfBiosContract method {}, txn hash {}, nonce {}", methodName, callData.getTxHash().toHex(),
-                callData.getTxNonce());
+            callData.getTxNonce());
 
         if (methodName.trim().isEmpty()) {
             log.error("No method name ");
-            return;
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
 
         if (methodName.equals("deposit")) {
@@ -61,7 +55,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
 //            } catch (IOException e) {
 //                e.printStackTrace();
 //            }
-            return;
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
 
         if (methodName.equals("withdraw")) {
@@ -70,18 +64,24 @@ public class VrfPreBuiltContract implements PreBuiltContract {
 //            } catch (IOException e) {
 //                e.printStackTrace();
 //            }
-            return;
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
 
         log.error("Invoking unknown contract method {}", methodName);
+        return ByteUtil.EMPTY_BYTE_ARRAY;
     }
 
     @Override
-    public Map<byte[], byte[]> getGenesisStorage() {
+    public Abi getAbi() {
+        return Abi.fromJson("[]");
+    }
+
+    @Override
+    public Map<HexBytes, HexBytes> getGenesisStorage() {
         if (genesisStorage == null) {
             synchronized (VrfPreBuiltContract.class) {
                 if (genesisStorage == null) {
-                    genesisStorage = new HashMap<byte[], byte[]>();
+                    genesisStorage = new HashMap<HexBytes, HexBytes>();
                 }
             }
         }
@@ -99,13 +99,13 @@ public class VrfPreBuiltContract implements PreBuiltContract {
             return;
         }
 
-        byte[] fromAddr = transaction.getFromAddress().getBytes();
+        byte[] fromAddr = transaction.getSender();
         Account fromAccount = accounts.get(HexBytes.fromBytes(fromAddr));
         Account contractAccount = accounts.get(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR));
 
         if (fromAccount.getBalance().compareTo(Uint256.of(amount)) < 0) {
             log.error("Deposit amount {} is less than account {} balance {}", amount, fromAddr,
-                    fromAccount.getBalance());
+                fromAccount.getBalance());
             return;
         }
 
@@ -133,8 +133,8 @@ public class VrfPreBuiltContract implements PreBuiltContract {
         }
 
         // Update account balance
-        fromAccount.setBalance(fromAccount.getBalance().safeSub(Uint256.of(amount)));
-        contractAccount.setBalance(contractAccount.getBalance().safeAdd(Uint256.of(amount)));
+        fromAccount.setBalance(fromAccount.getBalance().minus(Uint256.of(amount)));
+        contractAccount.setBalance(contractAccount.getBalance().plus(Uint256.of(amount)));
 
         // Update contract storage
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
@@ -153,7 +153,7 @@ public class VrfPreBuiltContract implements PreBuiltContract {
             return;
         }
 
-        byte[] fromAddr = transaction.getFromAddress().getBytes();
+        byte[] fromAddr = transaction.getSender();
         Account fromAccount = accounts.get(HexBytes.fromBytes(fromAddr));
         Account contractAccount = accounts.get(HexBytes.fromHex(VRF_BIOS_CONTRACT_ADDR));
 
@@ -176,16 +176,16 @@ public class VrfPreBuiltContract implements PreBuiltContract {
         total -= amount;
 
         // Update account balance
-        fromAccount.setBalance(fromAccount.getBalance().safeAdd(Uint256.of(amount)));
-        contractAccount.setBalance(contractAccount.getBalance().safeSub(Uint256.of(amount)));
+        fromAccount.setBalance(fromAccount.getBalance().plus(Uint256.of(amount)));
+        contractAccount.setBalance(contractAccount.getBalance().minus(Uint256.of(amount)));
 
         contractStorage.put(fromAddr, ByteUtil.longToBytes(deposit));
         contractStorage.put(TOTAL_KEY, ByteUtil.longToBytes(total));
     }
 
     private WithdrawParams parseWithdrawParams(Transaction transaction)
-            throws IOException {
-        byte[] payload = transaction.getPayload().getBytes();
+        throws IOException {
+        byte[] payload = transaction.getData();
         int methodNameLen = payload[0];
         int paramBytesLen = payload.length - methodNameLen - 1;
         byte[] paramBytes = new byte[paramBytesLen];
@@ -195,8 +195,8 @@ public class VrfPreBuiltContract implements PreBuiltContract {
     }
 
     private DepositParams parseDepositParams(Transaction transaction)
-            throws IOException {
-        byte[] payload = transaction.getPayload().getBytes();
+        throws IOException {
+        byte[] payload = transaction.getData();
         int methodNameLen = payload[0];
         int paramBytesLen = payload.length - methodNameLen - 1;
         byte[] paramBytes = new byte[paramBytesLen];

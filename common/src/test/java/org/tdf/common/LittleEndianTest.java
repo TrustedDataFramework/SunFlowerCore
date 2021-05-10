@@ -13,8 +13,8 @@ public class LittleEndianTest {
     @Test
     public void testInt16() {
         assert Arrays.equals(
-                LittleEndian.encodeInt16((short) 0xabcd),
-                new byte[]{(byte) 0xcd, (byte) 0xab}
+            LittleEndian.encodeInt16((short) 0xabcd),
+            new byte[]{(byte) 0xcd, (byte) 0xab}
         );
         assert LittleEndian.decodeInt16(new byte[]{(byte) 0xcd, (byte) 0xab}) == (short) 0xabcd;
     }
@@ -22,8 +22,8 @@ public class LittleEndianTest {
     @Test
     public void testInt32() {
         assert Arrays.equals(
-                LittleEndian.encodeInt32(0x1234abcd),
-                new byte[]{(byte) 0xcd, (byte) 0xab, 0x34, 0x12}
+            LittleEndian.encodeInt32(0x1234abcd),
+            new byte[]{(byte) 0xcd, (byte) 0xab, 0x34, 0x12}
         );
 
         assert LittleEndian.decodeInt32(new byte[]{(byte) 0xcd, (byte) 0xab, 0x34, 0x12}) == 0x1234abcd;
@@ -32,8 +32,8 @@ public class LittleEndianTest {
     @Test
     public void testInt64() {
         assert Arrays.equals(
-                LittleEndian.encodeInt64(0x12_34_ab_cd_45_67_89_efL),
-                new byte[]{(byte) 0xef, (byte) 0x89, (byte) 0x67, (byte) 0x45, (byte) 0xcd, (byte) 0xab, 0x34, 0x12}
+            LittleEndian.encodeInt64(0x12_34_ab_cd_45_67_89_efL),
+            new byte[]{(byte) 0xef, (byte) 0x89, (byte) 0x67, (byte) 0x45, (byte) 0xcd, (byte) 0xab, 0x34, 0x12}
         );
 
         assert LittleEndian.decodeInt64(new byte[]{(byte) 0xef, (byte) 0x89, (byte) 0x67, (byte) 0x45, (byte) 0xcd, (byte) 0xab, 0x34, 0x12}) == 0x12_34_ab_cd_45_67_89_efL;

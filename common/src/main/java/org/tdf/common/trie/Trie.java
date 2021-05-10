@@ -1,13 +1,12 @@
 package org.tdf.common.trie;
 
 import org.tdf.common.serialize.Codec;
+import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.Store;
-import org.tdf.common.util.ByteArrayMap;
+import org.tdf.common.util.HashUtil;
+import org.tdf.common.util.HexBytes;
 
-import java.util.AbstractMap;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -27,7 +26,7 @@ public interface Trie<K, V> extends Store<K, V> {
      * @return trie with root hash
      * @throws RuntimeException if the root hash not found in the store or rollback failed
      */
-    Trie<K, V> revert(byte[] rootHash, Store<byte[], byte[]> store) throws RuntimeException;
+    Trie<K, V> revert(HexBytes rootHash, Store<byte[], byte[]> store) throws RuntimeException;
 
     /**
      * rollback to a previous trie
@@ -36,7 +35,7 @@ public interface Trie<K, V> extends Store<K, V> {
      * @return trie with root hash
      * @throws RuntimeException if the root hash not found in the store or roll back failed
      */
-    Trie<K, V> revert(byte[] rootHash) throws RuntimeException;
+    Trie<K, V> revert(HexBytes rootHash) throws RuntimeException;
 
     /**
      * rollback to an empty trie
@@ -50,7 +49,7 @@ public interface Trie<K, V> extends Store<K, V> {
      *
      * @return root hash of new trie
      */
-    byte[] commit();
+    HexBytes commit();
 
     /**
      * dump keys this trie
@@ -58,7 +57,7 @@ public interface Trie<K, V> extends Store<K, V> {
      * @return minimal key value pairs to store this trie
      * @throws RuntimeException if the trie is both non-null and dirty
      */
-    Set<byte[]> dumpKeys();
+    Set<HexBytes> dumpKeys();
 
     /**
      * dump this trie
@@ -66,7 +65,7 @@ public interface Trie<K, V> extends Store<K, V> {
      * @return minimal key value pairs to store this trie
      * @throws RuntimeException if the trie is both non-null and dirty
      */
-    Map<byte[], byte[]> dump();
+    Map<HexBytes, HexBytes> dump();
 
     /**
      * get root hash of a non-dirty tree, return null hash if the trie is null
@@ -74,14 +73,14 @@ public interface Trie<K, V> extends Store<K, V> {
      * @return trie's root hash
      * @throws RuntimeException if this trie is dirty
      */
-    byte[] getRootHash() throws RuntimeException;
+    HexBytes getRootHash() throws RuntimeException;
 
     /**
      * get root hash of an empty trie
      *
      * @return root hash of an empty trie
      */
-    byte[] getNullHash();
+    HexBytes getNullHash();
 
     /**
      * trie is both non-null and has uncommitted modifications
@@ -99,7 +98,7 @@ public interface Trie<K, V> extends Store<K, V> {
      * @param k key to prove be absent or valid
      * @return merkle path of key
      */
-    Map<byte[], byte[]> getProof(K k);
+    Map<HexBytes, HexBytes> getProof(K k);
 
     /**
      * get merkle proof batched
@@ -107,8 +106,8 @@ public interface Trie<K, V> extends Store<K, V> {
      * @param keys keys to included in the proof
      * @return merkle proof
      */
-    default Map<byte[], byte[]> getProof(Collection<? extends K> keys) {
-        Map<byte[], byte[]> ret = new ByteArrayMap<>();
+    default Map<HexBytes, HexBytes> getProof(Collection<? extends K> keys) {
+        Map<HexBytes, HexBytes> ret = new HashMap<>();
         for (K key : keys) {
             ret.putAll(getProof(key));
         }
@@ -161,6 +160,15 @@ public interface Trie<K, V> extends Store<K, V> {
     void traverse(BiFunction<? super K, ? super V, Boolean> traverser);
 
     void traverseValue(Function<? super V, Boolean> traverser);
+
+    static Trie<byte[], byte[]> getDefault() {
+        return Trie.<byte[], byte[]>builder()
+            .store(new ByteArrayMapStore<>())
+            .keyCodec(Codec.identity())
+            .valueCodec(Codec.identity())
+            .hashFunction(HashUtil::sha3)
+            .build();
+    }
 
     class Builder<K, V> {
         private Function<byte[], byte[]> hashFunction;

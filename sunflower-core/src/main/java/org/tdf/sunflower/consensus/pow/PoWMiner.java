@@ -2,26 +2,27 @@ package org.tdf.sunflower.consensus.pow;
 
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.events.NewBestBlock;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.facade.TransactionPool;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.BlockCreateResult;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.state.Address;
+import org.tdf.sunflower.types.*;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.*;
 
 import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
-import static org.tdf.sunflower.state.Account.ADDRESS_SIZE;
+import static org.tdf.sunflower.types.Transaction.ADDRESS_LENGTH;
 
 @Slf4j(topic = "pow-miner")
 public class PoWMiner extends AbstractMiner {
     private final TransactionPool transactionPool;
-    private final PoWConfig poWConfig;
+    private final ConsensusConfig config;
     private final PoW poW;
     private final ForkJoinPool threadPool = (ForkJoinPool) Executors.newWorkStealingPool();
     private ScheduledExecutorService minerExecutor;
@@ -32,13 +33,13 @@ public class PoWMiner extends AbstractMiner {
     private Future<?> task;
 
     public PoWMiner(
-            PoWConfig minerConfig,
-            TransactionPool tp,
-            PoW pow
+        ConsensusConfig config,
+        TransactionPool tp,
+        PoW pow
     ) {
-        super(pow.getAccountTrie(), pow.getEventBus(), minerConfig);
+        super(pow.getAccountTrie(), pow.getEventBus(), config);
         this.transactionPool = tp;
-        this.poWConfig = minerConfig;
+        this.config = config;
         this.poW = pow;
 
         getEventBus().subscribe(NewBestBlock.class, e -> {
@@ -57,39 +58,41 @@ public class PoWMiner extends AbstractMiner {
 
     @Override
     protected Transaction createCoinBase(long height) {
-        return new Transaction(
-                PoW.TRANSACTION_VERSION, Transaction.Type.COIN_BASE.code,
-                System.currentTimeMillis() / 1000, height,
-                HexBytes.EMPTY, 0, Uint256.ZERO,
-                Uint256.of(20), HexBytes.EMPTY, poWConfig.getMinerCoinBase(),
-                HexBytes.EMPTY
-        );
+        return Transaction.builder()
+            .gasLimit(ByteUtil.EMPTY_BYTE_ARRAY)
+            .receiveAddress(Address.empty().getBytes())
+            .data(PoWBios.UPDATE.encode())
+            .value(ByteUtil.EMPTY_BYTE_ARRAY)
+            .gasPrice(ByteUtil.EMPTY_BYTE_ARRAY)
+            .nonce(ByteUtil.longToBytesNoLeadZeroes(height))
+            .build();
     }
 
     @Override
     protected Header createHeader(Block parent) {
         return Header.builder()
-                .version(parent.getVersion())
-                .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
-                .createdAt(System.currentTimeMillis() / 1000)
-                .payload(HexBytes.fromBytes(poW.getNBits(parent.getStateRoot().getBytes())))
-                .build();
+            .hashPrev(parent.getHash())
+            .coinbase(config.getMinerCoinBase())
+            .createdAt(System.currentTimeMillis() / 1000)
+            .height(parent.getHeight() + 1)
+            .build();
     }
 
     @Override
     protected boolean finalizeBlock(Block parent, Block block) {
-        byte[] nbits = poW.getNBits(parent.getStateRoot().getBytes());
+        Uint256 nbits = poW.bios.getNBits(parent.getHash());
         Random rd = new Random();
-        log.info("start finish pow target = {}", HexBytes.fromBytes(nbits));
+        byte[] nonce = new byte[8];
+        rd.nextBytes(nonce);
+        log.info("start finish pow target = {}", nbits.getDataHex());
         this.working = true;
-        while (PoW.compare(PoW.getPoWHash(block), nbits) > 0) {
+        while (PoW.compare(PoW.getPoWHash(block), nbits.getData()) > 0) {
             if (!working) {
                 log.info("mining canceled");
                 return false;
             }
-            byte[] nonce = new byte[32];
             rd.nextBytes(nonce);
-            block.setPayload(HexBytes.fromBytes(nonce));
+            block.setNonce(HexBytes.fromBytes(Arrays.copyOfRange(nonce, 0, nonce.length)));
         }
         log.info("pow success");
         this.working = false;
@@ -106,7 +109,7 @@ public class PoWMiner extends AbstractMiner {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }, 0, Math.max(1, poWConfig.getBlockInterval() / 4), TimeUnit.SECONDS);
+        }, 0, Math.max(1, config.getBlockInterval() / 4), TimeUnit.SECONDS);
     }
 
     @Override
@@ -127,15 +130,15 @@ public class PoWMiner extends AbstractMiner {
 
     @Override
     public HexBytes getMinerAddress() {
-        return poWConfig.getMinerCoinBase();
+        return config.getMinerCoinBase();
     }
 
     public void tryMine() {
-        if (!poWConfig.isEnableMining() || stopped) {
+        if (!config.enableMining() || stopped) {
             return;
         }
-        if (poWConfig.getMinerCoinBase() == null || poWConfig.getMinerCoinBase().size() != ADDRESS_SIZE) {
-            log.warn("pow miner: invalid coinbase address {}", poWConfig.getMinerCoinBase());
+        if (config.getMinerCoinBase() == null || config.getMinerCoinBase().size() != ADDRESS_LENGTH) {
+            log.warn("pow miner: invalid coinbase address {}", config.getMinerCoinBase());
             return;
         }
         if (working || task != null) return;
@@ -148,11 +151,13 @@ public class PoWMiner extends AbstractMiner {
             return;
         Runnable task = () -> {
             try {
-                BlockCreateResult res = createBlock(poW.getSunflowerRepository().getBestBlock());
+                BlockCreateResult res = createBlock(
+                    poW.getSunflowerRepository().getBestBlock(),
+                    Collections.emptyMap());
                 if (res.getBlock() != null) {
                     log.info("mining success block: {}", res.getBlock().getHeader());
                 }
-                getEventBus().publish(new NewBlockMined(res.getBlock(), res.getFailedTransactions(), res.getReasons()));
+                getEventBus().publish(new NewBlockMined(res.getBlock(), res.getInfos()));
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {

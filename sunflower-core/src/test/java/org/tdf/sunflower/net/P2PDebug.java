@@ -6,10 +6,8 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ClassUtils;
 import org.tdf.common.store.JsonStore;
-import org.tdf.common.store.MapStore;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.facade.PeerServerListener;
-import org.tdf.sunflower.facade.SecretStore;
 import org.tdf.sunflower.util.FileUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -37,7 +35,7 @@ public class P2PDebug {
         });
 
         // port listening on
-        PeerServerImpl server = new PeerServerImpl(new JsonStore("$memory", new ObjectMapper()), AbstractConsensusEngine.NONE, SecretStore.NONE);
+        PeerServerImpl server = new PeerServerImpl(new JsonStore("$memory", new ObjectMapper()), AbstractConsensusEngine.NONE);
         Properties properties = new Properties();
         FileUtils.setClassLoader(ClassUtils.getDefaultClassLoader());
         properties.load(FileUtils.getInputStream("p2p/node3.properties"));
@@ -101,18 +99,18 @@ public class P2PDebug {
             }
             if (line.equals("lookup")) {
                 server.getClient().broadcast(
-                        server.getClient().messageBuilder
-                                .buildLookup()
+                    server.getClient().messageBuilder
+                        .buildLookup()
                 );
                 continue;
             }
             if (line.startsWith("connect")) {
                 String[] hostPort = line.substring("connect".length()).trim()
-                        .split("\\s|:");
+                    .split("\\s|:");
                 server.getClient().dial(hostPort[0], Integer.parseInt(hostPort[1]),
-                        server.getClient()
-                                .messageBuilder
-                                .buildPing());
+                    server.getClient()
+                        .messageBuilder
+                        .buildPing());
                 continue;
             }
             if (line.equals("bootstraps")) {
@@ -121,7 +119,7 @@ public class P2PDebug {
             }
             if (line.startsWith("broadcast")) {
                 server.broadcast(line.substring("broadcast".length())
-                        .trim().getBytes(StandardCharsets.UTF_8));
+                    .trim().getBytes(StandardCharsets.UTF_8));
                 continue;
             }
             if (line.startsWith("shutdown")) {
@@ -132,8 +130,8 @@ public class P2PDebug {
             for (Peer p : server.getPeers()) {
                 if (p.getID().toString().startsWith(arguments.get(0))) {
                     server.dial(p,
-                            String.join(" ", arguments.subList(1, arguments.size()))
-                                    .getBytes(StandardCharsets.UTF_8)
+                        String.join(" ", arguments.subList(1, arguments.size()))
+                            .getBytes(StandardCharsets.UTF_8)
                     );
                 }
             }

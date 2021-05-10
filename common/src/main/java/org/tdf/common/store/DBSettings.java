@@ -3,8 +3,8 @@ package org.tdf.common.store;
 public class DBSettings {
 
     public static final DBSettings DEFAULT = new DBSettings()
-            .withMaxThreads(1)
-            .withMaxOpenFiles(32);
+        .withMaxThreads(1)
+        .withMaxOpenFiles(32);
 
     int maxOpenFiles;
     int maxThreads;

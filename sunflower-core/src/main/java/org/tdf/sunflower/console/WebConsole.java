@@ -61,7 +61,7 @@ public class WebConsole {
 
     private boolean verifyToken(String token, String createdAt) {
         return HexBytes.encode(CryptoContext.hash(
-                (uuid + createdAt).getBytes(StandardCharsets.US_ASCII)
+            (uuid + createdAt).getBytes(StandardCharsets.US_ASCII)
         )).equals(token);
     }
 
@@ -74,8 +74,8 @@ public class WebConsole {
     // read port, generate uuid write to token file
     private void writeTokenFile() {
         TokenFile file = TokenFile.builder()
-                .token(uuid)
-                .port(consoleConfig.getPort()).build();
+            .token(uuid)
+            .port(consoleConfig.getPort()).build();
 
         try {
             Start.MAPPER.writeValue(new File(consoleConfig.getTokenFile()), file);
@@ -86,8 +86,8 @@ public class WebConsole {
 
     private boolean closeUnauthorized(SocketIOClient client, Payload payload) {
         if (payload == null
-                || Math.abs(Long.parseLong(payload.getCreatedAt()) - System.currentTimeMillis()) > 30 * 1000
-                || !verifyToken(payload.getToken(), payload.getCreatedAt())
+            || Math.abs(Long.parseLong(payload.getCreatedAt()) - System.currentTimeMillis()) > 30 * 1000
+            || !verifyToken(payload.getToken(), payload.getCreatedAt())
         ) {
             sendError(client, "authentication failed, disconnect");
             client.disconnect();

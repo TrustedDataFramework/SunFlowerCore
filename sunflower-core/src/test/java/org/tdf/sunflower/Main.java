@@ -60,8 +60,8 @@ public class Main {
         byte[] plain = HexBytes.decode("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5");
         byte[] cipher = CryptoContext.encrypt(key, plain);
         SecretStoreImpl s = new SecretStoreImpl(
-                HexBytes.fromBytes(alicePk),
-                HexBytes.fromBytes(cipher)
+            HexBytes.fromBytes(alicePk),
+            HexBytes.fromBytes(cipher)
         );
         System.out.println(Start.MAPPER.writeValueAsString(s));
     }

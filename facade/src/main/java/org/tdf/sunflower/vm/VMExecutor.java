@@ -1,43 +1,59 @@
 package org.tdf.sunflower.vm;
 
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.tdf.common.types.Parameters;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.ByteUtil;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPElement;
-import org.tdf.rlp.RLPList;
-import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Bios;
-import org.tdf.sunflower.state.PreBuiltContract;
-import org.tdf.sunflower.types.Event;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.TransactionResult;
-import org.tdf.sunflower.vm.abi.AbiDataType;
-import org.tdf.sunflower.vm.abi.ContractCallPayload;
-import org.tdf.sunflower.vm.abi.ContractDeployPayload;
+import org.tdf.lotusvm.types.Module;
+import org.tdf.sunflower.state.Address;
+import org.tdf.sunflower.state.BuiltinContract;
+import org.tdf.sunflower.types.VMResult;
+import org.tdf.sunflower.vm.abi.Abi;
+import org.tdf.sunflower.vm.abi.SolidityType;
+import org.tdf.sunflower.vm.abi.WbiType;
 import org.tdf.sunflower.vm.hosts.*;
 
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 @NoArgsConstructor
 public class VMExecutor {
-    public VMExecutor(Backend backend, CallData callData, Limit limit, int depth) {
+    public static final int MAX_FRAMES = 16384;
+    public static final int MAX_STACK_SIZE = MAX_FRAMES * 64;
+    public static final int MAX_LABELS = MAX_FRAMES * 64;
+    public static final int MAX_CALL_DEPTH = 8;
+
+    public VMExecutor(Backend backend, CallData callData, StackResourcePool pool, long gasLimit) {
+        this(backend, callData, pool, new Limit(gasLimit), 0);
+    }
+
+    private VMExecutor(Backend backend, CallData callData, StackResourcePool pool, Limit limit, int depth) {
         this.backend = backend;
         this.callData = callData;
         this.limit = limit;
         this.depth = depth;
+        this.pool = pool;
     }
 
-    @Getter
-    private Backend backend;
-    @Getter
-    private CallData callData;
+    public Backend getBackend() {
+        return backend;
+    }
+
+    public CallData getCallData() {
+        return callData;
+    }
+
+    Backend backend;
+
+    CallData callData;
+
+    StackResourcePool pool;
 
 
     // gas limit hook
@@ -47,240 +63,228 @@ public class VMExecutor {
 
 
     public VMExecutor clone() {
-        if(depth == 63)
+        if (depth + 1 == MAX_CALL_DEPTH)
             throw new RuntimeException("vm call depth overflow");
-        return new VMExecutor(backend, callData.clone(), limit, depth + 1);
+        return new VMExecutor(backend, callData.clone(), pool, limit, depth + 1);
     }
 
-    public static void assertContractAddress(HexBytes address) {
-        if (address.size() != Account.ADDRESS_SIZE)
-            throw new RuntimeException("invalid address size " + address.size());
-
-        // address starts with 18 zero is reversed
-        for (int i = 0; i < 18; i++) {
-            if (address.get(i) != 0)
-                return;
-        }
-        throw new RuntimeException("cannot call reversed address " + address);
-    }
-
-    public static int allocString(ModuleInstance moduleInstance, String s) {
-        return WBI.malloc(moduleInstance, s);
-    }
-
-    public static int allocBytes(ModuleInstance moduleInstance, byte[] buf) {
-        return WBI.mallocBytes(moduleInstance, buf);
-    }
-
-    public static int allocAddress(ModuleInstance moduleInstance, byte[] addr) {
-        return WBI.mallocAddress(moduleInstance, addr);
-    }
-
-    public static int allocU256(ModuleInstance moduleInstance, Uint256 u) {
-        return WBI.malloc(moduleInstance, u);
-    }
-
-    static Object getResult(ModuleInstance module, long offset, AbiDataType type) {
-        switch (type) {
-            case I64:
-            case U64:
-            case F64:
-            case BOOL: {
-                return offset;
-            }
-            default:
-                return WBI.peek(module, (int) offset, type);
-        }
-    }
-
-    private long[] putParameters(ModuleInstance module, Parameters params) {
-        long[] ret = new long[params.getTypes().length];
-        for (int i = 0; i < ret.length; i++) {
-            AbiDataType t = AbiDataType.values()[(int) params.getTypes()[i]];
-            switch (t) {
-                case I64:
-                case U64:
-                case F64:
-                case BOOL: {
-                    ret[i] = params.getLi().get(i).asLong();
-                    break;
-                }
-                case BYTES: {
-                    ret[i] = allocBytes(module, params.getLi().get(i).asBytes());
-                    break;
-                }
-                case STRING: {
-                    ret[i] = allocString(module, params.getLi().get(i).asString());
-                    break;
-                }
-                case U256: {
-                    ret[i] = allocU256(module, Uint256.of(params.getLi().get(i).asBytes()));
-                    break;
-                }
-                case ADDRESS: {
-                    ret[i] = allocAddress(module, params.getLi().get(i).asBytes());
-                    break;
-                }
-                default:
-                    throw new UnsupportedOperationException();
-            }
-        }
-        return ret;
-    }
-
-    public TransactionResult execute() {
-        Transaction.Type t = Transaction.Type.values()[callData.getCallType()];
+    public VMResult execute() {
 
         // 1. increase sender nonce
         long n = backend.getNonce(callData.getOrigin());
-        if(!backend.isStatic() && n + 1 != callData.getTxNonce() && t != Transaction.Type.COIN_BASE)
+        if (!backend.isStatic() && n != callData.getTxNonce() && callData.getCallType() != CallType.COINBASE)
             throw new RuntimeException("invalid nonce");
 
+        HexBytes contractAddress = Address.empty();
 
-        switch (t) {
-            case TRANSFER:
-            case CONTRACT_CALL:{
-                backend.setNonce(callData.getOrigin(), n + 1);
-                break;
-            }
+        if (callData.getCallType() == CallType.CALL) {
+            backend.setNonce(callData.getOrigin(), n + 1);
             // contract deploy nonce will increase internally
         }
 
-
-        // 2. set initial gas by payload size
-        limit.setInitialGas(backend.getInitialGas(callData.getPayload().size()));
-
-        RLPList result = executeInternal();
-
-        // 3. calculate fee and
-        Uint256 fee = Uint256.of(limit.getGas()).mul(callData.getGasPrice());
-        backend.subBalance(callData.getOrigin(), fee);
-
-        List<Event> events = new ArrayList<>();
-
-        for (Map.Entry<HexBytes, List<Map.Entry<String, RLPList>>> entries : backend.getEvents().entrySet()) {
-            for (Map.Entry<String, RLPList> entry : entries.getValue()) {
-                events.add(new Event(entry.getKey(), entry.getValue()));
-            }
+        if (callData.getCallType() == CallType.CREATE) {
+            contractAddress = HashUtil.calcNewAddrHex(
+                callData.getCaller().getBytes(),
+                callData.getTxNonceAsBytes()
+            );
         }
 
-        return new TransactionResult(limit.getGas(), result, events, fee);
+        // 2. set initial gas by payload size
+        if(callData.getCallType() != CallType.COINBASE)
+            limit.setInitialGas(backend.getInitialGas(callData.getCallType() == CallType.CREATE, callData.getData().getBytes()));
+        byte[] result = executeInternal();
+
+        // 3. calculate fee and
+        Uint256 fee = Uint256.of(limit.getGas()).times(callData.getGasPrice());
+        backend.subBalance(callData.getOrigin(), fee);
+
+
+        return new VMResult(
+            limit.getGas(),
+            contractAddress,
+            result,
+            Collections.emptyList(),
+            fee
+        );
     }
 
-    public RLPList executeInternal() {
-        Transaction.Type t = Transaction.Type.values()[callData.getCallType()];
-
-        switch (t) {
-            case COIN_BASE: {
-                backend.addBalance(callData.getTxTo(), callData.getTxAmount());
-                for (Bios bios : backend.getBios().values()) {
-                    bios.update(backend);
+    public byte[] executeInternal() {
+        switch (callData.getCallType()) {
+            case COINBASE: {
+                backend.addBalance(callData.getTxTo(), callData.getTxValue());
+                for (BuiltinContract bios : backend.getBios().values()) {
+                    return bios.call(backend, callData);
                 }
-                return RLPList.createEmpty();
+                return ByteUtil.EMPTY_BYTE_ARRAY;
             }
-            case TRANSFER: {
-                // transfer balance
-                limit.addGas(Transaction.TRANSFER_GAS);
-                backend.addBalance(callData.getTo(), callData.getAmount());
-                backend.subBalance(callData.getCaller(), callData.getAmount());
-                return RLPList.createEmpty();
-            }
-            case CONTRACT_CALL:
-            case CONTRACT_DEPLOY:{
+            case CALL:
+            case CREATE: {
                 // is prebuilt
-                if (backend.getPreBuiltContracts().containsKey(callData.getTo())) {
-                    limit.addGas(Transaction.BUILTIN_CALL_GAS);
-                    backend.addBalance(callData.getTo(), callData.getAmount());
-                    backend.subBalance(callData.getCaller(), callData.getAmount());
-                    PreBuiltContract updater = backend.getPreBuiltContracts().get(callData.getTo());
-                    updater.update(backend, callData);
-                    return RLPList.createEmpty();
+                if (backend.getBuiltins().containsKey(callData.getTo())) {
+                    backend.addBalance(callData.getTo(), callData.getValue());
+                    backend.subBalance(callData.getCaller(), callData.getValue());
+                    BuiltinContract updater = backend.getBuiltins().get(callData.getTo());
+                    return updater.call(backend, callData);
                 }
 
-                Parameters parameters;
-                String method;
+                byte[] code;
+                byte[] data;
                 HexBytes contractAddress;
+                boolean create = callData.getCallType() == CallType.CREATE;
 
                 // if this is contract deploy, should create contract account
-                if (t == Transaction.Type.CONTRACT_DEPLOY) {
+                if (create) {
                     // increase sender nonce
                     long n = backend.getNonce(callData.getCaller());
-                    backend.setNonce(callData.getCaller(), n + 1);
+                    Module tmpModule = new Module(callData.getData().getBytes());
 
-                    ContractDeployPayload deployPayload =
-                            RLPCodec.decode(
-                                    callData.getPayload().getBytes(),
-                                    ContractDeployPayload.class
-                            );
-                    parameters = deployPayload.getParameters();
-                    method = "init";
+                    // validate module
+                    ModuleValidator.INSTANCE.validate(tmpModule, false);
+
+                    code = WBI.dropInit(callData.getData().getBytes());
+                    data = WBI.extractInitData(tmpModule);
+
                     // increase nonce here to avoid conflicts
-                    contractAddress = Transaction.createContractAddress(callData.getCaller(), backend.getNonce(callData.getCaller()));
+
+                    contractAddress =
+                        HashUtil.calcNewAddrHex(
+                            callData.getCaller().getBytes(),
+                            ByteUtil.longToBytesNoLeadZeroes(n)
+                        )
+
+                    ;
+                    backend.setNonce(callData.getCaller(), n + 1);
                     callData.setTo(contractAddress);
-                    backend.setCode(contractAddress, deployPayload.getBinary());
-                    backend.setABI(contractAddress, deployPayload.getContractABIs());
+                    backend.setCode(contractAddress, HexBytes.fromBytes(code));
                     backend.setContractCreatedBy(contractAddress, callData.getCaller());
                 } else {
-                    ContractCallPayload callPayload =
-                            RLPCodec.decode(
-                                    callData.getPayload().getBytes(), ContractCallPayload.class
-                            );
-                    parameters = callPayload.getParameters();
-                    method = callPayload.getMethod();
-                    if (method.equals("init"))
-                        throw new RuntimeException("cannot call construct");
                     contractAddress = callData.getTo();
+                    code = backend.getCode(contractAddress).getBytes();
+                    // call a non-contract account
+                    if (code.length == 0 && !callData.getData().isEmpty())
+                        throw new RuntimeException("call receiver not a contract");
+                    // transfer to a contract account
+                    if (code.length != 0 && callData.getData().isEmpty()) {
+                        throw new RuntimeException("transfer to a contract");
+                    }
+                    data = callData.getData().getBytes();
                 }
 
-                // is wasm call
-                backend.addBalance(contractAddress, callData.getAmount());
-                backend.subBalance(callData.getCaller(), callData.getAmount());
-                byte[] contractCode = backend.getCode(contractAddress);
+                backend.addBalance(contractAddress, callData.getValue());
+                backend.subBalance(callData.getCaller(), callData.getValue());
 
-                if (contractCode.length == 0)
-                    throw new RuntimeException("contract not found or is not a ccontract address");
+                if (code.length == 0)
+                    return ByteUtil.EMPTY_BYTE_ARRAY;
 
                 DBFunctions dbFunctions = new DBFunctions(backend, callData.getTo());
 
                 Hosts hosts = new Hosts()
-                        .withTransfer(
-                                backend,
-                                callData.getTo()
-                        )
-                        .withReflect(new Reflect(this))
-                        .withContext(new ContextHost(backend, callData))
-                        .withDB(dbFunctions)
-                        .withEvent(backend, callData.getTo());
+                    .withTransfer(
+                        backend,
+                        callData.getTo()
+                    )
+                    .withReflect(new Reflect(this))
+                    .withContext(new ContextHost(backend, callData))
+                    .withDB(dbFunctions)
+                    .withEvent(backend, callData.getTo());
 
-                ModuleInstance instance = ModuleInstance
+                Module m = new Module(code);
+
+                Abi abi = m.getCustomSections()
+                    .stream().filter(x -> x.getName().equals(WBI.ABI_SECTION_NAME))
+                    .findFirst()
+                    .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
+                    .get();
+
+
+                long[] rets;
+                ModuleInstance instance;
+                WBI.InjectResult r;
+
+                try (StackResource stack = pool.tryGet()) {
+                    instance = ModuleInstance
                         .builder()
-                        .binary(contractCode)
+                        // TODO: stack providers share in memory pool
+                        .stackProvider(stack)
+                        .module(m)
                         .hooks(Collections.singleton(limit))
                         .hostFunctions(hosts.getAll())
                         .build();
 
+                    r = WBI.inject(create, abi, instance, HexBytes.fromBytes(data));
 
-                RLPList ret = RLPList.createEmpty();
+                    // payable check
+                    boolean payable = r.getEntry() != null && r.getEntry().isPayable();
+                    if (!payable && !callData.getValue().isZero())
+                        throw new RuntimeException("function " + r.getName() + " is not payable");
 
-                if (method.equals("init") && !instance.containsExport("init"))
-                    return ret;
+                    if (!r.getExecutable())
+                        return ByteUtil.EMPTY_BYTE_ARRAY;
 
-                // put parameters will not consume steps
-                long steps = limit.getSteps();
-                long[] offsets = putParameters(instance, parameters);
-                limit.setSteps(steps);
-
-                long[] rets = instance.execute(method, offsets);
-                if (parameters.getReturnType().length > 0) {
-                    ret.add(
-                            RLPElement.readRLPTree(
-                                    getResult(
-                                            instance, rets[0], AbiDataType.values()[parameters.getReturnType()[0]])
-                            )
-                    );
+                    rets = instance.execute(r.getName(), r.getPointers());
                 }
 
-                return ret;
+                List<Object> results = new ArrayList<>();
+                List<Abi.Entry.Param> outputs;
+
+                if (create) {
+                    outputs = Optional
+                        .ofNullable(abi.findConstructor())
+                        .map(x -> x.outputs)
+                        .orElse(Collections.emptyList());
+                } else {
+                    outputs = abi.findFunction(x -> x.name.equals(r.getName())).outputs;
+                    if (outputs == null)
+                        outputs = Collections.emptyList();
+                }
+
+
+                // extract result
+                for (int i = 0; i < rets.length; i++) {
+                    SolidityType type = outputs.get(i).type;
+                    switch (type.getName()) {
+                        case "uint8":
+                        case "uint16":
+                        case "uint32":
+                        case "uint64": {
+                            results.add(BigInteger.valueOf(rets[i]));
+                            break;
+                        }
+                        case "uint":
+                        case "uint256": {
+                            Uint256 u = (Uint256) WBI.peek(instance, (int) rets[i], WbiType.UINT_256);
+                            results.add(u.getValue());
+                            break;
+                        }
+                        case "string": {
+                            String s = (String) WBI.peek(instance, (int) rets[i], WbiType.STRING);
+                            results.add(s);
+                            break;
+                        }
+                        case "address": {
+                            HexBytes addr = (HexBytes) WBI.peek(instance, (int) rets[i], WbiType.ADDRESS);
+                            results.add(addr.getBytes());
+                            break;
+                        }
+                        default: {
+                            if (type.getName().endsWith("]") || type.getName().endsWith(")")) {
+                                throw new RuntimeException("array or tuple is not supported");
+                            }
+
+                            if (type.getName().startsWith("bytes")) {
+                                HexBytes bytes = (HexBytes) WBI.peek(instance, (int) rets[i], WbiType.BYTES);
+                                results.add(bytes.getBytes());
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                if (outputs.size() > 0) {
+                    return Abi.Entry.Param.encodeList(outputs, results.toArray());
+                }
+
+                return ByteUtil.EMPTY_BYTE_ARRAY;
             }
             default:
                 throw new UnsupportedOperationException();

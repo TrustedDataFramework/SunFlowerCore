@@ -15,7 +15,6 @@ import org.springframework.shell.jline.JLineShellAutoConfiguration;
 import org.springframework.shell.legacy.LegacyAdapterAutoConfiguration;
 import org.springframework.shell.standard.StandardAPIAutoConfiguration;
 import org.springframework.shell.standard.commands.StandardCommandsAutoConfiguration;
-import org.springframework.web.socket.config.annotation.EnableWebSocket;
 
 import javax.annotation.PostConstruct;
 
@@ -23,20 +22,19 @@ import javax.annotation.PostConstruct;
 // test cache
 @SpringBootConfiguration
 @EnableAutoConfiguration(exclude = {
-        SpringShellAutoConfiguration.class,
-        JLineShellAutoConfiguration.class,
-        // Various Resolvers
-        JCommanderParameterResolverAutoConfiguration.class,
-        LegacyAdapterAutoConfiguration.class,
-        StandardAPIAutoConfiguration.class,
-        // Built-In Commands
-        StandardCommandsAutoConfiguration.class,
-        // Allows ${} support
-        PropertyPlaceholderAutoConfiguration.class,
+    SpringShellAutoConfiguration.class,
+    JLineShellAutoConfiguration.class,
+    // Various Resolvers
+    JCommanderParameterResolverAutoConfiguration.class,
+    LegacyAdapterAutoConfiguration.class,
+    StandardAPIAutoConfiguration.class,
+    // Built-In Commands
+    StandardCommandsAutoConfiguration.class,
+    // Allows ${} support
+    PropertyPlaceholderAutoConfiguration.class,
 })
-@EnableWebSocket
 @ComponentScan(excludeFilters = {@ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
-        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)})
+    @ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)})
 public class TestContext {
     @Autowired
     private ApplicationContext context;

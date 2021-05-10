@@ -49,10 +49,10 @@ public class MessageBuilder {
 
     public Message buildPeers(Collection<? extends Peer> peers) {
         return buildMessage(Code.PEERS, 1, Peers
-                .newBuilder().addAllPeers(
-                        peers.stream().map(Peer::encodeURI).collect(Collectors.toList())
-                )
-                .build().toByteArray()
+            .newBuilder().addAllPeers(
+                peers.stream().map(Peer::encodeURI).collect(Collectors.toList())
+            )
+            .build().toByteArray()
         );
     }
 
@@ -70,7 +70,7 @@ public class MessageBuilder {
         byte[] hash = CryptoContext.hash(serialized);
         int i = 0;
         int total = serialized.length / config.getMaxPacketSize() +
-                (serialized.length % config.getMaxPacketSize() == 0 ? 0 : 1);
+            (serialized.length % config.getMaxPacketSize() == 0 ? 0 : 1);
         while (remained > 0) {
             int size = Math.min(remained, config.getMaxPacketSize());
             byte[] bodyBytes = new byte[size];
@@ -91,24 +91,25 @@ public class MessageBuilder {
 
     public Message buildRelay(Message message) {
         Message.Builder builder = Message.newBuilder().mergeFrom(message)
-                .setCreatedAt(
-                        Timestamp.newBuilder().setSeconds(System.currentTimeMillis() / 1000).build()
-                )
-                .setRemotePeer(self.encodeURI())
-                .setNonce(nonce.incrementAndGet())
-                .setTtl(message.getTtl() - 1);
+            .setCreatedAt(
+                Timestamp.newBuilder().setSeconds(System.currentTimeMillis() / 1000).build()
+            )
+            .setRemotePeer(self.encodeURI())
+            .setNonce(nonce.incrementAndGet())
+            .setTtl(message.getTtl() - 1);
+
         byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }
 
     public Message buildMessage(Code code, long ttl, byte[] msg) {
         Message.Builder builder = Message.newBuilder()
-                .setCode(code)
-                .setCreatedAt(Timestamp.newBuilder().setSeconds(System.currentTimeMillis() / 1000))
-                .setRemotePeer(self.encodeURI())
-                .setTtl(ttl)
-                .setNonce(nonce.incrementAndGet())
-                .setBody(ByteString.copyFrom(msg));
+            .setCode(code)
+            .setCreatedAt(Timestamp.newBuilder().setSeconds(System.currentTimeMillis() / 1000))
+            .setRemotePeer(self.encodeURI())
+            .setTtl(ttl)
+            .setNonce(nonce.incrementAndGet())
+            .setBody(ByteString.copyFrom(msg));
         byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }

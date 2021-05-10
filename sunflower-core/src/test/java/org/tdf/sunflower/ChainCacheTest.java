@@ -54,7 +54,7 @@ public class ChainCacheTest {
         assert descendents.size() == 9;
         assert Chained.getDescendentsOf(cache, HexBytes.fromHex("0001")).size() == 7;
         Set<String> nodes = Chained.getDescendentsOf(cache, HexBytes.fromHex("0102"))
-                .stream().map(n -> n.hash.toString()).collect(Collectors.toSet());
+            .stream().map(n -> n.hash.toString()).collect(Collectors.toSet());
         assert nodes.size() == 3;
         assert nodes.containsAll(Arrays.asList("0203", "0103", "0204"));
     }
@@ -63,7 +63,7 @@ public class ChainCacheTest {
     public void testGetAncestors() throws Exception {
         List<Node> cache = getCache();
         Set<String> ancestors = Chained.getAncestorsOf(
-                cache, HexBytes.fromHex("0204")
+            cache, HexBytes.fromHex("0204")
         ).stream().map(n -> n.hash.toString()).collect(Collectors.toSet());
 
         assert ancestors.size() == 4;
@@ -71,7 +71,7 @@ public class ChainCacheTest {
 
 
         ancestors = Chained.getAncestorsOf(cache, HexBytes.fromHex("0000")).stream()
-                .map(n -> n.hash.toString()).collect(Collectors.toSet());
+            .map(n -> n.hash.toString()).collect(Collectors.toSet());
 
         assert ancestors.size() == 0;
     }
@@ -86,7 +86,7 @@ public class ChainCacheTest {
     @Test
     public void testGetLeaves() throws Exception {
         Set<String> leaves = Chained.getLeavesOf(getCache()).stream()
-                .map(x -> x.hash.toString()).collect(Collectors.toSet());
+            .map(x -> x.hash.toString()).collect(Collectors.toSet());
 
         assert leaves.size() == 4;
         assert leaves.containsAll(Arrays.asList("0401", "0204", "0103", "0004"));
@@ -95,9 +95,9 @@ public class ChainCacheTest {
     @Test
     public void testGetForks() throws Exception {
         System.out.print(Start.MAPPER.writeValueAsString(
-                Chained.getForks(
-                        getCache()
-                )
+            Chained.getForks(
+                getCache()
+            )
         ));
     }
 

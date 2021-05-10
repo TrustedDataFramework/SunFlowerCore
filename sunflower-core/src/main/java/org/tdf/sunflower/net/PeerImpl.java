@@ -3,8 +3,9 @@ package org.tdf.sunflower.net;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.exception.ApplicationException;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.CryptoContext;
+import org.tdf.sunflower.types.Transaction;
 
 import java.net.URI;
 import java.util.Optional;
@@ -48,10 +49,10 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         }
         p.host = u.getHost();
         if (u.getRawUserInfo() == null || u.getRawUserInfo().isEmpty())
-            throw new ApplicationException("parse peer failed: missing public key");
+            throw new RuntimeException("parse peer failed: missing public key");
         p.ID = HexBytes.fromHex(u.getRawUserInfo());
-        if (p.ID.size() != CryptoContext.getPublicKeySize()) {
-            throw new ApplicationException("peer " + url + " public key size should be " + CryptoContext.getPublicKeySize());
+        if (p.ID.size() != Transaction.ADDRESS_LENGTH) {
+            throw new RuntimeException("peer " + url + " address should be " + Transaction.ADDRESS_LENGTH);
         }
         return p;
     }
@@ -74,7 +75,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         int port = u.getPort();
         ret.host = (u.getHost() == null || u.getHost().trim().equals("")) ? "localhost" : u.getHost();
         ret.port = port <= 0 ? PeerServerConfig.DEFAULT_PORT : port;
-        ret.ID = HexBytes.fromBytes(CryptoContext.getPkFromSk(privateKey));
+        ret.ID = Address.fromPrivate(privateKey);
         ret.privateKey = privateKey;
         return ret;
     }
@@ -95,7 +96,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
 
     public int distance(PeerImpl that) {
         int res = 0;
-        byte[] bits = new byte[CryptoContext.getPublicKeySize()];
+        byte[] bits = new byte[Transaction.ADDRESS_LENGTH];
         for (int i = 0; i < bits.length; i++) {
             bits[i] = (byte) (ID.getBytes()[i] ^ that.ID.getBytes()[i]);
         }
@@ -108,12 +109,12 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     }
 
     int subTree(byte[] thatID) {
-        byte[] bits = new byte[CryptoContext.getPublicKeySize()];
+        byte[] bits = new byte[Transaction.ADDRESS_LENGTH];
         byte mask = (byte) (1 << 7);
         for (int i = 0; i < bits.length; i++) {
             bits[i] = (byte) (ID.getBytes()[i] ^ thatID[i]);
         }
-        for (int i = 0; i < CryptoContext.getPublicKeySize() * 8; i++) {
+        for (int i = 0; i < Transaction.ADDRESS_LENGTH * 8; i++) {
             if ((bits[i / 8] & (mask >>> (i % 8))) != 0) {
                 return i;
             }

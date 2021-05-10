@@ -4,6 +4,6 @@
 package org.tdf.sunflower.proto;
 
 public interface PongOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:Pong)
-        com.google.protobuf.MessageOrBuilder {
+    // @@protoc_insertion_point(interface_extends:Pong)
+    com.google.protobuf.MessageOrBuilder {
 }

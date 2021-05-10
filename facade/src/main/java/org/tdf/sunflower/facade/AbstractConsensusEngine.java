@@ -7,15 +7,13 @@ import org.tdf.common.store.Store;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Bios;
-import org.tdf.sunflower.state.PreBuiltContract;
+import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.ConsensusConfig;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
-import java.util.function.Function;
 
 
 @Getter
@@ -23,7 +21,7 @@ import java.util.function.Function;
 public abstract class AbstractConsensusEngine implements ConsensusEngine {
     public static final AbstractConsensusEngine NONE = new AbstractConsensusEngine() {
         @Override
-        public void init(Properties properties) {
+        public void init(ConsensusConfig config) {
             if (getTransactionPool() == null)
                 throw new RuntimeException("transaction pool not injected");
             if (getSunflowerRepository() == null)
@@ -36,7 +34,6 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
             setValidator(Validator.NONE);
             setGenesisBlock(new Block());
             setPeerServerListener(PeerServerListener.NONE);
-            initStateTrie();
         }
 
         @Override
@@ -44,17 +41,16 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
             return "none";
         }
     };
-    protected static final Object UNRESOLVED = new Object();
+
     // contract storage trie
-    private Trie<byte[], byte[]> contractStorageTrie;
+    private Trie<HexBytes, HexBytes> contractStorageTrie;
     // a map between hash and wasm byte code
-    private Store<byte[], byte[]> contractCodeStore;
-    private SecretStore secretStore;
+    private Store<HexBytes, HexBytes> contractCodeStore;
     // sub class should set miner explicitly when init() called
     private Miner miner;
     // sub class should set validator explicitly when init() called
     private Validator validator;
-    // sub class should set account stateTrie explicitly when init() called
+    // account stateTrie will be injected before init() called
     private StateTrie<HexBytes, Account> accountTrie;
     // sub class should set genesis block explicitly when init() called
     private Block genesisBlock;
@@ -64,33 +60,23 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     private TransactionPool transactionPool;
     // sunflowerRepository will be injected before init() called
     private SunflowerRepository sunflowerRepository;
-    // sub class should set confirmedBlocksProvider explicitly when init() called
-    private ConfirmedBlocksProvider confirmedBlocksProvider = x -> x;
+
     // sub class should set peer server listener explicitly when init() called
-    private PeerServerListener peerServerListener;
-    // set before init()
-    private Function<AbstractConsensusEngine, StateTrie<HexBytes, Account>> stateTrieProvider;
+    private PeerServerListener peerServerListener = PeerServerListener.NONE;
+
 
     public AbstractConsensusEngine() {
     }
 
-    public List<Account> getGenesisStates() {
+    public List<Account> getAlloc() {
         return Collections.emptyList();
     }
 
-    public List<PreBuiltContract> getPreBuiltContracts() {
+    public List<BuiltinContract> getBuiltins() {
         return Collections.emptyList();
     }
 
-    public List<Bios> getBios() {
+    public List<BuiltinContract> getBios() {
         return Collections.emptyList();
-    }
-
-    protected void initStateTrie() {
-        StateTrie<HexBytes, Account> trie = stateTrieProvider.apply(this);
-        setAccountTrie(trie);
-        Block b = getGenesisBlock();
-        b.setStateRoot(trie.getGenesisRoot());
-        setGenesisBlock(b);
     }
 }

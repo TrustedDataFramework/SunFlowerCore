@@ -173,14 +173,14 @@ public class PendingVrfState {
                     return true;
                 } else {
                     logger.warn(
-                            "Validate fail, Not the same block hash, best proposal hash 0x{} <- new hash 0x{} -----> Need to fix, should not be true.",
-                            Hex.toHexString(bestProof.getBlockIdentifier().getHash(), 0, 6),
-                            Hex.toHexString(header.getHash().getBytes(), 0, 6));
+                        "Validate fail, Not the same block hash, best proposal hash 0x{} <- new hash 0x{} -----> Need to fix, should not be true.",
+                        Hex.toHexString(bestProof.getBlockIdentifier().getHash(), 0, 6),
+                        Hex.toHexString(header.getHash().getBytes(), 0, 6));
                     return true; // -----> Need to fix, should not be true.
                 }
             } else {
                 logger.warn("Validate fail, Not the same block number, best proposal #{} <- new #{}",
-                        bestProof.getBlockIdentifier().getNumber(), header.getHeight());
+                    bestProof.getBlockIdentifier().getNumber(), header.getHeight());
             }
         } else {
             logger.warn("Validate fail, No best Proposal find");

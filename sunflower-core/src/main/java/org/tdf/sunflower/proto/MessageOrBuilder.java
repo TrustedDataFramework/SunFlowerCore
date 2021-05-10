@@ -4,8 +4,8 @@
 package org.tdf.sunflower.proto;
 
 public interface MessageOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:Message)
-        com.google.protobuf.MessageOrBuilder {
+    // @@protoc_insertion_point(interface_extends:Message)
+    com.google.protobuf.MessageOrBuilder {
 
     /**
      * <pre>

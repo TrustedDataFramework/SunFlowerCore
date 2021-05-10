@@ -7,7 +7,7 @@ class MessageLogger implements Plugin {
     @Override
     public void onMessage(ContextImpl context, PeerServerImpl server) {
         log.debug("receive {} message from {}:{}",
-                context.message.getCode(), context.remote.getHost(), context.remote.getPort()
+            context.message.getCode(), context.remote.getHost(), context.remote.getPort()
         );
         log.debug(context.message.toString());
     }

@@ -36,20 +36,20 @@ public class SM2Util extends GMBaseUtil {
     public final static BigInteger SM2_ECC_N = CURVE.getOrder();
     public final static BigInteger SM2_ECC_H = CURVE.getCofactor();
     public final static BigInteger SM2_ECC_GX = new BigInteger(
-            "32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7", 16);
+        "32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7", 16);
     public final static BigInteger SM2_ECC_GY = new BigInteger(
-            "BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0", 16);
+        "BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0", 16);
     public static final ECPoint G_POINT = CURVE.createPoint(SM2_ECC_GX, SM2_ECC_GY);
     public static final ECDomainParameters DOMAIN_PARAMS = new ECDomainParameters(CURVE, G_POINT,
-            SM2_ECC_N, SM2_ECC_H);
+        SM2_ECC_N, SM2_ECC_H);
     public static final int CURVE_LEN = BCECUtil.getCurveLength(DOMAIN_PARAMS);
     //////////////////////////////////////////////////////////////////////////////////////
 
     public static final EllipticCurve JDK_CURVE = new EllipticCurve(new ECFieldFp(SM2_ECC_P), SM2_ECC_A, SM2_ECC_B);
     public static final java.security.spec.ECPoint JDK_G_POINT = new java.security.spec.ECPoint(
-            G_POINT.getAffineXCoord().toBigInteger(), G_POINT.getAffineYCoord().toBigInteger());
+        G_POINT.getAffineXCoord().toBigInteger(), G_POINT.getAffineYCoord().toBigInteger());
     public static final java.security.spec.ECParameterSpec JDK_EC_SPEC = new java.security.spec.ECParameterSpec(
-            JDK_CURVE, JDK_G_POINT, SM2_ECC_N, SM2_ECC_H.intValue());
+        JDK_CURVE, JDK_G_POINT, SM2_ECC_N, SM2_ECC_H.intValue());
 
     //////////////////////////////////////////////////////////////////////////////////////
 
@@ -58,7 +58,7 @@ public class SM2Util extends GMBaseUtil {
     public static final byte[] DEFAULT_USER_ID = {0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38};
     public static final ECKeyPairGenerator KEY_PAIR_GENERATOR = new ECKeyPairGenerator();
     public static final ECKeyGenerationParameters EC_KEY_GENERATION_PARAMETERS =
-            new ECKeyGenerationParameters(new ECDomainParameters(CURVE, G_POINT, SM2_ECC_N), new SecureRandom());
+        new ECKeyGenerationParameters(new ECDomainParameters(CURVE, G_POINT, SM2_ECC_N), new SecureRandom());
 
     static {
         KEY_PAIR_GENERATOR.init(EC_KEY_GENERATION_PARAMETERS);
@@ -75,7 +75,7 @@ public class SM2Util extends GMBaseUtil {
     }
 
     public static KeyPair generateKeyPair() throws NoSuchProviderException, NoSuchAlgorithmException,
-            InvalidAlgorithmParameterException {
+        InvalidAlgorithmParameterException {
         SecureRandom random = new SecureRandom();
         return BCECUtil.generateKeyPair(DOMAIN_PARAMS, random);
     }
@@ -234,7 +234,7 @@ public class SM2Util extends GMBaseUtil {
      * @throws IOException
      */
     public static byte[] encodeSM2CipherToDER(int curveLength, int digestLength, byte[] cipher)
-            throws IOException {
+        throws IOException {
         int startPos = 1;
 
         byte[] c1x = new byte[curveLength];
@@ -328,7 +328,7 @@ public class SM2Util extends GMBaseUtil {
      * @throws CryptoException
      */
     public static byte[] sign(ECPrivateKeyParameters priKeyParameters, byte[] withId, byte[] srcData)
-            throws CryptoException {
+        throws CryptoException {
         SM2Signer signer = new SM2Signer();
         CipherParameters param = null;
         ParametersWithRandom pwr = new ParametersWithRandom(priKeyParameters, new SecureRandom());
@@ -489,10 +489,10 @@ public class SM2Util extends GMBaseUtil {
             c1Encoded = Arrays.copyOfRange(c1Encoded, c1Encoded.length - 64, c1Encoded.length);
         // C1 | C2 | C3
         return concat(
-                new byte[]{0x04},
-                c1Encoded,
-                source,
-                c3);
+            new byte[]{0x04},
+            c1Encoded,
+            source,
+            c3);
     }
 
     /**
@@ -511,8 +511,8 @@ public class SM2Util extends GMBaseUtil {
          * （C2 = encryptedData.length * 2 - C1长度  - C2长度）*/
         BytesReader r = new BytesReader(encrypted);
         byte[] c1Bytes = r.peek() == 0x04 ?
-                r.skip(1).readN(64) :
-                r.readN(64);
+            r.skip(1).readN(64) :
+            r.readN(64);
 
         byte[] c1x = Arrays.copyOfRange(c1Bytes, 0, 32);
         byte[] c1y = Arrays.copyOfRange(c1Bytes, 32, c1Bytes.length);

@@ -22,10 +22,10 @@ public class Client implements ChannelListener {
     private ChannelListener listener = ChannelListener.NONE;
 
     public Client(
-            PeerImpl self,
-            PeerServerConfig config,
-            MessageBuilder messageBuilder,
-            NetLayer netLayer
+        PeerImpl self,
+        PeerServerConfig config,
+        MessageBuilder messageBuilder,
+        NetLayer netLayer
     ) {
         this.peersCache = new PeersCache(self, config);
         this.config = config;
@@ -50,7 +50,7 @@ public class Client implements ChannelListener {
 
     public void dial(String host, int port, Message message) {
         getChannel(host, port, this, listener)
-                .ifPresent(ch -> ch.write(message));
+            .ifPresent(ch -> ch.write(message));
     }
 
     void bootstrap(Collection<URI> uris) {
@@ -88,10 +88,10 @@ public class Client implements ChannelListener {
             public void onClose(Channel channel) {
             }
         })
-                .flatMap(Channel::getRemote)
-                // if the connection had already created, onConnect will not triggered
-                // but the peer will be handled here
-                .ifPresent(connectionConsumer);
+            .flatMap(Channel::getRemote)
+            // if the connection had already created, onConnect will not triggered
+            // but the peer will be handled here
+            .ifPresent(connectionConsumer);
     }
 
     // try to get channel from cache, if channel not exists in cache,
@@ -100,11 +100,11 @@ public class Client implements ChannelListener {
         // cannot create channel connect to your self
         if (peer.equals(self)) return Optional.empty();
         Optional<Channel> ch = peersCache
-                .getChannel(peer.getID());
+            .getChannel(peer.getID());
         if (ch.isPresent()) return ch;
         ch = netLayer
-                .createChannel(peer.getHost(), peer.getPort(), this, listener)
-                .filter(Channel::isAlive);
+            .createChannel(peer.getHost(), peer.getPort(), this, listener)
+            .filter(Channel::isAlive);
         return ch;
     }
 
@@ -112,16 +112,16 @@ public class Client implements ChannelListener {
     // create from net layer
     private Optional<Channel> getChannel(String host, int port, ChannelListener... listeners) {
         Optional<Channel> ch = peersCache.getChannels()
-                .filter(
-                        x -> x.getRemote().map(
-                                p -> p.getHost().equals(host) && p.getPort() == port
-                        ).orElse(false)
-                )
-                .findAny();
+            .filter(
+                x -> x.getRemote().map(
+                    p -> p.getHost().equals(host) && p.getPort() == port
+                ).orElse(false)
+            )
+            .findAny();
         if (ch.isPresent()) return ch;
         ch = netLayer
-                .createChannel(host, port, listeners)
-                .filter(Channel::isAlive)
+            .createChannel(host, port, listeners)
+            .filter(Channel::isAlive)
         ;
         ch.ifPresent(c -> c.write(messageBuilder.buildPing()));
         return ch;
@@ -130,8 +130,8 @@ public class Client implements ChannelListener {
     @Override
     public void onConnect(PeerImpl remote, Channel channel) {
         if (!config.isEnableDiscovery() &&
-                !peersCache.bootstraps.containsKey(remote) &&
-                !peersCache.trusted.containsKey(remote)
+            !peersCache.bootstraps.containsKey(remote) &&
+            !peersCache.trusted.containsKey(remote)
         ) {
             channel.close("discovery is not enabled accept bootstraps and trusted only");
             return;
@@ -159,10 +159,10 @@ public class Client implements ChannelListener {
     public void onError(Throwable throwable, Channel channel) {
         throwable.printStackTrace();
         channel.getRemote()
-                .ifPresent(x -> {
-                    peersCache.half(x);
-                    log.error("error found decrease the score of peer " + x + " " + throwable.getMessage());
-                });
+            .ifPresent(x -> {
+                peersCache.half(x);
+                log.error("error found decrease the score of peer " + x + " " + throwable.getMessage());
+            });
 
     }
 
@@ -176,18 +176,18 @@ public class Client implements ChannelListener {
 
     void relay(Message message, PeerImpl receivedFrom) {
         peersCache.getChannels()
-                .filter(x -> x.getRemote().map(p -> !p.equals(receivedFrom)).orElse(false))
-                .forEach(c -> {
-                    if (message.getCode() == Code.ANOTHER) {
-                        byte[] msg = CryptoContext.decrypt(
-                                CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), receivedFrom.getID().getBytes()),
-                                message.getBody().toByteArray());
-                        byte[] sk = CryptoContext.ecdh(true, self.getPrivateKey(), c.getRemote().get().getID().getBytes());
-                        byte[] encryptMessage = CryptoContext.encrypt(sk, msg);
-                        c.write(builder.buildMessage(Code.ANOTHER, message.getTtl() - 1, encryptMessage));
-                        return;
-                    }
-                    c.write(messageBuilder.buildRelay(message));
-                });
+            .filter(x -> x.getRemote().map(p -> !p.equals(receivedFrom)).orElse(false))
+            .forEach(c -> {
+                if (message.getCode() == Code.ANOTHER) {
+                    byte[] msg = CryptoContext.decrypt(
+                        CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), receivedFrom.getID().getBytes()),
+                        message.getBody().toByteArray());
+                    byte[] sk = CryptoContext.ecdh(true, self.getPrivateKey(), c.getRemote().get().getID().getBytes());
+                    byte[] encryptMessage = CryptoContext.encrypt(sk, msg);
+                    c.write(builder.buildMessage(Code.ANOTHER, message.getTtl() - 1, encryptMessage));
+                    return;
+                }
+                c.write(messageBuilder.buildRelay(message));
+            });
     }
 }

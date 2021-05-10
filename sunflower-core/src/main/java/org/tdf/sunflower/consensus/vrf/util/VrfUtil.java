@@ -26,10 +26,7 @@ import org.tdf.sunflower.util.ByteUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.tdf.sunflower.consensus.vrf.util.VrfConstants.VRF_KEYSTORE_PASSWORD;
 
@@ -52,12 +49,15 @@ public class VrfUtil {
     }
 
     public static byte[] getMiner(Header header) {
-        return getMiner(header.getPayload());
+//        return getMiner(header.getPayload());
+        return new byte[20];
     }
 
     public static byte[] getMiner(Block block) {
-        return getMiner(block.getPayload());
+//        return getMiner(block.getPayload());
+        return new byte[20];
     }
+
 
     public static ProposalProof getProposalProof(HexBytes payload) {
         byte[] encoded = payload.getBytes();
@@ -66,11 +66,13 @@ public class VrfUtil {
     }
 
     public static ProposalProof getProposalProof(Header header) {
-        return getProposalProof(header.getPayload());
+//        return getProposalProof(header.getPayload());
+        return null;
     }
 
     public static ProposalProof getProposalProof(Block block) {
-        return getProposalProof(block.getPayload());
+//        return getProposalProof(block.getPayload());
+        return null;
     }
 
     public static byte[] getSeed(HexBytes payload) {
@@ -80,11 +82,13 @@ public class VrfUtil {
     }
 
     public static byte[] getSeed(Header header) {
-        return getSeed(header.getPayload());
+//        return getSeed(header.getPayload());
+        return null;
     }
 
     public static byte[] getSeed(Block block) {
-        return getSeed(block.getPayload());
+//        return getSeed(block.getPayload());
+        return null;
     }
 
     public static byte[] getSeed(VrfBlockWrapper blockWrapper) {
@@ -98,20 +102,22 @@ public class VrfUtil {
     }
 
     public static byte[] getPriority(Header header) {
-        return getPriority(header.getPayload());
+//        return getPriority(header.getPayload());
+        return null;
     }
 
     public static byte[] getPriority(Block block) {
-        return getPriority(block.getPayload());
+//        return getPriority(block.getPayload());
+        return null;
     }
 
     public static void setSeed(Header header, byte[] seed) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setSeed(seed);
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setSeed(seed);
 
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setSeed(Block block, byte[] seed) {
@@ -127,12 +133,12 @@ public class VrfUtil {
     }
 
     public static void setMiner(Header header, byte[] miner) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setMiner(miner);
-
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setMiner(miner);
+//
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setMiner(Block block, HexBytes miner) {
@@ -148,12 +154,12 @@ public class VrfUtil {
     }
 
     public static void setPriority(Header header, byte[] priority) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setPriority(priority);
-
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setPriority(priority);
+//
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setPriority(Block block, byte[] priority) {
@@ -169,12 +175,12 @@ public class VrfUtil {
     }
 
     public static void setProposalProof(Header header, ProposalProof proposalProof) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setProposalProof(RLPCodec.encode(proposalProof));
-
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setProposalProof(RLPCodec.encode(proposalProof));
+//
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setProposalProof(Block block, ProposalProof proposalProof) {
@@ -199,7 +205,7 @@ public class VrfUtil {
         String[] pubkeys = fileSystemKeystore.listStoredKeys();
         if (pubkeys.length == 0) {
             log.info("There is no Vrf SK exist, create a new one and save it in keystore, {}",
-                    fileSystemKeystore.getKeyStoreLocation().toAbsolutePath());
+                fileSystemKeystore.getKeyStoreLocation().toAbsolutePath());
 
             key = new VrfPrivateKey(Ed25519.getAlgorithm()).getSigner();
             fileSystemKeystore.storeKey(key, VRF_KEYSTORE_PASSWORD);
@@ -208,13 +214,13 @@ public class VrfUtil {
             key = fileSystemKeystore.loadStoredKey(pubkeys[0], VRF_KEYSTORE_PASSWORD);
             if (key == null) {
                 log.error("Fail to load Vrf SK from keystore, create a new one and save it in keystore, {}",
-                        fileSystemKeystore.getKeyStoreLocation().toAbsolutePath());
+                    fileSystemKeystore.getKeyStoreLocation().toAbsolutePath());
 
                 key = new VrfPrivateKey(Ed25519.getAlgorithm()).getSigner();
                 fileSystemKeystore.storeKey(key, VRF_KEYSTORE_PASSWORD);
             } else {
                 log.info("Vrf Sk is loaded from keystore, {}, pubkey {}",
-                        fileSystemKeystore.getKeyStoreLocation().toAbsolutePath(), pubkeys[0]);
+                    fileSystemKeystore.getKeyStoreLocation().toAbsolutePath(), pubkeys[0]);
             }
         }
 
@@ -234,7 +240,7 @@ public class VrfUtil {
 
     public static byte[] genPayload(long blockNum, int round, String seedStr, String minerCoinbaseStr,
                                     String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
-            throws IOException {
+        throws IOException {
         byte[] priority = ByteUtil.hexStringToBytes(priorityStr);
         byte[] seed = ByteUtil.hexStringToBytes(seedStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
@@ -245,7 +251,7 @@ public class VrfUtil {
     public static byte[] genPayload(long blockNum, int round, byte[] seed, byte[] minerCoinbase, byte[] priority,
                                     byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig) throws IOException {
         VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, seed, minerCoinbase, priority, blockHash, vrfSk, vrfPk,
-                vrfConfig);
+            vrfConfig);
 
         byte[] encoded = RLPCodec.encode(vbf1);
         return encoded;
@@ -254,7 +260,7 @@ public class VrfUtil {
     public static byte[] genPayload(long blockNum, int round, HexBytes seed, HexBytes minerCoinbase, HexBytes priority,
                                     HexBytes blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig) throws IOException {
         VrfBlockFields vbf1 = genVrfBlockFields(blockNum, round, seed.getBytes(), minerCoinbase.getBytes(),
-                priority.getBytes(), blockHash.getBytes(), vrfSk, vrfPk, vrfConfig);
+            priority.getBytes(), blockHash.getBytes(), vrfSk, vrfPk, vrfConfig);
 
         byte[] encoded = RLPCodec.encode(vbf1);
         return encoded;
@@ -262,7 +268,7 @@ public class VrfUtil {
 
     public static VrfBlockFields genVrfBlockFields(long blockNum, int round, String seedStr, String minerCoinbaseStr,
                                                    String priorityStr, String blockHashStr, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
-            throws IOException {
+        throws IOException {
         byte[] priority = ByteUtil.hexStringToBytes(priorityStr);
         byte[] seed = ByteUtil.hexStringToBytes(seedStr);
         byte[] blockHash = ByteUtil.hexStringToBytes(blockHashStr);
@@ -273,7 +279,7 @@ public class VrfUtil {
 
     public static VrfBlockFields genVrfBlockFields(long blockNum, int round, byte[] seed, byte[] minerCoinbase,
                                                    byte[] priority, byte[] blockHash, VrfPrivateKey vrfSk, byte[] vrfPk, VrfConfig vrfConfig)
-            throws IOException {
+        throws IOException {
 
         ProposalProof proposalProof = genProposalProof(blockNum, round, seed, minerCoinbase, blockHash, vrfSk, vrfPk);
         String parentReductionCommitProofs = null;
@@ -284,8 +290,8 @@ public class VrfUtil {
         }
 
         VrfBlockFields vbf1 = VrfBlockFields.builder().seed(seed).priority(priority).miner(minerCoinbase)
-                .proposalProof(RLPCodec.encode(proposalProof)).parentReductionCommitProofs(parentReductionCommitProofs)
-                .parentFinalCommitProofs(parentFinalCommitProofs).build();
+            .proposalProof(RLPCodec.encode(proposalProof)).parentReductionCommitProofs(parentReductionCommitProofs)
+            .parentFinalCommitProofs(parentFinalCommitProofs).build();
         return vbf1;
     }
 
@@ -383,7 +389,7 @@ public class VrfUtil {
     }
 
     public static void writeCommitProofsToFile(HashMapDB<CommitProof> commitProofs, String filePath)
-            throws IOException {
+        throws IOException {
         File file = new File(filePath);
         file.getParentFile().mkdirs();
         String proofsString = commitProofMapToCommaSepEncodedStr(commitProofs);
@@ -391,24 +397,24 @@ public class VrfUtil {
     }
 
     public static void writeReductionCommitProofsToFile(HashMapDB<CommitProof> commitProofs, VrfConfig vrfConfig)
-            throws IOException {
+        throws IOException {
         String filePath = getReductionCommitProofCachePath(vrfConfig);
         writeCommitProofsToFile(commitProofs, filePath);
     }
 
     public static void writeFinalCommitProofsToFile(HashMapDB<CommitProof> commitProofs, VrfConfig vrfConfig)
-            throws IOException {
+        throws IOException {
         String filePath = getFinalCommitProofCachePath(vrfConfig);
         writeCommitProofsToFile(commitProofs, filePath);
     }
 
     public static void setParentReductionCommitProofs(Header header, String parentReductionCommitProofs) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setParentReductionCommitProofs(parentReductionCommitProofs);
-
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setParentReductionCommitProofs(parentReductionCommitProofs);
+//
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setParentReductionCommitProofs(Block block, String parentReductionCommitProofs) {
@@ -416,12 +422,12 @@ public class VrfUtil {
     }
 
     public static void setParentFinalCommitProofs(Header header, String parentFinalCommitProofs) {
-        HexBytes payload = header.getPayload();
-        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
-        vrfBlockFields.setParentFinalCommitProofs(parentFinalCommitProofs);
-
-        byte[] encoded = RLPCodec.encode(vrfBlockFields);
-        header.setPayload(HexBytes.fromBytes(encoded));
+//        HexBytes payload = header.getPayload();
+//        VrfBlockFields vrfBlockFields = getVrfBlockFields(payload);
+//        vrfBlockFields.setParentFinalCommitProofs(parentFinalCommitProofs);
+//
+//        byte[] encoded = RLPCodec.encode(vrfBlockFields);
+//        header.setPayload(HexBytes.fromBytes(encoded));
     }
 
     public static void setParentFinalCommitProofs(Block block, String parentFinalCommitProofs) {
@@ -435,11 +441,13 @@ public class VrfUtil {
     }
 
     public static String getParentReductionCommitProofs(Header header) {
-        return getParentReductionCommitProofs(header.getPayload());
+//        return getParentReductionCommitProofs(header.getPayload());
+        return null;
     }
 
     public static String getParentReductionCommitProofs(Block block) {
-        return getParentReductionCommitProofs(block.getPayload());
+//        return getParentReductionCommitProofs(block.getPayload());
+        return null;
     }
 
     public static String getParentFinalCommitProofs(HexBytes payload) {
@@ -449,11 +457,13 @@ public class VrfUtil {
     }
 
     public static String getParentFinalCommitProofs(Header header) {
-        return getParentFinalCommitProofs(header.getPayload());
+//        return getParentFinalCommitProofs(header.getPayload());
+        return null;
     }
 
     public static String getParentFinalCommitProofs(Block block) {
-        return getParentFinalCommitProofs(block.getPayload());
+//        return getParentFinalCommitProofs(block.getPayload());
+        return null;
     }
 
     /**
@@ -480,11 +490,13 @@ public class VrfUtil {
     }
 
     public static List<CommitProof> getParentReductionCommitProofList(Header header) {
-        return getParentReductionCommitProofList(header.getPayload());
+//        return getParentReductionCommitProofList(header.getPayload());
+        return Collections.emptyList();
     }
 
     public static List<CommitProof> getParentReductionCommitProofList(Block block) {
-        return getParentReductionCommitProofList(block.getPayload());
+//        return getParentReductionCommitProofList(block.getPayload());
+        return Collections.emptyList();
     }
 
     public static List<CommitProof> getParentFinalCommitProofList(HexBytes payload) {
@@ -492,11 +504,13 @@ public class VrfUtil {
     }
 
     public static List<CommitProof> getParentFinalCommitProofList(Header header) {
-        return getParentFinalCommitProofList(header.getPayload());
+//        return getParentFinalCommitProofList(header.getPayload());
+        return Collections.emptyList();
     }
 
     public static List<CommitProof> getParentFinalCommitProofList(Block block) {
-        return getParentFinalCommitProofList(block.getPayload());
+//        return getParentFinalCommitProofList(block.getPayload());
+        return Collections.emptyList();
     }
 
     public static String commitProofListToCommaSepStr(List<CommitProof> list) {
@@ -537,7 +551,7 @@ public class VrfUtil {
     public static byte[] getFromContractStorage(HexBytes contractAddress, Header h, byte[] key, AccountTrie accountTrie,
                                                 Trie<byte[], byte[]> contractStorageTrie) {
         Account account = null;
-        Optional<Account> accountOpt = Optional.ofNullable(accountTrie.get(h.getStateRoot().getBytes(), contractAddress));
+        Optional<Account> accountOpt = Optional.ofNullable(accountTrie.get(h.getStateRoot(), contractAddress));
         if (accountOpt.isPresent()) {
             account = accountOpt.get();
         } else {

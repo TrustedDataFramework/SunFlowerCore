@@ -4,31 +4,25 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.event.EventBus;
-import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
-import org.tdf.sunflower.consensus.MinerConfig;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.exception.ConsensusEngineInitException;
 import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.BlockCreateResult;
-import org.tdf.sunflower.types.Header;
-import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.types.*;
 
 import java.time.OffsetDateTime;
-import java.util.List;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
-import static org.tdf.sunflower.state.Account.ADDRESS_SIZE;
+import static org.tdf.sunflower.types.Transaction.ADDRESS_LENGTH;
 
 
 @Slf4j(topic = "miner")
@@ -37,7 +31,7 @@ public class PoSMiner extends AbstractMiner {
     private final PoS pos;
     @Getter
     public HexBytes minerAddress;
-    private PoSConfig posConfig;
+    private ConsensusConfig config;
     @Setter
     private BlockRepository blockRepository;
     private volatile boolean stopped;
@@ -46,29 +40,20 @@ public class PoSMiner extends AbstractMiner {
     @Getter
     private TransactionPool transactionPool;
 
-    public PoSMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, MinerConfig minerConfig, PoS pos) {
-        super(accountTrie, eventBus, minerConfig);
+    public PoSMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, ConsensusConfig config, PoS pos) {
+        super(accountTrie, eventBus, config);
         this.pos = pos;
     }
 
     @Override
     protected Header createHeader(Block parent) {
         return Header.builder()
-                .version(parent.getVersion())
-                .hashPrev(parent.getHash()).height(parent.getHeight() + 1)
-                .createdAt(System.currentTimeMillis() / 1000)
-                .payload(HexBytes.EMPTY)
-                .build();
+            .build();
     }
 
     @Override
     protected boolean finalizeBlock(Block parent, Block block) {
         return true;
-    }
-
-    public void setPoSConfig(PoSConfig posConfig) throws ConsensusEngineInitException {
-        this.posConfig = posConfig;
-        this.minerAddress = posConfig.getMinerCoinBase();
     }
 
 
@@ -82,7 +67,7 @@ public class PoSMiner extends AbstractMiner {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }, 0, posConfig.getBlockInterval(), TimeUnit.SECONDS);
+        }, 0, config.getBlockInterval(), TimeUnit.SECONDS);
     }
 
     @Override
@@ -99,49 +84,39 @@ public class PoSMiner extends AbstractMiner {
     }
 
     public void tryMine() {
-        if (!posConfig.isEnableMining() || stopped) {
+        if (!config.enableMining() || stopped) {
             return;
         }
-        if (posConfig.getMinerCoinBase() == null || posConfig.getMinerCoinBase().size() != ADDRESS_SIZE) {
-            log.warn("pos miner: invalid coinbase address {}", posConfig.getMinerCoinBase());
+        if (config.getMinerCoinBase() == null || config.getMinerCoinBase().size() != ADDRESS_LENGTH) {
+            log.warn("pos miner: invalid coinbase address {}", config.getMinerCoinBase());
             return;
         }
         Block best = blockRepository.getBestBlock();
         // 判断是否轮到自己出块
         Optional<Proposer> o = getProposer(
-                best,
-                OffsetDateTime.now().toEpochSecond()
+            best,
+            OffsetDateTime.now().toEpochSecond()
         ).filter(p -> p.getAddress().equals(minerAddress));
 
         if (!o.isPresent()) return;
         log.debug("try to mining at height " + (best.getHeight() + 1));
         try {
-            BlockCreateResult res = createBlock(blockRepository.getBestBlock());
+            BlockCreateResult res = createBlock(blockRepository.getBestBlock(), Collections.emptyMap());
             if (res.getBlock() != null) {
                 log.info("mining success block: {}", res.getBlock().getHeader());
             }
-            getEventBus().publish(new NewBlockMined(res.getBlock(), res.getFailedTransactions(), res.getReasons()));
+            getEventBus().publish(new NewBlockMined(res.getBlock(), res.getInfos()));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public Optional<Proposer> getProposer(Block parent, long currentEpochSeconds) {
-        List<HexBytes> minerAddresses = pos.getMinerAddresses(parent.getStateRoot().getBytes());
-        return AbstractMiner.getProposer(parent, currentEpochSeconds, minerAddresses, posConfig.getBlockInterval());
+        return Optional.empty();
     }
 
 
     protected Transaction createCoinBase(long height) {
-        return Transaction.builder()
-                .version(PoS.TRANSACTION_VERSION)
-                .createdAt(System.currentTimeMillis() / 1000)
-                .nonce(height)
-                .from(HexBytes.EMPTY)
-                .amount(Uint256.ZERO)
-                .payload(HexBytes.empty())
-                .to(this.minerAddress)
-                .gasPrice(Uint256.ZERO)
-                .signature(HexBytes.EMPTY).build();
+        return Transaction.builder().build();
     }
 }

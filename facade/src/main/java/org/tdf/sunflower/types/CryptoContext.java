@@ -1,9 +1,11 @@
 package org.tdf.sunflower.types;
 
 import lombok.Setter;
+import org.tdf.common.crypto.ECKey;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.ECDH;
 
@@ -17,7 +19,7 @@ public class CryptoContext {
     public static BiFunction<byte[], byte[], byte[]> signer = (a, b) -> HexBytes.EMPTY_BYTES;
     @Setter
     private static Function<byte[], byte[]> hashFunction
-            = Function.identity();
+        = Function.identity();
     @Setter
     private static SignatureVerifier signatureVerifier = (pk, msg, sig) -> true;
     @Setter
@@ -45,50 +47,56 @@ public class CryptoContext {
     }
 
     public static byte[] hash(byte[] data) {
-        return hashFunction.apply(data);
+        return HashUtil.sha3(data);
     }
 
     public static boolean verify(byte[] pk, byte[] msg, byte[] sig) {
-        return signatureVerifier.verify(pk, msg, sig);
+        return true;
     }
 
     public static byte[] getPkFromSk(byte[] sk) {
-        return getPkFromSk.apply(sk);
+        return ECKey.fromPrivate(sk).getPubKey();
     }
 
-    public static byte[] getEmptyTrieRoot() {
+    public static HexBytes getEmptyTrieRoot() {
         Trie<?, ?> trie = Trie.<byte[], byte[]>builder()
-                .keyCodec(Codec.identity())
-                .valueCodec(Codec.identity())
-                .store(new ByteArrayMapStore<>())
-                .hashFunction(hashFunction)
-                .build();
+            .keyCodec(Codec.identity())
+            .valueCodec(Codec.identity())
+            .store(new ByteArrayMapStore<>())
+            .hashFunction(hashFunction)
+            .build();
 
         return trie.getNullHash();
     }
 
     public static byte[] generateSecretKey() {
-        return secretKeyGenerator.get();
+        return new ECKey().getPrivKeyBytes();
     }
 
     public static byte[] sign(byte[] sk, byte[] msg) {
-        return signer.apply(sk, msg);
+        return new byte[0];
     }
 
     public static byte[] encrypt(byte[] sk, byte[] msg) {
-        return encrypt.apply(sk, msg);
+        return msg;
     }
 
     public static byte[] decrypt(byte[] sk, byte[] encrypted) {
-        return decrypt.apply(sk, encrypted);
+        return encrypted;
     }
 
 
     public static byte[] ecdh(boolean initiator, byte[] sk, byte[] pk) {
-        return ecdh.exchange(initiator, sk, pk);
+        return HexBytes.EMPTY_BYTES;
     }
 
     public static byte[] ecdh(byte[] sk, byte[] pk) {
-        return ecdh.exchange(sk, pk);
+        return HexBytes.EMPTY_BYTES;
+    }
+
+    public static Function<byte[], byte[]> keccak256 = null;
+
+    public static byte[] keccak256(byte[] in) {
+        return keccak256.apply(in);
     }
 }

@@ -20,21 +20,21 @@ public class BigEndian {
 
     public static int decodeInt32(byte[] data) {
         return ByteBuffer.wrap(data)
-                .order(ByteOrder.BIG_ENDIAN)
-                .getInt();
+            .order(ByteOrder.BIG_ENDIAN)
+            .getInt();
     }
 
     // big-endian encoding
     public static byte[] encodeInt32(int val) {
         return ByteBuffer.allocate(Integer.BYTES)
-                .order(ByteOrder.BIG_ENDIAN)
-                .putInt(val).array();
+            .order(ByteOrder.BIG_ENDIAN)
+            .putInt(val).array();
     }
 
     // big-endian encoding
     public static byte[] encodeInt64(long value) {
         return ByteBuffer.allocate(Long.BYTES)
-                .putLong(value).array();
+            .putLong(value).array();
     }
 
     public static long decodeInt64(byte[] data) {
@@ -43,7 +43,7 @@ public class BigEndian {
 
     public static int compareUint256(byte[] a, byte[] b) {
         return new BigInteger(1, a).compareTo(
-                new BigInteger(1, b)
+            new BigInteger(1, b)
         );
     }
 
@@ -53,7 +53,7 @@ public class BigEndian {
 
     public static byte[] encodeInt16(short value) {
         return ByteBuffer.allocate(Short.BYTES)
-                .putShort(value).array();
+            .putShort(value).array();
     }
 
     public static byte[] encodeUint256(BigInteger in) {

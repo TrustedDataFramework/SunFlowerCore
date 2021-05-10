@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
+import org.tdf.common.util.HexBytes;
 
 import java.util.Map;
 import java.util.Set;
@@ -20,12 +21,12 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public Trie<K, V> revert(byte[] rootHash, Store<byte[], byte[]> store) throws RuntimeException {
+    public Trie<K, V> revert(HexBytes rootHash, Store<byte[], byte[]> store) throws RuntimeException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Trie<K, V> revert(byte[] rootHash) throws RuntimeException {
+    public Trie<K, V> revert(HexBytes rootHash) throws RuntimeException {
         throw new UnsupportedOperationException();
     }
 
@@ -35,27 +36,27 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public byte[] commit() {
+    public HexBytes commit() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Set<byte[]> dumpKeys() {
+    public Set<HexBytes> dumpKeys() {
         return delegate.dumpKeys();
     }
 
     @Override
-    public Map<byte[], byte[]> dump() {
+    public Map<HexBytes, HexBytes> dump() {
         return delegate.dump();
     }
 
     @Override
-    public byte[] getRootHash() throws RuntimeException {
+    public HexBytes getRootHash() throws RuntimeException {
         return delegate.getRootHash();
     }
 
     @Override
-    public byte[] getNullHash() {
+    public HexBytes getNullHash() {
         return delegate.getNullHash();
     }
 
@@ -86,7 +87,7 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
 
 
     @Override
-    public Map<byte[], byte[]> getProof(K k) {
+    public Map<HexBytes, HexBytes> getProof(K k) {
         return delegate.getProof(k);
     }
 
@@ -116,7 +117,7 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public Map<byte[], byte[]> getProofInternal(byte[] key) {
+    public Map<HexBytes, HexBytes> getProofInternal(byte[] key) {
         return delegate.getProofInternal(key);
     }
 

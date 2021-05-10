@@ -1,60 +1,87 @@
 package org.tdf.sunflower.types;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.*;
-import org.tdf.rlp.RLP;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPIgnored;
+import org.tdf.sunflower.state.Address;
 
 import java.util.Objects;
-import java.util.stream.Stream;
 
-@Getter
+
 @ToString
 @NoArgsConstructor
 public class Header implements Chained {
     /**
-     * magic version number
-     */
-    @RLP(0)
-    protected int version;
-    /**
      * hash of parent block
      */
-    @RLP(1)
-    protected HexBytes hashPrev;
+    protected HexBytes hashPrev = ByteUtil.ZEROS_32;
+
     /**
-     * root hash of transaction trie
+     * uncles list = rlp([])
      */
-    @RLP(2)
-    protected HexBytes transactionsRoot;
+    protected HexBytes unclesHash;
+
+    /**
+     * miner
+     */
+    protected HexBytes coinbase;
+
     /**
      * root hash of state trie
      */
-    @RLP(3)
-    protected HexBytes stateRoot;
+    protected HexBytes stateRoot = HashUtil.EMPTY_TRIE_HASH_HEX;
+
+    /**
+     * root hash of transaction trie
+     */
+    protected HexBytes transactionsRoot = HashUtil.EMPTY_TRIE_HASH_HEX;
+
+    /**
+     * receipts root
+     */
+    private HexBytes receiptTrieRoot = HashUtil.EMPTY_TRIE_HASH_HEX;
+
+    /**
+     * logs bloom
+     */
+    private HexBytes logsBloom = Bloom.EMPTY;
+
+    /**
+     * difficulty value = EMPTY_BYTES
+     */
+    private HexBytes difficulty;
+
     /**
      * height of current header
      */
-    @RLP(4)
     @JsonSerialize(using = IntSerializer.class)
-    protected long height;
+    protected long height = 0;
+
+    protected HexBytes gasLimit = HexBytes.EMPTY;
+
+    protected long gasUsed = 0;
+
     /**
      * unix epoch when the block mined
      */
     @JsonSerialize(using = EpochSecondsSerializer.class)
     @JsonDeserialize(using = EpochSecondDeserializer.class)
-    @RLP(5)
-    protected long createdAt;
-    /**
-     * custom data
-     */
-    @RLP(6)
-    protected HexBytes payload;
+    protected long createdAt = 0;
+
+    // <= 32 bytes
+    protected HexBytes extraData;
+
+    // = 32byte
+    protected HexBytes mixHash;
+
+    // = 8byte
+    protected HexBytes nonce;
+
+
     /**
      * hash of the block
      */
@@ -63,104 +90,175 @@ public class Header implements Chained {
     @Setter(AccessLevel.NONE)
     protected transient HexBytes hash;
 
-
     @Builder
     public Header(
-            int version, HexBytes hashPrev, HexBytes transactionsRoot,
-            HexBytes stateRoot, long height, long createdAt,
-            HexBytes payload
+        HexBytes hashPrev, HexBytes coinbase, HexBytes stateRoot,
+        HexBytes transactionsRoot, HexBytes receiptTrieRoot,
+        HexBytes logsBloom, long height, HexBytes gasLimit,
+        long gasUsed, long createdAt, HexBytes extraData
     ) {
-        this.version = version;
-        this.hashPrev = hashPrev;
-        this.transactionsRoot = transactionsRoot;
-        this.stateRoot = stateRoot;
+        this.coinbase = coinbase == null ? Address.empty() : coinbase;
+        this.receiptTrieRoot = receiptTrieRoot == null ? HashUtil.EMPTY_TRIE_HASH_HEX : receiptTrieRoot;
+        this.logsBloom = logsBloom == null ? Bloom.EMPTY : logsBloom;
+        this.gasLimit = gasLimit == null ? HexBytes.empty() : gasLimit;
+        this.gasUsed = gasUsed;
+        this.extraData = extraData == null ? HexBytes.empty() : extraData;
+        this.hashPrev = hashPrev == null ? ByteUtil.ZEROS_32 : hashPrev;
+        this.transactionsRoot = transactionsRoot == null ? HashUtil.EMPTY_TRIE_HASH_HEX : transactionsRoot;
+        this.stateRoot = stateRoot == null ? HashUtil.EMPTY_TRIE_HASH_HEX : stateRoot;
         this.height = height;
         this.createdAt = createdAt;
-        this.payload = payload;
+
+        // useless for tdos
+        this.unclesHash = HexBytes.fromBytes(HashUtil.EMPTY_LIST_HASH);
+        this.difficulty = HexBytes.empty();
+        this.mixHash = HexBytes.empty();
+        this.nonce = HexBytes.empty();
     }
 
     public HexBytes getHash() {
         return getHash(false);
     }
 
+    public void resetHash() {
+        this.hash = null;
+    }
+
     private HexBytes getHash(boolean forceReHash) {
         if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
-                    CryptoContext.hash(RLPCodec.encode(this))
+                CryptoContext.hash(RLPCodec.encode(this))
             );
             return this.hash;
         }
         return this.hash;
     }
 
-    public void setVersion(int version) {
-        this.version = version;
-        getHash(true);
-    }
 
     public void setHashPrev(HexBytes hashPrev) {
         this.hashPrev = hashPrev;
-        getHash(true);
+        resetHash();
     }
 
     public void setTransactionsRoot(HexBytes transactionsRoot) {
         this.transactionsRoot = transactionsRoot;
-        getHash(true);
+        resetHash();
     }
 
     public void setStateRoot(HexBytes stateRoot) {
         this.stateRoot = stateRoot;
-        getHash(true);
+        resetHash();
     }
 
-    public void setHeight(long height) {
-        this.height = height;
-        getHash(true);
+    public void setHeight(Long height) {
+        this.height = Objects.requireNonNull(height);
+        resetHash();
     }
 
-    public void setCreatedAt(long createdAt) {
-        this.createdAt = createdAt;
-        getHash(true);
+    public void setCreatedAt(Long createdAt) {
+        this.createdAt = Objects.requireNonNull(createdAt);
+        resetHash();
     }
 
-    public void setPayload(HexBytes payload) {
-        this.payload = payload;
-        getHash(true);
+
+    public void setCoinbase(HexBytes coinbase) {
+        this.coinbase = coinbase;
+        resetHash();
+    }
+
+    public void setGasLimit(HexBytes gasLimit) {
+        this.gasLimit = gasLimit;
+        resetHash();
+    }
+
+    public void setGasUsed(Long gasUsed) {
+        this.gasUsed = Objects.requireNonNull(gasUsed);
+        resetHash();
+    }
+
+    public void setExtraData(HexBytes extraData) {
+        this.extraData = extraData;
+        resetHash();
+    }
+
+    public void setMixHash(HexBytes mixHash) {
+        this.mixHash = mixHash;
+        resetHash();
+    }
+
+    public void setNonce(HexBytes nonce) {
+        this.nonce = nonce;
+        resetHash();
+    }
+
+    public void setReceiptTrieRoot(HexBytes receiptTrieRoot) {
+        this.receiptTrieRoot = receiptTrieRoot;
+        resetHash();
+    }
+
+    public void setLogsBloom(HexBytes logsBloom) {
+        this.logsBloom = logsBloom;
+        resetHash();
     }
 
     @Override
-    public Header clone() {
-        return new Header(
-                version, hashPrev, transactionsRoot, stateRoot,
-                height, createdAt, payload
-        );
+    public HexBytes getHashPrev() {
+        return hashPrev;
     }
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    public int size() {
-        return Constants.sizeOf(version) + Constants.sizeOf(height) +
-                Constants.sizeOf(createdAt) +
-                Stream.of(hashPrev, transactionsRoot, payload, hash)
-                        .map(Constants::sizeOf)
-                        .reduce(0, Integer::sum);
+    public HexBytes getUnclesHash() {
+        return unclesHash;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Header header = (Header) o;
-        return version == header.version &&
-                height == header.height &&
-                createdAt == header.createdAt &&
-                Objects.equals(hashPrev, header.hashPrev) &&
-                Objects.equals(transactionsRoot, header.transactionsRoot) &&
-                Objects.equals(stateRoot, header.stateRoot) &&
-                Objects.equals(payload, header.payload);
+    public HexBytes getCoinbase() {
+        return coinbase;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(version, hashPrev, transactionsRoot, stateRoot, height, createdAt, payload);
+    public HexBytes getStateRoot() {
+        return stateRoot;
+    }
+
+    public HexBytes getTransactionsRoot() {
+        return transactionsRoot;
+    }
+
+    public HexBytes getReceiptTrieRoot() {
+        return receiptTrieRoot;
+    }
+
+    public HexBytes getLogsBloom() {
+        return logsBloom;
+    }
+
+    public HexBytes getDifficulty() {
+        return difficulty;
+    }
+
+    public long getHeight() {
+        return height;
+    }
+
+    public HexBytes getGasLimit() {
+        return gasLimit;
+    }
+
+    public long getGasUsed() {
+        return gasUsed;
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public HexBytes getExtraData() {
+        return extraData;
+    }
+
+    public HexBytes getMixHash() {
+        return mixHash;
+    }
+
+    public HexBytes getNonce() {
+        return nonce;
     }
 }

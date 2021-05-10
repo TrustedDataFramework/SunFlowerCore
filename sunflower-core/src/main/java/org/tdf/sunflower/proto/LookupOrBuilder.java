@@ -4,6 +4,6 @@
 package org.tdf.sunflower.proto;
 
 public interface LookupOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:Lookup)
-        com.google.protobuf.MessageOrBuilder {
+    // @@protoc_insertion_point(interface_extends:Lookup)
+    com.google.protobuf.MessageOrBuilder {
 }

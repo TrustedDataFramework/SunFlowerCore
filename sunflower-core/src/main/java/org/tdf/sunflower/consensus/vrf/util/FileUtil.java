@@ -92,8 +92,8 @@ public class FileUtil {
 
     public static String getProperty(String propertyName) throws IOException {
         return getProperty(
-                System.getProperty("user.dir") + File.separator + "config" + File.separator + "EthService.properties",
-                propertyName);
+            System.getProperty("user.dir") + File.separator + "config" + File.separator + "EthService.properties",
+            propertyName);
     }
 
     public static void main(String[] args) {

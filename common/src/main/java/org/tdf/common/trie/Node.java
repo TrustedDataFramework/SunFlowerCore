@@ -48,10 +48,10 @@ class Node {
 
     static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache, HashFunction hashFunction) {
         return builder()
-                .hash(hash)
-                .readOnlyCache(readOnlyCache)
-                .hashFunction(hashFunction)
-                .build();
+            .hash(hash)
+            .readOnlyCache(readOnlyCache)
+            .hashFunction(hashFunction)
+            .build();
     }
 
     // create root node from database and reference
@@ -61,43 +61,43 @@ class Node {
 
     // create root node from database and reference
     static Node fromEncoded(
-            RLPElement rlp,
-            Store<byte[], byte[]> readOnlyCache,
-            HashFunction hashFunction
+        RLPElement rlp,
+        Store<byte[], byte[]> readOnlyCache,
+        HashFunction hashFunction
     ) {
         if (rlp.isRLPList())
             return builder()
-                    .rlp(rlp.asRLPList())
-                    .readOnlyCache(readOnlyCache)
-                    .hashFunction(hashFunction)
-                    .build();
-        return builder()
-                .hash(rlp.asBytes())
+                .rlp(rlp.asRLPList())
                 .readOnlyCache(readOnlyCache)
                 .hashFunction(hashFunction)
                 .build();
+        return builder()
+            .hash(rlp.asBytes())
+            .readOnlyCache(readOnlyCache)
+            .hashFunction(hashFunction)
+            .build();
     }
 
     static Node newBranch(HashFunction hashFunction) {
         return builder()
-                .children(new Object[BRANCH_SIZE])
-                .hashFunction(hashFunction)
-                .dirty(true).build();
+            .children(new Object[BRANCH_SIZE])
+            .hashFunction(hashFunction)
+            .dirty(true).build();
     }
 
     static Node newLeaf(TrieKey key, byte[] value, HashFunction hashFunction) {
         return builder()
-                .children(new Object[]{key, value})
-                .hashFunction(hashFunction)
-                .dirty(true).build();
+            .children(new Object[]{key, value})
+            .hashFunction(hashFunction)
+            .dirty(true).build();
     }
 
     static Node newExtension(TrieKey key, Node child, HashFunction hashFunction) {
         return builder()
-                .children(new Object[]{key, child})
-                .hashFunction(hashFunction)
-                .dirty(true)
-                .build();
+            .children(new Object[]{key, child})
+            .hashFunction(hashFunction)
+            .dirty(true)
+            .build();
     }
 
     private static NodeBuilder builder() {
@@ -112,8 +112,8 @@ class Node {
     // return rlp encoded
     // if commit is call at root node, force hash is set to true
     RLPElement commit(
-            Store<byte[], byte[]> cache,
-            boolean forceHash
+        Store<byte[], byte[]> cache,
+        boolean forceHash
     ) {
         // if child node is dirty, the parent node must be dirty also
         if (!dirty) return hash != null ? RLPItem.fromBytes(hash) : rlp;
@@ -163,7 +163,7 @@ class Node {
         if (rlp != null || hash == null) return;
 
         byte[] v = readOnlyCache
-                .get(hash);
+            .get(hash);
         if (v == null || !FastByteComparisons.equal(hash, hashFunction.apply(v))) {
             throw new RuntimeException("rlp encoding not found in cache");
         }
@@ -213,10 +213,10 @@ class Node {
             return (Node) o;
         }
         return builder()
-                .children(new Object[]{key, o})
-                .hashFunction(hashFunction)
-                .dirty(true)
-                .build();
+            .children(new Object[]{key, o})
+            .hashFunction(hashFunction)
+            .dirty(true)
+            .build();
     }
 
     public Type getType() {
@@ -566,8 +566,8 @@ class Node {
         return this.hash;
     }
 
-    Map<byte[], byte[]> getProof(TrieKey path, Map<byte[], byte[]> map) {
-        if (hash != null) map.put(hash, rlp.getEncoded());
+    Map<HexBytes, HexBytes> getProof(TrieKey path, Map<HexBytes, HexBytes> map) {
+        if (hash != null) map.put(HexBytes.fromBytes(hash), HexBytes.fromBytes(rlp.getEncoded()));
         switch (getType()) {
             case BRANCH: {
                 for (int i = 0; i < BRANCH_SIZE - 1; i++) {

@@ -4,11 +4,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.common.HashUtil;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.NoDeleteStore;
+import org.tdf.common.util.HashUtil;
+import org.tdf.common.util.HexBytes;
 
 @RunWith(JUnit4.class)
 public class SecureTrieTest {
@@ -21,11 +22,11 @@ public class SecureTrieTest {
     @Before
     public void before() {
         notSecured = Trie.<byte[], String>builder()
-                .hashFunction(HashUtil::sha3)
-                .keyCodec(Codec.identity())
-                .valueCodec(Codecs.STRING)
-                .store(new NoDeleteStore<>(new ByteArrayMapStore<>(), x -> x == null || x.length == 0))
-                .build();
+            .hashFunction(HashUtil::sha3)
+            .keyCodec(Codec.identity())
+            .valueCodec(Codecs.STRING)
+            .store(new NoDeleteStore<>(new ByteArrayMapStore<>(), x -> x == null || x.length == 0))
+            .build();
 
         secured = new SecureTrie<>(notSecured, HashUtil::sha3);
     }
@@ -42,9 +43,9 @@ public class SecureTrieTest {
     @Test
     public void testRevert() {
         secured.put("1".getBytes(), "1");
-        byte[] root = secured.commit();
+        HexBytes root = secured.commit();
         secured.put("2".getBytes(), "2");
-        byte[] root2 = secured.commit();
+        HexBytes root2 = secured.commit();
         assert secured.revert(root).size() == 1;
         assert secured.revert(root).get("1".getBytes()).equals("1");
         assert secured.revert(root2).size() == 2;
