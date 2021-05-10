@@ -16,7 +16,6 @@ import org.tdf.rlp.*
 import java.io.IOException
 import java.lang.NullPointerException
 import java.math.BigInteger
-import java.util.*
 import kotlin.math.sign
 
 @JsonDeserialize(using = Uint256Deserializer::class)
@@ -25,35 +24,34 @@ import kotlin.math.sign
     Uint256EncoderDecoder::class
 )
 @RLPDecoding(Uint256EncoderDecoder::class)
-class Uint256 private constructor(data: ByteArray) : Number() {
-    private val data: ByteArray
+class Uint256 private constructor(val value: BigInteger) : Number() {
 
     override fun toInt(): Int {
-        return value().intValueExact()
+        return value.intValueExact()
     }
 
     override fun toLong(): Long {
-        return value().longValueExact()
+        return value.longValueExact()
     }
 
     override fun toShort(): Short {
-        return value().shortValueExact()
+        return value.shortValueExact()
     }
 
     override fun toFloat(): Float {
-        return value().toFloat()
+        return value.toFloat()
     }
 
     override fun toDouble(): Double {
-        return value().toDouble()
+        return value.toDouble()
     }
 
     override fun toByte(): Byte {
-        return value().byteValueExact()
+        return value.byteValueExact()
     }
 
     override fun toChar(): Char {
-        return value().toChar()
+        return value.toChar()
     }
 
     /**
@@ -64,7 +62,7 @@ class Uint256 private constructor(data: ByteArray) : Number() {
      * @return instance data
      */
     fun getData(): ByteArray {
-        return data.copyOf(data.size)
+        return BigIntegers.asUnsignedByteArray(32, value)
     }
 
     val dataHex: HexBytes
@@ -72,19 +70,16 @@ class Uint256 private constructor(data: ByteArray) : Number() {
 
 
     val noLeadZeroesData: ByteArray
-        get() = getNoLeadZeroesData(data)
+        get() = BigIntegers.asUnsignedByteArray(value)
 
-    fun value(): BigInteger {
-        return BigInteger(1, data)
-    }
 
     val isZero: Boolean
         get() = if (this === ZERO) true else this.compareTo(ZERO) == 0
 
 
     fun uncheckedPlus(word: Uint256): Uint256 {
-        val result = value().add(word.value())
-        return Uint256(ByteUtil.copyToArray(result.and(MAX_VALUE)))
+        val result = value.add(word.value)
+        return Uint256(result.and(MAX_VALUE))
     }
 
     operator fun plus(word: Uint256): Uint256 {
@@ -104,13 +99,13 @@ class Uint256 private constructor(data: ByteArray) : Number() {
         if (word.isZero) {
             return ZERO
         }
-        val result = value().divide(word.value())
-        return Uint256(ByteUtil.copyToArray(result.and(MAX_VALUE)))
+        val result = value.divide(word.value)
+        return Uint256(result.and(MAX_VALUE))
     }
 
     fun uncheckedMinus(word: Uint256): Uint256 {
-        val result = value().subtract(word.value())
-        return Uint256(ByteUtil.copyToArray(result.and(MAX_VALUE)))
+        val result = value.subtract(word.value)
+        return Uint256(result.and(MAX_VALUE))
     }
 
     operator fun minus(word: Uint256): Uint256 {
@@ -122,8 +117,8 @@ class Uint256 private constructor(data: ByteArray) : Number() {
         if (word.isZero) {
             return ZERO
         }
-        val result = value().mod(word.value())
-        return Uint256(ByteUtil.copyToArray(result.and(MAX_VALUE)))
+        val result = value.mod(word.value)
+        return Uint256(result.and(MAX_VALUE))
     }
 
     operator fun rem(word: Uint256): Uint256 {
@@ -135,8 +130,8 @@ class Uint256 private constructor(data: ByteArray) : Number() {
 
 
     fun uncheckedTimes(word: Uint256): Uint256 {
-        val result = value().multiply(word.value())
-        return Uint256(ByteUtil.copyToArray(result.and(MAX_VALUE)))
+        val result = value.multiply(word.value)
+        return Uint256(result.and(MAX_VALUE))
     }
 
     operator fun times(word: Uint256): Uint256 {
@@ -151,10 +146,7 @@ class Uint256 private constructor(data: ByteArray) : Number() {
     operator fun compareTo(o: Uint256?): Int {
         if (o == null)
             throw NullPointerException()
-        val result = FastByteComparisons.compareTo(
-            data, 0, data.size,
-            o.data, 0, o.data.size
-        )
+        val result = value.compareTo(o.value)
         // Convert result into -1, 0 or 1 as is the convention
         return sign(result.toFloat()).toInt()
     }
@@ -167,7 +159,7 @@ class Uint256 private constructor(data: ByteArray) : Number() {
     }
 
     override fun hashCode(): Int {
-        return data.contentHashCode()
+        return value.hashCode()
     }
 
 
@@ -189,7 +181,7 @@ class Uint256 private constructor(data: ByteArray) : Number() {
     class Uint256Serializer : StdSerializer<Uint256>(Uint256::class.java) {
         @Throws(IOException::class)
         override fun serialize(value: Uint256, jgen: JsonGenerator, provider: SerializerProvider) {
-            jgen.writeString(value.value().toString(10))
+            jgen.writeString(value.value.toString(10))
         }
     }
 
@@ -208,19 +200,22 @@ class Uint256 private constructor(data: ByteArray) : Number() {
         val _2_256 = BigInteger.valueOf(2).pow(MAX_POW)
         val MAX_VALUE = _2_256.subtract(BigInteger.ONE)
         @JvmField
-        val ZERO = Uint256(ByteArray(32))
-        val ONE = of(1.toByte())
+        val ZERO = Uint256(BigInteger.ZERO)
+        val ONE = Uint256(BigInteger.ONE)
+
         fun of(pattern: String, radix: Int): Uint256 {
             val i = BigInteger(pattern, radix)
-            if (i.compareTo(BigInteger.ZERO) < 0 || i.compareTo(MAX_VALUE) > 0) throw RuntimeException(
+            if (i < BigInteger.ZERO || i > MAX_VALUE) throw RuntimeException(
                 "$pattern overflow"
             )
-            return of(ByteUtil.bigIntegerToBytes(i, 32))
+            return Uint256(i)
         }
 
         @JvmStatic
-        fun of(v: BigInteger?): Uint256 {
-            return of(BigIntegers.asUnsignedByteArray(v))
+        fun of(v: BigInteger): Uint256 {
+            if( v < BigInteger.ZERO)
+                throw RuntimeException("uint256 overflow")
+            return Uint256(v)
         }
 
         @JvmStatic
@@ -234,11 +229,7 @@ class Uint256 private constructor(data: ByteArray) : Number() {
                 if (data[data.size - 1] == (0).toByte()) return ZERO
                 if (data[data.size - 1] == (1).toByte()) return ONE
             }
-            return if (data.size == 32) Uint256(Arrays.copyOf(data, data.size)) else if (data.size <= 32) {
-                val bytes = ByteArray(32)
-                System.arraycopy(data, 0, bytes, 32 - data.size, data.size)
-                Uint256(bytes)
-            } else {
+            return if (data.size <= 32) Uint256(BigInteger(1, data)) else {
                 throw RuntimeException(
                     String.format(
                         "Data word can't exceed 32 bytes: 0x%s",
@@ -249,72 +240,35 @@ class Uint256 private constructor(data: ByteArray) : Number() {
         }
 
         @JvmStatic
-        fun of(data: String?): Uint256 {
-            return of(HexBytes.decode(data!!))
+        fun of(data: String): Uint256 {
+            return of(HexBytes.decode(data))
         }
 
         @JvmStatic
         fun of(num: Byte): Uint256 {
             val bb = ByteArray(32)
             bb[31] = num
-            return Uint256(bb)
+            return of(bb)
         }
 
         @JvmStatic
         fun of(num: Int): Uint256 {
-            return of(ByteUtil.intToBytes(num))
+            return of(BigInteger.valueOf(num.toLong()))
         }
 
         @JvmStatic
         fun of(num: Long): Uint256 {
-            return of(ByteUtil.longToBytes(num))
+            return of(BigInteger.valueOf(num))
         }
 
-        @JvmStatic
-        fun getNoLeadZeroesData(data: ByteArray): ByteArray {
-            val firstNonZero = ByteUtil.firstNonZeroByte(data)
-            return when (firstNonZero) {
-                -1 -> ByteUtil.EMPTY_BYTE_ARRAY
-                0 -> data
-                else -> {
-                    val result = ByteArray(data.size - firstNonZero)
-                    System.arraycopy(data, firstNonZero, result, 0, data.size - firstNonZero)
-                    result
-                }
-            }
-        }
 
         @JvmStatic
         fun main(args: Array<String>) {
+            val bytes = HexBytes.decode("01")
             val u = of(
-                byteArrayOf(
-                    255.toByte(),
-                    255.toByte(),
-                    255.toByte(),
-                    255.toByte(),
-                    255.toByte(),
-                    255.toByte(),
-                    255.toByte(),
-                    255.toByte()
-                )
+                bytes
             )
-            println((u + u).value())
+            println(u)
         }
-    }
-
-    /**
-     * Unsafe private constructor
-     * Doesn't guarantee immutability if byte[] contents are changed later
-     * Use one of factory methods instead:
-     * - [.of]
-     * - [.of]
-     * - [.of]
-     * - [.of]
-     *
-     * @param data Byte Array[32] which is guaranteed to be immutable
-     */
-    init {
-        if (data.size != 32) throw RuntimeException("Input byte array should have 32 bytes in it!")
-        this.data = data
     }
 }

@@ -35,6 +35,7 @@ import java.security.SecureRandom;
 
 import static org.junit.Assert.assertEquals;
 
+@Ignore
 public class VrfProofTest {
 
     private static final String privateKeyHex = "09bb524717b97f0ea5684962ccea964216483157a8170070927bd01c6913d823";

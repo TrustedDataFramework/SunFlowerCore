@@ -1,8 +1,8 @@
 package org.tdf.sunflower.service
 
 import org.springframework.stereotype.Service
-import org.tdf.lotusvm.runtime.LimitedStackProvider
-import org.tdf.lotusvm.runtime.StackProvider
+import org.tdf.lotusvm.runtime.LimitedStackAllocator
+import org.tdf.lotusvm.runtime.StackAllocator
 import org.tdf.sunflower.vm.LockedStackResource
 import org.tdf.sunflower.vm.StackResourcePool
 import org.tdf.sunflower.vm.VMExecutor
@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantLock
 
 @Service
 class StackResourcePoolImpl : StackResourcePool {
-    private val resources = arrayOfNulls<StackProvider>(MAX_POOL_SIZE)
+    private val resources = arrayOfNulls<StackAllocator>(MAX_POOL_SIZE)
     private val locks: List<Lock>
 
     init {
@@ -28,7 +28,7 @@ class StackResourcePoolImpl : StackResourcePool {
                 continue
             if (resources[i] == null)
                 resources[i] =
-                LimitedStackProvider(
+                LimitedStackAllocator(
                     VMExecutor.MAX_STACK_SIZE,
                     VMExecutor.MAX_FRAMES,
                     VMExecutor.MAX_LABELS

@@ -1,10 +1,10 @@
 package org.tdf.sunflower.vm;
 
-import org.tdf.lotusvm.runtime.StackProvider;
+import org.tdf.lotusvm.runtime.StackAllocator;
 
 import java.io.Closeable;
 
-public interface StackResource extends StackProvider, Closeable {
+public interface StackResource extends StackAllocator, Closeable {
     @Override
     void close();
 }

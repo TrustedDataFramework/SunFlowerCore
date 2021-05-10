@@ -5,12 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.collections4.Predicate;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.tdf.common.util.HashUtil;
@@ -18,6 +14,8 @@ import org.tdf.common.util.HashUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static java.lang.String.format;
@@ -66,8 +64,15 @@ public class Abi extends ArrayList<Abi.Entry> {
         }
     }
 
-    private <T extends Abi.Entry> T find(Class<T> resultClass, final Abi.Entry.Type type, final Predicate<T> searchPredicate) {
-        return (T) CollectionUtils.find(this, entry -> entry.type == type && searchPredicate.evaluate((T) entry));
+    @SuppressWarnings("unchecked")
+    private <T extends Abi.Entry> T find(
+        Class<T> clazz,
+        final Abi.Entry.Type type,
+        final Predicate<T> searchPredicate
+    ) {
+        return (T) this.stream()
+            .filter(entry -> entry.type == type && searchPredicate.test((T) entry))
+            .findFirst().orElse(null);
     }
 
     public Function findFunction(Predicate<Function> searchPredicate) {
@@ -330,7 +335,9 @@ public class Abi extends ArrayList<Abi.Entry> {
         }
 
         private List<Param> filteredInputs(final boolean indexed) {
-            return ListUtils.select(inputs, param -> param.indexed == indexed);
+            return inputs.stream()
+                .filter(x -> x.indexed == indexed)
+                .collect(Collectors.toCollection(ArrayList::new));
         }
 
         @Override

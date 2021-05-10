@@ -22,6 +22,7 @@ import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.*
 import org.tdf.sunflower.vm.CallData.Companion.fromTransaction
+import org.tdf.sunflower.vm.hosts.Limit
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -30,6 +31,7 @@ import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.function.Predicate
 import javax.annotation.PostConstruct
+import kotlin.math.min
 
 @Component
 class TransactionPoolImpl(
@@ -65,12 +67,14 @@ class TransactionPoolImpl(
     private val pendingReceipts: MutableList<TransactionReceipt> = mutableListOf()
     private var current: Backend? = null
     private val stackPool: StackResourcePool = SequentialStackResourcePool(VMExecutor.MAX_CALL_DEPTH)
+    private var gasUsed: Long = 0L
 
     private fun resetInternal(best: Header) {
         parentHeader = best
         pending.clear()
         pendingReceipts.clear()
         current = trie.createBackend(parentHeader, null, false)
+        gasUsed = 0
     }
 
     fun setEngine(engine: ConsensusEngine) {
@@ -83,6 +87,7 @@ class TransactionPoolImpl(
         pendingReceipts.clear()
         parentHeader = null
         current = null
+        gasUsed = 0L
     }
 
     @SneakyThrows
@@ -158,19 +163,28 @@ class TransactionPoolImpl(
                 continue
             }
 
+            val blockGasLimit = AppConfig.INSTANCE.blockGasLimit
+            if(gasUsed >= blockGasLimit)
+                return
+
             // try to execute
             try {
                 val child = current!!.createChild()
                 val callData = fromTransaction(t, false)
-                val vmExecutor = VMExecutor(child, callData, stackPool)
+                val vmExecutor = VMExecutor(
+                    child, callData, stackPool,
+                    min(t.gasLimitAsU256.toLong(), blockGasLimit)
+                )
+
                 val res = vmExecutor.execute()
 
+
+
                 // execute successfully
-                val currentGas = if (pendingReceipts.size > 0) ByteUtil.byteArrayToLong(
-                    pendingReceipts[pendingReceipts.size - 1].cumulativeGas
-                ) else 0
+                if(gasUsed + res.gasUsed > blockGasLimit)
+                    return
                 val receipt = TransactionReceipt(
-                    ByteUtil.longToBytesNoLeadZeroes(currentGas + res.gasUsed),
+                    ByteUtil.longToBytesNoLeadZeroes(gasUsed + res.gasUsed),
                     Bloom(), emptyList()
                 )
                 receipt.setGasUsed(res.gasUsed)
@@ -179,6 +193,7 @@ class TransactionPoolImpl(
                 pending.add(t)
                 pendingReceipts.add(receipt)
                 this.current = child
+                this.gasUsed += res.gasUsed
             } catch (e: Exception) {
                 errors[t.hashHex] = e.message ?: ""
             } finally {
@@ -219,11 +234,14 @@ class TransactionPoolImpl(
     }
 
     override fun current(): Backend {
+        val caller = HexBytes.fromHex("0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1")
         lock.readLock().lock()
         try {
             return if (current != null) {
                 this.lock.readLock().lock()
-                LockableBackend(current!!.createChild(), this.lock)
+                val child = current!!.createChild()
+                val b = LockableBackend(child, this.lock)
+                b
             } else {
                 val best = repository.bestHeader
                 trie.createBackend(best, best.stateRoot, null, false)

@@ -99,8 +99,6 @@ public class Start {
 
     public static void loadConstants(Environment env) {
         AppConfig.INSTANCE = new AppConfig(env);
-        Limit.setVMStepLimit(AppConfig.get().getStepLimit());
-        Limit.setMaxFrames(AppConfig.get().getMaxFrames());
     }
 
     @SneakyThrows

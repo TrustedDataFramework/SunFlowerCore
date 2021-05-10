@@ -9,6 +9,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.*;
+import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.util.*;
 
@@ -19,6 +20,10 @@ public abstract class AbstractValidator implements Validator {
 
     public AbstractValidator(StateTrie<HexBytes, Account> accountTrie) {
         this.accountTrie = accountTrie;
+    }
+
+    public long getBlockGasLimit() {
+        return 0;
     }
 
     protected BlockValidateResult commonValidate(@NonNull Block block, @NonNull Block parent) {
@@ -66,7 +71,7 @@ public abstract class AbstractValidator implements Validator {
         long gas = 0;
 
         Map<HexBytes, VMResult> results = new HashMap<>();
-        HexBytes currentRoot = parent.getStateRoot();
+        HexBytes currentRoot;
         long currentGas = 0;
         List<TransactionReceipt> receipts = new ArrayList<>();
 
@@ -76,9 +81,17 @@ public abstract class AbstractValidator implements Validator {
 
 
             for (Transaction tx : block.getBody().subList(1, block.getBody().size())) {
+                if(currentGas > getBlockGasLimit())
+                    return BlockValidateResult.fault("block gas overflow");
+
                 VMResult r;
                 synchronized (POOL) {
-                    VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(tx, false), POOL);
+                    VMExecutor executor = new VMExecutor(
+                        tmp,
+                        CallData.fromTransaction(tx, false),
+                        POOL,
+                        Math.min(getBlockGasLimit() - currentGas, tx.getGasLimitAsU256().longValue())
+                    );
                     r = executor.execute();
                 }
                 results.put(HexBytes.fromBytes(tx.getHash()), r);
@@ -98,7 +111,7 @@ public abstract class AbstractValidator implements Validator {
             }
 
             tmp.setHeaderCreatedAt(block.getCreatedAt());
-            VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(coinbase, true), POOL);
+            VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(coinbase, true), POOL, 0);
             VMResult r = executor.execute();
             currentGas += r.getGasUsed();
 

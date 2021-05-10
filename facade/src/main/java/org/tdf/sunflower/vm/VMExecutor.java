@@ -29,8 +29,8 @@ public class VMExecutor {
     public static final int MAX_LABELS = MAX_FRAMES * 64;
     public static final int MAX_CALL_DEPTH = 8;
 
-    public VMExecutor(Backend backend, CallData callData, StackResourcePool pool) {
-        this(backend, callData, pool, new Limit(0, 0, callData.getGasLimit().longValue(), 0, 0, 0), 0);
+    public VMExecutor(Backend backend, CallData callData, StackResourcePool pool, long gasLimit) {
+        this(backend, callData, pool, new Limit(gasLimit), 0);
     }
 
     private VMExecutor(Backend backend, CallData callData, StackResourcePool pool, Limit limit, int depth) {
@@ -90,7 +90,8 @@ public class VMExecutor {
         }
 
         // 2. set initial gas by payload size
-        limit.setInitialGas(backend.getInitialGas(callData.getData().size()));
+        if(callData.getCallType() != CallType.COINBASE)
+            limit.setInitialGas(backend.getInitialGas(callData.getCallType() == CallType.CREATE, callData.getData().getBytes()));
         byte[] result = executeInternal();
 
         // 3. calculate fee and
@@ -252,7 +253,7 @@ public class VMExecutor {
                         case "uint":
                         case "uint256": {
                             Uint256 u = (Uint256) WBI.peek(instance, (int) rets[i], WbiType.UINT_256);
-                            results.add(u.value());
+                            results.add(u.getValue());
                             break;
                         }
                         case "string": {

@@ -3,15 +3,15 @@ package org.tdf.sunflower.vm
 import org.tdf.common.store.Store
 import org.tdf.common.trie.Trie
 import org.tdf.common.types.Uint256
+import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.BuiltinContract
 import org.tdf.sunflower.types.CryptoContext
 import org.tdf.sunflower.types.Header
-import java.util.HashMap
 
 // backend for mining
-open class BackendImpl(
+class BackendImpl(
     private val parent: Header,
     override val parentBackend: BackendImpl? = null,
     private val trie: Trie<HexBytes, Account>,
@@ -21,6 +21,8 @@ open class BackendImpl(
     override val builtins: Map<HexBytes, BuiltinContract> = mutableMapOf(),
     override val bios: Map<HexBytes, BuiltinContract> = mutableMapOf(),
     override val isStatic: Boolean,
+
+    // address -> code
     private val codeStore: Store<HexBytes, HexBytes>,
     private val codeCache: MutableMap<HexBytes, HexBytes> = mutableMapOf(),
     override var headerCreatedAt: Long? = null
@@ -32,11 +34,14 @@ open class BackendImpl(
         modifiedStorage.clear()
     }
 
-    // get account by parent without clone
+    // get account without clone
     private fun lookup(address: HexBytes): Account {
-        if (parentBackend != null) return parentBackend!!.lookup(address)
-        val a = trie[address]
-        return a ?: Account.emptyAccount(address, Uint256.ZERO)
+        val a = modifiedAccounts[address]
+        if (a != null)
+            return a
+        if (parentBackend != null) return parentBackend.lookup(address)
+        val aInTrie = trie[address]
+        return aInTrie ?: Account.emptyAccount(address, Uint256.ZERO)
     }
 
     override fun createChild(): BackendImpl {
@@ -45,25 +50,27 @@ open class BackendImpl(
             this,
             trie,
             contractStorageTrie,
-            HashMap(),
-            HashMap(),
+            mutableMapOf(),
+            mutableMapOf(),
             builtins,
             bios,
             isStatic,
             codeStore,
-            codeCache,
+            mutableMapOf(),
             headerCreatedAt
         )
     }
 
     private fun mergeInternal(
         accounts: MutableMap<HexBytes, Account>,
-        storage: MutableMap<HexBytes, MutableMap<HexBytes, HexBytes>>
+        storage: MutableMap<HexBytes, MutableMap<HexBytes, HexBytes>>,
+        code: MutableMap<HexBytes, HexBytes>
     ) {
-        parentBackend?.mergeInternal(accounts, storage)
+        parentBackend?.mergeInternal(accounts, storage, code)
         modifiedAccounts.forEach { (key: HexBytes, value: Account) -> accounts[key] = value }
+        codeCache.forEach { (key: HexBytes, value: HexBytes) -> code[key] = value}
         for ((key, value) in modifiedStorage) {
-            storage.putIfAbsent(key, HashMap())
+            storage.putIfAbsent(key, mutableMapOf())
             storage[key]!!.putAll(value)
         }
     }
@@ -76,14 +83,16 @@ open class BackendImpl(
     override fun merge(): HexBytes {
         val accounts: MutableMap<HexBytes, Account> = mutableMapOf()
         val storage: MutableMap<HexBytes, MutableMap<HexBytes, HexBytes>> = mutableMapOf()
-        mergeInternal(accounts, storage)
+        val code = mutableMapOf<HexBytes, HexBytes>()
+        mergeInternal(accounts, storage, code)
         val modified: MutableSet<HexBytes> = mutableSetOf()
         modified.addAll(accounts.keys)
         modified.addAll(storage.keys)
+        modified.addAll(code.keys)
         val tmpTrie = trie.revert(trie.rootHash)
         for (addr in modified) {
             var a = accounts[addr]
-            // some account has not touched, but storage modified
+            // some account has not touched, but storage or code modified
             if (a == null) {
                 a = lookup(addr)
             }
@@ -100,7 +109,10 @@ open class BackendImpl(
             tmpTrie.put(addr, a)
         }
         for ((key, value) in codeCache) {
-            codeStore.put(key, value)
+            codeStore.put(
+                tmpTrie[key]!!.contractHash ,
+                value
+            )
         }
         return tmpTrie.commit()
     }
@@ -115,44 +127,28 @@ open class BackendImpl(
         get() = parent.hash
 
     override fun getBalance(address: HexBytes): Uint256 {
-        return if (modifiedAccounts.containsKey(address)) {
-            modifiedAccounts[address]!!.balance
-        } else lookup(address).balance
+        return lookup(address).balance
     }
 
     override fun setBalance(address: HexBytes, balance: Uint256?) {
-        if (modifiedAccounts.containsKey(address)) {
-            modifiedAccounts[address]!!.balance = balance
-            return
-        }
         val a = lookup(address).clone()
         a.balance = balance
         modifiedAccounts[address] = a
     }
 
     override fun getNonce(address: HexBytes): Long {
-        return if (modifiedAccounts.containsKey(address)) {
-            modifiedAccounts[address]!!.nonce
-        } else lookup(address).nonce
+        return lookup(address).nonce
     }
 
     override fun setNonce(address: HexBytes, nonce: Long) {
-        if (modifiedAccounts.containsKey(address)) {
-            modifiedAccounts[address]!!.nonce = nonce
-            return
-        }
         val a = lookup(address).clone()
         a.nonce = nonce
         modifiedAccounts[address] = a
     }
 
-    override fun getInitialGas(payloadSize: Int): Long {
-        return (payloadSize / 1024).toLong()
-    }
-
     override fun dbSet(address: HexBytes, key: HexBytes, value: HexBytes) {
         if (key.size() == 0) throw RuntimeException("invalid key length = 0")
-        modifiedStorage.putIfAbsent(address, HashMap())
+        modifiedStorage.putIfAbsent(address, mutableMapOf())
         modifiedStorage[address]!![key] = value
     }
 
@@ -162,14 +158,14 @@ open class BackendImpl(
         // if has modified
         if (modifiedStorage.containsKey(address)) {
             // if it is delete mark
-            val `val` = modifiedStorage[address]!![key]
-            if (`val` != null) {
+            val value = modifiedStorage[address]!![key]
+            if (value != null) {
                 // delete mark
-                return `val`
+                return value
             }
         }
         if (parentBackend != null) {
-            return parentBackend!!.dbGet(address, key)
+            return parentBackend.dbGet(address, key)
         }
         val a = trie[address] ?: return HexBytes.empty()
         val v = contractStorageTrie.revert(a.storageRoot)[key]
@@ -178,21 +174,15 @@ open class BackendImpl(
 
     override fun dbHas(address: HexBytes, key: HexBytes): Boolean {
         if (key.size() == 0) throw RuntimeException("invalid key length = 0")
-        val `val` = dbGet(address, key)
-        return `val`.size() != 0
+        val value = dbGet(address, key)
+        return value.size() != 0
     }
 
     override fun getContractCreatedBy(address: HexBytes): HexBytes {
-        return if (modifiedAccounts.containsKey(address)) {
-            modifiedAccounts[address]!!.createdBy
-        } else lookup(address).createdBy
+        return lookup(address).createdBy
     }
 
     override fun setContractCreatedBy(address: HexBytes, createdBy: HexBytes) {
-        if (modifiedAccounts.containsKey(address)) {
-            modifiedAccounts[address]!!.createdBy = createdBy
-            return
-        }
         val a = lookup(address).clone()
         a.createdBy = createdBy
         modifiedAccounts[address] = a
@@ -203,26 +193,29 @@ open class BackendImpl(
         dbSet(address, key, HexBytes.empty())
     }
 
-    override fun getCode(address: HexBytes): HexBytes {
-        var a = modifiedAccounts[address]
-        if (a == null) a = lookup(address).clone()
-        if (a!!.contractHash == null || a.contractHash.size() == 0) return HexBytes.empty()
-        var code = codeCache[a.contractHash]
-        if (code != null && code.size() != 0) return code
-        code = codeStore[a.contractHash]
+    private fun lookupCode(address: HexBytes): HexBytes {
+        val h = codeCache[address]
+        if(h != null)
+            return h
+        if(parentBackend != null)
+            return parentBackend.lookupCode(address)
+        val code = codeStore[address]
         return code ?: HexBytes.empty()
+    }
+
+    override fun getCode(address: HexBytes): HexBytes {
+        val a = lookup(address)
+        if (a.contractHash == HashUtil.EMPTY_DATA_HASH_HEX)
+            return HexBytes.empty()
+        return lookupCode(a.address)
     }
 
     override fun setCode(address: HexBytes, code: HexBytes) {
         val hash = CryptoContext.hash(code.bytes)
-        if (modifiedAccounts.containsKey(address)) {
-            modifiedAccounts[address]!!.contractHash = HexBytes.fromBytes(hash)
-        } else {
-            val a = lookup(address).clone()
-            a.contractHash = HexBytes.fromBytes(hash)
-            modifiedAccounts[address] = a
-        }
-        codeCache[HexBytes.fromBytes(hash)] = code
+        val a = lookup(address).clone()
+        a.contractHash = HexBytes.fromBytes(hash)
+        modifiedAccounts[address] = a
+        codeCache[address] = code
     }
 
     override fun onEvent(address: HexBytes, topics: List<Uint256>, data: ByteArray) {}

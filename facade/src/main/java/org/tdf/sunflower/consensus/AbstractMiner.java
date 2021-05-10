@@ -95,7 +95,7 @@ public abstract class AbstractMiner implements Miner {
 
         VMResult res;
         synchronized (POOL) {
-            VMExecutor executor = new VMExecutor(tmp, callData, POOL);
+            VMExecutor executor = new VMExecutor(tmp, callData, POOL, 0);
             res = executor.execute();
         }
 

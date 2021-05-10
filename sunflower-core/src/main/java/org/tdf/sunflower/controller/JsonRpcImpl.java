@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.AppConfig;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.facade.TransactionPool;
@@ -149,7 +150,7 @@ public class JsonRpcImpl implements JsonRpc {
         try (Backend repo = getBackendByBlockId(block, true)) {
             byte[] addressAsByteArray = hexToByteArray(address);
             Uint256 balance = repo.getBalance(HexBytes.fromBytes(addressAsByteArray));
-            return toJsonHex(balance.value());
+            return toJsonHex(balance.getValue());
         }
     }
 
@@ -168,7 +169,10 @@ public class JsonRpcImpl implements JsonRpc {
         try (
             Backend backend = getBackendByBlockId(blockId, true);
         ) {
-            return toJsonHex(backend.getNonce(jsonHexToHexBytes(address)));
+            System.out.println(backend);
+            long n = backend.getNonce(jsonHexToHexBytes(address));
+            System.out.println(n);
+            return toJsonHex(n);
         }
     }
 
@@ -223,28 +227,20 @@ public class JsonRpcImpl implements JsonRpc {
     @Override
     public String eth_call(CallArguments args, String bnOrId) throws Exception {
         CallData callData = Objects.requireNonNull(args).toCallData();
-        long start = System.currentTimeMillis();
         try (
             Backend backend = getBackendByBlockId(bnOrId, true);
         ) {
-            VMExecutor executor = new VMExecutor(backend, callData, stackResourcePool);
+            VMExecutor executor = new VMExecutor(backend, callData, stackResourcePool, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getExecutionResult());
-        }finally {
-            long end = System.currentTimeMillis();
-            System.out.println("eth call use " + (end - start) + " ms");
         }
     }
 
     @Override
     public String eth_estimateGas(CallArguments args) throws Exception {
         CallData callData = Objects.requireNonNull(args).toCallData();
-        long start = System.currentTimeMillis();
         try (Backend backend = getBackendByBlockId("latest", true)) {
-            VMExecutor executor = new VMExecutor(backend, callData, stackResourcePool);
+            VMExecutor executor = new VMExecutor(backend, callData, stackResourcePool, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getGasUsed());
-        } finally {
-            long end = System.currentTimeMillis();
-            System.out.println("eth estimate gas use " + (end - start) + " ms");
         }
     }
 

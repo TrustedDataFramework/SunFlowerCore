@@ -191,13 +191,6 @@ public class EntryController {
     }
 
 
-    @GetMapping(value = "/ints", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Double getInts() {
-        return WBI.INSTANCE.getBytes().longValue() * 1.0 / 1024 / 1024;
-    }
-
-
-
     @GetMapping(value = "/contract/{address}/abi", produces = MediaType.APPLICATION_JSON_VALUE)
     public Object getABI(@PathVariable("address") final String address) {
         HexBytes addressHex = Address.of(address);

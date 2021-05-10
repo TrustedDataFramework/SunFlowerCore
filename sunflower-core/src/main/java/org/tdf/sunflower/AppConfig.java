@@ -1,12 +1,22 @@
 package org.tdf.sunflower;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.Value;
 import org.springframework.core.env.Environment;
 import org.tdf.common.types.Uint256;
 import org.tdf.sunflower.facade.PropertyLike;
 import org.tdf.sunflower.types.PropertyReader;
+import org.tdf.sunflower.util.FileUtils;
+
+import java.io.InputStream;
+import java.util.Objects;
+
+import static org.tdf.sunflower.types.ConsensusConfig.DEFAULT_BLOCK_GAS_LIMIT;
 
 @RequiredArgsConstructor
 public class AppConfig {
@@ -19,7 +29,7 @@ public class AppConfig {
     private Integer trieCacheSize;
     private Integer p2pTransactionCacheSize;
     private Integer p2pProposalCacheSize;
-    private Long vmStepLimit;
+    private Long blockGasLimit;
     private Long maxFrames;
     private Integer maxContractCallDepth;
     private Uint256 vmGasPrice;
@@ -65,11 +75,20 @@ public class AppConfig {
         return this.p2pProposalCacheSize;
     }
 
-    public long getStepLimit() {
-        if (this.vmStepLimit != null)
-            return vmStepLimit;
-        this.vmStepLimit = reader.getAsLong("sunflower.vm.step-limit");
-        return this.vmStepLimit;
+    @SneakyThrows
+    public long getBlockGasLimit() {
+        if (this.blockGasLimit != null)
+            return blockGasLimit;
+
+        ObjectMapper objectMapper = new ObjectMapper()
+                .enable(JsonParser.Feature.ALLOW_COMMENTS);
+
+        InputStream in = FileUtils.getInputStream(
+            Objects.requireNonNull(properties.getProperty("sunflower.consensus.genesis"))
+        );
+        JsonNode n = objectMapper.readValue(in, JsonNode.class);
+        blockGasLimit = n.get("gasLimit") == null ? DEFAULT_BLOCK_GAS_LIMIT : n.get("gasLimit").asLong();
+        return blockGasLimit;
     }
 
     public long getMaxFrames() {

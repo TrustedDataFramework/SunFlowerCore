@@ -134,4 +134,9 @@ public class PoAValidator extends AbstractValidator {
 
         return ValidateResult.success();
     }
+
+    @Override
+    public long getBlockGasLimit() {
+        return poA.getConfig().getBlockGasLimit();
+    }
 }

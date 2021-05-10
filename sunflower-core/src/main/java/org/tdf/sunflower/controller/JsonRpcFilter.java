@@ -95,7 +95,7 @@ public class JsonRpcFilter implements Filter {
     private void notifyInvocation(JsonNode requestJson, JsonNode responseJson) throws IOException {
         if (responseJson.has("error")) {
             final String errorMessage = responseJson.get("error").toString();
-            log.warn("Problem when invoking JSON-RPC " + requestJson.toString() + " response:" + errorMessage);
+//            log.warn("Problem when invoking JSON-RPC " + requestJson.toString() + " response:" + errorMessage);
         } else {
             final String methodName = requestJson.get("method").asText();
             final List<JsonNode> params = new ArrayList<>();
@@ -109,9 +109,9 @@ public class JsonRpcFilter implements Filter {
             if (log.isInfoEnabled()) {
                 // passwords could be sent here
                 if (!EXCLUDE_LOGS.contains(methodName)) {
-                    log.info(methodName + "(" + params.stream()
-                        .map(JsonNode::asText)
-                        .collect(Collectors.joining(", ")) + "): " + responseText);
+//                    log.info(methodName + "(" + params.stream()
+//                        .map(JsonNode::asText)
+//                        .collect(Collectors.joining(", ")) + "): " + responseText);
                 } else {
                     // logging is handled manually in service
                 }

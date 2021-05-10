@@ -12,7 +12,7 @@ interface Backend: Closeable{
             String.format(
                 "balance of account %s less than %s",
                 addr,
-                amount.value().toString(10)
+                amount.value.toString(10)
             )
         )
         setBalance(addr, getBalance(addr) - amount)
@@ -33,7 +33,18 @@ interface Backend: Closeable{
     fun setBalance(address: HexBytes, balance: Uint256?)
     fun getNonce(address: HexBytes): Long
     fun setNonce(address: HexBytes, nonce: Long)
-    fun getInitialGas(payloadSize: Int): Long
+    fun getInitialGas(create: Boolean, data: ByteArray): Long {
+        var gas = if (create) { GasConfig.TRANSACTION_CREATE_CONTRACT } else { GasConfig.TRANSACTION }
+        val zero: Byte = 0
+        var i = 0;
+        while(i < data.size) {
+            gas += if (data[i] == zero) { GasConfig.TX_ZERO_DATA } else { GasConfig.TX_NO_ZERO_DATA }
+            i++
+        }
+        if(gas < 0)
+            throw RuntimeException("gas overflow")
+        return gas
+    }
     val builtins: Map<HexBytes, BuiltinContract>
     val bios: Map<HexBytes, BuiltinContract>
     fun dbSet(address: HexBytes, key: HexBytes, value: HexBytes)

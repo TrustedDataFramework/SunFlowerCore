@@ -15,6 +15,8 @@ import java.util.Objects;
 import java.util.Properties;
 
 public class ConsensusConfig {
+    public static final long DEFAULT_BLOCK_GAS_LIMIT = 60_000_000;
+
     @Getter
     protected final PropertyLike properties;
     protected final PropertyReader reader;
@@ -37,6 +39,7 @@ public class ConsensusConfig {
     private HexBytes minerCoinBase;
     private Integer blocksPerEra;
     private Integer maxMiners;
+    private Long blockGasLimit;
 
 
     public String getName() {
@@ -106,6 +109,14 @@ public class ConsensusConfig {
         );
 
         return objectMapper.readValue(in, JsonNode.class);
+    }
+
+    public long getBlockGasLimit() {
+        if (this.blockGasLimit != null)
+            return blockGasLimit;
+        JsonNode n = getGenesisJson();
+        blockGasLimit = n.get("gasLimit") == null ? DEFAULT_BLOCK_GAS_LIMIT : n.get("gasLimit").asLong();
+        return blockGasLimit;
     }
 }
 

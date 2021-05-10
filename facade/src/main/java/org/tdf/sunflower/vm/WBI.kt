@@ -10,10 +10,8 @@ import org.tdf.sunflower.vm.abi.WbiType
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.atomic.AtomicLong
 
 object WBI {
-    val bytes: AtomicLong = AtomicLong(0)
     const val ABI_SECTION_NAME = "__abi";
     const val INIT_SECTION_NAME = "__init"
     const val WBI_MALLOC = "__malloc"
@@ -112,7 +110,6 @@ object WBI {
         val start = (startAndLen ushr 32).toInt()
         val len = startAndLen.toInt()
         val bin = instance.memory.loadN(start, len)
-        this.bytes.addAndGet(bin.size.toLong())
         when (type) {
             WbiType.STRING -> {
                 return String(bin, StandardCharsets.UTF_8)
@@ -128,7 +125,6 @@ object WBI {
     }
 
     private fun mallocInternal(instance: ModuleInstance, type: Long, bin: ByteArray): Int {
-        this.bytes.addAndGet(bin.size.toLong())
         val ptr = instance.execute(WBI_MALLOC, bin.size.toLong())[0]
         instance.memory.put(ptr.toInt(), bin)
         val p = instance.execute(WBI_CHANGE_TYPE, type, ptr, bin.size.toLong())[0]
@@ -145,7 +141,6 @@ object WBI {
     @JvmStatic
     fun malloc(instance: ModuleInstance, s: Uint256): Int {
         val bin = s.noLeadZeroesData
-        this.bytes.addAndGet(bin.size.toLong())
         return mallocInternal(instance, WbiType.UINT_256, bin)
     }
 
