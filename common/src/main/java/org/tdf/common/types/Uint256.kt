@@ -260,15 +260,5 @@ class Uint256 private constructor(val value: BigInteger) : Number() {
         fun of(num: Long): Uint256 {
             return of(BigInteger.valueOf(num))
         }
-
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val bytes = HexBytes.decode("01")
-            val u = of(
-                bytes
-            )
-            println(u)
-        }
     }
 }

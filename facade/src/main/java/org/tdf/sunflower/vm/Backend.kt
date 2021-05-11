@@ -22,6 +22,7 @@ interface Backend: Closeable{
         setBalance(addr, getBalance(addr) + amount)
     }
 
+    fun getContractHash(address: HexBytes): HexBytes
     val height: Long
     val root: Backend
     val trieRoot: HexBytes

@@ -51,11 +51,11 @@ public class Limit implements Hook {
     }
 
     @Override
-    public void onNewFrame(Frame frame) {
+    public void onNewFrame() {
     }
 
     @Override
-    public void onFrameExit(Frame frame) {
+    public void onFrameExit() {
     }
 
     @Override

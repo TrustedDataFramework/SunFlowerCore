@@ -7,7 +7,6 @@ dependencies {
     // dependency without version number are configured by spring dependency management automatically
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-properties:${jacksonVersion}"
 

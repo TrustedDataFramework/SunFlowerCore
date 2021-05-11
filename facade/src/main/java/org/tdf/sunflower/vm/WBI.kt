@@ -109,7 +109,7 @@ object WBI {
         val startAndLen = instance.execute(WBI_PEEK, offset.toLong(), type)[0]
         val start = (startAndLen ushr 32).toInt()
         val len = startAndLen.toInt()
-        val bin = instance.memory.loadN(start, len)
+        val bin = instance.memory.load(start, len)
         when (type) {
             WbiType.STRING -> {
                 return String(bin, StandardCharsets.UTF_8)

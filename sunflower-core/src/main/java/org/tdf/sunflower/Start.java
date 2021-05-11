@@ -47,7 +47,6 @@ import org.tdf.sunflower.pool.TransactionPoolImpl;
 import org.tdf.sunflower.service.ConcurrentSunflowerRepository;
 import org.tdf.sunflower.service.HttpService;
 import org.tdf.sunflower.service.SunflowerRepositoryKVImpl;
-import org.tdf.sunflower.service.SunflowerRepositoryService;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
@@ -56,7 +55,6 @@ import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.util.EnvReader;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MappingUtil;
-import org.tdf.sunflower.vm.hosts.Limit;
 
 import java.io.File;
 import java.net.URL;
@@ -196,10 +194,10 @@ public class Start {
         ApplicationContext context
     ) {
         String type = context.getEnvironment().getProperty("sunflower.database.block-store");
-        type = (type == null || type.isEmpty()) ? "rdbms" : type;
+        type = (type == null || type.isEmpty()) ? "kv" : type;
         switch (type) {
             case "rdbms": {
-                return new SunflowerRepositoryService(context);
+                throw new UnsupportedOperationException();
             }
             case "kv": {
                 SunflowerRepositoryKVImpl ret = new SunflowerRepositoryKVImpl(context);

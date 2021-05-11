@@ -224,12 +224,15 @@ public class JsonRpcImpl implements JsonRpc {
 
     @Override
     public String eth_call(CallArguments args, String bnOrId) throws Exception {
+        long start = System.currentTimeMillis();
         CallData callData = Objects.requireNonNull(args).toCallData();
         try (
             Backend backend = getBackendByBlockId(bnOrId, true);
         ) {
             VMExecutor executor = new VMExecutor(backend, callData, stackResourcePool, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getExecutionResult());
+        } finally {
+            System.out.println("eth call use " + (System.currentTimeMillis() - start) + " ms");
         }
     }
 

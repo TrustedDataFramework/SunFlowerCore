@@ -121,6 +121,10 @@ class BackendImpl(
 
     }
 
+    override fun getContractHash(address: HexBytes): HexBytes {
+        return lookup(address).contractHash
+    }
+
     override val height: Long
         get() = parent.height + 1
     override val parentHash: HexBytes
@@ -199,7 +203,8 @@ class BackendImpl(
             return h
         if(parentBackend != null)
             return parentBackend.lookupCode(address)
-        val code = codeStore[address]
+        val a = lookup(address)
+        val code = codeStore[a.contractHash]
         return code ?: HexBytes.empty()
     }
 

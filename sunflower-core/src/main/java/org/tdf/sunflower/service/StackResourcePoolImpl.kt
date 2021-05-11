@@ -6,6 +6,7 @@ import org.tdf.lotusvm.runtime.StackAllocator
 import org.tdf.sunflower.vm.LockedStackResource
 import org.tdf.sunflower.vm.StackResourcePool
 import org.tdf.sunflower.vm.VMExecutor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 
@@ -24,7 +25,7 @@ class StackResourcePoolImpl : StackResourcePool {
 
     override fun tryGet(): LockedStackResource {
         for (i in (0..locks.size)) {
-            if(!locks[i].tryLock())
+            if(!locks[i].tryLock(1, TimeUnit.SECONDS))
                 continue
             if (resources[i] == null)
                 resources[i] =
@@ -40,6 +41,6 @@ class StackResourcePoolImpl : StackResourcePool {
     }
 
     companion object {
-        const val MAX_POOL_SIZE = 256
+        const val MAX_POOL_SIZE = 16
     }
 }
