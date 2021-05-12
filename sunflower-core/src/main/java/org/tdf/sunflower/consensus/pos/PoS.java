@@ -40,7 +40,7 @@ public class PoS extends AbstractConsensusEngine {
     }
 
     @Override
-    public List<Account> getAlloc() {
+    public Map<HexBytes, Account> getAlloc() {
         return genesis.getAlloc();
     }
 

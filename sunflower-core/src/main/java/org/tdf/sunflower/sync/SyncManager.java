@@ -306,8 +306,8 @@ public class SyncManager implements PeerServerListener, Closeable {
                     Accounts accounts = msg.getBodyAs(Accounts.class);
                     for (SyncAccount sa : accounts.getAccounts()) {
                         Account a = sa.getAccount();
-                        if (this.fastSyncAddresses.contains(a.getAddress()))
-                            continue;
+//                        if (this.fastSyncAddresses.contains(a.getAddress()))
+//                            continue;
                         // validate contract code
                         if (a.getContractHash() != null && a.getContractHash().size() != 0) {
                             HexBytes key = HexBytes.fromBytes(CryptoContext.hash(sa.getContractCode().getBytes()));
@@ -334,8 +334,8 @@ public class SyncManager implements PeerServerListener, Closeable {
                             }
                         }
 
-                        fastSyncAddresses.add(a.getAddress());
-                        fastSyncTrie.put(a.getAddress(), a);
+//                        fastSyncAddresses.add(a.getAddress());
+//                        fastSyncTrie.put(a.getAddress(), a);
                     }
                     log.info("synced accounts = " + fastSyncAddresses.size());
                     if (accounts.isTraversed()) {

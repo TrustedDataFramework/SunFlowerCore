@@ -166,8 +166,8 @@ public class EntryController {
         HexBytes addressHex = Address.of(addressOrPublicKey);
         Account a = accountTrie.get(sunflowerRepository.getBestHeader().getStateRoot(), addressHex);
         if (a == null)
-            a = Account.emptyAccount(addressHex, Uint256.ZERO);
-        return AccountView.fromAccount(a);
+            a = Account.emptyAccount(Uint256.ZERO);
+        return AccountView.fromAccount(addressHex, a);
     }
 
     @GetMapping(value = "/peers", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -298,9 +298,9 @@ public class EntryController {
         // if the account is not contract account, this field will be null
         private final HexBytes storageRoot;
 
-        static AccountView fromAccount(Account account) {
-            return new AccountView(account.getAddress(), account.getNonce(), account.getBalance(),
-                account.getCreatedBy(), account.getContractHash(),
+        static AccountView fromAccount(HexBytes address, Account account) {
+            return new AccountView(address, account.getNonce(), account.getBalance(),
+                Address.empty(), account.getContractHash(),
                 account.getStorageRoot());
         }
     }

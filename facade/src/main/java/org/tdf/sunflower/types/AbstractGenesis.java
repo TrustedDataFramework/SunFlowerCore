@@ -8,10 +8,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Account;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 @AllArgsConstructor
 public abstract class AbstractGenesis {
@@ -38,19 +35,19 @@ public abstract class AbstractGenesis {
         return HexBytes.fromBytes(ByteUtil.longToBytesNoLeadZeroes(getGasLimit()));
     }
 
-    public List<Account> getAlloc() {
+    public Map<HexBytes, Account> getAlloc() {
         JsonNode alloc = parsed.get("alloc");
 
         if (alloc == null)
-            return Collections.emptyList();
+            return Collections.emptyMap();
 
-        List<Account> r = new ArrayList<>();
+        Map<HexBytes, Account> r = new HashMap<>();
         for (Iterator<String> it = alloc.fieldNames(); it.hasNext(); ) {
             String k = it.next();
             String v = alloc.get(k).asText();
             BigInteger b = v.startsWith("0x") ? new BigInteger(v.substring(2), 16) : new BigInteger(v);
             Uint256 balance = Uint256.of(b);
-            r.add(Account.emptyAccount(HexBytes.fromHex(k), balance));
+            r.put(HexBytes.fromHex(k), Account.emptyAccount(balance));
         }
         return r;
     }

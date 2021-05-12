@@ -160,7 +160,6 @@ public class VMExecutor {
                     // increase nonce here to avoid conflicts
                     backend.setNonce(callData.getCaller(), n + 1);
                     backend.setCode(receiver, HexBytes.fromBytes(code));
-                    backend.setContractCreatedBy(receiver, callData.getCaller());
                     module = new Module(code);
                 } else {
                     HexBytes hash = backend.getContractHash(receiver);

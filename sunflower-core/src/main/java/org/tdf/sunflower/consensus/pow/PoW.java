@@ -2,6 +2,7 @@ package org.tdf.sunflower.consensus.pow;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
@@ -13,6 +14,7 @@ import org.tdf.sunflower.types.CryptoContext;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 
 @Slf4j(topic = "pow")
@@ -43,7 +45,7 @@ public class PoW extends AbstractConsensusEngine {
     }
 
     @Override
-    public List<Account> getAlloc() {
+    public Map<HexBytes, Account> getAlloc() {
         return genesis.getAlloc();
     }
 

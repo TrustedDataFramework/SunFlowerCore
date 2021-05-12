@@ -41,7 +41,7 @@ class BackendImpl(
             return a
         if (parentBackend != null) return parentBackend.lookup(address)
         val aInTrie = trie[address]
-        return aInTrie ?: Account.emptyAccount(address, Uint256.ZERO)
+        return aInTrie ?: Account.emptyAccount(Uint256.ZERO)
     }
 
     override fun createChild(): BackendImpl {
@@ -106,7 +106,11 @@ class BackendImpl(
                 }
             }
             a.storageRoot = s.commit()
-            tmpTrie.put(addr, a)
+
+            if(!a.isEmpty)
+                tmpTrie.put(addr, a)
+            else
+                tmpTrie.remove(addr)
         }
         for ((key, value) in codeCache) {
             codeStore.put(
@@ -182,16 +186,6 @@ class BackendImpl(
         return value.size() != 0
     }
 
-    override fun getContractCreatedBy(address: HexBytes): HexBytes {
-        return lookup(address).createdBy
-    }
-
-    override fun setContractCreatedBy(address: HexBytes, createdBy: HexBytes) {
-        val a = lookup(address).clone()
-        a.createdBy = createdBy
-        modifiedAccounts[address] = a
-    }
-
     override fun dbRemove(address: HexBytes, key: HexBytes) {
         if (key.size() == 0) throw RuntimeException("invalid key length = 0")
         dbSet(address, key, HexBytes.empty())
@@ -212,7 +206,7 @@ class BackendImpl(
         val a = lookup(address)
         if (a.contractHash == HashUtil.EMPTY_DATA_HASH_HEX)
             return HexBytes.empty()
-        return lookupCode(a.address)
+        return lookupCode(address)
     }
 
     override fun setCode(address: HexBytes, code: HexBytes) {

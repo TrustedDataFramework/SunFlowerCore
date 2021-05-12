@@ -24,6 +24,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -59,7 +60,7 @@ public class PoA extends AbstractConsensusEngine {
     }
 
     @Override
-    public List<Account> getAlloc() {
+    public Map<HexBytes, Account> getAlloc() {
         return genesis.getAlloc();
     }
 
@@ -107,7 +108,6 @@ public class PoA extends AbstractConsensusEngine {
                             }
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
                     }
 
                 }, 0, 30, TimeUnit.SECONDS

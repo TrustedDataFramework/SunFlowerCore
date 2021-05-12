@@ -7,6 +7,7 @@ import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * state storage
@@ -20,7 +21,7 @@ public interface StateTrie<ID, S> {
 
     // init genesis states
     HexBytes init(
-        List<Account> alloc,
+        Map<HexBytes, Account> alloc,
         List<BuiltinContract> bios,
         List<BuiltinContract> builtins
     );

@@ -34,10 +34,7 @@ import org.tdf.sunflower.util.FileUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Getter
 @Setter
@@ -53,18 +50,6 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
 
     public VrfEngine() {
 
-    }
-
-    @Override
-    public List<Account> getAlloc() {
-        List<Account> ret = new ArrayList<>();
-        if (genesis.alloc != null) {
-            genesis.alloc.forEach((k, v) -> {
-                Account a = Account.emptyAccount(HexBytes.fromHex(k), Uint256.of(v));
-                ret.add(a);
-            });
-        }
-        return ret;
     }
 
     @Override

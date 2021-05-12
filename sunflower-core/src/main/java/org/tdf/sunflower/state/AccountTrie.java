@@ -81,9 +81,9 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
         this.contractCodeStore = contractCodeStore;
     }
 
-    @Override
+
     @SneakyThrows
-    public HexBytes init(List<Account> alloc, List<BuiltinContract> bios, List<BuiltinContract> builtins) {
+    public HexBytes init(Map<HexBytes, Account> alloc, List<BuiltinContract> bios, List<BuiltinContract> builtins) {
         this.builtins = new HashMap<>();
         for (BuiltinContract builtin : builtins) {
             this.builtins.put(builtin.getAddress(), builtin);
@@ -96,14 +96,14 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
 
         Map<HexBytes, Account> genesisStates = new HashMap<>();
 
-        for (Account account : alloc) {
-            genesisStates.put(account.getAddress(), account);
+        for (Map.Entry<HexBytes, Account> entry : alloc.entrySet()) {
+            genesisStates.put(entry.getKey(), entry.getValue());
         }
 
 
         for (BuiltinContract c : ListUtils.sum(bios, builtins)) {
             HexBytes address = c.getAddress();
-            Account a = Account.emptyAccount(address, Uint256.ZERO);
+            Account a = Account.emptyAccount(Uint256.ZERO);
             Trie<HexBytes, HexBytes> trie = contractStorageTrie.revert();
             for (Map.Entry<HexBytes, HexBytes> entry : c.getGenesisStorage().entrySet()) {
                 trie.put(entry.getKey(), entry.getValue());

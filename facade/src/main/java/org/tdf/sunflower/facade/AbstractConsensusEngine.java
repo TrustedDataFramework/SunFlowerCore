@@ -14,6 +14,7 @@ import org.tdf.sunflower.types.ConsensusConfig;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 
 @Getter
@@ -68,8 +69,8 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     public AbstractConsensusEngine() {
     }
 
-    public List<Account> getAlloc() {
-        return Collections.emptyList();
+    public Map<HexBytes, Account> getAlloc() {
+        return Collections.emptyMap();
     }
 
     public List<BuiltinContract> getBuiltins() {
