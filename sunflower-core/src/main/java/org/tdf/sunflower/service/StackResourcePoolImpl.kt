@@ -17,7 +17,7 @@ class StackResourcePoolImpl : StackResourcePool {
 
     init {
         val locks = mutableListOf<Lock>()
-        for(i in (0 until MAX_POOL_SIZE)) {
+        for (i in (0 until MAX_POOL_SIZE)) {
             locks.add(ReentrantLock())
         }
         this.locks = locks
@@ -25,15 +25,22 @@ class StackResourcePoolImpl : StackResourcePool {
 
     override fun tryGet(): LockedStackResource {
         for (i in (locks.indices)) {
-            if(!locks[i].tryLock(1, TimeUnit.SECONDS))
+            if (!locks[i].tryLock(
+                    1, if (i == MAX_POOL_SIZE - 1) {
+                        TimeUnit.SECONDS
+                    } else {
+                        TimeUnit.MILLISECONDS
+                    }
+                )
+            )
                 continue
             if (resources[i] == null)
                 resources[i] =
-                LimitedStackAllocator(
-                    VMExecutor.MAX_STACK_SIZE,
-                    VMExecutor.MAX_FRAMES,
-                    VMExecutor.MAX_LABELS
-                )
+                    LimitedStackAllocator(
+                        VMExecutor.MAX_STACK_SIZE,
+                        VMExecutor.MAX_FRAMES,
+                        VMExecutor.MAX_LABELS
+                    )
             return LockedStackResource(resources[i]!!, locks[i])
         }
         throw RuntimeException("busy...")
