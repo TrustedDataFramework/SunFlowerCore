@@ -17,14 +17,14 @@ class StackResourcePoolImpl : StackResourcePool {
 
     init {
         val locks = mutableListOf<Lock>()
-        for(i in (0..MAX_POOL_SIZE)) {
+        for(i in (0 until MAX_POOL_SIZE)) {
             locks.add(ReentrantLock())
         }
         this.locks = locks
     }
 
     override fun tryGet(): LockedStackResource {
-        for (i in (0 until locks.size)) {
+        for (i in (locks.indices)) {
             if(!locks[i].tryLock(1, TimeUnit.SECONDS))
                 continue
             if (resources[i] == null)
@@ -34,7 +34,6 @@ class StackResourcePoolImpl : StackResourcePool {
                     VMExecutor.MAX_FRAMES,
                     VMExecutor.MAX_LABELS
                 )
-
             return LockedStackResource(resources[i]!!, locks[i])
         }
         throw RuntimeException("busy...")
