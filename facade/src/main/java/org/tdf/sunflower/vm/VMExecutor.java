@@ -9,7 +9,6 @@ import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.lotusvm.runtime.BaseMemory;
 import org.tdf.lotusvm.runtime.Memory;
 import org.tdf.lotusvm.runtime.UnsafeMemory;
 import org.tdf.lotusvm.types.Module;
@@ -98,6 +97,7 @@ public class VMExecutor {
                 callData.getCaller().getBytes(),
                 callData.getTxNonceAsBytes()
             );
+            callData.setTo(contractAddress);
         }
 
         // 2. set initial gas by payload size
@@ -140,8 +140,9 @@ public class VMExecutor {
                 }
 
                 Module module;
+                // contract constructor/call arguments
                 byte[] data;
-                HexBytes contractAddress;
+                HexBytes receiver = callData.getTo();
                 boolean create = callData.getCallType() == CallType.CREATE;
 
                 // if this is contract deploy, should create contract account
@@ -157,41 +158,34 @@ public class VMExecutor {
                     data = WBI.extractInitData(tmpModule);
 
                     // increase nonce here to avoid conflicts
-
-                    contractAddress =
-                        HashUtil.calcNewAddrHex(
-                            callData.getCaller().getBytes(),
-                            ByteUtil.longToBytesNoLeadZeroes(n)
-                        )
-
-                    ;
                     backend.setNonce(callData.getCaller(), n + 1);
-                    callData.setTo(contractAddress);
-                    backend.setCode(contractAddress, HexBytes.fromBytes(code));
-                    backend.setContractCreatedBy(contractAddress, callData.getCaller());
+                    backend.setCode(receiver, HexBytes.fromBytes(code));
+                    backend.setContractCreatedBy(receiver, callData.getCaller());
                     module = new Module(code);
                 } else {
-                    contractAddress = callData.getTo();
-                    HexBytes hash = backend.getContractHash(contractAddress);
+                    HexBytes hash = backend.getContractHash(receiver);
+                    // this is a transfer transaction
                     if(hash.equals(HashUtil.EMPTY_DATA_HASH_HEX))
                         module = null;
                     else
-                    module = CACHE.get(backend.getContractHash(contractAddress), () -> {
-                        byte[] code = backend.getCode(contractAddress).getBytes();
-                        // call a non-contract account
-                        if (code.length == 0 && !callData.getData().isEmpty())
-                            throw new RuntimeException("call receiver not a contract");
-                        // transfer to a contract account
-                        if (code.length != 0 && callData.getData().isEmpty()) {
-                            throw new RuntimeException("transfer to a contract");
-                        }
+                    module = CACHE.get(backend.getContractHash(receiver), () -> {
+                        byte[] code = backend.getCode(receiver).getBytes();
+                        if(code == null || code.length == 0)
+                            throw new RuntimeException("contract code not found");
                         return new Module(code);
                     });
-
                     data = callData.getData().getBytes();
                 }
 
-                backend.addBalance(contractAddress, callData.getValue());
+                // call a non-contract account
+                if (module == null && !callData.getData().isEmpty())
+                    throw new RuntimeException("call receiver not a contract");
+                // transfer to a contract account
+                if (module != null && callData.getData().isEmpty()) {
+                    throw new RuntimeException("transfer to a contract");
+                }
+
+                backend.addBalance(receiver, callData.getValue());
                 backend.subBalance(callData.getCaller(), callData.getValue());
 
                 if (module == null)

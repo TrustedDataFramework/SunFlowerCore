@@ -12,7 +12,7 @@ import java.util.Collections;
 
 public class U256Host extends HostFunction {
     enum U256OP {
-        SUM,
+        ADD,
         SUB,
         MUL,
         DIV,
@@ -36,7 +36,7 @@ public class U256Host extends HostFunction {
         Uint256 r = (Uint256) WBI.peek(getInstance(), (int) longs[2], WbiType.UINT_256);
         Uint256 res;
         switch (op) {
-            case SUM:
+            case ADD:
                 res = l.uncheckedPlus(r);
                 break;
             case SUB:
