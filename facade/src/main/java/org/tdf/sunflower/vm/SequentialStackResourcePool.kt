@@ -12,7 +12,6 @@ class SequentialStackResourcePool(val maxSize: Int) : StackResourcePool {
                 RcStackResource(LimitedStackAllocator(VMExecutor.MAX_STACK_SIZE, VMExecutor.MAX_FRAMES, VMExecutor.MAX_LABELS))
             if(resources[i]!!.refers() > 0)
                 continue
-            resources[i]!!.clear()
             return resources[i]!!
         }
         throw RuntimeException("resource pool overflow")

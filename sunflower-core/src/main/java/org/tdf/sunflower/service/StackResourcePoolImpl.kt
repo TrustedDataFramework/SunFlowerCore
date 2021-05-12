@@ -24,7 +24,7 @@ class StackResourcePoolImpl : StackResourcePool {
     }
 
     override fun tryGet(): LockedStackResource {
-        for (i in (0..locks.size)) {
+        for (i in (0 until locks.size)) {
             if(!locks[i].tryLock(1, TimeUnit.SECONDS))
                 continue
             if (resources[i] == null)
