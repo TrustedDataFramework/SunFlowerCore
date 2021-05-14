@@ -7,7 +7,7 @@ import org.tdf.sunflower.state.Address
 import org.tdf.sunflower.types.Transaction
 
 
-data class CallData (
+data class CallData(
     var caller: HexBytes = Address.empty(),
     var value: Uint256 = Uint256.ZERO,
     var txValue: Uint256 = Uint256.ZERO,
@@ -20,7 +20,7 @@ data class CallData (
     var txNonce: Long = 0,
     var gasPrice: Uint256 = Uint256.ZERO,
     var gasLimit: Uint256 = Uint256.ZERO,
-    ) {
+) {
 
     val txNonceAsBytes: ByteArray
         get() = ByteUtil.longToBytesNoLeadZeroes(txNonce)
@@ -43,8 +43,8 @@ data class CallData (
         @JvmStatic
         fun fromTransaction(tx: Transaction, coinbase: Boolean): CallData {
             var t = CallType.COINBASE
-            val origin = if(coinbase) Address.empty() else tx.senderHex
-            if(!coinbase){
+            val origin = if (coinbase) Address.empty() else tx.senderHex
+            if (!coinbase) {
                 t = if (tx.receiveHex.isEmpty) CallType.CREATE else CallType.CALL
             }
             return CallData(

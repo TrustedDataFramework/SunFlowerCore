@@ -119,7 +119,7 @@ public class PoAMiner extends AbstractMiner {
             return;
         }
 
-        try (RepositoryReader rd = blockRepository.getReader()){
+        try (RepositoryReader rd = blockRepository.getReader()) {
             Block best = rd.getBestBlock();
             long now = OffsetDateTime.now().toEpochSecond();
 

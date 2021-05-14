@@ -7,7 +7,6 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.facade.IRepositoryService;
 import org.tdf.sunflower.facade.RepositoryReader;
-import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.StorageWrapper;
@@ -169,7 +168,7 @@ public class Authentication extends AbstractBuiltIn {
                 return Collections.emptyList();
             }
             case "getProposer": {
-                try(RepositoryReader rd = repository.getReader()) {
+                try (RepositoryReader rd = repository.getReader()) {
                     Header parent = rd.getHeaderByHash(backend.getParentHash());
                     Optional<Proposer> o = Authentication.getProposerInternal(parent, ((BigInteger) args[0]).longValue(), nodes, this.config.getBlockInterval());
                     Proposer p = o.orElse(new Proposer(Address.empty(), 0, 0));

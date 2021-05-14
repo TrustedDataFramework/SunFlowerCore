@@ -8,8 +8,9 @@ import org.tdf.sunflower.facade.Validator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
-import org.tdf.sunflower.vm.*;
-import org.tdf.sunflower.vm.hosts.Limit;
+import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallData;
+import org.tdf.sunflower.vm.VMExecutor;
 
 import java.util.*;
 
@@ -79,17 +80,17 @@ public abstract class AbstractValidator implements Validator {
 
 
             for (Transaction tx : block.getBody().subList(1, block.getBody().size())) {
-                if(currentGas > getBlockGasLimit())
+                if (currentGas > getBlockGasLimit())
                     return BlockValidateResult.fault("block gas overflow");
 
                 VMResult r;
 
-                    VMExecutor executor = new VMExecutor(
-                        tmp,
-                        CallData.fromTransaction(tx, false),
-                        Math.min(getBlockGasLimit() - currentGas, tx.getGasLimitAsU256().longValue())
-                    );
-                    r = executor.execute();
+                VMExecutor executor = new VMExecutor(
+                    tmp,
+                    CallData.fromTransaction(tx, false),
+                    Math.min(getBlockGasLimit() - currentGas, tx.getGasLimitAsU256().longValue())
+                );
+                r = executor.execute();
 
                 results.put(HexBytes.fromBytes(tx.getHash()), r);
                 totalFee = totalFee.plus(r.getFee());

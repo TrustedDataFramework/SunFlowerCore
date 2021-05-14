@@ -159,9 +159,9 @@ public class SyncManager implements PeerServerListener, Closeable {
     @Override
     public void onMessage(Context context, PeerServer server) {
         executorService.execute(() -> {
-            try (RepositoryWriter writer = repository.getWriter()){
+            try (RepositoryWriter writer = repository.getWriter()) {
                 onMessageInternal(context, server, writer);
-            };
+            }
         });
     }
 
@@ -169,7 +169,6 @@ public class SyncManager implements PeerServerListener, Closeable {
     private void onMessageInternal(Context context, PeerServer server, RepositoryReader writer) {
         Optional<SyncMessage> o = SyncMessage.decode(context.getMessage());
         Block bestBlock = writer.getBestBlock();
-        ;
         if (!o.isPresent()) return;
         SyncMessage msg = o.get();
         log.debug("receive {} message from {}", msg.getCode(), context.getRemote());
@@ -383,7 +382,7 @@ public class SyncManager implements PeerServerListener, Closeable {
         }
         if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
             return;
-        try (RepositoryReader rd = repository.getReader()){
+        try (RepositoryReader rd = repository.getReader()) {
             Header best = rd.getBestHeader();
             blocks.sort(Block.FAT_COMPARATOR);
             for (Block block : blocks) {
@@ -509,7 +508,7 @@ public class SyncManager implements PeerServerListener, Closeable {
         if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
             throw new RuntimeException("busy...");
         }
-        try (RepositoryReader rd = repository.getReader()){
+        try (RepositoryReader rd = repository.getReader()) {
             List<Block> ret = new ArrayList<>();
             Set<HexBytes> orphans = new HashSet<>();
             Set<HexBytes> noOrphans = new HashSet<>();
@@ -544,7 +543,7 @@ public class SyncManager implements PeerServerListener, Closeable {
             return;
         Iterator<Block> it = queue.iterator();
 
-        try (RepositoryWriter writer = repository.getWriter()){
+        try (RepositoryWriter writer = repository.getWriter()) {
             Header best = writer.getBestHeader();
             Set<HexBytes> orphans = new HashSet<>();
             while (it.hasNext()) {
@@ -585,7 +584,7 @@ public class SyncManager implements PeerServerListener, Closeable {
 
     public void sendStatus() {
         if (fastSyncing) return;
-        try(RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repository.getReader()) {
             Header best = rd.getBestHeader();
             Block genesis = rd.getGenesis();
             Status status = new Status(

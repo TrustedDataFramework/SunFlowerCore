@@ -13,13 +13,17 @@ import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.TransactionPoolConfig
 import org.tdf.sunflower.events.NewBestBlock
 import org.tdf.sunflower.events.NewTransactionsCollected
-import org.tdf.sunflower.facade.*
+import org.tdf.sunflower.facade.ConsensusEngine
+import org.tdf.sunflower.facade.IRepositoryService
+import org.tdf.sunflower.facade.PendingTransactionValidator
+import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
-import org.tdf.sunflower.vm.*
+import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallData.Companion.fromTransaction
-import org.tdf.sunflower.vm.hosts.Limit
+import org.tdf.sunflower.vm.LockableBackend
+import org.tdf.sunflower.vm.VMExecutor
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -162,7 +166,7 @@ class TransactionPoolImpl(
             }
 
             val blockGasLimit = AppConfig.INSTANCE.blockGasLimit
-            if(gasUsed >= blockGasLimit)
+            if (gasUsed >= blockGasLimit)
                 return
 
             // try to execute
@@ -177,9 +181,8 @@ class TransactionPoolImpl(
                 val res = vmExecutor.execute()
 
 
-
                 // execute successfully
-                if(gasUsed + res.gasUsed > blockGasLimit)
+                if (gasUsed + res.gasUsed > blockGasLimit)
                     return
                 val receipt = TransactionReceipt(
                     ByteUtil.longToBytesNoLeadZeroes(gasUsed + res.gasUsed),
@@ -222,7 +225,7 @@ class TransactionPoolImpl(
     }
 
     override fun reset(parent: Header) {
-        if(!lock.writeLock().tryLock())
+        if (!lock.writeLock().tryLock())
             return
         try {
             resetInternal(parent)
@@ -234,7 +237,7 @@ class TransactionPoolImpl(
 
     override fun current(): Backend {
         lock.readLock().lock()
-        val rd = repository.getReader();
+        val rd = repository.getReader()
         try {
             return if (current != null) {
                 this.lock.readLock().lock()
@@ -252,7 +255,7 @@ class TransactionPoolImpl(
     }
 
     private fun onNewBestBlock(event: NewBestBlock) {
-        if(!lock.writeLock().tryLock()) {
+        if (!lock.writeLock().tryLock()) {
             return
         }
         try {

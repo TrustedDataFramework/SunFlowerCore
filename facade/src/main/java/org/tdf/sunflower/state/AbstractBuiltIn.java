@@ -61,7 +61,7 @@ public abstract class AbstractBuiltIn implements BuiltinContract {
 
     @Override
     public List<?> view(HexBytes blockHash, String method, Object... args) {
-        try(RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repository.getReader()) {
             Header parent = rd.getHeaderByHash(blockHash);
             Abi.Function func = getFunction(method);
             byte[] encoded = func.encode(args);

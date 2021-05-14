@@ -10,7 +10,7 @@ import kotlin.coroutines.CoroutineContext
 /**
  * lock-free event bus implementation
  */
-class EventBus : CoroutineScope{
+class EventBus : CoroutineScope {
     override val coroutineContext: CoroutineContext = CoroutineName("event-bus")
     private val listenersLock = false
     private var listeners: Map<Class<*>, List<Consumer<Any>>> = HashMap()

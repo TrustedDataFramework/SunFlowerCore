@@ -6,7 +6,7 @@ import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.state.BuiltinContract
 import java.io.Closeable
 
-interface Backend: Closeable{
+interface Backend : Closeable {
     fun subBalance(addr: HexBytes, amount: Uint256) {
         if (getBalance(addr) < amount) throw RuntimeException(
             String.format(
@@ -35,17 +35,26 @@ interface Backend: Closeable{
     fun getNonce(address: HexBytes): Long
     fun setNonce(address: HexBytes, nonce: Long)
     fun getInitialGas(create: Boolean, data: ByteArray): Long {
-        var gas = if (create) { GasConfig.TRANSACTION_CREATE_CONTRACT } else { GasConfig.TRANSACTION }
+        var gas = if (create) {
+            GasConfig.TRANSACTION_CREATE_CONTRACT
+        } else {
+            GasConfig.TRANSACTION
+        }
         val zero: Byte = 0
         var i = 0;
-        while(i < data.size) {
-            gas += if (data[i] == zero) { GasConfig.TX_ZERO_DATA } else { GasConfig.TX_NO_ZERO_DATA }
+        while (i < data.size) {
+            gas += if (data[i] == zero) {
+                GasConfig.TX_ZERO_DATA
+            } else {
+                GasConfig.TX_NO_ZERO_DATA
+            }
             i++
         }
-        if(gas < 0)
+        if (gas < 0)
             throw RuntimeException("gas overflow")
         return gas
     }
+
     val builtins: Map<HexBytes, BuiltinContract>
     val bios: Map<HexBytes, BuiltinContract>
     fun dbSet(address: HexBytes, key: HexBytes, value: HexBytes)

@@ -11,10 +11,12 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import org.tdf.common.types.Uint256.Uint256Deserializer
 import org.tdf.common.types.Uint256.Uint256EncoderDecoder
-import org.tdf.common.util.*
+import org.tdf.common.util.BigIntegers
+import org.tdf.common.util.ByteUtil
+import org.tdf.common.util.HexBytes
+import org.tdf.common.util.IntSerializer
 import org.tdf.rlp.*
 import java.io.IOException
-import java.lang.NullPointerException
 import java.math.BigInteger
 import kotlin.math.sign
 
@@ -199,6 +201,7 @@ class Uint256 private constructor(val value: BigInteger) : Number() {
         const val MAX_POW = 256
         val _2_256 = BigInteger.valueOf(2).pow(MAX_POW)
         val MAX_VALUE = _2_256.subtract(BigInteger.ONE)
+
         @JvmField
         val ZERO = Uint256(BigInteger.ZERO)
         val ONE = Uint256(BigInteger.ONE)
@@ -213,7 +216,7 @@ class Uint256 private constructor(val value: BigInteger) : Number() {
 
         @JvmStatic
         fun of(v: BigInteger): Uint256 {
-            if( v < BigInteger.ZERO)
+            if (v < BigInteger.ZERO)
                 throw RuntimeException("uint256 overflow")
             return Uint256(v)
         }

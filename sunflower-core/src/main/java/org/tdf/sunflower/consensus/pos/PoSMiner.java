@@ -8,7 +8,6 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.IRepositoryService;
 import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.TransactionPool;
@@ -94,7 +93,7 @@ public class PoSMiner extends AbstractMiner {
             return;
         }
 
-        try (RepositoryReader rd = blockRepository.getReader()){
+        try (RepositoryReader rd = blockRepository.getReader()) {
             Block best = rd.getBestBlock();
             // 判断是否轮到自己出块
             Optional<Proposer> o = getProposer(

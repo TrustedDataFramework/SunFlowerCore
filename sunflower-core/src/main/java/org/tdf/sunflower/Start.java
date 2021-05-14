@@ -44,8 +44,8 @@ import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.net.PeerServerImpl;
 import org.tdf.sunflower.pool.TransactionPoolImpl;
-import org.tdf.sunflower.service.*;
-import org.tdf.sunflower.state.Account;
+import org.tdf.sunflower.service.HttpService;
+import org.tdf.sunflower.service.RepositoryKVImpl;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
@@ -203,7 +203,7 @@ public class Start {
                 RepositoryKVImpl kv = new RepositoryKVImpl(context);
                 kv.setAccountTrie(accountTrie);
                 return new RepositoryService(
-                   kv
+                    kv
                 );
             }
         }
@@ -310,7 +310,7 @@ public class Start {
         Block g = engine.getGenesisBlock();
         g.setStateRoot(root);
 
-        try(RepositoryWriter writer = repositoryService.getWriter()) {
+        try (RepositoryWriter writer = repositoryService.getWriter()) {
             writer.saveGenesis(g);
         }
 

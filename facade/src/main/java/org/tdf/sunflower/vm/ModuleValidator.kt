@@ -2,9 +2,8 @@ package org.tdf.sunflower.vm
 
 import org.tdf.lotusvm.types.ExportSection
 import org.tdf.lotusvm.types.ImportType
-import org.tdf.lotusvm.types.Module;
+import org.tdf.lotusvm.types.Module
 import org.tdf.sunflower.vm.abi.Abi
-import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets
 
 object ModuleValidator {
@@ -22,15 +21,15 @@ object ModuleValidator {
         // when constructor found, __init section must exists
         val inits = customs.filter { c -> c.name == WBI.INIT_SECTION_NAME }
 
-        if(inits.size > 1)
+        if (inits.size > 1)
             throw RuntimeException("too many __init sections")
 
         val constructor = abi.findConstructor()
         // when __init section found, constructor should exists
-        if(inits.isNotEmpty() && constructor == null)
+        if (inits.isNotEmpty() && constructor == null)
             throw RuntimeException("constructor not found")
 
-        if(constructor != null && inits.isEmpty() && !update) {
+        if (constructor != null && inits.isEmpty() && !update) {
             // when update __init section will be dropped
             throw RuntimeException("constructor found, while __init section not found")
         }
@@ -41,10 +40,10 @@ object ModuleValidator {
         val moduleFunctions = mutableMapOf<String, Pair<Int, Int>>()
 
         for (entry in abi) {
-            if(entry.type == Abi.Entry.Type.constructor) {
+            if (entry.type == Abi.Entry.Type.constructor) {
                 abiFunctions["init"] = Pair(entry.inputs.size, entry.outputs.size)
             }
-            if(entry.type == Abi.Entry.Type.function) {
+            if (entry.type == Abi.Entry.Type.function) {
                 abiFunctions[entry.name!!] = Pair(entry.inputs.size, entry.outputs.size)
             }
         }
@@ -52,23 +51,23 @@ object ModuleValidator {
         val hostsCount: Int = m.importSection?.imports?.filter { x -> x.type == ImportType.TYPE_INDEX }?.count() ?: 0
         for (export in m.exportSection.exports) {
             // skip wbi functions
-            if(export.name == WBI.WBI_CHANGE_TYPE || export.name == WBI.WBI_MALLOC || export.name == WBI.WBI_PEEK)
+            if (export.name == WBI.WBI_CHANGE_TYPE || export.name == WBI.WBI_MALLOC || export.name == WBI.WBI_PEEK)
                 continue
-            if(export.type == ExportSection.ExportType.FUNCTION_INDEX) {
+            if (export.type == ExportSection.ExportType.FUNCTION_INDEX) {
                 val typeIdx = m.functionSection.typeIndices[export.index - hostsCount]
                 val type = m.typeSection.functionTypes[typeIdx]
                 moduleFunctions[export.name!!] = Pair(type.parameterTypes.size, type.resultTypes.size)
             }
         }
 
-        if(moduleFunctions.size != abiFunctions.size)
+        if (moduleFunctions.size != abiFunctions.size)
             throw RuntimeException("functions in abi is not equal to module")
 
         for (entry in abiFunctions) {
             val md = moduleFunctions[entry.key]!!
-            if(entry.value.second > 1 || md.second > 1)
+            if (entry.value.second > 1 || md.second > 1)
                 throw RuntimeException("wasm function should return at most one output")
-            if(md != entry.value){
+            if (md != entry.value) {
                 throw RuntimeException("""arity not equal for function name ${entry.key} abi = ${entry.value} module = $md""")
             }
         }

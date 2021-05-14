@@ -3,12 +3,12 @@ package org.tdf.sunflower.vm.hosts
 import org.tdf.common.util.HexBytes
 import org.tdf.lotusvm.runtime.HostFunction
 import org.tdf.lotusvm.types.FunctionType
+import org.tdf.lotusvm.types.Module
 import org.tdf.lotusvm.types.ValueType
+import org.tdf.sunflower.vm.ModuleValidator
 import org.tdf.sunflower.vm.VMExecutor
 import org.tdf.sunflower.vm.WBI
 import org.tdf.sunflower.vm.abi.WbiType
-import org.tdf.lotusvm.types.Module
-import org.tdf.sunflower.vm.ModuleValidator
 
 class Reflect(private val executor: VMExecutor) : HostFunction("_reflect", FUNCTION_TYPE) {
     override fun execute(vararg longs: Long): Long {

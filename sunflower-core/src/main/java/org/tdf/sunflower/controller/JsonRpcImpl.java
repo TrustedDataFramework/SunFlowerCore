@@ -176,7 +176,7 @@ public class JsonRpcImpl implements JsonRpc {
     @Override
     public String eth_getTransactionCount(String address, String blockId) throws Exception {
         try (
-            Backend backend = getBackendByBlockId(blockId, true);
+            Backend backend = getBackendByBlockId(blockId, true)
         ) {
             long n = backend.getNonce(jsonHexToHexBytes(address));
             return toJsonHex(n);
@@ -236,7 +236,7 @@ public class JsonRpcImpl implements JsonRpc {
         long start = System.currentTimeMillis();
         CallData callData = Objects.requireNonNull(args).toCallData();
         try (
-            Backend backend = getBackendByBlockId(bnOrId, true);
+            Backend backend = getBackendByBlockId(bnOrId, true)
         ) {
             VMExecutor executor = new VMExecutor(backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getExecutionResult());

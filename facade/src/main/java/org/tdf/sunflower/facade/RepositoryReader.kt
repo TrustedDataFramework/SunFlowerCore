@@ -7,7 +7,7 @@ import org.tdf.sunflower.types.Transaction
 import org.tdf.sunflower.types.TransactionInfo
 import java.io.Closeable
 
-interface RepositoryReader: Closeable{
+interface RepositoryReader : Closeable {
     val genesis: Block
     fun containsHeader(hash: HexBytes): Boolean
     val bestHeader: Header
@@ -19,8 +19,19 @@ interface RepositoryReader: Closeable{
     fun getCanonicalBlock(height: Long): Block?
     fun getCanonicalHeader(height: Long): Header?
 
-    fun getHeadersBetween(startHeight: Long, stopHeight: Long, limit: Int = Int.MAX_VALUE, descend: Boolean = false): List<Header>
-    fun getBlocksBetween(startHeight: Long, stopHeight: Long, limit: Int = Int.MAX_VALUE, descend: Boolean = false): List<Block>
+    fun getHeadersBetween(
+        startHeight: Long,
+        stopHeight: Long,
+        limit: Int = Int.MAX_VALUE,
+        descend: Boolean = false
+    ): List<Header>
+
+    fun getBlocksBetween(
+        startHeight: Long,
+        stopHeight: Long,
+        limit: Int = Int.MAX_VALUE,
+        descend: Boolean = false
+    ): List<Block>
 
     // get transaction info with transaction included
     fun getTransactionInfo(hash: HexBytes): TransactionInfo?

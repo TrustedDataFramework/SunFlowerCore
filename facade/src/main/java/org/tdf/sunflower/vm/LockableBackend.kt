@@ -6,7 +6,7 @@ import java.util.concurrent.locks.ReadWriteLock
 class LockableBackend(
     private val backend: Backend,
     private val lock: ReadWriteLock
-): Backend by backend{
+) : Backend by backend {
     override fun close() {
         lock.readLock().unlock()
     }

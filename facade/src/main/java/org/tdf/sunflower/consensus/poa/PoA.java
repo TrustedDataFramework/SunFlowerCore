@@ -89,7 +89,7 @@ public class PoA extends AbstractConsensusEngine {
 
             executorService.scheduleAtFixedRate(() ->
                 {
-                    try (RepositoryReader rd = getSunflowerRepository().getReader()){
+                    try (RepositoryReader rd = getSunflowerRepository().getReader()) {
                         URL url = new URL(this.config.getGatewayNode());
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 

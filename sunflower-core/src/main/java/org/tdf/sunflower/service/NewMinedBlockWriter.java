@@ -19,7 +19,7 @@ public class NewMinedBlockWriter {
             Block block = e.getBlock();
             if (block == null)
                 return;
-            try (RepositoryWriter writer = repository.getWriter()){
+            try (RepositoryWriter writer = repository.getWriter()) {
                 writer.writeBlock(block, e.getInfos());
             }
         });

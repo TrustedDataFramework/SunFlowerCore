@@ -68,7 +68,7 @@ class BackendImpl(
     ) {
         parentBackend?.mergeInternal(accounts, storage, code)
         modifiedAccounts.forEach { (key: HexBytes, value: Account) -> accounts[key] = value }
-        codeCache.forEach { (key: HexBytes, value: HexBytes) -> code[key] = value}
+        codeCache.forEach { (key: HexBytes, value: HexBytes) -> code[key] = value }
         for ((key, value) in modifiedStorage) {
             storage.putIfAbsent(key, mutableMapOf())
             storage[key]!!.putAll(value)
@@ -110,7 +110,7 @@ class BackendImpl(
         }
         for ((key, value) in codeCache) {
             codeStore.put(
-                tmpTrie[key]!!.contractHash ,
+                tmpTrie[key]!!.contractHash,
                 value
             )
         }
@@ -199,9 +199,9 @@ class BackendImpl(
 
     private fun lookupCode(address: HexBytes): HexBytes {
         val h = codeCache[address]
-        if(h != null)
+        if (h != null)
             return h
-        if(parentBackend != null)
+        if (parentBackend != null)
             return parentBackend.lookupCode(address)
         val a = lookup(address)
         val code = codeStore[a.contractHash]

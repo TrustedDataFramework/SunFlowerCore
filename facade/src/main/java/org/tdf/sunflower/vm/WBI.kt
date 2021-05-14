@@ -66,7 +66,7 @@ object WBI {
 
         // params == null -> abi not found
         if (entry == null)
-            return InjectResult( function ?: "", entry, LongArray(0), false)
+            return InjectResult(function ?: "", entry, LongArray(0), false)
 
         // malloc param types
         val inputs = Abi.Entry.Param.decodeList(entry.inputs, encoded!!.bytes)

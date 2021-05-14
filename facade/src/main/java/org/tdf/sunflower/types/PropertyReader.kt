@@ -23,7 +23,7 @@ class PropertyReader(val properties: PropertyLike) {
 
     fun getAsInt(property: String): Int {
         val s = properties.getProperty(property)
-                ?: throw RuntimeException("read property $property failed, property not found")
+            ?: throw RuntimeException("read property $property failed, property not found")
         return s.trim { it <= ' ' }.toInt()
     }
 
@@ -51,7 +51,8 @@ class PropertyReader(val properties: PropertyLike) {
 
     fun getAsLong(property: String): Long {
         val s = properties.getProperty(property)
-        if (s == null || s.trim { it <= ' ' }.isEmpty()) throw RuntimeException("read property $property failed, property not found")
+        if (s == null || s.trim { it <= ' ' }
+                .isEmpty()) throw RuntimeException("read property $property failed, property not found")
         return s.trim { it <= ' ' }.toLong()
     }
 

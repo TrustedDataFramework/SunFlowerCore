@@ -1,7 +1,10 @@
 package org.tdf.sunflower.vm.hosts;
 
 import lombok.Getter;
-import org.tdf.lotusvm.runtime.*;
+import org.tdf.lotusvm.runtime.Hook;
+import org.tdf.lotusvm.runtime.HostFunction;
+import org.tdf.lotusvm.runtime.Memory;
+import org.tdf.lotusvm.runtime.ModuleInstanceImpl;
 import org.tdf.lotusvm.types.Instruction;
 
 public class Limit implements Hook {
@@ -35,14 +38,14 @@ public class Limit implements Hook {
     @Override
     public void onInstruction(Instruction ins, ModuleInstanceImpl module) {
         steps++;
-        if(steps > y)
+        if (steps > y)
             throw new RuntimeException("gas overflow");
     }
 
     @Override
     public void onHostFunction(HostFunction function, ModuleInstanceImpl module) {
         steps++;
-        if(steps > y)
+        if (steps > y)
             throw new RuntimeException("gas overflow");
     }
 
@@ -60,7 +63,7 @@ public class Limit implements Hook {
 
     @Override
     public void onMemoryGrow(int beforeGrow, int afterGrow) {
-        if(afterGrow > MAX_MEMORY)
+        if (afterGrow > MAX_MEMORY)
             System.out.println("memory size overflow");
     }
 }

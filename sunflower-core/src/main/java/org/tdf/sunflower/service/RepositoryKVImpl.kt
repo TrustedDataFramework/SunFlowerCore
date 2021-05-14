@@ -189,6 +189,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
             headerStore[HexBytes.fromBytes(info.blockHash)] ?: continue
             if (isCanonical(HexBytes.fromBytes(info.blockHash))) {
                 info.receipt.transaction = transactionsStore[hash]
+                return info
             }
         }
         return null
@@ -196,7 +197,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
 
     companion object {
         private const val BEST_HEADER = "best"
-        private val log = LoggerFactory.getLogger("db");
+        private val log = LoggerFactory.getLogger("db")
     }
 
     init {

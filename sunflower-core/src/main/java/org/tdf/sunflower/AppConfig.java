@@ -81,7 +81,7 @@ public class AppConfig {
             return blockGasLimit;
 
         ObjectMapper objectMapper = new ObjectMapper()
-                .enable(JsonParser.Feature.ALLOW_COMMENTS);
+            .enable(JsonParser.Feature.ALLOW_COMMENTS);
 
         InputStream in = FileUtils.getInputStream(
             Objects.requireNonNull(properties.getProperty("sunflower.consensus.genesis"))

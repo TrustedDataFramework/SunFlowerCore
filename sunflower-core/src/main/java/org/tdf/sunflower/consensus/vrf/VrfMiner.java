@@ -19,7 +19,6 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.events.NewBlocksReceived;
-import org.tdf.sunflower.facade.BlockRepository;
 import org.tdf.sunflower.facade.IRepositoryService;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.PeerServer;

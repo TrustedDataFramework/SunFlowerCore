@@ -99,7 +99,7 @@ public class VMExecutor {
         }
 
         // 2. set initial gas by payload size
-        if(callData.getCallType() != CallType.COINBASE)
+        if (callData.getCallType() != CallType.COINBASE)
             limit.setInitialGas(backend.getInitialGas(callData.getCallType() == CallType.CREATE, callData.getData().getBytes()));
         byte[] result = executeInternal();
 
@@ -163,15 +163,15 @@ public class VMExecutor {
                 } else {
                     HexBytes hash = backend.getContractHash(receiver);
                     // this is a transfer transaction
-                    if(hash.equals(HashUtil.EMPTY_DATA_HASH_HEX))
+                    if (hash.equals(HashUtil.EMPTY_DATA_HASH_HEX))
                         module = null;
                     else
-                    module = CACHE.get(backend.getContractHash(receiver), () -> {
-                        byte[] code = backend.getCode(receiver).getBytes();
-                        if(code == null || code.length == 0)
-                            throw new RuntimeException("contract code not found");
-                        return new Module(code);
-                    });
+                        module = CACHE.get(backend.getContractHash(receiver), () -> {
+                            byte[] code = backend.getCode(receiver).getBytes();
+                            if (code == null || code.length == 0)
+                                throw new RuntimeException("contract code not found");
+                            return new Module(code);
+                        });
                     data = callData.getData().getBytes();
                 }
 

@@ -13,7 +13,9 @@ import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
-import org.tdf.sunflower.vm.*;
+import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallData;
+import org.tdf.sunflower.vm.VMExecutor;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -94,9 +96,8 @@ public abstract class AbstractMiner implements Miner {
 
         VMResult res;
 
-            VMExecutor executor = new VMExecutor(tmp, callData, 0);
-            res = executor.execute();
-
+        VMExecutor executor = new VMExecutor(tmp, callData, 0);
+        res = executor.execute();
 
 
         long lastGas =
