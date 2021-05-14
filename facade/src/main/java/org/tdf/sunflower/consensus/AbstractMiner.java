@@ -28,7 +28,6 @@ public abstract class AbstractMiner implements Miner {
     @Getter(AccessLevel.PROTECTED)
     private final EventBus eventBus;
     private final ConsensusConfig config;
-    private static final StackResourcePool POOL = new SequentialStackResourcePool(VMExecutor.MAX_CALL_DEPTH);
 
     public AbstractMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, ConsensusConfig config) {
         this.config = config;
@@ -94,10 +93,10 @@ public abstract class AbstractMiner implements Miner {
         header.setCreatedAt(tmp.getHeaderCreatedAt());
 
         VMResult res;
-        synchronized (POOL) {
-            VMExecutor executor = new VMExecutor(tmp, callData, POOL, 0);
+
+            VMExecutor executor = new VMExecutor(tmp, callData, 0);
             res = executor.execute();
-        }
+
 
 
         long lastGas =

@@ -66,7 +66,6 @@ class TransactionPoolImpl(
     private val pending: MutableList<Transaction> = mutableListOf()
     private val pendingReceipts: MutableList<TransactionReceipt> = mutableListOf()
     private var current: Backend? = null
-    private val stackPool: StackResourcePool = SequentialStackResourcePool(VMExecutor.MAX_CALL_DEPTH)
     private var gasUsed: Long = 0L
 
     private fun resetInternal(best: Header) {
@@ -172,7 +171,7 @@ class TransactionPoolImpl(
                 val child = current!!.createChild()
                 val callData = fromTransaction(t, false)
                 val vmExecutor = VMExecutor(
-                    child, callData, stackPool,
+                    child, callData,
                     min(t.gasLimitAsU256.toLong(), blockGasLimit)
                 )
 

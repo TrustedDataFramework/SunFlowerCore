@@ -10,7 +10,9 @@ import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.runtime.Memory;
+import org.tdf.lotusvm.runtime.StackAllocator;
 import org.tdf.lotusvm.runtime.UnsafeMemory;
+import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
 import org.tdf.lotusvm.types.Module;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.BuiltinContract;
@@ -39,16 +41,15 @@ public class VMExecutor {
             .maximumSize(128)
             .build();
 
-    public VMExecutor(Backend backend, CallData callData, StackResourcePool pool, long gasLimit) {
-        this(backend, callData, pool, new Limit(gasLimit), 0);
+    public VMExecutor(Backend backend, CallData callData, long gasLimit) {
+        this(backend, callData, new Limit(gasLimit), 0);
     }
 
-    private VMExecutor(Backend backend, CallData callData, StackResourcePool pool, Limit limit, int depth) {
+    private VMExecutor(Backend backend, CallData callData, Limit limit, int depth) {
         this.backend = backend;
         this.callData = callData;
         this.limit = limit;
         this.depth = depth;
-        this.pool = pool;
     }
 
     public Backend getBackend() {
@@ -63,9 +64,6 @@ public class VMExecutor {
 
     CallData callData;
 
-    StackResourcePool pool;
-
-
     // gas limit hook
     private Limit limit;
     // call depth
@@ -75,7 +73,7 @@ public class VMExecutor {
     public VMExecutor clone() {
         if (depth + 1 == MAX_CALL_DEPTH)
             throw new RuntimeException("vm call depth overflow");
-        return new VMExecutor(backend, callData.clone(), pool, limit, depth + 1);
+        return new VMExecutor(backend, callData.clone(), limit, depth + 1);
     }
 
     public VMResult execute() {
@@ -215,10 +213,13 @@ public class VMExecutor {
                 ModuleInstance instance;
                 WBI.InjectResult r;
 
-                try (StackResource stack = pool.tryGet(); Memory mem = new UnsafeMemory()) {
+                try (
+                    StackAllocator stack =
+                        new UnsafeStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
+                    Memory mem = new UnsafeMemory()) {
                     instance = ModuleInstance
                         .builder()
-                        .stackProvider(stack)
+                        .stackAllocator(stack)
                         .module(module)
                         .memory(mem)
                         .hooks(Collections.singleton(limit))

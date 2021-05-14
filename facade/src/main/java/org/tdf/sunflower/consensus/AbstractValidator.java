@@ -14,8 +14,6 @@ import org.tdf.sunflower.vm.hosts.Limit;
 import java.util.*;
 
 public abstract class AbstractValidator implements Validator {
-    private static final StackResourcePool POOL = new SequentialStackResourcePool(VMExecutor.MAX_CALL_DEPTH);
-
     protected final StateTrie<HexBytes, Account> accountTrie;
 
     public AbstractValidator(StateTrie<HexBytes, Account> accountTrie) {
@@ -85,15 +83,14 @@ public abstract class AbstractValidator implements Validator {
                     return BlockValidateResult.fault("block gas overflow");
 
                 VMResult r;
-                synchronized (POOL) {
+
                     VMExecutor executor = new VMExecutor(
                         tmp,
                         CallData.fromTransaction(tx, false),
-                        POOL,
                         Math.min(getBlockGasLimit() - currentGas, tx.getGasLimitAsU256().longValue())
                     );
                     r = executor.execute();
-                }
+
                 results.put(HexBytes.fromBytes(tx.getHash()), r);
                 totalFee = totalFee.plus(r.getFee());
 
@@ -111,7 +108,7 @@ public abstract class AbstractValidator implements Validator {
             }
 
             tmp.setHeaderCreatedAt(block.getCreatedAt());
-            VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(coinbase, true), POOL, 0);
+            VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(coinbase, true), 0);
             VMResult r = executor.execute();
             currentGas += r.getGasUsed();
 
