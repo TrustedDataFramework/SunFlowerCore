@@ -123,7 +123,7 @@ public class PosPreBuilt implements BuiltinContract {
                     nodeInfos.add(n);
                 else
                     nodeInfos.set(e.getKey(), n);
-                voteInfos.put(callData.getTxHash(), new VoteInfo(
+                voteInfos.set(callData.getTxHash(), new VoteInfo(
                     callData.getTxHash(), callData.getCaller(),
                     args, callData.getValue()
                 ));

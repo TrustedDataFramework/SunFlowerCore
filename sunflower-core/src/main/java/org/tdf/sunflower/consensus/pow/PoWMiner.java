@@ -144,7 +144,7 @@ public class PoWMiner extends AbstractMiner {
         }
         if (working || task != null) return;
 
-        try (RepositoryReader rd = poW.getSunflowerRepository().getReader()) {
+        try (RepositoryReader rd = poW.getRepo().getReader()) {
             Block best = rd.getBestBlock();
             log.debug("try to mining at height " + (best.getHeight() + 1));
             this.currentMiningHeight = best.getHeight() + 1;
@@ -154,7 +154,7 @@ public class PoWMiner extends AbstractMiner {
         }
 
         Runnable task = () -> {
-            try (RepositoryReader rd = poW.getSunflowerRepository().getReader()) {
+            try (RepositoryReader rd = poW.getRepo().getReader()) {
                 BlockCreateResult res = createBlock(
                     rd.getBestBlock(),
                     Collections.emptyMap());

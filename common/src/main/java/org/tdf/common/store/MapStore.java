@@ -33,7 +33,7 @@ public class MapStore<K, V> implements BatchStore<K, V>, IterableStore<K, V> {
     }
 
     @Override
-    public void put(@NonNull K k, @NonNull V v) {
+    public void set(@NonNull K k, @NonNull V v) {
         map.put(k, v);
     }
 

@@ -85,7 +85,7 @@ interface Backend : Closeable {
                 return dbGet(address, bytes)
             }
 
-            override fun put(bytes: HexBytes, bytes2: HexBytes) {
+            override fun set(bytes: HexBytes, bytes2: HexBytes) {
                 dbSet(address, bytes, bytes2)
             }
 

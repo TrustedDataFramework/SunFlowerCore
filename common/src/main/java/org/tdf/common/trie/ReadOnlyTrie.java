@@ -71,7 +71,7 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public void put(K k, V v) {
+    public void set(K k, V v) {
         throw new UnsupportedOperationException();
     }
 

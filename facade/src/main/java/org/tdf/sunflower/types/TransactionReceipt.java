@@ -37,7 +37,7 @@ public class TransactionReceipt {
             return HashUtil.EMPTY_TRIE_HASH_HEX;
 
         for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie.put(RLPCodec.encodeInt(i), receipts.get(i).getReceiptTrieEncoded());
+            receiptsTrie.set(RLPCodec.encodeInt(i), receipts.get(i).getReceiptTrieEncoded());
         }
         return receiptsTrie.commit();
     }

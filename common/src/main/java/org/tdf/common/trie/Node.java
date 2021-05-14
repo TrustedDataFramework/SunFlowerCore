@@ -151,7 +151,7 @@ class Node {
         // if encoded size is great than or equals to 32, store node to db and return a hash reference
         if (raw.length >= hashFunction.getSize() || forceHash) {
             hash = hashFunction.apply(raw);
-            cache.put(hash, raw);
+            cache.set(hash, raw);
             return RLPItem.fromBytes(hash);
         }
         // clean hash

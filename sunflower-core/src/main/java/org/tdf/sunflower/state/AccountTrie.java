@@ -106,7 +106,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
             Account a = Account.emptyAccount(address, Uint256.ZERO);
             Trie<HexBytes, HexBytes> trie = contractStorageTrie.revert();
             for (Map.Entry<HexBytes, HexBytes> entry : c.getGenesisStorage().entrySet()) {
-                trie.put(entry.getKey(), entry.getValue());
+                trie.set(entry.getKey(), entry.getValue());
             }
             HexBytes root = trie.commit();
             trie.flush();
@@ -116,7 +116,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
 
         // sync to genesis
         Trie<HexBytes, Account> tmp = this.trie.revert();
-        genesisStates.forEach(tmp::put);
+        genesisStates.forEach(tmp::set);
         log.info("genesis states = {}", Start.MAPPER.writeValueAsString(genesisStates));
         HexBytes r = tmp.commit();
         log.info("genesis state root = " + r);

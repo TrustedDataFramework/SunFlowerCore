@@ -24,7 +24,7 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
         public void init(ConsensusConfig config) {
             if (getTransactionPool() == null)
                 throw new RuntimeException("transaction pool not injected");
-            if (getSunflowerRepository() == null)
+            if (getRepo() == null)
                 throw new RuntimeException("consortium repository not injected");
             if (getEventBus() == null) {
                 throw new RuntimeException("event bus not injected");
@@ -59,7 +59,7 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     // transaction pool will be injected before init() called
     private TransactionPool transactionPool;
     // sunflowerRepository will be injected before init() called
-    private IRepositoryService sunflowerRepository;
+    private RepositoryService repo;
 
     // sub class should set peer server listener explicitly when init() called
     private PeerServerListener peerServerListener = PeerServerListener.NONE;

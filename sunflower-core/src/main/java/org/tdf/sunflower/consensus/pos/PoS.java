@@ -63,7 +63,7 @@ public class PoS extends AbstractConsensusEngine {
         this.minerContract.setAccountTrie((AccountTrie) getAccountTrie());
 
         this.posMiner = new PoSMiner(getAccountTrie(), getEventBus(), this.config, this);
-        this.posMiner.setBlockRepository(this.getSunflowerRepository());
+        this.posMiner.setRepo(this.getRepo());
         this.posMiner.setTransactionPool(getTransactionPool());
 
         setMiner(this.posMiner);

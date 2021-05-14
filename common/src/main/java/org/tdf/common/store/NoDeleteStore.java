@@ -28,9 +28,9 @@ public class NoDeleteStore<K, V> implements Store<K, V> {
     }
 
     @Override
-    public void put(@NonNull K k, @NonNull V v) {
+    public void set(@NonNull K k, @NonNull V v) {
         if (isNull.test(v)) return;
-        delegate.put(k, v);
+        delegate.set(k, v);
     }
 
     @Override

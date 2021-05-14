@@ -92,7 +92,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     public void saveGenesis(Block block) {
         super.saveGenesis(block);
         if (status.get(BEST_HEADER) == null) {
-            status.put(BEST_HEADER, block.getHeader());
+            status.set(BEST_HEADER, block.getHeader());
         }
     }
 
@@ -191,7 +191,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         writeBlockNoReset(block, infos);
         Block best = getBestBlock();
         if (Block.BEST_COMPARATOR.compare(best, block) < 0) {
-            status.put(BEST_HEADER, block.getHeader());
+            status.set(BEST_HEADER, block.getHeader());
             byte[] hash = block.getHash().getBytes();
             while (true) {
                 Header o = headerStore.get(hash);
@@ -200,7 +200,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
                 byte[] canonicalHash = canonicalIndex.get(o.getHeight());
                 if (canonicalHash != null && canonicalHash.length != 0 && FastByteComparisons.equal(canonicalHash, hash))
                     break;
-                canonicalIndex.put(o.getHeight(), hash);
+                canonicalIndex.set(o.getHeight(), hash);
                 hash = o.getHashPrev().getBytes();
             }
             eventBus.publish(new NewBestBlock(block));
@@ -260,7 +260,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
     @Override
     protected void writeGenesis(Block genesis) {
         writeBlockNoReset(genesis, Collections.emptyList());
-        canonicalIndex.put(0L, genesis.getHash().getBytes());
+        canonicalIndex.set(0L, genesis.getHash().getBytes());
     }
 
     private void writeBlockNoReset(Block block, List<TransactionInfo> infos) {
@@ -273,12 +273,12 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
         }
         if (containsHeader(block.getHash().getBytes()))
             return;
-        headerStore.put(block.getHash().getBytes(), block.getHeader());
+        headerStore.set(block.getHash().getBytes(), block.getHeader());
 
 
         for (int i = 0; i < block.getBody().size(); i++) {
             Transaction t = block.getBody().get(i);
-            transactionsStore.put(t.getHash(), t);
+            transactionsStore.set(t.getHash(), t);
             TransactionInfo info = infos.get(i);
 
             TransactionInfo[] found = this.transactionInfos.get(t.getHashHex());
@@ -290,14 +290,14 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
                 founds.add(info);
             }
 
-            this.transactionInfos.put(t.getHashHex(), founds.toArray(new TransactionInfo[0]));
+            this.transactionInfos.set(t.getHashHex(), founds.toArray(new TransactionInfo[0]));
         }
 
 
         HexBytes[] txHashes = block.getBody().stream().map(Transaction::getHashHex)
             .toArray(HexBytes[]::new);
 
-        transactionsRoot.put(
+        transactionsRoot.set(
             block.getTransactionsRoot().getBytes(),
             txHashes
         );
@@ -305,7 +305,7 @@ public class SunflowerRepositoryKVImpl extends AbstractBlockRepository implement
             .map(x -> new HashSet<>(Arrays.asList(x)))
             .orElse(new HashSet<>());
         headerHashes.add(block.getHash());
-        heightIndex.put(block.getHeight(), headerHashes.toArray(new HexBytes[0]));
+        heightIndex.set(block.getHeight(), headerHashes.toArray(new HexBytes[0]));
 
 
         log.info("write block at height " + block.getHeight() + " " + block.getHeader().getHash() + " to database success");

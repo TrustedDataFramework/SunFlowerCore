@@ -3,7 +3,7 @@ package org.tdf.sunflower.state;
 import lombok.Getter;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.facade.IRepositoryService;
+import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
@@ -15,7 +15,7 @@ import java.util.Objects;
 
 public abstract class AbstractBuiltIn implements BuiltinContract {
     protected StateTrie<HexBytes, Account> accounts;
-    protected IRepositoryService repository;
+    protected RepositoryService repo;
 
     @Getter
     protected HexBytes address;
@@ -23,11 +23,11 @@ public abstract class AbstractBuiltIn implements BuiltinContract {
     protected AbstractBuiltIn(
         HexBytes address,
         StateTrie<HexBytes, Account> accounts,
-        IRepositoryService repository
+        RepositoryService repo
     ) {
         this.address = address;
         this.accounts = accounts;
-        this.repository = repository;
+        this.repo = repo;
     }
 
     protected byte[] getSelector(HexBytes data) {
@@ -61,7 +61,7 @@ public abstract class AbstractBuiltIn implements BuiltinContract {
 
     @Override
     public List<?> view(HexBytes blockHash, String method, Object... args) {
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             Header parent = rd.getHeaderByHash(blockHash);
             Abi.Function func = getFunction(method);
             byte[] encoded = func.encode(args);

@@ -189,7 +189,7 @@ public class Start {
     }
 
     @Bean
-    public RepositoryService sunflowerRepository(
+    public RepositoryServiceImpl sunflowerRepository(
         ApplicationContext context,
         AccountTrie accountTrie
     ) {
@@ -202,7 +202,7 @@ public class Start {
             case "kv": {
                 RepositoryKVImpl kv = new RepositoryKVImpl(context);
                 kv.setAccountTrie(accountTrie);
-                return new RepositoryService(
+                return new RepositoryServiceImpl(
                     kv
                 );
             }
@@ -244,7 +244,7 @@ public class Start {
     @Bean
     public ConsensusEngine consensusEngine(
         ConsensusProperties consensusProperties,
-        RepositoryService repositoryService,
+        RepositoryServiceImpl repoSrv,
         TransactionPoolImpl transactionPool,
         DatabaseStoreFactory databaseStoreFactory,
         EventBus eventBus,
@@ -310,7 +310,7 @@ public class Start {
         Block g = engine.getGenesisBlock();
         g.setStateRoot(root);
 
-        try (RepositoryWriter writer = repositoryService.getWriter()) {
+        try (RepositoryWriter writer = repoSrv.getWriter()) {
             writer.saveGenesis(g);
         }
 
@@ -430,7 +430,7 @@ public class Start {
         engine.setEventBus(context.getBean(EventBus.class));
         engine.setTransactionPool(context.getBean(TransactionPool.class));
         DatabaseStoreFactory databaseStoreFactory = (context.getBean(DatabaseStoreFactory.class));
-        engine.setSunflowerRepository(context.getBean(IRepositoryService.class));
+        engine.setRepo(context.getBean(RepositoryService.class));
         engine.setContractStorageTrie(context.getBean("contractStorageTrie", Trie.class));
         engine.setContractCodeStore(context.getBean("contractCodeStore", Store.class));
         engine.setAccountTrie(context.getBean(AccountTrie.class));

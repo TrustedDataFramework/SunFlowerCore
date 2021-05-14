@@ -50,7 +50,7 @@ public abstract class ProofTest {
             .forEach(s -> {
                 String[] kv = s.split("=");
                 if (kv[0].equals("*") || kv[0].equals(stoopingly)) return;
-                trie.put(kv[0], kv[1]);
+                trie.set(kv[0], kv[1]);
             });
 
         trie.commit();
@@ -65,7 +65,7 @@ public abstract class ProofTest {
         String val = trie.get(paramnesia);
 
         Store<byte[], byte[]> store = new ByteArrayMapStore<>();
-        merklePath.forEach((k, v) -> store.put(k.getBytes(), v.getBytes()));
+        merklePath.forEach((k, v) -> store.set(k.getBytes(), v.getBytes()));
 
         assert trie
             .revert(root, store)
@@ -74,7 +74,7 @@ public abstract class ProofTest {
 
         merklePath = trie.getProof(stoopingly);
         Store<byte[], byte[]> store2 = new ByteArrayMapStore<>();
-        merklePath.forEach((k, v) -> store2.put(k.getBytes(), v.getBytes()));
+        merklePath.forEach((k, v) -> store2.set(k.getBytes(), v.getBytes()));
 
         assert trie.revert(root, store2).get(stoopingly) == null;
 
@@ -88,7 +88,7 @@ public abstract class ProofTest {
         Map<HexBytes, HexBytes> merklePath = empty.getProof(stoopingly);
 
         Store<byte[], byte[]> store = new ByteArrayMapStore<>();
-        merklePath.forEach((k, v) -> store.put(k.getBytes(), v.getBytes()));
+        merklePath.forEach((k, v) -> store.set(k.getBytes(), v.getBytes()));
 
         HexBytes root = trie.revert(trie.getNullHash(), store).getRootHash();
         assert
@@ -106,7 +106,7 @@ public abstract class ProofTest {
         );
 
         Store<byte[], byte[]> store = new ByteArrayMapStore<>();
-        rlpElement.forEach((k, v) -> store.put(k.getBytes(), v.getBytes()));
+        rlpElement.forEach((k, v) -> store.set(k.getBytes(), v.getBytes()));
 
         Trie<String, String> merkleProof =
             trie.revert(trie.getRootHash(), store);
@@ -153,7 +153,7 @@ public abstract class ProofTest {
 
         for (RLPElement account : accounts) {
             byte[] key = account.get(0).get(1).asBytes();
-            accountTrie.put(key, account);
+            accountTrie.set(key, account);
         }
 
         HexBytes root = accountTrie.commit();
@@ -161,7 +161,7 @@ public abstract class ProofTest {
         Map<HexBytes, HexBytes> proof = accountTrie.getProof(bigAccounts);
 
         Store<byte[], byte[]> store = new ByteArrayMapStore<>();
-        proof.forEach((k, v) -> store.put(k.getBytes(), v.getBytes()));
+        proof.forEach((k, v) -> store.set(k.getBytes(), v.getBytes()));
 
         Trie<byte[], RLPElement> proofTrie = accountTrie.revert(root, store);
 

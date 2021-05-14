@@ -3,6 +3,7 @@ package org.tdf.sunflower.service
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 import org.tdf.common.serialize.Codecs
+import org.tdf.common.store.BasePrefixStore
 import org.tdf.common.store.Store
 import org.tdf.common.store.StoreWrapper
 import org.tdf.common.util.FastByteComparisons
@@ -26,11 +27,8 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     // transactions root -> transaction hashes
     private val transactionsRoot: Store<HexBytes, Array<HexBytes>>
 
-    // block height -> block hashes
+    // block height -> block hashes, the first hash is canonical
     private val heightIndex: Store<Long, Array<HexBytes>>
-
-    // block height -> canonical hash
-    private val canonicalIndex: Store<Long, HexBytes>
 
     // "best" -> best header, "prune" -> pruned header
     private val status: Store<String, Header>
@@ -42,20 +40,15 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     override fun saveGenesis(b: Block) {
         super.saveGenesis(b)
         if (status[BEST_HEADER] == null) {
-            status.put(BEST_HEADER, b.header)
+            status[BEST_HEADER] = b.header
         }
     }
 
     override fun getBlockFromHeader(header: Header): Block {
         val txHashes = transactionsRoot[header.transactionsRoot]
             ?: throw RuntimeException("transactions of header $header not found")
-        val body: MutableList<Transaction> = ArrayList(txHashes.size)
-        for (hash in txHashes) {
-            val t = transactionsStore[hash] ?: throw RuntimeException("transaction $hash not found")
-            body.add(t)
-        }
         val ret = Block(header)
-        ret.body = body
+        ret.body = txHashes.map { transactionsStore[it]!! }
         return ret
     }
 
@@ -83,33 +76,50 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
             for (bytes in idx) {
                 val h = headerStore[bytes] ?: continue
                 ret.add(h)
+                if (ret.size > limit)
+                    return ret
             }
-            if (ret.size > limit) break
         }
         return ret
     }
 
+    private fun getCanonicalHashAt(height: Long): HexBytes?{
+        return heightIndex[height]?.getOrNull(0)
+    }
+
+    private fun setCanonicalHashAt(height: Long, hash: HexBytes) {
+        val set = heightIndex[height]?.toMutableSet() ?: mutableSetOf()
+        set.add(hash)
+        val arr = set.toTypedArray()
+        // i >= 0
+        val i = arr.indexOf(hash)
+
+        // now array contains at least one element
+        val t = arr[0]
+
+        // swap index, make hash canonical
+        arr[0] = hash
+        arr[i] = t
+        heightIndex[height] = arr
+    }
+
     override fun getHeadersByHeight(height: Long): List<Header> {
-        val idx = heightIndex[height] ?: return emptyList()
-        val ret: MutableList<Header> = ArrayList(idx.size)
-        for (bytes in idx) {
-            val h = headerStore[bytes] ?: continue
-            ret.add(h)
-        }
-        return ret
+        return (heightIndex[height] ?: emptyArray()).map { getHeaderByHash(it)!! }
     }
 
     override fun writeBlock(b: Block, infos: List<TransactionInfo>) {
         writeBlockNoReset(b, infos)
         val best = bestBlock
         if (Block.BEST_COMPARATOR.compare(best, b) < 0) {
-            status.put(BEST_HEADER, b.header)
+            status[BEST_HEADER] = b.header
             var hash = b.hash
             while (true) {
+                // reset canonical hash
                 val o = headerStore[hash] ?: break
-                val canonicalHash = canonicalIndex[o.height]
-                if (canonicalHash != null && canonicalHash.size() != 0 && canonicalHash == hash) break
-                canonicalIndex.put(o.height, hash)
+                val canonicalHash = getCanonicalHashAt(o.height)
+                if (canonicalHash == hash)
+                    break
+                setCanonicalHashAt(o.height, hash)
                 hash = o.hashPrev
             }
             eventBus.publish(NewBestBlock(b))
@@ -121,8 +131,8 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     }
 
     private fun isCanonical(h: Header): Boolean {
-        val hash = canonicalIndex[h.height]
-        return if (hash == null || hash.size() == 0) false else hash == h.hash
+        val hash = getCanonicalHashAt(h.height)
+        return hash?.equals(h.hash) ?: false
     }
 
     private fun isCanonical(hash: HexBytes): Boolean {
@@ -132,26 +142,26 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
 
     override fun writeGenesis(genesis: Block) {
         writeBlockNoReset(genesis, emptyList())
-        canonicalIndex.put(0L, genesis.hash)
+        setCanonicalHashAt(0L, genesis.hash)
     }
 
     private fun writeBlockNoReset(block: Block, infos: List<TransactionInfo>) {
         // ensure the state root exists
         val v = accountTrie!!.trieStore[block.stateRoot.bytes]
         if (block.stateRoot != accountTrie!!.trie.nullHash
-            && Store.IS_NULL.test(v)
+            && (v == null || v.isEmpty())
         ) {
             throw RuntimeException("unexpected error: account trie " + block.stateRoot + " not synced")
         }
         // if the block has written before
         if (containsHeader(block.hash)) return
         // write header into store
-        headerStore.put(block.hash, block.header)
+        headerStore[block.hash] = block.header
         // save transaction and transaction infos
         for (i in block.body.indices) {
             val t = block.body[i]
             // save transaction
-            transactionsStore.put(t.hashHex, t)
+            transactionsStore[t.hashHex] = t
             val info = infos[i]
             val found = transactionInfos[t.hashHex]
             val founds: MutableList<TransactionInfo> = found?.toMutableList() ?: mutableListOf()
@@ -160,39 +170,32 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
             ) {
                 founds.add(info)
             }
-            transactionInfos.put(t.hashHex, founds.toTypedArray())
+            transactionInfos[t.hashHex] = founds.toTypedArray()
         }
 
         // save transaction root -> tx hashes
         val txHashes: Array<HexBytes> = block.body.map { it.hashHex }.toTypedArray()
-        transactionsRoot.put(
-            block.transactionsRoot,
-            txHashes
-        )
+        transactionsRoot[block.transactionsRoot] = txHashes
 
+        // save header index
         val headerHashes: MutableSet<HexBytes> = heightIndex[block.height]?.toMutableSet() ?: mutableSetOf()
         headerHashes.add(block.hash)
-        heightIndex.put(block.height, headerHashes.toTypedArray())
+        heightIndex[block.height] = headerHashes.toTypedArray()
         log.info("write block at height " + block.height + " " + block.header.hash + " to database success")
     }
 
     override fun getCanonicalHeader(height: Long): Header? {
-        val v = canonicalIndex[height]
-        return if (v == null || v.size() == 0) null else getHeaderByHash(v)
+        val v = getCanonicalHashAt(height)
+        return v?.let { getHeaderByHash(it) }
     }
 
     override fun getTransactionInfo(hash: HexBytes): TransactionInfo? {
-        val infos = transactionInfos[hash]
-        if (infos == null || infos.isEmpty())
-            return null
-        for (info in infos) {
-            headerStore[HexBytes.fromBytes(info.blockHash)] ?: continue
-            if (isCanonical(HexBytes.fromBytes(info.blockHash))) {
-                info.receipt.transaction = transactionsStore[hash]
-                return info
-            }
+        val infos = transactionInfos[hash] ?: emptyArray()
+        val i = infos.firstOrNull { isCanonical(it.blockHashHex) }
+        i?.let {
+            it.receipt.transaction = transactionsStore[hash]
         }
-        return null
+        return i
     }
 
     companion object {
@@ -201,38 +204,36 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     }
 
     init {
+        val base = factory.create("blockchain")
+
         transactionsStore = StoreWrapper<HexBytes, Transaction, Any, Any>(
-            factory.create("transactions"),
+            BasePrefixStore(base, "t".toByteArray()),
             Codecs.HEX,
             Codecs.newRLPCodec(Transaction::class.java)
         )
+
         headerStore = StoreWrapper<HexBytes, Header, Any, Any>(
-            factory.create("headers"),
+            BasePrefixStore(base, "h".toByteArray()),
             Codecs.HEX,
             Codecs.newRLPCodec(Header::class.java)
         )
         transactionsRoot = StoreWrapper<HexBytes, Array<HexBytes>, Any, Any>(
-            factory.create("transactions-root"),
+            BasePrefixStore(base, "r".toByteArray()),
             Codecs.HEX,
             Codecs.newRLPCodec(Array<HexBytes>::class.java)
         )
         heightIndex = StoreWrapper<Long, Array<HexBytes>, Any, Any>(
-            factory.create("height-index"),
+            BasePrefixStore(base, "i".toByteArray()),
             Codecs.newRLPCodec(Long::class.java),
             Codecs.newRLPCodec(Array<HexBytes>::class.java)
         )
         status = StoreWrapper<String, Header, Any, Any>(
-            factory.create("block-store-status"),
+            BasePrefixStore(base, "s".toByteArray()),
             Codecs.STRING,
             Codecs.newRLPCodec(Header::class.java)
         )
-        canonicalIndex = StoreWrapper<Long, HexBytes, Any, Any>(
-            factory.create("canonical-index"),
-            Codecs.newRLPCodec(Long::class.java),
-            Codecs.HEX
-        )
         transactionInfos = StoreWrapper<HexBytes, Array<TransactionInfo>, Any, Any>(
-            factory.create("transaction-infos"),
+            BasePrefixStore(base, "f".toByteArray()),
             Codecs.HEX,
             Codecs.newRLPCodec(Array<TransactionInfo>::class.java)
         )

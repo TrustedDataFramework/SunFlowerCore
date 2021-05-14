@@ -7,7 +7,7 @@ import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.AppConfig;
 import org.tdf.sunflower.facade.ConsensusEngine;
-import org.tdf.sunflower.facade.IRepositoryService;
+import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.AccountTrie;
@@ -29,12 +29,12 @@ import static org.tdf.sunflower.controller.TypeConverter.*;
 @RequiredArgsConstructor
 public class JsonRpcImpl implements JsonRpc {
     private final AccountTrie accountTrie;
-    private final IRepositoryService repository;
+    private final RepositoryService repo;
     private final TransactionPool pool;
     private final ConsensusEngine engine;
 
     private Block getByJsonBlockId(String id) {
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             if ("earliest".equalsIgnoreCase(id)) {
                 return rd.getGenesis();
             } else if ("latest".equalsIgnoreCase(id)) {
@@ -119,7 +119,7 @@ public class JsonRpcImpl implements JsonRpc {
 
     @Override
     public String eth_blockNumber() {
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             return toJsonHex(rd.getBestHeader().getHeight());
         }
     }
@@ -130,7 +130,7 @@ public class JsonRpcImpl implements JsonRpc {
         if (blockId == null || blockId.trim().isEmpty())
             blockId = "latest";
 
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
 
             switch (blockId) {
                 case "latest": {
@@ -284,7 +284,7 @@ public class JsonRpcImpl implements JsonRpc {
     @Override
     public TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception {
         HexBytes hash = jsonHexToHexBytes(transactionHash);
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             TransactionInfo info = rd.getTransactionInfo(hash);
             Transaction tx = info == null ? null : info.getReceipt().getTransaction();
             Block b = info == null ? null : rd.getBlockByHash(HexBytes.fromBytes(info.getBlockHash()));

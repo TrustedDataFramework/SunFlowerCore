@@ -56,7 +56,7 @@ public class Transaction {
             return HexBytes.fromBytes(HashUtil.EMPTY_TRIE_HASH);
 
         for (int i = 0; i < transactions.size(); i++) {
-            txsState.put(RLPCodec.encodeInt(i), transactions.get(i).getEncoded());
+            txsState.set(RLPCodec.encodeInt(i), transactions.get(i).getEncoded());
         }
 
         return txsState.commit();

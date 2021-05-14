@@ -36,8 +36,8 @@ public class StoreWrapper<K, V, U, R>
     }
 
     @Override
-    public void put(@NonNull K k, @NonNull V v) {
-        store.put(keyCodec.getEncoder().apply(k), valueCodec.getEncoder().apply(v));
+    public void set(@NonNull K k, @NonNull V v) {
+        store.set(keyCodec.getEncoder().apply(k), valueCodec.getEncoder().apply(v));
     }
 
 

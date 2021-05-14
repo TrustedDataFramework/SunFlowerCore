@@ -8,7 +8,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.facade.IRepositoryService;
+import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
@@ -34,7 +34,7 @@ public class PoSMiner extends AbstractMiner {
     public HexBytes minerAddress;
     private ConsensusConfig config;
     @Setter
-    private IRepositoryService blockRepository;
+    private RepositoryService repo;
     private volatile boolean stopped;
     private ScheduledExecutorService minerExecutor;
     @Setter
@@ -93,7 +93,7 @@ public class PoSMiner extends AbstractMiner {
             return;
         }
 
-        try (RepositoryReader rd = blockRepository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             Block best = rd.getBestBlock();
             // 判断是否轮到自己出块
             Optional<Proposer> o = getProposer(

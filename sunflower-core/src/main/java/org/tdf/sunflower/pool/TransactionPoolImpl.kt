@@ -14,7 +14,7 @@ import org.tdf.sunflower.TransactionPoolConfig
 import org.tdf.sunflower.events.NewBestBlock
 import org.tdf.sunflower.events.NewTransactionsCollected
 import org.tdf.sunflower.facade.ConsensusEngine
-import org.tdf.sunflower.facade.IRepositoryService
+import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.facade.PendingTransactionValidator
 import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.state.Account
@@ -38,7 +38,7 @@ import kotlin.math.min
 class TransactionPoolImpl(
     private val eventBus: EventBus,
     private val config: TransactionPoolConfig,
-    private val repository: IRepositoryService,
+    private val repo: RepositoryService,
     private val trie: StateTrie<HexBytes, Account>
 ) : TransactionPool {
     companion object {
@@ -79,7 +79,7 @@ class TransactionPoolImpl(
 
     fun setEngine(engine: ConsensusEngine) {
         validator = engine.validator
-        repository.getReader().use {
+        repo.getReader().use {
             resetInternal(it.bestHeader)
         }
     }
@@ -237,7 +237,7 @@ class TransactionPoolImpl(
 
     override fun current(): Backend {
         lock.readLock().lock()
-        val rd = repository.getReader()
+        val rd = repo.getReader()
         try {
             return if (current != null) {
                 this.lock.readLock().lock()

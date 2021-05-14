@@ -69,7 +69,7 @@ public class TrieRollbackTest {
             if (keyVal[0].equals("*"))
                 trie.remove(keyVal[1].trim());
             else
-                trie.put(keyVal[0].trim(), keyVal[1].trim());
+                trie.set(keyVal[0].trim(), keyVal[1].trim());
 
             HexBytes rootHash = trie.commit();
 

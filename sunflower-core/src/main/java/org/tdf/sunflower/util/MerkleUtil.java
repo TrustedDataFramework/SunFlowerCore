@@ -22,7 +22,7 @@ public class MerkleUtil {
             .build();
 
         for (Hashed n : nodes) {
-            trie.put(i, n.getHash().getBytes());
+            trie.set(i, n.getHash().getBytes());
             i++;
         }
         return trie.commit();

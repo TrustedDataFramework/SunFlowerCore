@@ -57,7 +57,7 @@ public class PoW extends AbstractConsensusEngine {
     public void init(ConsensusConfig config) {
         this.config = config;
         genesis = new Genesis(config.getGenesisJson());
-        this.bios = new PoWBios(genesis.getNbits(), config, getAccountTrie(), getSunflowerRepository());
+        this.bios = new PoWBios(genesis.getNbits(), config, getAccountTrie(), getRepo());
         setGenesisBlock(genesis.getBlock());
 
         setValidator(new PoWValidator(this));

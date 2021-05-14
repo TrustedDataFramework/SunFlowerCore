@@ -11,7 +11,7 @@ import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.consensus.poa.config.PoAConfig;
 import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.facade.IRepositoryService;
+import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.types.Block;
@@ -37,7 +37,7 @@ public class PoAMiner extends AbstractMiner {
     private final PoAConfig config;
 
     @Setter
-    private IRepositoryService blockRepository;
+    private RepositoryService repo;
     private volatile boolean stopped;
     private ScheduledExecutorService minerExecutor;
     @Setter
@@ -119,7 +119,7 @@ public class PoAMiner extends AbstractMiner {
             return;
         }
 
-        try (RepositoryReader rd = blockRepository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             Block best = rd.getBestBlock();
             long now = OffsetDateTime.now().toEpochSecond();
 

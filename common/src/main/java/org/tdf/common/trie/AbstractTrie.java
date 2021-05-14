@@ -25,7 +25,7 @@ abstract class AbstractTrie<K, V> implements Trie<K, V> {
     abstract Map<HexBytes, HexBytes> getProofInternal(byte[] key);
 
     @Override
-    public void put(@NonNull K k, @NonNull V val) {
+    public void set(@NonNull K k, @NonNull V val) {
         putBytes(getKCodec().getEncoder().apply(k), getVCodec().getEncoder().apply(val));
     }
 

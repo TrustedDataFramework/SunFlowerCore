@@ -76,7 +76,7 @@ public class JsonStore implements BatchStore<String, JsonNode>, IterableStore<St
 
     @Override
     @SneakyThrows
-    public void put(@NonNull String s, @NonNull JsonNode jsonNode) {
+    public void set(@NonNull String s, @NonNull JsonNode jsonNode) {
         node.put(s, jsonNode);
         sync();
     }

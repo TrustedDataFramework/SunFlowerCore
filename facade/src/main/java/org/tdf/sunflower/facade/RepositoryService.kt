@@ -2,12 +2,12 @@ package org.tdf.sunflower.facade;
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-interface IRepositoryService {
+interface RepositoryService {
     fun getReader(): RepositoryReader
     fun getWriter(): RepositoryWriter
 }
 
-class RepositoryService(private val proxy: RepositoryWriter) : IRepositoryService {
+class RepositoryServiceImpl(private val proxy: RepositoryWriter) : RepositoryService {
     val lock = ReentrantReadWriteLock()
 
     override fun getReader(): RepositoryReader {

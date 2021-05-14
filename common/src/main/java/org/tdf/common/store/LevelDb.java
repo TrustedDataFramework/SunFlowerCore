@@ -200,7 +200,7 @@ public class LevelDb implements DatabaseStore {
     }
 
     @Override
-    public void put(@NonNull byte[] key, @NonNull byte[] val) {
+    public void set(@NonNull byte[] key, @NonNull byte[] val) {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled())

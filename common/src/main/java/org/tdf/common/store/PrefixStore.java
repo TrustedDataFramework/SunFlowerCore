@@ -35,11 +35,11 @@ public class PrefixStore<K, V> implements IterableStore<K, V> {
     }
 
     @Override
-    public void put(@NonNull K k, @NonNull V v) {
+    public void set(@NonNull K k, @NonNull V v) {
         byte[] encoded = kCodec.getEncoder().apply(k);
         HexBytes withPrefix = verifyAndPrefix(encoded);
         addKey(encoded);
-        contractStorage.put(withPrefix, HexBytes.fromBytes(vCodec.getEncoder().apply(v)));
+        contractStorage.set(withPrefix, HexBytes.fromBytes(vCodec.getEncoder().apply(v)));
     }
 
     private TreeSet<HexBytes> keySet() {
@@ -55,13 +55,13 @@ public class PrefixStore<K, V> implements IterableStore<K, V> {
     private void addKey(byte[] key) {
         TreeSet<HexBytes> keySet = keySet();
         keySet.add(HexBytes.fromBytes(key));
-        contractStorage.put(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
+        contractStorage.set(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
     }
 
     private void removeKey(byte[] key) {
         TreeSet<HexBytes> keySet = keySet();
         keySet.remove(HexBytes.fromBytes(key));
-        contractStorage.put(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
+        contractStorage.set(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
     }
 
     @Override

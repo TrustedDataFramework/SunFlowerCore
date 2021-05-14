@@ -33,7 +33,7 @@ public class SecureTrieTest {
 
     @Test
     public void test() {
-        secured.put("1".getBytes(), "1");
+        secured.set("1".getBytes(), "1");
         assert secured.size() > 0;
         assert secured.size() == 1;
         assert secured.get("1".getBytes()).equals("1");
@@ -42,9 +42,9 @@ public class SecureTrieTest {
 
     @Test
     public void testRevert() {
-        secured.put("1".getBytes(), "1");
+        secured.set("1".getBytes(), "1");
         HexBytes root = secured.commit();
-        secured.put("2".getBytes(), "2");
+        secured.set("2".getBytes(), "2");
         HexBytes root2 = secured.commit();
         assert secured.revert(root).size() == 1;
         assert secured.revert(root).get("1".getBytes()).equals("1");

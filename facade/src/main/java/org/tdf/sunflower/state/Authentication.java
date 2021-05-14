@@ -5,7 +5,7 @@ import lombok.SneakyThrows;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.consensus.Proposer;
-import org.tdf.sunflower.facade.IRepositoryService;
+import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.Header;
@@ -63,7 +63,7 @@ public class Authentication extends AbstractBuiltIn {
         @NonNull Collection<? extends HexBytes> nodes,
         @NonNull HexBytes contractAddress,
         StateTrie<HexBytes, Account> accounts,
-        IRepositoryService repo,
+        RepositoryService repo,
         ConsensusConfig config
     ) {
         super(contractAddress, accounts, repo);
@@ -168,7 +168,7 @@ public class Authentication extends AbstractBuiltIn {
                 return Collections.emptyList();
             }
             case "getProposer": {
-                try (RepositoryReader rd = repository.getReader()) {
+                try (RepositoryReader rd = repo.getReader()) {
                     Header parent = rd.getHeaderByHash(backend.getParentHash());
                     Optional<Proposer> o = Authentication.getProposerInternal(parent, ((BigInteger) args[0]).longValue(), nodes, this.config.getBlockInterval());
                     Proposer p = o.orElse(new Proposer(Address.empty(), 0, 0));

@@ -38,7 +38,7 @@ public class StorageWrapper {
     private void addKey(HexBytes key) {
         Set<HexBytes> keySet = keySet();
         keySet.add(key);
-        store.put(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
+        store.set(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
     }
 
     public void save(HexBytes key, Object o) {
@@ -47,13 +47,13 @@ public class StorageWrapper {
         if (!this.prefix.isEmpty()) {
             addKey(key);
         }
-        store.put(prefixed, RLPUtil.encode(o));
+        store.set(prefixed, RLPUtil.encode(o));
     }
 
     private void removeKey(HexBytes key) {
         Set<HexBytes> keySet = keySet();
         keySet.remove(key);
-        store.put(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
+        store.set(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
     }
 
     public void remove(HexBytes key) {

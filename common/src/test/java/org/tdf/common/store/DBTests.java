@@ -36,7 +36,7 @@ public abstract class DBTests {
     @Test
     public void test() {
         assert databaseStore.isAlive();
-        wrapped.put("1", "1");
+        wrapped.set("1", "1");
         assert wrapped.get("1").equals("1");
     }
 

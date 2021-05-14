@@ -102,17 +102,16 @@ class BackendImpl(
                 if (value.size() == 0) {
                     s.remove(key)
                 } else {
-                    s.put(key, value)
+                    s[key] = value
                 }
             }
             a.storageRoot = s.commit()
-            tmpTrie.put(addr, a)
+            tmpTrie[addr] = a
         }
         for ((key, value) in codeCache) {
-            codeStore.put(
-                tmpTrie[key]!!.contractHash,
-                value
-            )
+            codeStore[
+                tmpTrie[key]!!.contractHash
+            ] = value
         }
         return tmpTrie.commit()
     }

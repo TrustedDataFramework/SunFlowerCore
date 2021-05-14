@@ -19,7 +19,7 @@ import org.tdf.sunflower.consensus.vrf.struct.VrfResult;
 import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.events.NewBlocksReceived;
-import org.tdf.sunflower.facade.IRepositoryService;
+import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
@@ -47,7 +47,7 @@ public class VrfMiner extends AbstractMiner {
     public HexBytes minerAddress;
     private VrfConfig vrfConfig;
     private VrfGenesis genesis;
-    private IRepositoryService blockRepository;
+    private RepositoryService repo;
     private boolean stopped;
     private Thread thread;
     private VrfStateMachine vrfStateMachine;
@@ -87,8 +87,8 @@ public class VrfMiner extends AbstractMiner {
         VrfUtil.VRF_PK = Hex.toHexString(vrfSk.getSigner().generatePublicKey().getEncoded());
     }
 
-    public void setRepository(IRepositoryService blockRepository) {
-        this.blockRepository = blockRepository;
+    public void setRepository(RepositoryService blockRepository) {
+        this.repo = blockRepository;
     }
 
     @Override

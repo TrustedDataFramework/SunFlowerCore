@@ -43,7 +43,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class SyncManager implements PeerServerListener, Closeable {
     private final PeerServer peerServer;
     private final ConsensusEngine engine;
-    private final IRepositoryService repository;
+    private final RepositoryService repo;
     private final TransactionPool transactionPool;
     private final TreeSet<Block> queue = new TreeSet<>(Block.FAT_COMPARATOR);
     private final SyncConfig syncConfig;
@@ -79,7 +79,7 @@ public class SyncManager implements PeerServerListener, Closeable {
 
     public SyncManager(
         PeerServer peerServer, ConsensusEngine engine,
-        IRepositoryService repository,
+        RepositoryService repo,
         TransactionPool transactionPool, SyncConfig syncConfig,
         EventBus eventBus,
         AccountTrie accountTrie,
@@ -89,7 +89,7 @@ public class SyncManager implements PeerServerListener, Closeable {
     ) {
         this.peerServer = peerServer;
         this.engine = engine;
-        this.repository = repository;
+        this.repo = repo;
         this.transactionPool = transactionPool;
         this.syncConfig = syncConfig;
         this.eventBus = eventBus;
@@ -159,7 +159,7 @@ public class SyncManager implements PeerServerListener, Closeable {
     @Override
     public void onMessage(Context context, PeerServer server) {
         executorService.execute(() -> {
-            try (RepositoryWriter writer = repository.getWriter()) {
+            try (RepositoryWriter writer = repo.getWriter()) {
                 onMessageInternal(context, server, writer);
             }
         });
@@ -318,7 +318,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                                 log.error("contract hash not match");
                                 continue;
                             }
-                            contractCodeStore.put(key, sa.getContractCode());
+                            contractCodeStore.set(key, sa.getContractCode());
                         }
 
                         // validate storage root
@@ -327,7 +327,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                             for (int i = 0; i < sa.getContractStorage().size() / 2; i += 1) {
                                 HexBytes k = sa.getContractStorage().get(2 * i);
                                 HexBytes v = sa.getContractStorage().get(2 * i + 1);
-                                empty.put(k, v);
+                                empty.set(k, v);
                             }
 
                             HexBytes root = empty.commit();
@@ -338,7 +338,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                         }
 
                         fastSyncAddresses.add(a.getAddress());
-                        fastSyncTrie.put(a.getAddress(), a);
+                        fastSyncTrie.set(a.getAddress(), a);
                     }
                     log.info("synced accounts = " + fastSyncAddresses.size());
                     if (accounts.isTraversed()) {
@@ -382,7 +382,7 @@ public class SyncManager implements PeerServerListener, Closeable {
         }
         if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
             return;
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             Header best = rd.getBestHeader();
             blocks.sort(Block.FAT_COMPARATOR);
             for (Block block : blocks) {
@@ -508,7 +508,7 @@ public class SyncManager implements PeerServerListener, Closeable {
         if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
             throw new RuntimeException("busy...");
         }
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             List<Block> ret = new ArrayList<>();
             Set<HexBytes> orphans = new HashSet<>();
             Set<HexBytes> noOrphans = new HashSet<>();
@@ -543,7 +543,7 @@ public class SyncManager implements PeerServerListener, Closeable {
             return;
         Iterator<Block> it = queue.iterator();
 
-        try (RepositoryWriter writer = repository.getWriter()) {
+        try (RepositoryWriter writer = repo.getWriter()) {
             Header best = writer.getBestHeader();
             Set<HexBytes> orphans = new HashSet<>();
             while (it.hasNext()) {
@@ -584,7 +584,7 @@ public class SyncManager implements PeerServerListener, Closeable {
 
     public void sendStatus() {
         if (fastSyncing) return;
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             Header best = rd.getBestHeader();
             Block genesis = rd.getGenesis();
             Status status = new Status(

@@ -56,7 +56,7 @@ public class EntryController {
 
     private final ObjectMapper objectMapper;
 
-    private final IRepositoryService repository;
+    private final RepositoryService repo;
 
     private final SyncManager syncManager;
 
@@ -75,7 +75,7 @@ public class EntryController {
         Block best;
         List<Block> blocks;
 
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             best = rd.getBestBlock();
             blocks = rd.getBlocksBetween
                 (Math.max(0, best.getHeight() - 10), best.getHeight(), Integer.MAX_VALUE, false);
@@ -143,21 +143,21 @@ public class EntryController {
 
     @GetMapping(value = "/block/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
     public BlockV1 getBlock(@PathVariable String hashOrHeight) {
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             return BlockV1.fromV2(getBlockOrHeader(rd, hashOrHeight, rd::getCanonicalBlock, rd::getBlockByHash));
         }
     }
 
     @GetMapping(value = "/header/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
     public HeaderV1 getHeaders(@PathVariable String hashOrHeight) {
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             return HeaderV1.fromV2(getBlockOrHeader(rd, hashOrHeight, rd::getCanonicalHeader, rd::getHeaderByHash));
         }
     }
 
     @GetMapping(value = "/transaction/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
     public TransactionV1 getTransaction(@PathVariable String hash) {
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             return TransactionV1.fromV2(
                 rd.getTransaction(HexBytes.fromHex(hash))
             );
@@ -167,7 +167,7 @@ public class EntryController {
     @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)
     public AccountView getAccount(@PathVariable String addressOrPublicKey) throws Exception {
         HexBytes addressHex = Address.of(addressOrPublicKey);
-        try (RepositoryReader rd = repository.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             Account a = accountTrie.get(rd.getBestHeader().getStateRoot(), addressHex);
             if (a == null)
                 a = Account.emptyAccount(addressHex, Uint256.ZERO);

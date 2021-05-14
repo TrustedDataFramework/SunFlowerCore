@@ -9,7 +9,7 @@ public class NopStoreTests {
     @Test
     public void test0() {
         Store<String, String> nop = Store.getNop();
-        nop.put("k", "v");
+        nop.set("k", "v");
         assert nop.get("k") == null;
     }
 }

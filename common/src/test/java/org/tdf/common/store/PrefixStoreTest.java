@@ -23,7 +23,7 @@ public class PrefixStoreTest {
             Codecs.newRLPCodec(String.class)
         );
 
-        p.put("aaa", "bbb");
+        p.set("aaa", "bbb");
 //        Map<String, String> m = new HashMap<>(p.asMap());
         assertEquals("bbb", p.get("aaa"));
     }

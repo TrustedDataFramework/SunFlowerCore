@@ -89,7 +89,7 @@ public class PoA extends AbstractConsensusEngine {
 
             executorService.scheduleAtFixedRate(() ->
                 {
-                    try (RepositoryReader rd = getSunflowerRepository().getReader()) {
+                    try (RepositoryReader rd = getRepo().getReader()) {
                         URL url = new URL(this.config.getGatewayNode());
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
@@ -119,7 +119,7 @@ public class PoA extends AbstractConsensusEngine {
             genesis.getMiners(),
             Constants.POA_AUTHENTICATION_ADDR,
             getAccountTrie(),
-            getSunflowerRepository(),
+            getRepo(),
             this.getConfig()
         );
 
@@ -128,7 +128,7 @@ public class PoA extends AbstractConsensusEngine {
             genesis.getValidators(),
             Constants.VALIDATOR_CONTRACT_ADDR,
             getAccountTrie(),
-            getSunflowerRepository(),
+            getRepo(),
             this.config
         );
 
@@ -136,7 +136,7 @@ public class PoA extends AbstractConsensusEngine {
         builtins.add(this.minerContract);
 
         poaMiner = new PoAMiner(this);
-        poaMiner.setBlockRepository(this.getSunflowerRepository());
+        poaMiner.setRepo(this.getRepo());
         poaMiner.setTransactionPool(getTransactionPool());
 
         setMiner(poaMiner);

@@ -17,8 +17,8 @@ public class NoDoubleDeleteStore<K, V> implements Store<K, V> {
     }
 
     @Override
-    public void put(@NonNull K k, @NonNull V v) {
-        delegate.put(k, v);
+    public void set(@NonNull K k, @NonNull V v) {
+        delegate.set(k, v);
     }
 
 

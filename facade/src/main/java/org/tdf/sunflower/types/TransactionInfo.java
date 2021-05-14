@@ -1,6 +1,7 @@
 package org.tdf.sunflower.types;
 
 import lombok.NonNull;
+import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.*;
 
 import java.math.BigInteger;
@@ -81,6 +82,11 @@ public class TransactionInfo {
 
     public byte[] getBlockHash() {
         return blockHash;
+    }
+
+
+    public HexBytes getBlockHashHex() {
+        return HexBytes.fromBytes(blockHash);
     }
 
     public byte[] getParentBlockHash() {

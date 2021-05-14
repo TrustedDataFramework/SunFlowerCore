@@ -17,9 +17,9 @@ public abstract class NoDeleteStoreTest {
     @Before
     public void before() {
         store = supplyNoDelete();
-        store.put("a".getBytes(), "1".getBytes());
-        store.put("b".getBytes(), "2".getBytes());
-        store.put("c".getBytes(), "3".getBytes());
+        store.set("a".getBytes(), "1".getBytes());
+        store.set("b".getBytes(), "2".getBytes());
+        store.set("c".getBytes(), "3".getBytes());
         store.flush();
     }
 
@@ -42,7 +42,7 @@ public abstract class NoDeleteStoreTest {
     @Test
     public void test2() {
         store.remove("a".getBytes());
-        store.put("a".getBytes(), "11".getBytes());
+        store.set("a".getBytes(), "11".getBytes());
         assert FastByteComparisons.equal(
             Objects.requireNonNull(store.get("a".getBytes())),
             "11".getBytes()
