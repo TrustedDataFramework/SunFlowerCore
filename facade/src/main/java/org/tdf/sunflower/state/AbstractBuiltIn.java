@@ -3,7 +3,8 @@ package org.tdf.sunflower.state;
 import lombok.Getter;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HexBytes;
-import org.tdf.sunflower.facade.SunflowerRepository;
+import org.tdf.sunflower.facade.IRepositoryService;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallData;
@@ -14,7 +15,7 @@ import java.util.Objects;
 
 public abstract class AbstractBuiltIn implements BuiltinContract {
     protected StateTrie<HexBytes, Account> accounts;
-    protected SunflowerRepository repository;
+    protected IRepositoryService repository;
 
     @Getter
     protected HexBytes address;
@@ -22,7 +23,7 @@ public abstract class AbstractBuiltIn implements BuiltinContract {
     protected AbstractBuiltIn(
         HexBytes address,
         StateTrie<HexBytes, Account> accounts,
-        SunflowerRepository repository
+        IRepositoryService repository
     ) {
         this.address = address;
         this.accounts = accounts;
@@ -60,11 +61,13 @@ public abstract class AbstractBuiltIn implements BuiltinContract {
 
     @Override
     public List<?> view(HexBytes blockHash, String method, Object... args) {
-        Header parent = repository.getHeader(blockHash.getBytes()).get();
-        Abi.Function func = getFunction(method);
-        byte[] encoded = func.encode(args);
-        CallData callData = CallData.empty();
-        callData.setData(HexBytes.fromBytes(encoded));
-        return call(accounts.createBackend(parent, null, true), callData, method, args);
+        try(RepositoryReader rd = repository.getReader()) {
+            Header parent = rd.getHeaderByHash(blockHash);
+            Abi.Function func = getFunction(method);
+            byte[] encoded = func.encode(args);
+            CallData callData = CallData.empty();
+            callData.setData(HexBytes.fromBytes(encoded));
+            return call(accounts.createBackend(parent, null, true), callData, method, args);
+        }
     }
 }

@@ -7,7 +7,8 @@ import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.AppConfig;
 import org.tdf.sunflower.facade.ConsensusEngine;
-import org.tdf.sunflower.facade.SunflowerRepository;
+import org.tdf.sunflower.facade.IRepositoryService;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
@@ -28,21 +29,24 @@ import static org.tdf.sunflower.controller.TypeConverter.*;
 @RequiredArgsConstructor
 public class JsonRpcImpl implements JsonRpc {
     private final AccountTrie accountTrie;
-    private final SunflowerRepository repository;
+    private final IRepositoryService repository;
     private final TransactionPool pool;
     private final ConsensusEngine engine;
 
     private Block getByJsonBlockId(String id) {
-        if ("earliest".equalsIgnoreCase(id)) {
-            return repository.getCanonicalBlock(0).orElse(null);
-        } else if ("latest".equalsIgnoreCase(id)) {
-            return repository.getBestBlock();
-        } else if ("pending".equalsIgnoreCase(id)) {
-            return null;
-        } else {
-            long blockNumber = hexToBigInteger(id).longValue();
-            return repository.getCanonicalBlock(blockNumber).orElse(null);
+        try (RepositoryReader rd = repository.getReader()) {
+            if ("earliest".equalsIgnoreCase(id)) {
+                return rd.getGenesis();
+            } else if ("latest".equalsIgnoreCase(id)) {
+                return rd.getBestBlock();
+            } else if ("pending".equalsIgnoreCase(id)) {
+                return null;
+            } else {
+                long blockNumber = hexToBigInteger(id).longValue();
+                return rd.getCanonicalBlock(blockNumber);
+            }
         }
+
     }
 
     @Override
@@ -115,7 +119,9 @@ public class JsonRpcImpl implements JsonRpc {
 
     @Override
     public String eth_blockNumber() {
-        return toJsonHex(repository.getBestHeader().getHeight());
+        try (RepositoryReader rd = repository.getReader()) {
+            return toJsonHex(rd.getBestHeader().getHeight());
+        }
     }
 
 
@@ -124,21 +130,26 @@ public class JsonRpcImpl implements JsonRpc {
         if (blockId == null || blockId.trim().isEmpty())
             blockId = "latest";
 
-        switch (blockId) {
-            case "latest":
-                header = repository.getBestHeader();
-                break;
-            case "pending":
-                return pool.current();
-            case "earliest":
-                header = repository.getGenesis().getHeader();
-                break;
-            default:
-                int h = hexToBigInteger(blockId).intValue();
-                header = repository.getCanonicalHeader(h).get();
-                break;
+        try (RepositoryReader rd = repository.getReader()) {
+
+            switch (blockId) {
+                case "latest": {
+                    header = rd.getBestHeader();
+                    break;
+                }
+                case "pending":
+                    return pool.current();
+                case "earliest":
+                    header = rd.getGenesis().getHeader();
+                    break;
+                default:
+                    int h = hexToBigInteger(blockId).intValue();
+                    header = rd.getCanonicalHeader(h);
+                    break;
+            }
+            return accountTrie.createBackend(header, System.currentTimeMillis() / 1000, isStatic);
         }
-        return accountTrie.createBackend(header, System.currentTimeMillis() / 1000, isStatic);
+
     }
 
     @Override
@@ -273,13 +284,16 @@ public class JsonRpcImpl implements JsonRpc {
     @Override
     public TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception {
         HexBytes hash = jsonHexToHexBytes(transactionHash);
-        TransactionInfo info = repository.getTransactionInfo(hash);
-        Transaction tx = repository.getTransactionByHash(hash.getBytes()).orElse(null);
-        Block b = info == null ? null : repository.getBlock(info.getBlockHash()).orElse(null);
-        if (info == null || tx == null || b == null)
-            return null;
-        info.setTransaction(tx);
-        return new TransactionReceiptDTO(b, info);
+        try (RepositoryReader rd = repository.getReader()) {
+            TransactionInfo info = rd.getTransactionInfo(hash);
+            Transaction tx = info == null ? null : info.getReceipt().getTransaction();
+            Block b = info == null ? null : rd.getBlockByHash(HexBytes.fromBytes(info.getBlockHash()));
+            if (info == null || tx == null || b == null)
+                return null;
+            info.setTransaction(tx);
+            return new TransactionReceiptDTO(b, info);
+        }
+
     }
 
     @Override

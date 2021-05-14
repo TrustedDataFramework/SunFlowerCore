@@ -59,7 +59,7 @@ public abstract class AbstractConsensusEngine implements ConsensusEngine {
     // transaction pool will be injected before init() called
     private TransactionPool transactionPool;
     // sunflowerRepository will be injected before init() called
-    private SunflowerRepository sunflowerRepository;
+    private IRepositoryService sunflowerRepository;
 
     // sub class should set peer server listener explicitly when init() called
     private PeerServerListener peerServerListener = PeerServerListener.NONE;

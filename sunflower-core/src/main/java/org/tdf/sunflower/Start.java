@@ -44,9 +44,8 @@ import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.net.PeerServerImpl;
 import org.tdf.sunflower.pool.TransactionPoolImpl;
-import org.tdf.sunflower.service.ConcurrentSunflowerRepository;
-import org.tdf.sunflower.service.HttpService;
-import org.tdf.sunflower.service.SunflowerRepositoryKVImpl;
+import org.tdf.sunflower.service.*;
+import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
@@ -190,8 +189,9 @@ public class Start {
     }
 
     @Bean
-    public SunflowerRepository sunflowerRepository(
-        ApplicationContext context
+    public RepositoryService sunflowerRepository(
+        ApplicationContext context,
+        AccountTrie accountTrie
     ) {
         String type = context.getEnvironment().getProperty("sunflower.database.block-store");
         type = (type == null || type.isEmpty()) ? "kv" : type;
@@ -200,8 +200,11 @@ public class Start {
                 throw new UnsupportedOperationException();
             }
             case "kv": {
-                SunflowerRepositoryKVImpl ret = new SunflowerRepositoryKVImpl(context);
-                return new ConcurrentSunflowerRepository(ret);
+                RepositoryKVImpl kv = new RepositoryKVImpl(context);
+                kv.setAccountTrie(accountTrie);
+                return new RepositoryService(
+                   kv
+                );
             }
         }
         throw new RuntimeException("unknown block store type: " + type);
@@ -241,7 +244,7 @@ public class Start {
     @Bean
     public ConsensusEngine consensusEngine(
         ConsensusProperties consensusProperties,
-        SunflowerRepository repositoryService,
+        RepositoryService repositoryService,
         TransactionPoolImpl transactionPool,
         DatabaseStoreFactory databaseStoreFactory,
         EventBus eventBus,
@@ -301,14 +304,15 @@ public class Start {
             }
         }
 
-        repositoryService.setAccountTrie(accountTrie);
-
         // init accountTrie and genesis block
         AbstractConsensusEngine abstractEngine = ((AbstractConsensusEngine) engine);
         HexBytes root = accountTrie.init(abstractEngine.getAlloc(), abstractEngine.getBios(), abstractEngine.getBuiltins());
         Block g = engine.getGenesisBlock();
         g.setStateRoot(root);
-        repositoryService.saveGenesis(g);
+
+        try(RepositoryWriter writer = repositoryService.getWriter()) {
+            writer.saveGenesis(g);
+        }
 
         transactionPool.setEngine(engine);
         return engine;
@@ -426,7 +430,7 @@ public class Start {
         engine.setEventBus(context.getBean(EventBus.class));
         engine.setTransactionPool(context.getBean(TransactionPool.class));
         DatabaseStoreFactory databaseStoreFactory = (context.getBean(DatabaseStoreFactory.class));
-        engine.setSunflowerRepository(context.getBean(SunflowerRepository.class));
+        engine.setSunflowerRepository(context.getBean(IRepositoryService.class));
         engine.setContractStorageTrie(context.getBean("contractStorageTrie", Trie.class));
         engine.setContractCodeStore(context.getBean("contractCodeStore", Store.class));
         engine.setAccountTrie(context.getBean(AccountTrie.class));

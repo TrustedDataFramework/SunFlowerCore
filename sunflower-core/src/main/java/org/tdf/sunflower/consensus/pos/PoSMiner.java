@@ -9,6 +9,8 @@ import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.events.NewBlockMined;
 import org.tdf.sunflower.facade.BlockRepository;
+import org.tdf.sunflower.facade.IRepositoryService;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
@@ -33,7 +35,7 @@ public class PoSMiner extends AbstractMiner {
     public HexBytes minerAddress;
     private ConsensusConfig config;
     @Setter
-    private BlockRepository blockRepository;
+    private IRepositoryService blockRepository;
     private volatile boolean stopped;
     private ScheduledExecutorService minerExecutor;
     @Setter
@@ -91,17 +93,18 @@ public class PoSMiner extends AbstractMiner {
             log.warn("pos miner: invalid coinbase address {}", config.getMinerCoinBase());
             return;
         }
-        Block best = blockRepository.getBestBlock();
-        // 判断是否轮到自己出块
-        Optional<Proposer> o = getProposer(
-            best,
-            OffsetDateTime.now().toEpochSecond()
-        ).filter(p -> p.getAddress().equals(minerAddress));
 
-        if (!o.isPresent()) return;
-        log.debug("try to mining at height " + (best.getHeight() + 1));
-        try {
-            BlockCreateResult res = createBlock(blockRepository.getBestBlock(), Collections.emptyMap());
+        try (RepositoryReader rd = blockRepository.getReader()){
+            Block best = rd.getBestBlock();
+            // 判断是否轮到自己出块
+            Optional<Proposer> o = getProposer(
+                best,
+                OffsetDateTime.now().toEpochSecond()
+            ).filter(p -> p.getAddress().equals(minerAddress));
+
+            if (!o.isPresent()) return;
+            log.debug("try to mining at height " + (best.getHeight() + 1));
+            BlockCreateResult res = createBlock(rd.getBestBlock(), Collections.emptyMap());
             if (res.getBlock() != null) {
                 log.info("mining success block: {}", res.getBlock().getHeader());
             }

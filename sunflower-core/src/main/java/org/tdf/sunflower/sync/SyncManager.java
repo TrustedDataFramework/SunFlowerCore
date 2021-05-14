@@ -43,7 +43,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class SyncManager implements PeerServerListener, Closeable {
     private final PeerServer peerServer;
     private final ConsensusEngine engine;
-    private final SunflowerRepository repository;
+    private final IRepositoryService repository;
     private final TransactionPool transactionPool;
     private final TreeSet<Block> queue = new TreeSet<>(Block.FAT_COMPARATOR);
     private final SyncConfig syncConfig;
@@ -79,7 +79,7 @@ public class SyncManager implements PeerServerListener, Closeable {
 
     public SyncManager(
         PeerServer peerServer, ConsensusEngine engine,
-        SunflowerRepository repository,
+        IRepositoryService repository,
         TransactionPool transactionPool, SyncConfig syncConfig,
         EventBus eventBus,
         AccountTrie accountTrie,
@@ -93,8 +93,8 @@ public class SyncManager implements PeerServerListener, Closeable {
         this.transactionPool = transactionPool;
         this.syncConfig = syncConfig;
         this.eventBus = eventBus;
-        this.fastSyncing = syncConfig.getFastSyncHeight() > 0
-            && repository.getBestHeader().getHeight() == 0;
+//        this.fastSyncing = syncConfig.getFastSyncHeight() > 0
+//            && repository.getBestHeader().getHeight() == 0;
         this.fastSyncHash = HexBytes.fromBytes(syncConfig.getFastSyncHash());
         this.fastSyncHeight = syncConfig.getFastSyncHeight();
         this.accountTrie = accountTrie;
@@ -158,13 +158,17 @@ public class SyncManager implements PeerServerListener, Closeable {
 
     @Override
     public void onMessage(Context context, PeerServer server) {
-        executorService.execute(() -> onMessageInternal(context, server));
+        executorService.execute(() -> {
+            try (RepositoryWriter writer = repository.getWriter()){
+                onMessageInternal(context, server, writer);
+            };
+        });
     }
 
     @SneakyThrows
-    private void onMessageInternal(Context context, PeerServer server) {
+    private void onMessageInternal(Context context, PeerServer server, RepositoryReader writer) {
         Optional<SyncMessage> o = SyncMessage.decode(context.getMessage());
-        Block bestBlock = repository.getBestBlock();
+        Block bestBlock = writer.getBestBlock();
         ;
         if (!o.isPresent()) return;
         SyncMessage msg = o.get();
@@ -178,7 +182,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                     return;
                 }
                 Status s = msg.getBodyAs(Status.class);
-                this.onStatus(context, server, s);
+                this.onStatus(context, server, s, writer);
                 return;
             }
             case SyncMessage.GET_BLOCKS: {
@@ -190,7 +194,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 }
                 if (fastSyncing) return;
                 GetBlocks getBlocks = msg.getBodyAs(GetBlocks.class);
-                List<Block> blocks = repository.getBlocksBetween(
+                List<Block> blocks = writer.getBlocksBetween(
                     getBlocks.getStartHeight(),
                     getBlocks.getStopHeight(),
                     Math.min(syncConfig.getMaxBlocksTransfer(), getBlocks.getLimit()),
@@ -223,7 +227,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                     context.relay();
                     return;
                 }
-                Header best = repository.getBestHeader();
+                Header best = writer.getBestHeader();
                 if (receivedProposals.asMap().containsKey(proposal.getHash())) {
                     return;
                 }
@@ -232,7 +236,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 if (Math.abs(proposal.getHeight() - best.getHeight()) > syncConfig.getMaxPendingBlocks()) {
                     return;
                 }
-                if (repository.containsHeader(proposal.getHash().getBytes()))
+                if (writer.containsHeader(proposal.getHash()))
                     return;
                 if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
                     return;
@@ -377,11 +381,11 @@ public class SyncManager implements PeerServerListener, Closeable {
             }
             return;
         }
-        Header best = repository.getBestHeader();
-        blocks.sort(Block.FAT_COMPARATOR);
         if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS))
             return;
-        try {
+        try (RepositoryReader rd = repository.getReader()){
+            Header best = rd.getBestHeader();
+            blocks.sort(Block.FAT_COMPARATOR);
             for (Block block : blocks) {
                 if (queue.contains(block))
                     continue;
@@ -390,7 +394,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 if (Math.abs(block.getHeight() - best.getHeight()) > syncConfig.getMaxPendingBlocks())
                     break;
                 block.resetTransactionsRoot();
-                if (repository.containsHeader(block.getHash().getBytes()))
+                if (rd.containsHeader(block.getHash()))
                     continue;
                 queue.add(block);
             }
@@ -412,7 +416,7 @@ public class SyncManager implements PeerServerListener, Closeable {
 //    }
 
     @SneakyThrows
-    private void onStatus(Context ctx, PeerServer server, Status s) {
+    private void onStatus(Context ctx, PeerServer server, Status s, RepositoryReader rd) {
         if (fastSyncing) {
             boolean fastSyncEnabled =
                 s.getPrunedHeight() < fastSyncHeight
@@ -440,12 +444,12 @@ public class SyncManager implements PeerServerListener, Closeable {
             }
             return;
         }
-        Header best = repository.getBestHeader();
+        Header best = rd.getBestHeader();
         List<Block> orphans = Collections.emptyList();
         // try to sync orphans
         if (blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
             try {
-                orphans = getOrphansInternal();
+                orphans = getOrphansInternal(rd);
             } finally {
                 blockQueueLock.unlock();
             }
@@ -455,7 +459,7 @@ public class SyncManager implements PeerServerListener, Closeable {
             if (b != null
                 && s.getBestBlockHeight() >= b.getHeight()
                 && b.getHeight() > s.getPrunedHeight()
-                && !repository.containsHeader(b.getHashPrev().getBytes())
+                && !rd.containsHeader(b.getHashPrev())
             ) {
                 log.debug("try to fetch orphans, head height {} hash {}", b.getHeight(), b.getHash());
                 // remote: prune < b <= best
@@ -477,7 +481,7 @@ public class SyncManager implements PeerServerListener, Closeable {
         }
     }
 
-    private List<Block> getOrphansInternal() {
+    private List<Block> getOrphansInternal(RepositoryReader rd) {
         List<Block> orphanHeads = new ArrayList<>();
         Set<HexBytes> orphans = new HashSet<>();
         Set<HexBytes> noOrphans = new HashSet<>();
@@ -490,7 +494,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 orphans.add(block.getHash());
                 continue;
             }
-            if (repository.containsHeader(block.getHashPrev().getBytes())) {
+            if (rd.containsHeader(block.getHashPrev())) {
                 noOrphans.add(block.getHash());
             } else {
                 orphanHeads.add(block);
@@ -505,7 +509,7 @@ public class SyncManager implements PeerServerListener, Closeable {
         if (!blockQueueLock.tryLock(syncConfig.getLockTimeout(), TimeUnit.SECONDS)) {
             throw new RuntimeException("busy...");
         }
-        try {
+        try (RepositoryReader rd = repository.getReader()){
             List<Block> ret = new ArrayList<>();
             Set<HexBytes> orphans = new HashSet<>();
             Set<HexBytes> noOrphans = new HashSet<>();
@@ -519,7 +523,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                     ret.add(block);
                     continue;
                 }
-                if (repository.containsHeader(block.getHashPrev().getBytes())) {
+                if (rd.containsHeader(block.getHashPrev())) {
                     noOrphans.add(block.getHash());
                 } else {
                     ret.add(block);
@@ -536,12 +540,13 @@ public class SyncManager implements PeerServerListener, Closeable {
     public void tryWrite() {
         if (fastSyncing)
             return;
-        Header best = repository.getBestHeader();
-        Set<HexBytes> orphans = new HashSet<>();
         if (!blockQueueLock.tryLock(8 * syncConfig.getLockTimeout(), TimeUnit.SECONDS))
             return;
         Iterator<Block> it = queue.iterator();
-        try {
+
+        try (RepositoryWriter writer = repository.getWriter()){
+            Header best = writer.getBestHeader();
+            Set<HexBytes> orphans = new HashSet<>();
             while (it.hasNext()) {
                 Block b = it.next();
                 if (Math.abs(best.getHeight() - b.getHeight()) > syncConfig.getMaxAccountsTransfer()
@@ -550,7 +555,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                     it.remove();
                     continue;
                 }
-                if (repository.containsHeader(b.getHash().getBytes())) {
+                if (writer.containsHeader(b.getHash())) {
                     it.remove();
                     continue;
                 }
@@ -558,12 +563,12 @@ public class SyncManager implements PeerServerListener, Closeable {
                     orphans.add(b.getHash());
                     continue;
                 }
-                Optional<Block> o = repository.getBlock(b.getHashPrev().getBytes());
-                if (!o.isPresent()) {
+                Block o = writer.getBlockByHash(b.getHashPrev());
+                if (o == null) {
                     orphans.add(b.getHash());
                     continue;
                 }
-                ValidateResult res = engine.getValidator().validate(b, o.get());
+                ValidateResult res = engine.getValidator().validate(b, o);
                 if (!res.isSuccess()) {
                     it.remove();
                     log.error(res.getReason());
@@ -571,7 +576,7 @@ public class SyncManager implements PeerServerListener, Closeable {
                 }
                 it.remove();
                 BlockValidateResult rs = ((BlockValidateResult) res);
-                repository.writeBlock(b, rs.getInfos());
+                writer.writeBlock(b, rs.getInfos());
             }
         } finally {
             blockQueueLock.unlock();
@@ -580,18 +585,20 @@ public class SyncManager implements PeerServerListener, Closeable {
 
     public void sendStatus() {
         if (fastSyncing) return;
-        Header best = repository.getBestHeader();
-        Block genesis = repository.getGenesis();
-        Status status = new Status(
-            best.getHeight(),
-            best.getHash(),
-            genesis.getHash(),
-            0,
-            null
+        try(RepositoryReader rd = repository.getReader()) {
+            Header best = rd.getBestHeader();
+            Block genesis = rd.getGenesis();
+            Status status = new Status(
+                best.getHeight(),
+                best.getHash(),
+                genesis.getHash(),
+                0,
+                null
 //                repository.getPrunedHeight(),
 //                repository.getPrunedHash()
-        );
-        broadcastToApproved(SyncMessage.encode(SyncMessage.STATUS, status));
+            );
+            broadcastToApproved(SyncMessage.encode(SyncMessage.STATUS, status));
+        }
     }
 
 

@@ -5,6 +5,8 @@ import lombok.SneakyThrows;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.consensus.Proposer;
+import org.tdf.sunflower.facade.IRepositoryService;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.SunflowerRepository;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.Header;
@@ -62,7 +64,7 @@ public class Authentication extends AbstractBuiltIn {
         @NonNull Collection<? extends HexBytes> nodes,
         @NonNull HexBytes contractAddress,
         StateTrie<HexBytes, Account> accounts,
-        SunflowerRepository repo,
+        IRepositoryService repo,
         ConsensusConfig config
     ) {
         super(contractAddress, accounts, repo);
@@ -167,14 +169,16 @@ public class Authentication extends AbstractBuiltIn {
                 return Collections.emptyList();
             }
             case "getProposer": {
-                Header parent = repository.getHeader(backend.getParentHash().getBytes()).get();
-                Optional<Proposer> o = Authentication.getProposerInternal(parent, ((BigInteger) args[0]).longValue(), nodes, this.config.getBlockInterval());
-                Proposer p = o.orElse(new Proposer(Address.empty(), 0, 0));
-                return Arrays.asList(
-                    p.getAddress().getBytes(),
-                    BigInteger.valueOf(p.getStartTimeStamp()),
-                    BigInteger.valueOf(p.getEndTimeStamp())
-                );
+                try(RepositoryReader rd = repository.getReader()) {
+                    Header parent = rd.getHeaderByHash(backend.getParentHash());
+                    Optional<Proposer> o = Authentication.getProposerInternal(parent, ((BigInteger) args[0]).longValue(), nodes, this.config.getBlockInterval());
+                    Proposer p = o.orElse(new Proposer(Address.empty(), 0, 0));
+                    return Arrays.asList(
+                        p.getAddress().getBytes(),
+                        BigInteger.valueOf(p.getStartTimeStamp()),
+                        BigInteger.valueOf(p.getEndTimeStamp())
+                    );
+                }
             }
             default:
                 throw new RuntimeException("method not found");

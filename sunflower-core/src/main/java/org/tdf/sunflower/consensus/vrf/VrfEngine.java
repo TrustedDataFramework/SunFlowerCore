@@ -196,7 +196,7 @@ public class VrfEngine extends AbstractConsensusEngine implements PeerServerList
 
 //        vrfMiner = new VrfMiner(getAccountTrie(), getEventBus(), vrfConfig);
 
-        vrfMiner.setBlockRepository(this.getSunflowerRepository());
+//        vrfMiner.setBlockRepository(this.getSunflowerRepository());
         vrfMiner.setConfig(vrfConfig);
         vrfMiner.setGenesis(genesis);
         vrfMiner.setTransactionPool(getTransactionPool());

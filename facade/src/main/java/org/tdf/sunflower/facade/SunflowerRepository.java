@@ -120,21 +120,6 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
 
         }
 
-        //        @Override
-//        public void prune(byte[] hash) {
-//
-//        }
-//
-//        @Override
-//        public long getPrunedHeight() {
-//            return 0;
-//        }
-//
-//        @Override
-//        public HexBytes getPrunedHash() {
-//            return null;
-//        }
-
         @Override
         public boolean containsTransaction(byte[] hash) {
             return false;
@@ -150,11 +135,6 @@ public interface SunflowerRepository extends BlockRepository, TransactionReposit
             return Collections.emptyList();
         }
 
-
-//        @Override
-//        public void traverseTransactions(BiFunction<byte[], Transaction, Boolean> traverser) {
-//
-//        }
     };
 
     TransactionInfo getTransactionInfo(HexBytes transactionHash);

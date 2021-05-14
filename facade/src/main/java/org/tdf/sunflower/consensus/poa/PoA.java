@@ -11,6 +11,7 @@ import org.tdf.sunflower.consensus.EconomicModel;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.consensus.poa.config.PoAConfig;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Authentication;
 import org.tdf.sunflower.state.BuiltinContract;
@@ -88,7 +89,7 @@ public class PoA extends AbstractConsensusEngine {
 
             executorService.scheduleAtFixedRate(() ->
                 {
-                    try {
+                    try (RepositoryReader rd = getSunflowerRepository().getReader()){
                         URL url = new URL(this.config.getGatewayNode());
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
@@ -101,8 +102,8 @@ public class PoA extends AbstractConsensusEngine {
                                 HexBytes.fromHex(n.get(i).textValue()),
                                 Transaction.class
                             );
-                            if (!getSunflowerRepository().containsTransaction(tx.getHash())) {
-                                Block best = getSunflowerRepository().getBestBlock();
+                            if (!rd.containsTransaction(tx.getHashHex())) {
+                                Block best = rd.getBestBlock();
                                 getTransactionPool().collect(tx);
                             }
                         }

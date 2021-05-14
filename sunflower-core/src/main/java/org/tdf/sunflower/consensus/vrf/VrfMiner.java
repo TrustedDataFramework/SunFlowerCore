@@ -20,6 +20,7 @@ import org.tdf.sunflower.consensus.vrf.util.VrfMessageCode;
 import org.tdf.sunflower.consensus.vrf.util.VrfUtil;
 import org.tdf.sunflower.events.NewBlocksReceived;
 import org.tdf.sunflower.facade.BlockRepository;
+import org.tdf.sunflower.facade.IRepositoryService;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
@@ -47,7 +48,7 @@ public class VrfMiner extends AbstractMiner {
     public HexBytes minerAddress;
     private VrfConfig vrfConfig;
     private VrfGenesis genesis;
-    private BlockRepository blockRepository;
+    private IRepositoryService blockRepository;
     private boolean stopped;
     private Thread thread;
     private VrfStateMachine vrfStateMachine;
@@ -87,7 +88,7 @@ public class VrfMiner extends AbstractMiner {
         VrfUtil.VRF_PK = Hex.toHexString(vrfSk.getSigner().generatePublicKey().getEncoded());
     }
 
-    public void setRepository(BlockRepository blockRepository) {
+    public void setRepository(IRepositoryService blockRepository) {
         this.blockRepository = blockRepository;
     }
 
@@ -169,7 +170,7 @@ public class VrfMiner extends AbstractMiner {
 
     public void setVrfStateMachine(VrfStateMachine vrfStateMachine) {
         this.vrfStateMachine = vrfStateMachine;
-        this.vrfStateMachine.setBlockRepository(blockRepository);
+//        this.vrfStateMachine.setBlockRepository(blockRepository);
         this.vrfStateMachine.setVrfConfig(vrfConfig);
     }
 
@@ -201,7 +202,8 @@ public class VrfMiner extends AbstractMiner {
         log.info("VrfStateMachine is startup, minerCoinbase 0x{}, VrfPk 0x{}", Hex.toHexString(minerCoinbase, 0, 6),
             Hex.toHexString(vrfPk, 0, 6));
 
-        final Block bestPendingState = blockRepository.getBestBlock();
+        final Block bestPendingState = null;
+//            blockRepository.getBestBlock();
 
         final long nextBlockNum = bestPendingState.getHeight() + 1;
 
@@ -311,8 +313,10 @@ public class VrfMiner extends AbstractMiner {
     }
 
     private VrfMined getNewVrfMined() throws DecoderException, IOException {
-        Block bestBlock = blockRepository.getBestBlock();
-        Block bestPendingState = blockRepository.getBestBlock();
+        Block bestBlock = null;
+//            blockRepository.getBestBlock();
+        Block bestPendingState = null;
+//            blockRepository.getBestBlock();
         vrfSeed = VrfUtil.getSeed(bestPendingState);
 
         log.debug("getNewBlockForMining best blocks: PendingState: " + bestPendingState.getHeight() + ", Blockchain: "

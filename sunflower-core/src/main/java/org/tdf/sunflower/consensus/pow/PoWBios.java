@@ -9,7 +9,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
 import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.Start;
-import org.tdf.sunflower.facade.SunflowerRepository;
+import org.tdf.sunflower.facade.IRepositoryService;
 import org.tdf.sunflower.state.AbstractBuiltIn;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Constants;
@@ -48,7 +48,7 @@ public class PoWBios extends AbstractBuiltIn {
 
     public PoWBios(HexBytes nbits, ConsensusConfig config,
                    StateTrie<HexBytes, Account> accounts,
-                   SunflowerRepository repository) {
+                   IRepositoryService repository) {
         super(Constants.POW_BIOS_ADDR, accounts, repository);
         this.genesisNbits = Uint256.of(nbits.getBytes());
         this.config = config;

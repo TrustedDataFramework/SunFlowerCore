@@ -13,10 +13,7 @@ import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.TransactionPoolConfig
 import org.tdf.sunflower.events.NewBestBlock
 import org.tdf.sunflower.events.NewTransactionsCollected
-import org.tdf.sunflower.facade.ConsensusEngine
-import org.tdf.sunflower.facade.PendingTransactionValidator
-import org.tdf.sunflower.facade.SunflowerRepository
-import org.tdf.sunflower.facade.TransactionPool
+import org.tdf.sunflower.facade.*
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
@@ -37,7 +34,7 @@ import kotlin.math.min
 class TransactionPoolImpl(
     private val eventBus: EventBus,
     private val config: TransactionPoolConfig,
-    private val repository: SunflowerRepository,
+    private val repository: IRepositoryService,
     private val trie: StateTrie<HexBytes, Account>
 ) : TransactionPool {
     companion object {
@@ -78,7 +75,9 @@ class TransactionPoolImpl(
 
     fun setEngine(engine: ConsensusEngine) {
         validator = engine.validator
-        resetInternal(repository.bestHeader)
+        repository.getReader().use {
+            resetInternal(it.bestHeader)
+        }
     }
 
     private fun clearPending() {
@@ -235,6 +234,7 @@ class TransactionPoolImpl(
 
     override fun current(): Backend {
         lock.readLock().lock()
+        val rd = repository.getReader();
         try {
             return if (current != null) {
                 this.lock.readLock().lock()
@@ -242,10 +242,11 @@ class TransactionPoolImpl(
                 val b = LockableBackend(child, this.lock)
                 b
             } else {
-                val best = repository.bestHeader
+                val best = rd.bestHeader
                 trie.createBackend(best, best.stateRoot, null, false)
             }
         } finally {
+            rd.close()
             this.lock.readLock().unlock()
         }
     }

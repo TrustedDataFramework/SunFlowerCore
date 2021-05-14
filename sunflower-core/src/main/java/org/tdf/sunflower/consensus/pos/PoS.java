@@ -31,10 +31,6 @@ public class PoS extends AbstractConsensusEngine {
 
     }
 
-    public List<HexBytes> getMinerAddresses() {
-        return getMinerAddresses(getSunflowerRepository().getBestBlock().getStateRoot());
-    }
-
     public List<HexBytes> getMinerAddresses(HexBytes stateRoot) {
         return this.minerContract.getNodes(stateRoot).stream().limit(config.getMaxMiners()).collect(Collectors.toList());
     }

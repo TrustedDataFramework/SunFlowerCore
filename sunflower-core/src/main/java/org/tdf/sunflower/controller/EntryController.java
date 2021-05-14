@@ -20,10 +20,7 @@ import org.tdf.common.util.RLPUtil;
 import org.tdf.sunflower.AppConfig;
 import org.tdf.sunflower.GlobalConfig;
 import org.tdf.sunflower.consensus.poa.PoA;
-import org.tdf.sunflower.facade.ConsensusEngine;
-import org.tdf.sunflower.facade.Miner;
-import org.tdf.sunflower.facade.SunflowerRepository;
-import org.tdf.sunflower.facade.TransactionPool;
+import org.tdf.sunflower.facade.*;
 import org.tdf.sunflower.net.Peer;
 import org.tdf.sunflower.net.PeerServer;
 import org.tdf.sunflower.state.Account;
@@ -32,13 +29,11 @@ import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.util.EnvReader;
-import org.tdf.sunflower.vm.WBI;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -59,11 +54,9 @@ public class EntryController {
 
     private final TransactionPool pool;
 
-    private final SunflowerRepository sunflowerRepository;
-
     private final ObjectMapper objectMapper;
 
-    private final SunflowerRepository repository;
+    private final IRepositoryService repository;
 
     private final SyncManager syncManager;
 
@@ -79,8 +72,14 @@ public class EntryController {
 
         Stat.StatBuilder builder = Stat.builder();
         OperatingSystemMXBean osMxBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-        Block best = repository.getBestBlock();
-        List<Block> blocks = repository.getBlocksBetween(Math.max(0, best.getHeight() - 10), best.getHeight());
+        Block best;
+        List<Block> blocks;
+
+        try (RepositoryReader rd = repository.getReader()) {
+            best = rd.getBestBlock();
+            blocks = rd.getBlocksBetween
+                (Math.max(0, best.getHeight() - 10), best.getHeight(), Integer.MAX_VALUE, false);
+        }
 
         Uint256 totalGasPrice = Uint256.ZERO;
         long totalTransactions = 0;
@@ -94,7 +93,6 @@ public class EntryController {
         }
 
         long yesterday = System.currentTimeMillis() / 1000 - (24 * 60 * 60);
-        Optional<Header> o = binarySearch(yesterday, 0, best.getHeight());
 
         String diff = "";
 
@@ -109,7 +107,6 @@ public class EntryController {
             .mining(blocks.stream().anyMatch(
                 x -> x.getBody().size() > 0 && x.getBody().get(0).getReceiveHex().equals(miner.getMinerAddress())))
             .currentDifficulty(diff).transactionPoolSize(0)
-            .blocksPerDay(o.map(h -> best.getHeight() - h.getHeight() + 1).orElse(0L))
             .consensus(consensusEngine.getName())
             .genesis(rd.getGenesis())
             .ec(rd.getEC())
@@ -125,12 +122,12 @@ public class EntryController {
             ;
     }
 
-    private <T> T getBlockOrHeader(String hashOrHeight, Function<Long, Optional<T>> func,
-                                   Function<byte[], Optional<T>> func1) {
+    private <T> T getBlockOrHeader(RepositoryReader rd, String hashOrHeight, Function<Long, T> func,
+                                   Function<HexBytes, T> func1) {
         Long height = null;
         try {
             height = Long.parseLong(hashOrHeight);
-            Header h = repository.getBestHeader();
+            Header h = rd.getBestHeader();
             while (height < 0) {
                 height += h.getHeight() + 1;
             }
@@ -139,35 +136,43 @@ public class EntryController {
         }
         if (height != null) {
             final long finalHeight = height;
-            return func.apply(height)
-                .orElseThrow(() -> new RuntimeException("block at height " + finalHeight + " not found"));
+            return func.apply(height);
         }
-        return func1.apply(HexBytes.decode(hashOrHeight))
-            .orElseThrow(() -> new RuntimeException("block of hash " + hashOrHeight + " not found"));
+        return func1.apply(HexBytes.fromHex(hashOrHeight));
     }
 
     @GetMapping(value = "/block/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
     public BlockV1 getBlock(@PathVariable String hashOrHeight) {
-        return BlockV1.fromV2(getBlockOrHeader(hashOrHeight, repository::getCanonicalBlock, repository::getBlock));
+        try (RepositoryReader rd = repository.getReader()) {
+            return BlockV1.fromV2(getBlockOrHeader(rd, hashOrHeight, rd::getCanonicalBlock, rd::getBlockByHash));
+        }
     }
 
     @GetMapping(value = "/header/{hashOrHeight}", produces = MediaType.APPLICATION_JSON_VALUE)
     public HeaderV1 getHeaders(@PathVariable String hashOrHeight) {
-        return HeaderV1.fromV2(getBlockOrHeader(hashOrHeight, repository::getCanonicalHeader, repository::getHeader));
+        try (RepositoryReader rd = repository.getReader()) {
+            return HeaderV1.fromV2(getBlockOrHeader(rd, hashOrHeight, rd::getCanonicalHeader, rd::getHeaderByHash));
+        }
     }
 
     @GetMapping(value = "/transaction/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
     public TransactionV1 getTransaction(@PathVariable String hash) {
-        return repository.getTransactionByHash(HexBytes.decode(hash)).map(TransactionV1::fromV2).get();
+        try (RepositoryReader rd = repository.getReader()) {
+            return TransactionV1.fromV2(
+                rd.getTransaction(HexBytes.fromHex(hash))
+            );
+        }
     }
 
     @GetMapping(value = "/account/{addressOrPublicKey}", produces = MediaType.APPLICATION_JSON_VALUE)
     public AccountView getAccount(@PathVariable String addressOrPublicKey) throws Exception {
         HexBytes addressHex = Address.of(addressOrPublicKey);
-        Account a = accountTrie.get(sunflowerRepository.getBestHeader().getStateRoot(), addressHex);
-        if (a == null)
-            a = Account.emptyAccount(addressHex, Uint256.ZERO);
-        return AccountView.fromAccount(a);
+        try (RepositoryReader rd = repository.getReader()) {
+            Account a = accountTrie.get(rd.getBestHeader().getStateRoot(), addressHex);
+            if (a == null)
+                a = Account.emptyAccount(addressHex, Uint256.ZERO);
+            return AccountView.fromAccount(a);
+        }
     }
 
     @GetMapping(value = "/peers", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -193,9 +198,6 @@ public class EntryController {
 
     @GetMapping(value = "/contract/{address}/abi", produces = MediaType.APPLICATION_JSON_VALUE)
     public Object getABI(@PathVariable("address") final String address) {
-        HexBytes addressHex = Address.of(address);
-        Header h = sunflowerRepository.getBestHeader();
-        Account a = accountTrie.get(h.getStateRoot(), addressHex);
         return null;
     }
 
@@ -233,36 +235,6 @@ public class EntryController {
         return poa.farmBaseTransactions.stream().map(RLPUtil::encode).collect(Collectors.toList());
     }
 
-    // get the nearest block after or equals to the timestamp
-    private Optional<Header> binarySearch(long timestamp, long low, long high) {
-        Header x = repository.getCanonicalHeader(low).get();
-        if (low == high) {
-            if (x.getCreatedAt() < timestamp)
-                return Optional.empty();
-            return Optional.of(x);
-        }
-        Header m = repository.getCanonicalHeader((low + high) / 2).get();
-        if (m.getCreatedAt() == timestamp)
-            return Optional.of(m);
-        if (m.getCreatedAt() < timestamp) {
-            if (m.getHeight() == high)
-                return Optional.empty();
-
-            Header m1 = repository.getCanonicalHeader(m.getHeight() + 1).get();
-            if (m1.getCreatedAt() >= timestamp)
-                return Optional.of(m1);
-            return binarySearch(timestamp, Math.min(m.getHeight() + 1, high), high);
-        }
-        if (m.getHeight() == low) {
-            return Optional.of(m);
-        }
-        Header m1 = repository.getCanonicalHeader(m.getHeight() - 1).get();
-        if (m1.getCreatedAt() < timestamp)
-            return Optional.of(m);
-        if (m1.getCreatedAt() == timestamp)
-            return Optional.of(m1);
-        return binarySearch(timestamp, low, m.getHeight() - 1);
-    }
 
     @AllArgsConstructor
     @Getter

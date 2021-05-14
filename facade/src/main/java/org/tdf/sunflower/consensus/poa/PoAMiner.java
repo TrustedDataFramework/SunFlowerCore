@@ -11,7 +11,8 @@ import org.tdf.sunflower.consensus.AbstractMiner;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.consensus.poa.config.PoAConfig;
 import org.tdf.sunflower.events.NewBlockMined;
-import org.tdf.sunflower.facade.BlockRepository;
+import org.tdf.sunflower.facade.IRepositoryService;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.BlockCreateResult;
@@ -36,7 +37,7 @@ public class PoAMiner extends AbstractMiner {
     private final PoAConfig config;
 
     @Setter
-    private BlockRepository blockRepository;
+    private IRepositoryService blockRepository;
     private volatile boolean stopped;
     private ScheduledExecutorService minerExecutor;
     @Setter
@@ -118,22 +119,21 @@ public class PoAMiner extends AbstractMiner {
             return;
         }
 
-        Block best = blockRepository.getBestBlock();
-        long now = OffsetDateTime.now().toEpochSecond();
+        try (RepositoryReader rd = blockRepository.getReader()){
+            Block best = rd.getBestBlock();
+            long now = OffsetDateTime.now().toEpochSecond();
 
-        // 判断是否轮到自己出块
-        Proposer p = poA.getMinerContract().getProposer(
-            best.getHash(),
-            now
-        );
+            // 判断是否轮到自己出块
+            Proposer p = poA.getMinerContract().getProposer(
+                best.getHash(),
+                now
+            );
 
-        if (!p.getAddress().equals(config.getMinerCoinBase())) return;
-        log.debug("try to mining at height " + (best.getHeight() + 1));
-        Map<String, Long> args = new HashMap<>();
-        args.put("createdAt", now);
-
-        try {
-            BlockCreateResult b = createBlock(blockRepository.getBestBlock(), args);
+            if (!p.getAddress().equals(config.getMinerCoinBase())) return;
+            log.debug("try to mining at height " + (best.getHeight() + 1));
+            Map<String, Long> args = new HashMap<>();
+            args.put("createdAt", now);
+            BlockCreateResult b = createBlock(rd.getBestBlock(), args);
             if (b.getBlock() != null) {
                 log.info("mining success block: {}", b.getBlock().getHeader());
             }
