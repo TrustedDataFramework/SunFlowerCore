@@ -3,7 +3,6 @@ package org.tdf.sunflower.service
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 import org.tdf.common.serialize.Codecs
-import org.tdf.common.store.BasePrefixStore
 import org.tdf.common.store.Store
 import org.tdf.common.store.StoreWrapper
 import org.tdf.common.util.FastByteComparisons
@@ -204,36 +203,34 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     }
 
     init {
-        val base = factory.create("blockchain")
-
         transactionsStore = StoreWrapper<HexBytes, Transaction, Any, Any>(
-            BasePrefixStore(base, "t".toByteArray()),
+            factory.create('b'),
             Codecs.HEX,
             Codecs.newRLPCodec(Transaction::class.java)
         )
 
         headerStore = StoreWrapper<HexBytes, Header, Any, Any>(
-            BasePrefixStore(base, "h".toByteArray()),
+            factory.create('h'),
             Codecs.HEX,
             Codecs.newRLPCodec(Header::class.java)
         )
         transactionsRoot = StoreWrapper<HexBytes, Array<HexBytes>, Any, Any>(
-            BasePrefixStore(base, "r".toByteArray()),
+            factory.create('t'),
             Codecs.HEX,
             Codecs.newRLPCodec(Array<HexBytes>::class.java)
         )
         heightIndex = StoreWrapper<Long, Array<HexBytes>, Any, Any>(
-            BasePrefixStore(base, "i".toByteArray()),
+            factory.create('i'),
             Codecs.newRLPCodec(Long::class.java),
             Codecs.newRLPCodec(Array<HexBytes>::class.java)
         )
         status = StoreWrapper<String, Header, Any, Any>(
-            BasePrefixStore(base, "s".toByteArray()),
+            factory.create('s'),
             Codecs.STRING,
             Codecs.newRLPCodec(Header::class.java)
         )
         transactionInfos = StoreWrapper<HexBytes, Array<TransactionInfo>, Any, Any>(
-            BasePrefixStore(base, "f".toByteArray()),
+            factory.create('f'),
             Codecs.HEX,
             Codecs.newRLPCodec(Array<TransactionInfo>::class.java)
         )

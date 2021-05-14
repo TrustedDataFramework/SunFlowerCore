@@ -17,7 +17,7 @@ interface Store<K, V> {
      * @param k key to query
      * @return value or
      */
-    operator fun get(k: K): V
+    operator fun get(k: K): V?
 
     /**
      * puts key-value pair into store, remove key in the store if v is trap-like

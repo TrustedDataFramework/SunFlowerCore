@@ -18,10 +18,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.util.ClassUtils;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codecs;
-import org.tdf.common.store.JsonStore;
-import org.tdf.common.store.NoDeleteBatchStore;
-import org.tdf.common.store.Store;
-import org.tdf.common.store.StoreWrapper;
+import org.tdf.common.store.*;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.util.HexBytes;
 import org.tdf.crypto.CryptoHelpers;
@@ -234,7 +231,7 @@ public class Start {
     ) {
         AppConfig c = AppConfig.get();
         return new AccountTrie(
-            databaseStoreFactory.create("account-trie"),
+            databaseStoreFactory.create('a'),
             contractCodeStore,
             contractStorageTrie,
             c.isTrieSecure()
@@ -357,8 +354,8 @@ public class Start {
             .keyCodec(Codecs.HEX)
             .valueCodec(Codecs.HEX)
             .store(
-                new NoDeleteBatchStore<>(
-                    factory.create("contract-storage-trie"),
+                new NoDeleteStore<>(
+                    factory.create('o'),
                     Store.IS_NULL
                 )
             )
@@ -369,7 +366,7 @@ public class Start {
     @Bean
     public Store<HexBytes, HexBytes> contractCodeStore(DatabaseStoreFactory factory) {
         return new StoreWrapper<>(
-            factory.create("contract-code"),
+            factory.create('c'),
             Codecs.HEX,
             Codecs.HEX
         );

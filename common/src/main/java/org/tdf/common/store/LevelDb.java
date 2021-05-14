@@ -19,8 +19,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Slf4j(topic = "leveldb")
 public class LevelDb implements DatabaseStore {
     private final DBFactory factory;
-    // subdirectory
-    private String name;
     // parent directory
     private String directory;
     private DB db;
@@ -28,25 +26,21 @@ public class LevelDb implements DatabaseStore {
     private boolean alive;
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public LevelDb(DBFactory factory, String directory, String name) {
+    public LevelDb(DBFactory factory, String directory) {
         this.factory = factory;
         this.directory = directory;
-        this.name = name;
     }
 
-    public String getName() {
-        return name;
-    }
 
     public void init(DBSettings dbsettings) {
         this.dbSettings = dbsettings;
         resetDbLock.writeLock().lock();
         try {
-            log.debug("~> LevelDbDataSource.init(): " + name);
+            log.debug("~> LevelDbDataSource.init(): " + directory);
 
             if (isAlive()) return;
 
-            if (name == null) throw new NullPointerException("no name set to the db");
+            if (directory == null) throw new NullPointerException("no directory set to the db");
 
             Options options = new Options();
             options.createIfMissing(true);
@@ -63,7 +57,7 @@ public class LevelDb implements DatabaseStore {
                 final Path dbPath = getPath();
                 if (!Files.isSymbolicLink(dbPath.getParent())) Files.createDirectories(dbPath.getParent());
 
-                log.debug("Initializing new or existing database: '{}'", name);
+                log.debug("Initializing new or existing database: '{}'", directory);
                 try {
                     db = factory.open(dbPath.toFile(), options);
                 } catch (IOException e) {
@@ -89,7 +83,7 @@ public class LevelDb implements DatabaseStore {
                 log.error(ioe.getMessage(), ioe);
                 throw new RuntimeException("Can't initialize database", ioe);
             }
-            log.debug("<~ LevelDbDataSource.init(): " + name);
+            log.debug("<~ LevelDbDataSource.init(): " + directory);
         } finally {
             resetDbLock.writeLock().unlock();
         }
@@ -105,12 +99,12 @@ public class LevelDb implements DatabaseStore {
             if (!isAlive()) return;
 
             try {
-                log.debug("Close db: {}", name);
+                log.debug("Close db: {}", directory);
                 db.close();
 
                 alive = false;
             } catch (IOException e) {
-                log.error("Failed to find the db file on the close: {} ", name);
+                log.error("Failed to find the db file on the close: {} ", directory);
             }
         } finally {
             resetDbLock.writeLock().unlock();
@@ -142,17 +136,17 @@ public class LevelDb implements DatabaseStore {
     public void putAll(@NonNull Collection<? extends Map.Entry<? extends byte[], ? extends byte[]>> rows) {
         resetDbLock.readLock().lock();
         try {
-            if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
+            if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.updateBatch(): " + directory + ", " + rows.size());
             try {
                 updateBatchInternal(rows);
-                if (log.isTraceEnabled()) log.trace("<~ LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
+                if (log.isTraceEnabled()) log.trace("<~ LevelDbDataSource.updateBatch(): " + directory + ", " + rows.size());
             } catch (Exception e) {
                 log.error("Error, retrying one more time...", e);
                 // try one more time
                 try {
                     updateBatchInternal(rows);
                     if (log.isTraceEnabled())
-                        log.trace("<~ LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
+                        log.trace("<~ LevelDbDataSource.updateBatch(): " + directory + ", " + rows.size());
                 } catch (Exception e1) {
                     log.error("Error", e);
                     throw new RuntimeException(e);
@@ -181,17 +175,17 @@ public class LevelDb implements DatabaseStore {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled())
-                log.trace("~> LevelDbDataSource.get(): " + name + ", key: " + Hex.encodeHexString(key));
+                log.trace("~> LevelDbDataSource.get(): " + directory + ", key: " + Hex.encodeHexString(key));
             try {
                 byte[] ret = db.get(key);
                 if (log.isTraceEnabled())
-                    log.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.encodeHexString(key) + ", " + (ret == null ? "null" : ret.length));
+                    log.trace("<~ LevelDbDataSource.get(): " + directory + ", key: " + Hex.encodeHexString(key) + ", " + (ret == null ? "null" : ret.length));
                 return ret == null ? new byte[0] : ret;
             } catch (DBException e) {
                 log.warn("Exception. Retrying again...", e);
                 byte[] ret = db.get(key);
                 if (log.isTraceEnabled())
-                    log.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.encodeHexString(key) + ", " + (ret == null ? "null" : ret.length));
+                    log.trace("<~ LevelDbDataSource.get(): " + directory + ", key: " + Hex.encodeHexString(key) + ", " + (ret == null ? "null" : ret.length));
                 return ret == null ? new byte[0] : ret;
             }
         } finally {
@@ -204,14 +198,14 @@ public class LevelDb implements DatabaseStore {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled())
-                log.trace("~> LevelDbDataSource.put(): " + name + ", key: " + Hex.encodeHexString(key));
+                log.trace("~> LevelDbDataSource.put(): " + directory + ", key: " + Hex.encodeHexString(key));
             if (val.length == 0) {
                 db.delete(key);
             } else {
                 db.put(key, val);
             }
             if (log.isTraceEnabled())
-                log.trace("<~ LevelDbDataSource.put(): " + name + ", key: " + Hex.encodeHexString(key));
+                log.trace("<~ LevelDbDataSource.put(): " + directory + ", key: " + Hex.encodeHexString(key));
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -222,10 +216,10 @@ public class LevelDb implements DatabaseStore {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled())
-                log.trace("~> LevelDbDataSource.delete(): " + name + ", key: " + Hex.encodeHexString(key));
+                log.trace("~> LevelDbDataSource.delete(): " + directory + ", key: " + Hex.encodeHexString(key));
             db.delete(key);
             if (log.isTraceEnabled())
-                log.trace("<~ LevelDbDataSource.delete(): " + name + ", key: " + Hex.encodeHexString(key));
+                log.trace("<~ LevelDbDataSource.delete(): " + directory + ", key: " + Hex.encodeHexString(key));
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -237,7 +231,7 @@ public class LevelDb implements DatabaseStore {
     }
 
     private Path getPath() {
-        return Paths.get(directory, name);
+        return Paths.get(directory);
     }
 
     @Override

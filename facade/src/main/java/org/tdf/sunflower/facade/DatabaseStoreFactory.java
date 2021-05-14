@@ -1,13 +1,15 @@
 package org.tdf.sunflower.facade;
 
-import org.tdf.common.store.DatabaseStore;
+import org.tdf.common.store.Store;
 
 public interface DatabaseStoreFactory {
     String getDirectory();
 
-    DatabaseStore create(String name);
+    Store<byte[], byte[]> create(char prefix);
 
-    void cleanup();
+    default void cleanup() {
+
+    }
 
     String getName();
 }

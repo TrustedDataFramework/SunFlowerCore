@@ -6,8 +6,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.tdf.common.serialize.Codecs;
-import org.tdf.common.store.DatabaseStore;
-import org.tdf.common.store.NoDeleteBatchStore;
+import org.tdf.common.store.NoDeleteStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
@@ -32,7 +31,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
     private final Store<HexBytes, HexBytes> contractCodeStore;
     private Map<HexBytes, BuiltinContract> bios;
     private Map<HexBytes, BuiltinContract> builtins;
-    private final DatabaseStore db;
+    private final Store<byte[], byte[]> db;
     private final Store<byte[], byte[]> trieStore;
 
     public Backend createBackend(
@@ -59,13 +58,13 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
 
     @SneakyThrows
     public AccountTrie(
-        DatabaseStore db,
+        Store<byte[], byte[]> db,
         Store<HexBytes, HexBytes> contractCodeStore,
         Trie<HexBytes, HexBytes> contractStorageTrie,
         boolean secure
     ) {
         this.db = db;
-        this.trieStore = new NoDeleteBatchStore<>(db, Store.IS_NULL);
+        this.trieStore = new NoDeleteStore<>(db, Store.IS_NULL);
 
         this.trie = Trie.<HexBytes, Account>builder()
             .hashFunction(CryptoContext::hash)
@@ -125,7 +124,7 @@ public class AccountTrie extends AbstractStateTrie<HexBytes, Account> {
     }
 
     @Override
-    DatabaseStore getDB() {
+    Store<byte[], byte[]> getDB() {
         return this.db;
     }
 }

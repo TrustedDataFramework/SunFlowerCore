@@ -4,7 +4,7 @@ class BasePrefixStore(
     private val wrapped: Store<ByteArray, ByteArray>,
     val prefix: ByteArray
 ): Store<ByteArray, ByteArray> {
-    override fun get(k: ByteArray): ByteArray {
+    override fun get(k: ByteArray): ByteArray? {
         return wrapped[prefix + k]
     }
 
