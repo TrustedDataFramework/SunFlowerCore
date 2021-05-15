@@ -62,8 +62,7 @@ interface Backend : Closeable {
     // return empty byte array if key not found
     fun dbGet(address: HexBytes, key: HexBytes): HexBytes
     fun dbHas(address: HexBytes, key: HexBytes): Boolean
-    fun getContractCreatedBy(address: HexBytes): HexBytes
-    fun setContractCreatedBy(address: HexBytes, createdBy: HexBytes)
+
     fun dbRemove(address: HexBytes, key: HexBytes)
     fun getCode(address: HexBytes): HexBytes
     fun setCode(address: HexBytes, code: HexBytes)
