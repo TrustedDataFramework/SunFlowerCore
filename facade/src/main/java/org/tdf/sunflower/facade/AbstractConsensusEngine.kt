@@ -40,8 +40,10 @@ abstract class AbstractConsensusEngine : ConsensusEngine {
 
     // sub class should set peer server listener explicitly when init() called
     private var peerServerListener = PeerServerListener.NONE
-    open val alloc: List<Account?>?
-        get() = emptyList()
+
+    open val alloc: Map<HexBytes, Account>
+        get() = emptyMap()
+
     open val builtins: List<BuiltinContract?>?
         get() = emptyList()
     open val bios: List<BuiltinContract?>?

@@ -2,7 +2,6 @@ package org.tdf.sunflower.net
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.TextNode
-import com.google.common.base.Functions
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.ticker
@@ -117,16 +116,18 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
         val builder = client.messageBuilder
         if (!config.isEnableDiscovery) {
             // keep channel to bootstraps and trusted alive
-            Stream.of(cache.bootstraps.keys.stream(), cache.trusted.keys.stream())
-                .flatMap(Functions.identity())
-                .filter { x: PeerImpl? -> !cache.contains(x) }
-                .forEach { x: PeerImpl? -> server!!.client.dial(x, builder.buildPing()) }
+            val keys = cache.bootstraps.keys + cache.trusted.keys
+            for (key in keys) {
+                if(cache.contains(key))
+                    continue
+                server!!.client.dial(key, builder.buildPing())
+            }
             return
         }
         // query for neighbours when neighbours is not empty
         if (cache.size() > 0) {
             client.broadcast(builder.buildLookup())
-            cache.trusted.keys.forEach(Consumer { p: PeerImpl? -> client.dial(p, builder.buildPing()) })
+            cache.trusted.keys.forEach { client.dial(it, builder.buildPing()) }
             return
         }
         // query for peers from bootstraps and trusted when neighbours is empty

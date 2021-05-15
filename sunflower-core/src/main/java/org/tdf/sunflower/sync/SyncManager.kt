@@ -235,69 +235,7 @@ class SyncManager(
                 return
             }
             SyncMessage.ACCOUNTS -> {
-                if (!fastSyncing) return
-                if (fastSyncAddresses == null) {
-                    fastSyncAddresses = HashSet()
-                }
-                if (fastSyncTrie == null) {
-//                    fastSyncTrie = accountTrie.getTrie().revert(
-//                            accountTrie.getTrie().getNullHash(),
-//                            new CachedStore<>(accountTrie.getTrieStore(), ByteArrayMap::new)
-//                    );
-                }
-                fastSyncAddressesLock.lock()
-                try {
-                    val accounts = msg.getBodyAs(Accounts::class.java)
-                    for (sa in accounts.accounts) {
-                        val a = sa.account
-                        if (fastSyncAddresses!!.contains(a.address)) continue
-                        // validate contract code
-                        if (a.contractHash != null && a.contractHash.size() != 0) {
-                            val key = HexBytes.fromBytes(CryptoContext.hash(sa.contractCode.bytes))
-                            if (key != a.contractHash) {
-                                log.error("contract hash not match")
-                                continue
-                            }
-                            contractCodeStore[key] = sa.contractCode
-                        }
 
-                        // validate storage root
-                        if (a.storageRoot != null && a.storageRoot.size() != 0) {
-                            val empty = contractStorageTrie.revert()
-                            var i = 0
-                            while (i < sa.contractStorage.size / 2) {
-                                val k = sa.contractStorage[2 * i]
-                                val v = sa.contractStorage[2 * i + 1]
-                                empty[k] = v
-                                i += 1
-                            }
-                            val root = empty.commit()
-                            if (root != a.storageRoot) {
-                                log.error("storage root not match")
-                                continue
-                            }
-                        }
-                        fastSyncAddresses!!.add(a.address)
-                        fastSyncTrie!![a.address] = a
-                    }
-                    log.info("synced accounts = " + fastSyncAddresses!!.size)
-                    if (accounts.isTraversed) {
-                        fastSyncTotalAccounts = accounts.total.toLong()
-                    }
-                    if (fastSyncAddresses!!.size.toLong() != fastSyncTotalAccounts) {
-                        return
-                    }
-                    val stateRoot = fastSyncTrie!!.commit()
-                    if (fastSyncBlock!!.stateRoot != stateRoot) {
-                        clearFastSyncCache()
-                        SyncManager.log.error("fast sync failed, state root not match, malicious node may exists in network!!!")
-                        return
-                    }
-                    //                    finishFastSync();
-                } finally {
-                    fastSyncAddressesLock.unlock()
-                }
-                return
             }
             SyncMessage.BLOCKS -> {
                 val blocks = msg.getBodyAs(

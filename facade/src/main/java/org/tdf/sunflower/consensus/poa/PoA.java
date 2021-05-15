@@ -2,7 +2,6 @@ package org.tdf.sunflower.consensus.poa;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
@@ -18,6 +17,7 @@ import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.util.MapperUtil;
 
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 // poa is a minimal non-trivial consensus engine
 public class PoA extends AbstractConsensusEngine {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger("poa");
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper = MapperUtil.OBJECT_MAPPER;
 
     public static final int GATEWAY_ID = 1339;
     EconomicModel economicModel;
@@ -80,8 +80,7 @@ public class PoA extends AbstractConsensusEngine {
         if (this.config.getThreadId() != 0 && this.config.getThreadId() != GATEWAY_ID) {
             int core = Runtime.getRuntime().availableProcessors();
             executorService = Executors.newScheduledThreadPool(
-                core > 1 ? core / 2 : core,
-                new ThreadFactoryBuilder().setNameFormat("poa-thread-%d").build()
+                core > 1 ? core / 2 : core
             );
 
             executorService.scheduleAtFixedRate(() ->

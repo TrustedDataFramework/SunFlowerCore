@@ -128,7 +128,7 @@ public class Header implements Chained {
     private HexBytes getHash(boolean forceReHash) {
         if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
-                CryptoContext.hash(RLPCodec.encode(this))
+                HashUtil.sha3(RLPCodec.encode(this))
             );
             return this.hash;
         }

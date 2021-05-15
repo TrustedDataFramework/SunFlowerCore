@@ -1,9 +1,9 @@
 package org.tdf.common.store;
 
-import com.google.common.primitives.Bytes;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.tdf.common.serialize.Codec;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
 import org.tdf.rlp.RLPCodec;
@@ -31,7 +31,7 @@ public class PrefixStore<K, V> implements IterableStore<K, V> {
     private HexBytes verifyAndPrefix(byte[] key) {
         if (key.length == 0)
             throw new RuntimeException("invalid key, length = 0");
-        return HexBytes.fromBytes(Bytes.concat(prefix.getBytes(), key));
+        return HexBytes.fromBytes(ByteUtil.merge(prefix.getBytes(), key));
     }
 
     @Override

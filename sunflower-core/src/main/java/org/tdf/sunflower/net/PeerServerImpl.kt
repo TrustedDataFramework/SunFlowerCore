@@ -5,11 +5,12 @@ import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper
 import lombok.extern.slf4j.Slf4j
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.tdf.common.crypto.ECKey
 import org.tdf.common.store.JsonStore
 import org.tdf.sunflower.facade.ConsensusEngine
 import org.tdf.sunflower.facade.PeerServerListener
 import org.tdf.sunflower.proto.Message
-import org.tdf.sunflower.types.CryptoContext
+import org.tdf.sunflower.util.MapperUtil
 import java.io.IOException
 import java.net.URI
 import java.util.*
@@ -92,7 +93,7 @@ class PeerServerImpl(// if non-database provided, use memory database
     }
 
     init {
-        val mapper = JavaPropsMapper()
+        val mapper = MapperUtil.PROPS_MAPPER;
         try {
             config = mapper.readPropertiesAs(properties, PeerServerConfig::class.java)
             if (config.maxTTL <= 0)
@@ -129,7 +130,7 @@ class PeerServerImpl(// if non-database provided, use memory database
             // find valid private key from 1.properties 2.persist 3. generate
             var sk = if (config.privateKey == null) null else config.privateKey.bytes
             if (sk == null || sk.isEmpty()) {
-                sk = CryptoContext.generateSecretKey()
+                sk = ECKey().privKeyBytes
             }
             self = PeerImpl.createSelf(config.address, sk)
         } catch (e: Exception) {

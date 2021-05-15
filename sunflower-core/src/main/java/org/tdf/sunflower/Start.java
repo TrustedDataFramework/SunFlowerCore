@@ -34,9 +34,8 @@ import org.tdf.sunflower.service.RepositoryKVImpl;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
-import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.util.FileUtils;
-import org.tdf.sunflower.util.MappingUtil;
+import org.tdf.sunflower.util.MapperUtil;
 
 import java.io.File;
 import java.net.URL;
@@ -50,13 +49,7 @@ import java.util.*;
 // use SPRING_CONFIG_LOCATION environment to locate spring config
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 public class Start {
-    public static final byte[] TRIVIAL_KEY = new byte[]{
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 1
-    };
-    public static final ObjectMapper MAPPER = MappingUtil.OBJECT_MAPPER;
+    public static final ObjectMapper MAPPER = MapperUtil.OBJECT_MAPPER;
 
     private static ClassLoader customClassLoader = ClassUtils.getDefaultClassLoader();
 
@@ -105,7 +98,6 @@ public class Start {
 
     public static void main(String[] args) {
         FileUtils.setClassLoader(ClassUtils.getDefaultClassLoader());
-        CryptoContext.keccak256 = HashUtil::sha3;
         SpringApplication app = new SpringApplication(Start.class);
         app.setDefaultProperties(loadDefaultConfig());
         app.addInitializers(applicationContext -> {
@@ -286,7 +278,7 @@ public class Start {
     @Bean
     public Trie<HexBytes, HexBytes> contractStorageTrie(DatabaseStoreFactory factory) {
         return Trie.<HexBytes, HexBytes>builder()
-            .hashFunction(CryptoContext::hash)
+            .hashFunction(HashUtil.sha3)
             .keyCodec(Codecs.HEX)
             .valueCodec(Codecs.HEX)
             .store(

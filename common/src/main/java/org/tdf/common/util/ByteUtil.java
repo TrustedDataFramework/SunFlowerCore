@@ -2,6 +2,7 @@ package org.tdf.common.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -59,7 +60,7 @@ public class ByteUtil {
     /**
      * Omitting sign indication byte.
      * <br><br>
-     * Instead of {@link org.spongycastle.util.BigIntegers#asUnsignedByteArray(BigInteger)}
+     * Instead of {@link org.tdf.common.util.BigIntegers#asUnsignedByteArray(BigInteger)}
      * <br>we use this custom method to avoid an empty array in case of BigInteger.ZERO
      *
      * @param value - any big integer number. A <code>null</code>-value will return <code>null</code>
@@ -178,16 +179,6 @@ public class ByteUtil {
     }
 
 
-    /**
-     * Convert a byte-array into a hex String.<br>
-     * Works similar to {@link Hex#toHexString}
-     * but allows for <code>null</code>
-     *
-     * @param data - byte-array to convert to a hex-string
-     * @return hex representation of the data.<br>
-     * Returns an empty String if the input is <code>null</code>
-     * @see Hex#toHexString
-     */
     public static String toHexString(byte[] data) {
         return data == null ? "" : HexBytes.encode(data);
     }
@@ -476,14 +467,18 @@ public class ByteUtil {
      */
     public static byte[] merge(byte[]... arrays) {
         int count = 0;
-        for (byte[] array : arrays) {
-            count += array.length;
+
+        // avoid iterator creation here
+        for(int i = 0; i < arrays.length; i++) {
+            count += arrays[i].length;
         }
 
         // Create new array and copy all array contents
         byte[] mergedArray = new byte[count];
         int start = 0;
-        for (byte[] array : arrays) {
+
+        for(int i = 0; i < arrays.length; i++) {
+            byte[] array = arrays[i];
             System.arraycopy(array, 0, mergedArray, start, array.length);
             start += array.length;
         }
@@ -697,5 +692,54 @@ public class ByteUtil {
      */
     public static byte[] parseWord(byte[] input, int offset, int idx) {
         return parseBytes(input, offset + 32 * idx, 32);
+    }
+
+
+    public static byte[] subarray(byte[] array, int startIndexInclusive, int endIndexExclusive) {
+        if (array == null) {
+            return null;
+        } else {
+            if (startIndexInclusive < 0) {
+                startIndexInclusive = 0;
+            }
+
+            if (endIndexExclusive > array.length) {
+                endIndexExclusive = array.length;
+            }
+
+            int newSize = endIndexExclusive - startIndexInclusive;
+            if (newSize <= 0) {
+                return EMPTY_BYTE_ARRAY;
+            } else {
+                byte[] subarray = new byte[newSize];
+                System.arraycopy(array, startIndexInclusive, subarray, 0, newSize);
+                return subarray;
+            }
+        }
+    }
+
+    public static byte[][] subarray(byte[][] array, int startIndexInclusive, int endIndexExclusive) {
+        if (array == null) {
+            return null;
+        } else {
+            if (startIndexInclusive < 0) {
+                startIndexInclusive = 0;
+            }
+
+            if (endIndexExclusive > array.length) {
+                endIndexExclusive = array.length;
+            }
+
+            int newSize = endIndexExclusive - startIndexInclusive;
+            byte[][] subarray;
+            if (newSize <= 0) {
+                subarray = (byte[][]) Array.newInstance(byte[].class, 0);
+                return subarray;
+            } else {
+                subarray = (byte[][]) Array.newInstance(byte[].class, newSize);
+                System.arraycopy(array, startIndexInclusive, subarray, 0, newSize);
+                return subarray;
+            }
+        }
     }
 }

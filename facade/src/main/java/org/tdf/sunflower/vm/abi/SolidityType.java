@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.tdf.sunflower.vm.abi.Abi.merge;
+import static org.tdf.common.util.ByteUtil.merge;
 
 
 public abstract class SolidityType {

@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.tdf.common.util.HashUtil;
 
@@ -19,34 +18,13 @@ import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static java.lang.String.format;
+import static org.tdf.common.util.ByteUtil.merge;
+import static org.tdf.common.util.ByteUtil.subarray;
 
 
 public class Abi extends ArrayList<Abi.Entry> {
-    /**
-     * @param arrays - arrays to merge
-     * @return - merged array
-     */
-    public static byte[] merge(byte[]... arrays) {
-        int count = 0;
-        for (byte[] array : arrays) {
-            count += array.length;
-        }
 
-        // Create new array and copy all array contents
-        byte[] mergedArray = new byte[count];
-        int start = 0;
-        for (byte[] array : arrays) {
-            System.arraycopy(array, 0, mergedArray, start, array.length);
-            start += array.length;
-        }
-        return mergedArray;
-    }
-
-
-    private final static ObjectMapper DEFAULT_MAPPER = new ObjectMapper()
-//        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-//        .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
-        ;
+    private final static ObjectMapper DEFAULT_MAPPER = new ObjectMapper();
 
     public static Abi fromJson(String json) {
         try {
@@ -268,7 +246,7 @@ public class Abi extends ArrayList<Abi.Entry> {
         }
 
         public List<?> decode(byte[] encoded) {
-            return Param.decodeList(inputs, ArrayUtils.subarray(encoded, ENCODED_SIGN_LENGTH, encoded.length));
+            return Param.decodeList(inputs, subarray(encoded, ENCODED_SIGN_LENGTH, encoded.length));
         }
 
         public List<?> decodeResult(byte[] encoded) {
@@ -281,7 +259,7 @@ public class Abi extends ArrayList<Abi.Entry> {
         }
 
         public static byte[] extractSignature(byte[] data) {
-            return ArrayUtils.subarray(data, 0, ENCODED_SIGN_LENGTH);
+            return subarray(data, 0, ENCODED_SIGN_LENGTH);
         }
 
         @Override
@@ -311,7 +289,7 @@ public class Abi extends ArrayList<Abi.Entry> {
         public List<?> decode(byte[] data, byte[][] topics) {
             List<Object> result = new ArrayList<>(inputs.size());
 
-            byte[][] argTopics = anonymous ? topics : ArrayUtils.subarray(topics, 1, topics.length);
+            byte[][] argTopics = anonymous ? topics : subarray(topics, 1, topics.length);
             List<Param> indexedParams = filteredInputs(true);
             List<Object> indexed = new ArrayList<>();
             for (int i = 0; i < indexedParams.size(); i++) {

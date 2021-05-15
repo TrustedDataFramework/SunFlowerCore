@@ -11,7 +11,6 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
-import org.tdf.sunflower.types.CryptoContext;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -88,15 +87,7 @@ public class MessageFilter implements Plugin {
         }
 
         // filter invalid signatures
-        if (!CryptoContext.verify(
-            context.getRemote().getID().getBytes(),
-            Util.getRawForSign(context.message),
-            context.message.getSignature().toByteArray()
-        )) {
-            log.error("invalid signature received from " + context.remote);
-            context.exit();
-            return;
-        }
+
         // reject peer in black list and not in whitelist
         if (config.isBlocked(context.remote.getID())) {
             log.error("the peer " + context.remote + " has been blocked");
@@ -180,7 +171,7 @@ public class MessageFilter implements Plugin {
             }
 
             if (!FastByteComparisons.equal(
-                CryptoContext.hash(total),
+                HashUtil.sha3(total),
                 multiParts[0].getSignature().toByteArray())
             ) {
                 throw new RuntimeException("merge failed");

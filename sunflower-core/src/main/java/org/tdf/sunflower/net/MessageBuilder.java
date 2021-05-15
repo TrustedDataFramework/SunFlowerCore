@@ -3,8 +3,9 @@ package org.tdf.sunflower.net;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import lombok.Getter;
+import org.tdf.common.util.ByteUtil;
+import org.tdf.common.util.HashUtil;
 import org.tdf.sunflower.proto.*;
-import org.tdf.sunflower.types.CryptoContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,8 +13,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-
-import static org.tdf.sunflower.net.Util.getRawForSign;
 
 public class MessageBuilder {
     private final PeerServerConfig config;
@@ -57,7 +56,7 @@ public class MessageBuilder {
     }
 
     public List<Message> buildAnother(byte[] body, long ttl, Peer remote) {
-        byte[] encryptMessage = CryptoContext.encrypt(CryptoContext.ecdh(true, self.getPrivateKey(), remote.getID().getBytes()), body);
+        byte[] encryptMessage = body;
         Message buildResult = buildMessage(Code.ANOTHER, ttl, encryptMessage);
         if (buildResult.getSerializedSize() <= config.getMaxPacketSize()) {
             return Collections.singletonList(buildResult);
@@ -67,7 +66,7 @@ public class MessageBuilder {
         int current = 0;
         List<Message> multiParts = new ArrayList<>();
         Message.Builder builder = Message.newBuilder();
-        byte[] hash = CryptoContext.hash(serialized);
+        byte[] hash = HashUtil.sha3(serialized);
         int i = 0;
         int total = serialized.length / config.getMaxPacketSize() +
             (serialized.length % config.getMaxPacketSize() == 0 ? 0 : 1);
@@ -98,7 +97,7 @@ public class MessageBuilder {
             .setNonce(nonce.incrementAndGet())
             .setTtl(message.getTtl() - 1);
 
-        byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
+        byte[] sig = ByteUtil.EMPTY_BYTE_ARRAY;
         return builder.setSignature(ByteString.copyFrom(sig)).build();
     }
 
@@ -110,7 +109,6 @@ public class MessageBuilder {
             .setTtl(ttl)
             .setNonce(nonce.incrementAndGet())
             .setBody(ByteString.copyFrom(msg));
-        byte[] sig = CryptoContext.sign(self.getPrivateKey(), getRawForSign(builder.build()));
-        return builder.setSignature(ByteString.copyFrom(sig)).build();
+        return builder.setSignature(ByteString.copyFrom(ByteUtil.EMPTY_BYTE_ARRAY)).build();
     }
 }

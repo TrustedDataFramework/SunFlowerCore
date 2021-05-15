@@ -2,9 +2,9 @@ package org.tdf.sunflower.net;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.SneakyThrows;
+import org.tdf.common.crypto.ECKey;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Address;
-import org.tdf.sunflower.types.CryptoContext;
 import org.tdf.sunflower.types.Transaction;
 
 import java.net.URI;
@@ -67,7 +67,7 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     // create self as peer from input
     // if private key is missing, generate key automatically
     public static PeerImpl createSelf(URI u) {
-        return createSelf(u, CryptoContext.generateSecretKey());
+        return createSelf(u, new ECKey().getPrivKeyBytes());
     }
 
     // create self as peer from input

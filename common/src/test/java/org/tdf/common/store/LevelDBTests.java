@@ -8,6 +8,6 @@ import org.junit.runners.JUnit4;
 public class LevelDBTests extends DBTests {
     @Override
     DatabaseStore getDB() {
-        return new LevelDb(Iq80DBFactory.factory, "local/leveldb", "tmp");
+        return new LevelDb(Iq80DBFactory.factory, "local/leveldb");
     }
 }

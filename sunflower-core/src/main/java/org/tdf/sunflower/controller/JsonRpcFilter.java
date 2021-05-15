@@ -159,6 +159,7 @@ public class JsonRpcFilter implements Filter {
         @Override
         public ServletInputStream getInputStream() throws IOException {
             if (rawData == null) {
+
                 rawData = IOUtils.toByteArray(this.request.getReader());
                 servletStream.stream = new ByteArrayInputStream(rawData);
             }

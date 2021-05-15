@@ -16,7 +16,7 @@ public class LittleEndianTest {
             LittleEndian.encodeInt16((short) 0xabcd),
             new byte[]{(byte) 0xcd, (byte) 0xab}
         );
-        assert LittleEndian.decodeInt16(new byte[]{(byte) 0xcd, (byte) 0xab}) == (short) 0xabcd;
+        assert LittleEndian.decodeInt16(new byte[]{(byte) 0xcd, (byte) 0xab}, 0) == (short) 0xabcd;
     }
 
     @Test
@@ -26,7 +26,7 @@ public class LittleEndianTest {
             new byte[]{(byte) 0xcd, (byte) 0xab, 0x34, 0x12}
         );
 
-        assert LittleEndian.decodeInt32(new byte[]{(byte) 0xcd, (byte) 0xab, 0x34, 0x12}) == 0x1234abcd;
+        assert LittleEndian.decodeInt32(new byte[]{(byte) 0xcd, (byte) 0xab, 0x34, 0x12}, 0) == 0x1234abcd;
     }
 
     @Test
@@ -36,13 +36,6 @@ public class LittleEndianTest {
             new byte[]{(byte) 0xef, (byte) 0x89, (byte) 0x67, (byte) 0x45, (byte) 0xcd, (byte) 0xab, 0x34, 0x12}
         );
 
-        assert LittleEndian.decodeInt64(new byte[]{(byte) 0xef, (byte) 0x89, (byte) 0x67, (byte) 0x45, (byte) 0xcd, (byte) 0xab, 0x34, 0x12}) == 0x12_34_ab_cd_45_67_89_efL;
-    }
-
-    @Test
-    public void testIEEE754() {
-        assert LittleEndian.decodeIEEE754Double(LittleEndian.encodeIEEE754Double(0.5)) == 0.5;
-        assert LittleEndian.decodeIEEE754Float(LittleEndian.encodeIEEE754Float(0.5f)) == 0.5f;
-
+        assert LittleEndian.decodeInt64(new byte[]{(byte) 0xef, (byte) 0x89, (byte) 0x67, (byte) 0x45, (byte) 0xcd, (byte) 0xab, 0x34, 0x12}, 0) == 0x12_34_ab_cd_45_67_89_efL;
     }
 }

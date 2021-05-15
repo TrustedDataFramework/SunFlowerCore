@@ -2,7 +2,6 @@ package org.tdf.sunflower.net;
 
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
-import org.tdf.sunflower.types.CryptoContext;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -89,9 +88,8 @@ public class ContextImpl implements Context {
         if (message.getCode() == Code.ANOTHER) {
             if (decrypted != null)
                 return decrypted;
-            decrypted = CryptoContext.decrypt(
-                CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), remote.getID().getBytes()),
-                message.getBody().toByteArray());
+            decrypted =
+                message.getBody().toByteArray();
             return decrypted;
         }
         return message.getBody().toByteArray();

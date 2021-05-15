@@ -2,9 +2,8 @@ package org.tdf.common.util;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.primitives.Bytes;
 import lombok.NonNull;
-import org.apache.commons.codec.binary.Hex;
+import org.spongycastle.util.encoders.Hex;
 import org.tdf.common.serialize.HexBytesDecoder;
 import org.tdf.common.serialize.HexBytesEncoder;
 import org.tdf.rlp.RLPDecoding;
@@ -21,8 +20,8 @@ import java.util.Arrays;
  * HexBytes bytes = mapper.readValue("ffff", HexBytes.class);
  * String json = mapper.writeValueAsString(new HexBytes(new byte[32]));
  */
-@JsonDeserialize(using = HexBytesUtils.HexBytesDeserializer.class)
-@JsonSerialize(using = HexBytesUtils.HexBytesSerializer.class)
+@JsonDeserialize(using = HexBytesUtil.HexBytesDeserializer.class)
+@JsonSerialize(using = HexBytesUtil.HexBytesSerializer.class)
 @RLPEncoding(HexBytesEncoder.class)
 @RLPDecoding(HexBytesDecoder.class)
 public final class HexBytes implements Comparable<HexBytes>, Serializable {
@@ -44,12 +43,12 @@ public final class HexBytes implements Comparable<HexBytes>, Serializable {
     }
 
     public static String encode(byte[] bytes) {
-        return Hex.encodeHexString(bytes);
+        return Hex.toHexString(bytes);
     }
 
     public static byte[] decode(@NonNull String hex) throws RuntimeException {
         try {
-            return Hex.decodeHex(hex);
+            return Hex.decode(hex.startsWith("0x") ? hex.substring(2) : hex);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -57,7 +56,7 @@ public final class HexBytes implements Comparable<HexBytes>, Serializable {
 
     public static HexBytes fromHex(@NonNull String hex) throws RuntimeException {
         try {
-            return fromBytes(Hex.decodeHex(hex.startsWith("0x") ? hex.substring(2) : hex));
+            return fromBytes(decode(hex));
         } catch (Exception e) {
             throw new RuntimeException("invalid hex string " + hex);
         }
@@ -94,12 +93,14 @@ public final class HexBytes implements Comparable<HexBytes>, Serializable {
 
     public String toHex() {
         if (hexCache != null) return hexCache;
-        hexCache = Hex.encodeHexString(bytes);
+        hexCache = Hex.toHexString(bytes);
         return hexCache;
     }
 
     public HexBytes concat(HexBytes another) {
-        return new HexBytes(Bytes.concat(bytes, another.bytes));
+        return new HexBytes(
+            ByteUtil.merge(bytes, another.bytes)
+        );
     }
 
     public HexBytes slice(int start, int end) {

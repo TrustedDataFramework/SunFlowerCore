@@ -1,9 +1,9 @@
 package org.tdf.sunflower.types;
 
 import lombok.NonNull;
-import org.spongycastle.util.BigIntegers;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;

@@ -2,8 +2,8 @@ package org.tdf.common.store;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Hex;
 import org.iq80.leveldb.*;
+import org.tdf.common.util.HexBytes;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -177,17 +177,17 @@ public class LevelDb implements DatabaseStore {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled())
-                log.trace("~> LevelDbDataSource.get(): " + directory + ", key: " + Hex.encodeHexString(key));
+                log.trace("~> LevelDbDataSource.get(): " + directory + ", key: " + HexBytes.encode(key));
             try {
                 byte[] ret = db.get(key);
                 if (log.isTraceEnabled())
-                    log.trace("<~ LevelDbDataSource.get(): " + directory + ", key: " + Hex.encodeHexString(key) + ", " + (ret == null ? "null" : ret.length));
+                    log.trace("<~ LevelDbDataSource.get(): " + directory + ", key: " + HexBytes.encode(key) + ", " + (ret == null ? "null" : ret.length));
                 return ret == null ? new byte[0] : ret;
             } catch (DBException e) {
                 log.warn("Exception. Retrying again...", e);
                 byte[] ret = db.get(key);
                 if (log.isTraceEnabled())
-                    log.trace("<~ LevelDbDataSource.get(): " + directory + ", key: " + Hex.encodeHexString(key) + ", " + (ret == null ? "null" : ret.length));
+                    log.trace("<~ LevelDbDataSource.get(): " + directory + ", key: " + HexBytes.encode(key) + ", " + (ret == null ? "null" : ret.length));
                 return ret == null ? new byte[0] : ret;
             }
         } finally {
@@ -200,14 +200,14 @@ public class LevelDb implements DatabaseStore {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled())
-                log.trace("~> LevelDbDataSource.put(): " + directory + ", key: " + Hex.encodeHexString(key));
+                log.trace("~> LevelDbDataSource.put(): " + directory + ", key: " + HexBytes.encode(key));
             if (val.length == 0) {
                 db.delete(key);
             } else {
                 db.put(key, val);
             }
             if (log.isTraceEnabled())
-                log.trace("<~ LevelDbDataSource.put(): " + directory + ", key: " + Hex.encodeHexString(key));
+                log.trace("<~ LevelDbDataSource.put(): " + directory + ", key: " + HexBytes.encode(key));
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -218,10 +218,10 @@ public class LevelDb implements DatabaseStore {
         resetDbLock.readLock().lock();
         try {
             if (log.isTraceEnabled())
-                log.trace("~> LevelDbDataSource.delete(): " + directory + ", key: " + Hex.encodeHexString(key));
+                log.trace("~> LevelDbDataSource.delete(): " + directory + ", key: " + HexBytes.encode(key));
             db.delete(key);
             if (log.isTraceEnabled())
-                log.trace("<~ LevelDbDataSource.delete(): " + directory + ", key: " + Hex.encodeHexString(key));
+                log.trace("<~ LevelDbDataSource.delete(): " + directory + ", key: " + HexBytes.encode(key));
         } finally {
             resetDbLock.readLock().unlock();
         }

@@ -3,7 +3,6 @@ package org.tdf.sunflower.net;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
-import org.tdf.sunflower.types.CryptoContext;
 
 import java.net.URI;
 import java.util.Collection;
@@ -179,12 +178,9 @@ public class Client implements ChannelListener {
             .filter(x -> x.getRemote().map(p -> !p.equals(receivedFrom)).orElse(false))
             .forEach(c -> {
                 if (message.getCode() == Code.ANOTHER) {
-                    byte[] msg = CryptoContext.decrypt(
-                        CryptoContext.ecdh(false, builder.getSelf().getPrivateKey(), receivedFrom.getID().getBytes()),
-                        message.getBody().toByteArray());
-                    byte[] sk = CryptoContext.ecdh(true, self.getPrivateKey(), c.getRemote().get().getID().getBytes());
-                    byte[] encryptMessage = CryptoContext.encrypt(sk, msg);
-                    c.write(builder.buildMessage(Code.ANOTHER, message.getTtl() - 1, encryptMessage));
+                    byte[] msg =
+                        message.getBody().toByteArray();
+                    c.write(builder.buildMessage(Code.ANOTHER, message.getTtl() - 1, msg));
                     return;
                 }
                 c.write(messageBuilder.buildRelay(message));

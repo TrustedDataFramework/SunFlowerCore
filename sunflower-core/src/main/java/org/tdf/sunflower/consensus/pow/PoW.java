@@ -2,6 +2,7 @@ package org.tdf.sunflower.consensus.pow;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.Start;
@@ -10,7 +11,6 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
-import org.tdf.sunflower.types.CryptoContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,8 +28,8 @@ public class PoW extends AbstractConsensusEngine {
     }
 
     public static byte[] getPoWHash(Block block) {
-        byte[] d = CryptoContext.hash(RLPCodec.encode(block.getHeader()));
-        return CryptoContext.hash(d);
+        byte[] d = HashUtil.sha3(RLPCodec.encode(block.getHeader()));
+        return HashUtil.sha3(d);
     }
 
     public static int compare(byte[] x, byte[] y) {

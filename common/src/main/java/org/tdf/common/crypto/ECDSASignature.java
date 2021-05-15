@@ -9,7 +9,7 @@ import org.tdf.common.util.ByteUtil;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 
 import static org.tdf.common.util.BIUtil.isLessThan;
 import static org.tdf.common.util.ByteUtil.bigIntegerToBytes;
@@ -20,8 +20,6 @@ import static org.tdf.common.util.ByteUtil.bigIntegerToBytes;
  * components can be useful for doing further EC maths on them.
  */
 public class ECDSASignature {
-    private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
-
     /**
      * The two components of the signature.
      */
@@ -40,8 +38,7 @@ public class ECDSASignature {
     }
 
     /**
-     * t
-     *
+     *t
      * @param r
      * @param s
      * @return -
@@ -51,6 +48,7 @@ public class ECDSASignature {
     }
 
     /**
+     *
      * @param r -
      * @param s -
      * @param v -
@@ -62,6 +60,10 @@ public class ECDSASignature {
         return signature;
     }
 
+    public boolean validateComponents() {
+        return validateComponents(r, s, v);
+    }
+
     public static boolean validateComponents(BigInteger r, BigInteger s, byte v) {
 
         if (v != 27 && v != 28) return false;
@@ -69,11 +71,13 @@ public class ECDSASignature {
         if (isLessThan(r, BigInteger.ONE)) return false;
         if (isLessThan(s, BigInteger.ONE)) return false;
 
-        if (!isLessThan(r, SECP256K1N)) return false;
-        return isLessThan(s, SECP256K1N);
+        if (!isLessThan(r, ECKey.SECP256K1N)) return false;
+        if (!isLessThan(s, ECKey.SECP256K1N)) return false;
+
+        return true;
     }
 
-    static ECDSASignature decodeFromDER(byte[] bytes) {
+    public static ECDSASignature decodeFromDER(byte[] bytes) {
         ASN1InputStream decoder = null;
         try {
             decoder = new ASN1InputStream(bytes);
@@ -94,15 +98,8 @@ public class ECDSASignature {
             throw new RuntimeException(e);
         } finally {
             if (decoder != null)
-                try {
-                    decoder.close();
-                } catch (IOException x) {
-                }
+                try { decoder.close(); } catch (IOException x) {}
         }
-    }
-
-    public boolean validateComponents() {
-        return validateComponents(r, s, v);
     }
 
     /**
@@ -112,7 +109,7 @@ public class ECDSASignature {
      * been signed, as that violates various assumed invariants. Thus in future only one of those forms will be
      * considered legal and the other will be banned.
      *
-     * @return -
+     * @return  -
      */
     public ECDSASignature toCanonicalised() {
         if (s.compareTo(ECKey.HALF_CURVE_ORDER) > 0) {
@@ -128,6 +125,7 @@ public class ECDSASignature {
     }
 
     /**
+     *
      * @return -
      */
     public String toBase64() {
@@ -135,17 +133,17 @@ public class ECDSASignature {
         sigData[0] = v;
         System.arraycopy(bigIntegerToBytes(this.r, 32), 0, sigData, 1, 32);
         System.arraycopy(bigIntegerToBytes(this.s, 32), 0, sigData, 33, 32);
-        return new String(Base64.encode(sigData), StandardCharsets.UTF_8);
+        return new String(Base64.encode(sigData), Charset.forName("UTF-8"));
     }
 
     public byte[] toByteArray() {
         final byte fixedV = this.v >= 27
             ? (byte) (this.v - 27)
-            : this.v;
+            :this.v;
 
         return ByteUtil.merge(
-            bigIntegerToBytes(this.r, 32),
-            bigIntegerToBytes(this.s, 32),
+            ByteUtil.bigIntegerToBytes(this.r, 32),
+            ByteUtil.bigIntegerToBytes(this.s, 32),
             new byte[]{fixedV});
     }
 
@@ -161,7 +159,9 @@ public class ECDSASignature {
         ECDSASignature signature = (ECDSASignature) o;
 
         if (!r.equals(signature.r)) return false;
-        return s.equals(signature.s);
+        if (!s.equals(signature.s)) return false;
+
+        return true;
     }
 
     @Override
@@ -171,4 +171,3 @@ public class ECDSASignature {
         return result;
     }
 }
-

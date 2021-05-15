@@ -2,7 +2,6 @@ package org.tdf.sunflower.net;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.tdf.common.util.BigEndian;
 import org.tdf.common.util.HexBytes;
 
 import java.net.URI;
@@ -10,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 public class PeerServerConfig {
-    public static final int DEFAULT_PORT = BigEndian.decodeInt32(new byte[]{0, 0, 'w', 'i'});
+    public static final int DEFAULT_PORT = 7010;
     public static final String DEFAULT_PROTOCOL = "node";
     public static final long DEFAULT_MAX_TTL = 8;
     public static final int DEFAULT_MAX_PEERS = 32;

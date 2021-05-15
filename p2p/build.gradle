@@ -1,0 +1,6 @@
+dependencies {
+// https://mvnrepository.com/artifact/io.netty/netty-all
+    implementation group: 'io.netty', name: 'netty-all', version: '4.0.56.Final'
+    implementation project(':common')
+    compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"
+}

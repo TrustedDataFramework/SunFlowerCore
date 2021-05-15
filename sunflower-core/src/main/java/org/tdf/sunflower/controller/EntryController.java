@@ -28,7 +28,6 @@ import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.sync.SyncManager;
 import org.tdf.sunflower.types.*;
-import org.tdf.sunflower.util.EnvReader;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -92,31 +91,18 @@ public class EntryController {
             }
         }
 
-        long yesterday = System.currentTimeMillis() / 1000 - (24 * 60 * 60);
-
         String diff = "";
 
-        EnvReader rd = new EnvReader(ctx.getEnvironment());
         return builder
             .cpu(osMxBean.getSystemLoadAverage())
             .memoryUsed(osMxBean.getTotalPhysicalMemorySize() - osMxBean.getFreePhysicalMemorySize())
             .totalMemory(osMxBean.getTotalPhysicalMemorySize())
             .averageGasPrice(
                 totalTransactions == 0 ? Uint256.ZERO : totalGasPrice.div(Uint256.of(totalTransactions)))
-            .averageBlockInterval(rd.getBlockInterval()).height(best.getHeight())
             .mining(blocks.stream().anyMatch(
                 x -> x.getBody().size() > 0 && x.getBody().get(0).getReceiveHex().equals(miner.getMinerAddress())))
             .currentDifficulty(diff).transactionPoolSize(0)
             .consensus(consensusEngine.getName())
-            .genesis(rd.getGenesis())
-            .ec(rd.getEC())
-            .hash(rd.getHash())
-            .ae(rd.getAE())
-            .blockInterval(rd.getBlockInterval())
-            .p2pAddress(peerServer.getSelf().encodeURI())
-            .blocksPerEra(rd.getBlocksPerEra())
-            .maxMiners(rd.getMaxMiners())
-            .allowUnauthorized(rd.isAllowUnauthorized())
             .gasPrice(c.getVmGasPrice().longValue())
             .build()
             ;
