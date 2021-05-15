@@ -42,7 +42,7 @@ public class PoSMiner extends AbstractMiner {
     private TransactionPool transactionPool;
 
     public PoSMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, ConsensusConfig config, PoS pos) {
-        super(accountTrie, eventBus, config);
+        super(accountTrie, eventBus, config, pos.getTransactionPool());
         this.pos = pos;
     }
 

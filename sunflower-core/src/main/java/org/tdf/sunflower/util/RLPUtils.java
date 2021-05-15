@@ -1,15 +1,15 @@
 package org.tdf.sunflower.util;
 
-import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static java.util.Arrays.copyOfRange;
-import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
+import static org.tdf.common.util.BigIntegers.asUnsignedByteArray;
 import static org.tdf.sunflower.util.ByteUtil.*;
 
 public class RLPUtils {

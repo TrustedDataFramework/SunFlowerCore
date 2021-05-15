@@ -1,0 +1,118 @@
+package org.tdf.sunflower.state
+
+import org.slf4j.LoggerFactory
+import org.tdf.common.serialize.Codecs
+import org.tdf.common.store.NoDeleteStore
+import org.tdf.common.store.Store
+import org.tdf.common.trie.SecureTrie
+import org.tdf.common.trie.Trie
+import org.tdf.common.types.Uint256
+import org.tdf.common.util.HashUtil
+import org.tdf.common.util.HexBytes
+import org.tdf.sunflower.Start
+import org.tdf.sunflower.types.Header
+import org.tdf.sunflower.vm.Backend
+import org.tdf.sunflower.vm.BackendImpl
+import java.util.*
+
+class AccountTrie : AbstractStateTrie<HexBytes?, Account?> {
+    private var trie: Trie<HexBytes, Account>
+    val contractStorageTrie: Trie<HexBytes, HexBytes>
+    val contractCodeStore: Store<HexBytes, HexBytes>
+
+    var bios: Map<HexBytes, BuiltinContract> = emptyMap()
+    var builtins: Map<HexBytes, BuiltinContract> = emptyMap()
+
+    val db: Store<ByteArray, ByteArray>
+    private val trieStore: Store<ByteArray, ByteArray>
+
+
+    override fun createBackend(
+        parent: Header,
+        root: HexBytes,
+        newBlockCreatedAt: Long,
+        isStatic: Boolean
+    ): Backend {
+        return BackendImpl(
+            parent,
+            null,
+            trie.revert(root),
+            contractStorageTrie,
+            mutableMapOf(),
+            mutableMapOf(),
+            builtins,
+            bios,
+            isStatic,
+            contractCodeStore,
+            mutableMapOf(),
+            newBlockCreatedAt
+        )
+    }
+
+    constructor(
+        db: Store<ByteArray, ByteArray>,
+        contractCodeStore: Store<HexBytes, HexBytes>,
+        contractStorageTrie: Trie<HexBytes, HexBytes>,
+        secure: Boolean
+    ) {
+        this.db = db
+        trieStore = NoDeleteStore(db, Store.IS_NULL)
+        trie = Trie.builder<HexBytes, Account>()
+            .hashFunction(HashUtil.sha3)
+            .store(trieStore)
+            .keyCodec(Codecs.newRLPCodec(HexBytes::class.java))
+            .valueCodec(Codecs.newRLPCodec(Account::class.java))
+            .build()
+        if (secure) trie = SecureTrie(trie, HashUtil.sha3)
+        this.contractStorageTrie = contractStorageTrie
+        this.contractCodeStore = contractCodeStore
+    }
+
+    override fun init(alloc: List<Account>, bios: List<BuiltinContract>, builtins: List<BuiltinContract>): HexBytes {
+        this.builtins = builtins.map { Pair(it.address, it) }.toMap()
+        this.bios = bios.map { Pair(it.address, it) }.toMap()
+
+        val genesisStates: MutableMap<HexBytes, Account> = HashMap()
+        for (account in alloc) {
+            genesisStates[account.address] = account
+        }
+
+        for (c in (bios + builtins)) {
+            val address = c.address
+            val a = Account.emptyAccount(address, Uint256.ZERO)
+            val trie = contractStorageTrie.revert()
+            for ((key, value) in c.genesisStorage) {
+                trie[key] = value
+            }
+            val root = trie.commit()
+            trie.flush()
+            a.storageRoot = root
+            genesisStates[address] = a
+        }
+
+        // sync to genesis
+        val tmp = trie.revert()
+        genesisStates.forEach { (k: HexBytes, v: Account) -> tmp[k] = v }
+        log.info("genesis states = {}", Start.MAPPER.writeValueAsString(genesisStates))
+        val r = tmp.commit()
+        log.info("genesis state root = $r")
+        tmp.flush()
+        return r
+    }
+
+    public override fun getDB(): Store<ByteArray, ByteArray> {
+        return db
+    }
+
+    override fun getTrie(): Trie<HexBytes?, Account?>? {
+        return trie
+    }
+
+    override fun getTrieStore(): Store<ByteArray, ByteArray> {
+        return trieStore
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger("trie")
+    }
+}

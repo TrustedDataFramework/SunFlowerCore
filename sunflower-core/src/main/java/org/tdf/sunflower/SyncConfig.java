@@ -1,6 +1,5 @@
 package org.tdf.sunflower;
 
-import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -22,16 +21,13 @@ public class SyncConfig {
 
     private String pruneHash;
 
-    @Getter
     private long fastSyncHeight;
 
-    @Getter
     private long lockTimeout;
 
     private String fastSyncHash;
 
     private int maxAccountsTransfer;
-    @Getter
     private Map<String, Double> rateLimits;
 
     public long getHeartRate() {
@@ -60,5 +56,17 @@ public class SyncConfig {
 
     public byte[] getFastSyncHash() {
         return fastSyncHash == null ? null : HexBytes.decode(fastSyncHash);
+    }
+
+    public long getFastSyncHeight() {
+        return this.fastSyncHeight;
+    }
+
+    public long getLockTimeout() {
+        return this.lockTimeout;
+    }
+
+    public Map<String, Double> getRateLimits() {
+        return this.rateLimits;
     }
 }

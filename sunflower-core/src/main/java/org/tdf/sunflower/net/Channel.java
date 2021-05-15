@@ -5,7 +5,7 @@ import org.tdf.sunflower.proto.Message;
 import java.util.Optional;
 
 // channel for message transports
-interface Channel {
+public interface Channel {
     // write message to channel
     void write(Message message);
 

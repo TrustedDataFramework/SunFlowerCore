@@ -27,6 +27,9 @@ import kotlin.math.sign
 )
 @RLPDecoding(Uint256EncoderDecoder::class)
 class Uint256 private constructor(val value: BigInteger) : Number() {
+    override fun toString(): String {
+        return value.toString()
+    }
 
     override fun toInt(): Int {
         return value.intValueExact()

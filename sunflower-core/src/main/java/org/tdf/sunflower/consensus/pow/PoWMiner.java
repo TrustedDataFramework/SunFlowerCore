@@ -38,7 +38,7 @@ public class PoWMiner extends AbstractMiner {
         TransactionPool tp,
         PoW pow
     ) {
-        super(pow.getAccountTrie(), pow.getEventBus(), config);
+        super(pow.getAccountTrie(), pow.getEventBus(), config, pow.getTransactionPool());
         this.transactionPool = tp;
         this.config = config;
         this.poW = pow;
@@ -50,11 +50,6 @@ public class PoWMiner extends AbstractMiner {
                 this.currentMiningHeight = 0;
             }
         });
-    }
-
-    @Override
-    protected TransactionPool getTransactionPool() {
-        return transactionPool;
     }
 
     @Override

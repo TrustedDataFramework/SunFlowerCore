@@ -4,7 +4,6 @@ import org.tdf.sunflower.facade.PeerServerListener;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 
 public interface PeerServer {
     PeerServer NONE = new PeerServer() {
@@ -44,11 +43,6 @@ public interface PeerServer {
         }
 
         @Override
-        public void init(Properties properties) {
-
-        }
-
-        @Override
         public Peer getSelf() {
             return Peer.NONE;
         }
@@ -78,8 +72,6 @@ public interface PeerServer {
     void start();
 
     void stop();
-
-    void init(Properties properties);
 
     Peer getSelf();
 }

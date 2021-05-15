@@ -2,7 +2,6 @@ package org.tdf.sunflower.types;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import lombok.*;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.*;
 import org.tdf.rlp.RLPCodec;
@@ -12,8 +11,6 @@ import org.tdf.sunflower.state.Address;
 import java.util.Objects;
 
 
-@ToString
-@NoArgsConstructor
 public class Header implements Chained {
     /**
      * hash of parent block
@@ -86,11 +83,8 @@ public class Header implements Chained {
      * hash of the block
      */
     @RLPIgnored
-    @Getter(AccessLevel.NONE)
-    @Setter(AccessLevel.NONE)
     protected transient HexBytes hash;
 
-    @Builder
     public Header(
         HexBytes hashPrev, HexBytes coinbase, HexBytes stateRoot,
         HexBytes transactionsRoot, HexBytes receiptTrieRoot,
@@ -114,6 +108,13 @@ public class Header implements Chained {
         this.difficulty = HexBytes.empty();
         this.mixHash = HexBytes.empty();
         this.nonce = HexBytes.empty();
+    }
+
+    public Header() {
+    }
+
+    public static HeaderBuilder builder() {
+        return new HeaderBuilder();
     }
 
     public HexBytes getHash() {
@@ -260,5 +261,89 @@ public class Header implements Chained {
 
     public HexBytes getNonce() {
         return nonce;
+    }
+
+    public String toString() {
+        return "Header(hashPrev=" + this.getHashPrev() + ", unclesHash=" + this.getUnclesHash() + ", coinbase=" + this.getCoinbase() + ", stateRoot=" + this.getStateRoot() + ", transactionsRoot=" + this.getTransactionsRoot() + ", receiptTrieRoot=" + this.getReceiptTrieRoot() + ", logsBloom=" + this.getLogsBloom() + ", difficulty=" + this.getDifficulty() + ", height=" + this.getHeight() + ", gasLimit=" + this.getGasLimit() + ", gasUsed=" + this.getGasUsed() + ", createdAt=" + this.getCreatedAt() + ", extraData=" + this.getExtraData() + ", mixHash=" + this.getMixHash() + ", nonce=" + this.getNonce() + ", hash=" + this.getHash() + ")";
+    }
+
+    public static class HeaderBuilder {
+        private HexBytes hashPrev;
+        private HexBytes coinbase;
+        private HexBytes stateRoot;
+        private HexBytes transactionsRoot;
+        private HexBytes receiptTrieRoot;
+        private HexBytes logsBloom;
+        private long height;
+        private HexBytes gasLimit;
+        private long gasUsed;
+        private long createdAt;
+        private HexBytes extraData;
+
+        HeaderBuilder() {
+        }
+
+        public Header.HeaderBuilder hashPrev(HexBytes hashPrev) {
+            this.hashPrev = hashPrev;
+            return this;
+        }
+
+        public Header.HeaderBuilder coinbase(HexBytes coinbase) {
+            this.coinbase = coinbase;
+            return this;
+        }
+
+        public Header.HeaderBuilder stateRoot(HexBytes stateRoot) {
+            this.stateRoot = stateRoot;
+            return this;
+        }
+
+        public Header.HeaderBuilder transactionsRoot(HexBytes transactionsRoot) {
+            this.transactionsRoot = transactionsRoot;
+            return this;
+        }
+
+        public Header.HeaderBuilder receiptTrieRoot(HexBytes receiptTrieRoot) {
+            this.receiptTrieRoot = receiptTrieRoot;
+            return this;
+        }
+
+        public Header.HeaderBuilder logsBloom(HexBytes logsBloom) {
+            this.logsBloom = logsBloom;
+            return this;
+        }
+
+        public Header.HeaderBuilder height(long height) {
+            this.height = height;
+            return this;
+        }
+
+        public Header.HeaderBuilder gasLimit(HexBytes gasLimit) {
+            this.gasLimit = gasLimit;
+            return this;
+        }
+
+        public Header.HeaderBuilder gasUsed(long gasUsed) {
+            this.gasUsed = gasUsed;
+            return this;
+        }
+
+        public Header.HeaderBuilder createdAt(long createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+
+        public Header.HeaderBuilder extraData(HexBytes extraData) {
+            this.extraData = extraData;
+            return this;
+        }
+
+        public Header build() {
+            return new Header(hashPrev, coinbase, stateRoot, transactionsRoot, receiptTrieRoot, logsBloom, height, gasLimit, gasUsed, createdAt, extraData);
+        }
+
+        public String toString() {
+            return "Header.HeaderBuilder(hashPrev=" + this.hashPrev + ", coinbase=" + this.coinbase + ", stateRoot=" + this.stateRoot + ", transactionsRoot=" + this.transactionsRoot + ", receiptTrieRoot=" + this.receiptTrieRoot + ", logsBloom=" + this.logsBloom + ", height=" + this.height + ", gasLimit=" + this.gasLimit + ", gasUsed=" + this.gasUsed + ", createdAt=" + this.createdAt + ", extraData=" + this.extraData + ")";
+        }
     }
 }

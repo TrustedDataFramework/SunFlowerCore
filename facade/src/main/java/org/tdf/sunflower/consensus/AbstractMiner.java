@@ -1,9 +1,7 @@
 package org.tdf.sunflower.consensus;
 
-import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
@@ -23,22 +21,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j(topic = "miner")
 public abstract class AbstractMiner implements Miner {
-    @Getter(AccessLevel.PROTECTED)
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger("miner");
     private final StateTrie<HexBytes, Account> accountTrie;
-    @Getter(AccessLevel.PROTECTED)
     private final EventBus eventBus;
     private final ConsensusConfig config;
+    protected final TransactionPool pool;
 
-    public AbstractMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, ConsensusConfig config) {
-        this.config = config;
+    public AbstractMiner(StateTrie<HexBytes, Account> accountTrie, EventBus eventBus, ConsensusConfig config, TransactionPool pool) {
         this.accountTrie = accountTrie;
         this.eventBus = eventBus;
+        this.config = config;
+        this.pool = pool;
     }
-
-
-    protected abstract TransactionPool getTransactionPool();
 
     protected abstract Transaction createCoinBase(long height);
 
@@ -50,10 +45,10 @@ public abstract class AbstractMiner implements Miner {
     @SneakyThrows
     protected BlockCreateResult createBlock(Block parent, Map<String, ?> headerArgs) {
         PendingData p =
-            getTransactionPool().pop(parent.getHeader());
+            pool.pop(parent.getHeader());
 
         if (!config.allowEmptyBlock() && p.getPending().isEmpty()) {
-            getTransactionPool().reset(parent.getHeader());
+            pool.reset(parent.getHeader());
             return BlockCreateResult.empty();
         }
 
@@ -134,5 +129,13 @@ public abstract class AbstractMiner implements Miner {
         }
 
         return new BlockCreateResult(b, infos);
+    }
+
+    protected StateTrie<HexBytes, Account> getAccountTrie() {
+        return this.accountTrie;
+    }
+
+    protected EventBus getEventBus() {
+        return this.eventBus;
     }
 }

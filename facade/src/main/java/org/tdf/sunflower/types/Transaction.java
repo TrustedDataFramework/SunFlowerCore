@@ -3,7 +3,7 @@ package org.tdf.sunflower.types;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.tdf.common.crypto.ECDSASignature;
 import org.tdf.common.crypto.ECKey;
 import org.tdf.common.serialize.Codec;
@@ -24,10 +24,15 @@ import java.util.List;
 import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.tdf.common.util.ByteUtil.ZERO_BYTE_ARRAY;
 
-@Slf4j(topic = "tx")
 @RLPEncoding(Transaction.TransactionEncoder.class)
 @RLPDecoding(Transaction.TransactionDecoder.class)
 public class Transaction {
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger("tx");
+
+    public static TransactionBuilder builder() {
+        return new TransactionBuilder();
+    }
+
     public static class TransactionEncoder implements RLPEncoder<Transaction> {
 
         @Override
@@ -595,5 +600,55 @@ public class Transaction {
 
     public static void main(String[] args) {
 
+    }
+
+    public static class TransactionBuilder {
+        private byte[] nonce;
+        private byte[] gasPrice;
+        private byte[] gasLimit;
+        private byte[] receiveAddress;
+        private byte[] value;
+        private byte[] data;
+
+        TransactionBuilder() {
+        }
+
+        public Transaction.TransactionBuilder nonce(byte[] nonce) {
+            this.nonce = nonce;
+            return this;
+        }
+
+        public Transaction.TransactionBuilder gasPrice(byte[] gasPrice) {
+            this.gasPrice = gasPrice;
+            return this;
+        }
+
+        public Transaction.TransactionBuilder gasLimit(byte[] gasLimit) {
+            this.gasLimit = gasLimit;
+            return this;
+        }
+
+        public Transaction.TransactionBuilder receiveAddress(byte[] receiveAddress) {
+            this.receiveAddress = receiveAddress;
+            return this;
+        }
+
+        public Transaction.TransactionBuilder value(byte[] value) {
+            this.value = value;
+            return this;
+        }
+
+        public Transaction.TransactionBuilder data(byte[] data) {
+            this.data = data;
+            return this;
+        }
+
+        public Transaction build() {
+            return new Transaction(nonce, gasPrice, gasLimit, receiveAddress, value, data);
+        }
+
+        public String toString() {
+            return "Transaction.TransactionBuilder(nonce=" + Arrays.toString(this.nonce) + ", gasPrice=" + Arrays.toString(this.gasPrice) + ", gasLimit=" + Arrays.toString(this.gasLimit) + ", receiveAddress=" + Arrays.toString(this.receiveAddress) + ", value=" + Arrays.toString(this.value) + ", data=" + Arrays.toString(this.data) + ")";
+        }
     }
 }

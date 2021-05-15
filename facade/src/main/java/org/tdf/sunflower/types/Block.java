@@ -1,9 +1,7 @@
 package org.tdf.sunflower.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLP;
@@ -32,14 +30,11 @@ public class Block implements Chained {
     };
 
     // extend from header
-    @Getter
     @JsonIgnore
     @RLP(0)
     protected Header header;
 
 
-    @Getter
-    @Setter
     @RLP(1)
     protected List<Transaction> body;
 
@@ -181,5 +176,17 @@ public class Block implements Chained {
 
     public void setLogsBloom(HexBytes logsBloom) {
         header.setLogsBloom(logsBloom);
+    }
+
+    public Header getHeader() {
+        return this.header;
+    }
+
+    public List<Transaction> getBody() {
+        return this.body;
+    }
+
+    public void setBody(List<Transaction> body) {
+        this.body = body;
     }
 }

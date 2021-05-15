@@ -2,6 +2,10 @@ package org.tdf.sunflower.pool
 
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.TickerMode
+import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.launch
 import lombok.SneakyThrows
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -14,8 +18,8 @@ import org.tdf.sunflower.TransactionPoolConfig
 import org.tdf.sunflower.events.NewBestBlock
 import org.tdf.sunflower.events.NewTransactionsCollected
 import org.tdf.sunflower.facade.ConsensusEngine
-import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.facade.PendingTransactionValidator
+import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
@@ -25,13 +29,12 @@ import org.tdf.sunflower.vm.CallData.Companion.fromTransaction
 import org.tdf.sunflower.vm.LockableBackend
 import org.tdf.sunflower.vm.VMExecutor
 import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.function.Predicate
 import javax.annotation.PostConstruct
+import kotlin.concurrent.withLock
 import kotlin.math.min
 
 @Component
@@ -39,7 +42,8 @@ class TransactionPoolImpl(
     private val eventBus: EventBus,
     private val config: TransactionPoolConfig,
     private val repo: RepositoryService,
-    private val trie: StateTrie<HexBytes, Account>
+    private val trie: StateTrie<HexBytes, Account>,
+    private val appCfg: AppConfig
 ) : TransactionPool {
     companion object {
         val log: Logger = LoggerFactory.getLogger("txPool")
@@ -50,8 +54,6 @@ class TransactionPoolImpl(
 
     // hash -> info
     private val mCache: MutableMap<HexBytes, TransactionInfo> = mutableMapOf()
-    private val poolExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-
     private val lock: ReadWriteLock = ReentrantReadWriteLock()
 
     // dropped transactions
@@ -116,11 +118,10 @@ class TransactionPoolImpl(
     override fun collect(transactions: Collection<Transaction>): Map<HexBytes, String> {
         val errors: MutableMap<HexBytes, String> = mutableMapOf()
         lock.writeLock().lock()
-        val c = AppConfig.get()
         try {
             val newCollected: MutableList<Transaction> = mutableListOf()
             for (transaction in transactions) {
-                if (transaction.gasPriceAsU256 < c.vmGasPrice) throw RuntimeException("transaction pool: gas price of tx less than vm gas price " + c.vmGasPrice)
+                if (transaction.gasPriceAsU256 < appCfg.vmGasPrice) throw RuntimeException("transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}" )
                 val info = TransactionInfo(System.currentTimeMillis(), transaction)
                 if (cache.contains(info) || dropped.asMap().containsKey(transaction.hashHex)) continue
                 try {
@@ -165,7 +166,7 @@ class TransactionPoolImpl(
                 continue
             }
 
-            val blockGasLimit = AppConfig.INSTANCE.blockGasLimit
+            val blockGasLimit = appCfg.blockGasLimit
             if (gasUsed >= blockGasLimit)
                 return
 
@@ -236,21 +237,18 @@ class TransactionPoolImpl(
     }
 
     override fun current(): Backend {
-        lock.readLock().lock()
-        val rd = repo.getReader()
-        try {
-            return if (current != null) {
-                this.lock.readLock().lock()
-                val child = current!!.createChild()
-                val b = LockableBackend(child, this.lock)
-                b
-            } else {
-                val best = rd.bestHeader
-                trie.createBackend(best, best.stateRoot, null, false)
+        lock.readLock().withLock {
+            repo.getReader().use {
+                return if (current != null) {
+                    this.lock.readLock().lock()
+                    val child = current!!.createChild()
+                    val b = LockableBackend(child, this.lock)
+                    b
+                } else {
+                    val best = it.bestHeader
+                    trie.createBackend(best, best.stateRoot, null, false)
+                }
             }
-        } finally {
-            rd.close()
-            this.lock.readLock().unlock()
         }
     }
 
@@ -280,6 +278,11 @@ class TransactionPoolImpl(
     @PostConstruct
     fun initialize() {
         eventBus.subscribe(NewBestBlock::class.java) { event: NewBestBlock -> onNewBestBlock(event) }
-        poolExecutor.scheduleWithFixedDelay({ this.clear() }, 0, config.expiredIn, TimeUnit.SECONDS)
+        val ch = ticker(TimeUnit.SECONDS.toMillis(config.expiredIn), 0, mode = TickerMode.FIXED_DELAY)
+        GlobalScope.launch {
+            for (c in ch) {
+                clear()
+            }
+        }
     }
 }

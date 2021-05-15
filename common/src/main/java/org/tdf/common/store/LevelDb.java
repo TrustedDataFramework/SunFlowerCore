@@ -136,10 +136,12 @@ public class LevelDb implements DatabaseStore {
     public void putAll(@NonNull Collection<? extends Map.Entry<? extends byte[], ? extends byte[]>> rows) {
         resetDbLock.readLock().lock();
         try {
-            if (log.isTraceEnabled()) log.trace("~> LevelDbDataSource.updateBatch(): " + directory + ", " + rows.size());
+            if (log.isTraceEnabled())
+                log.trace("~> LevelDbDataSource.updateBatch(): " + directory + ", " + rows.size());
             try {
                 updateBatchInternal(rows);
-                if (log.isTraceEnabled()) log.trace("<~ LevelDbDataSource.updateBatch(): " + directory + ", " + rows.size());
+                if (log.isTraceEnabled())
+                    log.trace("<~ LevelDbDataSource.updateBatch(): " + directory + ", " + rows.size());
             } catch (Exception e) {
                 log.error("Error, retrying one more time...", e);
                 // try one more time

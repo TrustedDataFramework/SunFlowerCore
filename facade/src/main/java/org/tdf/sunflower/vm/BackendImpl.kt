@@ -110,7 +110,7 @@ class BackendImpl(
         }
         for ((key, value) in codeCache) {
             codeStore[
-                tmpTrie[key]!!.contractHash
+                    tmpTrie[key]!!.contractHash
             ] = value
         }
         return tmpTrie.commit()

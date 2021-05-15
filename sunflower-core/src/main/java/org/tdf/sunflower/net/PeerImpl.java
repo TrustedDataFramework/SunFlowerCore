@@ -1,7 +1,7 @@
 package org.tdf.sunflower.net;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
+import lombok.SneakyThrows;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.CryptoContext;
@@ -11,20 +11,27 @@ import java.net.URI;
 import java.util.Optional;
 
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-@AllArgsConstructor
 public class PeerImpl implements Peer, Comparable<PeerImpl> {
 
-    @Setter
     long score;
     private String protocol;
-    @Setter
     private String host;
     private int port;
     private HexBytes ID;
     @JsonIgnore
     private byte[] privateKey;
+
+    public PeerImpl(long score, String protocol, String host, int port, HexBytes ID, byte[] privateKey) {
+        this.score = score;
+        this.protocol = protocol;
+        this.host = host;
+        this.port = port;
+        this.ID = ID;
+        this.privateKey = privateKey;
+    }
+
+    private PeerImpl() {
+    }
 
     public static Optional<PeerImpl> parse(String url) {
         try {
@@ -143,5 +150,37 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
     @Override
     public int compareTo(PeerImpl o) {
         return ID.compareTo(o.ID);
+    }
+
+    public long getScore() {
+        return this.score;
+    }
+
+    public String getProtocol() {
+        return this.protocol;
+    }
+
+    public String getHost() {
+        return this.host;
+    }
+
+    public int getPort() {
+        return this.port;
+    }
+
+    public HexBytes getID() {
+        return this.ID;
+    }
+
+    public byte[] getPrivateKey() {
+        return this.privateKey;
+    }
+
+    public void setScore(long score) {
+        this.score = score;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
     }
 }

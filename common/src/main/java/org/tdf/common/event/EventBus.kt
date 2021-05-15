@@ -1,17 +1,14 @@
 package org.tdf.common.event
 
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.*
 import java.util.function.Consumer
-import kotlin.coroutines.CoroutineContext
 
 /**
  * lock-free event bus implementation
  */
-class EventBus : CoroutineScope {
-    override val coroutineContext: CoroutineContext = CoroutineName("event-bus")
+class EventBus {
     private val listenersLock = false
     private var listeners: Map<Class<*>, List<Consumer<Any>>> = HashMap()
 
@@ -43,7 +40,7 @@ class EventBus : CoroutineScope {
     fun publish(event: Any) {
         val consumers: List<Consumer<Any>> = listeners.getOrDefault(event.javaClass, emptyList())
         for (consumer in consumers) {
-            launch {
+            GlobalScope.launch {
                 try {
                     consumer.accept(event)
                 } catch (e: Exception) {

@@ -3,8 +3,7 @@ package org.tdf.sunflower.consensus.poa;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
 import org.tdf.sunflower.consensus.EconomicModel;
@@ -31,23 +30,20 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 // poa is a minimal non-trivial consensus engine
-@Slf4j(topic = "poa")
 public class PoA extends AbstractConsensusEngine {
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger("poa");
     private ObjectMapper objectMapper = new ObjectMapper();
 
     public static final int GATEWAY_ID = 1339;
     EconomicModel economicModel;
 
-    @Getter
     private PoAConfig config;
 
     private Genesis genesis;
     private PoAMiner poaMiner;
     private PoAValidator poAValidator;
 
-    @Getter
     private Authentication minerContract;
-    @Getter
     private Authentication validatorContract;
 
     private List<BuiltinContract> builtins;
@@ -136,8 +132,6 @@ public class PoA extends AbstractConsensusEngine {
         builtins.add(this.minerContract);
 
         poaMiner = new PoAMiner(this);
-        poaMiner.setRepo(this.getRepo());
-        poaMiner.setTransactionPool(getTransactionPool());
 
         setMiner(poaMiner);
 
@@ -153,5 +147,17 @@ public class PoA extends AbstractConsensusEngine {
     @Override
     public String getName() {
         return "poa";
+    }
+
+    public PoAConfig getConfig() {
+        return this.config;
+    }
+
+    public Authentication getMinerContract() {
+        return this.minerContract;
+    }
+
+    public Authentication getValidatorContract() {
+        return this.validatorContract;
     }
 }

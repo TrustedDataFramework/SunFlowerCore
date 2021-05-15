@@ -38,7 +38,6 @@ public class P2PDebugTool {
         });
         DatabaseStoreFactory factory = new DatabaseStoreFactoryImpl(new DatabaseConfig("memory", 1, "", false, "kv"));
         // port listening on
-        PeerServerImpl server = new PeerServerImpl(new JsonStore("$memory", new ObjectMapper()), AbstractConsensusEngine.NONE);
         Properties properties = new PeerServerProperties();
         properties.setProperty("address", System.getenv("X_ADDRESS"));
         if (System.getenv("X_BOOTSTRAPS") != null) {
@@ -59,7 +58,8 @@ public class P2PDebugTool {
             Optional.ofNullable(System.getenv("X_ENABLE_DISCOVERY")).orElse("false")
         );
         properties.setProperty("name", Optional.ofNullable(System.getenv("X_NAME")).orElse("gRPC"));
-        server.init(properties);
+        PeerServerImpl server = new PeerServerImpl(new JsonStore("$memory", new ObjectMapper()), AbstractConsensusEngine.NONE, properties);
+
         server.addListeners(new PeerServerListener() {
             @Override
             public void onMessage(Context context, PeerServer server) {
