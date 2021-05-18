@@ -2,6 +2,7 @@ package org.tdf.common.trie;
 
 import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
@@ -33,69 +34,58 @@ class Node {
     // the first element is trie key and the second element is value(leaf node) or child node(extension node)
     private Object[] children;
 
-    private HashFunction hashFunction;
-
-
-    private Node(RLPList rlp, boolean dirty, byte[] hash, Store<byte[], byte[]> readOnlyCache, Object[] children, HashFunction hashFunction) {
+    private Node(RLPList rlp, boolean dirty, byte[] hash, Store<byte[], byte[]> readOnlyCache, Object[] children) {
         this.rlp = rlp;
         this.dirty = dirty;
         this.hash = hash;
         this.readOnlyCache = readOnlyCache;
         this.children = children;
-        this.hashFunction = hashFunction;
     }
 
 
-    static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache, HashFunction hashFunction) {
+    static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache) {
         return builder()
             .hash(hash)
             .readOnlyCache(readOnlyCache)
-            .hashFunction(hashFunction)
             .build();
     }
 
     // create root node from database and reference
-    static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> readOnlyCache, HashFunction hashFunction) {
-        return fromEncoded(RLPElement.fromEncoded(encoded), readOnlyCache, hashFunction);
+    static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> readOnlyCache){
+        return fromEncoded(RLPElement.fromEncoded(encoded), readOnlyCache);
     }
 
     // create root node from database and reference
     static Node fromEncoded(
         RLPElement rlp,
-        Store<byte[], byte[]> readOnlyCache,
-        HashFunction hashFunction
+        Store<byte[], byte[]> readOnlyCache
     ) {
         if (rlp.isRLPList())
             return builder()
                 .rlp(rlp.asRLPList())
                 .readOnlyCache(readOnlyCache)
-                .hashFunction(hashFunction)
                 .build();
         return builder()
             .hash(rlp.asBytes())
             .readOnlyCache(readOnlyCache)
-            .hashFunction(hashFunction)
             .build();
     }
 
-    static Node newBranch(HashFunction hashFunction) {
+    static Node newBranch() {
         return builder()
             .children(new Object[BRANCH_SIZE])
-            .hashFunction(hashFunction)
             .dirty(true).build();
     }
 
-    static Node newLeaf(TrieKey key, byte[] value, HashFunction hashFunction) {
+    static Node newLeaf(TrieKey key, byte[] value) {
         return builder()
             .children(new Object[]{key, value})
-            .hashFunction(hashFunction)
             .dirty(true).build();
     }
 
-    static Node newExtension(TrieKey key, Node child, HashFunction hashFunction) {
+    static Node newExtension(TrieKey key, Node child) {
         return builder()
             .children(new Object[]{key, child})
-            .hashFunction(hashFunction)
             .dirty(true)
             .build();
     }
@@ -149,8 +139,8 @@ class Node {
         byte[] raw = rlp.getEncoded();
 
         // if encoded size is great than or equals to 32, store node to db and return a hash reference
-        if (raw.length >= hashFunction.getSize() || forceHash) {
-            hash = hashFunction.apply(raw);
+        if (raw.length >= 32 || forceHash) {
+            hash = HashUtil.sha3(raw);
             cache.set(hash, raw);
             return RLPItem.fromBytes(hash);
         }
@@ -164,7 +154,7 @@ class Node {
 
         byte[] v = readOnlyCache
             .get(hash);
-        if (v == null || !FastByteComparisons.equal(hash, hashFunction.apply(v))) {
+        if (v == null || !FastByteComparisons.equal(hash, HashUtil.sha3(v))) {
             throw new RuntimeException("rlp encoding not found in cache");
         }
         rlp = RLPElement.fromEncoded(v).asRLPList();
@@ -186,13 +176,13 @@ class Node {
                 children[1] = rlp.get(1).asBytes();
                 return;
             }
-            children[1] = fromEncoded(rlp.get(1), readOnlyCache, hashFunction);
+            children[1] = fromEncoded(rlp.get(1), readOnlyCache);
             return;
         }
         children = new Object[BRANCH_SIZE];
         for (int i = 0; i < BRANCH_SIZE - 1; i++) {
             if (rlp.get(i).isNull()) continue;
-            children[i] = fromEncoded(rlp.get(i), readOnlyCache, hashFunction);
+            children[i] = fromEncoded(rlp.get(i), readOnlyCache);
         }
         RLPItem item = rlp.get(BRANCH_SIZE - 1).asRLPItem();
         if (item.isNull()) return;
@@ -207,14 +197,13 @@ class Node {
     }
 
     // wrap o to an extension or leaf node
-    private Node newShort(TrieKey key, Object o, HashFunction hashFunction) {
+    private Node newShort(TrieKey key, Object o) {
         // if size of key is zero, no need to wrap child
         if (key.size() == 0 && o instanceof Node) {
             return (Node) o;
         }
         return builder()
             .children(new Object[]{key, o})
-            .hashFunction(hashFunction)
             .dirty(true)
             .build();
     }
@@ -324,7 +313,7 @@ class Node {
         if ((type == Type.LEAF && commonPrefix.size() == current.size())) {
             dispose(cache);
             byte[] val = getValue();
-            Node newBranch = newBranch(hashFunction);
+            Node newBranch = newBranch();
             children[1] = newBranch;
             newBranch.setValue(val);
             newBranch.branchInsert(key.shift(commonPrefix.size()), value, cache);
@@ -347,12 +336,12 @@ class Node {
         TrieKey tmp = current.shift(commonPrefix.size());
 
         Object o = children[1];
-        Node newBranch = newBranch(hashFunction);
+        Node newBranch = newBranch();
         children[1] = newBranch;
         // reset to common prefix
         children[0] = commonPrefix;
 
-        newBranch.children[tmp.get(0)] = newShort(tmp.shift(), o, hashFunction);
+        newBranch.children[tmp.get(0)] = newShort(tmp.shift(), o);
 
         tmp = key.shift(commonPrefix.size());
         if (tmp.isEmpty()) {
@@ -360,7 +349,7 @@ class Node {
             newBranch.children[BRANCH_SIZE - 1] = value;
             return dirty;
         }
-        newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value, hashFunction);
+        newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value);
         return dirty;
     }
 
@@ -414,7 +403,7 @@ class Node {
             this.dirty |= child.insert(key.shift(), value, cache);
             return dirty;
         }
-        child = newLeaf(key.shift(), value, hashFunction);
+        child = newLeaf(key.shift(), value);
         children[key.get(0)] = child;
         setDirty();
         return dirty;
@@ -507,7 +496,7 @@ class Node {
             children[BRANCH_SIZE - 1] = o;
             return;
         }
-        children[key.get(0)] = newShort(key.shift(), o, hashFunction);
+        children[key.get(0)] = newShort(key.shift(), o);
     }
 
     // check the branch node could be compacted
@@ -605,7 +594,6 @@ class Node {
         private byte[] hash;
         private Store<byte[], byte[]> readOnlyCache;
         private Object[] children;
-        private HashFunction hashFunction;
 
         NodeBuilder() {
         }
@@ -635,17 +623,8 @@ class Node {
             return this;
         }
 
-        private Node.NodeBuilder hashFunction(HashFunction hashFunction) {
-            this.hashFunction = hashFunction;
-            return this;
-        }
-
         private Node build() {
-            return new Node(rlp, dirty, hash, readOnlyCache, children, hashFunction);
-        }
-
-        public String toString() {
-            return "Node.NodeBuilder(rlp=" + this.rlp + ", dirty=" + this.dirty + ", hash=" + java.util.Arrays.toString(this.hash) + ", readOnlyCache=" + this.readOnlyCache + ", children=" + java.util.Arrays.deepToString(this.children) + ", hashFunction=" + this.hashFunction + ")";
+            return new Node(rlp, dirty, hash, readOnlyCache, children);
         }
     }
 }

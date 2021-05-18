@@ -86,7 +86,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     public HexBytes commit() {
         if (root == null) return nullHash;
         if (!root.isDirty()) return HexBytes.fromBytes(root.getHash());
-        byte[] hash = Rlp.decodeBytes(this.root.commit(store, true));
+        byte[] hash = this.root.commit(store, true).asBytes();
         if (root.isDirty() || root.getHash() == null)
             throw new RuntimeException("unexpected error: still dirty after commit");
         return HexBytes.fromBytes(hash);
