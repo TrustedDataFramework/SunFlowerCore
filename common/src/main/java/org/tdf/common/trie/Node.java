@@ -8,8 +8,8 @@ import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
+import org.tdf.rlpstream.RlpList;
 
-import java.util.Map;
 import java.util.function.BiFunction;
 
 import static org.tdf.common.trie.TrieKey.EMPTY;
@@ -151,28 +151,28 @@ class Node {
         // has parsed
         if (children != null) return;
         resolve();
-        RLPList rlp = RLPElement.fromEncoded(this.rlp).asRLPList();
+        RlpList rlp = RlpList.fromEncoded(this.rlp);
         if (rlp.size() == 2) {
             children = new Object[2];
-            byte[] packed = rlp.get(0).asBytes();
+            byte[] packed = rlp.bytesAt(0);
             TrieKey key = TrieKey.fromPacked(packed);
             children[0] = key;
             boolean terminal = TrieKey.isTerminal(packed);
             if (terminal) {
-                children[1] = rlp.get(1).asBytes();
+                children[1] = rlp.bytesAt(1);
                 return;
             }
-            children[1] = fromEncoded(rlp.get(1), readOnlyCache);
+            children[1] = fromEncoded(rlp.rawAt(1), readOnlyCache);
             return;
         }
         children = new Object[BRANCH_SIZE];
         for (int i = 0; i < BRANCH_SIZE - 1; i++) {
-            if (rlp.get(i).isNull()) continue;
-            children[i] = fromEncoded(rlp.get(i), readOnlyCache);
+            if (rlp.isNullAt(i)) continue;
+            children[i] = fromEncoded(rlp.rawAt(i), readOnlyCache);
         }
-        RLPItem item = rlp.get(BRANCH_SIZE - 1).asRLPItem();
-        if (item.isNull()) return;
-        children[BRANCH_SIZE - 1] = item.asBytes();
+        byte[] item = rlp.bytesAt(BRANCH_SIZE - 1);
+        if (item.length == 0) return;
+        children[BRANCH_SIZE - 1] = item;
     }
 
     // clean key-value in database
