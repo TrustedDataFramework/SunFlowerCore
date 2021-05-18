@@ -4,12 +4,10 @@ import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPElement;
-import org.tdf.rlp.RLPItem;
-import org.tdf.rlp.RLPList;
-import org.tdf.rlpstream.RlpList;
+import org.tdf.rlpstream.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
 
 import static org.tdf.common.trie.TrieKey.EMPTY;
@@ -47,21 +45,16 @@ class Node {
     static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache) {
         return new Node(null, false, hash, readOnlyCache, null);
     }
-
-    // create root node from database and reference
-    static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> readOnlyCache){
-        return fromEncoded(RLPElement.fromEncoded(encoded), readOnlyCache);
-    }
-
+    
     // create root node from database and reference
     static Node fromEncoded(
-        RLPElement rlp,
+        byte[] rlp,
         Store<byte[], byte[]> readOnlyCache
     ) {
-        if (rlp.isRLPList())
-            return new Node(rlp.asRLPList().getEncoded(), false, null, readOnlyCache, null);
-
-        return new Node(null, false, rlp.asBytes(), readOnlyCache, null);
+        long streamId = RlpStream.decodeElement(rlp, 0, rlp.length, true);
+        if (StreamId.isList(streamId))
+            return new Node(rlp, false, null, readOnlyCache, null);
+        return new Node(null, false, Rlp.decodeBytes(rlp), readOnlyCache, null);
     }
 
     static Node newBranch() {
@@ -88,35 +81,35 @@ class Node {
         boolean forceHash
     ) {
         // if child node is dirty, the parent node must be dirty also
-        if (!dirty) return hash != null ? RLPCodec.encodeBytes(hash) : rlp;
+        if (!dirty) return hash != null ? Rlp.encodeBytes(hash) : rlp;
         Type type = getType();
         switch (type) {
             case LEAF: {
-                RLPList rlp = RLPList.createEmpty(2);
-                rlp.add(RLPItem.fromBytes(getKey().toPacked(true)));
-                rlp.add(RLPItem.fromBytes(getValue()));
-                this.rlp = rlp.getEncoded();
+                this.rlp = Rlp.encodeElements(
+                    Rlp.encodeBytes(getKey().toPacked(true)),
+                    Rlp.encodeBytes(getValue())
+                );
                 break;
             }
             case EXTENSION: {
-                RLPList rlp = RLPList.createEmpty(2);
-                rlp.add(RLPItem.fromBytes(getKey().toPacked(false)));
-                rlp.add(RLPElement.fromEncoded(getExtension().commit(cache, false)));
-                this.rlp = rlp.getEncoded();
+                this.rlp = Rlp.encodeElements(
+                    Rlp.encodeBytes(getKey().toPacked(false)),
+                    getExtension().commit(cache, false)
+                );
                 break;
             }
             default: {
-                RLPList rlp = RLPList.createEmpty(BRANCH_SIZE);
+                List<byte[]> elements = new ArrayList<>(BRANCH_SIZE);
                 for (int i = 0; i < BRANCH_SIZE - 1; i++) {
                     Node child = (Node) children[i];
                     if (child == null) {
-                        rlp.add(RLPItem.NULL);
+                        elements.add(Constants.NULL);
                         continue;
                     }
-                    rlp.add(RLPElement.fromEncoded(child.commit(cache, false)));
+                    elements.add(child.commit(cache, false));
                 }
-                rlp.add(RLPItem.fromBytes(getValue()));
-                this.rlp = rlp.getEncoded();
+                elements.add(Rlp.encodeBytes(getValue()));
+                this.rlp = Rlp.encodeElements(elements);
             }
         }
         dispose(cache);
@@ -127,7 +120,7 @@ class Node {
         if (raw.length >= 32 || forceHash) {
             hash = HashUtil.sha3(raw);
             cache.set(hash, raw);
-            return RLPCodec.encodeBytes(hash);
+            return Rlp.encodeBytes(hash);
         }
         // clean hash
         return rlp;

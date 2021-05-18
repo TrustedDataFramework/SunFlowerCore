@@ -208,7 +208,7 @@ public class NodeTest {
             .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
         Store<byte[], byte[]> s = new ByteArrayMapStore<>();
         RLPElement element = RLPElement.fromEncoded(n.commit(s, true));
-        Node n2 = Node.fromEncoded(element, s);
+        Node n2 = Node.fromEncoded(element.getEncoded(), s);
         for (String s2 : Arrays.asList("toaster", "toasting", "slow", "slowly")
         ) {
             assert Arrays.equals(n2.get(TrieKey.fromNormal(s2.getBytes())), s2.getBytes());
