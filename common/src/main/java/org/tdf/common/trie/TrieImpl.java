@@ -10,8 +10,6 @@ import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPElement;
 import org.tdf.rlpstream.Rlp;
 
 import java.util.Map;
@@ -88,7 +86,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     public HexBytes commit() {
         if (root == null) return nullHash;
         if (!root.isDirty()) return HexBytes.fromBytes(root.getHash());
-        byte[] hash = RLPElement.fromEncoded(this.root.commit(store, true)).asBytes();
+        byte[] hash = Rlp.decodeBytes(this.root.commit(store, true));
         if (root.isDirty() || root.getHash() == null)
             throw new RuntimeException("unexpected error: still dirty after commit");
         return HexBytes.fromBytes(hash);

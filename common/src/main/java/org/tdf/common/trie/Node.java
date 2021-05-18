@@ -21,7 +21,7 @@ import static org.tdf.common.trie.TrieKey.EMPTY;
 class Node {
     static final int BRANCH_SIZE = 17;
     // rlp encoded of this node, for serialization
-    byte[] rlp;
+    RlpList rlp;
     private boolean dirty;
     // if hash is not null, resolve rlp encoded from db
     private byte[] hash;
@@ -33,7 +33,7 @@ class Node {
     // the first element is trie key and the second element is value(leaf node) or child node(extension node)
     private Object[] children;
 
-    private Node(byte[] rlp, boolean dirty, byte[] hash, Store<byte[], byte[]> readOnlyCache, Object[] children) {
+    private Node(RlpList rlp, boolean dirty, byte[] hash, Store<byte[], byte[]> readOnlyCache, Object[] children) {
         this.rlp = rlp;
         this.dirty = dirty;
         this.hash = hash;
@@ -41,11 +41,10 @@ class Node {
         this.children = children;
     }
 
-
     static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache) {
         return new Node(null, false, hash, readOnlyCache, null);
     }
-    
+
     // create root node from database and reference
     static Node fromEncoded(
         byte[] rlp,
@@ -53,8 +52,19 @@ class Node {
     ) {
         long streamId = RlpStream.decodeElement(rlp, 0, rlp.length, true);
         if (StreamId.isList(streamId))
-            return new Node(rlp, false, null, readOnlyCache, null);
+            return new Node(Rlp.decodeList(rlp), false, null, readOnlyCache, null);
         return new Node(null, false, Rlp.decodeBytes(rlp), readOnlyCache, null);
+    }
+
+    static Node fromListIndex(
+        RlpList li,
+        int idx,
+        Store<byte[], byte[]> readOnlyCache
+    ) {
+        if (li.isListAt(idx)) {
+            return new Node(li.listAt(idx), false, null, readOnlyCache, null);
+        }
+        return new Node(null, false, li.bytesAt(idx), readOnlyCache, null);
     }
 
     static Node newBranch() {
@@ -81,18 +91,18 @@ class Node {
         boolean forceHash
     ) {
         // if child node is dirty, the parent node must be dirty also
-        if (!dirty) return hash != null ? Rlp.encodeBytes(hash) : rlp;
+        if (!dirty) return hash != null ? Rlp.encodeBytes(hash) : rlp.getEncoded();
         Type type = getType();
         switch (type) {
             case LEAF: {
-                this.rlp = Rlp.encodeElements(
+                this.rlp = RlpList.fromElements(
                     Rlp.encodeBytes(getKey().toPacked(true)),
                     Rlp.encodeBytes(getValue())
                 );
                 break;
             }
             case EXTENSION: {
-                this.rlp = Rlp.encodeElements(
+                this.rlp = RlpList.fromElements(
                     Rlp.encodeBytes(getKey().toPacked(false)),
                     getExtension().commit(cache, false)
                 );
@@ -109,12 +119,12 @@ class Node {
                     elements.add(child.commit(cache, false));
                 }
                 elements.add(Rlp.encodeBytes(getValue()));
-                this.rlp = Rlp.encodeElements(elements);
+                this.rlp = RlpList.fromElements(elements);
             }
         }
         dispose(cache);
         dirty = false;
-        byte[] raw = rlp;
+        byte[] raw = rlp.getEncoded();
 
         // if encoded size is great than or equals to 32, store node to db and return a hash reference
         if (raw.length >= 32 || forceHash) {
@@ -123,7 +133,7 @@ class Node {
             return Rlp.encodeBytes(hash);
         }
         // clean hash
-        return rlp;
+        return rlp.getEncoded();
     }
 
     // get actual rlp encoding in the cache
@@ -135,7 +145,7 @@ class Node {
         if (v == null || !FastByteComparisons.equal(hash, HashUtil.sha3(v))) {
             throw new RuntimeException("rlp encoding not found in cache");
         }
-        rlp = v;
+        rlp = RlpList.fromEncoded(v);
     }
 
 
@@ -144,7 +154,6 @@ class Node {
         // has parsed
         if (children != null) return;
         resolve();
-        RlpList rlp = RlpList.fromEncoded(this.rlp);
         if (rlp.size() == 2) {
             children = new Object[2];
             byte[] packed = rlp.bytesAt(0);
@@ -155,13 +164,13 @@ class Node {
                 children[1] = rlp.bytesAt(1);
                 return;
             }
-            children[1] = fromEncoded(rlp.rawAt(1), readOnlyCache);
+            children[1] = fromListIndex(rlp, 1, readOnlyCache);
             return;
         }
         children = new Object[BRANCH_SIZE];
         for (int i = 0; i < BRANCH_SIZE - 1; i++) {
             if (rlp.isNullAt(i)) continue;
-            children[i] = fromEncoded(rlp.rawAt(i), readOnlyCache);
+            children[i] = fromListIndex(rlp, i, readOnlyCache);
         }
         byte[] item = rlp.bytesAt(BRANCH_SIZE - 1);
         if (item.length == 0) return;

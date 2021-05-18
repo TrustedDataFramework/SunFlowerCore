@@ -6,7 +6,6 @@ import org.junit.runners.JUnit4;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.BigEndian;
-import org.tdf.rlp.RLPElement;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -207,8 +206,8 @@ public class NodeTest {
         Arrays.asList("toaster", "toasting", "slow", "slowly")
             .forEach(x -> n.insert(TrieKey.fromNormal(x.getBytes()), x.getBytes()));
         Store<byte[], byte[]> s = new ByteArrayMapStore<>();
-        RLPElement element = RLPElement.fromEncoded(n.commit(s, true));
-        Node n2 = Node.fromEncoded(element.getEncoded(), s);
+        byte[] element = n.commit(s, true);
+        Node n2 = Node.fromEncoded(element, s);
         for (String s2 : Arrays.asList("toaster", "toasting", "slow", "slowly")
         ) {
             assert Arrays.equals(n2.get(TrieKey.fromNormal(s2.getBytes())), s2.getBytes());

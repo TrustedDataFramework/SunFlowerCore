@@ -17,7 +17,7 @@ class Dump implements ScannerAction {
         if (node.getHash() != null) {
             pairs.put(
                 HexBytes.fromBytes(node.getHash()),
-                HexBytes.fromBytes(Objects.requireNonNull(node.rlp))
+                HexBytes.fromBytes(Objects.requireNonNull(node.rlp.getEncoded()))
             );
         }
         return true;
