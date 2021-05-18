@@ -28,7 +28,7 @@ public class SecureTrieTest {
             .store(new NoDeleteStore<>(new ByteArrayMapStore<>(), x -> x == null || x.length == 0))
             .build();
 
-        secured = new SecureTrie<>(notSecured, HashUtil::sha3);
+        secured = new SecureTrie<>(notSecured);
     }
 
     @Test

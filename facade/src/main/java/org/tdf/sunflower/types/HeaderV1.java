@@ -9,8 +9,6 @@ import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
-import org.tdf.rlp.RLP;
-import org.tdf.rlp.RLPIgnored;
 
 @Getter
 @ToString
@@ -33,27 +31,22 @@ public class HeaderV1 implements Chained {
     /**
      * magic version number
      */
-    @RLP(0)
     protected int version;
     /**
      * hash of parent block
      */
-    @RLP(1)
     protected HexBytes hashPrev;
     /**
      * root hash of transaction trie
      */
-    @RLP(2)
     protected HexBytes transactionsRoot;
     /**
      * root hash of state trie
      */
-    @RLP(3)
     protected HexBytes stateRoot;
     /**
      * height of current header
      */
-    @RLP(4)
     @JsonSerialize(using = IntSerializer.class)
     protected long height;
     /**
@@ -61,17 +54,14 @@ public class HeaderV1 implements Chained {
      */
     @JsonSerialize(using = EpochSecondsSerializer.class)
     @JsonDeserialize(using = EpochSecondDeserializer.class)
-    @RLP(5)
     protected long createdAt;
     /**
      * custom data
      */
-    @RLP(6)
     protected HexBytes payload;
     /**
      * hash of the block
      */
-    @RLPIgnored
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     protected transient HexBytes hash;

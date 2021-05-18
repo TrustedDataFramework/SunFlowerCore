@@ -206,7 +206,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
         transactionsStore = StoreWrapper<HexBytes, Transaction, Any, Any>(
             factory.create('b'),
             Codecs.HEX,
-            Codecs.newRLPCodec(Transaction::class.java)
+            Transaction.TransactionCodec()
         )
 
         headerStore = StoreWrapper<HexBytes, Header, Any, Any>(

@@ -1,7 +1,6 @@
 package org.tdf.sunflower.types;
 
 import lombok.Builder;
-import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.tdf.common.crypto.ECDSASignature;
@@ -14,39 +13,40 @@ import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.*;
+import org.tdf.rlpstream.Rlp;
+import org.tdf.rlpstream.RlpEncodable;
+import org.tdf.rlpstream.RlpList;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.tdf.common.util.ByteUtil.ZERO_BYTE_ARRAY;
 
-@RLPEncoding(Transaction.TransactionEncoder.class)
-@RLPDecoding(Transaction.TransactionDecoder.class)
-public class Transaction {
+public class Transaction implements RlpEncodable {
+    public static final class TransactionCodec implements Codec<Transaction> {
+        public static Function<? super Transaction, byte[]> ENCODER = Transaction::getEncoded;
+        public static Function<byte[], ? extends Transaction> DECODER = Transaction::new;
+
+        @Override
+        public Function<? super Transaction, byte[]> getEncoder() {
+            return ENCODER;
+        }
+
+        @Override
+        public Function<byte[], ? extends Transaction> getDecoder() {
+            return DECODER;
+        }
+    }
+
     private static final Logger log = org.slf4j.LoggerFactory.getLogger("tx");
 
     public static TransactionBuilder builder() {
         return new TransactionBuilder();
-    }
-
-    public static class TransactionEncoder implements RLPEncoder<Transaction> {
-
-        @Override
-        public RLPElement encode(@NonNull Transaction o) {
-            return RLPElement.fromEncoded(o.getEncoded());
-        }
-    }
-
-    public static class TransactionDecoder implements RLPDecoder<Transaction> {
-
-        @Override
-        public Transaction decode(@NonNull RLPElement element) {
-            return new Transaction(element.getEncoded());
-        }
     }
 
     public static HexBytes calcTxTrie(List<Transaction> transactions) {
@@ -61,7 +61,7 @@ public class Transaction {
             return HexBytes.fromBytes(HashUtil.EMPTY_TRIE_HASH);
 
         for (int i = 0; i < transactions.size(); i++) {
-            txsState.set(RLPCodec.encodeInt(i), transactions.get(i).getEncoded());
+            txsState.set(Rlp.encodeInt(i), transactions.get(i).getEncoded());
         }
 
         return txsState.commit();
@@ -230,27 +230,38 @@ public class Transaction {
     public synchronized void rlpParse() {
         if (parsed) return;
         try {
-            RLPList transaction = RLPElement.fromEncoded(rlpEncoded).asRLPList();
+
+
+            RlpList li = Rlp.decodeList(rlpEncoded);
+//            long li = RlpStream.decodeElement(rlpEncoded, 0);
+//            long i = li & 0xffffffffL;
+//            List<byte[]> transaction = new ArrayList<>(9);
+//
+//            while (true) {
+//                i = RlpStream.iterateList(rlpEncoded, li, i);
+//                if (i == RlpStream.EOF)
+//                    break;
+//                if (RlpStream.isList(i))
+//                    throw new RuntimeException("Transaction RLP elements shouldn't be lists");
+//                transaction.add(RlpStream.copyFrom(rlpEncoded, i));
+//            }
+
 
             // Basic verification
-            if (transaction.size() > 9) throw new RuntimeException("Too many RLP elements");
-            for (RLPElement rlpElement : transaction) {
-                if (!rlpElement.isRLPItem())
-                    throw new RuntimeException("Transaction RLP elements shouldn't be lists");
-            }
+            if (li.size() > 9) throw new RuntimeException("Too many RLP elements");
 
-            this.nonce = transaction.get(0).asBytes();
-            this.gasPrice = transaction.get(1).asBytes();
-            this.gasLimit = transaction.get(2).asBytes();
-            this.receiveAddress = transaction.get(3).asBytes();
-            this.value = transaction.get(4).asBytes();
-            this.data = transaction.get(5).asBytes();
+            this.nonce = li.bytesAt(0);
+            this.gasPrice = li.bytesAt(1);
+            this.gasLimit = li.bytesAt(2);
+            this.receiveAddress = li.bytesAt(3);
+            this.value = li.bytesAt(4);
+            this.data = li.bytesAt(5);
             // only parse signature in case tx is signed
-            if (transaction.size() >= 7 && !transaction.get(6).isNull()) {
-                byte[] vData = transaction.get(6).asBytes();
+            if (li.size() >= 7 && li.bytesAt(6).length != 0) {
+                byte[] vData = li.bytesAt(6);
                 BigInteger v = ByteUtil.bytesToBigInteger(vData);
-                byte[] r = transaction.get(7).asBytes();
-                byte[] s = transaction.get(8).asBytes();
+                byte[] r = li.bytesAt(7);
+                byte[] s = li.bytesAt(8);
                 this.chainId = extractChainIdFromRawSignature(v, r, s);
                 if (r != null && s != null) {
                     this.signature = ECDSASignature.fromComponents(r, s, getRealV(v));
@@ -507,25 +518,25 @@ public class Transaction {
         // parse null as 0 for nonce
         byte[] nonce = null;
         if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
-            nonce = RLPCodec.encodeBytes(null);
+            nonce = Rlp.encodeBytes(null);
         } else {
-            nonce = RLPCodec.encodeBytes(this.nonce);
+            nonce = Rlp.encodeBytes(this.nonce);
         }
-        byte[] gasPrice = RLPCodec.encodeBytes(this.gasPrice);
-        byte[] gasLimit = RLPCodec.encodeBytes(this.gasLimit);
-        byte[] receiveAddress = RLPCodec.encodeBytes(this.receiveAddress);
-        byte[] value = RLPCodec.encodeBytes(this.value);
-        byte[] data = RLPCodec.encodeBytes(this.data);
+        byte[] gasPrice = Rlp.encodeBytes(this.gasPrice);
+        byte[] gasLimit = Rlp.encodeBytes(this.gasLimit);
+        byte[] receiveAddress = Rlp.encodeBytes(this.receiveAddress);
+        byte[] value = Rlp.encodeBytes(this.value);
+        byte[] data = Rlp.encodeBytes(this.data);
 
         // Since EIP-155 use chainId for v
         if (chainId == null) {
-            rlpRaw = RLPCodec.encodeElements(Arrays.asList(nonce, gasPrice, gasLimit, receiveAddress, value, data));
+            rlpRaw = Rlp.encodeElements(Arrays.asList(nonce, gasPrice, gasLimit, receiveAddress, value, data));
         } else {
             byte[] v, r, s;
-            v = RLPCodec.encodeInt(chainId);
-            r = RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY);
-            s = RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY);
-            rlpRaw = RLPCodec.encodeElements(Arrays.asList(nonce, gasPrice, gasLimit, receiveAddress, value, data, v, r, s));
+            v = Rlp.encodeInt(chainId);
+            r = Rlp.encodeBytes(EMPTY_BYTE_ARRAY);
+            s = Rlp.encodeBytes(EMPTY_BYTE_ARRAY);
+            rlpRaw = Rlp.encodeElements(Arrays.asList(nonce, gasPrice, gasLimit, receiveAddress, value, data, v, r, s));
         }
         return rlpRaw;
     }
@@ -534,12 +545,12 @@ public class Transaction {
 
         if (rlpEncoded != null) return rlpEncoded;
 
-        byte[] nonce = RLPCodec.encodeBytes(this.nonce);
-        byte[] gasPrice = RLPCodec.encodeBytes(this.gasPrice);
-        byte[] gasLimit = RLPCodec.encodeBytes(this.gasLimit);
-        byte[] receiveAddress = RLPCodec.encodeBytes(this.receiveAddress);
-        byte[] value = RLPCodec.encodeBytes(this.value);
-        byte[] data = RLPCodec.encodeBytes(this.data);
+        byte[] nonce = Rlp.encodeBytes(this.nonce);
+        byte[] gasPrice = Rlp.encodeBytes(this.gasPrice);
+        byte[] gasLimit = Rlp.encodeBytes(this.gasLimit);
+        byte[] receiveAddress = Rlp.encodeBytes(this.receiveAddress);
+        byte[] value = Rlp.encodeBytes(this.value);
+        byte[] data = Rlp.encodeBytes(this.data);
 
         byte[] v, r, s;
 
@@ -551,17 +562,17 @@ public class Transaction {
                 encodeV = signature.v - LOWER_REAL_V;
                 encodeV += chainId * 2 + CHAIN_ID_INC;
             }
-            v = RLPCodec.encodeInt(encodeV);
-            r = RLPCodec.encodeBytes(BigIntegers.asUnsignedByteArray(signature.r));
-            s = RLPCodec.encodeBytes(BigIntegers.asUnsignedByteArray(signature.s));
+            v = Rlp.encodeInt(encodeV);
+            r = Rlp.encodeBytes(BigIntegers.asUnsignedByteArray(signature.r));
+            s = Rlp.encodeBytes(BigIntegers.asUnsignedByteArray(signature.s));
         } else {
             // Since EIP-155 use chainId for v
-            v = chainId == null ? RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY) : RLPCodec.encodeInt(chainId);
-            r = RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY);
-            s = RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY);
+            v = chainId == null ? Rlp.encodeBytes(EMPTY_BYTE_ARRAY) : Rlp.encodeInt(chainId);
+            r = Rlp.encodeBytes(EMPTY_BYTE_ARRAY);
+            s = Rlp.encodeBytes(EMPTY_BYTE_ARRAY);
         }
 
-        this.rlpEncoded = RLPCodec.encodeElements(
+        this.rlpEncoded = Rlp.encodeElements(
             Arrays.asList(nonce, gasPrice, gasLimit,
                 receiveAddress, value, data, v, r, s)
         );

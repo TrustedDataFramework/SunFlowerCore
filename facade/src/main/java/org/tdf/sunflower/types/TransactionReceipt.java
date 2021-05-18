@@ -1,13 +1,13 @@
 package org.tdf.sunflower.types;
 
-import lombok.NonNull;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.*;
+import org.tdf.rlpstream.Rlp;
+import org.tdf.rlpstream.RlpList;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
 import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.tdf.common.util.ByteUtil.toHexString;
 
@@ -26,8 +25,6 @@ import static org.tdf.common.util.ByteUtil.toHexString;
  * and the cumulative gas used in the block containing the transaction receipt
  * as of immediately after the transaction has happened,
  */
-@RLPEncoding(TransactionReceipt.TransactionReceiptEncoder.class)
-@RLPDecoding(TransactionReceipt.TransactionReceiptDecoder.class)
 public class TransactionReceipt {
 
     public static HexBytes calcReceiptsTrie(List<TransactionReceipt> receipts) {
@@ -37,25 +34,9 @@ public class TransactionReceipt {
             return HashUtil.EMPTY_TRIE_HASH_HEX;
 
         for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie.set(RLPCodec.encodeInt(i), receipts.get(i).getReceiptTrieEncoded());
+            receiptsTrie.set(Rlp.encodeInt(i), receipts.get(i).getReceiptTrieEncoded());
         }
         return receiptsTrie.commit();
-    }
-
-    public static class TransactionReceiptEncoder implements RLPEncoder<TransactionReceipt> {
-
-        @Override
-        public RLPElement encode(@NonNull TransactionReceipt o) {
-            return RLPElement.fromEncoded(o.getEncoded());
-        }
-    }
-
-    public static class TransactionReceiptDecoder implements RLPDecoder<TransactionReceipt> {
-
-        @Override
-        public TransactionReceipt decode(@NonNull RLPElement element) {
-            return new TransactionReceipt(element.getEncoded());
-        }
     }
 
 
@@ -75,31 +56,29 @@ public class TransactionReceipt {
 
 
     public TransactionReceipt(byte[] rlp) {
-        RLPList receipt = RLPElement.fromEncoded(rlp).asRLPList();
+        RlpList receipt = Rlp.decodeList(rlp);
 
-        RLPItem postTxStateRLP = receipt.get(0).asRLPItem();
-        RLPItem cumulativeGasRLP = receipt.get(1).asRLPItem();
-        RLPItem bloomRLP = receipt.get(2).asRLPItem();
-        RLPList logs = receipt.get(3).asRLPList();
-        RLPItem gasUsedRLP = receipt.get(4).asRLPItem();
-        RLPItem result = receipt.get(5).asRLPItem();
 
-        postTxState = nullToEmpty(postTxStateRLP.asBytes());
-        cumulativeGas = cumulativeGasRLP.asBytes();
-        bloomFilter = new Bloom(bloomRLP.asBytes());
-        gasUsed = gasUsedRLP.asBytes();
-        executionResult = (executionResult = result.asBytes()) == null ? EMPTY_BYTE_ARRAY : executionResult;
+        RlpList logs = receipt.listAt(3);
+
+
+        postTxState = receipt.bytesAt(0);
+        cumulativeGas = receipt.bytesAt(1);
+        bloomFilter = new Bloom(receipt.bytesAt(2));
+        gasUsed = receipt.bytesAt(4);
+
+        executionResult = receipt.bytesAt(5);
 
         if (receipt.size() > 6) {
-            byte[] errBytes = receipt.get(6).asBytes();
+            byte[] errBytes = receipt.bytesAt(6);
             error = errBytes != null ? new String(errBytes, StandardCharsets.UTF_8) : "";
         }
 
-        for (RLPElement log : logs) {
-            LogInfo logInfo = new LogInfo(log.asBytes());
+        for(int i = 0; i < logs.size(); i++) {
+            LogInfo logInfo = new LogInfo(logs.bytesAt(i));
             logInfoList.add(logInfo);
-        }
 
+        }
         rlpEncoded = rlp;
     }
 
@@ -109,22 +88,6 @@ public class TransactionReceipt {
         this.cumulativeGas = cumulativeGas;
         this.bloomFilter = bloomFilter;
         this.logInfoList = logInfoList;
-    }
-
-    public TransactionReceipt(final RLPList rlpList) {
-        if (rlpList == null || rlpList.size() != 4)
-            throw new RuntimeException("Should provide RLPList with postTxState, cumulativeGas, bloomFilter, logInfoList");
-
-        this.postTxState = rlpList.get(0).asBytes();
-        this.cumulativeGas = rlpList.get(1).asBytes();
-        this.bloomFilter = new Bloom(rlpList.get(2).asBytes());
-
-        List<LogInfo> logInfos = new ArrayList<>();
-        for (RLPElement logInfoEl : (RLPList) rlpList.get(3)) {
-            LogInfo logInfo = new LogInfo(logInfoEl.asBytes());
-            logInfos.add(logInfo);
-        }
-        this.logInfoList = logInfos;
     }
 
     public byte[] getPostTxState() {
@@ -237,9 +200,9 @@ public class TransactionReceipt {
 
     public byte[] getEncoded(boolean receiptTrie) {
 
-        byte[] postTxStateRLP = RLPCodec.encodeBytes(this.postTxState);
-        byte[] cumulativeGasRLP = RLPCodec.encodeBytes(this.cumulativeGas);
-        byte[] bloomRLP = RLPCodec.encodeBytes(this.bloomFilter.getData());
+        byte[] postTxStateRLP = Rlp.encodeBytes(this.postTxState);
+        byte[] cumulativeGasRLP = Rlp.encodeBytes(this.cumulativeGas);
+        byte[] bloomRLP = Rlp.encodeBytes(this.bloomFilter.getData());
 
         final byte[] logInfoListRLP;
         if (logInfoList != null) {
@@ -250,18 +213,18 @@ public class TransactionReceipt {
                 logInfoListE[i] = logInfo.getEncoded();
                 ++i;
             }
-            logInfoListRLP = RLPCodec.encodeElements(Arrays.asList(logInfoListE));
+            logInfoListRLP = Rlp.encodeElements(Arrays.asList(logInfoListE));
         } else {
-            logInfoListRLP = RLPCodec.encodeElements(Collections.emptyList());
+            logInfoListRLP = Rlp.encodeElements(Collections.emptyList());
         }
 
         return receiptTrie ?
-            RLPCodec.encodeElements(Arrays.asList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP)) :
-            RLPCodec.encodeElements(
+            Rlp.encodeElements(Arrays.asList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP)) :
+            Rlp.encodeElements(
                 Arrays.asList(
                     postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP,
-                    RLPCodec.encodeBytes(gasUsed), RLPCodec.encodeBytes(executionResult),
-                    RLPCodec.encodeBytes(error.getBytes(StandardCharsets.UTF_8))
+                    Rlp.encodeBytes(gasUsed), Rlp.encodeBytes(executionResult),
+                    Rlp.encodeBytes(error.getBytes(StandardCharsets.UTF_8))
                 )
             );
 

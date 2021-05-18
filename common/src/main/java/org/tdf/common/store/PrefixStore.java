@@ -6,7 +6,7 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.rlp.RLPCodec;
+import org.tdf.rlpstream.Rlp;
 
 import java.util.*;
 
@@ -55,13 +55,13 @@ public class PrefixStore<K, V> implements IterableStore<K, V> {
     private void addKey(byte[] key) {
         TreeSet<HexBytes> keySet = keySet();
         keySet.add(HexBytes.fromBytes(key));
-        contractStorage.set(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
+        contractStorage.set(prefix, HexBytes.fromBytes(Rlp.encode(keySet.toArray())));
     }
 
     private void removeKey(byte[] key) {
         TreeSet<HexBytes> keySet = keySet();
         keySet.remove(HexBytes.fromBytes(key));
-        contractStorage.set(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
+        contractStorage.set(prefix, HexBytes.fromBytes(Rlp.encode(keySet.toArray())));
     }
 
     @Override

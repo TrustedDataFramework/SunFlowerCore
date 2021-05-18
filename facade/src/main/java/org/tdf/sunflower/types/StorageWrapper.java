@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPElement;
+import org.tdf.rlpstream.Rlp;
+import org.tdf.rlpstream.RlpList;
 
 import java.util.*;
 
@@ -38,7 +38,7 @@ public class StorageWrapper {
     private void addKey(HexBytes key) {
         Set<HexBytes> keySet = keySet();
         keySet.add(key);
-        store.set(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
+        store.set(prefix, HexBytes.fromBytes(Rlp.encode(keySet)));
     }
 
     public void save(HexBytes key, Object o) {
@@ -53,7 +53,7 @@ public class StorageWrapper {
     private void removeKey(HexBytes key) {
         Set<HexBytes> keySet = keySet();
         keySet.remove(key);
-        store.set(prefix, HexBytes.fromBytes(RLPCodec.encode(keySet)));
+        store.set(prefix, HexBytes.fromBytes(Rlp.encode(keySet)));
     }
 
     public void remove(HexBytes key) {
@@ -79,8 +79,12 @@ public class StorageWrapper {
         if (h == null)
             return defaultValue;
         List<T> ret = new ArrayList<>();
-        for (RLPElement element : RLPElement.fromEncoded(h.getBytes()).asRLPList()) {
-            ret.add(element.as(clazz));
+        RlpList li = Rlp.decodeList(h.getBytes());
+
+        for(int i = 0; i < li.size(); i++) {
+            ret.add(
+                Rlp.decode(li.rawAt(i), clazz)
+            );
         }
         return ret;
     }
@@ -91,8 +95,13 @@ public class StorageWrapper {
         if (h == null)
             return defaultValue;
         TreeSet<T> ret = new TreeSet<>();
-        for (RLPElement element : RLPElement.fromEncoded(h.getBytes()).asRLPList()) {
-            ret.add(element.as(clazz));
+
+        RlpList li = Rlp.decodeList(h.getBytes());
+
+        for(int i = 0; i < li.size(); i++) {
+            ret.add(
+                Rlp.decode(li.rawAt(i), clazz)
+            );
         }
         return ret;
     }

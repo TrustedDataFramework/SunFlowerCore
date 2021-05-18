@@ -11,7 +11,6 @@ import org.tdf.common.types.Chained;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLP;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,13 +26,11 @@ public class BlockV1 implements Chained {
     // extend from header
     @Getter
     @JsonIgnore
-    @RLP(0)
     protected HeaderV1 header;
 
 
     @Getter
     @Setter
-    @RLP(1)
     protected List<TransactionV1> body;
 
     public BlockV1() {

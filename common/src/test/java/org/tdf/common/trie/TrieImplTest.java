@@ -9,10 +9,11 @@ import org.tdf.common.util.HashUtil;
 @RunWith(JUnit4.class)
 public class TrieImplTest extends AbstractTrieTest {
     Trie<String, String> newStringTrie() {
-        return TrieImpl.newInstance(HashUtil::sha3, new AbstractTrieTest.NoDoubleDeleteStore(), Codecs.STRING, Codecs.STRING);
+        return TrieImpl.newInstance(new AbstractTrieTest.NoDoubleDeleteStore(), Codecs.STRING, Codecs.STRING);
     }
 
     Trie<byte[], byte[]> newBytesTrie() {
-        return TrieImpl.newInstance(HashUtil::sha3, new AbstractTrieTest.NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        return TrieImpl.newInstance(new AbstractTrieTest.NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
     }
+
 }

@@ -94,9 +94,8 @@ public class PoA extends AbstractConsensusEngine {
                         JsonNode n = objectMapper.readValue(responseStream, JsonNode.class);
                         n = n.get("data");
                         for (int i = 0; i < n.size(); i++) {
-                            Transaction tx = RLPUtil.decode(
-                                HexBytes.fromHex(n.get(i).textValue()),
-                                Transaction.class
+                            Transaction tx = new Transaction(
+                                HexBytes.decode(n.get(i).textValue())
                             );
                             if (!rd.containsTransaction(tx.getHashHex())) {
                                 Block best = rd.getBestBlock();

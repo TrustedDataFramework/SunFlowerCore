@@ -48,6 +48,10 @@ public abstract class AbstractTrieTest {
     abstract Trie<byte[], byte[]> newBytesTrie();
 
     @Test
+    public void test() {
+    }
+
+    @Test
     public void test1() {
         Trie<byte[], byte[]> trie = newBytesTrie();
         Arrays.asList("test", "toaster", "toasting", "slow", "slowly")
@@ -181,7 +185,7 @@ public abstract class AbstractTrieTest {
 
     @Test
     public void testDeleteCompletellyDiferentItems() {
-        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
 
         String val_1 = "1000000000000000000000000000000000000000000000000000000000000000";
         String val_2 = "2000000000000000000000000000000000000000000000000000000000000000";
@@ -259,7 +263,7 @@ public abstract class AbstractTrieTest {
 
     @Test
     public void testMassiveDelete() {
-        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(HashUtil::sha3, new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
         byte[] rootHash1 = null;
         for (int i = 0; i < 11000; i++) {
             trie.set(HashUtil.sha3(intToBytes(i)), HashUtil.sha3(intToBytes(i + 1000000)));
@@ -508,7 +512,7 @@ public abstract class AbstractTrieTest {
         int n = 1000000;
         if (!performance) return;
         TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(
-            HashUtil::sha256,
+//            HashUtil::sha256,
             new NoDoubleDeleteStore(),
             Codec.identity(),
             Codec.identity()

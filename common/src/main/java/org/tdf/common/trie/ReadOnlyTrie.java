@@ -87,11 +87,6 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
 
 
     @Override
-    public Map<HexBytes, HexBytes> getProof(K k) {
-        return delegate.getProof(k);
-    }
-
-    @Override
     public Codec<K> getKCodec() {
         return delegate.getKCodec();
     }
@@ -114,11 +109,6 @@ public class ReadOnlyTrie<K, V> extends AbstractTrie<K, V> {
     @Override
     public void removeBytes(byte[] data) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Map<HexBytes, HexBytes> getProofInternal(byte[] key) {
-        return delegate.getProofInternal(key);
     }
 
     @Override

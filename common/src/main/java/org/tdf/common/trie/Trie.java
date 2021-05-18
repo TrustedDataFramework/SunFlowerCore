@@ -89,31 +89,6 @@ public interface Trie<K, V> extends Store<K, V> {
      */
     boolean isDirty();
 
-    /**
-     * Get merkle path of key as proof, commonly used for SPV
-     * Merkle proof are used to decide upon the following factors
-     * If the key belongs in the merkle Trie
-     * To concisely prove the validity of data being part of a dataset without storing the whole data set
-     *
-     * @param k key to prove be absent or valid
-     * @return merkle path of key
-     */
-    Map<HexBytes, HexBytes> getProof(K k);
-
-    /**
-     * get merkle proof batched
-     *
-     * @param keys keys to included in the proof
-     * @return merkle proof
-     */
-    default Map<HexBytes, HexBytes> getProof(Collection<? extends K> keys) {
-        Map<HexBytes, HexBytes> ret = new HashMap<>();
-        for (K key : keys) {
-            ret.putAll(getProof(key));
-        }
-        return ret;
-    }
-
 //    default void prune(Collection<? extends byte[]> excludedRoots) {
 //        prune(excludedRoots, getStore());
 //    }
@@ -197,7 +172,7 @@ public interface Trie<K, V> extends Store<K, V> {
         }
 
         public Trie<K, V> build() {
-            return TrieImpl.newInstance(hashFunction, store, keyCodec, valueCodec);
+            return TrieImpl.newInstance(store, keyCodec, valueCodec);
         }
     }
 }

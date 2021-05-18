@@ -2,6 +2,7 @@ package org.tdf.common.trie;
 
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.Store;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 
 import java.util.Map;
@@ -24,27 +25,23 @@ import java.util.function.Function;
 public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     private AbstractTrie<K, V> delegate;
 
-    private Function<byte[], byte[]> hashFunction;
-
-
-    public SecureTrie(Trie<K, V> delegate, Function<byte[], byte[]> hashFunction) {
+    public SecureTrie(Trie<K, V> delegate) {
         this.delegate = (AbstractTrie<K, V>) delegate;
-        this.hashFunction = hashFunction;
     }
 
     @Override
     public Trie<K, V> revert(HexBytes rootHash, Store<byte[], byte[]> store) {
-        return new SecureTrie<>(delegate.revert(rootHash, store), hashFunction);
+        return new SecureTrie<>(delegate.revert(rootHash, store));
     }
 
     @Override
     public Trie<K, V> revert(HexBytes rootHash) {
-        return new SecureTrie<>(delegate.revert(rootHash), hashFunction);
+        return new SecureTrie<>(delegate.revert(rootHash));
     }
 
     @Override
     public Trie<K, V> revert() {
-        return new SecureTrie<>(delegate.revert(), hashFunction);
+        return new SecureTrie<>(delegate.revert());
     }
 
     @Override
@@ -110,22 +107,17 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
 
     @Override
     public V getFromBytes(byte[] data) {
-        return delegate.getFromBytes(hashFunction.apply(data));
+        return delegate.getFromBytes(HashUtil.sha3(data));
     }
 
     @Override
     public void putBytes(byte[] key, byte[] value) {
-        delegate.putBytes(hashFunction.apply(key), value);
+        delegate.putBytes(HashUtil.sha3(key), value);
     }
 
     @Override
     public void removeBytes(byte[] data) {
-        delegate.removeBytes(hashFunction.apply(data));
-    }
-
-    @Override
-    public Map<HexBytes, HexBytes> getProofInternal(byte[] key) {
-        return delegate.getProofInternal(hashFunction.apply(key));
+        delegate.removeBytes(HashUtil.sha3(data));
     }
 
     @Override

@@ -5,7 +5,9 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
+import org.tdf.rlpstream.RlpProps;
 
+@RlpProps({"nonce", "balance", "storageRoot", "contractHash"})
 public class Account {
     public Account() {
 
@@ -33,12 +35,6 @@ public class Account {
         this.storageRoot = storageRoot;
     }
 
-    /**
-     * create a fresh new account by address
-     *
-     * @param address address
-     * @return a fresh new account
-     */
     public static Account emptyAccount(Uint256 balance) {
         return new Account(0, balance, HashUtil.EMPTY_DATA_HASH_HEX, HashUtil.EMPTY_TRIE_HASH_HEX);
     }

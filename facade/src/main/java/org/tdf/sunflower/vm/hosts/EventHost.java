@@ -4,8 +4,6 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
-import org.tdf.rlp.RLPElement;
-import org.tdf.rlp.RLPList;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.WBI;
 import org.tdf.sunflower.vm.abi.WbiType;
@@ -38,7 +36,6 @@ public class EventHost extends HostFunction {
         byte[] y = (byte[]) WBI
             .peek(getInstance(), (int) parameters[1], WbiType.BYTES);
 
-        RLPList li = RLPElement.fromEncoded(y).asRLPList();
 //        backend.onEvent(address, x, li);
         return 0;
     }

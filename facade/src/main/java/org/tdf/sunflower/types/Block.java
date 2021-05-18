@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.NonNull;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLP;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,11 +30,8 @@ public class Block implements Chained {
 
     // extend from header
     @JsonIgnore
-    @RLP(0)
     protected Header header;
 
-
-    @RLP(1)
     protected List<Transaction> body;
 
     public Block() {

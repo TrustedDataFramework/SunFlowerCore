@@ -8,15 +8,13 @@ import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ReadOnlyStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPItem;
+import org.tdf.rlpstream.Rlp;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 
 // enhanced radix tree
@@ -24,7 +22,6 @@ import java.util.function.Function;
 public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     @Getter
     private final HexBytes nullHash;
-    HashFunction function;
 
     @Getter
     Store<byte[], byte[]> store;
@@ -34,15 +31,13 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     private Node root;
 
     static <K, V> TrieImpl<K, V> newInstance(
-        @NonNull Function<byte[], byte[]> hashFunction,
         @NonNull Store<byte[], byte[]> store,
         @NonNull Codec<K> keyCodec,
         @NonNull Codec<V> valueCodec
     ) {
 
         return new TrieImpl<>(
-            HexBytes.fromBytes(hashFunction.apply(RLPItem.NULL.getEncoded())),
-            new HashFunction(hashFunction),
+            HexBytes.fromBytes(HashUtil.EMPTY_TRIE_HASH),
             store,
             keyCodec,
             valueCodec,
@@ -72,7 +67,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
             return;
         }
         if (root == null) {
-            root = Node.newLeaf(TrieKey.fromNormal(key), value, function);
+            root = Node.newLeaf(TrieKey.fromNormal(key), value);
             return;
         }
         root.insert(TrieKey.fromNormal(key), value, store);
@@ -91,7 +86,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     public HexBytes commit() {
         if (root == null) return nullHash;
         if (!root.isDirty()) return HexBytes.fromBytes(root.getHash());
-        byte[] hash = this.root.commit(store, true).asBytes();
+        byte[] hash = Rlp.decodeBytes(this.root.commit(store, true));
         if (root.isDirty() || root.getHash() == null)
             throw new RuntimeException("unexpected error: still dirty after commit");
         return HexBytes.fromBytes(hash);
@@ -105,15 +100,14 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     @Override
     public TrieImpl<K, V> revert(@NonNull HexBytes rootHash, Store<byte[], byte[]> store) {
         if (FastByteComparisons.equal(rootHash.getBytes(), nullHash.getBytes()))
-            return new TrieImpl<>(nullHash, function, store,
+            return new TrieImpl<>(nullHash, store,
                 kCodec, vCodec, null);
         byte[] v = store.get(rootHash.getBytes());
         if (v == null || v.length == 0) throw new RuntimeException("rollback failed, root hash not exists");
         return new TrieImpl<>(
             nullHash,
-            function,
             store, kCodec, vCodec,
-            Node.fromRootHash(rootHash.getBytes(), ReadOnlyStore.of(store), function)
+            Node.fromRootHash(rootHash.getBytes(), ReadOnlyStore.of(store))
         );
     }
 
@@ -160,7 +154,6 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     public TrieImpl<K, V> revert() {
         return new TrieImpl<>(
             nullHash,
-            function,
             store, kCodec, vCodec,
             null
         );
@@ -174,15 +167,5 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
             }
             return true;
         });
-    }
-
-
-    public Map<HexBytes, HexBytes> getProofInternal(byte[] key) {
-        return root == null ?
-            Collections.emptyMap() :
-            root.getProof(
-                TrieKey.fromNormal(key),
-                new HashMap<>()
-            );
     }
 }

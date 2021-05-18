@@ -3,7 +3,7 @@ package org.tdf.sunflower.state;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPCodec;
+import org.tdf.rlpstream.Rlp;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.RepositoryService;
@@ -215,7 +215,7 @@ public class Authentication extends AbstractBuiltIn {
     @Override
     public Map<HexBytes, HexBytes> getGenesisStorage() {
         HashMap<HexBytes, HexBytes> ret = new HashMap<>();
-        ret.put(NODES_KEY, HexBytes.fromBytes(RLPCodec.encode(this.nodes)));
+        ret.put(NODES_KEY, HexBytes.fromBytes(Rlp.encode(this.nodes)));
         return ret;
     }
 

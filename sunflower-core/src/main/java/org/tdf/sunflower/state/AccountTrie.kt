@@ -58,12 +58,11 @@ class AccountTrie(
     init {
         trieStore = NoDeleteStore(db, Store.IS_NULL)
         trie = Trie.builder<HexBytes, Account>()
-            .hashFunction(HashUtil.sha3)
             .store(trieStore)
             .keyCodec(Codecs.newRLPCodec(HexBytes::class.java))
             .valueCodec(Codecs.newRLPCodec(Account::class.java))
             .build()
-        if (secure) trie = SecureTrie(trie, HashUtil.sha3)
+        if (secure) trie = SecureTrie(trie);
     }
 
     override fun init(alloc: Map<HexBytes, Account>, bios: List<BuiltinContract>, builtins: List<BuiltinContract>): HexBytes {

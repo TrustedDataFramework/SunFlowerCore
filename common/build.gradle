@@ -4,11 +4,11 @@ dependencies {
     testImplementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     compileOnly "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
 
-    compileOnly "org.tdf:rlp:${rlpVersion}"
-    testImplementation "org.tdf:rlp:${rlpVersion}"
-
     implementation "com.madgag.spongycastle:core:${scastleVersion}"
     implementation "com.madgag.spongycastle:prov:${scastleVersion}"
+    implementation "org.tdf:rlp:${rlpVersion}"
+
+    implementation fileTree("../libs")
 
     compileOnly "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
     compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"

@@ -1,30 +1,13 @@
 package org.tdf.sunflower.types;
 
-import lombok.NonNull;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.*;
+import org.tdf.rlpstream.*;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
-@RLPEncoding(TransactionInfo.TransactionInfoEncoder.class)
-@RLPDecoding(TransactionInfo.TransactionInfoDecoder.class)
-public class TransactionInfo {
-    public static class TransactionInfoEncoder implements RLPEncoder<TransactionInfo> {
 
-        @Override
-        public RLPElement encode(@NonNull TransactionInfo o) {
-            return RLPElement.fromEncoded(o.getEncoded());
-        }
-    }
-
-    public static class TransactionInfoDecoder implements RLPDecoder<TransactionInfo> {
-
-        @Override
-        public TransactionInfo decode(@NonNull RLPElement element) {
-            return new TransactionInfo(element.getEncoded());
-        }
-    }
+public class TransactionInfo implements RlpEncodable {
 
 
     TransactionReceipt receipt;
@@ -46,18 +29,18 @@ public class TransactionInfo {
         this.receipt = receipt;
     }
 
-    public TransactionInfo(byte[] rlp) {
-        RLPList txInfo = RLPElement.fromEncoded(rlp).asRLPList();
-        RLPList receiptRLP = txInfo.get(0).asRLPList();
-        RLPItem blockHashRLP = txInfo.get(1).asRLPItem();
-        RLPItem indexRLP = txInfo.get(2).asRLPItem();
+    @RlpCreator
+    public static Transaction fromRlpStream(byte[] bin, long streamId) {
+        return new Transaction(RlpStream.rawOf(bin, streamId));
+    }
 
-        receipt = new TransactionReceipt(receiptRLP.getEncoded());
-        blockHash = blockHashRLP.asBytes();
-        if (indexRLP.asBytes() == null)
-            index = 0;
-        else
-            index = new BigInteger(1, indexRLP.asBytes()).intValue();
+    public TransactionInfo(byte[] rlp) {
+        RlpList txInfo = Rlp.decodeList(rlp);
+        byte[] receiptRLP = txInfo.rawAt(0);
+
+        blockHash = txInfo.bytesAt(1);
+        index = Rlp.decodeInt(txInfo.rawAt(2));
+        receipt = new TransactionReceipt(receiptRLP);
     }
 
     public void setTransaction(Transaction tx) {
@@ -68,10 +51,10 @@ public class TransactionInfo {
     public byte[] getEncoded() {
 
         byte[] receiptRLP = this.receipt.getEncoded();
-        byte[] blockHashRLP = RLPCodec.encodeBytes(blockHash);
-        byte[] indexRLP = RLPCodec.encodeInt(index);
+        byte[] blockHashRLP = Rlp.encodeBytes(blockHash);
+        byte[] indexRLP = Rlp.encodeInt(index);
 
-        byte[] rlpEncoded = RLPCodec.encodeElements(Arrays.asList(receiptRLP, blockHashRLP, indexRLP));
+        byte[] rlpEncoded = Rlp.encodeElements(Arrays.asList(receiptRLP, blockHashRLP, indexRLP));
 
         return rlpEncoded;
     }

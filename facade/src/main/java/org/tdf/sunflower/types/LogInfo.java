@@ -2,10 +2,9 @@ package org.tdf.sunflower.types;
 
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HashUtil;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPElement;
-import org.tdf.rlp.RLPItem;
-import org.tdf.rlp.RLPList;
+import org.tdf.rlpstream.Rlp;
+import org.tdf.rlpstream.RlpEncodable;
+import org.tdf.rlpstream.RlpList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +12,7 @@ import java.util.List;
 
 import static org.tdf.common.util.ByteUtil.toHexString;
 
-public class LogInfo {
+public class LogInfo implements RlpEncodable {
 
 
     byte[] address = new byte[]{};
@@ -21,19 +20,16 @@ public class LogInfo {
     byte[] data = new byte[]{};
 
     public LogInfo(byte[] rlp) {
+        RlpList params = Rlp.decodeList(rlp);
+        RlpList logInfo = params.listAt(0);
 
-        RLPList params = RLPElement.fromEncoded(rlp).asRLPList();
-        RLPList logInfo = (RLPList) params.get(0);
+        RlpList topics = logInfo.listAt(1);
 
-        RLPItem address = (RLPItem) logInfo.get(0);
-        RLPList topics = (RLPList) logInfo.get(1);
-        RLPItem data = (RLPItem) logInfo.get(2);
+        this.address = logInfo.bytesAt(0);
+        this.data = logInfo.bytesAt(2);
 
-        this.address = address.asBytes() != null ? address.asBytes() : new byte[]{};
-        this.data = data.asBytes() != null ? data.asBytes() : new byte[]{};
-
-        for (RLPElement topic1 : topics) {
-            byte[] topic = topic1.asBytes();
+        for(int i = 0; i < topics.size(); i++){
+            byte[] topic = topics.bytesAt(i);
             this.topics.add(Uint256.of(topic));
         }
     }
@@ -59,7 +55,7 @@ public class LogInfo {
     /*  [address, [topic, topic ...] data] */
     public byte[] getEncoded() {
 
-        byte[] addressEncoded = RLPCodec.encodeBytes(this.address);
+        byte[] addressEncoded = Rlp.encodeBytes(this.address);
 
         byte[][] topicsEncoded = null;
         if (topics != null) {
@@ -67,16 +63,16 @@ public class LogInfo {
             int i = 0;
             for (Uint256 topic : topics) {
                 byte[] topicData = topic.getData();
-                topicsEncoded[i] = RLPCodec.encodeBytes(topicData);
+                topicsEncoded[i] = Rlp.encodeBytes(topicData);
                 ++i;
             }
         }
 
-        byte[] dataEncoded = RLPCodec.encodeBytes(data);
-        return RLPCodec.encodeElements(
+        byte[] dataEncoded = Rlp.encodeBytes(data);
+        return Rlp.encodeElements(
             Arrays.asList(
                 addressEncoded,
-                RLPCodec.encodeElements(Arrays.asList(topicsEncoded)), dataEncoded
+                Rlp.encodeElements(Arrays.asList(topicsEncoded)), dataEncoded
             )
         );
     }

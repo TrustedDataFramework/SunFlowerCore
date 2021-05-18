@@ -22,8 +22,6 @@ abstract class AbstractTrie<K, V> implements Trie<K, V> {
 
     abstract void removeBytes(byte[] data);
 
-    abstract Map<HexBytes, HexBytes> getProofInternal(byte[] key);
-
     @Override
     public void set(@NonNull K k, @NonNull V val) {
         putBytes(getKCodec().getEncoder().apply(k), getVCodec().getEncoder().apply(val));
@@ -50,10 +48,4 @@ abstract class AbstractTrie<K, V> implements Trie<K, V> {
     }
 
     abstract void traverseInternal(BiFunction<byte[], byte[], Boolean> traverser);
-
-
-    @Override
-    public Map<HexBytes, HexBytes> getProof(K k) {
-        return getProofInternal(getKCodec().getEncoder().apply(k));
-    }
 }

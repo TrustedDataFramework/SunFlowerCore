@@ -4,13 +4,18 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.*;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPIgnored;
+import org.tdf.rlpstream.Rlp;
+import org.tdf.rlpstream.RlpProps;
 import org.tdf.sunflower.state.Address;
 
 import java.util.Objects;
 
-
+@RlpProps({
+    "hashPrev", "unclesHash", "coinbase", "stateRoot",
+    "transactionsRoot", "receiptTrieRoot", "logsBloom", "difficulty",
+    "height", "gasLimit", "gasUsed", "createdAt",
+    "extraData", "mixHash", "nonce"
+})
 public class Header implements Chained {
     /**
      * hash of parent block
@@ -82,7 +87,6 @@ public class Header implements Chained {
     /**
      * hash of the block
      */
-    @RLPIgnored
     protected transient HexBytes hash;
 
     public Header(
@@ -128,7 +132,7 @@ public class Header implements Chained {
     private HexBytes getHash(boolean forceReHash) {
         if (forceReHash || this.hash == null) {
             this.hash = HexBytes.fromBytes(
-                HashUtil.sha3(RLPCodec.encode(this))
+                HashUtil.sha3(Rlp.encode(this))
             );
             return this.hash;
         }

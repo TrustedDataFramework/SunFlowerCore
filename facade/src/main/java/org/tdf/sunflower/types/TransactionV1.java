@@ -10,9 +10,7 @@ import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
-import org.tdf.rlp.RLP;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPIgnored;
+import org.tdf.rlpstream.Rlp;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -47,49 +45,37 @@ public class TransactionV1 {
     }
 
 
-    @RLP(0)
     protected int version;
-    @RLP(1)
     protected int type;
     @JsonSerialize(using = EpochSecondsSerializer.class)
     @JsonDeserialize(using = EpochSecondDeserializer.class)
-    @RLP(2)
     protected long createdAt;
-    @RLP(3)
     @JsonSerialize(using = IntSerializer.class)
     protected long nonce;
     /**
      * for coinbase, this field is null or empty bytes
      */
-    @RLP(4)
     protected HexBytes from;
-    @RLP(5)
     @JsonSerialize(using = IntSerializer.class)
     protected long gasLimit;
-    @RLP(6)
     @JsonSerialize(using = IntSerializer.class)
     protected Uint256 gasPrice;
-    @RLP(7)
     @JsonSerialize(using = IntSerializer.class)
     protected Uint256 amount;
     /**
      * for coinbase and transfer, this field is null or empty bytes
      */
-    @RLP(8)
     protected HexBytes payload;
     /**
      * for contract deploy, this field is null or empty bytes
      */
-    @RLP(9)
     protected HexBytes to;
     /**
      * not null
      */
-    @RLP(10)
     protected HexBytes signature;
     // generated value, no need to encode into rlp
     @Getter(AccessLevel.NONE)
-    @RLPIgnored
     protected transient HexBytes hash;
 
     @Builder
@@ -125,7 +111,7 @@ public class TransactionV1 {
 
     @JsonIgnore
     public byte[] getSignaturePlain() {
-        return RLPCodec.encode(new Object[]{
+        return Rlp.encode(new Object[]{
             version,
             type,
             createdAt,

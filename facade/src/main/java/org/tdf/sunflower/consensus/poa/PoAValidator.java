@@ -6,8 +6,8 @@ import org.tdf.common.crypto.ECDSASignature;
 import org.tdf.common.crypto.ECKey;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPElement;
-import org.tdf.rlp.RLPList;
+import org.tdf.rlpstream.Rlp;
+import org.tdf.rlpstream.RlpList;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
@@ -54,10 +54,10 @@ public class PoAValidator extends AbstractValidator {
         ) return ValidateResult.fault("invalid proposer " + block.getBody().get(0).getSenderHex());
 
         // validate signature
-        RLPList vrs = RLPElement.fromEncoded(block.getExtraData().getBytes()).asRLPList();
-        byte v = vrs.get(0).asByte();
-        byte[] r = vrs.get(1).asBytes();
-        byte[] s = vrs.get(2).asBytes();
+        RlpList vrs = Rlp.decodeList(block.getExtraData().getBytes());
+        byte v = Rlp.decodeByte(vrs.rawAt(0));
+        byte[] r = vrs.bytesAt(1);
+        byte[] s = vrs.bytesAt(2);
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
 
         byte[] rawHash = PoaUtils.getRawHash(block.getHeader());

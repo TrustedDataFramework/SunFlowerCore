@@ -10,25 +10,24 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import org.tdf.common.types.Uint256.Uint256Deserializer
-import org.tdf.common.types.Uint256.Uint256EncoderDecoder
-import org.tdf.common.util.BigIntegers
-import org.tdf.common.util.ByteUtil
-import org.tdf.common.util.HexBytes
-import org.tdf.common.util.IntSerializer
-import org.tdf.rlp.*
+import org.tdf.common.util.*
+import org.tdf.rlpstream.Rlp
+import org.tdf.rlpstream.RlpCreator
+import org.tdf.rlpstream.RlpEncodable
+import org.tdf.rlpstream.RlpStream
 import java.io.IOException
 import java.math.BigInteger
 import kotlin.math.sign
 
 @JsonDeserialize(using = Uint256Deserializer::class)
 @JsonSerialize(using = IntSerializer::class)
-@RLPEncoding(
-    Uint256EncoderDecoder::class
-)
-@RLPDecoding(Uint256EncoderDecoder::class)
-class Uint256 private constructor(val value: BigInteger) : Number() {
+class Uint256 private constructor(val value: BigInteger) : Number(), RlpEncodable{
     override fun toString(): String {
         return value.toString()
+    }
+
+    override fun getEncoded(): ByteArray {
+        return Rlp.encodeBigInteger(value)
     }
 
     override fun toInt(): Int {
@@ -190,15 +189,6 @@ class Uint256 private constructor(val value: BigInteger) : Number() {
         }
     }
 
-    class Uint256EncoderDecoder : RLPEncoder<Uint256>, RLPDecoder<Uint256> {
-        override fun encode(uint256: Uint256): RLPElement {
-            return RLPItem.fromBytes(uint256.noLeadZeroesData)
-        }
-
-        override fun decode(rlpElement: RLPElement): Uint256 {
-            return of(rlpElement.asBytes())
-        }
-    }
 
     companion object {
         const val MAX_POW = 256
@@ -215,6 +205,12 @@ class Uint256 private constructor(val value: BigInteger) : Number() {
                 "$pattern overflow"
             )
             return Uint256(i)
+        }
+
+        @JvmStatic
+        @RlpCreator
+        fun fromStream(bin: ByteArray, streamId: Long): BigInteger{
+            return RlpStream.asBigInteger(bin, streamId)
         }
 
         @JvmStatic

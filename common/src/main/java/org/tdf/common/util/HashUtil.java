@@ -5,8 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.Digest;
 import org.spongycastle.crypto.digests.RIPEMD160Digest;
 import org.tdf.common.crypto.jce.SpongyCastleProvider;
-import org.tdf.common.trie.HashFunction;
-import org.tdf.rlp.RLPCodec;
+import org.tdf.rlpstream.Rlp;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -42,14 +41,11 @@ public class HashUtil {
         HASH_256_ALGORITHM_NAME = "ETH-KECCAK-256";
         HASH_512_ALGORITHM_NAME = "ETH-KECCAK-512";
         EMPTY_DATA_HASH = sha3(EMPTY_BYTE_ARRAY);
-        EMPTY_LIST_HASH = sha3(RLPCodec.encodeElements(Collections.emptyList()));
-        EMPTY_TRIE_HASH = sha3(RLPCodec.encodeBytes(EMPTY_BYTE_ARRAY));
+        EMPTY_LIST_HASH = sha3(Rlp.encodeElements(Collections.emptyList()));
+        EMPTY_TRIE_HASH = sha3(Rlp.encodeBytes(EMPTY_BYTE_ARRAY));
         EMPTY_TRIE_HASH_HEX = HexBytes.fromBytes(EMPTY_TRIE_HASH);
         EMPTY_DATA_HASH_HEX = HexBytes.fromBytes(EMPTY_DATA_HASH);
     }
-
-    public static final HashFunction sha3 = new HashFunction(HashUtil::sha3);
-    public static final HashFunction sha256 = new HashFunction(HashUtil::sha256);
 
     /**
      * @param input - data for hashing
@@ -159,10 +155,10 @@ public class HashUtil {
      */
     public static byte[] calcNewAddr(byte[] addr, byte[] nonce) {
 
-        byte[] encSender = RLPCodec.encodeBytes(addr);
-        byte[] encNonce = RLPCodec.encodeBigInteger(new BigInteger(1, nonce));
+        byte[] encSender = Rlp.encodeBytes(addr);
+        byte[] encNonce = Rlp.encodeBigInteger(new BigInteger(1, nonce));
 
-        return sha3omit12(RLPCodec.encodeElements(Arrays.asList(encSender, encNonce)));
+        return sha3omit12(Rlp.encodeElements(Arrays.asList(encSender, encNonce)));
     }
 
     public static HexBytes calcNewAddrHex(byte[] addr, byte[] nonce) {

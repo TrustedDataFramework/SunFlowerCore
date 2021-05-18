@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.NonNull;
 import org.spongycastle.util.encoders.Hex;
-import org.tdf.common.serialize.HexBytesDecoder;
-import org.tdf.common.serialize.HexBytesEncoder;
-import org.tdf.rlp.RLPDecoding;
-import org.tdf.rlp.RLPEncoding;
+import org.tdf.rlpstream.Rlp;
+import org.tdf.rlpstream.RlpCreator;
+import org.tdf.rlpstream.RlpEncodable;
+import org.tdf.rlpstream.RlpStream;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -22,9 +22,7 @@ import java.util.Arrays;
  */
 @JsonDeserialize(using = HexBytesUtil.HexBytesDeserializer.class)
 @JsonSerialize(using = HexBytesUtil.HexBytesSerializer.class)
-@RLPEncoding(HexBytesEncoder.class)
-@RLPDecoding(HexBytesDecoder.class)
-public final class HexBytes implements Comparable<HexBytes>, Serializable {
+public final class HexBytes implements Comparable<HexBytes>, Serializable, RlpEncodable {
 
     public static final byte[] EMPTY_BYTES = new byte[0];
     // singleton zero value of HexBytes
@@ -40,6 +38,11 @@ public final class HexBytes implements Comparable<HexBytes>, Serializable {
     private HexBytes(@NonNull byte[] bytes) {
         this.bytes = bytes;
         this.hashCode = Arrays.hashCode(bytes);
+    }
+
+    @RlpCreator
+    public static HexBytes fromRlpStream(byte[] bin, long streamId) {
+        return HexBytes.fromBytes(RlpStream.asBytes(bin, streamId));
     }
 
     public static String encode(byte[] bytes) {
@@ -132,5 +135,10 @@ public final class HexBytes implements Comparable<HexBytes>, Serializable {
     @Override
     public int hashCode() {
         return hashCode;
+    }
+
+    @Override
+    public byte[] getEncoded() {
+        return Rlp.encodeBytes(this.bytes);
     }
 }
