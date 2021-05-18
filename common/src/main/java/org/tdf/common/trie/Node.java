@@ -44,10 +44,7 @@ class Node {
 
 
     static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache) {
-        return builder()
-            .hash(hash)
-            .readOnlyCache(readOnlyCache)
-            .build();
+        return new Node(null, false, hash, readOnlyCache, null);
     }
 
     // create root node from database and reference
@@ -61,37 +58,21 @@ class Node {
         Store<byte[], byte[]> readOnlyCache
     ) {
         if (rlp.isRLPList())
-            return builder()
-                .rlp(rlp.asRLPList())
-                .readOnlyCache(readOnlyCache)
-                .build();
-        return builder()
-            .hash(rlp.asBytes())
-            .readOnlyCache(readOnlyCache)
-            .build();
+            return new Node(rlp.asRLPList(), false, null, readOnlyCache, null);
+
+        return new Node(null, false, rlp.asBytes(), readOnlyCache, null);
     }
 
     static Node newBranch() {
-        return builder()
-            .children(new Object[BRANCH_SIZE])
-            .dirty(true).build();
+        return new Node(null, true, null, null, new Object[BRANCH_SIZE]);
     }
 
     static Node newLeaf(TrieKey key, byte[] value) {
-        return builder()
-            .children(new Object[]{key, value})
-            .dirty(true).build();
+        return new Node(null, true, null, null, new Object[]{key, value});
     }
 
     static Node newExtension(TrieKey key, Node child) {
-        return builder()
-            .children(new Object[]{key, child})
-            .dirty(true)
-            .build();
-    }
-
-    private static NodeBuilder builder() {
-        return new NodeBuilder();
+        return new Node(null, true, null, null, new Object[]{key, child});
     }
 
     private void setDirty() {
@@ -202,10 +183,7 @@ class Node {
         if (key.size() == 0 && o instanceof Node) {
             return (Node) o;
         }
-        return builder()
-            .children(new Object[]{key, o})
-            .dirty(true)
-            .build();
+        return new Node(null, true, null, null, new Object[]{key, o});
     }
 
     public Type getType() {
@@ -586,45 +564,5 @@ class Node {
         BRANCH,
         EXTENSION,
         LEAF
-    }
-
-    private static class NodeBuilder {
-        private RLPList rlp;
-        private boolean dirty;
-        private byte[] hash;
-        private Store<byte[], byte[]> readOnlyCache;
-        private Object[] children;
-
-        NodeBuilder() {
-        }
-
-        private Node.NodeBuilder rlp(RLPList rlp) {
-            this.rlp = rlp;
-            return this;
-        }
-
-        private Node.NodeBuilder dirty(boolean dirty) {
-            this.dirty = dirty;
-            return this;
-        }
-
-        private Node.NodeBuilder hash(byte[] hash) {
-            this.hash = hash;
-            return this;
-        }
-
-        private Node.NodeBuilder readOnlyCache(Store<byte[], byte[]> readOnlyCache) {
-            this.readOnlyCache = readOnlyCache;
-            return this;
-        }
-
-        private Node.NodeBuilder children(Object[] children) {
-            this.children = children;
-            return this;
-        }
-
-        private Node build() {
-            return new Node(rlp, dirty, hash, readOnlyCache, children);
-        }
     }
 }
