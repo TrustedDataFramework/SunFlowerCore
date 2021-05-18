@@ -27,8 +27,8 @@ public class TransactionInfo implements RlpEncodable {
     }
 
     @RlpCreator
-    public static Transaction fromRlpStream(byte[] bin, long streamId) {
-        return new Transaction(RlpStream.rawOf(bin, streamId));
+    public static TransactionInfo fromRlpStream(byte[] bin, long streamId) {
+        return new TransactionInfo(RlpStream.rawOf(bin, streamId));
     }
 
     public TransactionInfo(byte[] rlp) {

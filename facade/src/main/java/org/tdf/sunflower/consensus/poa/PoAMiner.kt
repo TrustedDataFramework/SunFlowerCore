@@ -111,8 +111,8 @@ class PoAMiner(private val poA: PoA) : AbstractMiner(poA.accountTrie, poA.eventB
             val b = createBlock(it.bestBlock, args)
             if (b.block != null) {
                 log.info("mining success block: {}", b.block.header)
+                eventBus.publish(NewBlockMined(b.block, b.infos))
             }
-            eventBus.publish(NewBlockMined(b.block!!, b.infos))
         }
     }
 
