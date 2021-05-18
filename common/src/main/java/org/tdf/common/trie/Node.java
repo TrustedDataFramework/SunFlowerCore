@@ -4,6 +4,7 @@ import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
+import org.tdf.rlp.RLPCodec;
 import org.tdf.rlp.RLPElement;
 import org.tdf.rlp.RLPItem;
 import org.tdf.rlp.RLPList;
@@ -22,7 +23,7 @@ import static org.tdf.common.trie.TrieKey.EMPTY;
 class Node {
     static final int BRANCH_SIZE = 17;
     // rlp encoded of this node, for serialization
-    RLPList rlp;
+    byte[] rlp;
     private boolean dirty;
     // if hash is not null, resolve rlp encoded from db
     private byte[] hash;
@@ -34,7 +35,7 @@ class Node {
     // the first element is trie key and the second element is value(leaf node) or child node(extension node)
     private Object[] children;
 
-    private Node(RLPList rlp, boolean dirty, byte[] hash, Store<byte[], byte[]> readOnlyCache, Object[] children) {
+    private Node(byte[] rlp, boolean dirty, byte[] hash, Store<byte[], byte[]> readOnlyCache, Object[] children) {
         this.rlp = rlp;
         this.dirty = dirty;
         this.hash = hash;
@@ -58,7 +59,7 @@ class Node {
         Store<byte[], byte[]> readOnlyCache
     ) {
         if (rlp.isRLPList())
-            return new Node(rlp.asRLPList(), false, null, readOnlyCache, null);
+            return new Node(rlp.asRLPList().getEncoded(), false, null, readOnlyCache, null);
 
         return new Node(null, false, rlp.asBytes(), readOnlyCache, null);
     }
@@ -82,48 +83,51 @@ class Node {
     // encode and commit root node to store
     // return rlp encoded
     // if commit is call at root node, force hash is set to true
-    RLPElement commit(
+    byte[] commit(
         Store<byte[], byte[]> cache,
         boolean forceHash
     ) {
         // if child node is dirty, the parent node must be dirty also
-        if (!dirty) return hash != null ? RLPItem.fromBytes(hash) : rlp;
+        if (!dirty) return hash != null ? RLPCodec.encodeBytes(hash) : rlp;
         Type type = getType();
         switch (type) {
             case LEAF: {
-                rlp = RLPList.createEmpty(2);
+                RLPList rlp = RLPList.createEmpty(2);
                 rlp.add(RLPItem.fromBytes(getKey().toPacked(true)));
                 rlp.add(RLPItem.fromBytes(getValue()));
+                this.rlp = rlp.getEncoded();
                 break;
             }
             case EXTENSION: {
-                rlp = RLPList.createEmpty(2);
+                RLPList rlp = RLPList.createEmpty(2);
                 rlp.add(RLPItem.fromBytes(getKey().toPacked(false)));
-                rlp.add(getExtension().commit(cache, false));
+                rlp.add(RLPElement.fromEncoded(getExtension().commit(cache, false)));
+                this.rlp = rlp.getEncoded();
                 break;
             }
             default: {
-                rlp = RLPList.createEmpty(BRANCH_SIZE);
+                RLPList rlp = RLPList.createEmpty(BRANCH_SIZE);
                 for (int i = 0; i < BRANCH_SIZE - 1; i++) {
                     Node child = (Node) children[i];
                     if (child == null) {
                         rlp.add(RLPItem.NULL);
                         continue;
                     }
-                    rlp.add(child.commit(cache, false));
+                    rlp.add(RLPElement.fromEncoded(child.commit(cache, false)));
                 }
                 rlp.add(RLPItem.fromBytes(getValue()));
+                this.rlp = rlp.getEncoded();
             }
         }
         dispose(cache);
         dirty = false;
-        byte[] raw = rlp.getEncoded();
+        byte[] raw = rlp;
 
         // if encoded size is great than or equals to 32, store node to db and return a hash reference
         if (raw.length >= 32 || forceHash) {
             hash = HashUtil.sha3(raw);
             cache.set(hash, raw);
-            return RLPItem.fromBytes(hash);
+            return RLPCodec.encodeBytes(hash);
         }
         // clean hash
         return rlp;
@@ -138,7 +142,7 @@ class Node {
         if (v == null || !FastByteComparisons.equal(hash, HashUtil.sha3(v))) {
             throw new RuntimeException("rlp encoding not found in cache");
         }
-        rlp = RLPElement.fromEncoded(v).asRLPList();
+        rlp = v;
     }
 
 
@@ -147,6 +151,7 @@ class Node {
         // has parsed
         if (children != null) return;
         resolve();
+        RLPList rlp = RLPElement.fromEncoded(this.rlp).asRLPList();
         if (rlp.size() == 2) {
             children = new Object[2];
             byte[] packed = rlp.get(0).asBytes();
@@ -531,33 +536,6 @@ class Node {
 
     byte[] getHash() {
         return this.hash;
-    }
-
-    Map<HexBytes, HexBytes> getProof(TrieKey path, Map<HexBytes, HexBytes> map) {
-        if (hash != null) map.put(HexBytes.fromBytes(hash), HexBytes.fromBytes(rlp.getEncoded()));
-        switch (getType()) {
-            case BRANCH: {
-                for (int i = 0; i < BRANCH_SIZE - 1; i++) {
-                    if (!path.isEmpty() && path.get(0) == i) {
-                        Node child = ((Node) children[i]);
-                        if (child != null) child.getProof(path.shift(), map);
-                    }
-                }
-                return map;
-            }
-            case LEAF: {
-                return map;
-            }
-            case EXTENSION: {
-                TrieKey matched = path.matchAndShift(getKey());
-
-                if (matched == null || matched.isEmpty()) {
-                    return map;
-                }
-                return getExtension().getProof(matched, map);
-            }
-        }
-        throw new RuntimeException();
     }
 
     enum Type {
