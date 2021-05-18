@@ -3,13 +3,10 @@ package org.tdf.sunflower.types;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlpstream.*;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 
 
 public class TransactionInfo implements RlpEncodable {
-
-
     TransactionReceipt receipt;
     byte[] blockHash;
     // user for pending transaction
@@ -54,9 +51,7 @@ public class TransactionInfo implements RlpEncodable {
         byte[] blockHashRLP = Rlp.encodeBytes(blockHash);
         byte[] indexRLP = Rlp.encodeInt(index);
 
-        byte[] rlpEncoded = Rlp.encodeElements(Arrays.asList(receiptRLP, blockHashRLP, indexRLP));
-
-        return rlpEncoded;
+        return Rlp.encodeElements(Arrays.asList(receiptRLP, blockHashRLP, indexRLP));
     }
 
     public TransactionReceipt getReceipt() {

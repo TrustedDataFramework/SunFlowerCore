@@ -13,13 +13,10 @@ import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.Rlp;
-import org.tdf.rlpstream.RlpEncodable;
-import org.tdf.rlpstream.RlpList;
+import org.tdf.rlpstream.*;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -112,6 +109,11 @@ public class Transaction implements RlpEncodable {
     public Transaction(byte[] rawData) {
         this.rlpEncoded = rawData;
         parsed = false;
+    }
+
+    @RlpCreator
+    public static Transaction fromRlpStream(byte[] bin, long streamId) {
+        return new Transaction(RlpStream.rawOf(bin, streamId));
     }
 
     public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
@@ -217,10 +219,6 @@ public class Transaction implements RlpEncodable {
         return (byte) (realV + inc);
     }
 
-    public long transactionCost(Block block) {
-        rlpParse();
-        return 0;
-    }
 
     public synchronized void verify() {
         rlpParse();
@@ -230,22 +228,7 @@ public class Transaction implements RlpEncodable {
     public synchronized void rlpParse() {
         if (parsed) return;
         try {
-
-
             RlpList li = Rlp.decodeList(rlpEncoded);
-//            long li = RlpStream.decodeElement(rlpEncoded, 0);
-//            long i = li & 0xffffffffL;
-//            List<byte[]> transaction = new ArrayList<>(9);
-//
-//            while (true) {
-//                i = RlpStream.iterateList(rlpEncoded, li, i);
-//                if (i == RlpStream.EOF)
-//                    break;
-//                if (RlpStream.isList(i))
-//                    throw new RuntimeException("Transaction RLP elements shouldn't be lists");
-//                transaction.add(RlpStream.copyFrom(rlpEncoded, i));
-//            }
-
 
             // Basic verification
             if (li.size() > 9) throw new RuntimeException("Too many RLP elements");

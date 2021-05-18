@@ -209,8 +209,8 @@ class Uint256 private constructor(val value: BigInteger) : Number(), RlpEncodabl
 
         @JvmStatic
         @RlpCreator
-        fun fromStream(bin: ByteArray, streamId: Long): BigInteger{
-            return RlpStream.asBigInteger(bin, streamId)
+        fun fromStream(bin: ByteArray, streamId: Long): Uint256{
+            return Uint256(RlpStream.asBigInteger(bin, streamId))
         }
 
         @JvmStatic
