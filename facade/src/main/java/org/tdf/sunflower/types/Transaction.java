@@ -513,13 +513,13 @@ public class Transaction implements RlpEncodable {
 
         // Since EIP-155 use chainId for v
         if (chainId == null) {
-            rlpRaw = Rlp.encodeElements(Arrays.asList(nonce, gasPrice, gasLimit, receiveAddress, value, data));
+            rlpRaw = Rlp.encodeElements(nonce, gasPrice, gasLimit, receiveAddress, value, data);
         } else {
             byte[] v, r, s;
             v = Rlp.encodeInt(chainId);
             r = Rlp.encodeBytes(EMPTY_BYTE_ARRAY);
             s = Rlp.encodeBytes(EMPTY_BYTE_ARRAY);
-            rlpRaw = Rlp.encodeElements(Arrays.asList(nonce, gasPrice, gasLimit, receiveAddress, value, data, v, r, s));
+            rlpRaw = Rlp.encodeElements(nonce, gasPrice, gasLimit, receiveAddress, value, data, v, r, s);
         }
         return rlpRaw;
     }
@@ -556,8 +556,8 @@ public class Transaction implements RlpEncodable {
         }
 
         this.rlpEncoded = Rlp.encodeElements(
-            Arrays.asList(nonce, gasPrice, gasLimit,
-                receiveAddress, value, data, v, r, s)
+            nonce, gasPrice, gasLimit,
+            receiveAddress, value, data, v, r, s
         );
 
         this.hash = HashUtil.sha3(rlpEncoded);

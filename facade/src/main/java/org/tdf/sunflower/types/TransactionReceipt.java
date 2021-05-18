@@ -7,6 +7,7 @@ import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlpstream.Rlp;
+import org.tdf.rlpstream.RlpEncodable;
 import org.tdf.rlpstream.RlpList;
 
 import java.math.BigInteger;
@@ -199,7 +200,6 @@ public class TransactionReceipt {
     }
 
     public byte[] getEncoded(boolean receiptTrie) {
-
         byte[] postTxStateRLP = Rlp.encodeBytes(this.postTxState);
         byte[] cumulativeGasRLP = Rlp.encodeBytes(this.cumulativeGas);
         byte[] bloomRLP = Rlp.encodeBytes(this.bloomFilter.getData());
@@ -213,19 +213,18 @@ public class TransactionReceipt {
                 logInfoListE[i] = logInfo.getEncoded();
                 ++i;
             }
-            logInfoListRLP = Rlp.encodeElements(Arrays.asList(logInfoListE));
+            logInfoListRLP = Rlp.encodeElements(logInfoListE);
         } else {
             logInfoListRLP = Rlp.encodeElements(Collections.emptyList());
         }
 
         return receiptTrie ?
-            Rlp.encodeElements(Arrays.asList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP)) :
+            Rlp.encodeElements(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP) :
             Rlp.encodeElements(
-                Arrays.asList(
                     postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP,
                     Rlp.encodeBytes(gasUsed), Rlp.encodeBytes(executionResult),
                     Rlp.encodeBytes(error.getBytes(StandardCharsets.UTF_8))
-                )
+
             );
 
     }

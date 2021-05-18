@@ -3,9 +3,6 @@ package org.tdf.sunflower.types;
 import org.tdf.common.util.HexBytes;
 import org.tdf.rlpstream.*;
 
-import java.util.Arrays;
-
-
 public class TransactionInfo implements RlpEncodable {
     TransactionReceipt receipt;
     byte[] blockHash;
@@ -51,7 +48,7 @@ public class TransactionInfo implements RlpEncodable {
         byte[] blockHashRLP = Rlp.encodeBytes(blockHash);
         byte[] indexRLP = Rlp.encodeInt(index);
 
-        return Rlp.encodeElements(Arrays.asList(receiptRLP, blockHashRLP, indexRLP));
+        return Rlp.encodeElements(receiptRLP, blockHashRLP, indexRLP);
     }
 
     public TransactionReceipt getReceipt() {

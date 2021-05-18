@@ -158,7 +158,7 @@ public class HashUtil {
         byte[] encSender = Rlp.encodeBytes(addr);
         byte[] encNonce = Rlp.encodeBigInteger(new BigInteger(1, nonce));
 
-        return sha3omit12(Rlp.encodeElements(Arrays.asList(encSender, encNonce)));
+        return sha3omit12(Rlp.encodeElements(encSender, encNonce));
     }
 
     public static HexBytes calcNewAddrHex(byte[] addr, byte[] nonce) {

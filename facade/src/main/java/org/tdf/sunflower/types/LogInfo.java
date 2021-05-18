@@ -2,12 +2,14 @@ package org.tdf.sunflower.types;
 
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HashUtil;
+import org.tdf.rlpstream.Constants;
 import org.tdf.rlpstream.Rlp;
 import org.tdf.rlpstream.RlpEncodable;
 import org.tdf.rlpstream.RlpList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.tdf.common.util.ByteUtil.toHexString;
@@ -70,10 +72,13 @@ public class LogInfo implements RlpEncodable {
 
         byte[] dataEncoded = Rlp.encodeBytes(data);
         return Rlp.encodeElements(
-            Arrays.asList(
                 addressEncoded,
-                Rlp.encodeElements(Arrays.asList(topicsEncoded)), dataEncoded
-            )
+                Rlp.encodeElements(
+                    topicsEncoded == null ?
+                        Collections.emptyList() :
+                        Arrays.asList(topicsEncoded)
+                ),
+                dataEncoded
         );
     }
 

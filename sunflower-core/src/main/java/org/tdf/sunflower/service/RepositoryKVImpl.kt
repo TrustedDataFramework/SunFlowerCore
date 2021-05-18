@@ -73,7 +73,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
         for (i in range) {
             val idx = heightIndex[i] ?: continue
             for (bytes in idx) {
-                val h = headerStore[bytes] ?: continue
+                val h = headerStore[bytes]!!
                 ret.add(h)
                 if (ret.size > limit)
                     return ret

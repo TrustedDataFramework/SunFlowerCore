@@ -35,8 +35,7 @@ dependencies {
     implementation "com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6"
     runtimeOnly 'javax.jws:jsr181-api:1.0-MR1'
     // https://mvnrepository.com/artifact/org.apache.commons/commons-pool2
-
-
+    implementation group: 'io.netty', name: 'netty-all', version: '4.0.56.Final'
 }
 
 task copyDependencies(type: Copy) {

@@ -15,4 +15,6 @@ dependencies {
     api "org.apache.commons:commons-lang3:${commonsLang3Version}"
     implementation "com.madgag.spongycastle:core:${scastleVersion}"
     implementation "com.madgag.spongycastle:prov:${scastleVersion}"
+
+    testImplementation group: 'org.slf4j', name: 'slf4j-nop', version: '1.7.30'
 }

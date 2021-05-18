@@ -25,16 +25,16 @@ public class TriePerformanceTest {
             sr.nextBytes(bytes);
             trie.set(bytes, dummy);
             if (i % 100000 == 0) {
-                System.out.println(i * 1.0 / n);
+//                System.out.println(i * 1.0 / n);
             }
         }
         trie.commit();
         trie.flush();
         long end = System.currentTimeMillis();
-        System.out.println("insert " + n + " " + (end - start) + " ms");
+        System.out.println("insert " + n + " use " + (end - start) + " ms");
         start = System.currentTimeMillis();
         int size = trie.size();
         end = System.currentTimeMillis();
-        System.out.println("count " + size + "" + (end - start) + " ms");
+        System.out.println("count " + size + " use " + (end - start) + " ms");
     }
 }
