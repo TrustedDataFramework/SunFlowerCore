@@ -1,39 +1,33 @@
-package org.tdf.common.store;
+package org.tdf.common.store
 
-public class DBSettings {
-
-    public static final DBSettings DEFAULT = new DBSettings()
-        .withMaxThreads(1)
-        .withMaxOpenFiles(32);
-
-    int maxOpenFiles;
-    int maxThreads;
-
-    private DBSettings() {
+class DBSettings private constructor() {
+    var maxOpenFiles = 0
+        private set
+    var maxThreads = 0
+        private set
+    
+    fun withMaxOpenFiles(maxOpenFiles: Int): DBSettings {
+        this.maxOpenFiles = maxOpenFiles
+        return this
     }
 
-    public static DBSettings newInstance() {
-        DBSettings settings = new DBSettings();
-        settings.maxOpenFiles = DEFAULT.maxOpenFiles;
-        settings.maxThreads = DEFAULT.maxThreads;
-        return settings;
+    fun withMaxThreads(maxThreads: Int): DBSettings {
+        this.maxThreads = maxThreads
+        return this
     }
 
-    public int getMaxOpenFiles() {
-        return maxOpenFiles;
-    }
+    companion object {
+        @JvmField
+        val DEFAULT = DBSettings()
+            .withMaxThreads(1)
+            .withMaxOpenFiles(32)
 
-    public DBSettings withMaxOpenFiles(int maxOpenFiles) {
-        this.maxOpenFiles = maxOpenFiles;
-        return this;
-    }
-
-    public int getMaxThreads() {
-        return maxThreads;
-    }
-
-    public DBSettings withMaxThreads(int maxThreads) {
-        this.maxThreads = maxThreads;
-        return this;
+        @JvmStatic
+        fun newInstance(): DBSettings {
+            val settings = DBSettings()
+            settings.maxOpenFiles = DEFAULT.maxOpenFiles
+            settings.maxThreads = DEFAULT.maxThreads
+            return settings
+        }
     }
 }

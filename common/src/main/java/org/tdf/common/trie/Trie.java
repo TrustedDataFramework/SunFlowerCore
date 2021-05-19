@@ -80,7 +80,9 @@ public interface Trie<K, V> extends Store<K, V> {
      *
      * @return root hash of an empty trie
      */
-    HexBytes getNullHash();
+    default HexBytes getNullHash() {
+        return HashUtil.EMPTY_TRIE_HASH_HEX;
+    }
 
     /**
      * trie is both non-null and has uncommitted modifications
@@ -141,20 +143,14 @@ public interface Trie<K, V> extends Store<K, V> {
             .store(new ByteArrayMapStore<>())
             .keyCodec(Codec.identity())
             .valueCodec(Codec.identity())
-            .hashFunction(HashUtil::sha3)
             .build();
     }
 
     class Builder<K, V> {
-        private Function<byte[], byte[]> hashFunction;
         private Store<byte[], byte[]> store;
         private Codec<K> keyCodec;
         private Codec<V> valueCodec;
 
-        public Builder<K, V> hashFunction(Function<byte[], byte[]> hashFunction) {
-            this.hashFunction = hashFunction;
-            return this;
-        }
 
         public Builder<K, V> store(Store<byte[], byte[]> store) {
             this.store = store;

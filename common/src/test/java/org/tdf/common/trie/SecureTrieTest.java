@@ -22,7 +22,6 @@ public class SecureTrieTest {
     @Before
     public void before() {
         notSecured = Trie.<byte[], String>builder()
-            .hashFunction(HashUtil::sha3)
             .keyCodec(Codec.identity())
             .valueCodec(Codecs.STRING)
             .store(new NoDeleteStore<>(new ByteArrayMapStore<>(), x -> x == null || x.length == 0))

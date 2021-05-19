@@ -43,8 +43,4 @@ interface Store<K, V> {
      */
     fun flush()
 
-    companion object {
-        @JvmField
-        val IS_NULL = Predicate { x: ByteArray? -> x == null || x.isEmpty() }
-    }
 }

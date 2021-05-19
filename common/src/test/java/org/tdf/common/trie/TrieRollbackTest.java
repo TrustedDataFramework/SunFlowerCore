@@ -10,6 +10,7 @@ import org.tdf.common.store.NoDeleteStore;
 import org.tdf.common.store.NoDoubleDeleteStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.ByteArrayMap;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 
@@ -40,10 +41,10 @@ public class TrieRollbackTest {
 
         delegate = new ByteArrayMapStore<>();
 
-        noDelete = new NoDeleteStore<>(delegate, Store.IS_NULL);
-        database = new NoDoubleDeleteStore<>(noDelete, Store.IS_NULL);
+        noDelete = new NoDeleteStore<>(delegate, ByteUtil::isNullOrZeroArray);
+        database = new NoDoubleDeleteStore<>(noDelete, ByteUtil::isNullOrZeroArray);
 
-        trie = Trie.<String, String>builder().hashFunction(HashUtil::sha3)
+        trie = Trie.<String, String>builder()
             .store(database)
             .keyCodec(Codecs.STRING)
             .valueCodec(Codecs.STRING)

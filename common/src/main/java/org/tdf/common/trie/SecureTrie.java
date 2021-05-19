@@ -65,11 +65,6 @@ public class SecureTrie<K, V> extends AbstractTrie<K, V> {
     }
 
     @Override
-    public HexBytes getNullHash() {
-        return delegate.getNullHash();
-    }
-
-    @Override
     public boolean isDirty() {
         return delegate.isDirty();
     }
