@@ -9,7 +9,7 @@ package org.tdf.sunflower.p2pv2
  * @see [
  * https://github.com/ethereum/wiki/wiki/ÐΞVp2p-Wire-Protocol](https://github.com/ethereum/wiki/wiki/%C3%90%CE%9EVp2p-Wire-Protocol)
  */
-enum class MessageCode(val cmd: Int) {
+enum class P2pMessageCodes(val cmd: Int) {
     /* P2P protocol */ /**
      * [0x00, P2P_VERSION, CLIEND_ID, CAPS, LISTEN_PORT, CLIENT_ID] <br></br>
      * First packet sent over the connection, and sent once by both sides.
@@ -57,9 +57,9 @@ enum class MessageCode(val cmd: Int) {
     USER(0x0F);
 
     companion object {
-        private val intToTypeMap: MutableMap<Int, MessageCode> = HashMap()
+        private val intToTypeMap: MutableMap<Int, P2pMessageCodes> = HashMap()
 
-        fun fromByte(i: Byte): MessageCode {
+        fun fromByte(i: Byte): P2pMessageCodes {
             return intToTypeMap[i.toInt()]!!
         }
 
@@ -68,7 +68,7 @@ enum class MessageCode(val cmd: Int) {
         }
 
         init {
-            for (type in MessageCode.values()) {
+            for (type in P2pMessageCodes.values()) {
                 intToTypeMap[type.cmd] = type
             }
         }

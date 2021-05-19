@@ -1,14 +1,17 @@
+package org.tdf.sunflower.p2pv2.server
+
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.*
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
-import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.logging.LoggingHandler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
+import org.tdf.common.util.ByteUtil.toHexString
+import org.tdf.sunflower.AppConfig
 
 /**
  * This class establishes a listener for incoming connections.
@@ -18,7 +21,10 @@ import org.springframework.stereotype.Component
  * @since 01.11.2014
  */
 @Component
-class PeerServerV2 @Autowired constructor(private val ctx: ApplicationContext){
+class PeerServerV2 @Autowired constructor(
+    private val ctx: ApplicationContext,
+    private val cfg: AppConfig
+    ){
     companion object {
         val log: Logger = LoggerFactory.getLogger("net")
     }
@@ -29,7 +35,7 @@ class PeerServerV2 @Autowired constructor(private val ctx: ApplicationContext){
 
 //    private var ethereumListener: EthereumListener? = null
 
-    var channelInitializer: ChannelInitializer<NioSocketChannel>? = null
+    var channelInitializer: ChannelInitializerImpl? = null
 
     private var listening = false
 
@@ -37,10 +43,12 @@ class PeerServerV2 @Autowired constructor(private val ctx: ApplicationContext){
     var workerGroup: EventLoopGroup? = null
     var channelFuture: ChannelFuture? = null
 
+    // this method will blocking current thread
+    // called by channel manager
     fun start(port: Int) {
         bossGroup = NioEventLoopGroup(1)
         workerGroup = NioEventLoopGroup()
-        channelInitializer = ctx.getBean(ChannelInitializer::class.java) as ChannelInitializer<NioSocketChannel>
+        channelInitializer = ctx.getBean(ChannelInitializerImpl::class.java)
 
         log.trace("Listening on port $port")
         try {
@@ -51,7 +59,7 @@ class PeerServerV2 @Autowired constructor(private val ctx: ApplicationContext){
             b.option(ChannelOption.MESSAGE_SIZE_ESTIMATOR, DefaultMessageSizeEstimator.DEFAULT)
 
             // set peer connection timeout
-            b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000)
+            b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, cfg.peerConnectionTimeout)
 
             // serving requests
             b.handler(LoggingHandler())
@@ -60,11 +68,15 @@ class PeerServerV2 @Autowired constructor(private val ctx: ApplicationContext){
             // Start the client.
             log.info("Listening for incoming connections, port: [{}] ", port)
             // print node id
-//            log.info("NodeId: [{}] ", toHexString(config.nodeId()))
+            log.info("NodeId: [{}] ", toHexString(cfg.nodeId))
 
+            log.info("wait for channel future sync")
             channelFuture = b.bind(port).sync()
+            log.info("channel future sync completed")
+
             listening = true
             // Wait until the connection is closed.
+            log.info("blocking until channel closed")
             channelFuture!!.channel().closeFuture().sync()
             log.debug("Connection is closed")
         } catch (e: Exception) {

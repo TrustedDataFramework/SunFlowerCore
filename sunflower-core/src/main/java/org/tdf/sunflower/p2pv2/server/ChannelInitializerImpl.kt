@@ -1,4 +1,4 @@
-package org.tdf.sunflower.p2pv2
+package org.tdf.sunflower.p2pv2.server
 
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
@@ -16,13 +16,14 @@ class ChannelInitializerImpl @Autowired constructor(
     val channelManager: ChannelManager,
     val ctx: ApplicationContext
 ) : ChannelInitializer<NioSocketChannel>() {
-    private var peerDiscoveryMode = false
+    var peerDiscoveryMode = false
     var remoteId: String = ""
 
+    // called by netty framework, execute when new connection created
     override fun initChannel(ch: NioSocketChannel) {
         try {
             if (!peerDiscoveryMode) {
-                logger.debug("Open {} connection, channel: {}", if (isInbound) "inbound" else "outbound", ch.toString())
+                log.debug("Open {} connection, channel: {}", if (inbound) "inbound" else "outbound", ch.toString())
             }
             // validate protocol
             if (notEligibleForIncomingConnection(ch)) {
@@ -30,12 +31,13 @@ class ChannelInitializerImpl @Autowired constructor(
                 return
             }
 
-//            val channel: Channel = ctx.getBean<Channel>(Channel::class.java)
-//            channel.setInetSocketAddress(ch.remoteAddress())
-//            channel.init(ch.pipeline(), remoteId, peerDiscoveryMode, channelManager)
-//            if (!peerDiscoveryMode) {
-//                channelManager.add(channel)
-//            }
+            // create channel at application level
+            val channel: Channel = ctx.getBean(Channel::class.java)
+            channel.inetSocketAddress = ch.remoteAddress()
+            channel.init(ch.pipeline(), remoteId, peerDiscoveryMode, channelManager)
+            if (!peerDiscoveryMode) {
+                channelManager.add(channel)
+            }
 
             // limit the size of receiving buffer to 1024
             ch.config().recvByteBufAllocator = FixedRecvByteBufAllocator(256 * 1024)
@@ -49,7 +51,7 @@ class ChannelInitializerImpl @Autowired constructor(
 //                }
 //            })
         } catch (e: Exception) {
-            logger.error("Unexpected error: ", e)
+            log.error("Unexpected error: ", e)
         }
     }
 
@@ -59,54 +61,64 @@ class ChannelInitializerImpl @Autowired constructor(
      * @return true if we should refuse this connection, otherwise false
      */
     private fun notEligibleForIncomingConnection(ch: NioSocketChannel): Boolean {
-        if (!isInbound) return false
+        // outbound connection is not eligible
+        if (!inbound) return false
         // For incoming connection drop if..
 
         // Bad remote address
         if (ch.remoteAddress() == null) {
-            logger.debug("Drop connection - bad remote address, channel: {}", ch.toString())
+            log.debug(
+                "Drop connection - bad remote address, channel: {}",
+                ch.toString()
+            )
+            return true
+        }
+        // Drop if we have long waiting queue already
+        if (!channelManager.acceptingNewPeers()) {
+            log.debug(
+                "Drop connection - many new peers are not processed, channel: {}",
+                ch.toString()
+            )
+            return true
+        }
+        // Refuse connections from ips that are already in connection queue
+        // Local and private network addresses are still welcome!
+        if (!ch.remoteAddress().address.isLoopbackAddress &&
+            !ch.remoteAddress().address.isSiteLocalAddress &&
+            channelManager.isAddressInQueue(ch.remoteAddress().address)
+        ) {
+            log.debug(
+                "Drop connection - already processing connection from this host, channel: {}",
+                ch.toString()
+            )
             return true
         }
 
-        // Drop if we have long waiting queue already
-//        if (!channelManager.acceptingNewPeers()) {
-//            logger.debug("Drop connection - many new peers are not processed, channel: {}", ch.toString())
-//            return true
-//        }
-
-        // Refuse connections from ips that are already in connection queue
-        // Local and private network addresses are still welcome!
-//        if (!ch.remoteAddress().address.isLoopbackAddress &&
-//            !ch.remoteAddress().address.isSiteLocalAddress &&
-//            channelManager.isAddressInQueue(ch.remoteAddress().address)
-//        ) {
-//            logger.debug("Drop connection - already processing connection from this host, channel: {}", ch.toString())
-//            return true
-//        }
-
         // Avoid too frequent connection attempts
-//        if (channelManager.isRecentlyDisconnected(ch.remoteAddress().address)) {
-//            logger.debug("Drop connection - the same IP was disconnected recently, channel: {}", ch.toString())
-//            return true
-//        }
-
+        if (channelManager.isRecentlyDisconnected(ch.remoteAddress().address)) {
+            log.debug(
+                "Drop connection - the same IP was disconnected recently, channel: {}",
+                ch.toString()
+            )
+            return true
+        }
         // Drop bad peers before creating channel
-//        if (nodeManager.isReputationPenalized(ch.remoteAddress())) {
-//            logger.debug("Drop connection - bad peer, channel: {}", ch.toString())
-//            return true
-//        }
-
+        if (nodeManager.isReputationPenalized(ch.remoteAddress())) {
+            log.debug(
+                "Drop connection - bad peer, channel: {}",
+                ch.toString()
+            )
+            return true
+        }
         return false
     }
 
-    private val isInbound: Boolean
+
+    private val inbound: Boolean
         get() = remoteId.isEmpty()
 
-    fun setPeerDiscoveryMode(peerDiscoveryMode: Boolean) {
-        this.peerDiscoveryMode = peerDiscoveryMode
-    }
 
     companion object {
-        private val logger = LoggerFactory.getLogger("net")
+        private val log = LoggerFactory.getLogger("net")
     }
 }

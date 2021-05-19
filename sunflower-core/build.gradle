@@ -6,7 +6,7 @@ plugins {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-properties"
-    implementation group: 'commons-io', name: 'commons-io', version: '2.8.0'
+    implementation "commons-io:commons-io:${commonIOVersion}"
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation "junit:junit"
@@ -35,7 +35,10 @@ dependencies {
     implementation "com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6"
     runtimeOnly 'javax.jws:jsr181-api:1.0-MR1'
     // https://mvnrepository.com/artifact/org.apache.commons/commons-pool2
-    implementation group: 'io.netty', name: 'netty-all', version: '4.0.56.Final'
+    implementation "io.netty:netty-all:${nettyVersion}"
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-collections4
+    implementation "org.apache.commons:commons-collections4:${commonsCollections4Version}"
+
 }
 
 task copyDependencies(type: Copy) {

@@ -8,12 +8,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.Value;
 import org.springframework.core.env.Environment;
+import org.tdf.common.crypto.ECKey;
 import org.tdf.common.types.Uint256;
 import org.tdf.sunflower.facade.PropertyLike;
 import org.tdf.sunflower.types.PropertyReader;
 import org.tdf.sunflower.util.FileUtils;
 
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import static org.tdf.sunflower.types.ConsensusConfig.DEFAULT_BLOCK_GAS_LIMIT;
@@ -34,6 +37,43 @@ public class AppConfig {
     private Integer maxContractCallDepth;
     private Uint256 vmGasPrice;
     private Boolean trieSecure;
+    private final ECKey myKey = new ECKey();
+
+    public boolean getEip8(){
+        return true;
+    }
+
+    public ECKey getMyKey() {
+        return myKey;
+    }
+
+    public int getPeerConnectionTimeout() {
+        return 2000;
+    }
+
+    public long getPeerChannelReadTimeout() {
+        return 30L;
+    }
+
+    public byte[] getNodeId() {
+        return myKey.getNodeId();
+    }
+
+    public int getMaxActivePeers() {
+        return 16;
+    }
+
+    public List<String> peerCapabilities() {
+        return Collections.singletonList("eth");
+    }
+
+    public int getDefaultP2PVersion() {
+        return 5;
+    }
+
+    public int getListenPort() {
+        return 8545;
+    }
 
     @Value
     public static class EnvWrapper implements PropertyLike {
