@@ -154,7 +154,8 @@ class Node {
         // has parsed
         if (children != null) return;
         resolve();
-        RlpList rlp = Rlp.decodeList(this.rlp);
+        long streamId = RlpStream.decodeElement(this.rlp, 0, this.rlp.length, true);
+        RlpList rlp = new RlpList(this.rlp, streamId, BRANCH_SIZE);
         if (rlp.size() == 2) {
             children = new Object[2];
             byte[] packed = rlp.bytesAt(0);

@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component
  * @since 01.11.2014
  */
 @Component
-class Server @Autowired constructor(private val ctx: ApplicationContext){
+class PeerServerV2 @Autowired constructor(private val ctx: ApplicationContext){
     companion object {
         val log: Logger = LoggerFactory.getLogger("net")
     }
