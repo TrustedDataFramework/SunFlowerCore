@@ -1,29 +1,28 @@
 package org.tdf.sunflower.p2pv2.server
 
-import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.FixedRecvByteBufAllocator
 import io.netty.channel.socket.nio.NioSocketChannel
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
+import org.tdf.sunflower.p2pv2.Loggers
+import org.tdf.sunflower.p2pv2.rlpx.discover.NodeManager
 
+// TODO: inject Node manager
 @Component
 @Scope("prototype")
 class ChannelInitializerImpl @Autowired constructor(
     val channelManager: ChannelManager,
-    val ctx: ApplicationContext
-) : ChannelInitializer<NioSocketChannel>() {
-    var peerDiscoveryMode = false
-    var remoteId: String = ""
-
+    private val ctx: ApplicationContext,
+    private val nodeManager: NodeManager
+) : PeerChannelInitializer(), Loggers {
     // called by netty framework, execute when new connection created
     override fun initChannel(ch: NioSocketChannel) {
         try {
             if (!peerDiscoveryMode) {
-                log.debug("Open {} connection, channel: {}", if (inbound) "inbound" else "outbound", ch.toString())
+                net.debug("Open {} connection, channel: {}", if (inbound) "inbound" else "outbound", ch.toString())
             }
             // validate protocol
             if (notEligibleForIncomingConnection(ch)) {
@@ -45,13 +44,13 @@ class ChannelInitializerImpl @Autowired constructor(
             ch.config().setOption(ChannelOption.SO_BACKLOG, 1024)
 
             // be aware of channel closing
-//            ch.closeFuture().addListener(ChannelFutureListener { future: ChannelFuture? ->
-//                if (!peerDiscoveryMode) {
-//                    channelManager.notifyDisconnect(channel)
-//                }
-//            })
+            ch.closeFuture().addListener {
+                if (!peerDiscoveryMode) {
+                    channelManager.notifyDisconnect(channel)
+                }
+            }
         } catch (e: Exception) {
-            log.error("Unexpected error: ", e)
+            net.error("Unexpected error: ", e)
         }
     }
 
@@ -67,15 +66,15 @@ class ChannelInitializerImpl @Autowired constructor(
 
         // Bad remote address
         if (ch.remoteAddress() == null) {
-            log.debug(
+            net.debug(
                 "Drop connection - bad remote address, channel: {}",
                 ch.toString()
             )
             return true
         }
         // Drop if we have long waiting queue already
-        if (!channelManager.acceptingNewPeers()) {
-            log.debug(
+        if (!channelManager.acceptingNewPeers) {
+            net.debug(
                 "Drop connection - many new peers are not processed, channel: {}",
                 ch.toString()
             )
@@ -87,7 +86,7 @@ class ChannelInitializerImpl @Autowired constructor(
             !ch.remoteAddress().address.isSiteLocalAddress &&
             channelManager.isAddressInQueue(ch.remoteAddress().address)
         ) {
-            log.debug(
+            net.debug(
                 "Drop connection - already processing connection from this host, channel: {}",
                 ch.toString()
             )
@@ -96,20 +95,20 @@ class ChannelInitializerImpl @Autowired constructor(
 
         // Avoid too frequent connection attempts
         if (channelManager.isRecentlyDisconnected(ch.remoteAddress().address)) {
-            log.debug(
+            net.debug(
                 "Drop connection - the same IP was disconnected recently, channel: {}",
                 ch.toString()
             )
             return true
         }
         // Drop bad peers before creating channel
-//        if (nodeManager.isReputationPenalized(ch.remoteAddress())) {
-//            log.debug(
-//                "Drop connection - bad peer, channel: {}",
-//                ch.toString()
-//            )
-//            return true
-//        }
+        if (nodeManager.isReputationPenalized(ch.remoteAddress())) {
+            net.debug(
+                "Drop connection - bad peer, channel: {}",
+                ch.toString()
+            )
+            return true
+        }
         return false
     }
 
@@ -117,8 +116,4 @@ class ChannelInitializerImpl @Autowired constructor(
     private val inbound: Boolean
         get() = remoteId.isEmpty()
 
-
-    companion object {
-        private val log = LoggerFactory.getLogger("net")
-    }
 }

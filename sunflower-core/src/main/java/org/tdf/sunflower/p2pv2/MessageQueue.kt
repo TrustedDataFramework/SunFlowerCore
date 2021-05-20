@@ -10,7 +10,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
-import org.tdf.sunflower.p2pv2.server.Channel
+import org.tdf.sunflower.p2pv2.server.ChannelImpl
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
     private val respondQueue: Queue<MessageRoundtrip> = ConcurrentLinkedQueue()
     private var ctx: ChannelHandlerContext? = null
     private var timerTask: ReceiveChannel<Unit>? = null
-    var channel: Channel? = null
+    var channel: ChannelImpl? = null
 
     fun activate(ctx: ChannelHandlerContext) {
         this.ctx = ctx

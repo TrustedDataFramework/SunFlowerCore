@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
 import org.tdf.common.util.ByteUtil.toHexString
 import org.tdf.sunflower.AppConfig
+import org.tdf.sunflower.p2pv2.Loggers
 
 /**
  * This class establishes a listener for incoming connections.
@@ -24,24 +25,15 @@ import org.tdf.sunflower.AppConfig
 class PeerServerV2 @Autowired constructor(
     private val ctx: ApplicationContext,
     private val cfg: AppConfig
-    ){
-    companion object {
-        val log: Logger = LoggerFactory.getLogger("net")
-    }
-
-//    private var config: SystemProperties? = null
-
-//    private var ctx: org.springframework.context.ApplicationContext? = null
-
-//    private var ethereumListener: EthereumListener? = null
-
+    ) : Loggers{
     var channelInitializer: ChannelInitializerImpl? = null
 
-    private var listening = false
+    var listening = false
+        private set
 
-    var bossGroup: EventLoopGroup? = null
-    var workerGroup: EventLoopGroup? = null
-    var channelFuture: ChannelFuture? = null
+    private var bossGroup: EventLoopGroup? = null
+    private var workerGroup: EventLoopGroup? = null
+    private var channelFuture: ChannelFuture? = null
 
     // this method will blocking current thread
     // called by channel manager
@@ -50,14 +42,13 @@ class PeerServerV2 @Autowired constructor(
         workerGroup = NioEventLoopGroup()
         channelInitializer = ctx.getBean(ChannelInitializerImpl::class.java)
 
-        log.trace("Listening on port $port")
+        net.trace("Listening on port $port")
         try {
             val b = ServerBootstrap()
             b.group(bossGroup, workerGroup)
             b.channel(NioServerSocketChannel::class.java)
             b.option(ChannelOption.SO_KEEPALIVE, true)
             b.option(ChannelOption.MESSAGE_SIZE_ESTIMATOR, DefaultMessageSizeEstimator.DEFAULT)
-
             // set peer connection timeout
             b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, cfg.peerConnectionTimeout)
 
@@ -66,21 +57,21 @@ class PeerServerV2 @Autowired constructor(
             b.childHandler(channelInitializer)
 
             // Start the client.
-            log.info("Listening for incoming connections, port: [{}] ", port)
+            net.info("Listening for incoming connections, port: [{}] ", port)
             // print node id
-            log.info("NodeId: [{}] ", toHexString(cfg.nodeId))
+            net.info("NodeId: [{}] ", toHexString(cfg.nodeId))
 
-            log.info("wait for channel future sync")
+            net.info("wait for channel future sync")
             channelFuture = b.bind(port).sync()
-            log.info("channel future sync completed")
+            net.info("channel future sync completed")
 
             listening = true
             // Wait until the connection is closed.
-            log.info("blocking until channel closed")
+            net.info("blocking until channel closed")
             channelFuture!!.channel().closeFuture().sync()
-            log.debug("Connection is closed")
+            net.debug("Connection is closed")
         } catch (e: Exception) {
-            log.error("Peer server error: {} ({})", e.message, e.javaClass.name)
+            net.error("Peer server error: {} ({})", e.message, e.javaClass.name)
             throw Error("Server Disconnected")
         } finally {
             workerGroup?.shutdownGracefully()
@@ -90,19 +81,15 @@ class PeerServerV2 @Autowired constructor(
     }
 
     fun close() {
-        if (listening && channelFuture != null && channelFuture!!.channel().isOpen) {
+        if (listening && (channelFuture?.channel()?.isOpen == true)) {
             try {
-                log.info("Closing PeerServer...")
+                net.info("Closing PeerServer...")
                 channelFuture!!.channel().close().sync()
-                log.info("PeerServer closed.")
+                net.info("PeerServer closed.")
             } catch (e: Exception) {
-                log.warn("Problems closing server channel", e)
+                net.warn("Problems closing server channel", e)
             }
         }
-    }
-
-    fun isListening(): Boolean {
-        return listening
     }
 }
 

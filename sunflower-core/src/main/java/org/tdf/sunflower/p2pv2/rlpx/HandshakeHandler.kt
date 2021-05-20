@@ -4,12 +4,10 @@ import com.google.common.io.ByteStreams
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageDecoder
-import io.netty.handler.timeout.ReadTimeoutException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.spongycastle.crypto.InvalidCipherTextException
 import org.spongycastle.math.ec.ECPoint
-import org.spongycastle.util.encoders.Hex
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
@@ -23,7 +21,7 @@ import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
 import org.tdf.sunflower.p2pv2.server.Channel
-import java.io.IOException
+import org.tdf.sunflower.p2pv2.server.ChannelImpl
 import java.net.InetSocketAddress
 
 /**
@@ -58,7 +56,7 @@ class HandshakeHandler @Autowired constructor(
     private var initiatePacket: ByteArray? = null
     private var isHandshakeDone = false
 
-    fun setRemote(remoteId: String, channel: Channel) {
+    fun setRemote(remoteId: String, channel: ChannelImpl) {
         this.remoteId = HexBytes.decode(remoteId)
         this.channel = channel
     }
@@ -155,15 +153,15 @@ class HandshakeHandler @Autowired constructor(
                         helloMessage
                     )
                     isHandshakeDone = true
-                    this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, helloMessage)
+//                    this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, helloMessage)
                 } else {
-                    val message = DisconnectMessage(payload)
-                    if (loggerNet.isDebugEnabled()) loggerNet.debug(
-                        "From: {}    Recv:  {}",
-                        channel,
-                        message
-                    )
-                    channel.getNodeStatistics().nodeDisconnectedRemote(message.getReason())
+//                    val message = DisconnectMessage(payload)
+//                    if (loggerNet.isDebugEnabled()) loggerNet.debug(
+//                        "From: {}    Recv:  {}",
+//                        channel,
+//                        message
+//                    )
+//                    channel.getNodeStatistics().nodeDisconnectedRemote(message.getReason())
                 }
             }
         } else {
@@ -226,33 +224,33 @@ class HandshakeHandler @Autowired constructor(
                 byteBufMsg.writeBytes(responsePacket)
                 ctx.writeAndFlush(byteBufMsg).sync()
             } else {
-                val frameCodec = this.frameCodec!!
-                val frames: List<Frame> = frameCodec.readFrames(buffer)
-                if (frames.isEmpty()) return
-                val frame: Frame = frames[0]
-                val message: Message = P2pMessageFactory().create(
-                    frame.getType() as Byte,
-                    ByteStreams.toByteArray(frame.getStream())
-                )
-                loggerNet.debug("From: {}    Recv:  {}", ctx.channel().remoteAddress(), message)
-                if (frame.getType() === P2pMessageCodes.DISCONNECT.asByte()) {
-                    loggerNet.debug("Active remote peer disconnected right after handshake.")
-                    return
-                }
-                if (frame.getType() !== P2pMessageCodes.HELLO.asByte()) {
-                    throw RuntimeException("The message type is not HELLO or DISCONNECT: $message")
-                }
-                val inboundHelloMessage: HelloMessage = message as HelloMessage
-
-                // now we know both remote nodeId and port
-                // let's set node, that will cause registering node in NodeManager
-                channel.initWithNode(remoteId, inboundHelloMessage.getListenPort())
-
-                // Secret authentication finish here
-                channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId))
-                isHandshakeDone = true
-                this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, inboundHelloMessage)
-                channel.getNodeStatistics().rlpxInHello.add()
+//                val frameCodec = this.frameCodec!!
+//                val frames: List<Frame> = frameCodec.readFrames(buffer)
+//                if (frames.isEmpty()) return
+//                val frame: Frame = frames[0]
+//                val message: Message = P2pMessageFactory().create(
+//                    frame.getType() as Byte,
+//                    ByteStreams.toByteArray(frame.getStream())
+//                )
+//                loggerNet.debug("From: {}    Recv:  {}", ctx.channel().remoteAddress(), message)
+//                if (frame.getType() === P2pMessageCodes.DISCONNECT.asByte()) {
+//                    loggerNet.debug("Active remote peer disconnected right after handshake.")
+//                    return
+//                }
+//                if (frame.getType() !== P2pMessageCodes.HELLO.asByte()) {
+//                    throw RuntimeException("The message type is not HELLO or DISCONNECT: $message")
+//                }
+//                val inboundHelloMessage: HelloMessage = message as HelloMessage
+//
+//                // now we know both remote nodeId and port
+//                // let's set node, that will cause registering node in NodeManager
+//                channel.initWithNode(remoteId, inboundHelloMessage.getListenPort())
+//
+//                // Secret authentication finish here
+//                channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId))
+//                isHandshakeDone = true
+//                this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, inboundHelloMessage)
+//                channel.getNodeStatistics().rlpxInHello.add()
             }
         }
     }
@@ -273,15 +271,15 @@ class HandshakeHandler @Autowired constructor(
 
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
-        if (channel.discoveryMode) {
-            loggerNet.trace("Handshake failed: $cause")
-        } else {
-            if (cause is IOException || cause is ReadTimeoutException) {
-                loggerNet.debug("Handshake failed: " + ctx.channel().remoteAddress() + ": " + cause)
-            } else {
-                loggerNet.warn("Handshake failed: ", cause)
-            }
-        }
-        ctx.close()
+//        if (channel.discoveryMode) {
+//            loggerNet.trace("Handshake failed: $cause")
+//        } else {
+//            if (cause is IOException || cause is ReadTimeoutException) {
+//                loggerNet.debug("Handshake failed: " + ctx.channel().remoteAddress() + ": " + cause)
+//            } else {
+//                loggerNet.warn("Handshake failed: ", cause)
+//            }
+//        }
+//        ctx.close()
     }
 }
