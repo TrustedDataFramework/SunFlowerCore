@@ -9,7 +9,7 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.rlp.RLPList;
+import org.tdf.rlpstream.Rlp;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.BuiltinContract;
@@ -89,7 +89,7 @@ public class PosPreBuilt implements BuiltinContract {
         List<NodeInfo> nodeInfos = new ArrayList<>(this.nodes.values());
         nodeInfos.sort(NodeInfo::compareTo);
         map.put(NODE_INFO_KEY, RLPUtil.encode(nodeInfos));
-        map.put(VOTE_INFO_KEY, RLPUtil.encode(RLPList.createEmpty()));
+        map.put(VOTE_INFO_KEY, HexBytes.fromBytes(Rlp.encodeElements()));
         return map;
     }
 

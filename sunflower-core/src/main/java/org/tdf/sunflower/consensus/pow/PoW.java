@@ -4,7 +4,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPCodec;
+import org.tdf.rlpstream.Rlp;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.state.Account;
@@ -28,7 +28,7 @@ public class PoW extends AbstractConsensusEngine {
     }
 
     public static byte[] getPoWHash(Block block) {
-        byte[] d = HashUtil.sha3(RLPCodec.encode(block.getHeader()));
+        byte[] d = HashUtil.sha3(Rlp.encode(block.getHeader()));
         return HashUtil.sha3(d);
     }
 

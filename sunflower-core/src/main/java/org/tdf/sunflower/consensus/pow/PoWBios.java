@@ -3,11 +3,8 @@ package org.tdf.sunflower.consensus.pow;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.types.Uint256;
-import org.tdf.common.util.BigIntegers;
-import org.tdf.common.util.ByteUtil;
-import org.tdf.common.util.HexBytes;
-import org.tdf.common.util.RLPUtil;
-import org.tdf.rlp.RLPList;
+import org.tdf.common.util.*;
+import org.tdf.rlpstream.Rlp;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.state.AbstractBuiltIn;
@@ -114,7 +111,7 @@ public class PoWBios extends AbstractBuiltIn {
 
             nbits = safeTyMul(nbits, x, y);
             backend.dbSet(Constants.POW_BIOS_ADDR, N_BITS_KEY, HexBytes.fromBytes(BigIntegers.asUnsignedByteArray(nbits)));
-            backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, HexBytes.fromBytes(RLPList.createEmpty().getEncoded()));
+            backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, HexBytes.fromBytes(Rlp.encodeElements()));
         } else {
             backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, RLPUtil.encode(ts));
         }
@@ -139,7 +136,7 @@ public class PoWBios extends AbstractBuiltIn {
     public Map<HexBytes, HexBytes> getGenesisStorage() {
         Map<HexBytes, HexBytes> ret = new HashMap<>();
         ret.put(N_BITS_KEY, genesisNbits.getDataHex());
-        ret.put(TIMESTAMPS_KEY, HexBytes.fromBytes(RLPList.createEmpty().getEncoded()));
+        ret.put(TIMESTAMPS_KEY, HexBytes.fromBytes(Rlp.encodeElements()));
         return ret;
     }
 }

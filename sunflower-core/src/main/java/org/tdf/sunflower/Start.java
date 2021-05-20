@@ -20,6 +20,7 @@ import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.*;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.poa.PoA;
@@ -284,7 +285,7 @@ public class Start {
             .store(
                 new NoDeleteStore<>(
                     factory.create('o'),
-                    Store.IS_NULL
+                    ByteUtil::isNullOrZeroArray
                 )
             )
             .build();

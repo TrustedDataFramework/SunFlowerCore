@@ -7,6 +7,7 @@ import org.tdf.common.store.Store
 import org.tdf.common.trie.SecureTrie
 import org.tdf.common.trie.Trie
 import org.tdf.common.types.Uint256
+import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.Start
@@ -56,7 +57,7 @@ class AccountTrie(
     }
 
     init {
-        trieStore = NoDeleteStore(db, Store.IS_NULL)
+        trieStore = NoDeleteStore(db, ByteUtil::isNullOrZeroArray)
         trie = Trie.builder<HexBytes, Account>()
             .store(trieStore)
             .keyCodec(Codecs.newRLPCodec(HexBytes::class.java))
