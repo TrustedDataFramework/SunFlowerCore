@@ -9,8 +9,7 @@ import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.message.Message
 
-sealed class P2pMessage(code: Int, val command: P2pMessageCodes): Message(code)
-
+sealed class P2pMessage(command: P2pMessageCodes): Message(command)
 
 @RlpProps("p2pVersion", "clientId", "capabilities", "listenPort", "peerId")
 class HelloMessage @RlpCreator constructor(
@@ -19,7 +18,7 @@ class HelloMessage @RlpCreator constructor(
     capabilities: Array<Capability>,
     var listenPort: Int = 0,
     var peerId: String = ""
-) : P2pMessage(P2pMessageCodes.HELLO.cmd, P2pMessageCodes.HELLO) {
+) : P2pMessage(P2pMessageCodes.HELLO) {
 
     /**
      * A peer-network capability code, readable ASCII and 3 letters.
@@ -30,7 +29,7 @@ class HelloMessage @RlpCreator constructor(
 }
 
 
-class PingMessage @RlpCreator constructor() : Message(P2pMessageCodes.PING.cmd), RlpEncodable {
+class PingMessage @RlpCreator constructor() : Message(P2pMessageCodes.PING), RlpEncodable {
 
     companion object {
         private val FIXED_PAYLOAD = HexBytes.decode("C0")

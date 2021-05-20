@@ -5,10 +5,10 @@ import org.tdf.rlpstream.RlpProps
 import org.tdf.sunflower.p2pv2.message.Message
 import java.math.BigInteger
 
-abstract class EthMessage(code: Int, val command: EthMessageCodes): Message(code)
+sealed class EthMessage(command: EthMessageCodes): Message(command)
 
 @RlpProps("protocolVersion", "networkId", "totalDifficulty", "bestHash", "genesisHash")
-class StatusMessage : EthMessage(EthMessageCodes.STATUS.cmd, EthMessageCodes.STATUS) {
+class StatusMessage : EthMessage(EthMessageCodes.STATUS) {
     var protocolVersion: Int = 0
     var networkId: Int = 0
     var totalDifficulty: ByteArray = ByteUtil.EMPTY_BYTE_ARRAY

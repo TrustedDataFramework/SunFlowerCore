@@ -14,4 +14,9 @@ data class Frame(val type: Int, val size: Int, val stream: InputStream) {
             return Frame(type, payload.size, ByteArrayInputStream(payload))
         }
     }
+
+    val chunked: Boolean
+        get() {
+            return contextId >= 0
+        }
 }

@@ -131,12 +131,12 @@ class HandshakeHandler @Autowired constructor(
 
                     // it must be format defined by EIP-8 then
                     responsePacket = readEIP8Packet(buffer, responsePacket)
-                    if (responsePacket == null) return
+                    if (responsePacket.isEmpty()) return
                     val response: AuthResponseMessageV4 =
                         handshake.handleAuthResponseV4(myKey, initiatePacket, responsePacket)
                     loggerNet.debug("From: {}    Recv:  {}", ctx.channel().remoteAddress(), response)
                 }
-                val secrets: EncryptionHandshake.Secrets = this.handshake!!.secrets
+                val secrets: EncryptionHandshake.Secrets = handshake.secrets
                 this.frameCodec = FrameCodec(secrets)
                 loggerNet.debug("auth exchange done")
 //                channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId))
@@ -149,7 +149,7 @@ class HandshakeHandler @Autowired constructor(
                 val payload = ByteStreams.toByteArray(frame.stream)
                 if (frame.type == P2pMessageCodes.HELLO.cmd) {
                     val helloMessage = Rlp.decode(payload, HelloMessage::class.java)
-                    if (loggerNet.isDebugEnabled()) loggerNet.debug(
+                    if (loggerNet.isDebugEnabled) loggerNet.debug(
                         "From: {}    Recv:  {}",
                         ctx.channel().remoteAddress(),
                         helloMessage
@@ -192,7 +192,7 @@ class HandshakeHandler @Autowired constructor(
                     // it must be format defined by EIP-8 then
                     try {
                         authInitPacket = readEIP8Packet(buffer, authInitPacket)
-                        if (authInitPacket == null) return
+                        if (authInitPacket.isEmpty()) return
                         val initiateMessage: AuthInitiateMessageV4 =
                             handshake.decryptAuthInitiateV4(authInitPacket, myKey)
                         loggerNet.debug(
@@ -221,7 +221,7 @@ class HandshakeHandler @Autowired constructor(
                 val remotePubKey: ECPoint = handshake.remotePublicKey
                 val compressed = remotePubKey.encoded
                 this.remoteId = ByteArray(compressed.size - 1)
-                System.arraycopy(compressed, 1, this.remoteId, 0, this.remoteId.size)
+                System.arraycopy(compressed, 1, this.remoteId!!, 0, this.remoteId!!.size)
                 val byteBufMsg = ctx.alloc().buffer(responsePacket.size)
                 byteBufMsg.writeBytes(responsePacket)
                 ctx.writeAndFlush(byteBufMsg).sync()

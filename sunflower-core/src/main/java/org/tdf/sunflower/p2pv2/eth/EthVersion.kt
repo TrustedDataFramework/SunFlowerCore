@@ -17,6 +17,8 @@ enum class EthVersion(val code: Byte) {
     companion object {
         val LOWER = V62.code
         val UPPER = V63.code
+
+        @JvmStatic
         fun fromCode(code: Int): EthVersion? {
             for (v in values()) {
                 if (v.code.toInt() == code) {
@@ -26,10 +28,12 @@ enum class EthVersion(val code: Byte) {
             return null
         }
 
+        @JvmStatic
         fun isSupported(code: Byte): Boolean {
             return code >= LOWER && code <= UPPER
         }
 
+        @JvmStatic
         fun supported(): List<EthVersion> {
             val supported: MutableList<EthVersion> = ArrayList()
             for (v in values()) {

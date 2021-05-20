@@ -13,11 +13,12 @@ import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.p2pv2.MessageQueue
 import org.tdf.sunflower.p2pv2.Node
 import org.tdf.sunflower.p2pv2.WireTrafficStats
+import org.tdf.sunflower.p2pv2.message.ReasonCode
 import org.tdf.sunflower.p2pv2.message.StaticMessages
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
 import org.tdf.sunflower.p2pv2.rlpx.Frame
 import org.tdf.sunflower.p2pv2.rlpx.FrameCodec
-import java.io.IOException
+import org.tdf.sunflower.p2pv2.rlpx.MessageCodec
 import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
 
@@ -26,7 +27,8 @@ class Channel @Autowired constructor(
     val mq: MessageQueue,
     val cfg: AppConfig,
     val stats: WireTrafficStats,
-    val staticMessages: StaticMessages
+    val staticMessages: StaticMessages,
+    val messageCodec: MessageCodec
 ) {
     var inetSocketAddress: InetSocketAddress? = null
     var discoveryMode = false
@@ -96,6 +98,32 @@ class Channel @Autowired constructor(
 //        getNodeStatistics().rlpxOutHello.add()
     }
 
+    fun disconnect(reason: ReasonCode) {
+//        getNodeStatistics().nodeDisconnectedLocal(reason)
+//        msgQueue.disconnect(reason)
+    }
+
+
+    fun publicRLPxHandshakeFinished(
+        ctx: ChannelHandlerContext, frameCodec: FrameCodec,
+        helloRemote: HelloMessage
+    ) {
+        log.debug(
+            "publicRLPxHandshakeFinished with " + ctx.channel().remoteAddress()
+        )
+        messageCodec.setSupportChunkedFrames(false)
+        val frameCodecHandler = FrameCodecHandler(frameCodec, this)
+        ctx.pipeline().addLast("medianFrameCodec", frameCodecHandler)
+        if (SnappyCodec.isSupported(Math.min(config.defaultP2PVersion(), helloRemote.getP2PVersion()))) {
+            ctx.pipeline().addLast("snappyCodec", SnappyCodec(this))
+            org.ethereum.net.server.Channel.logger.debug("{}: use snappy compression", ctx.channel())
+        }
+        ctx.pipeline().addLast("messageCodec", messageCodec)
+        ctx.pipeline().addLast(Capability.P2P, p2pHandler)
+        p2pHandler.setChannel(this)
+        p2pHandler.setHandshake(helloRemote, ctx)
+        getNodeStatistics().rlpxHandshake.add()
+    }
     companion object {
         val log: Logger = LoggerFactory.getLogger("net")
     }

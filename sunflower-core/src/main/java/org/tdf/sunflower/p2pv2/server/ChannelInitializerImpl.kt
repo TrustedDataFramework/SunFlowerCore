@@ -103,13 +103,13 @@ class ChannelInitializerImpl @Autowired constructor(
             return true
         }
         // Drop bad peers before creating channel
-        if (nodeManager.isReputationPenalized(ch.remoteAddress())) {
-            log.debug(
-                "Drop connection - bad peer, channel: {}",
-                ch.toString()
-            )
-            return true
-        }
+//        if (nodeManager.isReputationPenalized(ch.remoteAddress())) {
+//            log.debug(
+//                "Drop connection - bad peer, channel: {}",
+//                ch.toString()
+//            )
+//            return true
+//        }
         return false
     }
 
