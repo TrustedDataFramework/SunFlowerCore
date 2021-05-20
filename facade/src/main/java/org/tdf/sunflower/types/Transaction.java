@@ -52,7 +52,7 @@ public class Transaction implements RlpEncodable {
             .keyCodec(Codec.identity())
             .valueCodec(Codec.identity())
             .store(new ByteArrayMapStore<>())
-            .hashFunction(HashUtil::sha3).build();
+            .build();
 
         if (transactions == null || transactions.isEmpty())
             return HexBytes.fromBytes(HashUtil.EMPTY_TRIE_HASH);

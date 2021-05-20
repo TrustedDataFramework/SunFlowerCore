@@ -8,6 +8,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.spongycastle.crypto.InvalidCipherTextException
 import org.spongycastle.math.ec.ECPoint
+import org.spongycastle.util.encoders.Hex
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
@@ -18,8 +19,10 @@ import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.AppConfig
+import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
+import org.tdf.sunflower.p2pv2.rlpx.discover.NodeManager
 import org.tdf.sunflower.p2pv2.server.Channel
 import org.tdf.sunflower.p2pv2.server.ChannelImpl
 import java.net.InetSocketAddress
@@ -40,70 +43,88 @@ import java.net.InetSocketAddress
 @Component
 @Scope("prototype")
 class HandshakeHandlerImpl @Autowired constructor(
-    private val cfg: AppConfig
-): HandshakeHandler(){
-    companion object {
-        val loggerWire: Logger = LoggerFactory.getLogger("wire")
-        val loggerNet: Logger = LoggerFactory.getLogger("net")
-    }
+    private val cfg: AppConfig,
+    private val nodeManager: NodeManager
+): HandshakeHandler(), Loggers{
 
     private var frameCodec: FrameCodec? = null
-    private var channel: Channel? = null
-    override var remoteId: ByteArray = ByteUtil.EMPTY_BYTE_ARRAY
+
+    private var _channel: Channel? = null
+    val channel: Channel
+        get() = _channel!!
+
+    private var _remoteId: ByteArray? = null
+    override val remoteId: ByteArray
+        get() = _remoteId!!
+
+
     private val myKey = cfg.myKey
-    private var nodeId: ByteArray? = null
-    private var handshake: EncryptionHandshake? = null
-    private var initiatePacket: ByteArray? = null
+
+    private var _nodeId: ByteArray? = null
+    private val nodeId: ByteArray
+        get() = _nodeId!!
+
+    private var _handshake: EncryptionHandshake? = null
+    private val handshake: EncryptionHandshake
+        get() = _handshake!!
+
+
+
+    private var _initiatePacket: ByteArray? = null
+    private val initiatePacket: ByteArray
+        get() = _initiatePacket!!
+
     private var isHandshakeDone = false
 
     override fun setRemote(remoteId: String, channel: Channel) {
-        this.remoteId = HexBytes.decode(remoteId)
-        this.channel = channel
+        this._remoteId = HexBytes.decode(remoteId)
+        this._channel = channel
     }
 
     override fun channelActive(ctx: ChannelHandlerContext) {
-        channel!!.inetSocketAddress = ctx.channel().remoteAddress() as InetSocketAddress
-        if (remoteId!!.size == 64) {
-            channel!!.initWithNode(remoteId!!)
+        channel.inetSocketAddress = ctx.channel().remoteAddress() as InetSocketAddress
+        if (remoteId.size == 64) {
+            channel.initWithNode(remoteId)
             initiate(ctx)
         } else {
-            handshake = EncryptionHandshake()
-            nodeId = myKey.nodeId
+            _handshake = EncryptionHandshake()
+            _nodeId = myKey.nodeId
         }
     }
 
     // decode into objects
     override fun decode(ctx: ChannelHandlerContext, input: ByteBuf, out: List<Any>) {
-        loggerWire.debug("Decoding handshake... (" + input.readableBytes() + " bytes available)")
+        wire.debug("Decoding handshake... (" + input.readableBytes() + " bytes available)")
         decodeHandshake(ctx, input)
         if (isHandshakeDone) {
-            loggerWire.debug("Handshake done, removing HandshakeHandler from pipeline.")
+            wire.debug("Handshake done, removing HandshakeHandler from pipeline.")
             ctx.pipeline().remove(this)
         }
     }
 
     override fun initiate(ctx: ChannelHandlerContext) {
-        loggerNet.debug("RLPX protocol activated")
-        nodeId = myKey.nodeId
-        handshake = EncryptionHandshake(ECKey.fromNodeId(this.remoteId).pubKeyPoint)
+        net.debug("RLPX protocol activated")
+        _nodeId = myKey.nodeId
+
+        _handshake = EncryptionHandshake(ECKey.fromNodeId(this.remoteId).pubKeyPoint)
         val msg: Any
 
         if (cfg.eip8) {
-            val initiateMessage: AuthInitiateMessageV4 = handshake!!.createAuthInitiateV4(myKey)
-            initiatePacket = handshake!!.encryptAuthInitiateV4(initiateMessage)
+            val initiateMessage: AuthInitiateMessageV4 = handshake.createAuthInitiateV4(myKey)
+            _initiatePacket = handshake.encryptAuthInitiateV4(initiateMessage)
             msg = initiateMessage
         } else {
-            val initiateMessage: AuthInitiateMessage = handshake!!.createAuthInitiate(null, myKey)
-            initiatePacket = handshake!!.encryptAuthMessage(initiateMessage)
+            val initiateMessage: AuthInitiateMessage = handshake.createAuthInitiate(null, myKey)
+            _initiatePacket = handshake.encryptAuthMessage(initiateMessage)
             msg = initiateMessage
         }
-        val byteBufMsg = ctx.alloc().buffer(initiatePacket!!.size)
+        val byteBufMsg = ctx.alloc().buffer(initiatePacket.size)
         byteBufMsg.writeBytes(initiatePacket)
         ctx.writeAndFlush(byteBufMsg).sync()
 
-//        channel.getNodeStatistics().rlpxAuthMessagesSent.add()
+        channel.nodeStatistics.rlpxAuthMessagesSent.add()
 
-        if (loggerNet.isDebugEnabled()) loggerNet.debug(
+        if (net.isDebugEnabled) net.debug(
             "To:   {}    Send:  {}",
             ctx.channel().remoteAddress(),
             msg
@@ -112,42 +133,38 @@ class HandshakeHandlerImpl @Autowired constructor(
 
     // consume handshake, producing no resulting message to upper layers
     private fun decodeHandshake(ctx: ChannelHandlerContext, buffer: ByteBuf) {
-        val handshake = this.handshake!!
-
         if (handshake.isInitiator) {
             if (this.frameCodec == null) {
-                var responsePacket: ByteArray? = ByteArray(AuthResponseMessage.getLength() + ECIESCoder.getOverhead())
-                if (!buffer.isReadable(responsePacket!!.size)) return
+                var responsePacket = ByteArray(AuthResponseMessage.getLength() + ECIESCoder.getOverhead())
+                if (!buffer.isReadable(responsePacket.size)) return
                 buffer.readBytes(responsePacket)
                 try {
 
                     // trying to decode as pre-EIP-8
-                    val response: AuthResponseMessage =
-                        handshake.handleAuthResponse(myKey, initiatePacket, responsePacket)
-                    loggerNet.debug("From: {}    Recv:  {}", ctx.channel().remoteAddress(), response)
+                    val response = handshake.handleAuthResponse(myKey, initiatePacket, responsePacket)
+                    net.debug("From: {}    Recv:  {}", ctx.channel().remoteAddress(), response)
                 } catch (t: Throwable) {
 
                     // it must be format defined by EIP-8 then
                     responsePacket = readEIP8Packet(buffer, responsePacket)
                     if (responsePacket.isEmpty()) return
-                    val response: AuthResponseMessageV4 =
-                        handshake.handleAuthResponseV4(myKey, initiatePacket, responsePacket)
-                    loggerNet.debug("From: {}    Recv:  {}", ctx.channel().remoteAddress(), response)
+                    val response = handshake.handleAuthResponseV4(myKey, initiatePacket, responsePacket)
+                    net.debug("From: {}    Recv:  {}", ctx.channel().remoteAddress(), response)
                 }
-                val secrets: EncryptionHandshake.Secrets = handshake.secrets
+                val secrets = handshake.secrets
                 this.frameCodec = FrameCodec(secrets)
-                loggerNet.debug("auth exchange done")
+                net.debug("auth exchange done")
 //                channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId))
             } else {
                 val frameCodec = this.frameCodec!!
-                loggerWire.info("MessageCodec: Buffer bytes: " + buffer.readableBytes())
+                wire.info("MessageCodec: Buffer bytes: " + buffer.readableBytes())
                 val frames: List<Frame> = frameCodec.readFrames(buffer)
                 if ( frames.isEmpty()) return
                 val frame: Frame = frames[0]
                 val payload = ByteStreams.toByteArray(frame.stream)
                 if (frame.type == P2pMessageCodes.HELLO.cmd) {
                     val helloMessage = Rlp.decode(payload, HelloMessage::class.java)
-                    if (loggerNet.isDebugEnabled) loggerNet.debug(
+                    if (net.isDebugEnabled) net.debug(
                         "From: {}    Recv:  {}",
                         ctx.channel().remoteAddress(),
                         helloMessage
@@ -165,25 +182,25 @@ class HandshakeHandlerImpl @Autowired constructor(
                 }
             }
         } else {
-            loggerWire.debug("Not initiator.")
+            wire.debug("Not initiator.")
             if (frameCodec == null) {
-                loggerWire.debug("FrameCodec == null")
+                wire.debug("FrameCodec == null")
                 var authInitPacket: ByteArray? = ByteArray(AuthInitiateMessage.getLength() + ECIESCoder.getOverhead())
                 if (!buffer.isReadable(authInitPacket!!.size)) return
                 buffer.readBytes(authInitPacket)
-                this.handshake = EncryptionHandshake()
+                _handshake = EncryptionHandshake()
                 var responsePacket: ByteArray
                 try {
 
                     // trying to decode as pre-EIP-8
                     val initiateMessage: AuthInitiateMessage = handshake.decryptAuthInitiate(authInitPacket, myKey)
-                    loggerNet.debug(
+                    net.debug(
                         "From: {}    Recv:  {}",
                         ctx.channel().remoteAddress(),
                         initiateMessage
                     )
                     val response: AuthResponseMessage = handshake.makeAuthInitiate(initiateMessage, myKey)
-                    loggerNet.debug("To:   {}    Send:  {}", ctx.channel().remoteAddress(), response)
+                    net.debug("To:   {}    Send:  {}", ctx.channel().remoteAddress(), response)
                     responsePacket = handshake.encryptAuthResponse(response)
                 } catch (t: Throwable) {
 
@@ -193,20 +210,20 @@ class HandshakeHandlerImpl @Autowired constructor(
                         if (authInitPacket.isEmpty()) return
                         val initiateMessage: AuthInitiateMessageV4 =
                             handshake.decryptAuthInitiateV4(authInitPacket, myKey)
-                        loggerNet.debug(
+                        net.debug(
                             "From: {}    Recv:  {}",
                             ctx.channel().remoteAddress(),
                             initiateMessage
                         )
                         val response: AuthResponseMessageV4 = handshake.makeAuthInitiateV4(initiateMessage, myKey)
-                        loggerNet.debug(
+                        net.debug(
                             "To:   {}    Send:  {}",
                             ctx.channel().remoteAddress(),
                             response
                         )
                         responsePacket = handshake.encryptAuthResponseV4(response)
                     } catch (ce: InvalidCipherTextException) {
-                        loggerNet.warn(
+                        net.warn(
                             "Can't decrypt AuthInitiateMessage from " + ctx.channel().remoteAddress() +
                                     ". Most likely the remote peer used wrong public key (NodeID) to encrypt message."
                         )
@@ -218,7 +235,7 @@ class HandshakeHandlerImpl @Autowired constructor(
                 this.frameCodec = FrameCodec(secrets)
                 val remotePubKey: ECPoint = handshake.remotePublicKey
                 val compressed = remotePubKey.encoded
-                this.remoteId = ByteArray(compressed.size - 1)
+                this._remoteId = ByteArray(compressed.size - 1)
                 System.arraycopy(compressed, 1, this.remoteId!!, 0, this.remoteId!!.size)
                 val byteBufMsg = ctx.alloc().buffer(responsePacket.size)
                 byteBufMsg.writeBytes(responsePacket)
@@ -261,7 +278,8 @@ class HandshakeHandlerImpl @Autowired constructor(
             throw IllegalArgumentException("AuthResponse packet size is too low")
         val bytesLeft = size - plainPacket.size + 2
         val restBytes = ByteArray(bytesLeft)
-        if (!buffer.isReadable(restBytes.size)) return ByteUtil.EMPTY_BYTE_ARRAY
+        if (!buffer.isReadable(restBytes.size))
+            return ByteUtil.EMPTY_BYTE_ARRAY
         buffer.readBytes(restBytes)
         val fullResponse = ByteArray(size + 2)
         System.arraycopy(plainPacket, 0, fullResponse, 0, plainPacket.size)

@@ -1,5 +1,7 @@
 package org.tdf.sunflower.p2pv2.message;
 
-abstract class Message(val command: Enum<*>)
+abstract class Message(val command: Enum<*>) {
+    var code: Int = 0
+}
 
 

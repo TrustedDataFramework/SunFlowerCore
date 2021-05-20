@@ -6,6 +6,8 @@ import org.tdf.sunflower.p2pv2.Node
 import org.tdf.sunflower.p2pv2.message.ReasonCode
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
 import org.tdf.sunflower.p2pv2.rlpx.FrameCodec
+import org.tdf.sunflower.p2pv2.rlpx.discover.NodeStatistics
+import java.io.IOException
 import java.net.InetSocketAddress
 
 interface Channel {
@@ -31,4 +33,9 @@ interface Channel {
      * finish handshake, combine frame codec with message codec
      */
     fun finishHandshake(ctx: ChannelHandlerContext, frameCodec: FrameCodec, helloRemote: HelloMessage)
+
+    val nodeStatistics: NodeStatistics
+
+    fun sendHelloMessage(ctx: ChannelHandlerContext, frameCodec: FrameCodec, nodeId: String)
+
 }

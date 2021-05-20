@@ -6,8 +6,11 @@ import org.slf4j.LoggerFactory
 interface Loggers {
     companion object {
         val net: Logger = LoggerFactory.getLogger("net")
+        val wire: Logger = LoggerFactory.getLogger("wire")
     }
 
     val net: Logger
         get() = Loggers.net
+    val wire: Logger
+        get() = Loggers.wire
 }

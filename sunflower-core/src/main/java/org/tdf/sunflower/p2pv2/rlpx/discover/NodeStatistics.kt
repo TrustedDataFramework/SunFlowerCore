@@ -2,6 +2,23 @@ package org.tdf.sunflower.p2pv2.rlpx.discover
 
 import org.tdf.sunflower.p2pv2.message.ReasonCode
 
-interface NodeStatistics {
-    fun nodeDisconnectedLocal(reason: ReasonCode)
+abstract class NodeStatistics {
+    abstract fun nodeDisconnectedLocal(reason: ReasonCode)
+
+    val discoverOutPing = StatHandler()
+    val discoverInPong = StatHandler()
+    val discoverOutPong = StatHandler()
+    val discoverInPing = StatHandler()
+    val discoverInFind = StatHandler()
+    val discoverOutFind = StatHandler()
+    val discoverInNeighbours = StatHandler()
+    val discoverOutNeighbours = StatHandler()
+
+    val rlpxConnectionAttempts = StatHandler()
+    val rlpxAuthMessagesSent = StatHandler()
+    val rlpxOutHello = StatHandler()
+    val rlpxInHello = StatHandler()
+    val rlpxHandshake = StatHandler()
+    val rlpxOutMessages = StatHandler()
+    val rlpxInMessages = StatHandler()
 }

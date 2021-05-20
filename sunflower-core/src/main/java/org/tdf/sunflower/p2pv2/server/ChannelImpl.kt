@@ -11,7 +11,9 @@ import org.tdf.sunflower.p2pv2.MessageQueue
 import org.tdf.sunflower.p2pv2.Node
 import org.tdf.sunflower.p2pv2.WireTrafficStats
 import org.tdf.sunflower.p2pv2.message.ReasonCode
+import org.tdf.sunflower.p2pv2.message.StaticMessages
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
+import org.tdf.sunflower.p2pv2.rlpx.Frame
 import org.tdf.sunflower.p2pv2.rlpx.FrameCodec
 import org.tdf.sunflower.p2pv2.rlpx.HandshakeHandler
 import org.tdf.sunflower.p2pv2.rlpx.MessageCodec
@@ -26,13 +28,13 @@ class ChannelImpl @Autowired constructor(
     private val handshake: HandshakeHandler,
     private val cfg: AppConfig,
     private val stats: WireTrafficStats,
-    private val messageCodec: MessageCodec
+    private val staticMessages: StaticMessages
     ) : Channel {
     init {
         mq.channel = this
     }
 
-    private val nodeStatistics = NodeStatisticsImpl()
+    override val nodeStatistics = NodeStatisticsImpl()
 
     override var node: Node? = null
         private set
@@ -99,5 +101,9 @@ class ChannelImpl @Autowired constructor(
         TODO("Not yet implemented")
     }
 
-
+    override fun sendHelloMessage(ctx: ChannelHandlerContext, frameCodec: FrameCodec, nodeId: String) {
+        val hello = staticMessages.createHelloMessage(nodeId)
+        val byteBufMsg = ctx.alloc().buffer()
+//        frameCodec.writeFrame(Frame(hello))
+    }
 }
