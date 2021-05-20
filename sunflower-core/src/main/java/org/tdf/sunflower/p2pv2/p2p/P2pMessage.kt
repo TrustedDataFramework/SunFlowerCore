@@ -2,12 +2,11 @@ package org.tdf.sunflower.p2pv2.p2p
 
 
 import org.tdf.common.util.HexBytes
-import org.tdf.rlpstream.RlpCreator
-import org.tdf.rlpstream.RlpEncodable
-import org.tdf.rlpstream.RlpProps
+import org.tdf.rlpstream.*
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.message.Message
+import org.tdf.sunflower.p2pv2.message.ReasonCode
 
 sealed class P2pMessage(command: P2pMessageCodes): Message(command)
 
@@ -36,5 +35,19 @@ class PingMessage @RlpCreator constructor() : Message(P2pMessageCodes.PING), Rlp
     }
     override fun getEncoded(): ByteArray {
         return FIXED_PAYLOAD
+    }
+}
+
+@RlpProps("reason")
+class DisconnectMessage(var reason: ReasonCode = ReasonCode.UNKNOWN): Message(P2pMessageCodes.DISCONNECT) {
+    companion object {
+        @JvmStatic
+        @RlpCreator
+        fun fromRlpStream(bin: ByteArray, streamId: Long): DisconnectMessage{
+            val li = RlpList(bin, streamId, 1)
+            if(li.size() > 0)
+                return DisconnectMessage(ReasonCode.fromInt(li.intAt(0)))
+            return DisconnectMessage()
+        }
     }
 }

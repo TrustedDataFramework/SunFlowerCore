@@ -11,11 +11,10 @@ import org.tdf.rlpstream.RlpList
 import java.io.Serializable
 import java.net.URI
 import java.net.URISyntaxException
-import java.util.*
 
-class Node : Serializable {
+class Node : Serializable, Loggers{
     var id: ByteArray
-    var host: String? = null
+    var host: String = ""
     var port = 0
 
     /**
@@ -24,7 +23,7 @@ class Node : Serializable {
     // discovery endpoint doesn't have real nodeId for example
     var isDiscoveryNode = false
 
-    constructor(enodeURL: String?) {
+    constructor(enodeURL: String) {
         try {
             val uri = URI(enodeURL)
             if (uri.scheme != "enode") {
@@ -38,7 +37,7 @@ class Node : Serializable {
         }
     }
 
-    constructor(id: ByteArray, host: String?, port: Int) {
+    constructor(id: ByteArray, host: String, port: Int) {
         this.id = id
         this.host = host
         this.port = port
@@ -58,6 +57,7 @@ class Node : Serializable {
         val idB: ByteArray = if (nodeRLP.size() > 3) {
             nodeRLP.bytesAt(3)
         } else {
+            net.error("short node found")
             nodeRLP.bytesAt(2)
         }
         val port: Int = byteArrayToInt(portB)
@@ -68,7 +68,7 @@ class Node : Serializable {
         id = ECKey.fromNodeId(idB).nodeId
     }
 
-    constructor(rlp: ByteArray?) : this(RLPUtil.decodePartial(rlp, 0)) {}
+    constructor(rlp: ByteArray) : this(RLPUtil.decodePartial(rlp, 0))
 
     val hexId: String
         get() = Hex.toHexString(id)
@@ -83,8 +83,8 @@ class Node : Serializable {
     val fullRlp: ByteArray
         get() {
             val rlphost: ByteArray = Rlp.encodeBytes(hostToBytes(host))
-            val rlpTCPPort: ByteArray = Rlp.encodeInt(port)
             val rlpUDPPort: ByteArray = Rlp.encodeInt(port)
+            val rlpTCPPort: ByteArray = Rlp.encodeInt(port)
             val rlpId: ByteArray = Rlp.encodeBytes(id)
             return Rlp.encodeElements(rlphost, rlpUDPPort, rlpTCPPort, rlpId)
         }
@@ -114,15 +114,15 @@ class Node : Serializable {
         return this.toString().hashCode()
     }
 
-    override fun equals(o: Any?): Boolean {
-        if (o == null) {
+    override fun equals(other: Any?): Boolean {
+        if (other == null) {
             return false
         }
-        if (o === this) {
+        if (other === this) {
             return true
         }
-        return if (o is Node) {
-            Arrays.equals(o.id, id)
+        return if (other is Node) {
+            other.id.contentEquals(id)
         } else false
     }
 

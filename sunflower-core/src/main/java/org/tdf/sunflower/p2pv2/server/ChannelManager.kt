@@ -1,6 +1,7 @@
 package org.tdf.sunflower.p2pv2.server
 
 import io.netty.channel.ChannelPipeline
+import org.tdf.sunflower.p2pv2.Node
 import java.net.InetAddress
 
 interface ChannelManager {
@@ -15,4 +16,11 @@ interface ChannelManager {
     fun isRecentlyDisconnected(peerAddr: InetAddress): Boolean
 
     val acceptingNewPeers: Boolean
+
+    fun connect(node: Node)
+
+    val nodesInUse: Set<String>
+
+    val activePeers: List<Channel>
+
 }
