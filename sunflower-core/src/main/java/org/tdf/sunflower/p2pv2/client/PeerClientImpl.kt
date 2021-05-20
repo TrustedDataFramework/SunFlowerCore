@@ -52,6 +52,7 @@ class PeerClientImpl @Autowired constructor(val ctx: ApplicationContext, val cfg
         net.trace("Connecting to: $host:$port")
 
         val initializer = ctx.getBean(PeerChannelInitializer::class.java)
+        initializer.remoteId = remoteId
         initializer.peerDiscoveryMode = discoveryMode
 
         val b = Bootstrap()

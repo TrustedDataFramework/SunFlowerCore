@@ -66,6 +66,7 @@ class ChannelInitializerImpl @Autowired constructor(
 
         // Bad remote address
         if (ch.remoteAddress() == null) {
+            net.error("ch.remoteAddress = null, active = ${ch.isActive}, cfg = ${ch.config()}")
             net.debug(
                 "Drop connection - bad remote address, channel: {}",
                 ch.toString()
