@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component
 import org.tdf.common.event.EventBus
 import org.tdf.common.store.Store
 import org.tdf.common.trie.Trie
+import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.SyncConfig
@@ -186,7 +187,7 @@ class SyncManager(
                     getBlocks.startHeight,
                     getBlocks.stopHeight,
                     Math.min(syncConfig.maxBlocksTransfer, getBlocks.limit),
-                    getBlocks.isDescend
+                    getBlocks.descend
                 )
                 context.response(SyncMessage.encode(SyncMessage.BLOCKS, blocks))
                 return
@@ -477,7 +478,7 @@ class SyncManager(
                 best.hash,
                 genesis.hash,
                 0,
-                null //                repository.getPrunedHeight(),
+                HashUtil.EMPTY_DATA_HASH_HEX //                repository.getPrunedHeight(),
                 //                repository.getPrunedHash()
             )
             broadcastToApproved(SyncMessage.encode(SyncMessage.STATUS, status))
