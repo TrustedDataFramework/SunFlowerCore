@@ -20,8 +20,6 @@ import java.util.function.BiFunction;
 // enhanced radix tree
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TrieImpl<K, V> extends AbstractTrie<K, V> {
-    @Getter
-    private final HexBytes nullHash;
 
     @Getter
     Store<byte[], byte[]> store;
@@ -37,7 +35,6 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     ) {
 
         return new TrieImpl<>(
-            HexBytes.fromBytes(HashUtil.EMPTY_TRIE_HASH),
             store,
             keyCodec,
             valueCodec,
@@ -84,7 +81,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     }
 
     public HexBytes commit() {
-        if (root == null) return nullHash;
+        if (root == null) return getNullHash();
         if (!root.isDirty()) return HexBytes.fromBytes(root.getHash());
         byte[] hash = Rlp.decodeBytes(this.root.commit(store, true));
         if (root.isDirty() || root.getHash() == null)
@@ -99,13 +96,12 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
 
     @Override
     public TrieImpl<K, V> revert(@NonNull HexBytes rootHash, Store<byte[], byte[]> store) {
-        if (FastByteComparisons.equal(rootHash.getBytes(), nullHash.getBytes()))
-            return new TrieImpl<>(nullHash, store,
+        if (rootHash.equals(getNullHash()))
+            return new TrieImpl<>(store,
                 kCodec, vCodec, null);
         byte[] v = store.get(rootHash.getBytes());
         if (v == null || v.length == 0) throw new RuntimeException("rollback failed, root hash not exists");
         return new TrieImpl<>(
-            nullHash,
             store, kCodec, vCodec,
             Node.fromRootHash(rootHash.getBytes(), ReadOnlyStore.of(store))
         );
@@ -134,7 +130,7 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
 
     @Override
     public HexBytes getRootHash() throws RuntimeException {
-        if (root == null) return nullHash;
+        if (root == null) return getNullHash();
         if (root.isDirty() || root.getHash() == null)
             throw new RuntimeException("the trie is dirty or root hash is null");
         return HexBytes.fromBytes(root.getHash());
@@ -153,7 +149,6 @@ public class TrieImpl<K, V> extends AbstractTrie<K, V> {
     @Override
     public TrieImpl<K, V> revert() {
         return new TrieImpl<>(
-            nullHash,
             store, kCodec, vCodec,
             null
         );
