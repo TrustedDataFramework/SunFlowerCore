@@ -3,12 +3,8 @@ package org.tdf.sunflower.p2pv2.rlpx
 import com.google.common.io.ByteStreams
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
-import io.netty.handler.codec.ByteToMessageDecoder
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.spongycastle.crypto.InvalidCipherTextException
 import org.spongycastle.math.ec.ECPoint
-import org.spongycastle.util.encoders.Hex
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
@@ -21,10 +17,10 @@ import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
+import org.tdf.sunflower.p2pv2.p2p.DisconnectMessage
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
 import org.tdf.sunflower.p2pv2.rlpx.discover.NodeManager
 import org.tdf.sunflower.p2pv2.server.Channel
-import org.tdf.sunflower.p2pv2.server.ChannelImpl
 import java.net.InetSocketAddress
 
 /**
@@ -154,15 +150,15 @@ class HandshakeHandlerImpl @Autowired constructor(
                 val secrets = handshake.secrets
                 this.frameCodec = FrameCodec(secrets)
                 net.debug("auth exchange done")
-//                channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId))
+                channel.sendHelloMessage(ctx, frameCodec!!, HexBytes.encode(nodeId))
             } else {
                 val frameCodec = this.frameCodec!!
                 wire.info("MessageCodec: Buffer bytes: " + buffer.readableBytes())
                 val frames: List<Frame> = frameCodec.readFrames(buffer)
-                if ( frames.isEmpty()) return
+                if (frames.isEmpty()) return
                 val frame: Frame = frames[0]
                 val payload = ByteStreams.toByteArray(frame.stream)
-                if (frame.type == P2pMessageCodes.HELLO.cmd) {
+                if (frame.type == P2pMessageCodes.HELLO.code) {
                     val helloMessage = Rlp.decode(payload, HelloMessage::class.java)
                     if (net.isDebugEnabled) net.debug(
                         "From: {}    Recv:  {}",
@@ -170,15 +166,15 @@ class HandshakeHandlerImpl @Autowired constructor(
                         helloMessage
                     )
                     isHandshakeDone = true
-//                    this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, helloMessage)
+                    this.channel.finishHandshake(ctx, frameCodec, helloMessage)
                 } else {
-//                    val message = DisconnectMessage(payload)
-//                    if (loggerNet.isDebugEnabled()) loggerNet.debug(
-//                        "From: {}    Recv:  {}",
-//                        channel,
-//                        message
-//                    )
-//                    channel.getNodeStatistics().nodeDisconnectedRemote(message.getReason())
+                    val message = Rlp.decode(payload, DisconnectMessage::class.java)
+                    if (net.isDebugEnabled) net.debug(
+                        "From: {}    Recv:  {}",
+                        channel,
+                        message
+                    )
+                    channel.nodeStatistics.nodeDisconnectedRemote(message.reason)
                 }
             }
         } else {

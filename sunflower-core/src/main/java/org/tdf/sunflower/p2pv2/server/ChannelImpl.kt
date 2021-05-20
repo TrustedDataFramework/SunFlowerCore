@@ -6,7 +6,9 @@ import io.netty.handler.timeout.ReadTimeoutHandler
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
+import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.AppConfig
+import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.MessageQueue
 import org.tdf.sunflower.p2pv2.Node
 import org.tdf.sunflower.p2pv2.WireTrafficStats
@@ -16,7 +18,6 @@ import org.tdf.sunflower.p2pv2.p2p.HelloMessage
 import org.tdf.sunflower.p2pv2.rlpx.Frame
 import org.tdf.sunflower.p2pv2.rlpx.FrameCodec
 import org.tdf.sunflower.p2pv2.rlpx.HandshakeHandler
-import org.tdf.sunflower.p2pv2.rlpx.MessageCodec
 import org.tdf.sunflower.p2pv2.rlpx.discover.NodeStatisticsImpl
 import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
@@ -29,7 +30,7 @@ class ChannelImpl @Autowired constructor(
     private val cfg: AppConfig,
     private val stats: WireTrafficStats,
     private val staticMessages: StaticMessages
-    ) : Channel {
+    ) : Channel, Loggers {
     init {
         mq.channel = this
     }
@@ -104,6 +105,15 @@ class ChannelImpl @Autowired constructor(
     override fun sendHelloMessage(ctx: ChannelHandlerContext, frameCodec: FrameCodec, nodeId: String) {
         val hello = staticMessages.createHelloMessage(nodeId)
         val byteBufMsg = ctx.alloc().buffer()
-//        frameCodec.writeFrame(Frame(hello))
+        frameCodec.writeFrame(Frame(hello.code, Rlp.encode(hello)), byteBufMsg)
+        ctx.writeAndFlush(byteBufMsg).sync()
+
+        if (net.isDebugEnabled)
+            net.debug(
+            "To:   {}    Send:  {}",
+            ctx.channel().remoteAddress(),
+            hello
+        )
+        nodeStatistics.rlpxOutHello.add()
     }
 }

@@ -1,5 +1,6 @@
 package org.tdf.sunflower.p2pv2.eth.message
 
+import org.tdf.sunflower.p2pv2.MessageCode
 import org.tdf.sunflower.p2pv2.eth.EthVersion
 import java.util.*
 
@@ -11,7 +12,7 @@ import java.util.*
  * @see [
  * https://github.com/ethereum/wiki/wiki/Ethereum-Wire-Protocol](https://github.com/ethereum/wiki/wiki/Ethereum-Wire-Protocol)
  */
-enum class EthMessageCodes(val cmd: Int) {
+enum class EthMessageCodes(override val code: Int): MessageCode{
     /* Ethereum protocol */ /**
      * `[0x00, [PROTOCOL_VERSION, NETWORK_ID, TD, BEST_HASH, GENESIS_HASH] ` <br></br>
      *
@@ -193,13 +194,13 @@ enum class EthMessageCodes(val cmd: Int) {
                 val map: MutableMap<Int, EthMessageCodes> = HashMap()
                 intToTypeMap[v] = map
                 for (code in values(v)) {
-                    map[code.cmd] = code
+                    map[code.code] = code
                 }
             }
         }
     }
 
     fun asByte(): Byte {
-        return cmd.toByte()
+        return code.toByte()
     }
 }

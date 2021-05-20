@@ -21,4 +21,14 @@ abstract class NodeStatistics {
     val rlpxHandshake = StatHandler()
     val rlpxOutMessages = StatHandler()
     val rlpxInMessages = StatHandler()
+
+    var lastDisconnectedTime: Long = 0L
+        protected set
+    var rlpxLastRemoteDisconnectReason: ReasonCode? = null
+        protected set
+
+    open fun nodeDisconnectedRemote(reason: ReasonCode) {
+        lastDisconnectedTime = System.currentTimeMillis()
+        rlpxLastRemoteDisconnectReason = reason
+    }
 }

@@ -7,10 +7,9 @@ import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.eth.EthVersion
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
 import java.util.*
-import java.util.regex.Pattern
 
 @Component
-class StaticMessages @Autowired constructor(val cfg: AppConfig) {
+class StaticMessages @Autowired constructor(private val cfg: AppConfig) {
     private val allCaps: SortedSet<Capability>
 
     init {
@@ -27,21 +26,17 @@ class StaticMessages @Autowired constructor(val cfg: AppConfig) {
      */
     val configCapabilities: List<Capability>
         get() {
-        val ret: MutableList<Capability> = ArrayList()
-        val caps: MutableList<String> = cfg.peerCapabilities().toMutableList()
-        for (capability in this.allCaps) {
-            if (caps.contains(capability.name)) {
-                ret.add(capability)
+            val ret: MutableList<Capability> = ArrayList()
+            val caps: MutableList<String> = cfg.peerCapabilities().toMutableList()
+            for (capability in this.allCaps) {
+                if (caps.contains(capability.name)) {
+                    ret.add(capability)
+                }
             }
+            return ret
         }
-        return ret
-    }
 
-    fun createHelloMessage(peerId: String): HelloMessage {
-        return createHelloMessage(peerId, cfg.listenPort)
-    }
-
-    fun createHelloMessage(peerId: String, listenPort: Int): HelloMessage {
+    fun createHelloMessage(peerId: String, listenPort: Int = cfg.listenPort): HelloMessage {
         val p2pVersion = cfg.defaultP2PVersion
         return HelloMessage(
             p2pVersion, "",
