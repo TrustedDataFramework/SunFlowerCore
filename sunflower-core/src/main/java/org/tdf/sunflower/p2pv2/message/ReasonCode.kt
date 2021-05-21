@@ -6,7 +6,7 @@ import java.util.*
  * Reason is an optional integer specifying one
  * of a number of reasons for disconnect
  */
-enum class ReasonCode(private val reason: Int) {
+enum class ReasonCode(val reason: Int) {
     /**
      * [0x00] Disconnect request by other peer
      */
@@ -68,9 +68,5 @@ enum class ReasonCode(private val reason: Int) {
                 intToTypeMap[type.reason] = type
             }
         }
-    }
-
-    fun asByte(): Byte {
-        return reason.toByte()
     }
 }

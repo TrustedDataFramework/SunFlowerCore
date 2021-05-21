@@ -6,6 +6,7 @@ import io.netty.handler.timeout.ReadTimeoutHandler
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
+import org.tdf.common.util.HexBytes
 import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.p2pv2.Loggers
@@ -18,6 +19,8 @@ import org.tdf.sunflower.p2pv2.p2p.HelloMessage
 import org.tdf.sunflower.p2pv2.rlpx.Frame
 import org.tdf.sunflower.p2pv2.rlpx.FrameCodec
 import org.tdf.sunflower.p2pv2.rlpx.HandshakeHandler
+import org.tdf.sunflower.p2pv2.rlpx.discover.NodeManager
+import org.tdf.sunflower.p2pv2.rlpx.discover.NodeStatistics
 import org.tdf.sunflower.p2pv2.rlpx.discover.NodeStatisticsImpl
 import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
@@ -29,13 +32,17 @@ class ChannelImpl @Autowired constructor(
     private val handshake: HandshakeHandler,
     private val cfg: AppConfig,
     private val stats: WireTrafficStats,
-    private val staticMessages: StaticMessages
+    private val staticMessages: StaticMessages,
+    private val nodeManager: NodeManager
     ) : Channel, Loggers {
     init {
         mq.channel = this
     }
 
-    override val nodeStatistics = NodeStatisticsImpl()
+    private var _nodeStatistics: NodeStatistics? = null
+
+    override val nodeStatistics: NodeStatistics
+        get() = _nodeStatistics!!
 
     override var node: Node? = null
         private set
@@ -94,12 +101,10 @@ class ChannelImpl @Autowired constructor(
 
     override var inetSocketAddress: InetSocketAddress? = null
 
-    override fun initWithNode(nodeId: ByteArray?, remotePort: Int) {
-        TODO("Not yet implemented")
-    }
-
-    override fun initWithNode(nodeId: ByteArray?) {
-        TODO("Not yet implemented")
+    override fun initWithNode(nodeId: ByteArray, remotePort: Int) {
+        dev.info("init with node nodeId = ${HexBytes.fromBytes(nodeId)} remote port = ${remotePort}, remote host = ${inetSocketAddress?.hostName}")
+        node = Node(nodeId, inetSocketAddress!!.hostString, remotePort)
+        _nodeStatistics = nodeManager.getNodeStatistics(node!!)
     }
 
     override fun sendHelloMessage(ctx: ChannelHandlerContext, frameCodec: FrameCodec, nodeId: String) {

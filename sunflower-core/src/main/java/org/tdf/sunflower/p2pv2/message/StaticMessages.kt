@@ -2,6 +2,7 @@ package org.tdf.sunflower.p2pv2.message
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.eth.EthVersion

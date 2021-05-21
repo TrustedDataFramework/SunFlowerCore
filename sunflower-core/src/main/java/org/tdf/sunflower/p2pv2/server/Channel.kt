@@ -17,9 +17,8 @@ interface Channel {
     /**
      * Set node and register it in NodeManager if it is not registered yet.
      */
-    fun initWithNode(nodeId: ByteArray?, remotePort: Int)
+    fun initWithNode(nodeId: ByteArray, remotePort: Int = inetSocketAddress!!.port)
 
-    fun initWithNode(nodeId: ByteArray?)
 
     val peerId: String
 
