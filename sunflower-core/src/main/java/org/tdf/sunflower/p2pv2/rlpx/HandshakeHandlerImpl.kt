@@ -20,6 +20,7 @@ import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.message.Message
 import org.tdf.sunflower.p2pv2.p2p.DisconnectMessage
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
+import org.tdf.sunflower.p2pv2.p2p.P2PMessageFactory
 import org.tdf.sunflower.p2pv2.rlpx.discover.NodeManager
 import org.tdf.sunflower.p2pv2.server.Channel
 import java.net.InetSocketAddress
@@ -131,6 +132,7 @@ class HandshakeHandlerImpl @Autowired constructor(
     // consume handshake, producing no resulting message to upper layers
     private fun decodeHandshake(ctx: ChannelHandlerContext, buffer: ByteBuf) {
         if (handshake.isInitiator) {
+            // outbound client
             if (this.frameCodec == null) {
                 dev.info("frameCodec is null, try to assign value to frameCodec")
                 var responsePacket = ByteArray(AuthResponseMessage.getLength() + ECIESCoder.getOverhead())
@@ -193,26 +195,27 @@ class HandshakeHandlerImpl @Autowired constructor(
                 }
             }
         } else {
+            // inbound, server side
             wire.debug("Not initiator.")
             dev.info("Not initiator.")
             if (frameCodec == null) {
                 wire.debug("FrameCodec == null")
                 dev.info("FrameCodec == null ")
-                var authInitPacket: ByteArray? = ByteArray(AuthInitiateMessage.getLength() + ECIESCoder.getOverhead())
-                if (!buffer.isReadable(authInitPacket!!.size)) return
+                var authInitPacket: ByteArray = ByteArray(AuthInitiateMessage.getLength() + ECIESCoder.getOverhead())
+                if (!buffer.isReadable(authInitPacket.size)) return
                 buffer.readBytes(authInitPacket)
                 _handshake = EncryptionHandshake()
                 var responsePacket: ByteArray
                 try {
 
                     // trying to decode as pre-EIP-8
-                    val initiateMessage: AuthInitiateMessage = handshake.decryptAuthInitiate(authInitPacket, myKey)
+                    val initiateMessage = handshake.decryptAuthInitiate(authInitPacket, myKey)
                     net.debug(
                         "From: {}    Recv:  {}",
                         ctx.channel().remoteAddress(),
                         initiateMessage
                     )
-                    val response: AuthResponseMessage = handshake.makeAuthInitiate(initiateMessage, myKey)
+                    val response = handshake.makeAuthInitiate(initiateMessage, myKey)
                     net.debug("To:   {}    Send:  {}", ctx.channel().remoteAddress(), response)
                     responsePacket = handshake.encryptAuthResponse(response)
                 } catch (t: Throwable) {
@@ -221,14 +224,14 @@ class HandshakeHandlerImpl @Autowired constructor(
                     try {
                         authInitPacket = readEIP8Packet(buffer, authInitPacket)
                         if (authInitPacket.isEmpty()) return
-                        val initiateMessage: AuthInitiateMessageV4 =
+                        val initiateMessage =
                             handshake.decryptAuthInitiateV4(authInitPacket, myKey)
                         net.debug(
                             "From: {}    Recv:  {}",
                             ctx.channel().remoteAddress(),
                             initiateMessage
                         )
-                        val response: AuthResponseMessageV4 = handshake.makeAuthInitiateV4(initiateMessage, myKey)
+                        val response = handshake.makeAuthInitiateV4(initiateMessage, myKey)
                         net.debug(
                             "To:   {}    Send:  {}",
                             ctx.channel().remoteAddress(),
@@ -247,40 +250,40 @@ class HandshakeHandlerImpl @Autowired constructor(
                 val secrets: EncryptionHandshake.Secrets = handshake.secrets
                 this.frameCodec = FrameCodec(secrets)
                 val remotePubKey: ECPoint = handshake.remotePublicKey
-                val compressed = remotePubKey.encoded
+                val compressed = remotePubKey.getEncoded(true)
                 this._remoteId = ByteArray(compressed.size - 1)
                 System.arraycopy(compressed, 1, this.remoteId, 0, this.remoteId.size)
                 val byteBufMsg = ctx.alloc().buffer(responsePacket.size)
                 byteBufMsg.writeBytes(responsePacket)
                 ctx.writeAndFlush(byteBufMsg).sync()
             } else {
-//                val frameCodec = this.frameCodec!!
-//                val frames: List<Frame> = frameCodec.readFrames(buffer)
-//                if (frames.isEmpty()) return
-//                val frame: Frame = frames[0]
-//                val message: Message = P2pMessageFactory().create(
-//                    frame.getType() as Byte,
-//                    ByteStreams.toByteArray(frame.getStream())
-//                )
-//                net.debug("From: {}    Recv:  {}", ctx.channel().remoteAddress(), message)
-//                if (frame.type == P2pMessageCodes.DISCONNECT.code) {
-//                    net.debug("Active remote peer disconnected right after handshake.")
-//                    return
-//                }
-//                if (frame.type != P2pMessageCodes.HELLO.code) {
-//                    throw RuntimeException("The message type is not HELLO or DISCONNECT: $message")
-//                }
-//                val inboundHelloMessage: HelloMessage = message as HelloMessage
-//
-//                // now we know both remote nodeId and port
-//                // let's set node, that will cause registering node in NodeManager
-//                channel.initWithNode(remoteId, inboundHelloMessage.listenPort)
-//
-//                // Secret authentication finish here
-//                channel.sendHelloMessage(ctx, frameCodec, HexBytes.encode(nodeId))
-//                isHandshakeDone = true
-//                this.channel.finishHandshake(ctx, frameCodec, inboundHelloMessage)
-//                channel.nodeStatistics.rlpxInHello.add()
+                val frameCodec = this.frameCodec!!
+                val frames: List<Frame> = frameCodec.readFrames(buffer)
+                if (frames.isEmpty()) return
+                val frame: Frame = frames[0]
+                val message: Message = P2PMessageFactory.create(
+                    frame.type,
+                    ByteStreams.toByteArray(frame.stream)
+                )
+                net.debug("From: {}    Recv:  {}", ctx.channel().remoteAddress(), message)
+                if (frame.type == P2pMessageCodes.DISCONNECT.code) {
+                    net.debug("Active remote peer disconnected right after handshake.")
+                    return
+                }
+                if (frame.type != P2pMessageCodes.HELLO.code) {
+                    throw RuntimeException("The message type is not HELLO or DISCONNECT: $message")
+                }
+                val inboundHelloMessage: HelloMessage = message as HelloMessage
+
+                // now we know both remote nodeId and port
+                // let's set node, that will cause registering node in NodeManager
+                channel.initWithNode(remoteId, inboundHelloMessage.listenPort)
+
+                // Secret authentication finish here
+                channel.sendHelloMessage(ctx, frameCodec, HexBytes.encode(nodeId))
+                isHandshakeDone = true
+                this.channel.finishHandshake(ctx, frameCodec, inboundHelloMessage)
+                channel.nodeStatistics.rlpxInHello.add()
             }
         }
     }

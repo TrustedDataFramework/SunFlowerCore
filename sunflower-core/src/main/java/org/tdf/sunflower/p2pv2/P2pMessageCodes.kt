@@ -59,12 +59,12 @@ enum class P2pMessageCodes(override val code: Int): MessageCode{
     companion object {
         private val intToTypeMap: MutableMap<Int, P2pMessageCodes> = HashMap()
 
-        fun fromByte(i: Byte): P2pMessageCodes {
-            return intToTypeMap[i.toInt()]!!
+        fun fromInt(i: Int): P2pMessageCodes {
+            return intToTypeMap[i]!!
         }
 
-        fun inRange(code: Byte): Boolean {
-            return code >= HELLO.asByte() && code <= USER.asByte()
+        fun inRange(code: Int): Boolean {
+            return code >= HELLO.code && code <= USER.code
         }
 
         init {
@@ -72,9 +72,5 @@ enum class P2pMessageCodes(override val code: Int): MessageCode{
                 intToTypeMap[type.code] = type
             }
         }
-    }
-
-    fun asByte(): Byte {
-        return code.toByte()
     }
 }

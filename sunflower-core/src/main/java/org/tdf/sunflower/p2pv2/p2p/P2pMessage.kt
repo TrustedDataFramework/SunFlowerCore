@@ -45,7 +45,7 @@ class HelloMessage @RlpCreator constructor(
 
 
 
-class PingMessage @RlpCreator constructor() : Message(P2pMessageCodes.PING), RlpEncodable {
+class PingMessage @RlpCreator constructor() : P2pMessage(P2pMessageCodes.PING), RlpEncodable {
     companion object {
         private val FIXED_PAYLOAD = HexBytes.decode("C0")
     }
@@ -54,7 +54,7 @@ class PingMessage @RlpCreator constructor() : Message(P2pMessageCodes.PING), Rlp
     }
 }
 
-class PongMessage @RlpCreator constructor() : Message(P2pMessageCodes.PONG), RlpEncodable {
+class PongMessage @RlpCreator constructor() : P2pMessage(P2pMessageCodes.PONG), RlpEncodable {
     companion object {
         private val FIXED_PAYLOAD = HexBytes.decode("C0")
     }
@@ -63,7 +63,7 @@ class PongMessage @RlpCreator constructor() : Message(P2pMessageCodes.PONG), Rlp
     }
 }
 
-class DisconnectMessage(var reason: ReasonCode = ReasonCode.UNKNOWN): Message(P2pMessageCodes.DISCONNECT), RlpEncodable {
+class DisconnectMessage(var reason: ReasonCode = ReasonCode.UNKNOWN): P2pMessage(P2pMessageCodes.DISCONNECT), RlpEncodable {
     companion object {
         @JvmStatic
         @RlpCreator
