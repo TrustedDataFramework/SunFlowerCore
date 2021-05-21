@@ -13,7 +13,7 @@ import java.net.InetSocketAddress
 interface Channel {
     fun init(pipeline: ChannelPipeline, remoteId: String, discoveryMode: Boolean, channelManager: ChannelManager)
     var inetSocketAddress: InetSocketAddress?
-
+    val discoveryMode: Boolean
     /**
      * Set node and register it in NodeManager if it is not registered yet.
      */

@@ -80,6 +80,7 @@ class HandshakeHandlerImpl @Autowired constructor(
     }
 
     override fun channelActive(ctx: ChannelHandlerContext) {
+        dev.info("channel is active")
         channel.inetSocketAddress = ctx.channel().remoteAddress() as InetSocketAddress
         if (remoteId.size == 64) {
             channel.initWithNode(remoteId)
@@ -92,6 +93,7 @@ class HandshakeHandlerImpl @Autowired constructor(
 
     // decode into objects
     override fun decode(ctx: ChannelHandlerContext, input: ByteBuf, out: List<Any>) {
+        dev.info("Decoding handshake... (" + input.readableBytes() + " bytes available)")
         wire.debug("Decoding handshake... (" + input.readableBytes() + " bytes available)")
         decodeHandshake(ctx, input)
         if (isHandshakeDone) {
@@ -101,6 +103,7 @@ class HandshakeHandlerImpl @Autowired constructor(
     }
 
     override fun initiate(ctx: ChannelHandlerContext) {
+        dev.info("initiate channel handler context")
         net.debug("RLPX protocol activated")
         _nodeId = myKey.nodeId
 

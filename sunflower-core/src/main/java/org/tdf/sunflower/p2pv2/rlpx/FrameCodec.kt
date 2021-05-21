@@ -104,13 +104,13 @@ class FrameCodec(secrets: EncryptionHandshake.Secrets) {
             totalBodySize = (totalBodySize shl 8) + (headBuffer[1].toUByte().toInt())
             totalBodySize = (totalBodySize shl 8) + (headBuffer[2].toUByte().toInt())
             val rlpList = RLPUtil.decodePartial(headBuffer, 3)
-            protocol = Rlp.decodeInt(rlpList.rawAt(0))
+            protocol = rlpList.intAt(0)
             contextId = -1
             totalFrameSize = -1
             if (rlpList.size() > 1) {
-                contextId = Rlp.decodeInt(rlpList.rawAt(1))
+                contextId = rlpList.intAt(1)
                 if (rlpList.size() > 2) {
-                    totalFrameSize = Rlp.decodeInt(rlpList.rawAt(2))
+                    totalFrameSize = rlpList.intAt(2)
                 }
             }
             isHeadRead = true

@@ -18,12 +18,28 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 @Component @Scope("prototype") class MessageQueueImpl: MessageQueue
 {
+    val NO_FRAMING = Int.MAX_VALUE shr 1
+
     private val requestQueue: Queue<MessageRoundtrip> = ConcurrentLinkedQueue()
     private val respondQueue: Queue<MessageRoundtrip> = ConcurrentLinkedQueue()
     private var ctx: ChannelHandlerContext? = null
     private var timerTask: ReceiveChannel<Unit>? = null
 
     private var _channel: Channel? = null
+
+    override var maxFramePayloadSize: Int = NO_FRAMING
+
+    var _supportChunkedFrames: Boolean = false
+
+
+    override var supportChunkedFrames: Boolean
+        get() = _supportChunkedFrames
+        set(v) {
+            _supportChunkedFrames = v
+            if(!_supportChunkedFrames)
+                maxFramePayloadSize = NO_FRAMING
+        }
+
 
     override var channel: Channel
         get() = _channel!!

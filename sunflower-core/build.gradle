@@ -38,7 +38,7 @@ dependencies {
     implementation "io.netty:netty-all:${nettyVersion}"
     // https://mvnrepository.com/artifact/org.apache.commons/commons-collections4
     implementation "org.apache.commons:commons-collections4:${commonsCollections4Version}"
-
+    implementation "org.xerial.snappy:snappy-java:1.1.4" // Snappy compression
 }
 
 task copyDependencies(type: Copy) {

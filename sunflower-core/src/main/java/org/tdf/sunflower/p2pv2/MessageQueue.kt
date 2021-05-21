@@ -9,6 +9,9 @@ import org.tdf.sunflower.p2pv2.server.Channel
 interface MessageQueue {
     fun activate(ctx: ChannelHandlerContext)
     var channel: Channel
+    var supportChunkedFrames: Boolean
+    var maxFramePayloadSize: Int
+
     fun sendMessage(msg: Message)
 
     fun disconnect(reason: ReasonCode = ReasonCode.UNKNOWN) {

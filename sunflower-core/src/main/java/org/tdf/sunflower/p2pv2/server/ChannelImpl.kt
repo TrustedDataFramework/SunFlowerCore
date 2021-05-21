@@ -16,9 +16,7 @@ import org.tdf.sunflower.p2pv2.WireTrafficStats
 import org.tdf.sunflower.p2pv2.message.ReasonCode
 import org.tdf.sunflower.p2pv2.message.StaticMessages
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
-import org.tdf.sunflower.p2pv2.rlpx.Frame
-import org.tdf.sunflower.p2pv2.rlpx.FrameCodec
-import org.tdf.sunflower.p2pv2.rlpx.HandshakeHandler
+import org.tdf.sunflower.p2pv2.rlpx.*
 import org.tdf.sunflower.p2pv2.rlpx.discover.NodeManager
 import org.tdf.sunflower.p2pv2.rlpx.discover.NodeStatistics
 import org.tdf.sunflower.p2pv2.rlpx.discover.NodeStatisticsImpl
@@ -38,6 +36,10 @@ class ChannelImpl @Autowired constructor(
     init {
         mq.channel = this
     }
+    private var _discoveryMode: Boolean = false
+
+    override val discoveryMode: Boolean
+        get() = _discoveryMode
 
     private var _nodeStatistics: NodeStatistics? = null
 
@@ -53,7 +55,15 @@ class ChannelImpl @Autowired constructor(
     }
 
     override fun finishHandshake(ctx: ChannelHandlerContext, frameCodec: FrameCodec, helloRemote: HelloMessage) {
-        TODO("Not yet implemented")
+        mq.supportChunkedFrames  = false
+        val hd = FrameCodecHandler(frameCodec, this)
+        ctx.pipeline().addLast("medianFrameCodec", hd)
+
+        if(SnappyCodec.isSupported(Math.min(cfg.defaultP2PVersion, helloRemote.p2pVersion))) {
+            ctx.pipeline().addLast("snappyCodec", SnappyCodec(this))
+            net.debug("${ctx.channel()}: use snappy compression")
+        }
+
     }
 
     var remoteId: String = ""

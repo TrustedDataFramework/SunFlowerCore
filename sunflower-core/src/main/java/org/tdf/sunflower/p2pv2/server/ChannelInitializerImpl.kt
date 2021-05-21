@@ -20,6 +20,7 @@ class ChannelInitializerImpl @Autowired constructor(
 ) : PeerChannelInitializer(), Loggers {
     // called by netty framework, execute when new connection created
     override fun initChannel(ch: NioSocketChannel) {
+        dev.info("channel is registered")
         try {
             if (!peerDiscoveryMode) {
                 net.debug("Open {} connection, channel: {}", if (inbound) "inbound" else "outbound", ch.toString())
@@ -61,7 +62,7 @@ class ChannelInitializerImpl @Autowired constructor(
      */
     private fun notEligibleForIncomingConnection(ch: NioSocketChannel): Boolean {
         // outbound connection is not eligible
-        if (!inbound) return false
+        if (outbound) return false
         // For incoming connection drop if..
 
         // Bad remote address
@@ -117,4 +118,6 @@ class ChannelInitializerImpl @Autowired constructor(
     private val inbound: Boolean
         get() = remoteId.isEmpty()
 
+    private val outbound: Boolean
+        get() = !inbound
 }

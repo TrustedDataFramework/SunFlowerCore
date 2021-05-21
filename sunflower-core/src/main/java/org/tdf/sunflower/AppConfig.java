@@ -75,6 +75,10 @@ public class AppConfig {
         return 8545;
     }
 
+    public int getRlpxMaxFrameSize() {
+        return 32768;
+    }
+
     @Value
     public static class EnvWrapper implements PropertyLike {
         Environment env;
