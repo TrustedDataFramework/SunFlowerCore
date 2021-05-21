@@ -13,7 +13,7 @@ apply from: 'config/config.gradle'
 
 allprojects {
     group 'org.tdf'
-    version '2.0.1-beta'
+    version '2.1.0-beta'
 }
 
 subprojects {
