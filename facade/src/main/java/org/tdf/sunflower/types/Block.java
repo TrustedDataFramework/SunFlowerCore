@@ -4,11 +4,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.NonNull;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.HexBytes;
+import org.tdf.rlpstream.RlpCreator;
+import org.tdf.rlpstream.RlpProps;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+
+@RlpProps({"header", "body"})
 public class Block implements Chained {
     public static final Comparator<Block> FAT_COMPARATOR = (a, b) -> {
         if (a.getHeight() != b.getHeight())
@@ -33,6 +38,12 @@ public class Block implements Chained {
     protected Header header;
 
     protected List<Transaction> body;
+
+    @RlpCreator
+    public Block(Header header, Transaction[] body) {
+        this.header = header;
+        this.body = Arrays.asList(body);
+    }
 
     public Block() {
         header = new Header();

@@ -76,7 +76,7 @@ public class StorageWrapper {
     public <T> List<T> getList(HexBytes key, Class<T> clazz, List<T> defaultValue) {
         HexBytes prefixed = verifyAndPrefix(key);
         HexBytes h = store.get(prefixed);
-        if (h == null)
+        if (h == null || h.isEmpty())
             return defaultValue;
         List<T> ret = new ArrayList<>();
         RlpList li = Rlp.decodeList(h.getBytes());
@@ -92,7 +92,7 @@ public class StorageWrapper {
     public <T extends Comparable<T>> Set<T> getSet(HexBytes key, Class<T> clazz, Set<T> defaultValue) {
         HexBytes prefixed = verifyAndPrefix(key);
         HexBytes h = store.get(prefixed);
-        if (h == null)
+        if (h == null || h.isEmpty())
             return defaultValue;
         TreeSet<T> ret = new TreeSet<>();
 
