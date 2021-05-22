@@ -8,9 +8,11 @@ class StatHandler {
     fun add() {
         count.incrementAndGet()
     }
+
     fun add(delta: Long) {
         count.addAndGet(delta)
     }
+
     fun get() {
         count.get()
     }

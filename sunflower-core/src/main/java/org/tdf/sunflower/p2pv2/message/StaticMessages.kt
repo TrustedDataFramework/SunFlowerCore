@@ -15,10 +15,13 @@ class StaticMessages @Autowired constructor(private val cfg: AppConfig) {
     companion object {
         @JvmStatic
         val PING_MESSAGE: PingMessage = PingMessage()
+
         @JvmStatic
         val PONG_MESSAGE: PongMessage = PongMessage()
+
         @JvmStatic
         val GET_PEERS_MESSAGE: GetPeersMessage = GetPeersMessage()
+
         @JvmStatic
         val DISCONNECT_MESSAGE: DisconnectMessage = DisconnectMessage(ReasonCode.REQUESTED)
     }

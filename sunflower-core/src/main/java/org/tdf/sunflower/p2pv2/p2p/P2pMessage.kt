@@ -7,7 +7,7 @@ import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.message.Message
 import org.tdf.sunflower.p2pv2.message.ReasonCode
 
-sealed class P2pMessage(command: P2pMessageCodes): Message(command)
+sealed class P2pMessage(command: P2pMessageCodes) : Message(command)
 
 @RlpProps("p2pVersion", "clientId", "capabilities", "listenPort", "peerId")
 class HelloMessage @RlpCreator constructor(
@@ -44,11 +44,11 @@ class HelloMessage @RlpCreator constructor(
 }
 
 
-
 class PingMessage @RlpCreator constructor() : P2pMessage(P2pMessageCodes.PING), RlpEncodable {
     companion object {
         private val FIXED_PAYLOAD = HexBytes.decode("C0")
     }
+
     override fun getEncoded(): ByteArray {
         return FIXED_PAYLOAD
     }
@@ -58,18 +58,20 @@ class PongMessage @RlpCreator constructor() : P2pMessage(P2pMessageCodes.PONG), 
     companion object {
         private val FIXED_PAYLOAD = HexBytes.decode("C0")
     }
+
     override fun getEncoded(): ByteArray {
         return FIXED_PAYLOAD
     }
 }
 
-class DisconnectMessage(var reason: ReasonCode = ReasonCode.UNKNOWN): P2pMessage(P2pMessageCodes.DISCONNECT), RlpEncodable {
+class DisconnectMessage(var reason: ReasonCode = ReasonCode.UNKNOWN) : P2pMessage(P2pMessageCodes.DISCONNECT),
+    RlpEncodable {
     companion object {
         @JvmStatic
         @RlpCreator
-        fun fromRlpStream(bin: ByteArray, streamId: Long): DisconnectMessage{
+        fun fromRlpStream(bin: ByteArray, streamId: Long): DisconnectMessage {
             val li = RlpList(bin, streamId, 1)
-            if(li.size() > 0)
+            if (li.size() > 0)
                 return DisconnectMessage(ReasonCode.fromInt(li.intAt(0)))
             return DisconnectMessage()
         }

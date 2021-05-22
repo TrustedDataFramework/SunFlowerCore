@@ -12,7 +12,7 @@ import java.io.Serializable
 import java.net.URI
 import java.net.URISyntaxException
 
-class Node : Serializable, Loggers{
+class Node : Serializable, Loggers {
     var id: ByteArray
     var host: String = ""
     var port = 0

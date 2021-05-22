@@ -84,8 +84,10 @@ class FrameCodec(secrets: EncryptionHandshake.Secrets) {
         out.write(macBuffer, 0, 16)
     }
 
-    fun readFrames(buf: ByteBuf?): List<Frame> {
-        ByteBufInputStream(buf).use { bufInputStream -> return readFrames(bufInputStream) }
+    fun readFrames(buf: ByteBuf): List<Frame> {
+        ByteBufInputStream(buf).use {
+            return readFrames(it)
+        }
     }
 
     fun readFrames(inp: DataInput): List<Frame> {

@@ -8,6 +8,7 @@ import java.io.IOException
 
 class FrameCodecHandler(var frameCodec: FrameCodec, var channel: Channel) : NettyByteToMessageCodec<Frame>(), Loggers {
     override fun decode(ctx: ChannelHandlerContext, input: ByteBuf, out: MutableList<Any>) {
+        dev.info("frame codec decode")
         if (input.readableBytes() == 0) {
             wire.trace("in.readableBytes() == 0")
             return
@@ -26,6 +27,7 @@ class FrameCodecHandler(var frameCodec: FrameCodec, var channel: Channel) : Nett
     }
 
     override fun encode(ctx: ChannelHandlerContext, frame: Frame, out: ByteBuf) {
+        dev.info("frame codec encode")
         frameCodec.writeFrame(frame, out)
         channel.nodeStatistics.rlpxOutMessages.add()
     }

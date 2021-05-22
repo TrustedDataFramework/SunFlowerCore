@@ -1,12 +1,13 @@
 package org.tdf.sunflower.p2pv2.server
 
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.*
+import io.netty.channel.ChannelFuture
+import io.netty.channel.ChannelOption
+import io.netty.channel.DefaultMessageSizeEstimator
+import io.netty.channel.EventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.logging.LoggingHandler
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
@@ -25,7 +26,7 @@ import org.tdf.sunflower.p2pv2.Loggers
 class PeerServerV2 @Autowired constructor(
     private val ctx: ApplicationContext,
     private val cfg: AppConfig
-    ) : Loggers{
+) : Loggers {
     var channelInitializer: ChannelInitializerImpl? = null
 
     var listening = false

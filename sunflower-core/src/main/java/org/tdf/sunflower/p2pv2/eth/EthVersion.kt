@@ -3,8 +3,8 @@ package org.tdf.sunflower.p2pv2.eth
 import java.util.*
 
 
-enum class EthVersion(val code: Byte) {
-    V62(62.toByte()), V63(63.toByte());
+enum class EthVersion(val code: Int) {
+    V62(62), V63(63);
 
     fun isCompatible(version: EthVersion): Boolean {
         return if (version.code >= code) {
@@ -19,17 +19,17 @@ enum class EthVersion(val code: Byte) {
         val UPPER = V63.code
 
         @JvmStatic
-        fun fromCode(code: Int): EthVersion? {
+        fun fromCode(code: Int): EthVersion {
             for (v in values()) {
-                if (v.code.toInt() == code) {
+                if (v.code == code) {
                     return v
                 }
             }
-            return null
+            throw RuntimeException("eth version $code not found")
         }
 
         @JvmStatic
-        fun isSupported(code: Byte): Boolean {
+        fun isSupported(code: Int): Boolean {
             return code >= LOWER && code <= UPPER
         }
 

@@ -19,7 +19,7 @@ class PoolData @RlpCreator constructor(
     val debt: BigInteger? = null,
     val price: BigInteger? = null,
     val decimals: Long = 0,
-){
+) {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {

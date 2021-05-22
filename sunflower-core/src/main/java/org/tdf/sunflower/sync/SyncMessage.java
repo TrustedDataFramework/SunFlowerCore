@@ -1,7 +1,10 @@
 package org.tdf.sunflower.sync;
 
 import org.tdf.common.util.ByteUtil;
-import org.tdf.rlpstream.*;
+import org.tdf.rlpstream.Rlp;
+import org.tdf.rlpstream.RlpCreator;
+import org.tdf.rlpstream.RlpEncodable;
+import org.tdf.rlpstream.RlpList;
 
 import java.util.Optional;
 
@@ -17,12 +20,12 @@ public class SyncMessage implements RlpEncodable {
     public static final int ACCOUNTS = 12;
 
     private int code;
-
-    public int getCode() {
-        return code;
-    }
-
     private byte[] rawBody;
+
+    public SyncMessage(int code, byte[] rawBody) {
+        this.code = code;
+        this.rawBody = rawBody;
+    }
 
     @RlpCreator
     public static SyncMessage fromRlpStream(byte[] bin, long streamId) {
@@ -33,13 +36,6 @@ public class SyncMessage implements RlpEncodable {
         return msg;
     }
 
-
-    public SyncMessage(int code, byte[] rawBody) {
-        this.code = code;
-        this.rawBody = rawBody;
-    }
-
-
     public static byte[] encode(int code, Object msg) {
         return Rlp.encode(new Object[]{code, msg});
     }
@@ -49,6 +45,10 @@ public class SyncMessage implements RlpEncodable {
         int code = li.intAt(0);
         if (code < STATUS) return Optional.empty();
         return Optional.of(li.as(SyncMessage.class));
+    }
+
+    public int getCode() {
+        return code;
     }
 
     public <T> T getBodyAs(Class<T> clazz) {

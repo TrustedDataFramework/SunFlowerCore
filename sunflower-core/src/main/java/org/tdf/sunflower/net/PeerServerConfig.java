@@ -67,6 +67,10 @@ public class PeerServerConfig {
         return (name == null || name.isEmpty()) ? DEFAULT_NAME : name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @JsonIgnore
     public boolean isBlocked(HexBytes id) {
         if (whiteList != null && !whiteList.isEmpty())
@@ -79,104 +83,100 @@ public class PeerServerConfig {
         return this.maxPeers;
     }
 
-    public long getMaxTTL() {
-        return this.maxTTL;
-    }
-
-    public boolean isEnableDiscovery() {
-        return this.enableDiscovery;
-    }
-
-    public URI getAddress() {
-        return this.address;
-    }
-
-    public List<URI> getBootstraps() {
-        return this.bootstraps;
-    }
-
-    public List<URI> getTrusted() {
-        return this.trusted;
-    }
-
-    public Set<HexBytes> getWhiteList() {
-        return this.whiteList;
-    }
-
-    public Set<HexBytes> getBlockedList() {
-        return this.blockedList;
-    }
-
-    public HexBytes getPrivateKey() {
-        return this.privateKey;
-    }
-
-    public boolean isPersist() {
-        return this.persist;
-    }
-
-    public int getDiscoverRate() {
-        return this.discoverRate;
-    }
-
-    public int getMaxPacketSize() {
-        return this.maxPacketSize;
-    }
-
-    public int getCacheExpiredAfter() {
-        return this.cacheExpiredAfter;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public void setMaxPeers(int maxPeers) {
         this.maxPeers = maxPeers;
+    }
+
+    public long getMaxTTL() {
+        return this.maxTTL;
     }
 
     public void setMaxTTL(long maxTTL) {
         this.maxTTL = maxTTL;
     }
 
+    public boolean isEnableDiscovery() {
+        return this.enableDiscovery;
+    }
+
     public void setEnableDiscovery(boolean enableDiscovery) {
         this.enableDiscovery = enableDiscovery;
+    }
+
+    public URI getAddress() {
+        return this.address;
     }
 
     public void setAddress(URI address) {
         this.address = address;
     }
 
+    public List<URI> getBootstraps() {
+        return this.bootstraps;
+    }
+
     public void setBootstraps(List<URI> bootstraps) {
         this.bootstraps = bootstraps;
+    }
+
+    public List<URI> getTrusted() {
+        return this.trusted;
     }
 
     public void setTrusted(List<URI> trusted) {
         this.trusted = trusted;
     }
 
+    public Set<HexBytes> getWhiteList() {
+        return this.whiteList;
+    }
+
     public void setWhiteList(Set<HexBytes> whiteList) {
         this.whiteList = whiteList;
+    }
+
+    public Set<HexBytes> getBlockedList() {
+        return this.blockedList;
     }
 
     public void setBlockedList(Set<HexBytes> blockedList) {
         this.blockedList = blockedList;
     }
 
+    public HexBytes getPrivateKey() {
+        return this.privateKey;
+    }
+
     public void setPrivateKey(HexBytes privateKey) {
         this.privateKey = privateKey;
+    }
+
+    public boolean isPersist() {
+        return this.persist;
     }
 
     public void setPersist(boolean persist) {
         this.persist = persist;
     }
 
+    public int getDiscoverRate() {
+        return this.discoverRate;
+    }
+
     public void setDiscoverRate(int discoverRate) {
         this.discoverRate = discoverRate;
     }
 
+    public int getMaxPacketSize() {
+        return this.maxPacketSize;
+    }
+
     public void setMaxPacketSize(int maxPacketSize) {
         this.maxPacketSize = maxPacketSize;
+    }
+
+    public int getCacheExpiredAfter() {
+        return this.cacheExpiredAfter;
     }
 
     public void setCacheExpiredAfter(int cacheExpiredAfter) {

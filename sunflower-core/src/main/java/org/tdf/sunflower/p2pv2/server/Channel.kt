@@ -3,17 +3,22 @@ package org.tdf.sunflower.p2pv2.server
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelPipeline
 import org.tdf.sunflower.p2pv2.Node
+import org.tdf.sunflower.p2pv2.client.Capability
+import org.tdf.sunflower.p2pv2.eth.EthVersion
 import org.tdf.sunflower.p2pv2.message.ReasonCode
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
 import org.tdf.sunflower.p2pv2.rlpx.FrameCodec
 import org.tdf.sunflower.p2pv2.rlpx.discover.NodeStatistics
-import java.io.IOException
 import java.net.InetSocketAddress
 
 interface Channel {
     fun init(pipeline: ChannelPipeline, remoteId: String, discoveryMode: Boolean, channelManager: ChannelManager)
     var inetSocketAddress: InetSocketAddress?
     val discoveryMode: Boolean
+
+    var capabilities: List<Capability>
+
+
     /**
      * Set node and register it in NodeManager if it is not registered yet.
      */
@@ -37,4 +42,5 @@ interface Channel {
 
     fun sendHelloMessage(ctx: ChannelHandlerContext, frameCodec: FrameCodec, nodeId: String)
 
+    fun activateEth(ctx: ChannelHandlerContext, version: EthVersion)
 }

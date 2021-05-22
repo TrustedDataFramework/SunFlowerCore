@@ -1,7 +1,6 @@
 package org.tdf.sunflower.net
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper
 import lombok.extern.slf4j.Slf4j
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -84,7 +83,7 @@ class PeerServerImpl(// if non-database provided, use memory database
             client.trust(config.trusted)
         }
         // connect to stored peers when server restarts
-        peerStore.forEach{ k: Map.Entry<String, JsonNode> ->
+        peerStore.forEach { k: Map.Entry<String, JsonNode> ->
             if ("self" == k.key)
                 return
             val peer = PeerImpl.parse(k.value.asText()).get()

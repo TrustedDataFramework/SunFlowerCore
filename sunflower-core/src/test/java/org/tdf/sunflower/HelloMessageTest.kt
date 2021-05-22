@@ -1,6 +1,6 @@
 package org.tdf.sunflower
 
-import org.junit.Assert.*;
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -10,7 +10,6 @@ import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.eth.EthVersion
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
-import java.util.*
 
 @RunWith(JUnit4::class)
 class HelloMessageTest {
@@ -43,7 +42,8 @@ class HelloMessageTest {
             Capability(Capability.P2P, 5)
         )
         val listenPort = 992
-        val peerId = "f6334e3488a58bc9c9ff9acefaef88255b511a6b68ea2bebccbc1f9e608317f378d7db42ddf2b053ec59f32d88c2409291bd61085caf553564d82db320e67170"
+        val peerId =
+            "f6334e3488a58bc9c9ff9acefaef88255b511a6b68ea2bebccbc1f9e608317f378d7db42ddf2b053ec59f32d88c2409291bd61085caf553564d82db320e67170"
 
         val helloMessage =
             HelloMessage(version, clientStr, capabilities.toTypedArray(), listenPort, HexBytes.decode(peerId))

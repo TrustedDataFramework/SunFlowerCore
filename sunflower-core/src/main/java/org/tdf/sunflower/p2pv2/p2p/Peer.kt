@@ -4,19 +4,18 @@ import org.tdf.common.util.HexBytes
 import org.tdf.rlpstream.RlpProps
 import org.tdf.sunflower.p2pv2.client.Capability
 import java.net.InetAddress
-import java.util.*
 
 @RlpProps("ip", "port", "peerIdBytes", "capabilities")
 class Peer(
     val address: InetAddress, val port: Int,
-    val peerId: String, val capability: List<Capability>) {
+    val peerId: String, val capability: List<Capability>
+) {
 
     val ip: ByteArray
         get() = address.address
 
     val peerIdBytes: ByteArray
         get() = HexBytes.decode(peerId)
-
 
 
     override fun hashCode(): Int {

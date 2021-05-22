@@ -19,4 +19,6 @@ interface MessageQueue {
     }
 
     fun disconnect(msg: DisconnectMessage)
+
+    fun receiveMessage(msg: Message)
 }

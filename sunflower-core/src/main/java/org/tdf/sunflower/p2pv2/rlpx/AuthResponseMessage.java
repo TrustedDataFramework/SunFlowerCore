@@ -7,7 +7,7 @@ import static org.tdf.common.util.ByteUtil.toHexString;
 
 /**
  * Authentication response message, to be wrapped inside
- *
+ * <p>
  * Created by devrandom on 2015-04-07.
  */
 public class AuthResponseMessage {
@@ -35,7 +35,7 @@ public class AuthResponseMessage {
     }
 
     public static int getLength() {
-        return 64+32+1;
+        return 64 + 32 + 1;
     }
 
     public byte[] encode() {
@@ -46,7 +46,7 @@ public class AuthResponseMessage {
         offset += publicBytes.length - 1;
         System.arraycopy(nonce, 0, buffer, offset, nonce.length);
         offset += nonce.length;
-        buffer[offset] = (byte)(isTokenUsed ? 0x01 : 0x00);
+        buffer[offset] = (byte) (isTokenUsed ? 0x01 : 0x00);
         offset += 1;
         return buffer;
     }

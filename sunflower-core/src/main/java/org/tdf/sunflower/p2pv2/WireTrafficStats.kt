@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong
 import javax.annotation.PreDestroy
 
 @Component
-class WireTrafficStats() : Runnable{
+class WireTrafficStats() : Runnable {
     private val logger = LoggerFactory.getLogger("net")
 
     private val ticker = ticker(
@@ -31,7 +31,7 @@ class WireTrafficStats() : Runnable{
 
     init {
         GlobalScope.launch {
-            for(x in ticker) {
+            for (x in ticker) {
                 this@WireTrafficStats.run()
             }
         }

@@ -172,7 +172,7 @@ public class EncryptionHandshake {
      * Create a handshake auth message
      *
      * @param token previous token if we had a previous session
-     * @param key our private key
+     * @param key   our private key
      */
     public AuthInitiateMessage createAuthInitiate(@Nullable byte[] token, ECKey key) {
         AuthInitiateMessage message = new AuthInitiateMessage();
@@ -328,7 +328,7 @@ public class EncryptionHandshake {
             // compressed
             v -= 4;
         }
-        return (byte)(v - 27);
+        return (byte) (v - 27);
     }
 
     public Secrets getSecrets() {

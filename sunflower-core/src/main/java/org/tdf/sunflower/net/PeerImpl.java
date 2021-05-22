@@ -156,12 +156,20 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
         return this.score;
     }
 
+    public void setScore(long score) {
+        this.score = score;
+    }
+
     public String getProtocol() {
         return this.protocol;
     }
 
     public String getHost() {
         return this.host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
     }
 
     public int getPort() {
@@ -174,13 +182,5 @@ public class PeerImpl implements Peer, Comparable<PeerImpl> {
 
     public byte[] getPrivateKey() {
         return this.privateKey;
-    }
-
-    public void setScore(long score) {
-        this.score = score;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
     }
 }

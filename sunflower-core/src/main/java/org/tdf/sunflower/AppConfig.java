@@ -79,6 +79,10 @@ public class AppConfig {
         return 32768;
     }
 
+    public int getP2pPingInterval(){
+        return 5;
+    }
+
     @Value
     public static class EnvWrapper implements PropertyLike {
         Environment env;

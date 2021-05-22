@@ -2,7 +2,6 @@ package org.tdf.sunflower.p2pv2.eth.message
 
 import org.tdf.sunflower.p2pv2.MessageCode
 import org.tdf.sunflower.p2pv2.eth.EthVersion
-import java.util.*
 
 /**
  * A list of commands for the Ethereum network protocol.
@@ -12,7 +11,7 @@ import java.util.*
  * @see [
  * https://github.com/ethereum/wiki/wiki/Ethereum-Wire-Protocol](https://github.com/ethereum/wiki/wiki/Ethereum-Wire-Protocol)
  */
-enum class EthMessageCodes(override val code: Int): MessageCode{
+enum class EthMessageCodes(override val code: Int) : MessageCode {
     /* Ethereum protocol */ /**
      * `[0x00, [PROTOCOL_VERSION, NETWORK_ID, TD, BEST_HASH, GENESIS_HASH] ` <br></br>
      *
@@ -142,8 +141,8 @@ enum class EthMessageCodes(override val code: Int): MessageCode{
     RECEIPTS(0x10);
 
     companion object {
-        private val intToTypeMap: MutableMap<EthVersion, Map<Int, EthMessageCodes>> = HashMap()
-        private val versionToValuesMap: MutableMap<EthVersion, Array<EthMessageCodes>> = HashMap()
+        private val intToTypeMap: Map<EthVersion, Map<Int, EthMessageCodes>>
+        private val versionToValuesMap: Map<EthVersion, Array<EthMessageCodes>>
 
         fun values(v: EthVersion): Array<EthMessageCodes> {
             return versionToValuesMap[v]!!
@@ -151,21 +150,22 @@ enum class EthMessageCodes(override val code: Int): MessageCode{
 
         fun maxCode(v: EthVersion): Int {
             var max = 0
-            for (cd in versionToValuesMap[v]!!) if (max < cd.asByte()) max = cd.asByte().toInt()
+            for (cd in versionToValuesMap[v]!!) if (max < cd.code) max = cd.code
             return max
         }
 
-        fun fromByte(i: Byte, v: EthVersion): EthMessageCodes? {
+        fun fromInt(i: Int, v: EthVersion): EthMessageCodes {
             val map = intToTypeMap[v]!!
-            return map[i.toInt()]
+            return map[i]!!
         }
 
-        fun inRange(code: Byte, v: EthVersion): Boolean {
+        fun inRange(code: Int, v: EthVersion): Boolean {
             val codes = values(v)
-            return code >= codes[0].asByte() && code <= codes[codes.size - 1].asByte()
+            return code >= codes[0].code && code <= codes[codes.size - 1].code
         }
 
         init {
+            val versionToValuesMap = mutableMapOf<EthVersion, Array<EthMessageCodes>>()
             versionToValuesMap[EthVersion.V62] = arrayOf(
                 STATUS,
                 NEW_BLOCK_HASHES,
@@ -190,17 +190,17 @@ enum class EthMessageCodes(override val code: Int): MessageCode{
                 GET_RECEIPTS,
                 RECEIPTS
             )
+            this.versionToValuesMap = versionToValuesMap
+            val intToTypeMap = mutableMapOf<EthVersion, Map<Int, EthMessageCodes>>()
+
             for (v in EthVersion.values()) {
-                val map: MutableMap<Int, EthMessageCodes> = HashMap()
-                intToTypeMap[v] = map
+                val map: MutableMap<Int, EthMessageCodes> = mutableMapOf()
                 for (code in values(v)) {
                     map[code.code] = code
                 }
+                intToTypeMap[v] = map
             }
+            this.intToTypeMap = intToTypeMap
         }
-    }
-
-    fun asByte(): Byte {
-        return code.toByte()
     }
 }

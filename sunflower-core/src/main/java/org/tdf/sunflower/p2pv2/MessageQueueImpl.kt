@@ -16,8 +16,9 @@ import org.tdf.sunflower.p2pv2.server.Channel
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 
-@Component @Scope("prototype") class MessageQueueImpl: MessageQueue
-{
+@Component
+@Scope("prototype")
+class MessageQueueImpl : MessageQueue {
     val NO_FRAMING = Int.MAX_VALUE shr 1
 
     private val requestQueue: Queue<MessageRoundtrip> = ConcurrentLinkedQueue()
@@ -36,28 +37,31 @@ import java.util.concurrent.ConcurrentLinkedQueue
         get() = _supportChunkedFrames
         set(v) {
             _supportChunkedFrames = v
-            if(!_supportChunkedFrames)
+            if (!_supportChunkedFrames)
                 maxFramePayloadSize = NO_FRAMING
         }
 
 
     override var channel: Channel
         get() = _channel!!
-        set(v) { _channel = v }
+        set(v) {
+            _channel = v
+        }
 
     override fun sendMessage(msg: Message) {
-        TODO("Not yet implemented")
     }
 
     override fun disconnect(msg: DisconnectMessage) {
-        TODO("Not yet implemented")
+    }
+
+    override fun receiveMessage(msg: Message) {
     }
 
     override fun activate(ctx: ChannelHandlerContext) {
         this.ctx = ctx
         timerTask = ticker(10, 10, mode = TickerMode.FIXED_DELAY)
         GlobalScope.launch {
-            for(t in timerTask!!) {
+            for (t in timerTask!!) {
                 try {
 
                 } catch (t: Throwable) {

@@ -5,5 +5,5 @@ import org.tdf.rlpstream.RlpCreator
 import org.tdf.rlpstream.RlpProps
 
 @RlpProps("stateRoot", "maxAccounts")
-data class GetAccounts @RlpCreator constructor(val stateRoot: HexBytes, val maxAccounts: Int){
+data class GetAccounts @RlpCreator constructor(val stateRoot: HexBytes, val maxAccounts: Int) {
 }

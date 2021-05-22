@@ -121,7 +121,7 @@ class TransactionPoolImpl(
         try {
             val newCollected: MutableList<Transaction> = mutableListOf()
             for (transaction in transactions) {
-                if (transaction.gasPriceAsU256 < appCfg.vmGasPrice) throw RuntimeException("transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}" )
+                if (transaction.gasPriceAsU256 < appCfg.vmGasPrice) throw RuntimeException("transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}")
                 val info = TransactionInfo(System.currentTimeMillis(), transaction)
                 if (cache.contains(info) || dropped.asMap().containsKey(transaction.hashHex)) continue
                 try {

@@ -4,13 +4,12 @@ import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.message.MessageFactory
 import org.tdf.sunflower.p2pv2.message.StaticMessages
-import java.lang.RuntimeException
 
-object P2PMessageFactory: MessageFactory{
+object P2PMessageFactory : MessageFactory {
 
     override fun create(code: Int, encoded: ByteArray): P2pMessage {
         val cmd = P2pMessageCodes.fromInt(code)
-        val r: P2pMessage = when(cmd) {
+        val r: P2pMessage = when (cmd) {
             P2pMessageCodes.HELLO -> Rlp.decode(encoded, HelloMessage::class.java)
             P2pMessageCodes.DISCONNECT -> Rlp.decode(encoded, DisconnectMessage::class.java)
             P2pMessageCodes.PING -> StaticMessages.PING_MESSAGE

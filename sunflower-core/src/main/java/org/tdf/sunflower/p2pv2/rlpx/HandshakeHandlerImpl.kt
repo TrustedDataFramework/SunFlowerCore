@@ -43,7 +43,7 @@ import java.net.InetSocketAddress
 class HandshakeHandlerImpl @Autowired constructor(
     private val cfg: AppConfig,
     private val nodeManager: NodeManager
-): HandshakeHandler(), Loggers{
+) : HandshakeHandler(), Loggers {
 
     private var frameCodec: FrameCodec? = null
 
@@ -65,7 +65,6 @@ class HandshakeHandlerImpl @Autowired constructor(
     private var _handshake: EncryptionHandshake? = null
     private val handshake: EncryptionHandshake
         get() = _handshake!!
-
 
 
     private var _initiatePacket: ByteArray? = null

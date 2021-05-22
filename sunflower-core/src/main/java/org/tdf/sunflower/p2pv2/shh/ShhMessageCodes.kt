@@ -1,6 +1,6 @@
 package org.tdf.sunflower.p2pv2.shh
 
-import java.util.*
+import org.tdf.sunflower.p2pv2.MessageCode
 
 /**
  * A list of commands for the Whisper network protocol.
@@ -10,7 +10,7 @@ import java.util.*
  * @see [
  * https://github.com/ethereum/wiki/wiki/Wire-Protocol](https://github.com/ethereum/wiki/wiki/Wire-Protocol)
  */
-enum class ShhMessageCodes(private val cmd: Int) {
+enum class ShhMessageCodes(override val code: Int) : MessageCode {
     /* Whisper Protocol */ /**
      * [+0x00]
      */
@@ -27,21 +27,14 @@ enum class ShhMessageCodes(private val cmd: Int) {
     FILTER(0x02);
 
     companion object {
-        private val intToTypeMap: Array<ShhMessageCodes?> = arrayOfNulls(3)
+        private val intToTypeMap = arrayOf(STATUS, MESSAGE, FILTER)
 
-        fun fromByte(i: Int): ShhMessageCodes {
-            return intToTypeMap[i]!!
+        fun fromInt(i: Int): ShhMessageCodes {
+            return intToTypeMap[i]
         }
 
         fun inRange(code: Int): Boolean {
-            return code >= STATUS.cmd && code <= FILTER.cmd
-        }
-
-        init {
-            for (type in values()) {
-                intToTypeMap[type.cmd] = type
-            }
+            return code >= STATUS.code && code <= FILTER.code
         }
     }
-
 }

@@ -13,13 +13,15 @@ import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.MessageQueue
 import org.tdf.sunflower.p2pv2.Node
 import org.tdf.sunflower.p2pv2.WireTrafficStats
+import org.tdf.sunflower.p2pv2.client.Capability
+import org.tdf.sunflower.p2pv2.eth.EthVersion
 import org.tdf.sunflower.p2pv2.message.ReasonCode
 import org.tdf.sunflower.p2pv2.message.StaticMessages
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
+import org.tdf.sunflower.p2pv2.p2p.P2pHandler
 import org.tdf.sunflower.p2pv2.rlpx.*
 import org.tdf.sunflower.p2pv2.rlpx.discover.NodeManager
 import org.tdf.sunflower.p2pv2.rlpx.discover.NodeStatistics
-import org.tdf.sunflower.p2pv2.rlpx.discover.NodeStatisticsImpl
 import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
 
@@ -31,11 +33,14 @@ class ChannelImpl @Autowired constructor(
     private val cfg: AppConfig,
     private val stats: WireTrafficStats,
     private val staticMessages: StaticMessages,
-    private val nodeManager: NodeManager
-    ) : Channel, Loggers {
+    private val nodeManager: NodeManager,
+    private val codec: MessageCodec,
+    private val p2pHandler: P2pHandler
+) : Channel, Loggers {
     init {
         mq.channel = this
     }
+
     private var _discoveryMode: Boolean = false
 
     override val discoveryMode: Boolean
@@ -49,21 +54,35 @@ class ChannelImpl @Autowired constructor(
     override var node: Node? = null
         private set
 
+    override var capabilities: List<Capability>
+        get() = codec.capabilities
+        set(value) {
+            codec.capabilities = value
+        }
+
     override fun disconnect(reason: ReasonCode) {
         nodeStatistics.nodeDisconnectedLocal(reason)
         mq.disconnect(reason)
     }
 
     override fun finishHandshake(ctx: ChannelHandlerContext, frameCodec: FrameCodec, helloRemote: HelloMessage) {
-        mq.supportChunkedFrames  = false
+        dev.info("channel impl finish handshake")
+        mq.supportChunkedFrames = false
         val hd = FrameCodecHandler(frameCodec, this)
         ctx.pipeline().addLast("medianFrameCodec", hd)
 
-        if(SnappyCodec.isSupported(Math.min(cfg.defaultP2PVersion, helloRemote.p2pVersion))) {
+        if (SnappyCodec.isSupported(Math.min(cfg.defaultP2PVersion, helloRemote.p2pVersion))) {
+            dev.info("snappy codec added")
             ctx.pipeline().addLast("snappyCodec", SnappyCodec(this))
             net.debug("${ctx.channel()}: use snappy compression")
         }
 
+        ctx.pipeline().addLast("messageCodec", codec)
+        ctx.pipeline().addLast(Capability.P2P, p2pHandler)
+
+        p2pHandler.channel = this
+        p2pHandler.setHandshake(helloRemote, ctx)
+        nodeStatistics.rlpxHandshake.add()
     }
 
     var remoteId: String = ""
@@ -77,8 +96,8 @@ class ChannelImpl @Autowired constructor(
 
     override val peerIdShort: String
         get() {
-            return if(node == null) {
-                val v = remoteId ?: ""
+            return if (node == null) {
+                val v = remoteId
                 v.substring(0, Math.max(v.length, 8))
             } else {
                 node!!.hexIdShort
@@ -107,6 +126,8 @@ class ChannelImpl @Autowired constructor(
         pipeline.addLast("handshakeHandler", handshake)
         handshake.setRemote(remoteId, this)
         mq.channel = this
+        p2pHandler.mq = mq
+        codec.channel = this
     }
 
     override var inetSocketAddress: InetSocketAddress? = null
@@ -125,10 +146,14 @@ class ChannelImpl @Autowired constructor(
 
         if (net.isDebugEnabled)
             net.debug(
-            "To:   {}    Send:  {}",
-            ctx.channel().remoteAddress(),
-            hello
-        )
+                "To:   {}    Send:  {}",
+                ctx.channel().remoteAddress(),
+                hello
+            )
         nodeStatistics.rlpxOutHello.add()
+    }
+
+    override fun activateEth(ctx: ChannelHandlerContext, version: EthVersion) {
+        dev.info("eth activated")
     }
 }

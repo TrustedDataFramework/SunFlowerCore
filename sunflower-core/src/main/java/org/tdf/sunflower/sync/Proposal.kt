@@ -5,5 +5,5 @@ import org.tdf.rlpstream.RlpProps
 import org.tdf.sunflower.types.Block
 
 @RlpProps("block")
-data class Proposal @RlpCreator constructor(val block: Block){
+data class Proposal @RlpCreator constructor(val block: Block) {
 }

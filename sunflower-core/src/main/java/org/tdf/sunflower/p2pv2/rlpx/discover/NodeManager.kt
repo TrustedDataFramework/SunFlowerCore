@@ -8,5 +8,5 @@ interface NodeManager {
         return false
     }
 
-    fun getNodeStatistics(node: Node): NodeStatistics;
+    fun getNodeStatistics(node: Node): NodeStatistics
 }

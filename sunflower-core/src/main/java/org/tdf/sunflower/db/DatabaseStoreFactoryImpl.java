@@ -8,7 +8,6 @@ import org.tdf.common.store.*;
 import org.tdf.sunflower.DatabaseConfig;
 import org.tdf.sunflower.facade.DatabaseStoreFactory;
 
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -54,10 +53,10 @@ public class DatabaseStoreFactoryImpl implements DatabaseStoreFactory {
     }
 
     public Store<byte[], byte[]> create(char prefix) {
-        if(created.contains(new String(new char[] {prefix })))
+        if (created.contains(new String(new char[]{prefix})))
             throw new RuntimeException("this prefix had been used");
-        created.add(new String(new char[] {prefix }));
-        return new BasePrefixStore(base, new byte[] {(byte) prefix});
+        created.add(new String(new char[]{prefix}));
+        return new BasePrefixStore(base, new byte[]{(byte) prefix});
     }
 
 

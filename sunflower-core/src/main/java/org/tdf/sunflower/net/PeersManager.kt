@@ -16,7 +16,6 @@ import org.tdf.sunflower.proto.Peers
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -118,7 +117,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
             // keep channel to bootstraps and trusted alive
             val keys = cache.bootstraps.keys + cache.trusted.keys
             for (key in keys) {
-                if(cache.contains(key))
+                if (cache.contains(key))
                     continue
                 server!!.client.dial(key, builder.buildPing())
             }

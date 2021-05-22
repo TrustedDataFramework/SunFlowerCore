@@ -82,7 +82,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
         return ret
     }
 
-    private fun getCanonicalHashAt(height: Long): HexBytes?{
+    private fun getCanonicalHashAt(height: Long): HexBytes? {
         return heightIndex[height]?.getOrNull(0)
     }
 

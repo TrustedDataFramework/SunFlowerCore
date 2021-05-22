@@ -19,7 +19,7 @@ public class AuthInitiateMessage {
     }
 
     public static int getLength() {
-        return 65+32+64+32+1;
+        return 65 + 32 + 64 + 32 + 1;
     }
 
     static AuthInitiateMessage decode(byte[] wire) {
@@ -33,7 +33,7 @@ public class AuthInitiateMessage {
         offset += 32;
         int v = wire[offset] + 27;
         offset += 1;
-        message.signature = ECDSASignature.fromComponents(r, s, (byte)v);
+        message.signature = ECDSASignature.fromComponents(r, s, (byte) v);
         message.ephemeralPublicHash = new byte[32];
         System.arraycopy(wire, offset, message.ephemeralPublicHash, 0, 32);
         offset += 32;
@@ -76,7 +76,7 @@ public class AuthInitiateMessage {
         offset += publicBytes.length - 1;
         System.arraycopy(nonce, 0, buffer, offset, nonce.length);
         offset += nonce.length;
-        buffer[offset] = (byte)(isTokenUsed ? 0x01 : 0x00);
+        buffer[offset] = (byte) (isTokenUsed ? 0x01 : 0x00);
         offset += 1;
         return buffer;
     }

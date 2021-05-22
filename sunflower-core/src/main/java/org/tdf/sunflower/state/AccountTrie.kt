@@ -8,7 +8,6 @@ import org.tdf.common.trie.SecureTrie
 import org.tdf.common.trie.Trie
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.ByteUtil
-import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.Start
 import org.tdf.sunflower.types.Header
@@ -24,7 +23,7 @@ class AccountTrie(
 ) : AbstractStateTrie<HexBytes, Account>() {
     private var trie: Trie<HexBytes, Account>
 
-    override fun getTrie(): Trie<HexBytes, Account>{
+    override fun getTrie(): Trie<HexBytes, Account> {
         return trie
     }
 
@@ -66,7 +65,11 @@ class AccountTrie(
         if (secure) trie = SecureTrie(trie);
     }
 
-    override fun init(alloc: Map<HexBytes, Account>, bios: List<BuiltinContract>, builtins: List<BuiltinContract>): HexBytes {
+    override fun init(
+        alloc: Map<HexBytes, Account>,
+        bios: List<BuiltinContract>,
+        builtins: List<BuiltinContract>
+    ): HexBytes {
         this.builtins = builtins.map { Pair(it.address, it) }.toMap()
         this.bios = bios.map { Pair(it.address, it) }.toMap()
 
