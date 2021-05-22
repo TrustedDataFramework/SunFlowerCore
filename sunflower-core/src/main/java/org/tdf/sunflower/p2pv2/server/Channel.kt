@@ -31,6 +31,8 @@ interface Channel {
 
     val node: Node
 
+    val isDisconnected: Boolean
+
     fun disconnect(reason: ReasonCode)
 
     /**

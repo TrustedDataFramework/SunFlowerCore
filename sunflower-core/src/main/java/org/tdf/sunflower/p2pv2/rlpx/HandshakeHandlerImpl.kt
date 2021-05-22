@@ -21,7 +21,7 @@ import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.message.Message
 import org.tdf.sunflower.p2pv2.p2p.DisconnectMessage
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
-import org.tdf.sunflower.p2pv2.p2p.P2PMessageFactory
+import org.tdf.sunflower.p2pv2.p2p.P2PMessageDecoder
 import org.tdf.sunflower.p2pv2.server.Channel
 import java.io.IOException
 import java.net.InetSocketAddress
@@ -267,8 +267,8 @@ class HandshakeHandlerImpl @Autowired constructor(
                 val frames: List<Frame> = frameCodec.readFrames(buffer)
                 if (frames.isEmpty()) return
                 val frame: Frame = frames[0]
-                val message: Message = P2PMessageFactory.create(
-                    frame.type,
+                val message: Message = P2PMessageDecoder.decode(
+                    P2pMessageCodes.fromInt(frame.type),
                     ByteStreams.toByteArray(frame.stream)
                 )
                 net.debug("From: {}    Recv:  {}", ctx.channel().remoteAddress(), message)

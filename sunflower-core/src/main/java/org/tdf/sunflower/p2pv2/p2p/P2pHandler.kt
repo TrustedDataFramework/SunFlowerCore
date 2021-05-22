@@ -84,6 +84,7 @@ class P2pHandler(
                 setHandshake(msg, ctx)
             }
             is DisconnectMessage -> {
+                dev.info("disconnect reason =  ${msg.reason}")
                 mq.receiveMessage(msg)
                 channel.nodeStatistics.nodeDisconnectedRemote(msg.reason)
                 processDisconnect(ctx, msg)
@@ -216,7 +217,8 @@ class P2pHandler(
 //        mq.close()
     }
 
-    fun getSupportedCapabilities(hello: HelloMessage): List<Capability> {
+    // intersection of capability, downside capability version
+    private fun getSupportedCapabilities(hello: HelloMessage): List<Capability> {
         val configCaps: List<Capability> = staticMessages.configCapabilities
         val supported: MutableList<Capability> = mutableListOf()
         val eths: MutableList<Capability> = mutableListOf()

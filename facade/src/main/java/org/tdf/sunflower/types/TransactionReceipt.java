@@ -6,9 +6,7 @@ import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.Rlp;
-import org.tdf.rlpstream.RlpEncodable;
-import org.tdf.rlpstream.RlpList;
+import org.tdf.rlpstream.*;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -55,11 +53,13 @@ public class TransactionReceipt {
     public TransactionReceipt() {
     }
 
+    @RlpCreator
+    public static TransactionReceipt fromRlpStream(byte[] bin, long streamId) {
+        RlpList li = new RlpList(bin, streamId, 7);
+        return new TransactionReceipt(li);
+    }
 
-    public TransactionReceipt(byte[] rlp) {
-        RlpList receipt = Rlp.decodeList(rlp);
-
-
+    public TransactionReceipt(RlpList receipt) {
         RlpList logs = receipt.listAt(3);
 
 
@@ -80,7 +80,12 @@ public class TransactionReceipt {
             logInfoList.add(logInfo);
 
         }
-        rlpEncoded = rlp;
+        rlpEncoded = receipt.getEncoded();
+    }
+
+
+    public TransactionReceipt(byte[] rlp) {
+        this(Rlp.decodeList(rlp));
     }
 
     public TransactionReceipt(byte[] cumulativeGas,

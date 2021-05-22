@@ -1,5 +1,6 @@
 package org.tdf.sunflower.p2pv2.rlpx
 
+import org.tdf.sunflower.p2pv2.MessageCode
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.eth.EthVersion
@@ -22,7 +23,7 @@ class MessageCodesResolver(caps: List<Capability>) {
             if (capability.name == Capability.ETH) {
                 ethOffset = offset
                 val v = EthVersion.fromCode(capability.version)
-                offset += EthMessageCodes.maxCode(v) + 1 // +1 is essential cause STATUS code starts from 0x0
+                offset += v.maxMsgCode + 1 // +1 is essential cause STATUS code starts from 0x0
             }
             if (capability.name == Capability.SHH) {
                 shhOffset = offset
@@ -36,46 +37,22 @@ class MessageCodesResolver(caps: List<Capability>) {
         }
     }
 
-    fun withP2pOffset(code: Int): Int {
-        return withOffset(code, Capability.P2P)
+    fun resolve(frameType: Int): MessageCode {
+        var v = frameType - p2pOffset
+        if (v >= 0 && P2pMessageCodes.inRange(v))
+            return P2pMessageCodes.fromInt(v)
+        v = frameType - ethOffset
+        if (v >= 0 && EthMessageCodes.inRange(v))
+            return EthMessageCodes.fromInt(v)
+        throw RuntimeException("unsupported type $frameType")
     }
 
-    fun withBzzOffset(code: Int): Int {
-        return withOffset(code, Capability.BZZ)
-    }
-
-    fun withEthOffset(code: Int): Int {
-        return withOffset(code, Capability.ETH)
-    }
-
-    fun withShhOffset(code: Int): Int {
-        return withOffset(code, Capability.SHH)
-    }
-
-    fun withOffset(code: Int, cap: String): Int {
-        val offset = getOffset(cap)
-        return code + offset
-    }
-
-    fun resolveP2p(code: Int): Int {
-        return resolve(code, Capability.P2P)
-    }
-
-    fun resolveBzz(code: Int): Int {
-        return resolve(code, Capability.BZZ)
-    }
-
-    fun resolveEth(code: Int): Int {
-        return resolve(code, Capability.ETH)
-    }
-
-    fun resolveShh(code: Int): Int {
-        return resolve(code, Capability.SHH)
-    }
-
-    private fun resolve(code: Int, cap: String): Int {
-        val offset = getOffset(cap)
-        return code - offset
+    fun withOffset(code: MessageCode): Int {
+        return when (code) {
+            is P2pMessageCodes -> code.code + p2pOffset
+            is EthMessageCodes -> code.code + ethOffset
+            else -> throw RuntimeException("unsupported code $code")
+        }
     }
 
     private fun getOffset(cap: String): Int {

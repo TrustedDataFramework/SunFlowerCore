@@ -12,6 +12,7 @@ interface MessageQueue {
     var supportChunkedFrames: Boolean
     var maxFramePayloadSize: Int
 
+    val hasPing: Boolean
     fun sendMessage(msg: Message)
 
     fun disconnect(reason: ReasonCode = ReasonCode.UNKNOWN) {

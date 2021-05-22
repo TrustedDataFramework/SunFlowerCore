@@ -44,7 +44,7 @@ class ChannelImpl @Autowired constructor(
     override var discoveryMode: Boolean = false
         private set
 
-
+    override val isDisconnected = false
     // set when initWithNode
     private var _nodeStatistics: NodeStatistics? = null
     override val nodeStatistics: NodeStatistics

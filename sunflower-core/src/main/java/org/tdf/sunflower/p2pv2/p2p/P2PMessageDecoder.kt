@@ -1,15 +1,15 @@
 package org.tdf.sunflower.p2pv2.p2p
 
 import org.tdf.rlpstream.Rlp
+import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
-import org.tdf.sunflower.p2pv2.message.MessageFactory
+import org.tdf.sunflower.p2pv2.message.MessageDecoder
 import org.tdf.sunflower.p2pv2.message.StaticMessages
 
-object P2PMessageFactory : MessageFactory {
-
-    override fun create(code: Int, encoded: ByteArray): P2pMessage {
-        val cmd = P2pMessageCodes.fromInt(code)
-        val r: P2pMessage = when (cmd) {
+object P2PMessageDecoder : MessageDecoder<P2pMessageCodes>, Loggers{
+    override fun decode(code: P2pMessageCodes, encoded: ByteArray): P2pMessage {
+        dev.info("create p2p message code = $code")
+        val r: P2pMessage = when (code) {
             P2pMessageCodes.HELLO -> Rlp.decode(encoded, HelloMessage::class.java)
             P2pMessageCodes.DISCONNECT -> Rlp.decode(encoded, DisconnectMessage::class.java)
             P2pMessageCodes.PING -> StaticMessages.PING_MESSAGE

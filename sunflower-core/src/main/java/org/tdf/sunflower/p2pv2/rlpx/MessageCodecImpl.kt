@@ -11,14 +11,12 @@ import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.eth.EthVersion
-import org.tdf.sunflower.p2pv2.eth.message.EthMessage
+import org.tdf.sunflower.p2pv2.eth.message.EthMessageCodes
+import org.tdf.sunflower.p2pv2.eth.message.EthMessageDecoder
 import org.tdf.sunflower.p2pv2.message.Message
 import org.tdf.sunflower.p2pv2.message.ReasonCode
-import org.tdf.sunflower.p2pv2.p2p.P2PMessageFactory
-import org.tdf.sunflower.p2pv2.p2p.P2pMessage
+import org.tdf.sunflower.p2pv2.p2p.P2PMessageDecoder
 import org.tdf.sunflower.p2pv2.server.Channel
-import org.tdf.sunflower.p2pv2.shh.ShhMessage
-import org.tdf.sunflower.p2pv2.swarm.bzz.BzzMessage
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -33,6 +31,8 @@ class MessageCodecImpl(val cfg: AppConfig) : MessageCodec(), Loggers {
     private val resolver: MessageCodesResolver
         get() = _resolver!!
 
+    private var ethMsgFactory: EthMessageDecoder? = null
+
     override var channel: Channel
         get() = _channel!!
         set(value) {
@@ -45,6 +45,11 @@ class MessageCodecImpl(val cfg: AppConfig) : MessageCodec(), Loggers {
         set(v) {
             _caps = v
             _resolver = MessageCodesResolver(_caps)
+            for (capability in capabilities) {
+                if (capability.isEth) {
+                    this.ethMsgFactory = EthMessageDecoder(EthVersion.fromCode(capability.version))
+                }
+            }
         }
 
     var ethVersion: EthVersion = EthVersion.V62
@@ -128,7 +133,7 @@ class MessageCodecImpl(val cfg: AppConfig) : MessageCodec(), Loggers {
             wire.debug("Recv: Encoded: {} [{}]", frameType, toHexString(payload))
         var msg: Message? = null
         try {
-            msg = createMessage(frameType, payload)
+            msg = decodeMessage(frameType, payload)
             if (net.isDebugEnabled)
                 net.debug("From: {}    Recv:  {}", channel, msg.toString())
         } catch (ex: Exception) {
@@ -160,6 +165,7 @@ class MessageCodecImpl(val cfg: AppConfig) : MessageCodec(), Loggers {
 
     private fun splitMessageToFrames(msg: Message): List<Frame> {
         val code = getCode(msg)
+        dev.info("split message to frames msg = $msg code = $code")
         val ret: MutableList<Frame> = ArrayList()
         val bytes: ByteArray = Rlp.encode(msg)
         var curPos = 0
@@ -189,27 +195,18 @@ class MessageCodecImpl(val cfg: AppConfig) : MessageCodec(), Loggers {
         }
     }
 
-    /* TODO: this dirty hack is here cause we need to use message
-           TODO: adaptive id on high message abstraction level,
-           TODO: need a solution here*/
     private fun getCode(msg: Message): Int {
-        return when (msg) {
-            is P2pMessage -> resolver.withP2pOffset(msg.code)
-            is EthMessage -> resolver.withEthOffset(msg.code)
-            is BzzMessage -> resolver.withShhOffset(msg.code)
-            is ShhMessage -> resolver.withBzzOffset(msg.code)
-            else -> throw RuntimeException("unknown msg $msg")
-        }
+        return resolver.withOffset(msg.command)
     }
 
-    private fun createMessage(code: Int, payload: ByteArray): Message? {
-        dev.info("create message here")
-        val resolved = resolver.resolveP2p(code)
-        if (P2pMessageCodes.inRange(resolved)) {
-            dev.info("create p2p message $resolved")
-            return P2PMessageFactory.create(resolved, payload)
+    private fun decodeMessage(code: Int, payload: ByteArray): Message? {
+        dev.info("decode message here frame type = $code")
+        val resolved = resolver.resolve(code)
+        return when (resolved) {
+            is P2pMessageCodes -> P2PMessageDecoder.decode(resolved, payload)
+            is EthMessageCodes -> ethMsgFactory!!.decode(resolved, payload)
+            else -> null
         }
-        return null
     }
 
 

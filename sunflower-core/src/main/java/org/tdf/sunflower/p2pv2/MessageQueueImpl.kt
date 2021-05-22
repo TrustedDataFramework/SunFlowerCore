@@ -1,5 +1,6 @@
 package org.tdf.sunflower.p2pv2
 
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -18,7 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 @Component
 @Scope("prototype")
-class MessageQueueImpl : MessageQueue {
+class MessageQueueImpl : MessageQueue, Loggers {
     val NO_FRAMING = Int.MAX_VALUE shr 1
 
     private val requestQueue: Queue<MessageRoundtrip> = ConcurrentLinkedQueue()
@@ -30,8 +31,10 @@ class MessageQueueImpl : MessageQueue {
 
     override var maxFramePayloadSize: Int = NO_FRAMING
 
-    var _supportChunkedFrames: Boolean = false
+    override var hasPing: Boolean = false
+        private set
 
+    var _supportChunkedFrames: Boolean = false
 
     override var supportChunkedFrames: Boolean
         get() = _supportChunkedFrames
@@ -49,6 +52,15 @@ class MessageQueueImpl : MessageQueue {
         }
 
     override fun sendMessage(msg: Message) {
+        if (channel.isDisconnected) {
+            net.warn(
+                "{}: attempt to send [{}] message after disconnect",
+                channel,
+                msg.command
+            )
+            return
+        }
+        requestQueue.add(MessageRoundtrip(msg))
     }
 
     override fun disconnect(msg: DisconnectMessage) {
@@ -57,13 +69,18 @@ class MessageQueueImpl : MessageQueue {
     override fun receiveMessage(msg: Message) {
     }
 
+
+
     override fun activate(ctx: ChannelHandlerContext) {
         this.ctx = ctx
         timerTask = ticker(10, 10, mode = TickerMode.FIXED_DELAY)
         GlobalScope.launch {
             for (t in timerTask!!) {
                 try {
-
+                    requestQueue.poll()?.let {
+                        dev.info("send msg to remote ${it.msg}")
+                        ctx.writeAndFlush(it.msg)
+                    }
                 } catch (t: Throwable) {
                     log.error("Unhandled exception", t)
                 }
