@@ -41,18 +41,18 @@ class ChannelImpl @Autowired constructor(
         mq.channel = this
     }
 
-    private var _discoveryMode: Boolean = false
+    override var discoveryMode: Boolean = false
+        private set
 
-    override val discoveryMode: Boolean
-        get() = _discoveryMode
 
+    // set when initWithNode
     private var _nodeStatistics: NodeStatistics? = null
-
     override val nodeStatistics: NodeStatistics
         get() = _nodeStatistics!!
 
-    override var node: Node? = null
-        private set
+    private var _node: Node? = null
+    override val node: Node
+        get() = _node!!
 
     override var capabilities: List<Capability>
         get() = codec.capabilities
@@ -68,8 +68,8 @@ class ChannelImpl @Autowired constructor(
     override fun finishHandshake(ctx: ChannelHandlerContext, frameCodec: FrameCodec, helloRemote: HelloMessage) {
         dev.info("channel impl finish handshake")
         mq.supportChunkedFrames = false
-        val hd = FrameCodecHandler(frameCodec, this)
-        ctx.pipeline().addLast("medianFrameCodec", hd)
+        val handler = FrameCodecHandler(frameCodec, this)
+        ctx.pipeline().addLast("medianFrameCodec", handler)
 
         if (SnappyCodec.isSupported(Math.min(cfg.defaultP2PVersion, helloRemote.p2pVersion))) {
             dev.info("snappy codec added")
@@ -92,15 +92,15 @@ class ChannelImpl @Autowired constructor(
         private set
 
     override val peerId: String
-        get() = node?.hexId ?: "<null>"
+        get() = _node?.hexId ?: "<null>"
 
     override val peerIdShort: String
         get() {
-            return if (node == null) {
+            return if (_node == null) {
                 val v = remoteId
                 v.substring(0, Math.max(v.length, 8))
             } else {
-                node!!.hexIdShort
+                node.hexIdShort
             }
         }
 
@@ -115,6 +115,7 @@ class ChannelImpl @Autowired constructor(
         discoveryMode: Boolean,
         channelManager: ChannelManager
     ) {
+        this.discoveryMode = discoveryMode
         _channelManager = channelManager
         this.remoteId = remoteId
         this.active = remoteId.isNotEmpty()
@@ -125,17 +126,25 @@ class ChannelImpl @Autowired constructor(
         pipeline.addLast(stats.tcp)
         pipeline.addLast("handshakeHandler", handshake)
         handshake.setRemote(remoteId, this)
+        codec.channel = this
         mq.channel = this
         p2pHandler.mq = mq
-        codec.channel = this
     }
 
-    override var inetSocketAddress: InetSocketAddress? = null
+    private var _inetSocketAddress: InetSocketAddress? = null
+
+    // set when channel active
+    override var inetSocketAddress
+        get() = _inetSocketAddress!!
+        set(v) {
+            _inetSocketAddress = v
+        }
+
 
     override fun initWithNode(nodeId: ByteArray, remotePort: Int) {
-        dev.info("init with node nodeId = ${HexBytes.fromBytes(nodeId)} remote port = ${remotePort}, remote host = ${inetSocketAddress?.hostName}")
-        node = Node(nodeId, inetSocketAddress!!.hostString, remotePort)
-        _nodeStatistics = nodeManager.getNodeStatistics(node!!)
+        dev.info("init with node nodeId = ${HexBytes.fromBytes(nodeId)} remote port = ${remotePort}, remote host = ${inetSocketAddress.hostName}")
+        _node = Node(nodeId, inetSocketAddress.hostString, remotePort)
+        _nodeStatistics = nodeManager.getNodeStatistics(node)
     }
 
     override fun sendHelloMessage(ctx: ChannelHandlerContext, frameCodec: FrameCodec, nodeId: String) {

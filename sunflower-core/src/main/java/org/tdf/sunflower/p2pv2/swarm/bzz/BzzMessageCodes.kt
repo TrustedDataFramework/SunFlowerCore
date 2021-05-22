@@ -1,4 +1,4 @@
-package org.tdf.sunflower.p2pv2.swarm
+package org.tdf.sunflower.p2pv2.swarm.bzz
 
 import org.tdf.sunflower.p2pv2.MessageCode
 

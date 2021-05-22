@@ -2,6 +2,10 @@ package org.tdf.sunflower.p2pv2.p2p
 
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.TickerMode
+import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
@@ -28,12 +32,11 @@ class P2pHandler(
 
     private val logger = LoggerFactory.getLogger("net")
 
-    private val pingTimer = Executors.newSingleThreadScheduledExecutor { r: Runnable? ->
-        Thread(
-            r,
-            "P2pPingTimer"
-        )
-    }
+    private val pingTicker = ticker(
+        TimeUnit.SECONDS.toMillis(cfg.p2pPingInterval.toLong()),
+        TimeUnit.SECONDS.toMillis(2),
+        mode = TickerMode.FIXED_DELAY
+    )
 
     private var _mq: MessageQueue? = null
     var mq: MessageQueue
@@ -60,9 +63,6 @@ class P2pHandler(
         }
 
 
-    private var pingTask: ScheduledFuture<*>? = null
-
-
     override fun handlerAdded(ctx: ChannelHandlerContext) {
         dev.info("p2p handler added")
         logger.debug("P2P protocol activated")
@@ -72,7 +72,7 @@ class P2pHandler(
 
 
     override fun channelRead0(ctx: ChannelHandlerContext, msg: P2pMessage) {
-        dev.info("p2p handler channel read0 msg = ${msg}")
+        dev.info("p2p handler channel read0 msg = $msg")
         if (P2pMessageCodes.inRange(msg.code)) logger.trace(
             "P2PHandler invoke: [{}]",
             msg.command
@@ -200,17 +200,19 @@ class P2pHandler(
 
     private fun startTimers() {
         // sample for pinging in background
-        pingTask = pingTimer.scheduleAtFixedRate({
-            try {
-                mq.sendMessage(PING_MESSAGE)
-            } catch (t: Throwable) {
-                logger.error("Unhandled exception", t)
+        GlobalScope.launch {
+            for (t in pingTicker) {
+                try {
+                    mq.sendMessage(PING_MESSAGE)
+                } catch (t: Throwable) {
+                    logger.error("Unhandled exception", t)
+                }
             }
-        }, 2, cfg.p2pPingInterval.toLong(), TimeUnit.SECONDS)
+        }
     }
 
     fun killTimers() {
-        pingTask!!.cancel(false)
+        pingTicker.cancel()
 //        mq.close()
     }
 

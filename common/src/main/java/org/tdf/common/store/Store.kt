@@ -1,7 +1,5 @@
 package org.tdf.common.store
 
-import java.util.function.Predicate
-
 /**
  * abstract storage of key-value mappings
  * the key and value are not allowed to be null

@@ -1,4 +1,4 @@
-package org.tdf.sunflower.p2pv2.message;
+package org.tdf.sunflower.p2pv2.message
 
 import org.tdf.sunflower.p2pv2.MessageCode
 

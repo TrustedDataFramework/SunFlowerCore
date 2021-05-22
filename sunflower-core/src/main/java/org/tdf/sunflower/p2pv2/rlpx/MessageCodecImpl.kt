@@ -8,14 +8,17 @@ import org.tdf.common.util.ByteUtil.toHexString
 import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.p2pv2.Loggers
-import org.tdf.sunflower.p2pv2.MessageCode
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.eth.EthVersion
+import org.tdf.sunflower.p2pv2.eth.message.EthMessage
 import org.tdf.sunflower.p2pv2.message.Message
 import org.tdf.sunflower.p2pv2.message.ReasonCode
 import org.tdf.sunflower.p2pv2.p2p.P2PMessageFactory
+import org.tdf.sunflower.p2pv2.p2p.P2pMessage
 import org.tdf.sunflower.p2pv2.server.Channel
+import org.tdf.sunflower.p2pv2.shh.ShhMessage
+import org.tdf.sunflower.p2pv2.swarm.bzz.BzzMessage
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -141,12 +144,13 @@ class MessageCodecImpl(val cfg: AppConfig) : MessageCodec(), Loggers {
 
     override fun encode(ctx: ChannelHandlerContext, msg: Message, out: MutableList<Any>) {
         val output = String.format("To: \t%s \tSend: \t%s", ctx.channel().remoteAddress(), msg)
+        dev.info(output)
         if (net.isDebugEnabled)
             net.debug("To:   {}    Send:  {}", channel, msg)
         val encoded: ByteArray = Rlp.encode(msg)
         if (wire.isDebugEnabled) wire.debug(
             "Send: Encoded: {} [{}]",
-            getCode(msg.command),
+            getCode(msg),
             toHexString(encoded)
         )
         val frames = splitMessageToFrames(msg)
@@ -155,7 +159,7 @@ class MessageCodecImpl(val cfg: AppConfig) : MessageCodec(), Loggers {
     }
 
     private fun splitMessageToFrames(msg: Message): List<Frame> {
-        val code = getCode(msg.command)
+        val code = getCode(msg)
         val ret: MutableList<Frame> = ArrayList()
         val bytes: ByteArray = Rlp.encode(msg)
         var curPos = 0
@@ -188,8 +192,14 @@ class MessageCodecImpl(val cfg: AppConfig) : MessageCodec(), Loggers {
     /* TODO: this dirty hack is here cause we need to use message
            TODO: adaptive id on high message abstraction level,
            TODO: need a solution here*/
-    private fun getCode(msgCommand: MessageCode): Int {
-        return 0
+    private fun getCode(msg: Message): Int {
+        return when (msg) {
+            is P2pMessage -> resolver.withP2pOffset(msg.code)
+            is EthMessage -> resolver.withEthOffset(msg.code)
+            is BzzMessage -> resolver.withShhOffset(msg.code)
+            is ShhMessage -> resolver.withBzzOffset(msg.code)
+            else -> throw RuntimeException("unknown msg $msg")
+        }
     }
 
     private fun createMessage(code: Int, payload: ByteArray): Message? {

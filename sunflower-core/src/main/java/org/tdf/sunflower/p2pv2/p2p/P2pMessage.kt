@@ -7,7 +7,7 @@ import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.message.Message
 import org.tdf.sunflower.p2pv2.message.ReasonCode
 
-sealed class P2pMessage(command: P2pMessageCodes) : Message(command)
+abstract class P2pMessage(command: P2pMessageCodes) : Message(command)
 
 @RlpProps("p2pVersion", "clientId", "capabilities", "listenPort", "peerId")
 class HelloMessage @RlpCreator constructor(

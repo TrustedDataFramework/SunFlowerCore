@@ -144,7 +144,7 @@ class Node : Serializable, Loggers {
                 // continue
             }
             val generatedNodeKey: ECKey = ECKey.fromPrivate(sha3(addressOrEnode.toByteArray()))
-            val generatedNodeId = Hex.toHexString(generatedNodeKey.getNodeId())
+            val generatedNodeId = Hex.toHexString(generatedNodeKey.nodeId)
             val node = Node("enode://$generatedNodeId@$addressOrEnode")
             node.isDiscoveryNode = true
             return node

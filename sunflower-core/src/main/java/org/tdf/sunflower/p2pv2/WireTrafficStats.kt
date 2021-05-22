@@ -6,10 +6,8 @@ import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelPromise
 import io.netty.channel.socket.DatagramPacket
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.ticker
-import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.tdf.common.util.CommonUtils.sizeToStr
@@ -18,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong
 import javax.annotation.PreDestroy
 
 @Component
-class WireTrafficStats() : Runnable {
+class WireTrafficStats : Runnable {
     private val logger = LoggerFactory.getLogger("net")
 
     private val ticker = ticker(
@@ -30,11 +28,11 @@ class WireTrafficStats() : Runnable {
     val udp = TrafficStatHandler()
 
     init {
-        GlobalScope.launch {
-            for (x in ticker) {
-                this@WireTrafficStats.run()
-            }
-        }
+//        GlobalScope.launch {
+//            for (x in ticker) {
+//                this@WireTrafficStats.run()
+//            }
+//        }
     }
 
     override fun run() {

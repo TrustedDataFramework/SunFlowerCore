@@ -5,7 +5,7 @@ import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.eth.EthVersion
 import org.tdf.sunflower.p2pv2.eth.message.EthMessageCodes
 import org.tdf.sunflower.p2pv2.shh.ShhMessageCodes
-import org.tdf.sunflower.p2pv2.swarm.BzzMessageCodes
+import org.tdf.sunflower.p2pv2.swarm.bzz.BzzMessageCodes
 
 class MessageCodesResolver(caps: List<Capability>) {
     private val offsets: MutableMap<String, Int> = mutableMapOf()

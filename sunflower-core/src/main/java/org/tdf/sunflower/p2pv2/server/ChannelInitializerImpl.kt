@@ -33,8 +33,10 @@ class ChannelInitializerImpl @Autowired constructor(
 
             // create channel at application level
             val channel: Channel = ctx.getBean(Channel::class.java)
-            channel.inetSocketAddress = ch.remoteAddress()
+            ch.remoteAddress()?.let { channel.inetSocketAddress = it }
+            dev.info("call channel.init remoteId = $remoteId")
             channel.init(ch.pipeline(), remoteId, peerDiscoveryMode, channelManager)
+
             if (!peerDiscoveryMode) {
                 channelManager.add(channel)
             }
@@ -67,13 +69,14 @@ class ChannelInitializerImpl @Autowired constructor(
 
         // Bad remote address
         if (ch.remoteAddress() == null) {
-            net.error("ch.remoteAddress = null, active = ${ch.isActive}, cfg = ${ch.config()}")
+            dev.error("ch.remoteAddress = null, active = ${ch.isActive}, cfg = ${ch.config()}")
             net.debug(
                 "Drop connection - bad remote address, channel: {}",
                 ch.toString()
             )
             return true
         }
+        val remoteAddress = ch.remoteAddress()!!
         // Drop if we have long waiting queue already
         if (!channelManager.acceptingNewPeers) {
             net.debug(
@@ -84,9 +87,9 @@ class ChannelInitializerImpl @Autowired constructor(
         }
         // Refuse connections from ips that are already in connection queue
         // Local and private network addresses are still welcome!
-        if (!ch.remoteAddress().address.isLoopbackAddress &&
-            !ch.remoteAddress().address.isSiteLocalAddress &&
-            channelManager.isAddressInQueue(ch.remoteAddress().address)
+        if (!remoteAddress.address.isLoopbackAddress &&
+            !remoteAddress.address.isSiteLocalAddress &&
+            channelManager.isAddressInQueue(remoteAddress.address)
         ) {
             net.debug(
                 "Drop connection - already processing connection from this host, channel: {}",
@@ -96,7 +99,7 @@ class ChannelInitializerImpl @Autowired constructor(
         }
 
         // Avoid too frequent connection attempts
-        if (channelManager.isRecentlyDisconnected(ch.remoteAddress().address)) {
+        if (channelManager.isRecentlyDisconnected(remoteAddress.address)) {
             net.debug(
                 "Drop connection - the same IP was disconnected recently, channel: {}",
                 ch.toString()
@@ -104,7 +107,7 @@ class ChannelInitializerImpl @Autowired constructor(
             return true
         }
         // Drop bad peers before creating channel
-        if (nodeManager.isReputationPenalized(ch.remoteAddress())) {
+        if (nodeManager.isReputationPenalized(remoteAddress)) {
             net.debug(
                 "Drop connection - bad peer, channel: {}",
                 ch.toString()

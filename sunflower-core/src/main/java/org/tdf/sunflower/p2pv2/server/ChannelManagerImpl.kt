@@ -63,23 +63,23 @@ class ChannelManagerImpl @Autowired constructor
         discoveryMode: Boolean,
         channelManager: ChannelManager
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun add(ch: Channel) {
-        TODO("Not yet implemented")
+
     }
 
     override fun notifyDisconnect(ch: Channel) {
-        TODO("Not yet implemented")
+
     }
 
     override fun isAddressInQueue(peerAddr: InetAddress): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
     override fun isRecentlyDisconnected(peerAddr: InetAddress): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
 }

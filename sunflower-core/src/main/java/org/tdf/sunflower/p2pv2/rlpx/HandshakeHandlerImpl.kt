@@ -3,6 +3,7 @@ package org.tdf.sunflower.p2pv2.rlpx
 import com.google.common.io.ByteStreams
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
+import io.netty.handler.timeout.ReadTimeoutException
 import org.spongycastle.crypto.InvalidCipherTextException
 import org.spongycastle.math.ec.ECPoint
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,8 +22,8 @@ import org.tdf.sunflower.p2pv2.message.Message
 import org.tdf.sunflower.p2pv2.p2p.DisconnectMessage
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
 import org.tdf.sunflower.p2pv2.p2p.P2PMessageFactory
-import org.tdf.sunflower.p2pv2.rlpx.discover.NodeManager
 import org.tdf.sunflower.p2pv2.server.Channel
+import java.io.IOException
 import java.net.InetSocketAddress
 
 /**
@@ -37,12 +38,10 @@ import java.net.InetSocketAddress
  * which installs further handlers depending on the protocol parameters.
  * This handler is finally removed from the pipeline.
  */
-// TODO: 1. wait for node manager 2. add node stat
 @Component
 @Scope("prototype")
 class HandshakeHandlerImpl @Autowired constructor(
     private val cfg: AppConfig,
-    private val nodeManager: NodeManager
 ) : HandshakeHandler(), Loggers {
 
     private var frameCodec: FrameCodec? = null
@@ -79,12 +78,13 @@ class HandshakeHandlerImpl @Autowired constructor(
     }
 
     override fun channelActive(ctx: ChannelHandlerContext) {
-        dev.info("channel is active")
         channel.inetSocketAddress = ctx.channel().remoteAddress() as InetSocketAddress
         if (remoteId.size == 64) {
+            dev.info("outbound channel is active")
             channel.initWithNode(remoteId)
             initiate(ctx)
         } else {
+            dev.info("inbound channel is active")
             _handshake = EncryptionHandshake()
             _nodeId = myKey.nodeId
         }
@@ -96,16 +96,19 @@ class HandshakeHandlerImpl @Autowired constructor(
         wire.debug("Decoding handshake... (" + input.readableBytes() + " bytes available)")
         decodeHandshake(ctx, input)
         if (isHandshakeDone) {
+            dev.info("Handshake done, removing HandshakeHandler from pipeline.")
             wire.debug("Handshake done, removing HandshakeHandler from pipeline.")
             ctx.pipeline().remove(this)
         }
     }
 
+    // called when outbound channel active
     override fun initiate(ctx: ChannelHandlerContext) {
-        dev.info("initiate channel handler context")
+        dev.info("initiate outbound channel handler context")
         net.debug("RLPX protocol activated")
         _nodeId = myKey.nodeId
 
+        // when outbound, initiator is self
         _handshake = EncryptionHandshake(ECKey.fromNodeId(this.remoteId).pubKeyPoint)
         val msg: Any
 
@@ -118,6 +121,7 @@ class HandshakeHandlerImpl @Autowired constructor(
             _initiatePacket = handshake.encryptAuthMessage(initiateMessage)
             msg = initiateMessage
         }
+        dev.info("send initiate packet size = ${initiatePacket.size}")
         val byteBufMsg = ctx.alloc().buffer(initiatePacket.size)
         byteBufMsg.writeBytes(initiatePacket)
         ctx.writeAndFlush(byteBufMsg).sync()
@@ -159,7 +163,6 @@ class HandshakeHandlerImpl @Autowired constructor(
                 dev.info("try to create frameCodec")
                 val secrets = handshake.secrets
                 this.frameCodec = FrameCodec(secrets)
-                dev.info("auth exchange done")
                 net.debug("auth exchange done")
                 dev.info("send hello message to remote peer")
                 channel.sendHelloMessage(ctx, frameCodec!!, HexBytes.encode(nodeId))
@@ -201,9 +204,10 @@ class HandshakeHandlerImpl @Autowired constructor(
             wire.debug("Not initiator.")
             dev.info("Not initiator.")
             if (frameCodec == null) {
+                // wait for init packet
                 wire.debug("FrameCodec == null")
                 dev.info("FrameCodec == null ")
-                var authInitPacket: ByteArray = ByteArray(AuthInitiateMessage.getLength() + ECIESCoder.getOverhead())
+                var authInitPacket = ByteArray(AuthInitiateMessage.getLength() + ECIESCoder.getOverhead())
                 if (!buffer.isReadable(authInitPacket.size)) return
                 buffer.readBytes(authInitPacket)
                 _handshake = EncryptionHandshake()
@@ -252,9 +256,9 @@ class HandshakeHandlerImpl @Autowired constructor(
                 val secrets: EncryptionHandshake.Secrets = handshake.secrets
                 this.frameCodec = FrameCodec(secrets)
                 val remotePubKey: ECPoint = handshake.remotePublicKey
-                val compressed = remotePubKey.getEncoded(true)
-                this._remoteId = ByteArray(compressed.size - 1)
-                System.arraycopy(compressed, 1, this.remoteId, 0, this.remoteId.size)
+                val uncompressed = remotePubKey.getEncoded(false)
+                this._remoteId = ByteArray(uncompressed.size - 1)
+                System.arraycopy(uncompressed, 1, this.remoteId, 0, this.remoteId.size)
                 val byteBufMsg = ctx.alloc().buffer(responsePacket.size)
                 byteBufMsg.writeBytes(responsePacket)
                 ctx.writeAndFlush(byteBufMsg).sync()
@@ -307,15 +311,15 @@ class HandshakeHandlerImpl @Autowired constructor(
 
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
-//        if (channel.discoveryMode) {
-//            loggerNet.trace("Handshake failed: $cause")
-//        } else {
-//            if (cause is IOException || cause is ReadTimeoutException) {
-//                loggerNet.debug("Handshake failed: " + ctx.channel().remoteAddress() + ": " + cause)
-//            } else {
-//                loggerNet.warn("Handshake failed: ", cause)
-//            }
-//        }
-//        ctx.close()
+        if (channel.discoveryMode) {
+            net.trace("Handshake failed: $cause")
+        } else {
+            if (cause is IOException || cause is ReadTimeoutException) {
+                net.debug("Handshake failed: " + ctx.channel().remoteAddress() + ": " + cause)
+            } else {
+                net.warn("Handshake failed: ", cause)
+            }
+        }
+        ctx.close()
     }
 }

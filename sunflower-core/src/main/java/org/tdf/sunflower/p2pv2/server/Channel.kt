@@ -13,7 +13,7 @@ import java.net.InetSocketAddress
 
 interface Channel {
     fun init(pipeline: ChannelPipeline, remoteId: String, discoveryMode: Boolean, channelManager: ChannelManager)
-    var inetSocketAddress: InetSocketAddress?
+    var inetSocketAddress: InetSocketAddress
     val discoveryMode: Boolean
 
     var capabilities: List<Capability>
@@ -22,14 +22,14 @@ interface Channel {
     /**
      * Set node and register it in NodeManager if it is not registered yet.
      */
-    fun initWithNode(nodeId: ByteArray, remotePort: Int = inetSocketAddress!!.port)
+    fun initWithNode(nodeId: ByteArray, remotePort: Int = inetSocketAddress.port)
 
 
     val peerId: String
 
     val peerIdShort: String
 
-    val node: Node?
+    val node: Node
 
     fun disconnect(reason: ReasonCode)
 

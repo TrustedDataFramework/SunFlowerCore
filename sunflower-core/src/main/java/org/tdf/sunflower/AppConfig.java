@@ -10,6 +10,7 @@ import lombok.Value;
 import org.springframework.core.env.Environment;
 import org.tdf.common.crypto.ECKey;
 import org.tdf.common.types.Uint256;
+import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.PropertyLike;
 import org.tdf.sunflower.types.PropertyReader;
 import org.tdf.sunflower.util.FileUtils;
@@ -44,7 +45,7 @@ public class AppConfig {
     }
 
     public ECKey getMyKey() {
-        return myKey;
+        return ECKey.fromPrivate(HexBytes.decode("f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5"));
     }
 
     public int getPeerConnectionTimeout() {

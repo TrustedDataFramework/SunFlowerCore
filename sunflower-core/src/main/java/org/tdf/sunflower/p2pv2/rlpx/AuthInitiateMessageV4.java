@@ -7,6 +7,7 @@ import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.RLPUtil;
 import org.tdf.rlpstream.Rlp;
 import org.tdf.rlpstream.RlpList;
+
 import static org.tdf.common.util.ByteUtil.toHexString;
 
 import static org.spongycastle.util.BigIntegers.asUnsignedByteArray;
@@ -36,7 +37,7 @@ public class AuthInitiateMessageV4 {
         System.arraycopy(signatureBytes, offset, s, 0, 32);
         offset += 32;
         int v = signatureBytes[offset] + 27;
-        message.signature = ECDSASignature.fromComponents(r, s, (byte)v);
+        message.signature = ECDSASignature.fromComponents(r, s, (byte) v);
 
         byte[] publicKeyBytes = params.bytesAt(1);
         byte[] bytes = new byte[65];

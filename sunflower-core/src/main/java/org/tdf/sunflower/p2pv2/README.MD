@@ -7,5 +7,10 @@ outbound
 3. Channel Initializer(1. create channel, 2. inetSocketAddress = null 
 4. Channel.init, 1. set remote id, 2. add handshake handler into pipeline. 3. set mq.channel 
 5. Netty Channel active event
-6. Handshake handler: 1. set channel.inetSocketAddress 2. handle handshake 3. notify handshake finished
+6. Handshake handler: 
+    1. set channel.inetSocketAddress 
+    2. create handshake packet, send packet 
+    3. waiting for handshake packet, finish initialize and create frame codec
+    4. send hello message to remote
+    5. waiting for hello message, notify channel handshake finished
 7. 
