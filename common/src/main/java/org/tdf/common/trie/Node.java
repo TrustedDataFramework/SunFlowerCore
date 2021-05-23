@@ -1,10 +1,13 @@
 package org.tdf.common.trie;
 
+import com.github.salpadding.rlpstream.Constants;
+import com.github.salpadding.rlpstream.Rlp;
+import com.github.salpadding.rlpstream.RlpList;
+import com.github.salpadding.rlpstream.StreamId;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +53,7 @@ class Node {
         byte[] rlp,
         Store<byte[], byte[]> readOnlyCache
     ) {
-        long streamId = RlpStream.decodeElement(rlp, 0, rlp.length, true);
+        long streamId = StreamId.decodeElement(rlp, 0, rlp.length, true);
         if (StreamId.isList(streamId))
             return new Node(rlp, false, null, readOnlyCache, null);
         return new Node(null, false, Rlp.decodeBytes(rlp), readOnlyCache, null);
@@ -154,7 +157,7 @@ class Node {
         // has parsed
         if (children != null) return;
         resolve();
-        long streamId = RlpStream.decodeElement(this.rlp, 0, this.rlp.length, true);
+        long streamId = StreamId.decodeElement(this.rlp, 0, this.rlp.length, true);
         RlpList rlp = new RlpList(this.rlp, streamId, BRANCH_SIZE);
         if (rlp.size() == 2) {
             children = new Object[2];

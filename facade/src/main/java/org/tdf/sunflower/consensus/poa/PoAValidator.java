@@ -1,13 +1,13 @@
 package org.tdf.sunflower.consensus.poa;
 
+import com.github.salpadding.rlpstream.Rlp;
+import com.github.salpadding.rlpstream.RlpList;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import org.tdf.common.crypto.ECDSASignature;
 import org.tdf.common.crypto.ECKey;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.Rlp;
-import org.tdf.rlpstream.RlpList;
 import org.tdf.sunflower.consensus.AbstractValidator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;

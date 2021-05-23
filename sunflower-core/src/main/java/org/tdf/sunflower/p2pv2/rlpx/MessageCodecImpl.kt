@@ -1,11 +1,11 @@
 package org.tdf.sunflower.p2pv2.rlpx
 
+import com.github.salpadding.rlpstream.Rlp
 import com.google.common.io.ByteStreams
 import io.netty.channel.ChannelHandlerContext
 import org.apache.commons.collections4.map.LRUMap
 import org.springframework.stereotype.Component
 import org.tdf.common.util.ByteUtil.toHexString
-import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.P2pMessageCodes

@@ -1,7 +1,7 @@
 package org.tdf.sunflower.p2pv2.eth.message
 
+import com.github.salpadding.rlpstream.*
 import org.tdf.common.util.HexBytes
-import org.tdf.rlpstream.*
 import org.tdf.sunflower.p2pv2.message.Message
 import org.tdf.sunflower.types.TransactionReceipt
 import java.math.BigInteger
@@ -43,13 +43,13 @@ class StatusMessage(
 }
 
 class ReceiptsMessage(val receipts: List<List<TransactionReceipt>>) : EthMessage(EthMessageCodes.RECEIPTS),
-    RlpEncodable {
-    override fun getEncoded(): ByteArray {
+    RlpWritable {
+    override fun writeToBuf(buf: RlpBuffer): Int {
         val li = receipts.map {
             it.map { x -> x.getEncoded(true) }
         }
         val blocks = li.map { Rlp.encodeElements(it) }
-        return Rlp.encodeElements(blocks)
+        return buf.writeElements(*blocks.toTypedArray())
     }
 
     companion object {
@@ -57,7 +57,7 @@ class ReceiptsMessage(val receipts: List<List<TransactionReceipt>>) : EthMessage
         @JvmStatic
         @RlpCreator
         fun fromRlpStream(bin: ByteArray, streamId: Long): ReceiptsMessage {
-            val array = RlpStream.decode(bin, streamId, Array<Array<TransactionReceipt>>::class.java)
+            val array = StreamId.`as`(bin, streamId, Array<Array<TransactionReceipt>>::class.java)
             return ReceiptsMessage(array.map { it.toList() })
         }
     }

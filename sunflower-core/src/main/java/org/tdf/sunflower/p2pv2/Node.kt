@@ -1,13 +1,13 @@
 package org.tdf.sunflower.p2pv2
 
+import com.github.salpadding.rlpstream.Rlp
+import com.github.salpadding.rlpstream.RlpList
 import org.spongycastle.util.encoders.Hex
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.ByteUtil.*
 import org.tdf.common.util.CommonUtils
 import org.tdf.common.util.HashUtil.sha3
 import org.tdf.common.util.RLPUtil
-import org.tdf.rlpstream.Rlp
-import org.tdf.rlpstream.RlpList
 import java.io.Serializable
 import java.net.URI
 import java.net.URISyntaxException

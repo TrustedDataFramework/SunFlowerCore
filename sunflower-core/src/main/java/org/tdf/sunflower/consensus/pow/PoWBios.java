@@ -1,10 +1,10 @@
 package org.tdf.sunflower.consensus.pow;
 
+import com.github.salpadding.rlpstream.Rlp;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.*;
-import org.tdf.rlpstream.Rlp;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.state.AbstractBuiltIn;

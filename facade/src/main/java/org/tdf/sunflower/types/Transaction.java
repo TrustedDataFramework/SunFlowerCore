@@ -1,5 +1,6 @@
 package org.tdf.sunflower.types;
 
+import com.github.salpadding.rlpstream.*;
 import lombok.Builder;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
@@ -13,7 +14,6 @@ import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.*;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
@@ -24,7 +24,12 @@ import java.util.function.Function;
 import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.tdf.common.util.ByteUtil.ZERO_BYTE_ARRAY;
 
-public class Transaction implements RlpEncodable {
+public class Transaction implements RlpWritable {
+    @Override
+    public int writeToBuf(RlpBuffer rlpBuffer) {
+        return rlpBuffer.writeRaw(getEncoded());
+    }
+
     public static final class TransactionCodec implements Codec<Transaction> {
         public static Function<? super Transaction, byte[]> ENCODER = Transaction::getEncoded;
         public static Function<byte[], ? extends Transaction> DECODER = Transaction::new;
@@ -113,7 +118,7 @@ public class Transaction implements RlpEncodable {
 
     @RlpCreator
     public static Transaction fromRlpStream(byte[] bin, long streamId) {
-        return new Transaction(RlpStream.rawOf(bin, streamId));
+        return new Transaction(StreamId.rawOf(bin, streamId));
     }
 
     public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,

@@ -1,11 +1,11 @@
 package org.tdf.sunflower.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.github.salpadding.rlpstream.RlpCreator;
+import com.github.salpadding.rlpstream.RlpProps;
 import lombok.NonNull;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.RlpCreator;
-import org.tdf.rlpstream.RlpProps;
 
 import java.util.ArrayList;
 import java.util.Arrays;

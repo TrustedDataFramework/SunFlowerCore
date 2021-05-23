@@ -1,7 +1,7 @@
 package org.tdf.sunflower.consensus.poa;
 
+import com.github.salpadding.rlpstream.Rlp;
 import org.tdf.common.util.HashUtil;
-import org.tdf.rlpstream.Rlp;
 import org.tdf.sunflower.types.Header;
 
 public class PoaUtils {

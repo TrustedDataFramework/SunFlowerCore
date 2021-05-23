@@ -1,7 +1,7 @@
 package org.tdf.common.serialize;
 
+import com.github.salpadding.rlpstream.Rlp;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.Rlp;
 
 import java.nio.charset.StandardCharsets;
 import java.util.function.Function;

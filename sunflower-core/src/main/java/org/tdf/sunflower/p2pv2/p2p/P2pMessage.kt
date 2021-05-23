@@ -1,7 +1,7 @@
 package org.tdf.sunflower.p2pv2.p2p
 
+import com.github.salpadding.rlpstream.*
 import org.tdf.common.util.HexBytes
-import org.tdf.rlpstream.*
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.message.Message
@@ -44,28 +44,27 @@ class HelloMessage @RlpCreator constructor(
 }
 
 
-class PingMessage @RlpCreator constructor() : P2pMessage(P2pMessageCodes.PING), RlpEncodable {
+class PingMessage @RlpCreator constructor() : P2pMessage(P2pMessageCodes.PING), RlpWritable {
     companion object {
         private val FIXED_PAYLOAD = HexBytes.decode("C0")
     }
 
-    override fun getEncoded(): ByteArray {
-        return FIXED_PAYLOAD
+    override fun writeToBuf(buf: RlpBuffer): Int {
+        return buf.writeRaw(FIXED_PAYLOAD)
     }
 }
 
-class PongMessage @RlpCreator constructor() : P2pMessage(P2pMessageCodes.PONG), RlpEncodable {
+class PongMessage @RlpCreator constructor() : P2pMessage(P2pMessageCodes.PONG), RlpWritable {
     companion object {
         private val FIXED_PAYLOAD = HexBytes.decode("C0")
     }
 
-    override fun getEncoded(): ByteArray {
-        return FIXED_PAYLOAD
+    override fun writeToBuf(buf: RlpBuffer): Int {
+        return buf.writeRaw(FIXED_PAYLOAD)
     }
 }
 
-class DisconnectMessage(var reason: ReasonCode = ReasonCode.UNKNOWN) : P2pMessage(P2pMessageCodes.DISCONNECT),
-    RlpEncodable {
+class DisconnectMessage(var reason: ReasonCode = ReasonCode.UNKNOWN) : P2pMessage(P2pMessageCodes.DISCONNECT), RlpWritable{
     companion object {
         @JvmStatic
         @RlpCreator
@@ -77,12 +76,12 @@ class DisconnectMessage(var reason: ReasonCode = ReasonCode.UNKNOWN) : P2pMessag
         }
     }
 
-    override fun getEncoded(): ByteArray {
-        return Rlp.encodeElements(Rlp.encodeInt(reason.reason))
+    override fun writeToBuf(buf: RlpBuffer): Int {
+        return buf.writeList(reason.reason)
     }
 }
 
-class GetPeersMessage : P2pMessage(P2pMessageCodes.GET_PEERS), RlpEncodable {
+class GetPeersMessage : P2pMessage(P2pMessageCodes.GET_PEERS), RlpWritable {
 
 
     companion object {
@@ -92,7 +91,7 @@ class GetPeersMessage : P2pMessage(P2pMessageCodes.GET_PEERS), RlpEncodable {
         val encoded: ByteArray = HexBytes.decode("C104")
     }
 
-    override fun getEncoded(): ByteArray {
-        return GetPeersMessage.encoded
+    override fun writeToBuf(buf: RlpBuffer): Int {
+        return buf.writeRaw(encoded)
     }
 }

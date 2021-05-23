@@ -1,10 +1,10 @@
 package org.tdf.sunflower.consensus.pow;
 
+import com.github.salpadding.rlpstream.Rlp;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.Rlp;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.state.Account;

@@ -1,7 +1,7 @@
 package org.tdf.sunflower.p2pv2.p2p
 
+import com.github.salpadding.rlpstream.RlpProps
 import org.tdf.common.util.HexBytes
-import org.tdf.rlpstream.RlpProps
 import org.tdf.sunflower.p2pv2.client.Capability
 import java.net.InetAddress
 

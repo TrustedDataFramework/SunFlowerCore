@@ -1,5 +1,6 @@
 package org.tdf.common.trie;
 
+import com.github.salpadding.rlpstream.Rlp;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,10 +8,7 @@ import lombok.NonNull;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ReadOnlyStore;
 import org.tdf.common.store.Store;
-import org.tdf.common.util.FastByteComparisons;
-import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.Rlp;
 
 import java.util.Map;
 import java.util.Set;

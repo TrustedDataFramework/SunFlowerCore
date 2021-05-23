@@ -1,5 +1,6 @@
 package org.tdf.sunflower.consensus.pos;
 
+import com.github.salpadding.rlpstream.Rlp;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.serialize.Codecs;
@@ -9,7 +10,6 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.rlpstream.Rlp;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.BuiltinContract;

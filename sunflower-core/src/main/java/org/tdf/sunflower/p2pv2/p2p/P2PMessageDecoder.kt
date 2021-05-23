@@ -1,6 +1,6 @@
 package org.tdf.sunflower.p2pv2.p2p
 
-import org.tdf.rlpstream.Rlp
+import com.github.salpadding.rlpstream.Rlp
 import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.message.MessageDecoder

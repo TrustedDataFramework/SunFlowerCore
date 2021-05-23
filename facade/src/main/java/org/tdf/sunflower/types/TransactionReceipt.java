@@ -1,17 +1,18 @@
 package org.tdf.sunflower.types;
 
+import com.github.salpadding.rlpstream.Rlp;
+import com.github.salpadding.rlpstream.RlpCreator;
+import com.github.salpadding.rlpstream.RlpList;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.*;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 

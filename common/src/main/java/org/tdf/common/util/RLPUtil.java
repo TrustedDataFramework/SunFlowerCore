@@ -1,8 +1,9 @@
 package org.tdf.common.util;
 
-import org.tdf.rlpstream.Rlp;
-import org.tdf.rlpstream.RlpList;
-import org.tdf.rlpstream.RlpStream;
+
+import com.github.salpadding.rlpstream.Rlp;
+import com.github.salpadding.rlpstream.RlpList;
+import com.github.salpadding.rlpstream.StreamId;
 
 public class RLPUtil {
     public static <T> T decode(HexBytes data, Class<T> clazz) {
@@ -14,7 +15,7 @@ public class RLPUtil {
     }
 
     public static RlpList decodePartial(byte[] bin, int offset) {
-        long streamId = RlpStream.decodeElement(bin, offset, bin.length, false);
+        long streamId = StreamId.decodeElement(bin, offset, bin.length, false);
         return new RlpList(bin, streamId, 0);
     }
 }

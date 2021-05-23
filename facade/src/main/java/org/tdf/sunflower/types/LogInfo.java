@@ -1,11 +1,11 @@
 package org.tdf.sunflower.types;
 
+import com.github.salpadding.rlpstream.Rlp;
+import com.github.salpadding.rlpstream.RlpBuffer;
+import com.github.salpadding.rlpstream.RlpList;
+import com.github.salpadding.rlpstream.RlpWritable;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HashUtil;
-import org.tdf.rlpstream.Constants;
-import org.tdf.rlpstream.Rlp;
-import org.tdf.rlpstream.RlpEncodable;
-import org.tdf.rlpstream.RlpList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,7 +14,7 @@ import java.util.List;
 
 import static org.tdf.common.util.ByteUtil.toHexString;
 
-public class LogInfo implements RlpEncodable {
+public class LogInfo implements RlpWritable {
 
 
     byte[] address = new byte[]{};
@@ -109,6 +109,11 @@ public class LogInfo implements RlpEncodable {
             ", topics=" + topicsStr +
             ", data=" + toHexString(data) +
             '}';
+    }
+
+    @Override
+    public int writeToBuf(RlpBuffer rlpBuffer) {
+        return rlpBuffer.writeRaw(getEncoded());
     }
 }
 

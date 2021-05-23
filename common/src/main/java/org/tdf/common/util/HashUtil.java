@@ -1,18 +1,17 @@
 package org.tdf.common.util;
 
+import com.github.salpadding.rlpstream.Rlp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.Digest;
 import org.spongycastle.crypto.digests.RIPEMD160Digest;
 import org.tdf.common.crypto.jce.SpongyCastleProvider;
-import org.tdf.rlpstream.Rlp;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 

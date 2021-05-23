@@ -1,11 +1,11 @@
 package org.tdf.sunflower.types;
 
+import com.github.salpadding.rlpstream.Rlp;
+import com.github.salpadding.rlpstream.RlpList;
 import lombok.RequiredArgsConstructor;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.rlpstream.Rlp;
-import org.tdf.rlpstream.RlpList;
 
 import java.util.*;
 

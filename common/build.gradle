@@ -6,7 +6,6 @@ dependencies {
 
     implementation "com.madgag.spongycastle:core:${scastleVersion}"
     implementation "com.madgag.spongycastle:prov:${scastleVersion}"
-    implementation fileTree("../libs")
 
     compileOnly "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
     compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"

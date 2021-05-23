@@ -1,11 +1,11 @@
 package org.tdf.sunflower.p2pv2.rlpx;
 
+import com.github.salpadding.rlpstream.Rlp;
+import com.github.salpadding.rlpstream.RlpList;
 import org.spongycastle.math.ec.ECPoint;
 import org.tdf.common.crypto.ECKey;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.rlpstream.Rlp;
-import org.tdf.rlpstream.RlpList;
 
 import static org.tdf.common.util.ByteUtil.toHexString;
 

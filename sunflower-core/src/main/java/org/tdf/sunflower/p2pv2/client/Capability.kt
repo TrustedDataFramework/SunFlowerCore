@@ -1,7 +1,7 @@
 package org.tdf.sunflower.p2pv2.client
 
-import org.tdf.rlpstream.RlpCreator
-import org.tdf.rlpstream.RlpProps
+import com.github.salpadding.rlpstream.RlpCreator
+import com.github.salpadding.rlpstream.RlpProps
 
 @RlpProps("name", "version")
 data class Capability @RlpCreator constructor(val name: String, val version: Int) : Comparable<Capability> {

@@ -1,5 +1,6 @@
 package org.tdf.sunflower.p2pv2.rlpx
 
+import com.github.salpadding.rlpstream.Rlp
 import com.google.common.io.ByteStreams
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
@@ -14,7 +15,6 @@ import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.BigEndian
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HexBytes
-import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.P2pMessageCodes

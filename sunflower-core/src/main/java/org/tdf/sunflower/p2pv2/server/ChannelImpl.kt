@@ -1,5 +1,6 @@
 package org.tdf.sunflower.p2pv2.server
 
+import com.github.salpadding.rlpstream.Rlp
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelPipeline
 import io.netty.handler.timeout.ReadTimeoutHandler
@@ -7,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
 import org.tdf.common.util.HexBytes
-import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.MessageQueue

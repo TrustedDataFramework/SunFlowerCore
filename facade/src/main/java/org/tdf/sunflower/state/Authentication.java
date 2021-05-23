@@ -1,9 +1,9 @@
 package org.tdf.sunflower.state;
 
+import com.github.salpadding.rlpstream.Rlp;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.Rlp;
 import org.tdf.sunflower.consensus.Proposer;
 import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.RepositoryService;

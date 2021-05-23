@@ -1,12 +1,12 @@
 package org.tdf.common.store;
 
+import com.github.salpadding.rlpstream.Rlp;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
-import org.tdf.rlpstream.Rlp;
 
 import java.util.*;
 

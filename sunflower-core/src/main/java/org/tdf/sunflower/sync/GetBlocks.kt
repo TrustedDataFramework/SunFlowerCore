@@ -1,8 +1,7 @@
 package org.tdf.sunflower.sync
 
-import org.tdf.rlpstream.RlpCreator
-import org.tdf.rlpstream.RlpProps
-
+import com.github.salpadding.rlpstream.RlpCreator
+import com.github.salpadding.rlpstream.RlpProps
 
 @RlpProps("startHeight", "stopHeight", "descend", "limit")
 data class GetBlocks @RlpCreator constructor(

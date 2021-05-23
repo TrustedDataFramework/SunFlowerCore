@@ -1,11 +1,11 @@
 package org.tdf.sunflower.state;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.github.salpadding.rlpstream.RlpProps;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
-import org.tdf.rlpstream.RlpProps;
 
 @RlpProps({"nonce", "balance", "storageRoot", "contractHash"})
 public class Account {

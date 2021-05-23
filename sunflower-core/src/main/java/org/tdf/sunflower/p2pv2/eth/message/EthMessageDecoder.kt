@@ -1,7 +1,7 @@
 package org.tdf.sunflower.p2pv2.eth.message
 
+import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.util.HexBytes
-import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.eth.EthVersion
 import org.tdf.sunflower.p2pv2.message.MessageDecoder

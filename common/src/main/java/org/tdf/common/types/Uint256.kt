@@ -9,26 +9,27 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.github.salpadding.rlpstream.RlpBuffer
+import com.github.salpadding.rlpstream.RlpCreator
+import com.github.salpadding.rlpstream.RlpWritable
+import com.github.salpadding.rlpstream.StreamId
 import org.tdf.common.types.Uint256.Uint256Deserializer
 import org.tdf.common.util.*
-import org.tdf.rlpstream.Rlp
-import org.tdf.rlpstream.RlpCreator
-import org.tdf.rlpstream.RlpEncodable
-import org.tdf.rlpstream.RlpStream
 import java.io.IOException
 import java.math.BigInteger
 import kotlin.math.sign
 
 @JsonDeserialize(using = Uint256Deserializer::class)
 @JsonSerialize(using = IntSerializer::class)
-class Uint256 private constructor(val value: BigInteger) : Number(), RlpEncodable{
+class Uint256 private constructor(val value: BigInteger) : Number(), RlpWritable {
     override fun toString(): String {
         return value.toString()
     }
 
-    override fun getEncoded(): ByteArray {
-        return Rlp.encodeBigInteger(value)
+    override fun writeToBuf(buf: RlpBuffer): Int {
+        return buf.writeBigInt(value)
     }
+
 
     override fun toInt(): Int {
         return value.intValueExact()
@@ -210,7 +211,7 @@ class Uint256 private constructor(val value: BigInteger) : Number(), RlpEncodabl
         @JvmStatic
         @RlpCreator
         fun fromStream(bin: ByteArray, streamId: Long): Uint256{
-            return Uint256(RlpStream.asBigInteger(bin, streamId))
+            return Uint256(StreamId.asBigInteger(bin, streamId))
         }
 
         @JvmStatic

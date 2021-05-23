@@ -1,14 +1,10 @@
 package org.tdf.sunflower.sync;
 
+import com.github.salpadding.rlpstream.*;
 import org.tdf.common.util.ByteUtil;
-import org.tdf.rlpstream.Rlp;
-import org.tdf.rlpstream.RlpCreator;
-import org.tdf.rlpstream.RlpEncodable;
-import org.tdf.rlpstream.RlpList;
-
 import java.util.Optional;
 
-public class SyncMessage implements RlpEncodable {
+public class SyncMessage implements RlpWritable {
     public static final int UNKNOWN = 0;
 
     public static final int STATUS = 4;
@@ -56,10 +52,7 @@ public class SyncMessage implements RlpEncodable {
     }
 
     @Override
-    public byte[] getEncoded() {
-        return Rlp.encodeElements(
-            Rlp.encodeInt(code),
-            rawBody
-        );
+    public int writeToBuf(RlpBuffer rlpBuffer) {
+        return rlpBuffer.writeElements(Rlp.encodeInt(code), rawBody);
     }
 }

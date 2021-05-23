@@ -1,5 +1,7 @@
 package org.tdf.sunflower.p2pv2.rlpx
 
+import com.github.salpadding.rlpstream.Rlp
+import com.github.salpadding.rlpstream.StreamId
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufInputStream
 import io.netty.buffer.ByteBufOutputStream
@@ -11,9 +13,6 @@ import org.spongycastle.crypto.modes.SICBlockCipher
 import org.spongycastle.crypto.params.KeyParameter
 import org.spongycastle.crypto.params.ParametersWithIV
 import org.tdf.common.util.RLPUtil
-import org.tdf.rlpstream.Rlp
-import org.tdf.rlpstream.RlpStream
-import org.tdf.rlpstream.StreamId
 import java.io.*
 import java.util.*
 import kotlin.experimental.xor
@@ -130,8 +129,8 @@ class FrameCodec(secrets: EncryptionHandshake.Secrets) {
         ingressMac.update(buffer, 0, frameSize)
         dec.processBytes(buffer, 0, frameSize, buffer, 0)
         var pos = 0
-        val typeStreamId = RlpStream.decodeElement(buffer, pos, buffer.size, false)
-        val type = RlpStream.asLong(buffer, typeStreamId)
+        val typeStreamId = StreamId.decodeElement(buffer, pos, buffer.size, false)
+        val type = StreamId.asLong(buffer, typeStreamId)
         pos = StreamId.offsetOf(typeStreamId) + StreamId.sizeOf(typeStreamId)
         val payload: InputStream = ByteArrayInputStream(buffer, pos, totalBodySize - pos)
         val size = totalBodySize - pos

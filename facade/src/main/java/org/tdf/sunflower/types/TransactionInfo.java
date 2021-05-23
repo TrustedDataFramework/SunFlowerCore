@@ -1,9 +1,9 @@
 package org.tdf.sunflower.types;
 
+import com.github.salpadding.rlpstream.*;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlpstream.*;
 
-public class TransactionInfo implements RlpEncodable {
+public class TransactionInfo implements RlpWritable {
     TransactionReceipt receipt;
     byte[] blockHash;
     // user for pending transaction
@@ -25,7 +25,7 @@ public class TransactionInfo implements RlpEncodable {
 
     @RlpCreator
     public static TransactionInfo fromRlpStream(byte[] bin, long streamId) {
-        return new TransactionInfo(RlpStream.rawOf(bin, streamId));
+        return new TransactionInfo(StreamId.rawOf(bin, streamId));
     }
 
     public TransactionInfo(byte[] rlp) {
@@ -78,6 +78,11 @@ public class TransactionInfo implements RlpEncodable {
 
     public boolean isPending() {
         return blockHash == null;
+    }
+
+    @Override
+    public int writeToBuf(RlpBuffer rlpBuffer) {
+        return rlpBuffer.writeRaw(getEncoded());
     }
 }
 
