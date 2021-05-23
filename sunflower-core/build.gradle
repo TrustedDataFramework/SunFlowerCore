@@ -23,13 +23,9 @@ dependencies {
     implementation "com.madgag.spongycastle:core:${scastleVersion}" // for SHA3 and SECP256K1
     implementation "com.madgag.spongycastle:prov:${scastleVersion}" // for SHA3 and SECP256K1
     implementation "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
-
     implementation "org.tdf:lotusvm:${lotusvmVersion}"
-    implementation "org.slf4j:slf4j-api:${slf4jVersion}"
-    implementation "org.slf4j:jul-to-slf4j:${slf4jVersion}"
 
     implementation "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
-    implementation "org.iq80.leveldb:leveldb:${leveldbVersion}"
     implementation "com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6"
     runtimeOnly 'javax.jws:jsr181-api:1.0-MR1'
     // https://mvnrepository.com/artifact/org.apache.commons/commons-pool2

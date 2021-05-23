@@ -40,7 +40,7 @@ class BackendImpl(
             return a
         if (parentBackend != null) return parentBackend.lookup(address)
         val aInTrie = trie[address]
-        return aInTrie ?: Account.emptyAccount(Uint256.ZERO)
+        return aInTrie ?: Account()
     }
 
     override fun createChild(): BackendImpl {
@@ -136,8 +136,8 @@ class BackendImpl(
         return lookup(address).balance
     }
 
-    override fun setBalance(address: HexBytes, balance: Uint256?) {
-        val a = lookup(address).clone()
+    override fun setBalance(address: HexBytes, balance: Uint256) {
+        val a = lookup(address).copy()
         a.balance = balance
         modifiedAccounts[address] = a
     }
@@ -147,7 +147,7 @@ class BackendImpl(
     }
 
     override fun setNonce(address: HexBytes, nonce: Long) {
-        val a = lookup(address).clone()
+        val a = lookup(address).copy()
         a.nonce = nonce
         modifiedAccounts[address] = a
     }
@@ -209,7 +209,7 @@ class BackendImpl(
 
     override fun setCode(address: HexBytes, code: HexBytes) {
         val hash = HashUtil.sha3(code.bytes)
-        val a = lookup(address).clone()
+        val a = lookup(address).copy()
         a.contractHash = HexBytes.fromBytes(hash)
         modifiedAccounts[address] = a
         codeCache[address] = code

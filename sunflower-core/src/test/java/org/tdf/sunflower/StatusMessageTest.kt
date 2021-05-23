@@ -1,10 +1,10 @@
 package org.tdf.sunflower
 
+import com.github.salpadding.rlpstream.Rlp
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.tdf.common.util.HexBytes
-import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.p2pv2.eth.message.StatusMessage
 
 @RunWith(JUnit4::class)

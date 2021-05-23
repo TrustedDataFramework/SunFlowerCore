@@ -25,7 +25,7 @@ public class SyncMessage implements RlpWritable {
 
     @RlpCreator
     public static SyncMessage fromRlpStream(byte[] bin, long streamId) {
-        RlpList li = new RlpList(bin, streamId, 2);
+        RlpList li = StreamId.asList(bin, streamId, 2);
         SyncMessage msg = new SyncMessage(0, ByteUtil.EMPTY_BYTE_ARRAY);
         msg.code = li.intAt(0);
         msg.rawBody = li.rawAt(1);

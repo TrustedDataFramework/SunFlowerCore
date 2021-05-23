@@ -49,9 +49,9 @@ class PoAMiner(private val poA: PoA) : AbstractMiner(poA.accountTrie, poA.eventB
         val sig = key.sign(rawHash)
         block.extraData = RLPUtil.encode(
             arrayOf<Any>(
-                java.lang.Byte.toUnsignedInt(sig.v),
-                BigIntegers.asUnsignedByteArray(sig.r),
-                BigIntegers.asUnsignedByteArray(sig.s)
+                sig.v,
+                sig.r,
+                sig.s
             )
         )
         if (config.threadId == PoA.GATEWAY_ID) {

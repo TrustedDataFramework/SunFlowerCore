@@ -69,7 +69,7 @@ class DisconnectMessage(var reason: ReasonCode = ReasonCode.UNKNOWN) : P2pMessag
         @JvmStatic
         @RlpCreator
         fun fromRlpStream(bin: ByteArray, streamId: Long): DisconnectMessage {
-            val li = RlpList(bin, streamId, 1)
+            val li = StreamId.asList(bin, streamId, 1)
             if (li.size() > 0)
                 return DisconnectMessage(ReasonCode.fromInt(li.intAt(0)))
             return DisconnectMessage()

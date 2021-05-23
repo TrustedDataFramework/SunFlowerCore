@@ -3,6 +3,7 @@ package org.tdf.sunflower.types;
 import com.github.salpadding.rlpstream.Rlp;
 import com.github.salpadding.rlpstream.RlpCreator;
 import com.github.salpadding.rlpstream.RlpList;
+import com.github.salpadding.rlpstream.StreamId;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigIntegers;
@@ -56,7 +57,7 @@ public class TransactionReceipt {
 
     @RlpCreator
     public static TransactionReceipt fromRlpStream(byte[] bin, long streamId) {
-        RlpList li = new RlpList(bin, streamId, 7);
+        RlpList li = StreamId.asList(bin, streamId, 7);
         return new TransactionReceipt(li);
     }
 

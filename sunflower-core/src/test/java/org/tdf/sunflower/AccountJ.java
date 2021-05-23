@@ -1,4 +1,5 @@
-package org.tdf.sunflower.state;
+package org.tdf.sunflower;
+
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.salpadding.rlpstream.RlpProps;
@@ -8,8 +9,8 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.IntSerializer;
 
 @RlpProps({"nonce", "balance", "storageRoot", "contractHash"})
-public class Account {
-    public Account() {
+public class AccountJ {
+    public AccountJ() {
 
     }
 
@@ -28,21 +29,21 @@ public class Account {
     private HexBytes contractHash;
 
 
-    public Account(long nonce, Uint256 balance, HexBytes contractHash, HexBytes storageRoot) {
+    public AccountJ(long nonce, Uint256 balance, HexBytes contractHash, HexBytes storageRoot) {
         this.nonce = nonce;
         this.balance = balance;
         this.contractHash = contractHash;
         this.storageRoot = storageRoot;
     }
 
-    public static Account emptyAccount(Uint256 balance) {
-        return new Account(0, balance, HashUtil.EMPTY_DATA_HASH_HEX, HashUtil.EMPTY_TRIE_HASH_HEX);
+    public static AccountJ emptyAccount(Uint256 balance) {
+        return new AccountJ(0, balance, HashUtil.EMPTY_DATA_HASH_HEX, HashUtil.EMPTY_TRIE_HASH_HEX);
     }
 
 
     @Override
-    public Account clone() {
-        return new Account(nonce, balance, contractHash, storageRoot);
+    public AccountJ clone() {
+        return new AccountJ(nonce, balance, contractHash, storageRoot);
     }
 
 
@@ -80,6 +81,6 @@ public class Account {
 
     public boolean isEmpty() {
         return nonce == 0 && balance.isZero() && contractHash.equals(HashUtil.EMPTY_DATA_HASH_HEX)
-            && storageRoot.equals(HashUtil.EMPTY_TRIE_HASH_HEX);
+                && storageRoot.equals(HashUtil.EMPTY_TRIE_HASH_HEX);
     }
 }

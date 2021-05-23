@@ -17,8 +17,6 @@ public class NewMinedBlockWriter {
     ) {
         eventBus.subscribe(NewBlockMined.class, (e) -> {
             Block block = e.getBlock();
-            if (block == null)
-                return;
             try (RepositoryWriter writer = repo.getWriter()) {
                 writer.writeBlock(block, e.getInfos());
             }

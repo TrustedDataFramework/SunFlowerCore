@@ -1,11 +1,11 @@
 package org.tdf.sunflower
 
+import com.github.salpadding.rlpstream.Rlp
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.tdf.common.util.HexBytes
-import org.tdf.rlpstream.Rlp
 import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.eth.EthVersion

@@ -1,24 +1,24 @@
 package org.tdf.sunflower
 
+import com.github.salpadding.rlpstream.Rlp
+import com.github.salpadding.rlpstream.RlpCreator
+import com.github.salpadding.rlpstream.RlpProps
 import org.spongycastle.util.encoders.Hex
-import org.tdf.rlpstream.Rlp
-import org.tdf.rlpstream.RlpCreator
-import org.tdf.rlpstream.RlpProps
 import java.math.BigInteger
 import java.util.*
 
 @RlpProps("chainId", "address", "poolType", "f", "fm", "r", "rm", "debt", "price", "decimals")
 class PoolData @RlpCreator constructor(
-    val chainId: Long = 0,
+    val chainId: Long,
     val address: ByteArray,
-    val poolType: Long = 0,
-    val f: BigInteger? = null,
-    val fm: BigInteger? = null,
-    val r: BigInteger? = null,
-    val rm: BigInteger? = null,
-    val debt: BigInteger? = null,
-    val price: BigInteger? = null,
-    val decimals: Long = 0,
+    val poolType: Long,
+    val f: BigInteger,
+    val fm: BigInteger,
+    val r: BigInteger,
+    val rm: BigInteger,
+    val debt: BigInteger,
+    val price: BigInteger,
+    val decimals: Long,
 ) {
     companion object {
         @JvmStatic

@@ -10,7 +10,7 @@ import java.security.SecureRandom;
 // insert 10000000 23382 ms
 public class TriePerformanceTest {
     public static void main(String[] args) {
-        int n = 10_000_000;
+        int n = 10_000_00;
         Trie<byte[], byte[]> trie = Trie.<byte[], byte[]>builder()
             .store(new ByteArrayMapStore<>())
             .keyCodec(Codec.identity())

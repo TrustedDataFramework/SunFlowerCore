@@ -40,7 +40,11 @@ public class JsonStore implements BatchStore<String, JsonNode>, IterableStore<St
             return;
         byte[] bin = mapper.writeValueAsBytes(node);
         Files.write(Paths.get(this.jsonFile), bin, CREATE, TRUNCATE_EXISTING, WRITE);
-        Files.setPosixFilePermissions(Paths.get(this.jsonFile), defaultPosixPermissions);
+        try {
+            Files.setPosixFilePermissions(Paths.get(this.jsonFile), defaultPosixPermissions);
+        }catch (Exception ignored) {
+
+        }
     }
 
     @SneakyThrows

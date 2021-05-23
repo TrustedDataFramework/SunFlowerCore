@@ -1,21 +1,20 @@
 package org.tdf.common.types
 
-import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
-import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.github.salpadding.rlpstream.RlpBuffer
 import com.github.salpadding.rlpstream.RlpCreator
 import com.github.salpadding.rlpstream.RlpWritable
 import com.github.salpadding.rlpstream.StreamId
 import org.tdf.common.types.Uint256.Uint256Deserializer
-import org.tdf.common.util.*
-import java.io.IOException
+import org.tdf.common.util.BigIntegers
+import org.tdf.common.util.ByteUtil
+import org.tdf.common.util.HexBytes
+import org.tdf.common.util.IntSerializer
 import java.math.BigInteger
 import kotlin.math.sign
 
@@ -169,7 +168,6 @@ class Uint256 private constructor(val value: BigInteger) : Number(), RlpWritable
 
 
     class Uint256Deserializer : StdDeserializer<Uint256>(Uint256::class.java) {
-        @Throws(IOException::class)
         override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Uint256 {
             val node = p.codec.readTree<JsonNode>(p)
             if (node.isNull) return ZERO
@@ -182,14 +180,6 @@ class Uint256 private constructor(val value: BigInteger) : Number(), RlpWritable
             } else of(encoded, 10)
         }
     }
-
-    class Uint256Serializer : StdSerializer<Uint256>(Uint256::class.java) {
-        @Throws(IOException::class)
-        override fun serialize(value: Uint256, jgen: JsonGenerator, provider: SerializerProvider) {
-            jgen.writeString(value.value.toString(10))
-        }
-    }
-
 
     companion object {
         const val MAX_POW = 256
@@ -210,7 +200,7 @@ class Uint256 private constructor(val value: BigInteger) : Number(), RlpWritable
 
         @JvmStatic
         @RlpCreator
-        fun fromStream(bin: ByteArray, streamId: Long): Uint256{
+        fun fromStream(bin: ByteArray, streamId: Long): Uint256 {
             return Uint256(StreamId.asBigInteger(bin, streamId))
         }
 

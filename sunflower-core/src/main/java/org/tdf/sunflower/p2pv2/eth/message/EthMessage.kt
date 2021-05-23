@@ -22,7 +22,7 @@ class StatusMessage(
         @JvmStatic
         @RlpCreator
         fun fromRlpStream(bin: ByteArray, streamId: Long): StatusMessage {
-            val li = RlpList(bin, streamId, 6)
+            val li = StreamId.asList(bin, streamId, 6)
             return StatusMessage(
                 li.intAt(0), li.intAt(1),
                 HexBytes.fromBytes(li.bytesAt(2)),

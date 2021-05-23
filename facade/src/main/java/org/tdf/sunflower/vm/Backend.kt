@@ -31,7 +31,7 @@ interface Backend : Closeable {
 
     // only used for bios contract
     var headerCreatedAt: Long?
-    fun setBalance(address: HexBytes, balance: Uint256?)
+    fun setBalance(address: HexBytes, balance: Uint256)
     fun getNonce(address: HexBytes): Long
     fun setNonce(address: HexBytes, nonce: Long)
     fun getInitialGas(create: Boolean, data: ByteArray): Long {

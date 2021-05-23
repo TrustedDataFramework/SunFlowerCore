@@ -158,7 +158,7 @@ class Node {
         if (children != null) return;
         resolve();
         long streamId = StreamId.decodeElement(this.rlp, 0, this.rlp.length, true);
-        RlpList rlp = new RlpList(this.rlp, streamId, BRANCH_SIZE);
+        RlpList rlp = StreamId.asList(this.rlp, streamId, BRANCH_SIZE);
         if (rlp.size() == 2) {
             children = new Object[2];
             byte[] packed = rlp.bytesAt(0);

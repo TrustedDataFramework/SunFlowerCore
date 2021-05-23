@@ -6,7 +6,6 @@ import org.tdf.common.store.NoDeleteStore
 import org.tdf.common.store.Store
 import org.tdf.common.trie.SecureTrie
 import org.tdf.common.trie.Trie
-import org.tdf.common.types.Uint256
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.Start
@@ -77,7 +76,7 @@ class AccountTrie(
 
         for (c in (bios + builtins)) {
             val address = c.address
-            val a = Account.emptyAccount(Uint256.ZERO)
+            val a = Account()
             val trie = contractStorageTrie.revert()
             for ((key, value) in c.genesisStorage) {
                 trie[key] = value
