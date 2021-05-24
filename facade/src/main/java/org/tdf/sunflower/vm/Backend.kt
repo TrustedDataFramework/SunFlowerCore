@@ -80,16 +80,16 @@ interface Backend : Closeable {
 
     fun getAsStore(address: HexBytes): Store<HexBytes, HexBytes> {
         return object : Store<HexBytes, HexBytes> {
-            override operator fun get(bytes: HexBytes): HexBytes {
-                return dbGet(address, bytes)
+            override operator fun get(k: HexBytes): HexBytes {
+                return dbGet(address, k)
             }
 
-            override fun set(bytes: HexBytes, bytes2: HexBytes) {
-                dbSet(address, bytes, bytes2)
+            override fun set(k: HexBytes, v: HexBytes) {
+                dbSet(address, k, v)
             }
 
-            override fun remove(bytes: HexBytes) {
-                dbRemove(address, bytes)
+            override fun remove(k: HexBytes) {
+                dbRemove(address, k)
             }
 
             override fun flush() {

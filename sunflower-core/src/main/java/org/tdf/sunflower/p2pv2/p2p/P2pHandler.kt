@@ -38,13 +38,7 @@ class P2pHandler(
         mode = TickerMode.FIXED_DELAY
     )
 
-    private var _mq: MessageQueue? = null
-    var mq: MessageQueue
-        get() = _mq!!
-        set(value) {
-            _mq = value
-        }
-
+    lateinit var mq: MessageQueue
 
     var peerDiscoveryMode = false
 
@@ -54,14 +48,7 @@ class P2pHandler(
     private var ethOutbound = 0
 
 
-    private var _channel: Channel? = null
-
-    var channel: Channel
-        get() = _channel!!
-        set(v) {
-            _channel = v
-        }
-
+    lateinit var channel: Channel
 
     override fun handlerAdded(ctx: ChannelHandlerContext) {
         dev.info("p2p handler added")

@@ -24,28 +24,18 @@ import java.util.concurrent.atomic.AtomicInteger
 class MessageCodecImpl(val cfg: AppConfig) : MessageCodec(), Loggers {
     private var maxFramePayloadSize = NO_FRAMING
 
-    private var _channel: Channel? = null
-    private var _caps: List<Capability> = emptyList()
-    private var _resolver: MessageCodesResolver? = null
+    override lateinit var channel: Channel
+    private lateinit var resolver: MessageCodesResolver
+    private lateinit var ethMsgFactory: EthMessageDecoder
 
-    private val resolver: MessageCodesResolver
-        get() = _resolver!!
-
-    private var ethMsgFactory: EthMessageDecoder? = null
-
-    override var channel: Channel
-        get() = _channel!!
-        set(value) {
-            _channel = value
+    override var capabilities: List<Capability> = emptyList()
+        get() {
+            return field
         }
-
-
-    override var capabilities
-        get() = _caps
         set(v) {
-            _caps = v
-            _resolver = MessageCodesResolver(_caps)
-            for (capability in capabilities) {
+            field = v
+            resolver = MessageCodesResolver(field)
+            for (capability in field) {
                 if (capability.isEth) {
                     this.ethMsgFactory = EthMessageDecoder(EthVersion.fromCode(capability.version))
                 }

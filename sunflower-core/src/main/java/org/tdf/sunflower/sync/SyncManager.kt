@@ -160,7 +160,6 @@ class SyncManager(
 
     private fun onMessageInternal(context: Context, server: PeerServer, writer: RepositoryReader) {
         val o = SyncMessage.decode(context.message)
-        val bestBlock = writer.bestBlock
         if (!o.isPresent) return
         val msg = o.get()
         log.debug("receive {} message from {}", msg.code, context.remote)
@@ -209,7 +208,7 @@ class SyncManager(
             SyncMessage.PROPOSAL -> {
                 if (isNotApproved(context)) return
                 val p = msg.getBodyAs(Proposal::class.java)
-                val proposal = p.block ?: return
+                val proposal = p.block
                 if (fastSyncing && !receivedProposals.asMap().containsKey(proposal.hash)) {
                     receivedProposals.put(proposal.hash, true)
                     context.relay()

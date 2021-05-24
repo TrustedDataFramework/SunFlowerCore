@@ -45,12 +45,12 @@ class ChannelImpl @Autowired constructor(
         private set
 
     override val isDisconnected = false
-    // set when initWithNode
-    private var _nodeStatistics: NodeStatistics? = null
-    override val nodeStatistics: NodeStatistics
-        get() = _nodeStatistics!!
 
-    private var _node: Node? = null
+    // set when initWithNode
+    override lateinit var nodeStatistics: NodeStatistics
+
+    var _node: Node? = null
+
     override val node: Node
         get() = _node!!
 
@@ -144,7 +144,7 @@ class ChannelImpl @Autowired constructor(
     override fun initWithNode(nodeId: ByteArray, remotePort: Int) {
         dev.info("init with node nodeId = ${HexBytes.fromBytes(nodeId)} remote port = ${remotePort}, remote host = ${inetSocketAddress.hostName}")
         _node = Node(nodeId, inetSocketAddress.hostString, remotePort)
-        _nodeStatistics = nodeManager.getNodeStatistics(node)
+        nodeStatistics = nodeManager.getNodeStatistics(node)
     }
 
     override fun sendHelloMessage(ctx: ChannelHandlerContext, frameCodec: FrameCodec, nodeId: String) {

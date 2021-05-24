@@ -1,6 +1,5 @@
 package org.tdf.sunflower.p2pv2
 
-import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -27,28 +26,20 @@ class MessageQueueImpl : MessageQueue, Loggers {
     private var ctx: ChannelHandlerContext? = null
     private var timerTask: ReceiveChannel<Unit>? = null
 
-    private var _channel: Channel? = null
+    override lateinit var channel: Channel
 
     override var maxFramePayloadSize: Int = NO_FRAMING
 
     override var hasPing: Boolean = false
         private set
 
-    var _supportChunkedFrames: Boolean = false
 
-    override var supportChunkedFrames: Boolean
-        get() = _supportChunkedFrames
+    override var supportChunkedFrames: Boolean = false
+        get() = field
         set(v) {
-            _supportChunkedFrames = v
-            if (!_supportChunkedFrames)
+            field = v
+            if (!field)
                 maxFramePayloadSize = NO_FRAMING
-        }
-
-
-    override var channel: Channel
-        get() = _channel!!
-        set(v) {
-            _channel = v
         }
 
     override fun sendMessage(msg: Message) {

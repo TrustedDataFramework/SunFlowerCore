@@ -46,35 +46,18 @@ class HandshakeHandlerImpl @Autowired constructor(
 
     private var frameCodec: FrameCodec? = null
 
-    private var _channel: Channel? = null
-    val channel: Channel
-        get() = _channel!!
-
-    private var _remoteId: ByteArray? = null
-    override val remoteId: ByteArray
-        get() = _remoteId!!
-
+    lateinit var channel: Channel
+    override lateinit var remoteId: ByteArray
 
     private val myKey = cfg.myKey
-
-    private var _nodeId: ByteArray? = null
-    private val nodeId: ByteArray
-        get() = _nodeId!!
-
-    private var _handshake: EncryptionHandshake? = null
-    private val handshake: EncryptionHandshake
-        get() = _handshake!!
-
-
-    private var _initiatePacket: ByteArray? = null
-    private val initiatePacket: ByteArray
-        get() = _initiatePacket!!
-
+    lateinit var nodeId: ByteArray
+    lateinit var handshake: EncryptionHandshake
+    lateinit var initiatePacket: ByteArray
     private var isHandshakeDone = false
 
     override fun setRemote(remoteId: String, channel: Channel) {
-        this._remoteId = HexBytes.decode(remoteId)
-        this._channel = channel
+        this.remoteId = HexBytes.decode(remoteId)
+        this.channel = channel
     }
 
     override fun channelActive(ctx: ChannelHandlerContext) {
@@ -85,8 +68,8 @@ class HandshakeHandlerImpl @Autowired constructor(
             initiate(ctx)
         } else {
             dev.info("inbound channel is active")
-            _handshake = EncryptionHandshake()
-            _nodeId = myKey.nodeId
+            handshake = EncryptionHandshake()
+            nodeId = myKey.nodeId
         }
     }
 
@@ -106,19 +89,19 @@ class HandshakeHandlerImpl @Autowired constructor(
     override fun initiate(ctx: ChannelHandlerContext) {
         dev.info("initiate outbound channel handler context")
         net.debug("RLPX protocol activated")
-        _nodeId = myKey.nodeId
+        nodeId = myKey.nodeId
 
         // when outbound, initiator is self
-        _handshake = EncryptionHandshake(ECKey.fromNodeId(this.remoteId).pubKeyPoint)
+        handshake = EncryptionHandshake(ECKey.fromNodeId(this.remoteId).pubKeyPoint)
         val msg: Any
 
         if (cfg.eip8) {
             val initiateMessage: AuthInitiateMessageV4 = handshake.createAuthInitiateV4(myKey)
-            _initiatePacket = handshake.encryptAuthInitiateV4(initiateMessage)
+            initiatePacket = handshake.encryptAuthInitiateV4(initiateMessage)
             msg = initiateMessage
         } else {
             val initiateMessage: AuthInitiateMessage = handshake.createAuthInitiate(null, myKey)
-            _initiatePacket = handshake.encryptAuthMessage(initiateMessage)
+            initiatePacket = handshake.encryptAuthMessage(initiateMessage)
             msg = initiateMessage
         }
         dev.info("send initiate packet size = ${initiatePacket.size}")
@@ -210,7 +193,7 @@ class HandshakeHandlerImpl @Autowired constructor(
                 var authInitPacket = ByteArray(AuthInitiateMessage.getLength() + ECIESCoder.getOverhead())
                 if (!buffer.isReadable(authInitPacket.size)) return
                 buffer.readBytes(authInitPacket)
-                _handshake = EncryptionHandshake()
+                handshake = EncryptionHandshake()
                 var responsePacket: ByteArray
                 try {
 
@@ -257,7 +240,7 @@ class HandshakeHandlerImpl @Autowired constructor(
                 this.frameCodec = FrameCodec(secrets)
                 val remotePubKey: ECPoint = handshake.remotePublicKey
                 val uncompressed = remotePubKey.getEncoded(false)
-                this._remoteId = ByteArray(uncompressed.size - 1)
+                this.remoteId = ByteArray(uncompressed.size - 1)
                 System.arraycopy(uncompressed, 1, this.remoteId, 0, this.remoteId.size)
                 val byteBufMsg = ctx.alloc().buffer(responsePacket.size)
                 byteBufMsg.writeBytes(responsePacket)
