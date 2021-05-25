@@ -1,7 +1,7 @@
 package org.tdf.sunflower.state
 
-import com.github.salpadding.rlpstream.RlpCreator
-import com.github.salpadding.rlpstream.RlpProps
+import com.github.salpadding.rlpstream.annotation.RlpCreator
+import com.github.salpadding.rlpstream.annotation.RlpProps
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.HashUtil

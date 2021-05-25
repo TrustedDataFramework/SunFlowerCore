@@ -1,8 +1,8 @@
 package org.tdf.sunflower.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.github.salpadding.rlpstream.RlpCreator;
-import com.github.salpadding.rlpstream.RlpProps;
+import com.github.salpadding.rlpstream.annotation.RlpCreator;
+import com.github.salpadding.rlpstream.annotation.RlpProps;
 import lombok.NonNull;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.HexBytes;
