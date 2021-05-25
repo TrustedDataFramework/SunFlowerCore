@@ -2,6 +2,7 @@ package org.tdf.sunflower.db;
 
 import lombok.extern.slf4j.Slf4j;
 import org.fusesource.leveldbjni.JniDBFactory;
+import org.iq80.leveldb.impl.Iq80DBFactory;
 import org.springframework.stereotype.Component;
 import org.tdf.common.store.*;
 import org.tdf.sunflower.DatabaseConfig;
@@ -28,6 +29,9 @@ public class DatabaseStoreFactoryImpl implements DatabaseStoreFactory {
                 break;
             case "memory":
                 base = new MemoryDatabaseStore();
+                break;
+            case "leveldb-iq80":
+                base = new LevelDb(Iq80DBFactory.factory, config.getDirectory());
                 break;
             default:
                 base = new LevelDb(JniDBFactory.factory, config.getDirectory());
