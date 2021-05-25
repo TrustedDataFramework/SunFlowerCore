@@ -1,6 +1,7 @@
 package org.tdf.sunflower.types;
 
 import com.github.salpadding.rlpstream.*;
+import com.github.salpadding.rlpstream.annotation.RlpCreator;
 import org.tdf.common.util.HexBytes;
 
 public class TransactionInfo implements RlpWritable {

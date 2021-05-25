@@ -1,9 +1,9 @@
 package org.tdf.sunflower.types;
 
 import com.github.salpadding.rlpstream.Rlp;
-import com.github.salpadding.rlpstream.RlpCreator;
 import com.github.salpadding.rlpstream.RlpList;
 import com.github.salpadding.rlpstream.StreamId;
+import com.github.salpadding.rlpstream.annotation.RlpCreator;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigIntegers;

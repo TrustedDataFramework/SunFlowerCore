@@ -3,9 +3,9 @@ package org.tdf.common.util;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.salpadding.rlpstream.RlpBuffer;
-import com.github.salpadding.rlpstream.RlpCreator;
 import com.github.salpadding.rlpstream.RlpWritable;
 import com.github.salpadding.rlpstream.StreamId;
+import com.github.salpadding.rlpstream.annotation.RlpCreator;
 import lombok.NonNull;
 import org.spongycastle.util.encoders.Hex;
 

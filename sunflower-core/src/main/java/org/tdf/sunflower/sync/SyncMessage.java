@@ -1,6 +1,7 @@
 package org.tdf.sunflower.sync;
 
 import com.github.salpadding.rlpstream.*;
+import com.github.salpadding.rlpstream.annotation.RlpCreator;
 import org.tdf.common.util.ByteUtil;
 import java.util.Optional;
 

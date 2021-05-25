@@ -3,7 +3,7 @@ package org.tdf.sunflower.types;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.salpadding.rlpstream.Rlp;
-import com.github.salpadding.rlpstream.RlpProps;
+import com.github.salpadding.rlpstream.annotation.RlpProps;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.*;
 import org.tdf.sunflower.state.Address;

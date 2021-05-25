@@ -1,6 +1,8 @@
 package org.tdf.sunflower.p2pv2.eth.message
 
 import com.github.salpadding.rlpstream.*
+import com.github.salpadding.rlpstream.annotation.RlpCreator
+import com.github.salpadding.rlpstream.annotation.RlpProps
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.p2pv2.message.Message
 import org.tdf.sunflower.types.TransactionReceipt
