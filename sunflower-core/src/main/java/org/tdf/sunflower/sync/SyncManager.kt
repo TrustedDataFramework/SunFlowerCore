@@ -193,7 +193,7 @@ class SyncManager(
             }
             SyncMessage.TRANSACTION -> {
                 if (isNotApproved(context)) return
-                val txs = Arrays.asList(
+                val txs = listOf(
                     *msg.getBodyAs(
                         Array<Transaction>::class.java
                     )
@@ -224,7 +224,8 @@ class SyncManager(
                     return
                 }
                 if (writer.containsHeader(proposal.hash)) return
-                mtx.tryLock()
+                if(!mtx.tryLock())
+                    return
                 log.debug("lock acquired by thread ${Thread.currentThread().id} pos = 1")
                 try {
                     queue.add(proposal)
