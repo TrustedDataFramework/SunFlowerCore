@@ -77,36 +77,46 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
 
         GlobalScope.launch {
             for (c in pingTicker) {
-                client.broadcast(
-                    builder.buildPing()
-                )
+                try {
+                    client.broadcast(builder.buildPing())
+                }catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
 
         GlobalScope.launch {
             for (c in discoverTicker) {
-                // persist peers
-                (server.peerStore as BatchStore<String?, JsonNode?>)
-                    .putAll(
-                        client.peersCache.peers
-                            .map { AbstractMap.SimpleEntry(it.id.toHex(), TextNode(it.encodeURI())) }
-                            .toList()
-                    )
-                lookup()
-                cache.half()
-                if (!config.isEnableDiscovery)
-                    continue
-                pending.keys
-                    .stream()
-                    .filter { x: PeerImpl? -> !cache.contains(x) }
-                    .limit(config.maxPeers.toLong())
-                    .forEach { p: PeerImpl ->
-                        log.info("try to connect to peer $p")
-                        client.dial(p, builder.buildPing())
-                    }
-                pending.clear()
+                try {
+                    loopPeers(server, client, cache, builder)
+                }catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
+    }
+
+    private fun loopPeers(server: PeerServerImpl, client: Client, cache: PeersCache, builder: MessageBuilder) {
+        // persist peers
+        (server.peerStore as BatchStore<String?, JsonNode?>)
+            .putAll(
+                client.peersCache.peers
+                    .map { AbstractMap.SimpleEntry(it.id.toHex(), TextNode(it.encodeURI())) }
+                    .toList()
+            )
+        lookup()
+        cache.half()
+        if (!config.isEnableDiscovery)
+            return
+        pending.keys
+            .stream()
+            .filter { x: PeerImpl? -> !cache.contains(x) }
+            .limit(config.maxPeers.toLong())
+            .forEach { p: PeerImpl ->
+                log.info("try to connect to peer $p")
+                client.dial(p, builder.buildPing())
+            }
+        pending.clear()
     }
 
     private fun lookup() {

@@ -116,13 +116,23 @@ class SyncManager(
         val writeTicker = ticker(TimeUnit.SECONDS.toMillis(syncConfig.blockWriteRate), mode = TickerMode.FIXED_DELAY)
         GlobalScope.launch {
             for (c in writeTicker) {
-                tryWrite()
+                try {
+                    tryWrite()
+                }catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
+
         val statusTicker = ticker(TimeUnit.SECONDS.toMillis(syncConfig.heartRate), mode = TickerMode.FIXED_DELAY)
+
         GlobalScope.launch {
             for (c in statusTicker) {
-                sendStatus()
+                try {
+                    sendStatus()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
 

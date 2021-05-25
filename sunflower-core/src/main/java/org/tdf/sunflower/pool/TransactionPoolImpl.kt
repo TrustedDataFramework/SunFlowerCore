@@ -281,7 +281,11 @@ class TransactionPoolImpl(
         val ch = ticker(TimeUnit.SECONDS.toMillis(config.expiredIn), 0, mode = TickerMode.FIXED_DELAY)
         GlobalScope.launch {
             for (c in ch) {
-                clear()
+                try {
+                    clear()
+                }catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }

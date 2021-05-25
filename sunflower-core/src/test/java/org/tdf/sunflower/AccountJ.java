@@ -2,7 +2,7 @@ package org.tdf.sunflower;
 
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.github.salpadding.rlpstream.RlpProps;
+import com.github.salpadding.rlpstream.annotation.RlpProps;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;

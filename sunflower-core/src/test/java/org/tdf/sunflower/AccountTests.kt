@@ -1,8 +1,8 @@
 package org.tdf.sunflower
 
 import com.github.salpadding.rlpstream.Rlp
-import com.github.salpadding.rlpstream.RlpCreator
-import com.github.salpadding.rlpstream.RlpProps
+import com.github.salpadding.rlpstream.annotation.RlpCreator
+import com.github.salpadding.rlpstream.annotation.RlpProps
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
