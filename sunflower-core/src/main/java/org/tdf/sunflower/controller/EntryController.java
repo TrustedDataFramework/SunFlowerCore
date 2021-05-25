@@ -218,7 +218,13 @@ public class EntryController {
     @GetMapping(value = "/farmBaseTransactions", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<HexBytes> farmBaseTransactions() {
         PoA poa = (PoA) consensusEngine;
-        return poa.farmBaseTransactions.stream().map(RLPUtil::encode).collect(Collectors.toList());
+        return poa
+                .farmBaseTransactions
+                .asMap()
+                .values()
+                .stream()
+                .map(RLPUtil::encode)
+                .collect(Collectors.toList());
     }
 
 

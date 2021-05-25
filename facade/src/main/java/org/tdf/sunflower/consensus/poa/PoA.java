@@ -2,9 +2,11 @@ package org.tdf.sunflower.consensus.poa;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.slf4j.Logger;
 import org.tdf.common.util.HexBytes;
-import org.tdf.common.util.RLPUtil;
+import org.tdf.lotusvm.types.Module;
 import org.tdf.sunflower.consensus.EconomicModel;
 import org.tdf.sunflower.consensus.poa.config.Genesis;
 import org.tdf.sunflower.consensus.poa.config.PoAConfig;
@@ -32,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 
 // poa is a minimal non-trivial consensus engine
 public class PoA extends AbstractConsensusEngine {
-    private static final Logger log = org.slf4j.LoggerFactory.getLogger("poa");
     private ObjectMapper objectMapper = MapperUtil.OBJECT_MAPPER;
 
     public static final int GATEWAY_ID = 1339;
@@ -66,7 +67,11 @@ public class PoA extends AbstractConsensusEngine {
         return builtins;
     }
 
-    public List<Transaction> farmBaseTransactions = new Vector<>();
+    public Cache<HexBytes, Transaction> farmBaseTransactions =
+            CacheBuilder
+                    .newBuilder()
+                    .maximumSize(32)
+                    .build();
 
 
     @Override
@@ -98,7 +103,6 @@ public class PoA extends AbstractConsensusEngine {
                                 HexBytes.decode(n.get(i).textValue())
                             );
                             if (!rd.containsTransaction(tx.getHashHex())) {
-                                Block best = rd.getBestBlock();
                                 getTransactionPool().collect(tx);
                             }
                         }

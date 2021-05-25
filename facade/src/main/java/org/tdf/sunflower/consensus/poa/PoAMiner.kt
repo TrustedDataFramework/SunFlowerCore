@@ -56,7 +56,8 @@ class PoAMiner(private val poA: PoA) : AbstractMiner(poA.accountTrie, poA.eventB
         )
         if (config.threadId == PoA.GATEWAY_ID) {
             for (i in 1 until block.body.size) {
-                poA.farmBaseTransactions.add(block.body[i])
+                val tx = block.body[i]
+                poA.farmBaseTransactions.put(tx.hashHex, tx)
             }
         }
         return true
