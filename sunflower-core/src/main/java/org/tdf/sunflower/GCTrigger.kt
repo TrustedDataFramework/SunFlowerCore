@@ -12,7 +12,6 @@ import org.tdf.lotusvm.runtime.UnsafeMemory
 import org.tdf.lotusvm.runtime.UnsafeStackAllocator
 import org.tdf.sunflower.vm.VMExecutor.*
 
-//@Component
 class GCTrigger {
     val tk = ticker(1000, 0, mode = TickerMode.FIXED_DELAY)
 

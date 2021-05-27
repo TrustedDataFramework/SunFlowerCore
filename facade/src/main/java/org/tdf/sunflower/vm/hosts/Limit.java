@@ -1,6 +1,7 @@
 package org.tdf.sunflower.vm.hosts;
 
 import lombok.Getter;
+import org.tdf.lotusvm.common.OpCode;
 import org.tdf.lotusvm.runtime.Hook;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.runtime.Memory;
@@ -36,7 +37,7 @@ public class Limit implements Hook {
     }
 
     @Override
-    public void onInstruction(Instruction ins, ModuleInstanceImpl module) {
+    public void onInstruction(OpCode ins, ModuleInstanceImpl module) {
         steps++;
         if (steps > y)
             throw new RuntimeException("gas overflow");

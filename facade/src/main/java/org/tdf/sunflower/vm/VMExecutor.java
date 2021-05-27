@@ -2,6 +2,7 @@ package org.tdf.sunflower.vm;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.io.Closer;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import org.tdf.common.types.Uint256;
@@ -24,10 +25,7 @@ import org.tdf.sunflower.vm.hosts.*;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @NoArgsConstructor
 public class VMExecutor {
@@ -35,10 +33,11 @@ public class VMExecutor {
     public static final int MAX_STACK_SIZE = MAX_FRAMES * 64;
     public static final int MAX_LABELS = MAX_FRAMES * 64;
     public static final int MAX_CALL_DEPTH = 8;
-    public static final Cache<HexBytes, Module> CACHE =
+    public static final Cache<HexBytes, byte[]> CACHE =
         CacheBuilder
             .newBuilder()
-            .maximumSize(128)
+            .weigher((k, v) -> ((byte[]) v).length + ((HexBytes) k).size())
+            .maximumWeight(1024L * 1024L * 8L) // 8mb cache for contracts
             .build();
 
     public VMExecutor(Backend backend, CallData callData, long gasLimit) {
@@ -137,7 +136,7 @@ public class VMExecutor {
                     return updater.call(backend, callData);
                 }
 
-                Module module;
+                byte[] code;
                 // contract constructor/call arguments
                 byte[] data;
                 HexBytes receiver = callData.getTo();
@@ -152,40 +151,36 @@ public class VMExecutor {
                     // validate module
                     ModuleValidator.INSTANCE.validate(tmpModule, false);
 
-                    byte[] code = WBI.dropInit(callData.getData().getBytes());
+                    code = WBI.dropInit(callData.getData().getBytes());
                     data = WBI.extractInitData(tmpModule);
 
                     // increase nonce here to avoid conflicts
                     backend.setNonce(callData.getCaller(), n + 1);
                     backend.setCode(receiver, HexBytes.fromBytes(code));
-                    module = new Module(code);
                 } else {
                     HexBytes hash = backend.getContractHash(receiver);
                     // this is a transfer transaction
-                    if (hash.equals(HashUtil.EMPTY_DATA_HASH_HEX))
-                        module = null;
-                    else
-                        module = CACHE.get(backend.getContractHash(receiver), () -> {
-                            byte[] code = backend.getCode(receiver).getBytes();
-                            if (code == null || code.length == 0)
-                                throw new RuntimeException("contract code not found");
-                            return new Module(code);
-                        });
+                    if (hash.equals(HashUtil.EMPTY_DATA_HASH_HEX)) {
+                        code = HexBytes.EMPTY_BYTES;
+                    } else {
+                        code = CACHE.get(backend.getContractHash(receiver), () -> backend.getCode(receiver).getBytes());
+                    }
                     data = callData.getData().getBytes();
                 }
 
+                Objects.requireNonNull(code);
                 // call a non-contract account
-                if (module == null && !callData.getData().isEmpty())
+                if (code.length == 0 && !callData.getData().isEmpty())
                     throw new RuntimeException("call receiver not a contract");
                 // transfer to a contract account
-                if (module != null && callData.getData().isEmpty()) {
+                if (code.length != 0 && callData.getData().isEmpty()) {
                     throw new RuntimeException("transfer to a contract");
                 }
 
                 backend.addBalance(receiver, callData.getValue());
                 backend.subBalance(callData.getCaller(), callData.getValue());
 
-                if (module == null)
+                if (code.length == 0)
                     return ByteUtil.EMPTY_BYTE_ARRAY;
 
                 DBFunctions dbFunctions = new DBFunctions(backend, callData.getTo());
@@ -201,29 +196,33 @@ public class VMExecutor {
                     .withEvent(backend, callData.getTo());
 
 
-                Abi abi = module.getCustomSections()
-                    .stream().filter(x -> x.getName().equals(WBI.ABI_SECTION_NAME))
-                    .findFirst()
-                    .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
-                    .get();
+                Closer closer = Closer.create();
 
-
-                long[] rets;
-                ModuleInstance instance;
-                WBI.InjectResult r;
-
-                try (
+                try {
                     StackAllocator stack =
-                        new UnsafeStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
-                    Memory mem = new UnsafeMemory()) {
-                    instance = ModuleInstance
-                        .builder()
-                        .stackAllocator(stack)
-                        .module(module)
-                        .memory(mem)
-                        .hooks(Collections.singleton(limit))
-                        .hostFunctions(hosts.getAll())
-                        .build();
+                        closer.register(new UnsafeStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS));
+                    Memory mem = closer.register(new UnsafeMemory());
+                    Module module = closer.register(new Module(code));
+
+                    ModuleInstance instance =
+                        ModuleInstance
+                            .builder()
+                            .stackAllocator(stack)
+                            .module(module)
+                            .memory(mem)
+                            .hooks(Collections.singleton(limit))
+                            .hostFunctions(hosts.getAll())
+                            .build();
+
+                    Abi abi = module.getCustomSections()
+                        .stream().filter(x -> x.getName().equals(WBI.ABI_SECTION_NAME))
+                        .findFirst()
+                        .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
+                        .get();
+
+
+                    long[] rets;
+                    WBI.InjectResult r;
 
                     r = WBI.inject(create, abi, instance, HexBytes.fromBytes(data));
 
@@ -297,6 +296,10 @@ public class VMExecutor {
                     }
 
                     return ByteUtil.EMPTY_BYTE_ARRAY;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    closer.close();
                 }
             }
             default:
