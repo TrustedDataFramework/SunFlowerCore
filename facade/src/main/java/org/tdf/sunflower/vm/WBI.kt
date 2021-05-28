@@ -4,7 +4,7 @@ import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.lotusvm.ModuleInstance
 import org.tdf.lotusvm.types.CustomSection
-import org.tdf.lotusvm.types.Module
+import org.tdf.lotusvm.Module
 import org.tdf.sunflower.vm.abi.Abi
 import org.tdf.sunflower.vm.abi.WbiType
 import java.io.ByteArrayOutputStream
@@ -20,18 +20,19 @@ object WBI {
 
     @JvmStatic
     fun dropInit(code: ByteArray): ByteArray {
-        val m = Module(code)
-        val out = ByteArrayOutputStream()
-        // drop __init sections
-        var now = 0
-        for (section in m.customSections) {
-            if (section.name == INIT_SECTION_NAME) {
-                out.write(code, now, section.offset - now)
-                now = section.limit
+        Module.create(code).use {
+            val out = ByteArrayOutputStream()
+            // drop __init sections
+            var now = 0
+            for (section in it.customSections) {
+                if (section.name == INIT_SECTION_NAME) {
+                    out.write(code, now, section.offset - now)
+                    now = section.limit
+                }
             }
+            out.write(code, now, code.size - now)
+            return out.toByteArray()
         }
-        out.write(code, now, code.size - now)
-        return out.toByteArray()
     }
 
     @JvmStatic

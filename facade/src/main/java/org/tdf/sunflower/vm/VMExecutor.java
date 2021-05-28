@@ -14,7 +14,7 @@ import org.tdf.lotusvm.runtime.Memory;
 import org.tdf.lotusvm.runtime.StackAllocator;
 import org.tdf.lotusvm.runtime.UnsafeMemory;
 import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
-import org.tdf.lotusvm.types.Module;
+import org.tdf.lotusvm.Module;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.types.VMResult;
@@ -146,17 +146,17 @@ public class VMExecutor {
                 if (create) {
                     // increase sender nonce
                     long n = backend.getNonce(callData.getCaller());
-                    Module tmpModule = new Module(callData.getData().getBytes());
+                    try (Module tmpModule = Module.create(callData.getData().getBytes())) {
+                        // validate module
+                        ModuleValidator.INSTANCE.validate(tmpModule, false);
 
-                    // validate module
-                    ModuleValidator.INSTANCE.validate(tmpModule, false);
+                        code = WBI.dropInit(callData.getData().getBytes());
+                        data = WBI.extractInitData(tmpModule);
 
-                    code = WBI.dropInit(callData.getData().getBytes());
-                    data = WBI.extractInitData(tmpModule);
-
-                    // increase nonce here to avoid conflicts
-                    backend.setNonce(callData.getCaller(), n + 1);
-                    backend.setCode(receiver, HexBytes.fromBytes(code));
+                        // increase nonce here to avoid conflicts
+                        backend.setNonce(callData.getCaller(), n + 1);
+                        backend.setCode(receiver, HexBytes.fromBytes(code));
+                    }
                 } else {
                     HexBytes hash = backend.getContractHash(receiver);
                     // this is a transfer transaction
@@ -202,7 +202,7 @@ public class VMExecutor {
                     StackAllocator stack =
                         closer.register(new UnsafeStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS));
                     Memory mem = closer.register(new UnsafeMemory());
-                    Module module = closer.register(new Module(code));
+                    Module module = closer.register(Module.create(code));
 
                     ModuleInstance instance =
                         ModuleInstance

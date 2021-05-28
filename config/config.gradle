@@ -20,7 +20,7 @@ ext {
     nettySocketIOVersion = '1.7.12'
     nettyVersion = '4.0.56.Final'
     rlpVersion = '1.1.21'
-    lotusvmVersion = '2.1.6'
+    lotusvmVersion = '2.1.7'
     springShellVersion = '2.0.0.RELEASE'
     slf4jVersion = '1.7.28'
     fastjsonVersion = "1.2.62"

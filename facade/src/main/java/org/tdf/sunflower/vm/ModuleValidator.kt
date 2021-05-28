@@ -2,14 +2,15 @@ package org.tdf.sunflower.vm
 
 import org.tdf.lotusvm.types.ExportSection
 import org.tdf.lotusvm.types.ImportType
-import org.tdf.lotusvm.types.Module
+import org.tdf.lotusvm.Module;
+import org.tdf.lotusvm.types.ExportType
 import org.tdf.sunflower.vm.abi.Abi
 import java.nio.charset.StandardCharsets
 
 object ModuleValidator {
     fun validate(m: Module, update: Boolean) {
         // 1. exact one abi section found
-        val customs = m.customSections ?: emptyList()
+        val customs = m.customSections
         val abiSections = customs.filter { c -> c.name == WBI.ABI_SECTION_NAME }
         if (abiSections.size != 1)
             throw RuntimeException("expect exactly one __abi section, while ${abiSections.size} found")
@@ -49,14 +50,14 @@ object ModuleValidator {
         }
 
         val hostsCount: Int = m.importSection?.imports?.filter { x -> x.type == ImportType.TYPE_INDEX }?.count() ?: 0
-        for (export in m.exportSection.exports) {
+        for (export in m.exportSection?.exports ?: emptyList()) {
             // skip wbi functions
             if (export.name == WBI.WBI_CHANGE_TYPE || export.name == WBI.WBI_MALLOC || export.name == WBI.WBI_PEEK)
                 continue
-            if (export.type == ExportSection.ExportType.FUNCTION_INDEX) {
-                val typeIdx = m.functionSection.typeIndices[export.index - hostsCount]
-                val type = m.typeSection.functionTypes[typeIdx]
-                moduleFunctions[export.name!!] = Pair(type.parameterTypes.size, type.resultTypes.size)
+            if (export.type == ExportType.FUNCTION_INDEX) {
+                val typeIdx = m.functionSection!!.typeIndices[export.index - hostsCount]
+                val type = m.typeSection!!.functionTypes[typeIdx]
+                moduleFunctions[export.name] = Pair(type.parameterTypes.size, type.resultTypes.size)
             }
         }
 
