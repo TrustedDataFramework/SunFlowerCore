@@ -15,6 +15,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j(topic = "jsonrpc")
 @Component
@@ -94,13 +95,13 @@ public class JsonRpcFilter implements Filter {
     private void notifyInvocation(JsonNode requestJson, JsonNode responseJson) throws IOException {
         if (responseJson.has("error")) {
             final String errorMessage = responseJson.get("error").toString();
-//            log.warn("Problem when invoking JSON-RPC " + requestJson.toString() + " response:" + errorMessage);
+            log.warn("Problem when invoking JSON-RPC " + requestJson.toString() + " response:" + errorMessage);
         } else {
             final String methodName = requestJson.get("method").asText();
             final List<JsonNode> params = new ArrayList<>();
             if (requestJson.has("params")) {
                 requestJson.get("params")
-                    .forEach(n -> params.add(n));
+                    .forEach(params::add);
             }
 
             final String responseText = mapper.writeValueAsString(responseJson);

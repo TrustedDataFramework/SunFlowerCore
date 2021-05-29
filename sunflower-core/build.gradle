@@ -34,6 +34,9 @@ dependencies {
     // https://mvnrepository.com/artifact/org.apache.commons/commons-collections4
     implementation "org.apache.commons:commons-collections4:${commonsCollections4Version}"
     implementation "org.xerial.snappy:snappy-java:1.1.4" // Snappy compression
+
+    testApi "org.web3j:core:4.8.4"
+    testImplementation 'com.squareup.okhttp3:okhttp:4.9.0'
 }
 
 task copyDependencies(type: Copy) {

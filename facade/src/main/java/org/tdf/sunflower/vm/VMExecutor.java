@@ -2,19 +2,18 @@ package org.tdf.sunflower.vm;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.io.Closer;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
+import org.tdf.lotusvm.Module;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.runtime.Memory;
 import org.tdf.lotusvm.runtime.StackAllocator;
 import org.tdf.lotusvm.runtime.UnsafeMemory;
 import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
-import org.tdf.lotusvm.Module;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.types.VMResult;
@@ -29,16 +28,16 @@ import java.util.*;
 
 @NoArgsConstructor
 public class VMExecutor {
-    public static final int MAX_FRAMES = 16384;
-    public static final int MAX_STACK_SIZE = MAX_FRAMES * 64;
-    public static final int MAX_LABELS = MAX_FRAMES * 64;
+    public static final int MAX_FRAMES = 16 * 1024 * 1024;
+    public static final int MAX_STACK_SIZE = MAX_FRAMES;
+    public static final int MAX_LABELS = MAX_FRAMES;
     public static final int MAX_CALL_DEPTH = 8;
     public static final Cache<HexBytes, byte[]> CACHE =
-        CacheBuilder
-            .newBuilder()
-            .weigher((k, v) -> ((byte[]) v).length + ((HexBytes) k).size())
-            .maximumWeight(1024L * 1024L * 8L) // 8mb cache for contracts
-            .build();
+            CacheBuilder
+                    .newBuilder()
+                    .weigher((k, v) -> ((byte[]) v).length + ((HexBytes) k).size())
+                    .maximumWeight(1024L * 1024L * 8L) // 8mb cache for contracts
+                    .build();
 
     public VMExecutor(Backend backend, CallData callData, long gasLimit) {
         this(backend, callData, new Limit(gasLimit), 0);
@@ -91,8 +90,8 @@ public class VMExecutor {
 
         if (callData.getCallType() == CallType.CREATE) {
             contractAddress = HashUtil.calcNewAddrHex(
-                callData.getCaller().getBytes(),
-                callData.getTxNonceAsBytes()
+                    callData.getCaller().getBytes(),
+                    callData.getTxNonceAsBytes()
             );
             callData.setTo(contractAddress);
         }
@@ -108,11 +107,11 @@ public class VMExecutor {
 
 
         return new VMResult(
-            limit.getGas(),
-            contractAddress,
-            result,
-            Collections.emptyList(),
-            fee
+                limit.getGas(),
+                contractAddress,
+                result,
+                Collections.emptyList(),
+                fee
         );
     }
 
@@ -186,39 +185,37 @@ public class VMExecutor {
                 DBFunctions dbFunctions = new DBFunctions(backend, callData.getTo());
 
                 Hosts hosts = new Hosts()
-                    .withTransfer(
-                        backend,
-                        callData.getTo()
-                    )
-                    .withReflect(new Reflect(this))
-                    .withContext(new ContextHost(backend, callData))
-                    .withDB(dbFunctions)
-                    .withEvent(backend, callData.getTo());
+                        .withTransfer(
+                                backend,
+                                callData.getTo()
+                        )
+                        .withReflect(new Reflect(this))
+                        .withContext(new ContextHost(backend, callData))
+                        .withDB(dbFunctions)
+                        .withEvent(backend, callData.getTo());
 
 
-                Closer closer = Closer.create();
-
-                try {
-                    StackAllocator stack =
-                        closer.register(new UnsafeStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS));
-                    Memory mem = closer.register(new UnsafeMemory());
-                    Module module = closer.register(Module.create(code));
-
+                try (
+                        StackAllocator stack =
+                                new UnsafeStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
+                        Memory mem = new UnsafeMemory();
+                        Module module = Module.create(code);
+                ) {
                     ModuleInstance instance =
-                        ModuleInstance
-                            .builder()
-                            .stackAllocator(stack)
-                            .module(module)
-                            .memory(mem)
-                            .hooks(Collections.singleton(limit))
-                            .hostFunctions(hosts.getAll())
-                            .build();
+                            ModuleInstance
+                                    .builder()
+                                    .stackAllocator(stack)
+                                    .module(module)
+                                    .memory(mem)
+                                    .hooks(Collections.singleton(limit))
+                                    .hostFunctions(hosts.getAll())
+                                    .build();
 
                     Abi abi = module.getCustomSections()
-                        .stream().filter(x -> x.getName().equals(WBI.ABI_SECTION_NAME))
-                        .findFirst()
-                        .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
-                        .get();
+                            .stream().filter(x -> x.getName().equals(WBI.ABI_SECTION_NAME))
+                            .findFirst()
+                            .map(x -> Abi.fromJson(new String(x.getData(), StandardCharsets.UTF_8)))
+                            .get();
 
 
                     long[] rets;
@@ -240,9 +237,9 @@ public class VMExecutor {
 
                     if (create) {
                         outputs = Optional
-                            .ofNullable(abi.findConstructor())
-                            .map(x -> x.outputs)
-                            .orElse(Collections.emptyList());
+                                .ofNullable(abi.findConstructor())
+                                .map(x -> x.outputs)
+                                .orElse(Collections.emptyList());
                     } else {
                         outputs = abi.findFunction(x -> x.name.equals(r.getName())).outputs;
                         if (outputs == null)
@@ -296,10 +293,6 @@ public class VMExecutor {
                     }
 
                     return ByteUtil.EMPTY_BYTE_ARRAY;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    closer.close();
                 }
             }
             default:

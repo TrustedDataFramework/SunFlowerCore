@@ -450,6 +450,7 @@ public class ECKey implements Serializable {
         return pubKeyHash;
     }
 
+
     /**
      * Compute the encoded X, Y coordinates of a public point.
      *
