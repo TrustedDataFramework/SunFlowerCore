@@ -10,10 +10,7 @@ import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.Module;
 import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.lotusvm.runtime.Memory;
-import org.tdf.lotusvm.runtime.StackAllocator;
-import org.tdf.lotusvm.runtime.UnsafeMemory;
-import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
+import org.tdf.lotusvm.runtime.*;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.types.VMResult;
@@ -197,8 +194,8 @@ public class VMExecutor {
 
                 try (
                         StackAllocator stack =
-                                new UnsafeStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
-                        Memory mem = new UnsafeMemory();
+                                ResourceFactory.createStack(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
+                        Memory mem = ResourceFactory.createMemory();
                         Module module = Module.create(code);
                 ) {
                     ModuleInstance instance =

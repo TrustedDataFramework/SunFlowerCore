@@ -1,18 +1,22 @@
 package org.tdf.sunflower
 
 import com.google.common.io.ByteStreams
+import com.google.common.io.Files
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.controller.TypeConverter.toJsonHex
+import org.tdf.sunflower.vm.abi.Abi
 import org.web3j.crypto.*
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameter
 import org.web3j.protocol.http.HttpService
+import java.io.File
 import java.io.FileInputStream
 import java.math.BigInteger
+import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 
-const val path = ""
+const val path = "C:\\Users\\sal\\Desktop\\dev\\inlined.wasm"
 const val abi = """
 [
     {
@@ -562,18 +566,63 @@ fun main() {
         }catch (ignored: Exception) {
 
         }
-        Thread.sleep(5000)
+        Thread.sleep(1000)
     }
 }
 
 fun loop() {
     val privateKeyHex = "f00df601a78147ffe0b84de1dffbebed2a6ea965becd5d0bd7faf54f1f29c6b5"
-    val privateKey = ECKey.fromPrivate(HexBytes.decode(privateKeyHex))
-    val data = HexBytes.decode(String(ByteStreams.toByteArray(FileInputStream(path))))
     val web3 = Web3j.build(HttpService("http://localhost:7010"))
-    val nonce = web3.ethGetTransactionCount(toJsonHex(privateKey.address), DefaultBlockParameter.valueOf("pending")).send().transactionCount
-    val raw = RawTransaction.createTransaction(nonce, BigInteger.ZERO, BigInteger.valueOf(Integer.MAX_VALUE.toLong()), "0x", toJsonHex(data))
-    val signedMessage = TransactionEncoder.signMessage(raw, 102L, Credentials.create(privateKeyHex));
-    val hex = toJsonHex(signedMessage)
-    println(web3.ethSendRawTransaction(hex).send().transactionHash)
+    val w = Web3Wallet(web3, privateKeyHex)
+    val txHash = w.create(
+        HexBytes.decode(String(ByteStreams.toByteArray(FileInputStream(path))))
+    )
+    // wait for block
+    Thread.sleep(6000)
+    val receipt = web3.ethGetTransactionReceipt(txHash).send()
+
+    println(receipt)
+    val con = receipt.result.contractAddress
+
+    val c = w.contract(con, abi)
+    c.call("setPoolMinValue", BigInteger.valueOf(Long.MAX_VALUE))
+    Thread.sleep(6000)
+}
+
+class Web3Wallet(private val web3: Web3j, val privateKey: String): Web3j by web3 {
+    val key = ECKey.fromPrivate(HexBytes.decode(privateKey))
+    val address = key.address
+
+    fun create(data: ByteArray): String{
+        val nonce = web3.ethGetTransactionCount(toJsonHex(address), DefaultBlockParameter.valueOf("pending")).send().transactionCount
+        val raw = RawTransaction.createTransaction(nonce, BigInteger.ZERO, BigInteger.valueOf(Integer.MAX_VALUE.toLong()), "0x", toJsonHex(data))
+        val signedMessage = TransactionEncoder.signMessage(raw, 102L, Credentials.create(privateKey));
+        val hex = toJsonHex(signedMessage)
+        return web3.ethSendRawTransaction(hex).send().transactionHash
+    }
+
+    fun contract(addr: String, abi: String): Web3Contract {
+        return Web3Contract(this, addr, abi)
+    }
+}
+
+class Web3Contract(private val w: Web3Wallet, val addr: String, val abi: String) {
+    val abiEncoder = Abi.fromJson(abi)
+
+    fun call(method: String, vararg args: Any): String {
+        val nonce = w.ethGetTransactionCount(toJsonHex(w.address), DefaultBlockParameter.valueOf("pending")).send().transactionCount
+        val encoded = abiEncoder.findFunction { it.name == method }
+            .encode(args)
+        val raw = RawTransaction.createTransaction(
+            nonce.add(BigInteger.ONE),
+            BigInteger.ZERO,
+            BigInteger.valueOf(Integer.MAX_VALUE.toLong()),
+            addr,
+            BigInteger.ZERO,
+            toJsonHex(encoded)
+        )
+        val signedMessage = TransactionEncoder.signMessage(raw, 102L, Credentials.create(w.privateKey));
+        val hex = toJsonHex(signedMessage)
+        return w.ethSendRawTransaction(hex).send().transactionHash
+    }
 }
