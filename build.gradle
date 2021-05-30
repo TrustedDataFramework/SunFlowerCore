@@ -13,7 +13,7 @@ apply from: 'config/config.gradle'
 
 allprojects {
     group 'org.tdf'
-    version '2.1.7-beta'
+    version '2.1.8-beta'
 
     repositories {
         mavenLocal()
