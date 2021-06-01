@@ -72,7 +72,6 @@ public class VMExecutor {
     }
 
     public VMResult execute() {
-
         // 1. increase sender nonce
         long n = backend.getNonce(callData.getOrigin());
         if (!backend.isStatic() && n != callData.getTxNonce() && callData.getCallType() != CallType.COINBASE)
