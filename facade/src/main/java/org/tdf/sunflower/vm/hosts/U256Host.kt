@@ -26,8 +26,8 @@ class U256Host : HostFunction("_u256", FUNCTION_TYPE) {
             tmpData[i] = 0
     }
 
-    private fun loadSlot(offset: Long, slot: Slot) {
-        val startAndLen = instance.execute(WBI.WBI_PEEK, offset and 0xFFFFFFFFL, WbiType.UINT_256)[0]
+    private fun loadSlot(offset: Int, slot: Slot) {
+        val startAndLen = instance.execute(WBI.WBI_PEEK, offset.toLong(), WbiType.UINT_256)[0]
         val start = (startAndLen ushr 32).toInt()
         val len = startAndLen.toInt()
 
@@ -53,17 +53,23 @@ class U256Host : HostFunction("_u256", FUNCTION_TYPE) {
 
         val size = if (firstNoZero < 0) { 0 } else { tmpData.size - firstNoZero }
         val ptr = (instance.execute(WBI.WBI_MALLOC, size.toLong())[0]).toInt()
+        if (ptr < 0) throw RuntimeException("malloc failed: pointer is negative")
+
         for(i in 0 until size) {
             instance.memory.storeI8(ptr + i, tmpData[firstNoZero + i])
         }
-        return ptr.toUInt().toLong()
+
+        val p = instance.execute(WBI.WBI_CHANGE_TYPE, WbiType.UINT_256, ptr.toLong(), size.toLong())[0]
+        val r = p.toInt()
+        if (r < 0) throw RuntimeException("malloc failed: pointer is negative")
+        return r.toLong()
     }
 
     override fun execute(args: LongArray): Long {
         val i = args[0].toInt()
         val op = U256OP.values()[i]
-        loadSlot(args[1], slot0)
-        loadSlot(args[2], slot1)
+        loadSlot(args[1].toInt(), slot0)
+        loadSlot(args[2].toInt(), slot1)
 
         when (op) {
             U256OP.ADD -> {
