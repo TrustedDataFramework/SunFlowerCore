@@ -353,7 +353,7 @@ class SyncManager(
         }
         for (b in orphans) {
             if (b != null && s.bestBlockHeight >= b.height && b.height > s.prunedHeight && !rd.containsHeader(b.hashPrev)) {
-                SyncManager.log.debug("try to fetch orphans, head height {} hash {}", b.height, b.hash)
+                log.debug("try to fetch orphans, head height {} hash {}", b.height, b.hash)
                 // remote: prune < b <= best
                 val getBlocks = GetBlocks(
                     s.prunedHeight, b.height, true,
@@ -373,8 +373,8 @@ class SyncManager(
         }
     }
 
-    private fun getOrphansInternal(rd: RepositoryReader): List<Block?> {
-        val orphanHeads: MutableList<Block?> = ArrayList()
+    private fun getOrphansInternal(rd: RepositoryReader): List<Block> {
+        val orphanHeads: MutableList<Block> = ArrayList()
         val orphans: MutableSet<HexBytes> = HashSet()
         val noOrphans: MutableSet<HexBytes> = HashSet()
         for (block in queue) {

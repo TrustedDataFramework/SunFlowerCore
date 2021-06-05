@@ -125,7 +125,7 @@ object WBI {
         throw RuntimeException("unexpected")
     }
 
-    private fun mallocInternal(instance: ModuleInstance, type: Long, bin: ByteArray): Int {
+    fun mallocInternal(instance: ModuleInstance, type: Long, bin: ByteArray): Int {
         val ptr = instance.execute(WBI_MALLOC, bin.size.toLong())[0]
         instance.memory.put(ptr.toInt(), bin)
         val p = instance.execute(WBI_CHANGE_TYPE, type, ptr, bin.size.toLong())[0]
