@@ -7,7 +7,6 @@ import org.tdf.lotusvm.types.FunctionType
 import org.tdf.lotusvm.types.ValueType
 import org.tdf.sunflower.vm.WBI
 import org.tdf.sunflower.vm.abi.WbiType
-import java.util.*
 
 class U256Host : HostFunction("_u256", FUNCTION_TYPE) {
     private val slot0: Slot = SlotImpl()
@@ -102,7 +101,7 @@ class U256Host : HostFunction("_u256", FUNCTION_TYPE) {
 
     companion object {
         val FUNCTION_TYPE = FunctionType( // offset, length, offset
-            Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64), listOf(ValueType.I64)
+            listOf(ValueType.I64, ValueType.I64, ValueType.I64), listOf(ValueType.I64)
         )
     }
 }
