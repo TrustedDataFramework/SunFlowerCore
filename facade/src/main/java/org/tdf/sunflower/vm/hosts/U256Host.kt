@@ -32,10 +32,7 @@ class U256Host : HostFunction("_u256", FUNCTION_TYPE) {
         val len = startAndLen.toInt()
 
         clearTmp()
-        for(i in 0 until len) {
-            tmpData[tmpData.size - len + i] = instance.memory.load8(start + i)
-        }
-
+        memory.read(start, tmpData, tmpData.size - len, len)
         slot.decodeBE(tmpData, 0)
     }
 
@@ -55,9 +52,7 @@ class U256Host : HostFunction("_u256", FUNCTION_TYPE) {
         val ptr = (instance.execute(WBI.WBI_MALLOC, size.toLong())[0]).toInt()
         if (ptr < 0) throw RuntimeException("malloc failed: pointer is negative")
 
-        for(i in 0 until size) {
-            instance.memory.storeI8(ptr + i, tmpData[firstNoZero + i])
-        }
+        memory.write(ptr, tmpData, firstNoZero, size)
 
         val p = instance.execute(WBI.WBI_CHANGE_TYPE, WbiType.UINT_256, ptr.toLong(), size.toLong())[0]
         val r = p.toInt()
@@ -102,7 +97,7 @@ class U256Host : HostFunction("_u256", FUNCTION_TYPE) {
 
     companion object {
         val FUNCTION_TYPE = FunctionType( // offset, length, offset
-            Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64), listOf(ValueType.I64)
+            listOf(ValueType.I64, ValueType.I64, ValueType.I64), listOf(ValueType.I64)
         )
     }
 }
