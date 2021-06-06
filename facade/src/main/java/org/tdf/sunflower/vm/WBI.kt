@@ -110,7 +110,8 @@ object WBI {
         val startAndLen = instance.execute(WBI_PEEK, offset.toLong(), type)[0]
         val start = (startAndLen ushr 32).toInt()
         val len = startAndLen.toInt()
-        val bin = instance.memory.load(start, len)
+        val bin = ByteArray(len)
+        instance.memory.read(start, bin)
         when (type) {
             WbiType.STRING -> {
                 return String(bin, StandardCharsets.UTF_8)
@@ -127,7 +128,7 @@ object WBI {
 
     private fun mallocInternal(instance: ModuleInstance, type: Long, bin: ByteArray): Int {
         val ptr = instance.execute(WBI_MALLOC, bin.size.toLong())[0]
-        instance.memory.put(ptr.toInt(), bin)
+        instance.memory.write(ptr.toInt(), bin)
         val p = instance.execute(WBI_CHANGE_TYPE, type, ptr, bin.size.toLong())[0]
         val r = p.toInt()
         if (r < 0) throw RuntimeException("malloc failed: pointer is negative")
