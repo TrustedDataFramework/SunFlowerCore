@@ -7,7 +7,6 @@ import org.tdf.lotusvm.types.FunctionType
 import org.tdf.lotusvm.types.ValueType
 import org.tdf.sunflower.vm.WBI
 import org.tdf.sunflower.vm.abi.WbiType
-import java.util.*
 
 class U256Host : HostFunction("_u256", FUNCTION_TYPE) {
     private val slot0: Slot = SlotImpl()
