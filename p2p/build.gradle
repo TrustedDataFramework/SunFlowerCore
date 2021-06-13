@@ -1,9 +1,0 @@
-dependencies {
-// https://mvnrepository.com/artifact/io.netty/netty-all
-    implementation group: 'io.netty', name: 'netty-all', version: '4.0.56.Final'
-    implementation project(':common')
-    compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"
-
-    testImplementation "org.slf4j:slf4j-api:${slf4jVersion}"
-    testImplementation group: 'org.slf4j', name: 'slf4j-nop', version: '1.7.30'
-}

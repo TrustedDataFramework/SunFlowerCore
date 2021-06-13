@@ -82,7 +82,7 @@ public class JsonRpcFilter implements Filter {
                     }
 
                 } catch (IOException e) {
-                    log.error("Error parsing JSON-RPC request", e);
+//                    log.error("Error parsing JSON-RPC request", e);
                 }
             } else {
                 chain.doFilter(request, response);
@@ -95,7 +95,7 @@ public class JsonRpcFilter implements Filter {
     private void notifyInvocation(JsonNode requestJson, JsonNode responseJson) throws IOException {
         if (responseJson.has("error")) {
             final String errorMessage = responseJson.get("error").toString();
-            log.warn("Problem when invoking JSON-RPC " + requestJson.toString() + " response:" + errorMessage);
+//            log.warn("Problem when invoking JSON-RPC " + requestJson.toString() + " response:" + errorMessage);
         } else {
             final String methodName = requestJson.get("method").asText();
             final List<JsonNode> params = new ArrayList<>();

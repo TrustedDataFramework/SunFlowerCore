@@ -14,6 +14,7 @@ dependencies {
     compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
     implementation project(':common')
     implementation project(':facade')
+    implementation project(':evm')
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
