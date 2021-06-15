@@ -17,11 +17,11 @@ fun IntArray.copyFrom(n: BigInteger) {
 }
 
 
-fun IntArray.copyFrom(n: Int){
+fun IntArray.copyFrom(n: Int) {
     SlotUtils.copyFrom(this, 0, n)
 }
 
-fun IntArray.toByteArray(): ByteArray{
+fun IntArray.toByteArray(): ByteArray {
     val r = ByteArray(MAX_BYTE_ARRAY_SIZE)
     SlotUtils.encodeBE(this, 0, r, 0)
     return r
