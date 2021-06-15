@@ -5,6 +5,8 @@ import org.tdf.common.util.SlotUtils.*
 import java.math.BigInteger
 
 interface Stack {
+    val size: Int
+
     fun push(n: IntArray, offset: Int)
 
     fun push(n: MutableBigInteger)
@@ -34,7 +36,6 @@ interface Stack {
     fun pop(buf: IntArray, offset: Int)
 
     fun popBigInt(signed: Boolean = false): BigInteger
-
 
     // arithmetic, unsigned
     fun add()
@@ -70,7 +71,7 @@ class StackImpl : Stack {
 
     private var top: Int = -SLOT_SIZE
 
-    var size: Int = 0
+    override var size: Int = 0
         private set
 
     private var data: IntArray = IntArray(SLOT_SIZE * INITIAL_CAP)

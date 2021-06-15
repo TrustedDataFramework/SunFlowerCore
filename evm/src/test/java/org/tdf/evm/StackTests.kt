@@ -7,12 +7,12 @@ import org.tdf.evm.StackImpl.Companion.P_2_256
 import org.tdf.evm.StackImpl.Companion.P_MAX
 import java.math.BigInteger
 
+val stack: Stack = StackImpl()
+
 class TestOperator(
     private val expect: (BigInteger, BigInteger) -> BigInteger,
     private val actual: (Stack) -> BigInteger
 ) {
-    private val stack: Stack = StackImpl()
-
     fun expect(left: BigInteger, right: BigInteger): BigInteger {
         return expect.invoke(left, right)
     }
@@ -180,6 +180,36 @@ val stackOr = TestOperator(
     }
 )
 
+val stackXor = TestOperator(
+    { l, r ->
+        l.xor(r)
+    },
+    fun(stack: Stack): BigInteger {
+        stack.xor()
+        return stack.popBigInt()
+    }
+)
+
+val stackEq = TestOperator(
+    { l, r ->
+        if(l == r) { BigInteger.ONE } else { BigInteger.ZERO }
+    },
+    fun(stack: Stack): BigInteger {
+        stack.eq()
+        return stack.popBigInt()
+    }
+)
+
+val stackIsZero = TestOperator(
+    { l, _ ->
+        if(l == BigInteger.ZERO ) { BigInteger.ONE } else { BigInteger.ZERO }
+    },
+    fun(stack: Stack): BigInteger {
+        stack.isZero()
+        return stack.popBigInt()
+    }
+)
+
 @RunWith(JUnit4::class)
 class StackTests {
     @Test
@@ -249,6 +279,22 @@ class StackTests {
     fun testRandomOr() {
         TestUtil.unsignedArithmeticTest(stackOr)
     }
+
+    @Test
+    fun testRandomXor() {
+        TestUtil.unsignedArithmeticTest(stackXor)
+    }
+
+    @Test
+    fun testRandomEq() {
+        TestUtil.unsignedArithmeticTest(stackEq)
+    }
+
+    @Test
+    fun testRandomIsZero() {
+        TestUtil.unsignedArithmeticTest(stackIsZero)
+    }
+
 
     @Test
     fun testFailed() {

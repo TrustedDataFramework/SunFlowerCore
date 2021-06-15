@@ -48,7 +48,12 @@ object TestUtil {
                         l = r + r
                     }
 
-                    testSinglePair(op, l, r)
+                    try {
+                        testSinglePair(op, l, r)
+                    }catch (e: Exception) {
+                        println("exception found l = $l r = $r, op = $op")
+                        throw e
+                    }
                 }
             }
         }
