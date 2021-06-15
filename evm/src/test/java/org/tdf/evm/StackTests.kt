@@ -7,24 +7,30 @@ import org.tdf.evm.StackImpl.Companion.P_2_256
 import org.tdf.evm.StackImpl.Companion.P_MAX
 import java.math.BigInteger
 
-val stack: Stack = StackImpl()
-
-class TestOperator(
+class StackTestOperator(
     private val expect: (BigInteger, BigInteger) -> BigInteger,
-    private val actual: (Stack) -> BigInteger
-) {
-    fun expect(left: BigInteger, right: BigInteger): BigInteger {
+    private val actual: (Stack) -> BigInteger,
+    private val skip: (BigInteger, BigInteger) -> Boolean = { _, _ -> false }
+) : TestBinaryOperator {
+    private val stack = StackImpl()
+
+    override fun skip(left: BigInteger, right: BigInteger): Boolean {
+        return skip.invoke(left, right)
+    }
+
+    override fun expect(left: BigInteger, right: BigInteger): BigInteger {
         return expect.invoke(left, right)
     }
 
-    fun actual(left: BigInteger, right: BigInteger): BigInteger {
+    override fun actual(left: BigInteger, right: BigInteger): BigInteger {
         stack.push(right)
         stack.push(left)
         return actual.invoke(stack)
     }
 }
 
-val stackAdd = TestOperator(
+
+val stackAdd = StackTestOperator(
     { l, r -> (l + r) % P_2_256 },
     fun(stack: Stack): BigInteger {
         stack.add()
@@ -32,7 +38,7 @@ val stackAdd = TestOperator(
     }
 )
 
-val stackSub = TestOperator(
+val stackSub = StackTestOperator(
     { l, r -> (l - r).and(P_MAX) },
     fun(stack: Stack): BigInteger {
         stack.sub()
@@ -40,7 +46,7 @@ val stackSub = TestOperator(
     }
 )
 
-val stackMul = TestOperator(
+val stackMul = StackTestOperator(
     { l, r -> (l * r) % P_2_256 },
     fun(stack: Stack): BigInteger {
         stack.mul()
@@ -48,7 +54,7 @@ val stackMul = TestOperator(
     }
 )
 
-val stackDiv = TestOperator(
+val stackDiv = StackTestOperator(
     { l, r ->
         if (r == BigInteger.ZERO) {
             BigInteger.ZERO
@@ -62,7 +68,7 @@ val stackDiv = TestOperator(
     }
 )
 
-val stackMod = TestOperator(
+val stackMod = StackTestOperator(
     { l, r ->
         if (r == BigInteger.ZERO) {
             BigInteger.ZERO
@@ -76,7 +82,7 @@ val stackMod = TestOperator(
     }
 )
 
-val stackSDiv = TestOperator(
+val stackSDiv = StackTestOperator(
     { l, r ->
         if (r == BigInteger.ZERO) {
             BigInteger.ZERO
@@ -90,7 +96,7 @@ val stackSDiv = TestOperator(
     }
 )
 
-val stackSMod = TestOperator(
+val stackSMod = StackTestOperator(
     { l, r ->
         if (r == BigInteger.ZERO) {
             BigInteger.ZERO
@@ -104,7 +110,7 @@ val stackSMod = TestOperator(
     }
 )
 
-val stackLt = TestOperator(
+val stackLt = StackTestOperator(
     { l, r ->
         if (l < r) {
             BigInteger.ONE
@@ -118,7 +124,7 @@ val stackLt = TestOperator(
     }
 )
 
-val stackSLt = TestOperator(
+val stackSLt = StackTestOperator(
     { l, r ->
         if (l < r) {
             BigInteger.ONE
@@ -132,7 +138,7 @@ val stackSLt = TestOperator(
     }
 )
 
-val stackGt = TestOperator(
+val stackGt = StackTestOperator(
     { l, r ->
         if (l > r) {
             BigInteger.ONE
@@ -146,7 +152,7 @@ val stackGt = TestOperator(
     }
 )
 
-val stackSGt = TestOperator(
+val stackSGt = StackTestOperator(
     { l, r ->
         if (l > r) {
             BigInteger.ONE
@@ -160,7 +166,7 @@ val stackSGt = TestOperator(
     }
 )
 
-val stackAnd = TestOperator(
+val stackAnd = StackTestOperator(
     { l, r ->
         l.and(r)
     },
@@ -170,7 +176,7 @@ val stackAnd = TestOperator(
     }
 )
 
-val stackOr = TestOperator(
+val stackOr = StackTestOperator(
     { l, r ->
         l.or(r)
     },
@@ -180,7 +186,7 @@ val stackOr = TestOperator(
     }
 )
 
-val stackXor = TestOperator(
+val stackXor = StackTestOperator(
     { l, r ->
         l.xor(r)
     },
@@ -190,9 +196,13 @@ val stackXor = TestOperator(
     }
 )
 
-val stackEq = TestOperator(
+val stackEq = StackTestOperator(
     { l, r ->
-        if(l == r) { BigInteger.ONE } else { BigInteger.ZERO }
+        if (l == r) {
+            BigInteger.ONE
+        } else {
+            BigInteger.ZERO
+        }
     },
     fun(stack: Stack): BigInteger {
         stack.eq()
@@ -200,12 +210,34 @@ val stackEq = TestOperator(
     }
 )
 
-val stackIsZero = TestOperator(
+val stackIsZero = StackTestOperator(
     { l, _ ->
-        if(l == BigInteger.ZERO ) { BigInteger.ONE } else { BigInteger.ZERO }
+        if (l == BigInteger.ZERO) {
+            BigInteger.ONE
+        } else {
+            BigInteger.ZERO
+        }
     },
     fun(stack: Stack): BigInteger {
         stack.isZero()
+        return stack.popBigInt()
+    }
+)
+
+val stackExp = StackTestOperator(
+    { l, r ->
+        l.modPow(r, P_2_256)
+    },
+    fun(stack: Stack): BigInteger {
+        stack.exp()
+        return stack.popBigInt()
+    }
+)
+
+val stackDup = StackTestOperator(
+    { _, r -> r },
+    fun(stack: Stack): BigInteger {
+        stack.dup(stack.size - 2)
         return stack.popBigInt()
     }
 )
@@ -295,11 +327,20 @@ class StackTests {
         TestUtil.unsignedArithmeticTest(stackIsZero)
     }
 
+    @Test
+    fun testRandomExp() {
+        TestUtil.unsignedArithmeticTest(stackExp, 2)
+    }
+
+    @Test
+    fun testRandomDup() {
+        TestUtil.unsignedArithmeticTest(stackDup, 2)
+    }
 
     @Test
     fun testFailed() {
-        val l = BigInteger.valueOf(193)
-        val r = BigInteger.valueOf(-1)
-        TestUtil.testSinglePair(stackSDiv, l, r)
+        val l = BigInteger.valueOf(0)
+        val r = BigInteger.valueOf(0)
+        TestUtil.testSinglePair(stackSub, l, r)
     }
 }

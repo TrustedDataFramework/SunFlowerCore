@@ -36,6 +36,8 @@ class U256Register {
     }
 
     fun mul(left: BigInteger, right: BigInteger): BigInteger {
+        if (left == BigInteger.ZERO || right == BigInteger.ZERO)
+            return BigInteger.ZERO
         slot0.copyFrom(left)
         slot1.copyFrom(right)
         varSlot.reset()

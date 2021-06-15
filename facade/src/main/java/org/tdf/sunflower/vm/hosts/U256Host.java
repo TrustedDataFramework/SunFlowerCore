@@ -16,7 +16,6 @@ import static org.tdf.sunflower.vm.WBI.*;
 
 public class U256Host extends HostFunction {
     private static final int[] ZERO_SLOT = new int[SLOT_SIZE * 2];
-    private static final byte[] ZERO_BYTES = new byte[MAX_BYTE_ARRAY_SIZE];
 
     private final int[] slot0 = new int[SLOT_SIZE];
     private final int[] slot1 = new int[SLOT_SIZE];
@@ -52,10 +51,6 @@ public class U256Host extends HostFunction {
         super("_u256", FUNCTION_TYPE);
     }
 
-    private void reset(int[] slot) {
-        System.arraycopy(ZERO_SLOT, 0, slot, 0, slot.length);
-    }
-
     // override slot by uint256 pointer
     private void copyToSlot(int[] slot, long pointer) {
         // call peek function, convert uint256 pointer to byte array fat pointer
@@ -67,7 +62,7 @@ public class U256Host extends HostFunction {
             throw new RuntimeException("invalid uint256, overflow");
 
         // reset temp
-        System.arraycopy(ZERO_BYTES, 0, tempBytes, 0, MAX_BYTE_ARRAY_SIZE);
+        Arrays.fill(tempBytes, (byte) 0);
 
         // read memory referred by fat pointer into temp byte array
         getMemory().read(offset, tempBytes, MAX_BYTE_ARRAY_SIZE - len, len);
@@ -86,7 +81,7 @@ public class U256Host extends HostFunction {
         }
 
         // reset temp byte array
-        System.arraycopy(ZERO_BYTES, 0, tempBytes, 0, MAX_BYTE_ARRAY_SIZE);
+        Arrays.fill(tempBytes, (byte) 0);
 
         // encode into temp byte array
         for (int i = 0; i < SLOT_SIZE; i++) {
@@ -147,29 +142,29 @@ public class U256Host extends HostFunction {
                 }
                 mut0.multiply(mut1, mut2);
                 // keep at most 256 least significant bits
-                reset(slot0);
+                Arrays.fill(slot0, 0);
                 SlotUtils.trim256(varSlot0, mut2.getOffset(), mut2.getIntLen(), slot0, 0);
                 return writeSlot(slot0);
             }
             case DIV: {
                 // reset temporary divisor and rem
-                reset(divisor);
+                Arrays.fill(divisor, 0);
                 mut3.clear();
 
                 mut0.divideKnuth(mut1, mut2, mut3, divisor, false);
 
-                reset(slot0);
+                Arrays.fill(slot0, 0);
                 SlotUtils.trim256(mut2.getValue(), mut2.getOffset(), mut2.getIntLen(), slot0, 0);
                 return writeSlot(slot0);
             }
             case MOD: {
                 // reset temporary divisor and rem
-                reset(divisor);
+                Arrays.fill(divisor, 0);
                 mut3.clear();
 
                 mut0.divideKnuth(mut1, mut2, mut3, divisor, true);
 
-                reset(slot0);
+                Arrays.fill(slot0, 0);
                 SlotUtils.trim256(mut3.getValue(), mut3.getOffset(), mut3.getIntLen(), slot0, 0);
                 return writeSlot(slot0);
             }

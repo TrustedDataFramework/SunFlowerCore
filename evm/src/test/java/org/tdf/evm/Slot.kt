@@ -3,9 +3,10 @@ package org.tdf.evm
 import org.tdf.common.util.SlotUtils
 import org.tdf.common.util.SlotUtils.MAX_BYTE_ARRAY_SIZE
 import java.math.BigInteger
+import java.util.*
 
 fun IntArray.reset() {
-    SlotUtils.reset(this)
+    Arrays.fill(this, 0)
 }
 
 fun IntArray.copyFrom(bytes: ByteArray) {

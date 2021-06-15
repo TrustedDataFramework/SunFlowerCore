@@ -8,9 +8,57 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.tdf.common.util.SlotUtils.MAX_BYTE_ARRAY_SIZE
 import org.tdf.common.util.SlotUtils.SLOT_SIZE
+import org.tdf.evm.StackImpl.Companion.P_2_256
 import java.math.BigInteger
 import java.security.SecureRandom
 import java.util.*
+
+class RegTestOperator(
+    private val expect: (BigInteger, BigInteger) -> BigInteger,
+    private val actual: (U256Register, BigInteger, BigInteger) -> BigInteger,
+    private val skip: (BigInteger, BigInteger) -> Boolean = { _, _ -> false }
+) : TestBinaryOperator {
+    private val reg = U256Register()
+
+    override fun skip(left: BigInteger, right: BigInteger): Boolean {
+        return skip.invoke(left, right)
+    }
+
+    override fun expect(left: BigInteger, right: BigInteger): BigInteger {
+        return expect.invoke(left, right)
+    }
+
+    override fun actual(left: BigInteger, right: BigInteger): BigInteger {
+        return actual.invoke(reg, left, right)
+    }
+}
+
+val regAdd = RegTestOperator(
+    { l, r -> (l + r) % P_2_256 },
+    { reg, l, r -> reg.add(l, r) }
+)
+
+val regSub = RegTestOperator(
+    { l, r -> (l - r).and(StackImpl.P_MAX) },
+    { reg, l, r -> reg.sub(l, r) }
+)
+
+val regMul = RegTestOperator(
+    { l, r -> (l * r).and(StackImpl.P_MAX) },
+    { reg, l, r -> reg.mul(l, r) }
+)
+
+val regDiv = RegTestOperator(
+    { l, r -> (l / r).and(StackImpl.P_MAX) },
+    { reg, l, r -> reg.div(l, r) },
+    { _, r -> r == BigInteger.ZERO }
+)
+
+val regMod = RegTestOperator(
+    { l, r -> l % r },
+    { reg, l, r -> reg.mod(l, r) },
+    { _, r -> r == BigInteger.ZERO }
+)
 
 @RunWith(JUnit4::class)
 class U256Tests {
@@ -85,43 +133,12 @@ class U256Tests {
 
     @Test
     fun testRandomAdd() {
-        val reg = U256Register()
-        for (i in 0 until 1000) {
-            val left = ByteArray(MAX_BYTE_ARRAY_SIZE)
-            SR.nextBytes(left)
-
-            val right = ByteArray(MAX_BYTE_ARRAY_SIZE)
-            SR.nextBytes(right)
-
-            val l = BigInteger(1, left)
-            val r = BigInteger(1, right)
-
-            val expected = (l + r).mod(_2_256)
-
-            val actual = reg.add(l, r)
-
-            assertEquals(expected.toString(16), actual.toString(16))
-        }
+        TestUtil.unsignedArithmeticTest(regAdd)
     }
 
     @Test
     fun testRandomSub() {
-        val reg = U256Register()
-        for (i in 0 until 1000) {
-            val left = ByteArray(MAX_BYTE_ARRAY_SIZE)
-            SR.nextBytes(left)
-
-            val right = ByteArray(MAX_BYTE_ARRAY_SIZE)
-            SR.nextBytes(right)
-
-            val l = BigInteger(1, left)
-            val r = BigInteger(1, right)
-
-            val expected = l.subtract(r).mod(_2_256)
-            val actual = reg.sub(l, r)
-
-            assertEquals(expected.toString(16), actual.toString(16))
-        }
+        TestUtil.unsignedArithmeticTest(regSub)
     }
 
     @Test
@@ -139,21 +156,7 @@ class U256Tests {
 
     @Test
     fun testRandomMul() {
-        val reg = U256Register()
-        val left = ByteArray(MAX_BYTE_ARRAY_SIZE)
-        val right = ByteArray(MAX_BYTE_ARRAY_SIZE)
-        for (i in 0 until 1000) {
-            SR.nextBytes(left)
-            SR.nextBytes(right)
-
-            val l = BigInteger(1, left)
-            val r = BigInteger(1, right)
-
-            val expected = (l * r).mod(_2_256)
-            val actual = reg.mul(l, r)
-
-            assertEquals(expected.toString(16), actual.toString(16))
-        }
+        TestUtil.unsignedArithmeticTest(regMul)
     }
 
 
@@ -169,86 +172,13 @@ class U256Tests {
 
     @Test
     fun testRandomDiv() {
-        val reg = U256Register()
-
-        for (j in 4..32) {
-            val left = ByteArray(j)
-            for (k in 4..32) {
-                val right = ByteArray(k)
-                for (i in 0 until 1000) {
-                    SR.nextBytes(left)
-                    SR.nextBytes(right)
-
-                    val l = BigInteger(1, left)
-                    val r = BigInteger(1, right)
-
-                    if (r == BigInteger.ZERO)
-                        continue
-
-                    val expected = l / r
-                    val actual = reg.div(l, r)
-
-                    assertEquals(expected.toString(16), actual.toString(16))
-                }
-            }
-
-        }
-
+        TestUtil.unsignedArithmeticTest(regDiv)
     }
 
 
     @Test
     fun testRandomMod() {
-        val reg = U256Register()
-
-        for (j in 4..32) {
-            val left = ByteArray(j)
-            for (k in 4..32) {
-                val right = ByteArray(k)
-                for (i in 0 until 1000) {
-                    SR.nextBytes(left)
-                    SR.nextBytes(right)
-
-                    if (j >= 24 && k >= 24 && i == 3) {
-                        for (x in 4 until j)
-                            left[x] = 0
-                        for (x in 4 until k)
-                            right[x] = 0
-                    }
-
-                    var l = if (i == 0) {
-                        BigInteger.ZERO
-                    } else {
-                        BigInteger(1, left)
-                    }
-                    var r = if (i == 1) {
-                        l
-                    } else {
-                        BigInteger(1, right)
-                    }
-
-                    if (k == 4 && i == 2) {
-                        l = r + r
-                    }
-
-
-
-                    if (r == BigInteger.ZERO)
-                        continue
-
-
-                    val expected = l % r
-                    val actual = reg.mod(l, r)
-
-                    if (actual != expected) {
-                        println("l = $l r = $r")
-                    }
-                    assertEquals(expected.toString(16), actual.toString(16))
-                }
-            }
-
-        }
-
+        TestUtil.unsignedArithmeticTest(regMod)
     }
 
     @Test

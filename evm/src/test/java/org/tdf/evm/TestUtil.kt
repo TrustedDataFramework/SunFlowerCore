@@ -4,10 +4,18 @@ import org.junit.Assert
 import java.math.BigInteger
 import kotlin.experimental.and
 
+interface TestBinaryOperator {
+    fun skip(left: BigInteger, right: BigInteger): Boolean
+    fun expect(left: BigInteger, right: BigInteger): BigInteger
+    fun actual(left: BigInteger, right: BigInteger): BigInteger
+}
+
 object TestUtil {
     private const val LOOPS = 100
 
-    fun testSinglePair(op: TestOperator, l: BigInteger, r: BigInteger) {
+    fun testSinglePair(op: TestBinaryOperator, l: BigInteger, r: BigInteger) {
+        if (op.skip(l, r))
+            return
         val expected = op.expect(l, r)
         val actual = op.actual(l, r)
 
@@ -17,12 +25,12 @@ object TestUtil {
         Assert.assertEquals("", expected.toString(16), actual.toString(16))
     }
 
-    fun unsignedArithmeticTest(op: TestOperator) {
+    fun unsignedArithmeticTest(op: TestBinaryOperator, loops: Int = LOOPS) {
         for (j in 0..32) {
             val left = ByteArray(j)
             for (k in 0..32) {
                 val right = ByteArray(k)
-                for (i in 0 until LOOPS) {
+                for (i in 0 until loops) {
                     U256Tests.SR.nextBytes(left)
                     U256Tests.SR.nextBytes(right)
 
@@ -50,7 +58,7 @@ object TestUtil {
 
                     try {
                         testSinglePair(op, l, r)
-                    }catch (e: Exception) {
+                    } catch (e: Exception) {
                         println("exception found l = $l r = $r, op = $op")
                         throw e
                     }
@@ -59,12 +67,12 @@ object TestUtil {
         }
     }
 
-    fun signedArithmeticTest(op: TestOperator) {
+    fun signedArithmeticTest(op: TestBinaryOperator, loops: Int = LOOPS) {
         for (j in 0..32) {
             val left = ByteArray(j)
             for (k in 0..32) {
                 val right = ByteArray(k)
-                for (i in 0 until LOOPS) {
+                for (i in 0 until loops) {
                     U256Tests.SR.nextBytes(left)
                     U256Tests.SR.nextBytes(right)
 
@@ -110,7 +118,13 @@ object TestUtil {
                         l = r + r
                     }
 
-                    testSinglePair(op, l, r)
+
+                    try {
+                        testSinglePair(op, l, r)
+                    } catch (e: Exception) {
+                        println("exception found l = $l r = $r, op = $op")
+                        throw e
+                    }
                 }
             }
         }

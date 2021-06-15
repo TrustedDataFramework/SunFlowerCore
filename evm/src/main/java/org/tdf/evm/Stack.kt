@@ -3,6 +3,7 @@ package org.tdf.evm
 import org.tdf.common.util.MutableBigInteger
 import org.tdf.common.util.SlotUtils.*
 import java.math.BigInteger
+import java.util.*
 
 interface Stack {
     val size: Int
@@ -21,23 +22,27 @@ interface Stack {
     fun push(n: BigInteger)
 
     /**
-     * push a value to stack
+     * push a long value to stack
      */
     fun pushLong(n: Long)
 
     /**
-     * push a value to stack
+     * push a int value to stack
      */
     fun pushInt(n: Int)
 
+    fun drop(n: Int = 1)
+
     /**
-     * pop top into slot
+     * pop top into buffer
      */
     fun pop(buf: IntArray, offset: Int)
 
+    /**
+     * pop as biginteger
+     */
     fun popBigInt(signed: Boolean = false): BigInteger
 
-    // arithmetic, unsigned
     fun add()
     fun sub()
     fun mul()
@@ -106,7 +111,7 @@ class StackImpl : Stack {
         tryGrow()
         size++
         top += SLOT_SIZE
-        System.arraycopy(ZERO_SLOT, 0, data, top, SLOT_SIZE)
+        Arrays.fill(data, top, top + SLOT_SIZE, 0)
         trim256(n.value, n.offset, n.intLen, data, top)
     }
 
@@ -150,7 +155,7 @@ class StackImpl : Stack {
 
     private fun pushInternal(n: BigInteger) {
         tryGrow()
-        resetTempBytes()
+        Arrays.fill(tempBytes, 0)
         size++
         top += SLOT_SIZE
         copyFrom(tempBytes, 0, n)
@@ -178,7 +183,7 @@ class StackImpl : Stack {
         tryGrow()
         size++
         top += SLOT_SIZE
-        System.arraycopy(ZERO_SLOT, 0, data, top, SLOT_SIZE)
+        Arrays.fill(data, top, top + SLOT_SIZE, 0)
     }
 
     override fun pushLong(n: Long) {
@@ -186,7 +191,7 @@ class StackImpl : Stack {
         // clear top slot
         size++
         top += SLOT_SIZE
-        System.arraycopy(ZERO_SLOT, 0, data, top, SLOT_SIZE)
+        Arrays.fill(data, top, top + SLOT_SIZE, 0)
         data[top + 6] = (n ushr 32).toInt()
         data[top + 7] = n.toInt()
     }
@@ -196,7 +201,7 @@ class StackImpl : Stack {
         // clear top slot
         size++
         top += SLOT_SIZE
-        System.arraycopy(ZERO_SLOT, 0, data, top, SLOT_SIZE)
+        Arrays.fill(data, top, top + SLOT_SIZE, 0)
         data[top + 7] = n
     }
 
@@ -296,14 +301,14 @@ class StackImpl : Stack {
         // clear quotient
         varMut.clear()
         // clear divisor slot
-        System.arraycopy(ZERO_SLOT, 0, divisor, 0, SLOT_SIZE * 2)
+        Arrays.fill(divisor, 0)
         // clear rem
         remMut.clear()
         operandMut0.divideKnuth(operandMut1, varMut, remMut, divisor, needRem)
     }
 
     private fun popOperand0(carry: Long) {
-        System.arraycopy(ZERO_SLOT, 0, operand0, 0, SLOT_SIZE)
+        Arrays.fill(operand0, 0)
         pop(operand0, SLOT_SIZE)
         operand0[SLOT_SIZE - 1] = carry.toInt()
         operandMut0.setValue(operand0, operand0.size)
@@ -311,7 +316,7 @@ class StackImpl : Stack {
     }
 
     private fun popOperand1(carry: Long) {
-        System.arraycopy(ZERO_SLOT, 0, operand1, 0, SLOT_SIZE)
+        Arrays.fill(operand1, 0)
         pop(operand1, SLOT_SIZE)
         operand1[SLOT_SIZE - 1] = carry.toInt()
         operandMut1.setValue(operand1, operand1.size)
@@ -377,7 +382,7 @@ class StackImpl : Stack {
         // special case
         if (isOne(data, top - SLOT_SIZE)) {
             if (rem) {
-                System.arraycopy(ZERO_SLOT, 0, data, top - SLOT_SIZE, SLOT_SIZE)
+                Arrays.fill(data, top - SLOT_SIZE, top, 0)
             } else {
                 System.arraycopy(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
             }
@@ -390,7 +395,7 @@ class StackImpl : Stack {
         val rightSign = signOf(data, top - SLOT_SIZE)
 
         if (leftSign == 0 || rightSign == 0) {
-            System.arraycopy(ZERO_SLOT, 0, data, top - SLOT_SIZE, SLOT_SIZE)
+            Arrays.fill(data, top - SLOT_SIZE, top, 0)
             size--
             top -= SLOT_SIZE
             return
@@ -440,8 +445,7 @@ class StackImpl : Stack {
             throw RuntimeException("stack underflow")
 
         val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
-        popInternal()
-        popInternal()
+        drop(2)
 
         if (cmp == 0) {
             pushOne()
@@ -455,8 +459,7 @@ class StackImpl : Stack {
             throw RuntimeException("stack underflow")
 
         val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
-        popInternal()
-        popInternal()
+        drop(2)
 
         if (cmp < 0) {
             pushOne()
@@ -473,8 +476,7 @@ class StackImpl : Stack {
         val rightSign = signOf(data, top - SLOT_SIZE)
 
         if (leftSign != rightSign) {
-            popInternal()
-            popInternal()
+            drop(2)
             if (leftSign < rightSign) {
                 pushOne()
             } else {
@@ -484,8 +486,7 @@ class StackImpl : Stack {
         }
 
         val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE) * leftSign * rightSign
-        popInternal()
-        popInternal()
+        drop(2)
         if (cmp < 0) {
             pushOne()
         } else {
@@ -498,8 +499,7 @@ class StackImpl : Stack {
             throw RuntimeException("stack underflow")
 
         val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
-        popInternal()
-        popInternal()
+        drop(2)
 
         if (cmp > 0) {
             pushOne()
@@ -516,8 +516,7 @@ class StackImpl : Stack {
         val rightSign = signOf(data, top - SLOT_SIZE)
 
         if (leftSign != rightSign) {
-            popInternal()
-            popInternal()
+            drop(2)
             if (leftSign > rightSign) {
                 pushOne()
             } else {
@@ -527,8 +526,7 @@ class StackImpl : Stack {
         }
 
         val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE) * leftSign * rightSign
-        popInternal()
-        popInternal()
+        drop(2)
         if (cmp > 0) {
             pushOne()
         } else {
@@ -536,9 +534,11 @@ class StackImpl : Stack {
         }
     }
 
-    private fun popInternal() {
-        size -= 1
-        top -= SLOT_SIZE
+    override fun drop(n: Int) {
+        if (size < n)
+            throw RuntimeException("stack underflow")
+        size -= n
+        top -= SLOT_SIZE * n
     }
 
     override fun isZero() {
@@ -553,7 +553,7 @@ class StackImpl : Stack {
             }
         }
 
-        popInternal()
+        drop()
         if (isZero) {
             pushOne()
         } else {
@@ -573,22 +573,12 @@ class StackImpl : Stack {
     }
 
 
-    protected val tempBytes: ByteArray = ByteArray(MAX_BYTE_ARRAY_SIZE)
-
-    protected fun resetTempBytes() {
-        System.arraycopy(ZERO_BYTES, 0, tempBytes, 0, MAX_BYTE_ARRAY_SIZE)
-    }
-
-    protected fun resetSlot(slot: IntArray, offset: Int, size: Int) {
-        System.arraycopy(ZERO_SLOT, 0, slot, offset, size)
-    }
+    private val tempBytes: ByteArray = ByteArray(MAX_BYTE_ARRAY_SIZE)
 
     companion object {
         val ZERO_BYTES: ByteArray = ByteArray(MAX_BYTE_ARRAY_SIZE)
-        val ZERO_SLOT: IntArray = IntArray(SLOT_SIZE * 2)
         const val INITIAL_CAP = 2
         val P_2_256 = BigInteger.valueOf(2).pow(256)
         val P_MAX = P_2_256 - BigInteger.ONE
     }
-
 }

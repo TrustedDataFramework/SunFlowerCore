@@ -23,15 +23,7 @@ public final class SlotUtils {
     public static final int INT_BITS = 32;
 
     // slot - 1 = slot + negative_one
-    public static final int[] NEGATIVE_ONE;
-
-    static {
-        NEGATIVE_ONE = Arrays.copyOfRange(ONE, 0, SLOT_SIZE);
-        for(int i = 0; i < SLOT_SIZE; i++)
-            NEGATIVE_ONE[i] = ~NEGATIVE_ONE[i];
-        add(NEGATIVE_ONE, 0, ONE, 0, NEGATIVE_ONE, 0);
-    }
-
+    public static final int[] NEGATIVE_ONE = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff};
 
     /**
      * dst = left + right, return 1 if overflow
@@ -199,16 +191,6 @@ public final class SlotUtils {
         }
         System.arraycopy(data, dataOffset + size - SLOT_SIZE, out, outOffset, SLOT_SIZE);
     }
-
-    public static void reset(int[] data) {
-        reset(data, 0, data.length);
-    }
-
-    public static void reset(int[] data, int offset, int limit) {
-        for (int i = offset; i < offset + limit; i++)
-            data[i] = 0;
-    }
-
 
     public static int intLen(int[] slot, int slotOffset, int limit) {
         for (int i = slotOffset; i < slotOffset + limit; i++) {
