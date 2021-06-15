@@ -5,9 +5,9 @@ import java.math.BigInteger
 import kotlin.experimental.and
 
 object TestUtil {
+    private const val LOOPS = 100
+
     fun testSinglePair(op: TestOperator, l: BigInteger, r: BigInteger) {
-        if (op.skip(l, r))
-            return
         val expected = op.expect(l, r)
         val actual = op.actual(l, r)
 
@@ -22,7 +22,7 @@ object TestUtil {
             val left = ByteArray(j)
             for (k in 0..32) {
                 val right = ByteArray(k)
-                for (i in 0 until 1000) {
+                for (i in 0 until LOOPS) {
                     U256Tests.SR.nextBytes(left)
                     U256Tests.SR.nextBytes(right)
 
@@ -59,7 +59,7 @@ object TestUtil {
             val left = ByteArray(j)
             for (k in 0..32) {
                 val right = ByteArray(k)
-                for (i in 0 until 1000) {
+                for (i in 0 until LOOPS) {
                     U256Tests.SR.nextBytes(left)
                     U256Tests.SR.nextBytes(right)
 

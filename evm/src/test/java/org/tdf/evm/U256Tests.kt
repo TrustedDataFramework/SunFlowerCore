@@ -6,7 +6,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.tdf.common.util.SlotUtils.*
+import org.tdf.common.util.SlotUtils.MAX_BYTE_ARRAY_SIZE
+import org.tdf.common.util.SlotUtils.SLOT_SIZE
 import java.math.BigInteger
 import java.security.SecureRandom
 import java.util.*
@@ -208,10 +209,10 @@ class U256Tests {
                     SR.nextBytes(left)
                     SR.nextBytes(right)
 
-                    if(j >= 24 && k >= 24 && i == 3) {
-                        for(x in 4 until j)
+                    if (j >= 24 && k >= 24 && i == 3) {
+                        for (x in 4 until j)
                             left[x] = 0
-                        for(x in 4 until k)
+                        for (x in 4 until k)
                             right[x] = 0
                     }
 
@@ -226,7 +227,7 @@ class U256Tests {
                         BigInteger(1, right)
                     }
 
-                    if(k == 4 && i == 2) {
+                    if (k == 4 && i == 2) {
                         l = r + r
                     }
 
@@ -234,7 +235,6 @@ class U256Tests {
 
                     if (r == BigInteger.ZERO)
                         continue
-
 
 
                     val expected = l % r

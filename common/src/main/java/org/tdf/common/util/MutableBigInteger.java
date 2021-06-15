@@ -4,6 +4,8 @@ import java.lang.reflect.Constructor;
 import java.math.BigInteger;
 import java.util.Arrays;
 
+import static org.tdf.common.util.SlotUtils.SLOT_SIZE;
+
 public class MutableBigInteger {
     static final long INFLATED = Long.MIN_VALUE;
 
@@ -405,7 +407,7 @@ public class MutableBigInteger {
      * Sets this MutableBigInteger's value array to a copy of the specified
      * array. The intLen is set to the length of the new array.
      */
-    void copyValue(MutableBigInteger src) {
+    public void copyValue(MutableBigInteger src) {
         int len = src.intLen;
         if (value.length < len)
             value = new int[len];
@@ -418,7 +420,7 @@ public class MutableBigInteger {
      * Sets this MutableBigInteger's value array to a copy of the specified
      * array. The intLen is set to the length of the specified array.
      */
-    void copyValue(int[] val) {
+    public void copyValue(int[] val) {
         int len = val.length;
         if (value.length < len)
             value = new int[len];
@@ -1731,4 +1733,11 @@ public class MutableBigInteger {
         assert (t * val == 1);
         return t;
     }
+
+    public void trim256() {
+        if(intLen <= SLOT_SIZE)
+            return;
+        offset += intLen - SLOT_SIZE;
+    }
+
 }

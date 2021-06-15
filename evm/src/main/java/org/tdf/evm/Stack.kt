@@ -40,12 +40,14 @@ interface Stack {
     fun add()
     fun sub()
     fun mul()
+    fun mulMod()
     fun div()
     fun mod()
     fun addMod()
     fun and()
     fun or()
     fun xor()
+    fun exp()
 
     // arithmetic, signed
     fun signedDiv()
@@ -53,6 +55,10 @@ interface Stack {
 
     fun not()
     fun eq()
+    fun lt()
+    fun slt()
+    fun gt()
+    fun sgt()
     fun isZero()
 
 
@@ -209,6 +215,27 @@ class StackImpl : Stack {
         push(varMut)
     }
 
+    override fun mulMod() {
+        popOperand0(0)
+        popOperand1(0)
+        varMut.clear()
+        if (!operandMut0.isZero && !operandMut1.isZero) {
+            operandMut0.multiply(operandMut1, varMut)
+        }
+
+        operandMut0.copyValue(varMut)
+        varMut.clear()
+        popOperand1(0)
+        divModInternal(true)
+        push(remMut)
+    }
+
+    override fun exp() {
+        val num = popBigInt()
+        val exp = popBigInt()
+        push(num.modPow(exp, P_2_256))
+    }
+
     override fun div() {
         popOperand0(0)
         popOperand1(0)
@@ -307,30 +334,30 @@ class StackImpl : Stack {
     override fun and() {
         if (size < 2)
             throw RuntimeException("stack overflow")
-        for(i in top - SLOT_SIZE until top) {
+        for (i in top - SLOT_SIZE until top) {
             data[i] = data[i] and data[i + SLOT_SIZE]
         }
-        size --
+        size--
         top -= SLOT_SIZE
     }
 
     override fun or() {
         if (size < 2)
             throw RuntimeException("stack overflow")
-        for(i in top - SLOT_SIZE until top) {
+        for (i in top - SLOT_SIZE until top) {
             data[i] = data[i] or data[i + SLOT_SIZE]
         }
-        size --
+        size--
         top -= SLOT_SIZE
     }
 
     override fun xor() {
         if (size < 2)
             throw RuntimeException("stack overflow")
-        for(i in top - SLOT_SIZE until top) {
+        for (i in top - SLOT_SIZE until top) {
             data[i] = data[i] xor data[i + SLOT_SIZE]
         }
-        size --
+        size--
         top -= SLOT_SIZE
     }
 
@@ -422,6 +449,91 @@ class StackImpl : Stack {
         }
     }
 
+    override fun lt() {
+        if (size < 2)
+            throw RuntimeException("stack underflow")
+
+        val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
+        popInternal()
+        popInternal()
+
+        if (cmp < 0) {
+            pushOne()
+        } else {
+            pushZero()
+        }
+    }
+
+    override fun slt() {
+        if (size < 2)
+            throw RuntimeException("stack underflow")
+
+        val leftSign = signOf(data, top)
+        val rightSign = signOf(data, top - SLOT_SIZE)
+
+        if (leftSign != rightSign) {
+            popInternal()
+            popInternal()
+            if (leftSign < rightSign) {
+                pushOne()
+            } else {
+                pushZero()
+            }
+            return
+        }
+
+        val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE) * leftSign * rightSign
+        popInternal()
+        popInternal()
+        if (cmp < 0) {
+            pushOne()
+        } else {
+            pushZero()
+        }
+    }
+
+    override fun gt() {
+        if (size < 2)
+            throw RuntimeException("stack underflow")
+
+        val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
+        popInternal()
+        popInternal()
+
+        if (cmp > 0) {
+            pushOne()
+        } else {
+            pushZero()
+        }
+    }
+
+    override fun sgt() {
+        if (size < 2)
+            throw RuntimeException("stack underflow")
+
+        val leftSign = signOf(data, top)
+        val rightSign = signOf(data, top - SLOT_SIZE)
+
+        if (leftSign != rightSign) {
+            popInternal()
+            popInternal()
+            if (leftSign > rightSign) {
+                pushOne()
+            } else {
+                pushZero()
+            }
+            return
+        }
+
+        val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE) * leftSign * rightSign
+        popInternal()
+        popInternal()
+        if (cmp > 0) {
+            pushOne()
+        } else {
+            pushZero()
+        }
+    }
 
     private fun popInternal() {
         size -= 1
@@ -474,6 +586,8 @@ class StackImpl : Stack {
         val ZERO_BYTES: ByteArray = ByteArray(MAX_BYTE_ARRAY_SIZE)
         val ZERO_SLOT: IntArray = IntArray(SLOT_SIZE * 2)
         const val INITIAL_CAP = 2
+        val P_2_256 = BigInteger.valueOf(2).pow(256)
+        val P_MAX = P_2_256 - BigInteger.ONE
     }
 
 }

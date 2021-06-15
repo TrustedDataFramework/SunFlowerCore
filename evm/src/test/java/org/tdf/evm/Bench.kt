@@ -9,10 +9,10 @@ import java.security.SecureRandom
 val slot0 = IntArray(SLOT_SIZE)
 val m0 = MutableBigInteger(slot0)
 
-val slot1 =  IntArray(SLOT_SIZE)
+val slot1 = IntArray(SLOT_SIZE)
 val m1 = MutableBigInteger(slot1)
 
-val slot2 =  IntArray(SLOT_SIZE)
+val slot2 = IntArray(SLOT_SIZE)
 
 
 val tmp = ByteArray(MAX_BYTE_ARRAY_SIZE)
@@ -21,7 +21,7 @@ val tmpMutBigInt = MutableBigInteger(mulTmp)
 
 val sr = SecureRandom()
 
-fun interface Operator{
+fun interface Operator {
     fun mul(left: ByteArray, right: ByteArray)
 }
 
@@ -53,9 +53,13 @@ fun main() {
 
     val start = System.currentTimeMillis()
 
-    val op = if (System.getenv("op") == "bigint") { bigIntOp } else { slotOp }
+    val op = if (System.getenv("op") == "bigint") {
+        bigIntOp
+    } else {
+        slotOp
+    }
 
-    for(i in 0 until count) {
+    for (i in 0 until count) {
         sr.nextBytes(left)
         sr.nextBytes(right)
         op.mul(left, right)
@@ -63,5 +67,5 @@ fun main() {
 
     val end = System.currentTimeMillis()
 
-    println("ops = ${count * 1.0 / (end - start) * 1000 }")
+    println("ops = ${count * 1.0 / (end - start) * 1000}")
 }

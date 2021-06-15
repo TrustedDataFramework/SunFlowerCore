@@ -1,6 +1,7 @@
 package org.tdf.common.util;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
 /**
  * slot is a 256bit arithmetic unit
@@ -17,14 +18,19 @@ public final class SlotUtils {
     public static final int SIGN_BIT_MASK = 0x80000000;
 
 
-    public static final int[] ONE_EXT = {
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 1
-    };
-
     public static final int MAX_BYTE_ARRAY_SIZE = 32;
     public static final int INT_SIZE = 4;
     public static final int INT_BITS = 32;
+
+    // slot - 1 = slot + negative_one
+    public static final int[] NEGATIVE_ONE;
+
+    static {
+        NEGATIVE_ONE = Arrays.copyOfRange(ONE, 0, SLOT_SIZE);
+        for(int i = 0; i < SLOT_SIZE; i++)
+            NEGATIVE_ONE[i] = ~NEGATIVE_ONE[i];
+        add(NEGATIVE_ONE, 0, ONE, 0, NEGATIVE_ONE, 0);
+    }
 
 
     /**
@@ -176,7 +182,7 @@ public final class SlotUtils {
      */
     public static int compareTo(int[] left, int leftOffset, int[] right, int rightOffset, int size) {
         for (int i = 0; i < size; i++) {
-            int compared = Integer.compareUnsigned(left[leftOffset + i], right[rightOffset + 1]);
+            int compared = Integer.compareUnsigned(left[leftOffset + i], right[rightOffset + i]);
             if (compared != 0)
                 return compared;
         }
