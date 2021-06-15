@@ -1,6 +1,8 @@
 package org.tdf.evm
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.Assert
+import java.io.InputStream
 import java.math.BigInteger
 import kotlin.experimental.and
 
@@ -10,7 +12,32 @@ interface TestBinaryOperator {
     fun actual(left: BigInteger, right: BigInteger): BigInteger
 }
 
+val objectMapper = ObjectMapper()
+
 object TestUtil {
+    fun testSpec(fileName: String, op: (BigInteger, BigInteger) -> BigInteger) {
+        val bytes = readClassPathFile(fileName)
+        val cases = objectMapper.readValue(bytes, Array<SpecFile>::class.java)
+
+        for(c in cases) {
+            val x = BigInteger(c.X, 16)
+            val y = BigInteger(c.Y, 16)
+            val expected = BigInteger(c.Expected, 16)
+            val z = op.invoke(x, y)
+            if(expected != z) {
+                println("x = $x, y = $y")
+                throw RuntimeException("expected $expected while $z returned")
+            }
+        }
+    }
+
+    fun readClassPathFile(name: String): ByteArray {
+        val stream: InputStream = TestUtil::class.java.getClassLoader().getResource(name)!!.openStream()
+        val all = ByteArray(stream.available())
+        if (stream.read(all) != all.size) throw RuntimeException("read bytes from stream failed")
+        return all
+    }
+
     private const val LOOPS = 100
 
     fun testSinglePair(op: TestBinaryOperator, l: BigInteger, r: BigInteger) {

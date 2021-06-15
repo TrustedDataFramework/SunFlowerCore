@@ -229,4 +229,16 @@ public final class SlotUtils {
         }
         add(dst, dstOffset, ONE, 0, dst, dstOffset);
     }
+
+    public static void complement(byte[] dst, int dstOffset, int size) {
+        for (int i = dstOffset; i < dstOffset + size; i++) {
+            dst[i] = (byte) (~(dst[i] & 0xff));
+        }
+        int carry = 1;
+        for(int i = dstOffset + size - 1; i >= dstOffset; i--) {
+            int added = (dst[i] & 0xff) + carry;
+            dst[dstOffset + i] = (byte) added;
+            carry = added >>> 8;
+        }
+    }
 }
