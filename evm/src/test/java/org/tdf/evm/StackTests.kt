@@ -107,6 +107,25 @@ object StackSDiv: TestOperator {
     }
 }
 
+object StackSMod: TestOperator {
+    private val stack: Stack = StackImpl()
+
+    override fun skip(left: BigInteger, right: BigInteger): Boolean {
+        return false
+    }
+
+    override fun expect(left: BigInteger, right: BigInteger): BigInteger {
+        return if(right == BigInteger.ZERO) { BigInteger.ZERO } else { left % right }
+    }
+
+    override fun actual(left: BigInteger, right: BigInteger): BigInteger {
+        stack.push(right)
+        stack.push(left)
+        stack.signedMod()
+        return stack.popBigInt(true)
+    }
+}
+
 
 @RunWith(JUnit4::class)
 class StackTests {
@@ -133,6 +152,12 @@ class StackTests {
     @Test
     fun testRandomSignedDiv() {
         TestUtil.signedArithmeticTest(StackSDiv)
+    }
+
+
+    @Test
+    fun testRandomSignedMod() {
+        TestUtil.signedArithmeticTest(StackSMod)
     }
 
     @Test

@@ -43,9 +43,13 @@ interface Stack {
     fun div()
     fun mod()
     fun addMod()
+    fun and()
+    fun or()
+    fun xor()
 
     // arithmetic, signed
     fun signedDiv()
+    fun signedMod()
 
     fun not()
     fun eq()
@@ -300,13 +304,55 @@ class StackImpl : Stack {
         push(remMut)
     }
 
-    override fun signedDiv() {
+    override fun and() {
         if (size < 2)
             throw RuntimeException("stack overflow")
+        for(i in top - SLOT_SIZE until top) {
+            data[i] = data[i] and data[i + SLOT_SIZE]
+        }
+        size --
+        top -= SLOT_SIZE
+    }
+
+    override fun or() {
+        if (size < 2)
+            throw RuntimeException("stack overflow")
+        for(i in top - SLOT_SIZE until top) {
+            data[i] = data[i] or data[i + SLOT_SIZE]
+        }
+        size --
+        top -= SLOT_SIZE
+    }
+
+    override fun xor() {
+        if (size < 2)
+            throw RuntimeException("stack overflow")
+        for(i in top - SLOT_SIZE until top) {
+            data[i] = data[i] xor data[i + SLOT_SIZE]
+        }
+        size --
+        top -= SLOT_SIZE
+    }
+
+    override fun signedMod() {
+        signedDivMod(true)
+    }
+
+    override fun signedDiv() {
+        signedDivMod(false)
+    }
+
+    private fun signedDivMod(rem: Boolean) {
+        if (size < 2)
+            throw RuntimeException("stack underflow")
 
         // special case
         if (isOne(data, top - SLOT_SIZE)) {
-            System.arraycopy(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
+            if (rem) {
+                System.arraycopy(ZERO_SLOT, 0, data, top - SLOT_SIZE, SLOT_SIZE)
+            } else {
+                System.arraycopy(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
+            }
             size--
             top -= SLOT_SIZE
             return
@@ -329,15 +375,24 @@ class StackImpl : Stack {
         if (rightSign < 0)
             complement(data, top - SLOT_SIZE)
 
-        val sign = leftSign * rightSign
+        val sign = if (rem) {
+            leftSign
+        } else {
+            leftSign * rightSign
+        }
 
         popOperand0(0)
         popOperand1(0)
 
 
         // divided as uint256
-        divModInternal(false)
-        push(varMut)
+        divModInternal(rem)
+
+        if (rem) {
+            push(remMut)
+        } else {
+            push(varMut)
+        }
 
         if (sign < 0) {
             complement(data, top)
