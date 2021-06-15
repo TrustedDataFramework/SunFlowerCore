@@ -16,6 +16,7 @@ fun IntArray.copyFrom(n: BigInteger) {
     SlotUtils.copyFrom(this, 0, n)
 }
 
+
 fun IntArray.copyFrom(n: Int){
     SlotUtils.copyFrom(this, 0, n)
 }

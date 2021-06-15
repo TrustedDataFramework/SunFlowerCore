@@ -22,7 +22,7 @@ val tmpMutBigInt = MutableBigInteger(mulTmp)
 val sr = SecureRandom()
 
 fun interface Operator{
-    fun add(left: ByteArray, right: ByteArray)
+    fun mul(left: ByteArray, right: ByteArray)
 }
 
 val bigIntOp = Operator { left, right ->
@@ -58,11 +58,10 @@ fun main() {
     for(i in 0 until count) {
         sr.nextBytes(left)
         sr.nextBytes(right)
-        op.add(left, right)
+        op.mul(left, right)
     }
 
     val end = System.currentTimeMillis()
 
     println("ops = ${count * 1.0 / (end - start) * 1000 }")
 }
-

@@ -176,9 +176,7 @@ public class MutableBigInteger {
      * supposed to modify the returned array.
      */
     private int[] getMagnitudeArray() {
-        if (offset > 0 || value.length != intLen)
-            return Arrays.copyOfRange(value, offset, offset + intLen);
-        return value;
+        return Arrays.copyOfRange(value, offset, offset + intLen);
     }
 
     /**
@@ -195,27 +193,6 @@ public class MutableBigInteger {
 
 
     /**
-     * This is for internal use in converting from a MutableBigInteger
-     * object into a long value given a specified sign.
-     * returns INFLATED if value is not fit into long
-     */
-    long toCompactValue(int sign) {
-        if (intLen == 0 || sign == 0)
-            return 0L;
-        int[] mag = getMagnitudeArray();
-        int len = mag.length;
-        int d = mag[0];
-        // If this MutableBigInteger can not be fitted into long, we need to
-        // make a BigInteger object for the resultant BigDecimal object.
-        if (len > 2 || (d < 0 && len == 2))
-            return INFLATED;
-        long v = (len == 2) ?
-                ((mag[1] & LONG_MASK) | (d & LONG_MASK) << 32) :
-                d & LONG_MASK;
-        return sign == -1 ? -v : v;
-    }
-
-    /**
      * Clear out a MutableBigInteger for reuse.
      */
     public void clear() {
@@ -227,7 +204,7 @@ public class MutableBigInteger {
     /**
      * Set a MutableBigInteger to zero, removing its offset.
      */
-    void reset() {
+    public void reset() {
         offset = intLen = 0;
     }
 
@@ -1095,24 +1072,6 @@ public class MutableBigInteger {
             return rem;
     }
 
-    /**
-     * Calculates the quotient of this div b and places the quotient in the
-     * provided MutableBigInteger objects and the remainder object is returned.
-     */
-    public MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient) {
-        return divide(b, quotient, true);
-    }
-
-    public MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient, boolean needRemainder) {
-        return divideKnuth(b, quotient, needRemainder);
-    }
-
-    /**
-     * @see #divideKnuth(MutableBigInteger, MutableBigInteger, boolean)
-     */
-    MutableBigInteger divideKnuth(MutableBigInteger b, MutableBigInteger quotient) {
-        return divideKnuth(b, quotient, true);
-    }
 
     /**
      * Calculates the quotient of this div b and places the quotient in the
@@ -1124,57 +1083,67 @@ public class MutableBigInteger {
      * It special cases one word divisors for speed. The content of b is not
      * changed.
      */
-    MutableBigInteger divideKnuth(MutableBigInteger b, MutableBigInteger quotient, boolean needRemainder) {
+    public void divideKnuth(MutableBigInteger b, MutableBigInteger quotient, MutableBigInteger rem, int[] temporaryDivisor, boolean needRem) {
         if (b.intLen == 0)
             throw new ArithmeticException("BigInteger divide by zero");
 
         // Dividend is zero
         if (intLen == 0) {
             quotient.intLen = quotient.offset = 0;
-            return needRemainder ? new MutableBigInteger() : null;
+            if(needRem)
+                rem.reset();
+            return;
         }
 
         int cmp = compare(b);
         // Dividend less than divisor
         if (cmp < 0) {
             quotient.intLen = quotient.offset = 0;
-            return needRemainder ? new MutableBigInteger(this) : null;
+            if(needRem) {
+                System.arraycopy(this.value, offset, rem.value, 0, intLen);
+                rem.offset = 0;
+                rem.intLen = intLen;
+            }
+            return;
         }
         // Dividend equal to divisor
         if (cmp == 0) {
             quotient.value[0] = quotient.intLen = 1;
             quotient.offset = 0;
-            return needRemainder ? new MutableBigInteger() : null;
+            if(needRem)
+                rem.reset();
+            return;
         }
 
         quotient.clear();
         // Special case one word divisor
         if (b.intLen == 1) {
             int r = divideOneWord(b.value[b.offset], quotient);
-            if (needRemainder) {
-                if (r == 0)
-                    return new MutableBigInteger();
-                return new MutableBigInteger(r);
-            } else {
-                return null;
+            if (needRem) {
+                if (r == 0)  {
+                    rem.reset();
+                } else {
+                    rem.value[0] = r;
+                    rem.intLen = 1;
+                    rem.offset = 0;
+                }
             }
+            return;
         }
 
         // Cancel common powers of two if we're above the KNUTH_POW2_* thresholds
         if (intLen >= KNUTH_POW2_THRESH_LEN) {
             int trailingZeroBits = Math.min(getLowestSetBit(), b.getLowestSetBit());
             if (trailingZeroBits >= KNUTH_POW2_THRESH_ZEROS * 32) {
-                MutableBigInteger a = new MutableBigInteger(this);
-                b = new MutableBigInteger(b);
-                a.rightShift(trailingZeroBits);
+                rightShift(trailingZeroBits);
                 b.rightShift(trailingZeroBits);
-                MutableBigInteger r = a.divideKnuth(b, quotient);
-                r.leftShift(trailingZeroBits);
-                return r;
+                divideKnuth(b, quotient, rem, temporaryDivisor, needRem);
+                rem.leftShift(trailingZeroBits);
+                return;
             }
         }
 
-        return divideMagnitude(b, quotient, needRemainder);
+        divideMagnitude(b, quotient, rem, temporaryDivisor, needRem);
     }
 
     /**
@@ -1261,28 +1230,25 @@ public class MutableBigInteger {
      * The quotient will be placed into the provided quotient object &
      * the remainder object is returned.
      */
-    private MutableBigInteger divideMagnitude(MutableBigInteger div,
+    private void divideMagnitude(MutableBigInteger div,
                                               MutableBigInteger quotient,
-                                              boolean needRemainder) {
+                                              final MutableBigInteger rem,
+                                              int[] divisor,
+                                              boolean needRem) {
         // assert div.intLen > 1
         // D1 normalize the divisor
         int shift = Integer.numberOfLeadingZeros(div.value[div.offset]);
         // Copy divisor value to protect divisor
         final int dlen = div.intLen;
-        int[] divisor;
-        MutableBigInteger rem; // Remainder starts as dividend with space for a leading zero
         if (shift > 0) {
-            divisor = new int[dlen];
             copyAndShift(div.value, div.offset, dlen, divisor, 0, shift);
             if (Integer.numberOfLeadingZeros(value[offset]) >= shift) {
-                int[] remarr = new int[intLen + 1];
-                rem = new MutableBigInteger(remarr);
+                int[] remarr = rem.value;
                 rem.intLen = intLen;
                 rem.offset = 1;
                 copyAndShift(value, offset, intLen, remarr, 1, shift);
             } else {
-                int[] remarr = new int[intLen + 2];
-                rem = new MutableBigInteger(remarr);
+                int[] remarr = rem.value;
                 rem.intLen = intLen + 1;
                 rem.offset = 1;
                 int rFrom = offset;
@@ -1296,8 +1262,7 @@ public class MutableBigInteger {
                 remarr[intLen + 1] = c << shift;
             }
         } else {
-            divisor = Arrays.copyOfRange(div.value, div.offset, div.offset + div.intLen);
-            rem = new MutableBigInteger(new int[intLen + 1]);
+            System.arraycopy(div.value, div.offset, divisor, 0, div.intLen);
             System.arraycopy(value, offset, rem.value, 1, intLen);
             rem.intLen = intLen;
             rem.offset = 1;
@@ -1433,7 +1398,7 @@ public class MutableBigInteger {
             // D4 Multiply and subtract
             int borrow;
             rem.value[limit - 1 + rem.offset] = 0;
-            if (needRemainder)
+            if (needRem)
                 borrow = mulsub(rem.value, divisor, qhat, dlen, limit - 1 + rem.offset);
             else
                 borrow = mulsubBorrow(rem.value, divisor, qhat, dlen, limit - 1 + rem.offset);
@@ -1441,7 +1406,7 @@ public class MutableBigInteger {
             // D5 Test remainder
             if (borrow + 0x80000000 > nh2) {
                 // D6 Add back
-                if (needRemainder)
+                if (needRem)
                     divadd(divisor, rem.value, limit - 1 + 1 + rem.offset);
                 qhat--;
             }
@@ -1451,14 +1416,13 @@ public class MutableBigInteger {
         }
 
 
-        if (needRemainder) {
+        if (needRem) {
             // D8 Unnormalize
             if (shift > 0)
                 rem.rightShift(shift);
             rem.normalize();
         }
         quotient.normalize();
-        return needRemainder ? rem : null;
     }
 
     /**
@@ -1655,26 +1619,6 @@ public class MutableBigInteger {
     }
 
     /**
-     * Calculate GCD of this and b. This and b are changed by the computation.
-     */
-    MutableBigInteger hybridGCD(MutableBigInteger b) {
-        // Use Euclid's algorithm until the numbers are approximately the
-        // same length, then use the binary GCD algorithm to find the GCD.
-        MutableBigInteger a = this;
-        MutableBigInteger q = new MutableBigInteger();
-
-        while (b.intLen != 0) {
-            if (Math.abs(a.intLen - b.intLen) < 2)
-                return a.binaryGCD(b);
-
-            MutableBigInteger r = a.divide(b, q);
-            a = b;
-            b = r;
-        }
-        return a;
-    }
-
-    /**
      * Calculate GCD of this and v.
      * Assumes that this and v are not zero.
      */
@@ -1760,39 +1704,6 @@ public class MutableBigInteger {
         return a << t;
     }
 
-
-    /*
-     * Calculate the multiplicative inverse of this mod 2^k.
-     */
-    MutableBigInteger modInverseMP2(int k) {
-        if (isEven())
-            throw new ArithmeticException("Non-invertible. (GCD != 1)");
-
-        if (k > 64)
-            return euclidModInverse(k);
-
-        int t = inverseMod32(value[offset + intLen - 1]);
-
-        if (k < 33) {
-            t = (k == 32 ? t : t & ((1 << k) - 1));
-            return new MutableBigInteger(t);
-        }
-
-        long pLong = (value[offset + intLen - 1] & LONG_MASK);
-        if (intLen > 1)
-            pLong |= ((long) value[offset + intLen - 2] << 32);
-        long tLong = t & LONG_MASK;
-        tLong = tLong * (2 - pLong * tLong);  // 1 more Newton iter step
-        tLong = (k == 64 ? tLong : tLong & ((1L << k) - 1));
-
-        MutableBigInteger result = new MutableBigInteger(new int[2]);
-        result.value[0] = (int) (tLong >>> 32);
-        result.value[1] = (int) tLong;
-        result.intLen = 2;
-        result.normalize();
-        return result;
-    }
-
     /**
      * Returns the multiplicative inverse of val mod 2^32.  Assumes val is odd.
      */
@@ -1819,118 +1730,5 @@ public class MutableBigInteger {
         t *= 2 - val * t;
         assert (t * val == 1);
         return t;
-    }
-
-    /**
-     * Calculate the multiplicative inverse of 2^k mod mod, where mod is odd.
-     */
-    static MutableBigInteger modInverseBP2(MutableBigInteger mod, int k) {
-        // Copy the mod to protect original
-        return fixup(new MutableBigInteger(1), new MutableBigInteger(mod), k);
-    }
-
-
-    /**
-     * The Fixup Algorithm
-     * Calculates X such that X = C * 2^(-k) (mod P)
-     * Assumes C<P and P is odd.
-     */
-    static MutableBigInteger fixup(MutableBigInteger c, MutableBigInteger p,
-                                   int k) {
-        MutableBigInteger temp = new MutableBigInteger();
-        // Set r to the multiplicative inverse of p mod 2^32
-        int r = -inverseMod32(p.value[p.offset + p.intLen - 1]);
-
-        for (int i = 0, numWords = k >> 5; i < numWords; i++) {
-            // V = R * c (mod 2^j)
-            int v = r * c.value[c.offset + c.intLen - 1];
-            // c = c + (v * p)
-            p.mul(v, temp);
-            c.add(temp);
-            // c = c / 2^j
-            c.intLen--;
-        }
-        int numBits = k & 0x1f;
-        if (numBits != 0) {
-            // V = R * c (mod 2^j)
-            int v = r * c.value[c.offset + c.intLen - 1];
-            v &= ((1 << numBits) - 1);
-            // c = c + (v * p)
-            p.mul(v, temp);
-            c.add(temp);
-            // c = c / 2^j
-            c.rightShift(numBits);
-        }
-
-        // In theory, c may be greater than p at this point (Very rare!)
-        if (c.compare(p) >= 0)
-            c = c.divide(p, new MutableBigInteger());
-
-        return c;
-    }
-
-    /**
-     * Uses the extended Euclidean algorithm to compute the modInverse of base
-     * mod a modulus that is a power of 2. The modulus is 2^k.
-     */
-    MutableBigInteger euclidModInverse(int k) {
-        MutableBigInteger b = new MutableBigInteger(1);
-        b.leftShift(k);
-        MutableBigInteger mod = new MutableBigInteger(b);
-
-        MutableBigInteger a = new MutableBigInteger(this);
-        MutableBigInteger q = new MutableBigInteger();
-        MutableBigInteger r = b.divide(a, q);
-
-        MutableBigInteger swapper = b;
-        // swap b & r
-        b = r;
-        r = swapper;
-
-        MutableBigInteger t1 = new MutableBigInteger(q);
-        MutableBigInteger t0 = new MutableBigInteger(1);
-        MutableBigInteger temp = new MutableBigInteger();
-
-        while (!b.isOne()) {
-            r = a.divide(b, q);
-
-            if (r.intLen == 0)
-                throw new ArithmeticException("BigInteger not invertible.");
-
-            swapper = r;
-            a = swapper;
-
-            if (q.intLen == 1)
-                t1.mul(q.value[q.offset], temp);
-            else
-                q.multiply(t1, temp);
-            swapper = q;
-            q = temp;
-            temp = swapper;
-            t0.add(q);
-
-            if (a.isOne())
-                return t0;
-
-            r = b.divide(a, q);
-
-            if (r.intLen == 0)
-                throw new ArithmeticException("BigInteger not invertible.");
-
-            swapper = b;
-            b = r;
-
-            if (q.intLen == 1)
-                t0.mul(q.value[q.offset], temp);
-            else
-                q.multiply(t0, temp);
-            swapper = q;
-            q = temp;
-            temp = swapper;
-
-            t1.add(q);
-        }
-        mod.subtract(t1);
-        return mod;
     }
 }

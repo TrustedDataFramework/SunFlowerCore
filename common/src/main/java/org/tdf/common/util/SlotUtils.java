@@ -85,6 +85,24 @@ public final class SlotUtils {
         decodeBE(data, 0, slot, slotOffset);
     }
 
+    // copy from biginteger into 256bit byte array
+    public static void copyFrom(byte[] dst, int offset, BigInteger value) {
+        if(value.signum() < 0)
+            throw new RuntimeException("unexpected negative bignumber");
+
+        byte[] bytes = value.toByteArray();
+
+        if (bytes[0] == 0) {
+            if(bytes.length - 1 > MAX_BYTE_ARRAY_SIZE)
+                throw new ArithmeticException("bigint overflow");
+            System.arraycopy(bytes, 1, dst, offset + MAX_BYTE_ARRAY_SIZE - bytes.length + 1, bytes.length - 1);
+            return;
+        }
+        if(bytes.length > MAX_BYTE_ARRAY_SIZE)
+            throw new ArithmeticException("bigint overflow");
+        System.arraycopy(bytes, 0, dst, offset + MAX_BYTE_ARRAY_SIZE - bytes.length, bytes.length);
+    }
+
     /**
      * convert unsigned big integer to byte array
      */
@@ -153,8 +171,8 @@ public final class SlotUtils {
     /**
      * compare left slot to right slot
      */
-    public static int compareTo(int[] left, int leftOffset, int[] right, int rightOffset, int limit) {
-        for (int i = 0; i < limit; i++) {
+    public static int compareTo(int[] left, int leftOffset, int[] right, int rightOffset, int size) {
+        for (int i = 0; i < size; i++) {
             int compared = Integer.compareUnsigned(left[leftOffset + i], right[rightOffset + 1]);
             if (compared != 0)
                 return compared;
@@ -191,4 +209,11 @@ public final class SlotUtils {
         return 0;
     }
 
+    public static int sign(MutableBigInteger n) {
+        if(n.intLen == 0)
+            return 0;
+        if(n.intLen < SLOT_SIZE)
+            return 1;
+        return n.value[n.offset] < 0 ? -1 : 1;
+    }
 }

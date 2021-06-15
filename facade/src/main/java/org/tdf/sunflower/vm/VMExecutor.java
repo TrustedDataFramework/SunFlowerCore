@@ -26,8 +26,8 @@ import java.util.*;
 @NoArgsConstructor
 public class VMExecutor {
     public static final int MAX_FRAMES = 16384;
-    public static final int MAX_STACK_SIZE = MAX_FRAMES * 64;
-    public static final int MAX_LABELS = MAX_FRAMES * 64;
+    public static final int MAX_STACK_SIZE = MAX_FRAMES * 4;
+    public static final int MAX_LABELS = MAX_FRAMES * 4;
     public static final int MAX_CALL_DEPTH = 8;
     public static final Cache<HexBytes, byte[]> CACHE =
             CacheBuilder

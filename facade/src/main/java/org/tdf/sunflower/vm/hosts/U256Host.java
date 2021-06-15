@@ -20,12 +20,19 @@ public class U256Host extends HostFunction {
 
     private final int[] slot0 = new int[SLOT_SIZE];
     private final int[] slot1 = new int[SLOT_SIZE];
-    private final int[] varSlot = new int[SLOT_SIZE * 2];
+    private final int[] varSlot0 = new int[SLOT_SIZE * 2];
+    private final int[] varSlot1 = new int[SLOT_SIZE * 2];
+
+    private final int[] divisor = new int[SLOT_SIZE * 2];
+
+
     private final byte[] tempBytes = new byte[MAX_BYTE_ARRAY_SIZE];
 
     private final MutableBigInteger mut0 = new MutableBigInteger(slot0);
     private final MutableBigInteger mut1 = new MutableBigInteger(slot1);
-    private final MutableBigInteger mut2 = new MutableBigInteger(varSlot);
+
+    private final MutableBigInteger mut2 = new MutableBigInteger(varSlot0);
+    private final MutableBigInteger mut3 = new MutableBigInteger(varSlot1);
 
 
     enum U256OP {
@@ -37,9 +44,9 @@ public class U256Host extends HostFunction {
     }
 
     public static final FunctionType FUNCTION_TYPE = new FunctionType(
-            // offset, length, offset
-            Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
-            Collections.singletonList(ValueType.I64));
+        // offset, length, offset
+        Arrays.asList(ValueType.I64, ValueType.I64, ValueType.I64),
+        Collections.singletonList(ValueType.I64));
 
     public U256Host() {
         super("_u256", FUNCTION_TYPE);
@@ -70,7 +77,7 @@ public class U256Host extends HostFunction {
 
     // write slot into memory
     private long writeSlot(int[] slot) {
-        if(slot == ZERO_SLOT) {
+        if (slot == ZERO_SLOT) {
             long ptr = instance.execute(WBI_MALLOC, 0)[0];
             long p = instance.execute(WBI_CHANGE_TYPE, WbiType.UINT_256, ptr, 0)[0];
             int r = (int) p;
@@ -116,7 +123,7 @@ public class U256Host extends HostFunction {
         copyToSlot(slot0, longs[1]);
         copyToSlot(slot1, longs[2]);
 
-        if(op == U256OP.MUL || op == U256OP.DIV || op == U256OP.MOD) {
+        if (op == U256OP.MUL || op == U256OP.DIV || op == U256OP.MOD) {
             mut0.setValue(slot0, SLOT_SIZE);
             mut0.normalize();
             mut1.setValue(slot1, SLOT_SIZE);
@@ -135,25 +142,35 @@ public class U256Host extends HostFunction {
                 return writeSlot(slot0);
             }
             case MUL: {
-                if(mut0.isZero() || mut1.isZero()) {
+                if (mut0.isZero() || mut1.isZero()) {
                     return writeSlot(ZERO_SLOT);
                 }
                 mut0.multiply(mut1, mut2);
                 // keep at most 256 least significant bits
                 reset(slot0);
-                SlotUtils.trim256(varSlot, mut2.getOffset(), mut2.getIntLen(), slot0, 0);
+                SlotUtils.trim256(varSlot0, mut2.getOffset(), mut2.getIntLen(), slot0, 0);
                 return writeSlot(slot0);
             }
             case DIV: {
-                mut0.divide(mut1, mut2, false);
+                // reset temporary divisor and rem
+                reset(divisor);
+                mut3.clear();
+
+                mut0.divideKnuth(mut1, mut2, mut3, divisor, false);
+
                 reset(slot0);
                 SlotUtils.trim256(mut2.getValue(), mut2.getOffset(), mut2.getIntLen(), slot0, 0);
                 return writeSlot(slot0);
             }
             case MOD: {
-                MutableBigInteger mod = mut0.divide(mut1, mut2, true);
+                // reset temporary divisor and rem
+                reset(divisor);
+                mut3.clear();
+
+                mut0.divideKnuth(mut1, mut2, mut3, divisor, true);
+
                 reset(slot0);
-                SlotUtils.trim256(mod.getValue(), mod.getOffset(), mod.getIntLen(), slot0, 0);
+                SlotUtils.trim256(mut3.getValue(), mut3.getOffset(), mut3.getIntLen(), slot0, 0);
                 return writeSlot(slot0);
             }
             default:

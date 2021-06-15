@@ -1,11 +1,11 @@
 package org.tdf.types;
 
+import com.github.salpadding.rlpstream.Rlp;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.spongycastle.util.encoders.Hex;
 import org.tdf.common.types.Uint256;
-import org.tdf.rlpstream.Rlp;
 import org.tdf.sunflower.state.Account;
 
 import java.math.BigInteger;

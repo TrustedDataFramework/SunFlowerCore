@@ -1,7 +1,6 @@
 package org.tdf.evm;
 
 import org.tdf.common.util.MutableBigInteger
-import org.tdf.common.util.SlotUtils
 import org.tdf.common.util.SlotUtils.SLOT_SIZE
 import java.math.BigInteger
 
@@ -16,11 +15,11 @@ class U256Register {
     private val slot1 = IntArray(SLOT_SIZE)
 
     // variable length slot, used for multiply
-    private val slot2 = IntArray(SLOT_SIZE * 2)
+    private val varSlot = IntArray(SLOT_SIZE * 2)
+    private val divisorSlot = IntArray(SLOT_SIZE * 2)
 
-    private val slot3 = IntArray(SLOT_SIZE)
-    private val slot4 = IntArray(SLOT_SIZE)
-    private val slot5 = IntArray(SLOT_SIZE)
+    private val remSlot = IntArray(SLOT_SIZE * 2)
+    private val rem = MutableBigInteger(remSlot)
 
     fun add(left: BigInteger, right: BigInteger): BigInteger {
         slot0.copyFrom(left)
@@ -39,7 +38,7 @@ class U256Register {
     fun mul(left: BigInteger, right: BigInteger): BigInteger {
         slot0.copyFrom(left)
         slot1.copyFrom(right)
-        slot2.reset()
+        varSlot.reset()
 
         val m0 = MutableBigInteger(slot0)
         m0.normalize()
@@ -47,7 +46,7 @@ class U256Register {
         val m1 = MutableBigInteger(slot1)
         m1.normalize()
 
-        val m2 = MutableBigInteger(slot2)
+        val m2 = MutableBigInteger(varSlot)
         m0.multiply(m1, m2)
 
         return m2.toBigInt().mod(_2_256)
@@ -58,17 +57,41 @@ class U256Register {
         val m = MutableBigInteger(slot0)
         m.normalize()
 
-        slot1.reset()
         slot1.copyFrom(right)
         val m1 = MutableBigInteger(slot1)
         m1.normalize()
 
 
-        slot2.reset()
-        val quo = MutableBigInteger(slot2)
+        varSlot.reset()
+        val quo = MutableBigInteger(varSlot)
+        quo.reset()
 
-        m.divide(m1, quo, false)
+        rem.clear()
+        divisorSlot.reset()
+
+        m.divideKnuth(m1, quo, rem, divisorSlot, false)
         return quo.toBigInt()
+    }
+
+    fun mod(left: BigInteger, right: BigInteger): BigInteger {
+        slot0.copyFrom(left)
+        val m = MutableBigInteger(slot0)
+        m.normalize()
+
+        slot1.copyFrom(right)
+        val m1 = MutableBigInteger(slot1)
+        m1.normalize()
+
+
+        varSlot.reset()
+        val quo = MutableBigInteger(varSlot)
+        quo.reset()
+
+        rem.clear()
+        divisorSlot.reset()
+
+        m.divideKnuth(m1, quo, rem, divisorSlot, true)
+        return rem.toBigInt()
     }
 
 }
