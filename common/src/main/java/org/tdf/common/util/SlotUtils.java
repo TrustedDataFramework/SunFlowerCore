@@ -14,9 +14,12 @@ public final class SlotUtils {
     public static final long LONG_MASK = 0xffffffffL;
     public static final int[] ONE = {0, 0, 0, 0, 0, 0, 0, 1};
 
+    public static final int SIGN_BIT_MASK = 0x80000000;
+
+
     public static final int[] ONE_EXT = {
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 1
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 1
     };
 
     public static final int MAX_BYTE_ARRAY_SIZE = 32;
@@ -87,18 +90,18 @@ public final class SlotUtils {
 
     // copy from biginteger into 256bit byte array
     public static void copyFrom(byte[] dst, int offset, BigInteger value) {
-        if(value.signum() < 0)
+        if (value.signum() < 0)
             throw new RuntimeException("unexpected negative bignumber");
 
         byte[] bytes = value.toByteArray();
 
         if (bytes[0] == 0) {
-            if(bytes.length - 1 > MAX_BYTE_ARRAY_SIZE)
+            if (bytes.length - 1 > MAX_BYTE_ARRAY_SIZE)
                 throw new ArithmeticException("bigint overflow");
             System.arraycopy(bytes, 1, dst, offset + MAX_BYTE_ARRAY_SIZE - bytes.length + 1, bytes.length - 1);
             return;
         }
-        if(bytes.length > MAX_BYTE_ARRAY_SIZE)
+        if (bytes.length > MAX_BYTE_ARRAY_SIZE)
             throw new ArithmeticException("bigint overflow");
         System.arraycopy(bytes, 0, dst, offset + MAX_BYTE_ARRAY_SIZE - bytes.length, bytes.length);
     }
@@ -107,7 +110,7 @@ public final class SlotUtils {
      * convert unsigned big integer to byte array
      */
     public static byte[] asUnsignedByteArray(
-            BigInteger value) {
+        BigInteger value) {
         byte[] bytes = value.toByteArray();
 
         if (bytes[0] == 0) {
@@ -209,11 +212,33 @@ public final class SlotUtils {
         return 0;
     }
 
-    public static int sign(MutableBigInteger n) {
-        if(n.intLen == 0)
-            return 0;
-        if(n.intLen < SLOT_SIZE)
-            return 1;
-        return n.value[n.offset] < 0 ? -1 : 1;
+    public static void and(int[] dst, int dstOffset, int[] other, int otherOffset, int length) {
+        for (int i = 0; i < length; i++)
+            dst[dstOffset + i] &= other[otherOffset + i];
+    }
+
+    public static int signOf(int[] dst, int dstOffset) {
+        if (dst[dstOffset] < 0)
+            return -1;
+        for (int i = dstOffset; i < dstOffset + SLOT_SIZE; i++) {
+            if (dst[i] != 0)
+                return 1;
+        }
+        return 0;
+    }
+
+    public static boolean isOne(int[] dst, int dstOffset) {
+        for (int i = 0; i < SLOT_SIZE; i++) {
+            if (ONE[i] != dst[dstOffset + i])
+                return false;
+        }
+        return true;
+    }
+
+    public static void complement(int[] dst, int dstOffset) {
+        for (int i = dstOffset; i < dstOffset + SLOT_SIZE; i++) {
+            dst[i] = ~dst[i];
+        }
+        add(dst, dstOffset, ONE, 0, dst, dstOffset);
     }
 }

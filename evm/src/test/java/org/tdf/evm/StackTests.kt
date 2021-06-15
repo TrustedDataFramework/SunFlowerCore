@@ -88,31 +88,57 @@ object StackMod: TestOperator {
     }
 }
 
+object StackSDiv: TestOperator {
+    private val stack: Stack = StackImpl()
+
+    override fun skip(left: BigInteger, right: BigInteger): Boolean {
+        return false
+    }
+
+    override fun expect(left: BigInteger, right: BigInteger): BigInteger {
+        return if(right == BigInteger.ZERO) { BigInteger.ZERO } else { left / right }
+    }
+
+    override fun actual(left: BigInteger, right: BigInteger): BigInteger {
+        stack.push(right)
+        stack.push(left)
+        stack.signedDiv()
+        return stack.popBigInt(true)
+    }
+}
+
 
 @RunWith(JUnit4::class)
 class StackTests {
     @Test
     fun testRandomAdd() {
-        TestUtil.arithmeticTest(StackAdd)
+        TestUtil.unsignedArithmeticTest(StackAdd)
     }
 
     @Test
     fun testRandomMul() {
-        TestUtil.arithmeticTest(StackMul)
+        TestUtil.unsignedArithmeticTest(StackMul)
     }
 
     @Test
     fun testRandomDiv() {
-        TestUtil.arithmeticTest(StackDiv)
+        TestUtil.unsignedArithmeticTest(StackDiv)
     }
 
     @Test
     fun testRandomMod() {
-        TestUtil.arithmeticTest(StackMod)
+        TestUtil.unsignedArithmeticTest(StackMod)
+    }
+
+    @Test
+    fun testRandomSignedDiv() {
+        TestUtil.signedArithmeticTest(StackSDiv)
     }
 
     @Test
     fun testFailed() {
-        TestUtil.testSinglePair(StackDiv, BigInteger.valueOf(3510866428), BigInteger.valueOf(1755433214))
+        val l = BigInteger.valueOf(193)
+        val r = BigInteger.valueOf(-1)
+        TestUtil.testSinglePair(StackSDiv, l, r)
     }
 }
