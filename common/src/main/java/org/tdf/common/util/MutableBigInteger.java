@@ -568,10 +568,10 @@ public class MutableBigInteger {
      * divisor a back to the dividend result at a specified offset. It is used
      * when qhat was estimated too large, and must be adjusted.
      */
-    private int divadd(int[] a, int[] result, int offset) {
+    private int divadd(int[] a, int aLen, int[] result, int offset) {
         long carry = 0;
 
-        for (int j = a.length - 1; j >= 0; j--) {
+        for (int j = aLen - 1; j >= 0; j--) {
             long sum = (a[j] & LONG_MASK) +
                     (result[j + offset] & LONG_MASK) + carry;
             result[j + offset] = (int) sum;
@@ -1347,7 +1347,7 @@ public class MutableBigInteger {
             // D5 Test remainder
             if (borrow + 0x80000000 > nh2) {
                 // D6 Add back
-                divadd(divisor, rem.value, j + 1 + rem.offset);
+                divadd(divisor, dlen, rem.value, j + 1 + rem.offset);
                 qhat--;
             }
 
@@ -1409,7 +1409,7 @@ public class MutableBigInteger {
             if (borrow + 0x80000000 > nh2) {
                 // D6 Add back
                 if (needRem)
-                    divadd(divisor, rem.value, limit - 1 + 1 + rem.offset);
+                    divadd(divisor, dlen, rem.value, limit - 1 + 1 + rem.offset);
                 qhat--;
             }
 

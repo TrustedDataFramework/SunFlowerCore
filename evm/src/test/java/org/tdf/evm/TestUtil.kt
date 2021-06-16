@@ -1,7 +1,14 @@
 package org.tdf.evm
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.junit.Assert
+import org.spongycastle.util.encoders.Hex
+import org.tdf.common.util.SlotUtils
+import org.tdf.common.util.SlotUtils.SLOT_SIZE
 import java.io.InputStream
 import java.math.BigInteger
 import kotlin.experimental.and
@@ -12,21 +19,45 @@ interface TestBinaryOperator {
     fun actual(left: BigInteger, right: BigInteger): BigInteger
 }
 
-val objectMapper = ObjectMapper()
+
+
+data class EvmSpec(
+    @JsonProperty("X") val x: String = "",
+    @JsonProperty("Y") val y: String = "",
+    @JsonProperty("Expected") val expected: String = ""
+) {
+    val xData: IntArray
+    val yData: IntArray
+
+    init {
+        xData = IntArray(SLOT_SIZE)
+        yData = IntArray(SLOT_SIZE)
+        val xBytes = Hex.decode(x)
+        val yBytes = Hex.decode(y)
+        SlotUtils.decodeBE(xBytes, 0, xData, 0)
+        SlotUtils.decodeBE(yBytes, 0, yData, 0)
+    }
+}
 
 object TestUtil {
-    fun testSpec(fileName: String, op: (BigInteger, BigInteger) -> BigInteger) {
-        val bytes = readClassPathFile(fileName)
-        val cases = objectMapper.readValue(bytes, Array<SpecFile>::class.java)
+    private val objectMapper: ObjectMapper = jacksonObjectMapper()
 
-        for(c in cases) {
-            val x = BigInteger(c.X, 16)
-            val y = BigInteger(c.Y, 16)
-            val expected = BigInteger(c.Expected, 16)
-            val z = op.invoke(x, y)
-            if(expected != z) {
-                println("x = $x, y = $y")
-                throw RuntimeException("expected $expected while $z returned")
+
+    fun testSpec(fileName: String, op: (EvmSpec) -> String) {
+        val bytes = readClassPathFile(fileName)
+        val cases = objectMapper.readValue(bytes, Array<EvmSpec>::class.java)
+
+        for (c in cases) {
+            val actual: String
+            try {
+                actual = op.invoke(c)
+            } catch (e: Exception) {
+                println("exception!! case = $c")
+                throw e
+            }
+            if (c.expected != actual) {
+                println("case = $c")
+                throw RuntimeException("expected ${c.expected} while $actual returned")
             }
         }
     }

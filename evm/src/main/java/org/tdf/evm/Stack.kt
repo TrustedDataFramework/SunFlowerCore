@@ -8,7 +8,7 @@ import java.util.*
 interface Stack {
     val size: Int
 
-    fun push(n: IntArray, offset: Int)
+    fun push(n: IntArray, offset: Int = 0)
 
     fun push(n: MutableBigInteger)
 
@@ -38,7 +38,7 @@ interface Stack {
     /**
      * pop top into buffer
      */
-    fun pop(buf: IntArray, offset: Int)
+    fun pop(buf: IntArray, offset: Int = 0)
 
     /**
      * pop as biginteger
@@ -612,9 +612,8 @@ class StackImpl : Stack {
             pushZero()
             return
         }
-        val n = MAX_BYTE_ARRAY_SIZE - i.toInt() - 1
         encodeBE(data, top, tempBytes, 0)
-        val j = tempBytes[n].toUByte().toInt()
+        val j = tempBytes[i.toInt()].toUByte().toInt()
         drop()
         pushInt(j)
     }

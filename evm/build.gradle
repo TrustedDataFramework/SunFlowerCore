@@ -2,5 +2,8 @@ dependencies {
     testImplementation group: 'junit', name: 'junit', version: '4.12'
     implementation project(":common")
     testImplementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}"
+    testImplementation "com.madgag.spongycastle:core:${scastleVersion}"
+    testImplementation "com.madgag.spongycastle:prov:${scastleVersion}"
 }
 
