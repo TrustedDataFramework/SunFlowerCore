@@ -3,7 +3,6 @@ package org.tdf.common;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
-import org.tdf.common.util.HashUtil;
 
 import java.security.SecureRandom;
 

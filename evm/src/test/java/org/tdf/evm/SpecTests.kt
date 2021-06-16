@@ -8,7 +8,7 @@ import org.tdf.common.util.SlotUtils
 import org.tdf.common.util.SlotUtils.MAX_BYTE_ARRAY_SIZE
 import org.tdf.common.util.SlotUtils.SLOT_SIZE
 
-fun Stack.popHex(): String{
+fun Stack.popHex(): String {
     val ints = IntArray(SLOT_SIZE)
     val bytes = ByteArray(MAX_BYTE_ARRAY_SIZE)
     this.pop(ints)
@@ -23,7 +23,7 @@ class SpecTests {
         val stack = StackImpl()
 
         TestUtil.testSpec("testdata/testcases_signext.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.signExtend()
@@ -37,7 +37,7 @@ class SpecTests {
         val stack = StackImpl()
 
         TestUtil.testSpec("testdata/testcases_add.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData, 0)
                 stack.push(c.yData, 0)
                 stack.add()
@@ -49,11 +49,11 @@ class SpecTests {
     @Test
     fun testAnd() {
         val stack = StackImpl()
-        TestUtil.testSpec("testdata/testcases_add.json",
-            fun (c: EvmSpec): String {
+        TestUtil.testSpec("testdata/testcases_and.json",
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
-                stack.add()
+                stack.and()
                 return stack.popHex()
             }
         )
@@ -63,7 +63,7 @@ class SpecTests {
     fun testByte() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_byte.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.byte()
@@ -76,7 +76,7 @@ class SpecTests {
     fun testDiv() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_div.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.div()
@@ -89,7 +89,7 @@ class SpecTests {
     fun testEq() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_eq.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.eq()
@@ -102,7 +102,7 @@ class SpecTests {
     fun testExp() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_exp.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.exp()
@@ -115,7 +115,7 @@ class SpecTests {
     fun testGt() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_gt.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.gt()
@@ -128,7 +128,7 @@ class SpecTests {
     fun testLt() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_lt.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.lt()
@@ -141,7 +141,7 @@ class SpecTests {
     fun testMod() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_mod.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.mod()
@@ -154,7 +154,7 @@ class SpecTests {
     fun testMul() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_mul.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.mul()
@@ -167,7 +167,7 @@ class SpecTests {
     fun testOr() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_or.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.or()
@@ -180,7 +180,7 @@ class SpecTests {
     fun testSdiv() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_sdiv.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.signedDiv()
@@ -193,7 +193,7 @@ class SpecTests {
     fun testSGt() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_sgt.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.sgt()
@@ -206,7 +206,7 @@ class SpecTests {
     fun testSlt() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_slt.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.slt()
@@ -219,7 +219,7 @@ class SpecTests {
     fun testSMod() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_smod.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.signedMod()
@@ -232,7 +232,7 @@ class SpecTests {
     fun testSub() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_sub.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.sub()
@@ -245,7 +245,7 @@ class SpecTests {
     fun testXor() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_xor.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.xor()
@@ -259,7 +259,7 @@ class SpecTests {
     fun testShl() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_shl.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.shl()
@@ -272,7 +272,7 @@ class SpecTests {
     fun testShr() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_shr.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.shr()
@@ -285,7 +285,7 @@ class SpecTests {
     fun testSar() {
         val stack = StackImpl()
         TestUtil.testSpec("testdata/testcases_sar.json",
-            fun (c: EvmSpec): String {
+            fun(c: EvmSpec): String {
                 stack.push(c.xData)
                 stack.push(c.yData)
                 stack.sar()

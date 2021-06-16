@@ -17,19 +17,19 @@ class RegTestOperator(
     private val expect: (BigInteger, BigInteger) -> BigInteger,
     private val actual: (U256Register, BigInteger, BigInteger) -> BigInteger,
     private val skip: (BigInteger, BigInteger) -> Boolean = { _, _ -> false }
-) : TestBinaryOperator {
+) : TestOperator {
     private val reg = U256Register()
 
-    override fun skip(left: BigInteger, right: BigInteger): Boolean {
-        return skip.invoke(left, right)
+    override fun skip(args: Array<BigInteger>): Boolean {
+        return skip.invoke(args[0], args[1])
     }
 
-    override fun expect(left: BigInteger, right: BigInteger): BigInteger {
-        return expect.invoke(left, right)
+    override fun expect(args: Array<BigInteger>): BigInteger {
+        return expect.invoke(args[0], args[1])
     }
 
-    override fun actual(left: BigInteger, right: BigInteger): BigInteger {
-        return actual.invoke(reg, left, right)
+    override fun actual(args: Array<BigInteger>): BigInteger {
+        return actual.invoke(reg, args[0], args[1])
     }
 }
 
@@ -133,12 +133,12 @@ class U256Tests {
 
     @Test
     fun testRandomAdd() {
-        TestUtil.unsignedArithmeticTest(regAdd)
+        TestUtil.randomTest(regAdd)
     }
 
     @Test
     fun testRandomSub() {
-        TestUtil.unsignedArithmeticTest(regSub)
+        TestUtil.randomTest(regSub)
     }
 
     @Test
@@ -156,7 +156,7 @@ class U256Tests {
 
     @Test
     fun testRandomMul() {
-        TestUtil.unsignedArithmeticTest(regMul)
+        TestUtil.randomTest(regMul)
     }
 
 
@@ -172,13 +172,13 @@ class U256Tests {
 
     @Test
     fun testRandomDiv() {
-        TestUtil.unsignedArithmeticTest(regDiv)
+        TestUtil.randomTest(regDiv)
     }
 
 
     @Test
     fun testRandomMod() {
-        TestUtil.unsignedArithmeticTest(regMod)
+        TestUtil.randomTest(regMod)
     }
 
     @Test

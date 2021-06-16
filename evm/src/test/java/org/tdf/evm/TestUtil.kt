@@ -1,25 +1,41 @@
 package org.tdf.evm
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.junit.Assert
 import org.spongycastle.util.encoders.Hex
 import org.tdf.common.util.SlotUtils
 import org.tdf.common.util.SlotUtils.SLOT_SIZE
+import org.tdf.evm.StackImpl.Companion.P_MAX
+import org.tdf.evm.StackImpl.Companion.P_SIGNED_MAX
 import java.io.InputStream
 import java.math.BigInteger
 import kotlin.experimental.and
 
-interface TestBinaryOperator {
-    fun skip(left: BigInteger, right: BigInteger): Boolean
-    fun expect(left: BigInteger, right: BigInteger): BigInteger
-    fun actual(left: BigInteger, right: BigInteger): BigInteger
+interface TestOperator {
+    fun skip(args: Array<BigInteger>): Boolean
+    fun expect(args: Array<BigInteger>): BigInteger
+    fun actual(args: Array<BigInteger>): BigInteger
 }
 
+class TestOpImpl(
+    private val expect: (Array<BigInteger>) -> BigInteger,
+    private val actual: (Array<BigInteger>) -> BigInteger,
+    private val skip: (Array<BigInteger>) -> Boolean = { _ -> false },
+) : TestOperator {
+    override fun skip(args: Array<BigInteger>): Boolean {
+        return skip.invoke(args)
+    }
 
+    override fun expect(args: Array<BigInteger>): BigInteger {
+        return expect.invoke(args)
+    }
+
+    override fun actual(args: Array<BigInteger>): BigInteger {
+        return actual.invoke(args)
+    }
+}
 
 data class EvmSpec(
     @JsonProperty("X") val x: String = "",
@@ -63,7 +79,7 @@ object TestUtil {
     }
 
     fun readClassPathFile(name: String): ByteArray {
-        val stream: InputStream = TestUtil::class.java.getClassLoader().getResource(name)!!.openStream()
+        val stream: InputStream = TestUtil::class.java.classLoader.getResource(name)!!.openStream()
         val all = ByteArray(stream.available())
         if (stream.read(all) != all.size) throw RuntimeException("read bytes from stream failed")
         return all
@@ -71,120 +87,97 @@ object TestUtil {
 
     private const val LOOPS = 100
 
-    fun testSinglePair(op: TestBinaryOperator, l: BigInteger, r: BigInteger) {
-        if (op.skip(l, r))
+    fun testSinglePair(op: TestOperator, args: Array<BigInteger>) {
+        if (op.skip(args))
             return
-        val expected = op.expect(l, r)
-        val actual = op.actual(l, r)
+        val expected = op.expect(args)
+        val actual = op.actual(args)
 
         if (actual != expected) {
-            println("test failed: l = $l r = $r")
+            println("test failed: args = ${args.contentToString()}")
         }
         Assert.assertEquals("", expected.toString(16), actual.toString(16))
     }
 
-    fun unsignedArithmeticTest(op: TestBinaryOperator, loops: Int = LOOPS) {
-        for (j in 0..32) {
-            val left = ByteArray(j)
-            for (k in 0..32) {
-                val right = ByteArray(k)
-                for (i in 0 until loops) {
-                    U256Tests.SR.nextBytes(left)
-                    U256Tests.SR.nextBytes(right)
+    private fun IntArray.last(): Boolean {
+        for (i in 0 until this.size) {
+            if (this[i] < 32)
+                return false
+        }
+        return true
+    }
 
-                    if (j >= 24 && k >= 24 && i == 3) {
-                        for (x in 4 until j)
-                            left[x] = 0
-                        for (x in 4 until k)
-                            right[x] = 0
-                    }
-
-                    var l = if (i == 0) {
-                        BigInteger.ZERO
-                    } else {
-                        BigInteger(1, left)
-                    }
-                    val r = if (i == 1) {
-                        l
-                    } else {
-                        BigInteger(1, right)
-                    }
-
-                    if (k == 4 && i == 2) {
-                        l = r + r
-                    }
-
-                    try {
-                        testSinglePair(op, l, r)
-                    } catch (e: Exception) {
-                        println("exception found l = $l r = $r, op = $op")
-                        throw e
-                    }
-                }
+    fun IntArray.next() {
+        var carry = 1
+        for (i in 0 until this.size) {
+            if (this[i] == 32 && carry == 1) {
+                this[i] = 0
+                carry = 1
+            } else {
+                this[i] += carry
+                carry = 0
             }
         }
     }
 
-    fun signedArithmeticTest(op: TestBinaryOperator, loops: Int = LOOPS) {
-        for (j in 0..32) {
-            val left = ByteArray(j)
-            for (k in 0..32) {
-                val right = ByteArray(k)
-                for (i in 0 until loops) {
-                    U256Tests.SR.nextBytes(left)
-                    U256Tests.SR.nextBytes(right)
 
-                    if (j == 32)
-                        left[0] = left[0].and(0x7f)
-                    if (k == 32)
-                        right[0] = right[0].and(0x7f)
+    fun randomTest(op: TestOperator, signed: Boolean = false, loops: Int = LOOPS, argLen: Int = 2) {
+        val sz = IntArray(argLen)
+        val nums = arrayOfNulls<BigInteger>(argLen)
+        val bufs = arrayOfNulls<ByteArray>(argLen)
 
-                    if (j >= 24 && k >= 24 && i == 3) {
-                        for (x in 4 until j)
-                            left[x] = 0
-                        for (x in 4 until k)
-                            right[x] = 0
+        while (true) {
+            // initialize buffers
+            for (i in 0 until argLen) {
+                bufs[i] = ByteArray(sz[i])
+            }
+
+            for (i in 0 until loops) {
+                bufs.requireNoNulls().forEachIndexed { idx, it ->
+                    U256Tests.SR.nextBytes(it)
+                    if (it.size == 32 && signed) {
+                        it[0] = it[0] and 0x7f
                     }
 
-                    val leftNeg = U256Tests.SR.nextBoolean()
-                    val rightNeg = U256Tests.SR.nextBoolean()
+                    if (it.size >= 24 && i == 3)
+                        it.fill(0, 4, it.size)
 
-                    var l = if (i == 0) {
-                        BigInteger.ZERO
+                    val neg = if (signed) {
+                        U256Tests.SR.nextBoolean()
                     } else {
-                        BigInteger(
-                            if (leftNeg) {
-                                -1
-                            } else {
-                                1
-                            }, left
-                        )
-                    }
-                    var r = if (i == 1) {
-                        l
-                    } else {
-                        BigInteger(
-                            if (rightNeg) {
-                                -1
-                            } else {
-                                1
-                            }, right
-                        )
+                        false
                     }
 
-                    if (k == 4 && i == 2) {
-                        l = r + r
+                    if (idx == 1 && i == 2) {
+                        nums[idx] = (nums[idx - 1]!! + nums[idx - 1]!!) and (if (signed) {
+                            P_SIGNED_MAX
+                        } else {
+                            P_MAX
+                        })
+                        return@forEachIndexed
                     }
 
+                    nums[idx] = BigInteger(
+                        if (neg) {
+                            -1
+                        } else {
+                            1
+                        }, it
+                    )
+                    return@forEachIndexed
+                }
 
-                    try {
-                        testSinglePair(op, l, r)
-                    } catch (e: Exception) {
-                        println("exception found l = $l r = $r, op = $op")
-                        throw e
-                    }
+
+                try {
+                    testSinglePair(op, nums.requireNoNulls())
+                } catch (e: Exception) {
+                    println("exception found args = ${nums.contentToString()}")
+                    throw e
                 }
             }
+            if (sz.last())
+                break
+            sz.next()
         }
     }
 }

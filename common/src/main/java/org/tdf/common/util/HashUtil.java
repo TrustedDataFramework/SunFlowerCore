@@ -70,7 +70,6 @@ public class HashUtil {
             LOG.error("Can't find such algorithm", e);
             throw new RuntimeException(e);
         }
-
     }
 
     public static byte[] sha3(byte[] input1, byte[] input2) {
@@ -102,6 +101,19 @@ public class HashUtil {
             return digest.digest();
         } catch (NoSuchAlgorithmException e) {
             LOG.error("Can't find such algorithm", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public static void sha3(byte[] input, int start, int length, byte[] dst) {
+        MessageDigest digest;
+        try {
+            digest = MessageDigest.getInstance(HASH_256_ALGORITHM_NAME, CRYPTO_PROVIDER);
+            digest.update(input, start, length);
+            digest.digest(dst, 0, dst.length);
+        } catch (Exception e) {
+            LOG.error("Exception: ", e);
             throw new RuntimeException(e);
         }
     }

@@ -1,5 +1,6 @@
 package org.tdf.evm
 
+import org.tdf.common.util.HashUtil
 import org.tdf.common.util.MutableBigInteger
 import org.tdf.common.util.SlotUtils.*
 import java.math.BigInteger
@@ -50,6 +51,13 @@ interface Stack {
      */
     fun popUnsignedInt(): Long
 
+    fun popIntExact(): Int {
+        val n = popUnsignedInt()
+        if (n < 0)
+            throw RuntimeException("integer overflow")
+        return n.toInt()
+    }
+
     // arithmetic, unsigned
     fun add()
     fun sub()
@@ -81,13 +89,19 @@ interface Stack {
     fun shr()
     fun sar()
 
+    fun sha3(mem: Memory)
 
     fun dup(index: Int)
     fun swap(index: Int)
+
+    // memory access
+    fun mstore(mem: Memory)
+    fun mstore8(mem: Memory)
+    fun mload(mem: Memory)
+    fun ret(mem: Memory): ByteArray
 }
 
-class StackImpl : Stack {
-
+class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     private var top: Int = -SLOT_SIZE
 
     override var size: Int = 0
@@ -108,7 +122,7 @@ class StackImpl : Stack {
 
     private val divisor = IntArray(SLOT_SIZE * 2)
 
-    private val remSlot = IntArray(SLOT_SIZE * 2)
+    private val remSlot = IntArray(SLOT_SIZE * 4)
     private val remMut = MutableBigInteger(remSlot)
 
 
@@ -122,6 +136,8 @@ class StackImpl : Stack {
     }
 
     override fun push(n: MutableBigInteger) {
+        if (size == limit)
+            throw RuntimeException("stack overflow")
         tryGrow()
         size++
         top += SLOT_SIZE
@@ -173,6 +189,8 @@ class StackImpl : Stack {
     }
 
     override fun push(n: IntArray, offset: Int) {
+        if (size == limit)
+            throw RuntimeException("stack overflow")
         tryGrow()
         size++
         top += SLOT_SIZE
@@ -189,22 +207,23 @@ class StackImpl : Stack {
     }
 
     override fun push(n: BigInteger) {
+        if (size == limit)
+            throw RuntimeException("stack overflow")
         if (n.signum() >= 0) {
             pushInternal(n)
             return
         }
-        pushInternal(n.negate())
-        complement(data, top)
+        pushInternal(n.and(P_MAX))
     }
 
     override fun pushOne() {
-        tryGrow()
-        size++
-        top += SLOT_SIZE
-        System.arraycopy(ONE, 0, data, top, SLOT_SIZE)
+        pushZero()
+        data[top + 7] = 1
     }
 
     override fun pushZero() {
+        if (size == limit)
+            throw RuntimeException("stack overflow")
         tryGrow()
         size++
         top += SLOT_SIZE
@@ -224,11 +243,13 @@ class StackImpl : Stack {
 
     override fun add() {
         addInternal()
+        size--
+        top -= SLOT_SIZE
     }
 
     override fun mul() {
-        popOperand0(0)
-        popOperand1(0)
+        popOperand0()
+        popOperand1()
         if (operandMut0.isZero || operandMut1.isZero) {
             pushZero()
             return
@@ -239,16 +260,25 @@ class StackImpl : Stack {
     }
 
     override fun mulMod() {
-        popOperand0(0)
-        popOperand1(0)
+        popOperand0()
+        popOperand1()
         varMut.clear()
-        if (!operandMut0.isZero && !operandMut1.isZero) {
-            operandMut0.multiply(operandMut1, varMut)
+
+        if (operandMut0.isZero || operandMut1.isZero) {
+            drop()
+            pushZero()
+            return
         }
 
+        operandMut0.multiply(operandMut1, varMut)
         operandMut0.copyValue(varMut)
         varMut.clear()
-        popOperand1(0)
+        popOperand1()
+
+        if (operandMut1.isZero) {
+            pushZero()
+            return
+        }
         divModInternal(true)
         push(remMut)
     }
@@ -260,8 +290,8 @@ class StackImpl : Stack {
     }
 
     override fun div() {
-        popOperand0(0)
-        popOperand1(0)
+        popOperand0()
+        popOperand1()
         if (operandMut1.isZero) {
             pushZero()
             return
@@ -292,14 +322,51 @@ class StackImpl : Stack {
         System.arraycopy(operand0, 0, data, index * SLOT_SIZE, SLOT_SIZE)
     }
 
+    override fun mstore(mem: Memory) {
+        if (size == 0)
+            throw RuntimeException("stack underflow")
+        val off = popUnsignedInt()
+        if (off < 0)
+            throw RuntimeException("memory access overflow")
+        encodeBE(data, top, tempBytes, 0)
+        drop()
+        mem.write(off.toInt(), tempBytes)
+    }
+
+    override fun mstore8(mem: Memory) {
+        pushInt(0xff)
+        and()
+        mstore(mem)
+    }
+
+    override fun mload(mem: Memory) {
+        if (size == 0)
+            throw RuntimeException("stack underflow")
+        val off = popUnsignedInt()
+        if (off < 0)
+            throw RuntimeException("memory access overflow")
+        mem.read(off.toInt(), tempBytes)
+        if (size == limit)
+            throw RuntimeException("stack overflow")
+        tryGrow()
+        size++
+        top += SLOT_SIZE
+        decodeBE(tempBytes, 0, data, top)
+    }
+
+    override fun ret(mem: Memory): ByteArray {
+        val off = popIntExact()
+        val len = popIntExact()
+        val r = ByteArray(len)
+        mem.read(off, r)
+        return r
+    }
+
 
     private fun addInternal(): Long {
         if (size < 2)
             throw RuntimeException("stack underflow")
-        val carry = add(data, top - SLOT_SIZE, data, top, data, top - SLOT_SIZE)
-        size--
-        top -= SLOT_SIZE
-        return carry
+        return add(data, top - SLOT_SIZE, data, top, data, top - SLOT_SIZE)
     }
 
     override fun sub() {
@@ -324,28 +391,30 @@ class StackImpl : Stack {
         operandMut0.divideKnuth(operandMut1, varMut, remMut, divisor, needRem)
     }
 
-    private fun popOperand0(carry: Long) {
+    private fun popOperand0(carry: Long = 0) {
         Arrays.fill(operand0, 0)
         pop(operand0, SLOT_SIZE)
-        operand0[SLOT_SIZE - 1] = carry.toInt()
+        operand0[7] = carry.toInt()
         operandMut0.setValue(operand0, operand0.size)
         operandMut0.normalize()
     }
 
-    private fun popOperand1(carry: Long) {
+    private fun popOperand1() {
         Arrays.fill(operand1, 0)
         pop(operand1, SLOT_SIZE)
-        operand1[SLOT_SIZE - 1] = carry.toInt()
         operandMut1.setValue(operand1, operand1.size)
         operandMut1.normalize()
     }
 
     override fun addMod() {
         val carry = addInternal()
+        drop()
+
         // pop into operand0
         popOperand0(carry)
+
         // pop into operand1
-        popOperand1(0)
+        popOperand1()
         if (operandMut1.isZero) {
             pushZero()
             return
@@ -454,8 +523,8 @@ class StackImpl : Stack {
             leftSign * rightSign
         }
 
-        popOperand0(0)
-        popOperand1(0)
+        popOperand0()
+        popOperand1()
 
 
         // divided as uint256
@@ -667,9 +736,19 @@ class StackImpl : Stack {
         signedRightShift(data, top, c / INT_BITS, c % INT_BITS)
     }
 
+    override fun sha3(mem: Memory) {
+        if (size < 2)
+            throw RuntimeException("stack underflow")
+        val off = popIntExact()
+        val len = popIntExact()
+        HashUtil.sha3(mem.data, off, len, tempBytes)
+        pushZero()
+        decodeBE(tempBytes, 0, data, top)
+    }
+
     override fun mod() {
-        popOperand0(0)
-        popOperand1(0)
+        popOperand0()
+        popOperand1()
         if (operandMut1.isZero) {
             pushZero()
         } else {
@@ -685,5 +764,6 @@ class StackImpl : Stack {
         const val INITIAL_CAP = 2
         val P_2_256 = BigInteger.valueOf(2).pow(256)
         val P_MAX = P_2_256 - BigInteger.ONE
+        val P_SIGNED_MAX = BigInteger.valueOf(2).pow(255) - BigInteger.ONE
     }
 }

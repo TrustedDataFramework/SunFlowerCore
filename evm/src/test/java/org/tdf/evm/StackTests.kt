@@ -7,30 +7,30 @@ import org.tdf.evm.StackImpl.Companion.P_2_256
 import org.tdf.evm.StackImpl.Companion.P_MAX
 import java.math.BigInteger
 
-class StackTestOperator(
+class StackBinaryOp(
     private val expect: (BigInteger, BigInteger) -> BigInteger,
     private val actual: (Stack) -> BigInteger,
     private val skip: (BigInteger, BigInteger) -> Boolean = { _, _ -> false }
-) : TestBinaryOperator {
+) : TestOperator {
     private val stack = StackImpl()
 
-    override fun skip(left: BigInteger, right: BigInteger): Boolean {
-        return skip.invoke(left, right)
+    override fun skip(args: Array<BigInteger>): Boolean {
+        return skip.invoke(args[0], args[1])
     }
 
-    override fun expect(left: BigInteger, right: BigInteger): BigInteger {
-        return expect.invoke(left, right)
+    override fun expect(args: Array<BigInteger>): BigInteger {
+        return expect.invoke(args[0], args[1])
     }
 
-    override fun actual(left: BigInteger, right: BigInteger): BigInteger {
-        stack.push(right)
-        stack.push(left)
+    override fun actual(args: Array<BigInteger>): BigInteger {
+        stack.push(args[1])
+        stack.push(args[0])
         return actual.invoke(stack)
     }
 }
 
 
-val stackAdd = StackTestOperator(
+val stackAdd = StackBinaryOp(
     { l, r -> (l + r) % P_2_256 },
     fun(stack: Stack): BigInteger {
         stack.add()
@@ -38,7 +38,7 @@ val stackAdd = StackTestOperator(
     }
 )
 
-val stackSub = StackTestOperator(
+val stackSub = StackBinaryOp(
     { l, r -> (l - r).and(P_MAX) },
     fun(stack: Stack): BigInteger {
         stack.sub()
@@ -46,7 +46,7 @@ val stackSub = StackTestOperator(
     }
 )
 
-val stackMul = StackTestOperator(
+val stackMul = StackBinaryOp(
     { l, r -> (l * r) % P_2_256 },
     fun(stack: Stack): BigInteger {
         stack.mul()
@@ -54,7 +54,7 @@ val stackMul = StackTestOperator(
     }
 )
 
-val stackDiv = StackTestOperator(
+val stackDiv = StackBinaryOp(
     { l, r ->
         if (r == BigInteger.ZERO) {
             BigInteger.ZERO
@@ -68,7 +68,7 @@ val stackDiv = StackTestOperator(
     }
 )
 
-val stackMod = StackTestOperator(
+val stackMod = StackBinaryOp(
     { l, r ->
         if (r == BigInteger.ZERO) {
             BigInteger.ZERO
@@ -82,7 +82,7 @@ val stackMod = StackTestOperator(
     }
 )
 
-val stackSDiv = StackTestOperator(
+val stackSDiv = StackBinaryOp(
     { l, r ->
         if (r == BigInteger.ZERO) {
             BigInteger.ZERO
@@ -96,7 +96,7 @@ val stackSDiv = StackTestOperator(
     }
 )
 
-val stackSMod = StackTestOperator(
+val stackSMod = StackBinaryOp(
     { l, r ->
         if (r == BigInteger.ZERO) {
             BigInteger.ZERO
@@ -110,7 +110,7 @@ val stackSMod = StackTestOperator(
     }
 )
 
-val stackLt = StackTestOperator(
+val stackLt = StackBinaryOp(
     { l, r ->
         if (l < r) {
             BigInteger.ONE
@@ -124,7 +124,7 @@ val stackLt = StackTestOperator(
     }
 )
 
-val stackSLt = StackTestOperator(
+val stackSLt = StackBinaryOp(
     { l, r ->
         if (l < r) {
             BigInteger.ONE
@@ -138,7 +138,7 @@ val stackSLt = StackTestOperator(
     }
 )
 
-val stackGt = StackTestOperator(
+val stackGt = StackBinaryOp(
     { l, r ->
         if (l > r) {
             BigInteger.ONE
@@ -152,7 +152,7 @@ val stackGt = StackTestOperator(
     }
 )
 
-val stackSGt = StackTestOperator(
+val stackSGt = StackBinaryOp(
     { l, r ->
         if (l > r) {
             BigInteger.ONE
@@ -166,7 +166,7 @@ val stackSGt = StackTestOperator(
     }
 )
 
-val stackAnd = StackTestOperator(
+val stackAnd = StackBinaryOp(
     { l, r ->
         l.and(r)
     },
@@ -176,7 +176,7 @@ val stackAnd = StackTestOperator(
     }
 )
 
-val stackOr = StackTestOperator(
+val stackOr = StackBinaryOp(
     { l, r ->
         l.or(r)
     },
@@ -186,7 +186,7 @@ val stackOr = StackTestOperator(
     }
 )
 
-val stackXor = StackTestOperator(
+val stackXor = StackBinaryOp(
     { l, r ->
         l.xor(r)
     },
@@ -196,7 +196,7 @@ val stackXor = StackTestOperator(
     }
 )
 
-val stackEq = StackTestOperator(
+val stackEq = StackBinaryOp(
     { l, r ->
         if (l == r) {
             BigInteger.ONE
@@ -210,7 +210,7 @@ val stackEq = StackTestOperator(
     }
 )
 
-val stackIsZero = StackTestOperator(
+val stackIsZero = StackBinaryOp(
     { l, _ ->
         if (l == BigInteger.ZERO) {
             BigInteger.ONE
@@ -224,7 +224,7 @@ val stackIsZero = StackTestOperator(
     }
 )
 
-val stackExp = StackTestOperator(
+val stackExp = StackBinaryOp(
     { l, r ->
         l.modPow(r, P_2_256)
     },
@@ -234,7 +234,7 @@ val stackExp = StackTestOperator(
     }
 )
 
-val stackDup = StackTestOperator(
+val stackDup = StackBinaryOp(
     { _, r -> r },
     fun(stack: Stack): BigInteger {
         stack.dup(stack.size - 2)
@@ -242,105 +242,173 @@ val stackDup = StackTestOperator(
     }
 )
 
+class SingleOp(private val stack: Stack) : TestOperator {
+    override fun skip(args: Array<BigInteger>): Boolean {
+        return false
+    }
+
+    override fun expect(args: Array<BigInteger>): BigInteger {
+        return args[0]
+    }
+
+    override fun actual(args: Array<BigInteger>): BigInteger {
+        stack.push(args[0])
+        return stack.popBigInt(true)
+    }
+
+}
+
+
 @RunWith(JUnit4::class)
 class StackTests {
     @Test
     fun testRandomAdd() {
-        TestUtil.unsignedArithmeticTest(stackAdd)
+        TestUtil.randomTest(stackAdd)
     }
 
     @Test
     fun testRandomSub() {
-        TestUtil.unsignedArithmeticTest(stackSub)
+        TestUtil.randomTest(stackSub)
     }
 
     @Test
     fun testRandomMul() {
-        TestUtil.unsignedArithmeticTest(stackMul)
+        TestUtil.randomTest(stackMul)
     }
 
     @Test
     fun testRandomDiv() {
-        TestUtil.unsignedArithmeticTest(stackDiv)
+        TestUtil.randomTest(stackDiv)
     }
 
     @Test
     fun testRandomMod() {
-        TestUtil.unsignedArithmeticTest(stackMod)
+        TestUtil.randomTest(stackMod)
     }
 
     @Test
     fun testRandomSignedDiv() {
-        TestUtil.signedArithmeticTest(stackSDiv)
+        TestUtil.randomTest(stackSDiv, signed = true)
     }
 
 
     @Test
     fun testRandomSignedMod() {
-        TestUtil.signedArithmeticTest(stackSMod)
+        TestUtil.randomTest(stackSMod, signed = true)
     }
 
     @Test
     fun testRandomLt() {
-        TestUtil.unsignedArithmeticTest(stackLt)
+        TestUtil.randomTest(stackLt)
     }
 
 
     @Test
     fun testRandomSLt() {
-        TestUtil.signedArithmeticTest(stackSLt)
+        TestUtil.randomTest(stackSLt, signed = true)
     }
 
     @Test
     fun testRandomGt() {
-        TestUtil.unsignedArithmeticTest(stackGt)
+        TestUtil.randomTest(stackGt)
     }
 
 
     @Test
     fun testRandomSGt() {
-        TestUtil.signedArithmeticTest(stackSGt)
+        TestUtil.randomTest(stackSGt, signed = true)
     }
 
     @Test
     fun testRandomAnd() {
-        TestUtil.unsignedArithmeticTest(stackAnd)
+        TestUtil.randomTest(stackAnd)
     }
 
     @Test
     fun testRandomOr() {
-        TestUtil.unsignedArithmeticTest(stackOr)
+        TestUtil.randomTest(stackOr)
     }
 
     @Test
     fun testRandomXor() {
-        TestUtil.unsignedArithmeticTest(stackXor)
+        TestUtil.randomTest(stackXor)
     }
 
     @Test
     fun testRandomEq() {
-        TestUtil.unsignedArithmeticTest(stackEq)
+        TestUtil.randomTest(stackEq)
     }
 
     @Test
     fun testRandomIsZero() {
-        TestUtil.unsignedArithmeticTest(stackIsZero)
+        TestUtil.randomTest(stackIsZero)
     }
 
     @Test
     fun testRandomExp() {
-        TestUtil.unsignedArithmeticTest(stackExp, 2)
+        TestUtil.randomTest(stackExp, loops = 10)
     }
 
     @Test
     fun testRandomDup() {
-        TestUtil.unsignedArithmeticTest(stackDup, 2)
+        TestUtil.randomTest(stackDup, loops = 10)
     }
 
     @Test
-    fun testFailed() {
-        val l = BigInteger.valueOf(0)
-        val r = BigInteger.valueOf(0)
-        TestUtil.testSinglePair(stackSub, l, r)
+    fun testSingleOp() {
+        val op = SingleOp(StackImpl())
+        TestUtil.randomTest(op, signed = true, argLen = 1)
+    }
+
+    @Test
+    fun testAddMod() {
+        val stack = StackImpl()
+        val stackAddMod = TestOpImpl(
+            { if (it[2] == BigInteger.ZERO) BigInteger.ZERO else (it[0] + it[1]) % it[2] },
+            fun(args: Array<BigInteger>): BigInteger {
+                stack.push(args[2])
+                stack.push(args[1])
+                stack.push(args[0])
+                stack.addMod()
+                return stack.popBigInt()
+            }
+        )
+
+        TestUtil.randomTest(stackAddMod, argLen = 3)
+    }
+
+    @Test
+    fun testMulMod() {
+        val stack = StackImpl()
+        val stackAddMod = TestOpImpl(
+            { if (it[2] == BigInteger.ZERO) BigInteger.ZERO else (it[0] * it[1]) % it[2] },
+            fun(args: Array<BigInteger>): BigInteger {
+                stack.push(args[2])
+                stack.push(args[1])
+                stack.push(args[0])
+                stack.mulMod()
+                return stack.popBigInt()
+            }
+        )
+
+        TestUtil.randomTest(stackAddMod, argLen = 3)
+    }
+
+    @Test
+    fun testPushInt() {
+        val stack = StackImpl()
+        val stackPushInt = TestOpImpl(
+            { it[0].and(BigInteger.valueOf(0xffffffffL)) },
+            fun(args: Array<BigInteger>): BigInteger {
+                stack.pushInt(
+                    args[0]
+                        .and(BigInteger.valueOf(0xffffffffL))
+                        .longValueExact().toInt()
+                )
+                return stack.popBigInt()
+            }
+        )
+
+        TestUtil.randomTest(stackPushInt, argLen = 1)
     }
 }

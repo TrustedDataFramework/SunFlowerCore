@@ -1,4 +1,4 @@
-package org.tdf.evm;
+package org.tdf.evm
 
 import org.tdf.common.util.MutableBigInteger
 import org.tdf.common.util.SlotUtils.MAX_BYTE_ARRAY_SIZE
