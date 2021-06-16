@@ -76,6 +76,7 @@ interface Stack {
     fun gt()
     fun sgt()
     fun isZero()
+    fun byte()
 
 
     fun dup(index: Int)
@@ -91,7 +92,7 @@ class StackImpl : Stack {
 
     private var data: IntArray = IntArray(SLOT_SIZE * INITIAL_CAP)
 
-    var cap: Int = INITIAL_CAP
+    private var cap: Int = INITIAL_CAP
 
     private val operand0 = IntArray(SLOT_SIZE * 2)
     private val operandMut0 = MutableBigInteger(operand0)
@@ -389,7 +390,7 @@ class StackImpl : Stack {
             throw RuntimeException("stack underflow")
 
         val n = popUnsignedInt()
-        if(n < 0 || n > MAX_BYTE_ARRAY_SIZE - 1)
+        if(n < 0 || n >= MAX_BYTE_ARRAY_SIZE)
             return
 
         val bytesLong = n + 1
@@ -602,6 +603,20 @@ class StackImpl : Stack {
         } else {
             pushZero()
         }
+    }
+
+    override fun byte() {
+        val i = popUnsignedInt()
+        if(i < 0 || i >= MAX_BYTE_ARRAY_SIZE) {
+            drop()
+            pushZero()
+            return
+        }
+        val n = MAX_BYTE_ARRAY_SIZE - i.toInt() - 1
+        encodeBE(data, top, tempBytes, 0)
+        val j = tempBytes[n].toUByte().toInt()
+        drop()
+        pushInt(j)
     }
 
     override fun mod() {

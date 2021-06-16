@@ -73,7 +73,7 @@ object TestUtil {
                     } else {
                         BigInteger(1, left)
                     }
-                    var r = if (i == 1) {
+                    val r = if (i == 1) {
                         l
                     } else {
                         BigInteger(1, right)
