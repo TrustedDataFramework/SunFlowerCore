@@ -301,11 +301,9 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun dup(index: Int) {
-        tryGrow()
         if (index >= size)
             throw RuntimeException("stack underflow")
-        size++
-        top += SLOT_SIZE
+        pushZero()
         System.arraycopy(data, index * SLOT_SIZE, data, top, SLOT_SIZE)
     }
 
@@ -325,12 +323,10 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun mstore(mem: Memory) {
         if (size == 0)
             throw RuntimeException("stack underflow")
-        val off = popUnsignedInt()
-        if (off < 0)
-            throw RuntimeException("memory access overflow")
+        val off = popIntExact()
         encodeBE(data, top, tempBytes, 0)
         drop()
-        mem.write(off.toInt(), tempBytes)
+        mem.write(off, tempBytes)
     }
 
     override fun mstore8(mem: Memory) {
@@ -342,15 +338,9 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun mload(mem: Memory) {
         if (size == 0)
             throw RuntimeException("stack underflow")
-        val off = popUnsignedInt()
-        if (off < 0)
-            throw RuntimeException("memory access overflow")
-        mem.read(off.toInt(), tempBytes)
-        if (size == limit)
-            throw RuntimeException("stack overflow")
-        tryGrow()
-        size++
-        top += SLOT_SIZE
+        val off = popIntExact()
+        mem.read(off, tempBytes)
+        pushZero()
         decodeBE(tempBytes, 0, data, top)
     }
 
@@ -374,8 +364,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
             throw RuntimeException("stack underflow")
         subMut(data, top, data, top - SLOT_SIZE, data, top)
         System.arraycopy(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
-        size--
-        top -= SLOT_SIZE
+        drop()
     }
 
     // perform operation
