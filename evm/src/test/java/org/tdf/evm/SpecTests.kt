@@ -253,4 +253,44 @@ class SpecTests {
             }
         )
     }
+
+
+    @Test
+    fun testShl() {
+        val stack = StackImpl()
+        TestUtil.testSpec("testdata/testcases_shl.json",
+            fun (c: EvmSpec): String {
+                stack.push(c.xData)
+                stack.push(c.yData)
+                stack.shl()
+                return stack.popHex()
+            }
+        )
+    }
+
+    @Test
+    fun testShr() {
+        val stack = StackImpl()
+        TestUtil.testSpec("testdata/testcases_shr.json",
+            fun (c: EvmSpec): String {
+                stack.push(c.xData)
+                stack.push(c.yData)
+                stack.shr()
+                return stack.popHex()
+            }
+        )
+    }
+
+    @Test
+    fun testSar() {
+        val stack = StackImpl()
+        TestUtil.testSpec("testdata/testcases_sar.json",
+            fun (c: EvmSpec): String {
+                stack.push(c.xData)
+                stack.push(c.yData)
+                stack.sar()
+                return stack.popHex()
+            }
+        )
+    }
 }

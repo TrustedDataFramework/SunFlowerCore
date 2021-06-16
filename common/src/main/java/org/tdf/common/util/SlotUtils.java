@@ -1,7 +1,6 @@
 package org.tdf.common.util;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * slot is a 256bit arithmetic unit
@@ -21,6 +20,7 @@ public final class SlotUtils {
     public static final int MAX_BYTE_ARRAY_SIZE = 32;
     public static final int INT_SIZE = 4;
     public static final int INT_BITS = 32;
+    public static final int SLOT_BITS = SLOT_SIZE * INT_BITS;
 
     // slot - 1 = slot + negative_one
     public static final int[] NEGATIVE_ONE = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff};
@@ -241,4 +241,51 @@ public final class SlotUtils {
             carry = added >>> 8;
         }
     }
+
+    public static void leftShift(int[] val, int offset, int words, int rems) {
+        for(int i = 0; i < SLOT_SIZE && words != 0; i++) {
+            val[offset + i] = i + words < SLOT_SIZE ? val[offset + i + words] : 0;
+        }
+        if(rems == 0)
+            return;
+        int n2 = 32 - rems;
+        for (int i = offset, c = val[i], m = i + SLOT_SIZE - 1; i < m; i++) {
+            int b = c;
+            c = val[i + 1];
+            val[i] = (b << rems) | (c >>> n2);
+        }
+        val[offset + SLOT_SIZE - 1] <<= rems;
+    }
+
+    public static void rightShift(int[] val, int offset, int words, int rems) {
+        for(int i = SLOT_MAX_INDEX; i >= 0 && words != 0; i--) {
+            val[offset + i] = i - words >= 0 ? val[offset + i - words] : 0;
+        }
+        if(rems == 0)
+            return;
+        int n2 = 32 - rems;
+        for (int i = offset + SLOT_SIZE - 1, c = val[i]; i > offset; i--) {
+            int b = c;
+            c = val[i - 1];
+            val[i] = (c << n2) | (b >>> rems);
+        }
+        val[offset] >>>= rems;
+    }
+
+    public static void signedRightShift(int[] val, int offset, int words, int rems) {
+        int sig = val[offset] < 0  ? -1 : 0;
+        for(int i = SLOT_MAX_INDEX; i >= 0 && words != 0; i--) {
+            val[offset + i] = i - words >= 0 ? val[offset + i - words] : sig;
+        }
+        if(rems == 0)
+            return;
+        int n2 = 32 - rems;
+        for (int i = offset + SLOT_SIZE - 1, c = val[i]; i > offset; i--) {
+            int b = c;
+            c = val[i - 1];
+            val[i] = (c << n2) | (b >>> rems);
+        }
+        val[offset] >>= rems;
+    }
+
 }

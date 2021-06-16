@@ -77,6 +77,9 @@ interface Stack {
     fun sgt()
     fun isZero()
     fun byte()
+    fun shl()
+    fun shr()
+    fun sar()
 
 
     fun dup(index: Int)
@@ -157,9 +160,9 @@ class StackImpl : Stack {
         return r
     }
 
-    override fun popUnsignedInt(): Long{
-        for(i in 0 until SLOT_MAX_INDEX) {
-            if(data[top + i] != 0) {
+    override fun popUnsignedInt(): Long {
+        for (i in 0 until SLOT_MAX_INDEX) {
+            if (data[top + i] != 0) {
                 drop()
                 return -1
             }
@@ -386,11 +389,11 @@ class StackImpl : Stack {
     }
 
     override fun signExtend() {
-        if(size < 2)
+        if (size < 2)
             throw RuntimeException("stack underflow")
 
         val n = popUnsignedInt()
-        if(n < 0 || n >= MAX_BYTE_ARRAY_SIZE)
+        if (n < 0 || n >= MAX_BYTE_ARRAY_SIZE)
             return
 
         val bytesLong = n + 1
@@ -606,8 +609,10 @@ class StackImpl : Stack {
     }
 
     override fun byte() {
+        if (size < 2)
+            throw RuntimeException("stack underflow")
         val i = popUnsignedInt()
-        if(i < 0 || i >= MAX_BYTE_ARRAY_SIZE) {
+        if (i < 0 || i >= MAX_BYTE_ARRAY_SIZE) {
             drop()
             pushZero()
             return
@@ -616,6 +621,50 @@ class StackImpl : Stack {
         val j = tempBytes[i.toInt()].toUByte().toInt()
         drop()
         pushInt(j)
+    }
+
+    override fun shl() {
+        if (size < 2)
+            throw RuntimeException("stack underflow")
+        val i = popUnsignedInt()
+        if (i < 0 || i >= SLOT_BITS) {
+            drop()
+            pushZero()
+            return
+        }
+        val c = i.toInt()
+        leftShift(data, top, c / INT_BITS, c % INT_BITS)
+    }
+
+    override fun shr() {
+        if (size < 2)
+            throw RuntimeException("stack underflow")
+        val i = popUnsignedInt()
+        if (i < 0 || i >= SLOT_BITS) {
+            drop()
+            pushZero()
+            return
+        }
+        val c = i.toInt()
+        rightShift(data, top, c / INT_BITS, c % INT_BITS)
+    }
+
+    override fun sar() {
+        if (size < 2)
+            throw RuntimeException("stack underflow")
+        val i = popUnsignedInt()
+        if (i < 0 || i >= SLOT_BITS) {
+            if (data[top] < 0) {
+                drop()
+                push(NEGATIVE_ONE)
+            } else {
+                drop()
+                pushZero()
+            }
+            return
+        }
+        val c = i.toInt()
+        signedRightShift(data, top, c / INT_BITS, c % INT_BITS)
     }
 
     override fun mod() {
