@@ -1,10 +1,13 @@
 package org.tdf.evm
 
-import org.tdf.common.util.HashUtil
-import org.tdf.common.util.MutableBigInteger
-import org.tdf.common.util.SlotUtils.*
+import org.tdf.evm.SlotUtils.*
 import java.math.BigInteger
 import java.util.*
+
+fun interface Digest {
+    // dst[dstPos:] = sha3(src[srcPos:srcPos+srcLen])
+    fun digest(src: ByteArray, srcPos: Int, srcLen: Int, dst: ByteArray, dstPos: Int)
+}
 
 interface Stack {
     val size: Int
@@ -12,6 +15,10 @@ interface Stack {
     fun push(n: IntArray, offset: Int = 0)
 
     fun push(n: MutableBigInteger)
+
+    fun push(b: Boolean) {
+        if(b) pushOne() else pushZero()
+    }
 
     fun pushZero()
 
@@ -89,7 +96,7 @@ interface Stack {
     fun shr()
     fun sar()
 
-    fun sha3(mem: Memory)
+    fun sha3(mem: Memory, hashFun: Digest)
 
     fun dup(index: Int)
     fun swap(index: Int)
@@ -321,9 +328,9 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun mstore(mem: Memory) {
+        val off = popIntExact()
         if (size == 0)
             throw RuntimeException("stack underflow")
-        val off = popIntExact()
         encodeBE(data, top, tempBytes, 0)
         drop()
         mem.write(off, tempBytes)
@@ -336,9 +343,9 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun mload(mem: Memory) {
+        val off = popIntExact()
         if (size == 0)
             throw RuntimeException("stack underflow")
-        val off = popIntExact()
         mem.read(off, tempBytes)
         pushZero()
         decodeBE(tempBytes, 0, data, top)
@@ -383,7 +390,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     private fun popOperand0(carry: Long = 0) {
         Arrays.fill(operand0, 0)
         pop(operand0, SLOT_SIZE)
-        operand0[7] = carry.toInt()
+        operand0[SLOT_MAX_INDEX] = carry.toInt()
         operandMut0.setValue(operand0, operand0.size)
         operandMut0.normalize()
     }
@@ -398,11 +405,10 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun addMod() {
         val carry = addInternal()
         drop()
-
-        // pop into operand0
+        // pop addition result into operand0
         popOperand0(carry)
 
-        // pop into operand1
+        // pop modular into operand1
         popOperand1()
         if (operandMut1.isZero) {
             pushZero()
@@ -459,8 +465,8 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
         encodeBE(data, top, tempBytes, 0)
 
-        Arrays.fill(tempBytes, 0, MAX_BYTE_ARRAY_SIZE - bytes, 0)
         if (tempBytes[MAX_BYTE_ARRAY_SIZE - bytes] >= 0) {
+            Arrays.fill(tempBytes, 0, MAX_BYTE_ARRAY_SIZE - bytes, 0)
             decodeBE(tempBytes, 0, data, top)
             return
         }
@@ -477,7 +483,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         if (size < 2)
             throw RuntimeException("stack underflow")
 
-        // special case
+        // special case any / 1 = any, any % 1 = 0
         if (isOne(data, top - SLOT_SIZE)) {
             if (rem) {
                 Arrays.fill(data, top - SLOT_SIZE, top, 0)
@@ -492,6 +498,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         val leftSign = signOf(data, top)
         val rightSign = signOf(data, top - SLOT_SIZE)
 
+        // special case 0 / any = 0, 0 % any = 0
         if (leftSign == 0 || rightSign == 0) {
             Arrays.fill(data, top - SLOT_SIZE, top, 0)
             size--
@@ -499,13 +506,14 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
             return
         }
 
-
+        // perform unsigned div mod of their complement
         if (leftSign < 0)
             complement(data, top)
 
         if (rightSign < 0)
             complement(data, top - SLOT_SIZE)
 
+        // mark the sign of result
         val sign = if (rem) {
             leftSign
         } else {
@@ -514,8 +522,6 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
         popOperand0()
         popOperand1()
-
-
         // divided as uint256
         divModInternal(rem)
 
@@ -558,12 +564,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
         val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
         dropTwice()
-
-        if (cmp < 0) {
-            pushOne()
-        } else {
-            pushZero()
-        }
+        push(cmp < 0)
     }
 
     override fun slt() {
@@ -575,21 +576,13 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
         if (leftSign != rightSign) {
             dropTwice()
-            if (leftSign < rightSign) {
-                pushOne()
-            } else {
-                pushZero()
-            }
+            push(leftSign < rightSign)
             return
         }
 
         val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE) * leftSign * rightSign
         dropTwice()
-        if (cmp < 0) {
-            pushOne()
-        } else {
-            pushZero()
-        }
+        push(cmp < 0)
     }
 
     override fun gt() {
@@ -598,12 +591,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
         val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
         dropTwice()
-
-        if (cmp > 0) {
-            pushOne()
-        } else {
-            pushZero()
-        }
+        push(cmp > 0)
     }
 
     override fun sgt() {
@@ -615,21 +603,13 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
         if (leftSign != rightSign) {
             dropTwice()
-            if (leftSign > rightSign) {
-                pushOne()
-            } else {
-                pushZero()
-            }
+            push(leftSign > rightSign)
             return
         }
 
         val cmp = compareTo(data, top, data, top - SLOT_SIZE, SLOT_SIZE) * leftSign * rightSign
         dropTwice()
-        if (cmp > 0) {
-            pushOne()
-        } else {
-            pushZero()
-        }
+        push(cmp > 0)
     }
 
     override fun drop() {
@@ -657,13 +637,8 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
                 break
             }
         }
-
         drop()
-        if (isZero) {
-            pushOne()
-        } else {
-            pushZero()
-        }
+        push(isZero)
     }
 
     override fun byte() {
@@ -725,12 +700,10 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         signedRightShift(data, top, c / INT_BITS, c % INT_BITS)
     }
 
-    override fun sha3(mem: Memory) {
-        if (size < 2)
-            throw RuntimeException("stack underflow")
+    override fun sha3(mem: Memory, digest: Digest) {
         val off = popIntExact()
         val len = popIntExact()
-        HashUtil.sha3(mem.data, off, len, tempBytes)
+        digest.digest(mem.data, off, len, tempBytes, 0)
         pushZero()
         decodeBE(tempBytes, 0, data, top)
     }

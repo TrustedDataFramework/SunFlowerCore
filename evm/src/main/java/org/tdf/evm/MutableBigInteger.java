@@ -1,10 +1,10 @@
-package org.tdf.common.util;
+package org.tdf.evm;
 
 import java.lang.reflect.Constructor;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static org.tdf.common.util.SlotUtils.SLOT_SIZE;
+import static org.tdf.evm.SlotUtils.SLOT_SIZE;
 
 public class MutableBigInteger {
     static final long INFLATED = Long.MIN_VALUE;

@@ -6,8 +6,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.tdf.common.util.SlotUtils.MAX_BYTE_ARRAY_SIZE
-import org.tdf.common.util.SlotUtils.SLOT_SIZE
+import org.tdf.evm.SlotUtils.MAX_BYTE_ARRAY_SIZE
+import org.tdf.evm.SlotUtils.SLOT_SIZE
 import org.tdf.evm.StackImpl.Companion.P_2_256
 import java.math.BigInteger
 import java.security.SecureRandom

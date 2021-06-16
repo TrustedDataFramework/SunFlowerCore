@@ -38,6 +38,7 @@ dependencies {
 
     testApi "org.web3j:core:4.8.4"
     testImplementation 'com.squareup.okhttp3:okhttp:4.9.0'
+
 }
 
 task copyDependencies(type: Copy) {

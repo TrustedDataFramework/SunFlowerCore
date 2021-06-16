@@ -4,9 +4,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.spongycastle.util.encoders.Hex
-import org.tdf.common.util.SlotUtils
-import org.tdf.common.util.SlotUtils.MAX_BYTE_ARRAY_SIZE
-import org.tdf.common.util.SlotUtils.SLOT_SIZE
+import org.tdf.evm.SlotUtils.MAX_BYTE_ARRAY_SIZE
+import org.tdf.evm.SlotUtils.SLOT_SIZE
 
 fun Stack.popHex(): String {
     val ints = IntArray(SLOT_SIZE)

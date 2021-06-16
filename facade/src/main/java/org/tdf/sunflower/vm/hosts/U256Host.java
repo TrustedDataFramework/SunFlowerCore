@@ -1,8 +1,8 @@
 package org.tdf.sunflower.vm.hosts;
 
 import org.tdf.common.util.BigEndian;
-import org.tdf.common.util.MutableBigInteger;
-import org.tdf.common.util.SlotUtils;
+import org.tdf.evm.MutableBigInteger;
+import org.tdf.evm.SlotUtils;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ValueType;
@@ -11,7 +11,8 @@ import org.tdf.sunflower.vm.abi.WbiType;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.tdf.common.util.SlotUtils.*;
+
+import static org.tdf.evm.SlotUtils.*;
 import static org.tdf.sunflower.vm.WBI.*;
 
 public class U256Host extends HostFunction {

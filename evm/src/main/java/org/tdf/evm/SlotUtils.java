@@ -1,4 +1,4 @@
-package org.tdf.common.util;
+package org.tdf.evm;
 
 import java.math.BigInteger;
 
@@ -6,6 +6,18 @@ import java.math.BigInteger;
  * slot is a 256bit arithmetic unit
  */
 public final class SlotUtils {
+    public static int decodeInt32(byte[] data, int offset) {
+        return ((data[offset] & 0xff) << 24) | ((data[offset + 1] & 0xff) << 16) | ((data[offset + 2] & 0xff) << 8) | (data[offset + 3] & 0xff);
+    }
+
+    public static void encodeInt32(int val, byte[] data, int offset) {
+        data[offset] = (byte) ((val >>> 24) & 0xff);
+        data[offset + 1] = (byte) ((val >>> 16) & 0xff);
+        data[offset + 2] = (byte) ((val >>> 8) & 0xff);
+        data[offset + 3] = (byte) (val & 0xff);
+    }
+
+
     private SlotUtils() {
     }
 
@@ -56,7 +68,7 @@ public final class SlotUtils {
      */
     public static void encodeBE(int[] left, int leftOffset, byte[] out, int outOffset) {
         for (int i = 0; i < SLOT_SIZE; i++) {
-            BigEndian.encodeInt32(left[i + leftOffset], out, outOffset + i * INT_SIZE);
+            encodeInt32(left[i + leftOffset], out, outOffset + i * INT_SIZE);
         }
     }
 
@@ -65,7 +77,7 @@ public final class SlotUtils {
      */
     public static void decodeBE(byte[] data, int dataOffset, int[] out, int outOffset) {
         for (int i = 0; i < SLOT_SIZE; i++) {
-            out[outOffset + i] = BigEndian.decodeInt32(data, dataOffset + i * INT_SIZE);
+            out[outOffset + i] = decodeInt32(data, dataOffset + i * INT_SIZE);
         }
     }
 
@@ -154,7 +166,7 @@ public final class SlotUtils {
     public static BigInteger toBigInt(int[] slot, int slotOffset, int size) {
         byte[] bytes = new byte[size * INT_SIZE];
         for (int i = 0; i < size; i++)
-            BigEndian.encodeInt32(slot[slotOffset + i], bytes, i * INT_SIZE);
+            encodeInt32(slot[slotOffset + i], bytes, i * INT_SIZE);
         return new BigInteger(1, bytes);
     }
 

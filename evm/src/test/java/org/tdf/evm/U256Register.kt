@@ -1,7 +1,6 @@
 package org.tdf.evm
 
-import org.tdf.common.util.MutableBigInteger
-import org.tdf.common.util.SlotUtils.SLOT_SIZE
+import org.tdf.evm.SlotUtils.SLOT_SIZE
 import java.math.BigInteger
 
 class U256Register {

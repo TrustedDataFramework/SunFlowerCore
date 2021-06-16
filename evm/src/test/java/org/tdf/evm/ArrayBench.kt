@@ -1,8 +1,7 @@
 package org.tdf.evm
 
-import org.tdf.common.util.SlotUtils
-import org.tdf.common.util.SlotUtils.MAX_BYTE_ARRAY_SIZE
-import org.tdf.common.util.SlotUtils.SLOT_SIZE
+import org.tdf.evm.SlotUtils.MAX_BYTE_ARRAY_SIZE
+import org.tdf.evm.SlotUtils.SLOT_SIZE
 
 val slot = IntArray(SLOT_SIZE)
 val zeros = IntArray(SLOT_SIZE * 2)

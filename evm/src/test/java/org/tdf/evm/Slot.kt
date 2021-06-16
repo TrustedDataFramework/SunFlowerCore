@@ -1,7 +1,6 @@
 package org.tdf.evm
 
-import org.tdf.common.util.SlotUtils
-import org.tdf.common.util.SlotUtils.MAX_BYTE_ARRAY_SIZE
+import org.tdf.evm.SlotUtils.MAX_BYTE_ARRAY_SIZE
 import java.math.BigInteger
 import java.util.*
 

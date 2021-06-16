@@ -5,8 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.Assert
 import org.spongycastle.util.encoders.Hex
-import org.tdf.common.util.SlotUtils
-import org.tdf.common.util.SlotUtils.SLOT_SIZE
+import org.tdf.evm.SlotUtils.SLOT_SIZE
 import org.tdf.evm.StackImpl.Companion.P_MAX
 import org.tdf.evm.StackImpl.Companion.P_SIGNED_MAX
 import java.io.InputStream
