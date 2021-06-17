@@ -26,7 +26,7 @@ public class U256Host extends HostFunction {
     private final int[] divisor = new int[SLOT_SIZE * 2];
 
 
-    private final byte[] tempBytes = new byte[MAX_BYTE_ARRAY_SIZE];
+    private final byte[] tempBytes = new byte[SLOT_BYTE_ARRAY_SIZE];
 
     private final MutableBigInteger mut0 = new MutableBigInteger(slot0);
     private final MutableBigInteger mut1 = new MutableBigInteger(slot1);
@@ -59,14 +59,14 @@ public class U256Host extends HostFunction {
 
         int offset = (int) (startAndLen >>> 32);
         int len = (int) (startAndLen & 0xffffffffL);
-        if (len > MAX_BYTE_ARRAY_SIZE)
+        if (len > SLOT_BYTE_ARRAY_SIZE)
             throw new RuntimeException("invalid uint256, overflow");
 
         // reset temp
         Arrays.fill(tempBytes, (byte) 0);
 
         // read memory referred by fat pointer into temp byte array
-        getMemory().read(offset, tempBytes, MAX_BYTE_ARRAY_SIZE - len, len);
+        getMemory().read(offset, tempBytes, SLOT_BYTE_ARRAY_SIZE - len, len);
         // decode temp byte array into slot
         SlotUtils.decodeBE(tempBytes, 0, slot, 0);
     }
@@ -93,9 +93,9 @@ public class U256Host extends HostFunction {
         // size of tempBytes without leading zeros
         int effectiveSize = 0;
 
-        for (int i = 0; i < MAX_BYTE_ARRAY_SIZE; i++) {
+        for (int i = 0; i < SLOT_BYTE_ARRAY_SIZE; i++) {
             if (tempBytes[i] != 0) {
-                effectiveSize = MAX_BYTE_ARRAY_SIZE - i;
+                effectiveSize = SLOT_BYTE_ARRAY_SIZE - i;
                 break;
             }
         }
@@ -103,7 +103,7 @@ public class U256Host extends HostFunction {
         // call malloc, allocate a memory, get the fat pointer
         long ptr = instance.execute(WBI_MALLOC, effectiveSize)[0];
         // override the allocated memory by uint256 data
-        instance.getMemory().write((int) ptr, tempBytes, MAX_BYTE_ARRAY_SIZE - effectiveSize, effectiveSize);
+        instance.getMemory().write((int) ptr, tempBytes, SLOT_BYTE_ARRAY_SIZE - effectiveSize, effectiveSize);
         // call change_t function, convert fat pointer to uint256 pointer
         long p = instance.execute(WBI_CHANGE_TYPE, WbiType.UINT_256, ptr, effectiveSize)[0];
         int r = (int) p;
@@ -134,7 +134,7 @@ public class U256Host extends HostFunction {
                 return writeSlot(slot0);
             }
             case SUB: {
-                SlotUtils.subMut(slot0, 0, slot1, 0, slot0, 0);
+                SlotUtils.sub(slot0, 0, slot1, 0, slot0, 0);
                 return writeSlot(slot0);
             }
             case MUL: {

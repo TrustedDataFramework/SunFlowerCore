@@ -1,6 +1,6 @@
 package org.tdf.evm
 
-import org.tdf.evm.SlotUtils.MAX_BYTE_ARRAY_SIZE
+import org.tdf.evm.SlotUtils.SLOT_BYTE_ARRAY_SIZE
 import org.tdf.evm.SlotUtils.SLOT_SIZE
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -14,7 +14,7 @@ val m1 = MutableBigInteger(slot1)
 val slot2 = IntArray(SLOT_SIZE)
 
 
-val tmp = ByteArray(MAX_BYTE_ARRAY_SIZE)
+val tmp = ByteArray(SLOT_BYTE_ARRAY_SIZE)
 val mulTmp = IntArray(SLOT_SIZE * 2)
 val tmpMutBigInt = MutableBigInteger(mulTmp)
 
@@ -44,9 +44,9 @@ val slotOp = Operator { left, right ->
 }
 
 fun main() {
-    val left = ByteArray(MAX_BYTE_ARRAY_SIZE)
-    val right = ByteArray(MAX_BYTE_ARRAY_SIZE)
-    val out = ByteArray(MAX_BYTE_ARRAY_SIZE)
+    val left = ByteArray(SLOT_BYTE_ARRAY_SIZE)
+    val right = ByteArray(SLOT_BYTE_ARRAY_SIZE)
+    val out = ByteArray(SLOT_BYTE_ARRAY_SIZE)
 
     val count = 10000000
 

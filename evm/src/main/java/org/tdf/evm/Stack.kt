@@ -12,12 +12,17 @@ fun interface Digest {
 interface Stack {
     val size: Int
 
+    // memory size for m
+    fun memSize(op: Int, len: Int = 0): Int
+
+    fun push(buf: ByteArray, offset: Int = 0, len: Int = buf.size)
+
     fun push(n: IntArray, offset: Int = 0)
 
     fun push(n: MutableBigInteger)
 
     fun push(b: Boolean) {
-        if(b) pushOne() else pushZero()
+        if (b) pushOne() else pushZero()
     }
 
     fun pushZero()
@@ -109,6 +114,32 @@ interface Stack {
 }
 
 class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
+    override fun memSize(op: Int, len: Int): Int {
+        when (op) {
+            OpCodes.MSTORE -> {
+                val r = popUnsignedInt()
+                if (r < 0)
+                    throw RuntimeException("memory access overflow")
+                if (r + len > Int.MAX_VALUE)
+                    throw RuntimeException("memory access overflow")
+                size++
+                top += SLOT_SIZE
+                return (r + len).toInt()
+            }
+            OpCodes.RETURN -> {
+                val off = popUnsignedInt()
+                val memLen = popUnsignedInt()
+                val total = off + memLen
+                if (total > Int.MAX_VALUE || total < 0)
+                    throw RuntimeException("memory access overflow")
+                size += 2
+                top += SLOT_SIZE * 2
+                return total.toInt()
+            }
+            else -> throw RuntimeException("invalid op = $op")
+        }
+    }
+
     private var top: Int = -SLOT_SIZE
 
     override var size: Int = 0
@@ -140,6 +171,15 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         val tmp = IntArray(cap * SLOT_SIZE)
         System.arraycopy(data, 0, tmp, 0, data.size)
         this.data = tmp
+    }
+
+    override fun push(buf: ByteArray, offset: Int, len: Int) {
+        if (len > SLOT_BYTE_ARRAY_SIZE)
+            throw RuntimeException("byte array size overflow")
+        Arrays.fill(tempBytes, 0)
+        System.arraycopy(buf, offset, tempBytes, SLOT_BYTE_ARRAY_SIZE - len, len)
+        pushZero()
+        decodeBE(tempBytes, 0, data, top)
     }
 
     override fun push(n: MutableBigInteger) {
@@ -369,9 +409,8 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun sub() {
         if (size < 2)
             throw RuntimeException("stack underflow")
-        subMut(data, top, data, top - SLOT_SIZE, data, top)
-        System.arraycopy(data, top, data, top - SLOT_SIZE, SLOT_SIZE)
-        drop()
+        sub(data, top, data, top - SLOT_SIZE, data, top - SLOT_SIZE)
+        dropNocheck()
     }
 
     // perform operation
@@ -457,7 +496,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
             throw RuntimeException("stack underflow")
 
         val n = popUnsignedInt()
-        if (n < 0 || n >= MAX_BYTE_ARRAY_SIZE)
+        if (n < 0 || n >= SLOT_BYTE_ARRAY_SIZE)
             return
 
         val bytesLong = n + 1
@@ -465,13 +504,13 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
         encodeBE(data, top, tempBytes, 0)
 
-        if (tempBytes[MAX_BYTE_ARRAY_SIZE - bytes] >= 0) {
-            Arrays.fill(tempBytes, 0, MAX_BYTE_ARRAY_SIZE - bytes, 0)
+        if (tempBytes[SLOT_BYTE_ARRAY_SIZE - bytes] >= 0) {
+            Arrays.fill(tempBytes, 0, SLOT_BYTE_ARRAY_SIZE - bytes, 0)
             decodeBE(tempBytes, 0, data, top)
             return
         }
 
-        Arrays.fill(tempBytes, 0, MAX_BYTE_ARRAY_SIZE - bytes, 0xff.toByte())
+        Arrays.fill(tempBytes, 0, SLOT_BYTE_ARRAY_SIZE - bytes, 0xff.toByte())
         decodeBE(tempBytes, 0, data, top)
     }
 
@@ -612,11 +651,15 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         push(cmp > 0)
     }
 
+    private fun dropNocheck() {
+        size -= 1
+        top -= SLOT_SIZE
+    }
+
     override fun drop() {
         if (size < 1)
             throw RuntimeException("stack underflow")
-        size -= 1
-        top -= SLOT_SIZE
+        dropNocheck()
     }
 
     override fun dropTwice() {
@@ -645,7 +688,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         if (size < 2)
             throw RuntimeException("stack underflow")
         val i = popUnsignedInt()
-        if (i < 0 || i >= MAX_BYTE_ARRAY_SIZE) {
+        if (i < 0 || i >= SLOT_BYTE_ARRAY_SIZE) {
             drop()
             pushZero()
             return
@@ -720,7 +763,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
 
-    private val tempBytes: ByteArray = ByteArray(MAX_BYTE_ARRAY_SIZE)
+    private val tempBytes: ByteArray = ByteArray(SLOT_BYTE_ARRAY_SIZE)
 
     companion object {
         const val INITIAL_CAP = 2

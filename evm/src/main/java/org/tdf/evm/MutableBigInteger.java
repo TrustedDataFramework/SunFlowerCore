@@ -10,63 +10,12 @@ public class MutableBigInteger {
     static final long INFLATED = Long.MIN_VALUE;
 
     static final long LONG_MASK = 0xffffffffL;
-
-    static int bitLengthForInt(int n) {
-        return 32 - Integer.numberOfLeadingZeros(n);
-    }
-
-    public int[] getValue() {
-        return value;
-    }
-
-    public void setValue(int[] value) {
-        this.value = value;
-    }
-
-    public int getIntLen() {
-        return intLen;
-    }
-
-    public void setIntLen(int intLen) {
-        this.intLen = intLen;
-    }
-
-    public int getOffset() {
-        return offset;
-    }
-
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
-    /**
-     * Holds the magnitude of this MutableBigInteger in big endian order.
-     * The magnitude may start at an offset into the value array, and it may
-     * end before the length of the value array.
-     */
-    int[] value;
-
-    /**
-     * The number of ints of the value array that are currently used
-     * to hold the magnitude of this MutableBigInteger. The magnitude starts
-     * at an offset and offset + intLen may be less than value.length.
-     */
-    int intLen;
-
-    /**
-     * The offset into the value array where the magnitude of this
-     * MutableBigInteger begins.
-     */
-    int offset = 0;
-
-    // Constants
     /**
      * MutableBigInteger with one element value array with the value 1. Used by
      * BigDecimal divideAndRound to increment the quotient. Use this constant
      * only when the method is not going to modify this object.
      */
     static final MutableBigInteger ONE = new MutableBigInteger(1);
-
     /**
      * The minimum {@code intLen} for cancelling powers of two before
      * dividing.
@@ -75,7 +24,6 @@ public class MutableBigInteger {
      * the dividend and divisor.
      */
     static final int KNUTH_POW2_THRESH_LEN = 6;
-
     /**
      * The minimum number of trailing zero ints for cancelling powers of two
      * before dividing.
@@ -84,8 +32,24 @@ public class MutableBigInteger {
      * of two from the dividend and divisor.
      */
     static final int KNUTH_POW2_THRESH_ZEROS = 3;
-
-    // Constructors
+    private static Constructor<BigInteger> BIG_INTEGER_CONSTRUCTOR = null;
+    /**
+     * Holds the magnitude of this MutableBigInteger in big endian order.
+     * The magnitude may start at an offset into the value array, and it may
+     * end before the length of the value array.
+     */
+    int[] value;
+    /**
+     * The number of ints of the value array that are currently used
+     * to hold the magnitude of this MutableBigInteger. The magnitude starts
+     * at an offset and offset + intLen may be less than value.length.
+     */
+    int intLen;
+    /**
+     * The offset into the value array where the magnitude of this
+     * MutableBigInteger begins.
+     */
+    int offset = 0;
 
     /**
      * The default constructor. An empty MutableBigInteger is created with
@@ -115,7 +79,7 @@ public class MutableBigInteger {
         intLen = val.length;
     }
 
-
+    // Constants
     /**
      * Construct a new MutableBigInteger with a magnitude equal to the
      * specified MutableBigInteger.
@@ -125,7 +89,9 @@ public class MutableBigInteger {
         value = Arrays.copyOfRange(val.value, val.offset, val.offset + intLen);
     }
 
-    private static Constructor<BigInteger> BIG_INTEGER_CONSTRUCTOR = null;
+    static int bitLengthForInt(int n) {
+        return 32 - Integer.numberOfLeadingZeros(n);
+    }
 
     private static Constructor<BigInteger> getBigIntegerConstructor() {
         if (BIG_INTEGER_CONSTRUCTOR != null)
@@ -142,6 +108,134 @@ public class MutableBigInteger {
         }
     }
 
+    // Constructors
+
+    private static void copyAndShift(int[] src, int srcFrom, int srcLen, int[] dst, int dstFrom, int shift) {
+        int n2 = 32 - shift;
+        int c = src[srcFrom];
+        for (int i = 0; i < srcLen - 1; i++) {
+            int b = c;
+            c = src[++srcFrom];
+            dst[dstFrom + i] = (b << shift) | (c >>> n2);
+        }
+        dst[dstFrom + srcLen - 1] = c << shift;
+    }
+
+    /**
+     * This method divides a long quantity by an int to estimate
+     * qhat for two multi precision numbers. It is used when
+     * the signed value of n is less than zero.
+     * Returns long value where high 32 bits contain remainder value and
+     * low 32 bits contain quotient value.
+     */
+    static long divWord(long n, int d) {
+        long dLong = d & LONG_MASK;
+        long r;
+        long q;
+        if (dLong == 1) {
+            q = (int) n;
+            r = 0;
+            return (r << 32) | (q & LONG_MASK);
+        }
+
+        // Approximate the quotient and remainder
+        q = (n >>> 1) / (dLong >>> 1);
+        r = n - q * dLong;
+
+        // Correct the approximation
+        while (r < 0) {
+            r += dLong;
+            q--;
+        }
+        while (r >= dLong) {
+            r -= dLong;
+            q++;
+        }
+        // n - q*dlong == r && 0 <= r <dLong, hence we're done.
+        return (r << 32) | (q & LONG_MASK);
+    }
+
+    /**
+     * Calculate GCD of a and b interpreted as unsigned integers.
+     */
+    static int binaryGcd(int a, int b) {
+        if (b == 0)
+            return a;
+        if (a == 0)
+            return b;
+
+        // Right shift a & b till their last bits equal to 1.
+        int aZeros = Integer.numberOfTrailingZeros(a);
+        int bZeros = Integer.numberOfTrailingZeros(b);
+        a >>>= aZeros;
+        b >>>= bZeros;
+
+        int t = (aZeros < bZeros ? aZeros : bZeros);
+
+        while (a != b) {
+            if ((a + 0x80000000) > (b + 0x80000000)) {  // a > b as unsigned
+                a -= b;
+                a >>>= Integer.numberOfTrailingZeros(a);
+            } else {
+                b -= a;
+                b >>>= Integer.numberOfTrailingZeros(b);
+            }
+        }
+        return a << t;
+    }
+
+    /**
+     * Returns the multiplicative inverse of val mod 2^32.  Assumes val is odd.
+     */
+    static int inverseMod32(int val) {
+        // Newton's iteration!
+        int t = val;
+        t *= 2 - val * t;
+        t *= 2 - val * t;
+        t *= 2 - val * t;
+        t *= 2 - val * t;
+        return t;
+    }
+
+    /**
+     * Returns the multiplicative inverse of val mod 2^64.  Assumes val is odd.
+     */
+    static long inverseMod64(long val) {
+        // Newton's iteration!
+        long t = val;
+        t *= 2 - val * t;
+        t *= 2 - val * t;
+        t *= 2 - val * t;
+        t *= 2 - val * t;
+        t *= 2 - val * t;
+        assert (t * val == 1);
+        return t;
+    }
+
+    public int[] getValue() {
+        return value;
+    }
+
+    public void setValue(int[] value) {
+        this.value = value;
+    }
+
+    public int getIntLen() {
+        return intLen;
+    }
+
+    public void setIntLen(int intLen) {
+        this.intLen = intLen;
+    }
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
     public BigInteger toBigInt() {
         normalize();
         return toBigInt(isZero() ? 0 : 1);
@@ -156,7 +250,6 @@ public class MutableBigInteger {
             throw new RuntimeException(e);
         }
     }
-
 
     /**
      * Makes this number an {@code n}-int number all of whose bits are ones.
@@ -192,7 +285,6 @@ public class MutableBigInteger {
         long d = value[offset] & LONG_MASK;
         return (intLen == 2) ? d << 32 | (value[offset + 1] & LONG_MASK) : d;
     }
-
 
     /**
      * Clear out a MutableBigInteger for reuse.
@@ -573,7 +665,7 @@ public class MutableBigInteger {
 
         for (int j = aLen - 1; j >= 0; j--) {
             long sum = (a[j] & LONG_MASK) +
-                    (result[j + offset] & LONG_MASK) + carry;
+                (result[j + offset] & LONG_MASK) + carry;
             result[j + offset] = (int) sum;
             carry = sum >>> 32;
         }
@@ -595,8 +687,8 @@ public class MutableBigInteger {
             long difference = q[offset] - product;
             q[offset--] = (int) difference;
             carry = (product >>> 32)
-                    + (((difference & LONG_MASK) >
-                    (((~(int) product) & LONG_MASK))) ? 1 : 0);
+                + (((difference & LONG_MASK) >
+                (((~(int) product) & LONG_MASK))) ? 1 : 0);
         }
         return (int) carry;
     }
@@ -613,8 +705,8 @@ public class MutableBigInteger {
             long product = (a[j] & LONG_MASK) * xLong + carry;
             long difference = q[offset--] - product;
             carry = (product >>> 32)
-                    + (((difference & LONG_MASK) >
-                    (((~(int) product) & LONG_MASK))) ? 1 : 0);
+                + (((difference & LONG_MASK) >
+                (((~(int) product) & LONG_MASK))) ? 1 : 0);
         }
         return (int) carry;
     }
@@ -651,7 +743,6 @@ public class MutableBigInteger {
         val[offset + intLen - 1] <<= n;
     }
 
-
     /**
      * Discards all ints whose index is greater than {@code n}.
      */
@@ -682,7 +773,7 @@ public class MutableBigInteger {
             x--;
             y--;
             sum = (value[x + offset] & LONG_MASK) +
-                    (addend.value[y + addend.offset] & LONG_MASK) + carry;
+                (addend.value[y + addend.offset] & LONG_MASK) + carry;
             result[rstart--] = (int) sum;
             carry = sum >>> 32;
         }
@@ -747,7 +838,7 @@ public class MutableBigInteger {
             y--;
             int bval = y + addend.offset < addend.value.length ? addend.value[y + addend.offset] : 0;
             sum = (value[x + offset] & LONG_MASK) +
-                    (bval & LONG_MASK) + carry;
+                (bval & LONG_MASK) + carry;
             result[rstart--] = (int) sum;
             carry = sum >>> 32;
         }
@@ -876,7 +967,7 @@ public class MutableBigInteger {
             y--;
 
             diff = (a.value[x + a.offset] & LONG_MASK) -
-                    (b.value[y + b.offset] & LONG_MASK) - ((int) -(diff >> 32));
+                (b.value[y + b.offset] & LONG_MASK) - ((int) -(diff >> 32));
             result[rstart--] = (int) diff;
         }
         // Subtract remainder of longer number
@@ -918,7 +1009,7 @@ public class MutableBigInteger {
             x--;
             y--;
             diff = (a.value[a.offset + x] & LONG_MASK) -
-                    (b.value[b.offset + y] & LONG_MASK) - ((int) -(diff >> 32));
+                (b.value[b.offset + y] & LONG_MASK) - ((int) -(diff >> 32));
             a.value[a.offset + x] = (int) diff;
         }
         // Subtract remainder of longer number
@@ -951,7 +1042,7 @@ public class MutableBigInteger {
         long carry = 0;
         for (int j = yLen - 1, k = yLen + xLen - 1; j >= 0; j--, k--) {
             long product = (y.value[j + y.offset] & LONG_MASK) *
-                    (value[xLen - 1 + offset] & LONG_MASK) + carry;
+                (value[xLen - 1 + offset] & LONG_MASK) + carry;
             z.value[k] = (int) product;
             carry = product >>> 32;
         }
@@ -962,8 +1053,8 @@ public class MutableBigInteger {
             carry = 0;
             for (int j = yLen - 1, k = yLen + i; j >= 0; j--, k--) {
                 long product = (y.value[j + y.offset] & LONG_MASK) *
-                        (value[i + offset] & LONG_MASK) +
-                        (z.value[k] & LONG_MASK) + carry;
+                    (value[i + offset] & LONG_MASK) +
+                    (z.value[k] & LONG_MASK) + carry;
                 z.value[k] = (int) product;
                 carry = product >>> 32;
             }
@@ -992,7 +1083,7 @@ public class MutableBigInteger {
         // Perform the multiplication word by word
         long ylong = y & LONG_MASK;
         int[] zval = (z.value.length < intLen + 1 ? new int[intLen + 1]
-                : z.value);
+            : z.value);
         long carry = 0;
         for (int i = intLen - 1; i >= 0; i--) {
             long product = ylong * (value[i + offset] & LONG_MASK) + carry;
@@ -1052,7 +1143,7 @@ public class MutableBigInteger {
         int xlen = intLen;
         while (--xlen > 0) {
             long dividendEstimate = (remLong << 32) |
-                    (value[offset + intLen - xlen] & LONG_MASK);
+                (value[offset + intLen - xlen] & LONG_MASK);
             int q;
             if (dividendEstimate >= 0) {
                 q = (int) (dividendEstimate / divisorLong);
@@ -1074,7 +1165,6 @@ public class MutableBigInteger {
             return rem;
     }
 
-
     /**
      * Calculates the quotient of this div b and places the quotient in the
      * provided MutableBigInteger objects and the remainder object is returned.
@@ -1092,7 +1182,7 @@ public class MutableBigInteger {
         // Dividend is zero
         if (intLen == 0) {
             quotient.intLen = quotient.offset = 0;
-            if(needRem)
+            if (needRem)
                 rem.reset();
             return;
         }
@@ -1101,7 +1191,7 @@ public class MutableBigInteger {
         // Dividend less than divisor
         if (cmp < 0) {
             quotient.intLen = quotient.offset = 0;
-            if(needRem) {
+            if (needRem) {
                 System.arraycopy(this.value, offset, rem.value, 0, intLen);
                 rem.offset = 0;
                 rem.intLen = intLen;
@@ -1112,7 +1202,7 @@ public class MutableBigInteger {
         if (cmp == 0) {
             quotient.value[0] = quotient.intLen = 1;
             quotient.offset = 0;
-            if(needRem)
+            if (needRem)
                 rem.reset();
             return;
         }
@@ -1122,7 +1212,7 @@ public class MutableBigInteger {
         if (b.intLen == 1) {
             int r = divideOneWord(b.value[b.offset], quotient);
             if (needRem) {
-                if (r == 0)  {
+                if (r == 0) {
                     rem.reset();
                 } else {
                     rem.value[0] = r;
@@ -1216,27 +1306,16 @@ public class MutableBigInteger {
         }
     }
 
-    private static void copyAndShift(int[] src, int srcFrom, int srcLen, int[] dst, int dstFrom, int shift) {
-        int n2 = 32 - shift;
-        int c = src[srcFrom];
-        for (int i = 0; i < srcLen - 1; i++) {
-            int b = c;
-            c = src[++srcFrom];
-            dst[dstFrom + i] = (b << shift) | (c >>> n2);
-        }
-        dst[dstFrom + srcLen - 1] = c << shift;
-    }
-
     /**
      * Divide this MutableBigInteger by the divisor.
      * The quotient will be placed into the provided quotient object &
      * the remainder object is returned.
      */
     private void divideMagnitude(MutableBigInteger div,
-                                              MutableBigInteger quotient,
-                                              final MutableBigInteger rem,
-                                              int[] divisor,
-                                              boolean needRem) {
+                                 MutableBigInteger quotient,
+                                 final MutableBigInteger rem,
+                                 int[] divisor,
+                                 boolean needRem) {
         // assert div.intLen > 1
         // D1 normalize the divisor
         int shift = Integer.numberOfLeadingZeros(div.value[div.offset]);
@@ -1567,14 +1646,14 @@ public class MutableBigInteger {
         long difference = q[offset] - product;
         q[offset--] = (int) difference;
         long carry = (product >>> 32)
-                + (((difference & LONG_MASK) >
-                (((~(int) product) & LONG_MASK))) ? 1 : 0);
+            + (((difference & LONG_MASK) >
+            (((~(int) product) & LONG_MASK))) ? 1 : 0);
         product = (dh & LONG_MASK) * xLong + carry;
         difference = q[offset] - product;
         q[offset--] = (int) difference;
         carry = (product >>> 32)
-                + (((difference & LONG_MASK) >
-                (((~(int) product) & LONG_MASK))) ? 1 : 0);
+            + (((difference & LONG_MASK) >
+            (((~(int) product) & LONG_MASK))) ? 1 : 0);
         return (int) carry;
     }
 
@@ -1584,40 +1663,6 @@ public class MutableBigInteger {
      */
     private boolean unsignedLongCompare(long one, long two) {
         return (one + Long.MIN_VALUE) > (two + Long.MIN_VALUE);
-    }
-
-    /**
-     * This method divides a long quantity by an int to estimate
-     * qhat for two multi precision numbers. It is used when
-     * the signed value of n is less than zero.
-     * Returns long value where high 32 bits contain remainder value and
-     * low 32 bits contain quotient value.
-     */
-    static long divWord(long n, int d) {
-        long dLong = d & LONG_MASK;
-        long r;
-        long q;
-        if (dLong == 1) {
-            q = (int) n;
-            r = 0;
-            return (r << 32) | (q & LONG_MASK);
-        }
-
-        // Approximate the quotient and remainder
-        q = (n >>> 1) / (dLong >>> 1);
-        r = n - q * dLong;
-
-        // Correct the approximation
-        while (r < 0) {
-            r += dLong;
-            q--;
-        }
-        while (r >= dLong) {
-            r -= dLong;
-            q++;
-        }
-        // n - q*dlong == r && 0 <= r <dLong, hence we're done.
-        return (r << 32) | (q & LONG_MASK);
     }
 
     /**
@@ -1677,65 +1722,8 @@ public class MutableBigInteger {
         return u;
     }
 
-    /**
-     * Calculate GCD of a and b interpreted as unsigned integers.
-     */
-    static int binaryGcd(int a, int b) {
-        if (b == 0)
-            return a;
-        if (a == 0)
-            return b;
-
-        // Right shift a & b till their last bits equal to 1.
-        int aZeros = Integer.numberOfTrailingZeros(a);
-        int bZeros = Integer.numberOfTrailingZeros(b);
-        a >>>= aZeros;
-        b >>>= bZeros;
-
-        int t = (aZeros < bZeros ? aZeros : bZeros);
-
-        while (a != b) {
-            if ((a + 0x80000000) > (b + 0x80000000)) {  // a > b as unsigned
-                a -= b;
-                a >>>= Integer.numberOfTrailingZeros(a);
-            } else {
-                b -= a;
-                b >>>= Integer.numberOfTrailingZeros(b);
-            }
-        }
-        return a << t;
-    }
-
-    /**
-     * Returns the multiplicative inverse of val mod 2^32.  Assumes val is odd.
-     */
-    static int inverseMod32(int val) {
-        // Newton's iteration!
-        int t = val;
-        t *= 2 - val * t;
-        t *= 2 - val * t;
-        t *= 2 - val * t;
-        t *= 2 - val * t;
-        return t;
-    }
-
-    /**
-     * Returns the multiplicative inverse of val mod 2^64.  Assumes val is odd.
-     */
-    static long inverseMod64(long val) {
-        // Newton's iteration!
-        long t = val;
-        t *= 2 - val * t;
-        t *= 2 - val * t;
-        t *= 2 - val * t;
-        t *= 2 - val * t;
-        t *= 2 - val * t;
-        assert (t * val == 1);
-        return t;
-    }
-
     public void trim256() {
-        if(intLen <= SLOT_SIZE)
+        if (intLen <= SLOT_SIZE)
             return;
         offset += intLen - SLOT_SIZE;
     }

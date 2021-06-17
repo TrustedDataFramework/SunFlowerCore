@@ -2,49 +2,71 @@ package org.tdf.evm
 
 import java.math.BigInteger
 
+internal val emptyByteArray = ByteArray(0)
+
+interface EvmContext {
+    // transaction.sender
+    val origin: ByteArray
+
+    // current block number
+    val number: Long
+
+    // chain id
+    val chainId: Long
+    val timestamp: Long
+    val difficulty: BigInteger
+
+    // gas limit in block
+    val blockGasLimit: Long
+
+    // gas limit in transaction
+    val txGasLimit: Long
+}
+
+interface EvmCallData {
+    val caller: ByteArray
+    val receipt: ByteArray
+    val value: BigInteger
+    val input: ByteArray
+    val code: ByteArray
+}
+
 interface EvmHost {
     val digest: Digest
 
     // get balance of address, address.length = 20
-    fun balanceOf(address: ByteArray): BigInteger
-
-    // tx origin
-    val origin: ByteArray
-    // block number
-    val number: BigInteger
-    val chainId: Long
-    val timestamp: Long
-
-    val difficulty: BigInteger
-        get() = BigInteger.ZERO
-
-    val blockGasLimit: Long
-    val txGasLimit: Long
+    fun getBalance(address: ByteArray): BigInteger
+    fun setBalance(address: ByteArray, balance: BigInteger)
 
     fun getStorage(address: ByteArray, key: ByteArray): ByteArray
     fun setStorage(address: ByteArray, key: ByteArray, value: ByteArray)
 
-    fun getCode(address: ByteArray): ByteArray
-    fun setCode(address: ByteArray, code: ByteArray)
-
-
-    fun getNonce(address: ByteArray): BigInteger
-    fun setNonce(address: ByteArray, n: BigInteger)
+    fun call(caller: ByteArray, receipt: ByteArray, value: BigInteger, input: ByteArray): ByteArray
+    fun delegateCall(caller: ByteArray, receipt: ByteArray, value: BigInteger, input: ByteArray): ByteArray
 
     fun drop(address: ByteArray)
 }
 
-class Interpreter(val code: ByteArray, val host: EvmHost) {
+enum class Status {
+    READY,
+    RUNNING,
+    STOP,
+    REVERTED
+}
+
+class Interpreter(val host: EvmHost) {
     var pc: Int = 0
-    var steps: Int = 0
     private val stack = StackImpl()
     private val memory = MemoryImpl()
+    var ret: ByteArray = emptyByteArray
 
-    fun execute() {
+    var status: Status = Status.READY
+        private set
 
-        while (true) {
+    fun execute(data: EvmCallData) {
+        while (pc < data.code.size) {
 
-            when (val op = code[pc].toUByte().toInt()) {
+            when (val op = data.code[pc].toUByte().toInt()) {
                 OpCodes.STOP -> break
                 OpCodes.ADD -> stack.add()
                 OpCodes.MUL -> stack.mul()
@@ -74,13 +96,35 @@ class Interpreter(val code: ByteArray, val host: EvmHost) {
                 OpCodes.SHA3 -> stack.sha3(memory, host.digest)
                 OpCodes.POP -> stack.drop()
                 OpCodes.MLOAD -> stack.mload(memory)
-                OpCodes.MSTORE -> stack.mstore(memory)
+                OpCodes.MSTORE -> {
+                    val memSize = stack.memSize(op, 32)
+                    memory.resize(memSize)
+                    stack.mstore(memory)
+                }
                 OpCodes.MSTORE8 -> stack.mstore8(memory)
 
-                in OpCodes.PUSH1..OpCodes.PUSH32 -> stack.pushZero()
+                OpCodes.RETURN -> {
+                    val memSize = stack.memSize(op)
+                    memory.resize(memSize)
+                    ret = stack.ret(memory)
+                    break
+                }
+                OpCodes.REVERT -> {
+                    break
+                }
+                // push(code[pc+1:pc+1+n])
+                in OpCodes.PUSH1..OpCodes.PUSH32 -> {
+                    val n = Math.min(op - OpCodes.PUSH1 + 1, data.code.size - pc - 1)
+                    stack.push(data.code, pc + 1, n)
+                    pc += n
+                    pc++
+                    continue
+                }
                 in OpCodes.DUP1..OpCodes.DUP16 -> stack.dup(op - OpCodes.DUP1 + 1)
                 in OpCodes.SWAP1..OpCodes.SWAP16 -> stack.swap(op - OpCodes.SWAP1 + 1)
             }
+
+            pc++
         }
     }
 }

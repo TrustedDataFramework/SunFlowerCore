@@ -6,7 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.tdf.evm.SlotUtils.MAX_BYTE_ARRAY_SIZE
+import org.tdf.evm.SlotUtils.SLOT_BYTE_ARRAY_SIZE
 import org.tdf.evm.SlotUtils.SLOT_SIZE
 import org.tdf.evm.StackImpl.Companion.P_2_256
 import java.math.BigInteger
@@ -72,7 +72,7 @@ class U256Tests {
     @Test
     fun testLoadSlot() {
         for (i in 0 until 1000) {
-            val left = ByteArray(MAX_BYTE_ARRAY_SIZE)
+            val left = ByteArray(SLOT_BYTE_ARRAY_SIZE)
             SR.nextBytes(left)
 
             val slot = IntArray(SLOT_SIZE)
@@ -92,8 +92,8 @@ class U256Tests {
             slot.copyFrom(left)
             val actual = Arrays.copyOfRange(
                 slot.toByteArray(),
-                MAX_BYTE_ARRAY_SIZE - 16,
-                MAX_BYTE_ARRAY_SIZE
+                SLOT_BYTE_ARRAY_SIZE - 16,
+                SLOT_BYTE_ARRAY_SIZE
             )
             assertArrayEquals(left, actual)
         }

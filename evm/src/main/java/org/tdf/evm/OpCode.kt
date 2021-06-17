@@ -1,7 +1,6 @@
 package org.tdf.evm
 
 object OpCodes {
-
     /**
      * Halts execution (0x00)
      */
@@ -739,5 +738,12 @@ object OpCodes {
      * (0xff) Halt execution and register account for later deletion
      */
     const val SUICIDE = 0xff
+
+    @JvmStatic
+    val MEM_SIZE = IntArray(SUICIDE + 1)
+
+    init {
+        MEM_SIZE[MSTORE] = 32
+    }
 }
 

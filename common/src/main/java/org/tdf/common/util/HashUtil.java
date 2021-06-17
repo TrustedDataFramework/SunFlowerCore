@@ -106,12 +106,12 @@ public class HashUtil {
     }
 
 
-    public static void sha3(byte[] input, int start, int length, byte[] dst) {
+    public static void sha3(byte[] input, int start, int length, byte[] dst, int dstOff) {
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance(HASH_256_ALGORITHM_NAME, CRYPTO_PROVIDER);
             digest.update(input, start, length);
-            digest.digest(dst, 0, dst.length);
+            digest.digest(dst, dstOff, dst.length);
         } catch (Exception e) {
             LOG.error("Exception: ", e);
             throw new RuntimeException(e);

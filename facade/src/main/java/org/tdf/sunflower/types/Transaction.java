@@ -241,6 +241,9 @@ public class Transaction implements RlpWritable {
             this.nonce = li.bytesAt(0);
             this.gasPrice = li.bytesAt(1);
             this.gasLimit = li.bytesAt(2);
+            if(gasLimit.length > 8 || (gasLimit.length == 8 && gasLimit[0] < 0))
+                throw new RuntimeException("gas limit exceeds Long.MAX_VALUE");
+
             this.receiveAddress = li.bytesAt(3);
             this.value = li.bytesAt(4);
             this.data = li.bytesAt(5);

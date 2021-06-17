@@ -4,12 +4,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.spongycastle.util.encoders.Hex
-import org.tdf.evm.SlotUtils.MAX_BYTE_ARRAY_SIZE
+import org.tdf.evm.SlotUtils.SLOT_BYTE_ARRAY_SIZE
 import org.tdf.evm.SlotUtils.SLOT_SIZE
 
 fun Stack.popHex(): String {
     val ints = IntArray(SLOT_SIZE)
-    val bytes = ByteArray(MAX_BYTE_ARRAY_SIZE)
+    val bytes = ByteArray(SLOT_BYTE_ARRAY_SIZE)
     this.pop(ints)
     SlotUtils.encodeBE(ints, 0, bytes, 0)
     return Hex.toHexString(bytes)

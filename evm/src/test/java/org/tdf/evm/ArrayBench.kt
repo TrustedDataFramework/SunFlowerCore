@@ -1,11 +1,11 @@
 package org.tdf.evm
 
-import org.tdf.evm.SlotUtils.MAX_BYTE_ARRAY_SIZE
+import org.tdf.evm.SlotUtils.SLOT_BYTE_ARRAY_SIZE
 import org.tdf.evm.SlotUtils.SLOT_SIZE
 
 val slot = IntArray(SLOT_SIZE)
 val zeros = IntArray(SLOT_SIZE * 2)
-val bytes = ByteArray(MAX_BYTE_ARRAY_SIZE)
+val bytes = ByteArray(SLOT_BYTE_ARRAY_SIZE)
 
 fun main() {
     val start = System.currentTimeMillis()
