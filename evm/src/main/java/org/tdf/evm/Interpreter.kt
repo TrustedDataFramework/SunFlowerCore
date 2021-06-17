@@ -12,7 +12,7 @@ interface EvmHost {
     val origin: ByteArray
     // block number
     val number: BigInteger
-    val chainId: BigInteger
+    val chainId: Long
     val timestamp: Long
 
     val difficulty: BigInteger

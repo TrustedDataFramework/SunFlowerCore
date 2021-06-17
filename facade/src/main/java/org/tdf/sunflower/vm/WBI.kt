@@ -1,9 +1,9 @@
 package org.tdf.sunflower.vm
 
 import org.tdf.common.types.Uint256
+import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.lotusvm.ModuleInstance
-import org.tdf.lotusvm.types.CustomSection
 import org.tdf.lotusvm.Module
 import org.tdf.sunflower.vm.abi.Abi
 import org.tdf.sunflower.vm.abi.WbiType
@@ -37,8 +37,7 @@ object WBI {
 
     @JvmStatic
     fun extractInitData(m: Module): ByteArray {
-        return m.customSections.stream().filter { x: CustomSection -> x.name == INIT_SECTION_NAME }.findFirst()
-            .map { obj: CustomSection -> obj.data }.orElse(ByteArray(0))
+        return m.customSections.firstOrNull { it.name == INIT_SECTION_NAME } ?.data ?: ByteUtil.EMPTY_BYTE_ARRAY
     }
 
     // the __init section is dropped before inject
@@ -127,7 +126,7 @@ object WBI {
     }
 
     @JvmStatic
-    fun mallocInternal(instance: ModuleInstance, type: Long, bin: ByteArray): Int {
+    fun malloc(instance: ModuleInstance, type: Long, bin: ByteArray): Int {
         val ptr = instance.execute(WBI_MALLOC, bin.size.toLong())[0]
         instance.memory.write(ptr.toInt(), bin)
         val p = instance.execute(WBI_CHANGE_TYPE, type, ptr, bin.size.toLong())[0]
@@ -139,23 +138,23 @@ object WBI {
     @JvmStatic
     fun malloc(instance: ModuleInstance, s: String): Int {
         val bin = s.toByteArray(StandardCharsets.UTF_8)
-        return mallocInternal(instance, WbiType.STRING, bin)
+        return malloc(instance, WbiType.STRING, bin)
     }
 
     @JvmStatic
     fun malloc(instance: ModuleInstance, s: Uint256): Int {
         val bin = s.noLeadZeroesData
-        return mallocInternal(instance, WbiType.UINT_256, bin)
+        return malloc(instance, WbiType.UINT_256, bin)
     }
 
     @JvmStatic
     fun mallocBytes(instance: ModuleInstance, bin: HexBytes): Int {
-        return mallocInternal(instance, WbiType.BYTES, bin.bytes)
+        return malloc(instance, WbiType.BYTES, bin.bytes)
     }
 
     @JvmStatic
     fun mallocAddress(instance: ModuleInstance, address: HexBytes): Int {
-        return mallocInternal(instance, WbiType.ADDRESS, address.bytes)
+        return malloc(instance, WbiType.ADDRESS, address.bytes)
     }
 
     data class InjectResult(val name: String, val entry: Abi.Entry?, val pointers: LongArray, val executable: Boolean);
