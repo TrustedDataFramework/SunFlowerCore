@@ -26,11 +26,7 @@ data class CallData(
         get() = ByteUtil.longToBytesNoLeadZeroes(txNonce)
 
     fun clone(): CallData {
-        return CallData(
-            caller, value, txValue, to, txTo,
-            callType, data, origin, txHash, txNonce,
-            gasPrice, gasLimit
-        )
+        return this.copy()
     }
 
     companion object {
