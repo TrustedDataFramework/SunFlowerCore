@@ -17,6 +17,7 @@ public final class SlotUtils {
     public static final int SLOT_BITS = SLOT_SIZE * INT_BITS;
     // slot - 1 = slot + negative_one
     public static final int[] NEGATIVE_ONE = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff};
+
     private SlotUtils() {
     }
 

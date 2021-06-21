@@ -80,6 +80,7 @@ public class MutableBigInteger {
     }
 
     // Constants
+
     /**
      * Construct a new MutableBigInteger with a magnitude equal to the
      * specified MutableBigInteger.

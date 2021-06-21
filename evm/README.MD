@@ -2,12 +2,19 @@
 
 Evm Opcode pseudo code
 
+读写越界溢出的处理
+
+- 栈越界或者溢出，合约报错，终止
+- 内存溢出，合约报错终止
+- code, calldata 允许溢出
+- 允许 divisor = 0
+
 1. Stop(0x00)
 
 return empty
 
-2. Add(0x01), Mul(0x02), Sub(0x03), Div(0x04), SDiv(0x05), Mod(0x06), SMod(0x07), Exp(0x0a), Lt(0x10), GT(0x11), SLT(0x12), SGT(0x13), EQ(0x14),
-And(0x16), Or(0x17), Xor(0x18), Shl(0x1b), Shr(0x1c), Sar(0x1d)
+2. Add(0x01), Mul(0x02), Sub(0x03), Div(0x04), SDiv(0x05), Mod(0x06), SMod(0x07), Exp(0x0a), Lt(0x10), GT(0x11), SLT(
+   0x12), SGT(0x13), EQ(0x14), And(0x16), Or(0x17), Xor(0x18), Shl(0x1b), Shr(0x1c), Sar(0x1d)
 
 ```go
 left, right := stack.pop(), stack.pop()
@@ -25,7 +32,6 @@ switch(op) {
     }
 }
 ```
-
 
 3. AddMod(0x08), MulMod(0x09)
 
@@ -76,6 +82,9 @@ if n >= 32 {
 
 ```go
 off, size := stack.pop(), stack.pop()
+if off + size > limit {
+    panic("memory overflow")
+}
 stack.push(sha3(memory[off:off+size]))
 ```
 
@@ -87,7 +96,7 @@ copy(data[32-20:32], contract.Address())
 stack.push(data)
 ```
 
-9.  Balance(0x31)
+9. Balance(0x31)
 
 ```go
 stack.push(backend.GetBalance(stack.pop()[32-20:]))
@@ -118,12 +127,14 @@ stack.push(contract.CallValue())
 13. CallDataLoad(0x35)
 
 ```go
-offset := stack.pop()
-end := offset + 32
+offset := stack.pop() & 0xffffffff
 
 if offset > len(calldata) {
     offset = len(calldata)
 }
+
+end := offset + 32
+
 if end > len(calldata) {
     end = len(calldata)
 }
@@ -143,13 +154,37 @@ stack.push(len(calldata))
 15. CallDataCopy(0x37)
 
 ```go
-memOff, dataOff, len = stack.pop(), stack.pop(), stack.pop()
+memOff, dataOff, len := 
+    stack.pop() & 0xffffffff, 
+    stack.pop() & 0xffffffff, 
+    stack.pop() & 0xffffffff
+
+if dataOff > len(calldata) {
+    dataOff = len(calldata)
+}
+
+end := dataOff + len
 
 
 ```
 
 16. CodeSize(0x38)
+
+```go
+stack.push(len(code))
+```
+
 17. CodeCopy(0x39)
+
+```go
+memOff, codeOff, len := 
+    stack.pop() & 0xffffffff, 
+    stack.pop() & 0xffffffff, 
+    stack.pop() & 0xffffffff
+
+copy(mem[memOff: memOff+len], code[codeOff: codeOff+len]
+```
+
 18. ReturnDataSize(0x3d)
 19. ReturnDataCopy(0x3e)
 20. GasPrice(0x3a)

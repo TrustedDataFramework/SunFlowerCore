@@ -12,9 +12,9 @@ fun interface Digest {
 interface Stack {
     val size: Int
 
-    // memory size for m
-    fun memSize(op: Int, len: Int = 0): Int
+    fun popAsAddress(): ByteArray
 
+    // memory size for m
     fun push(buf: ByteArray, offset: Int = 0, len: Int = buf.size)
 
     fun push(n: IntArray, offset: Int = 0)
@@ -45,8 +45,6 @@ interface Stack {
     fun pushInt(n: Int)
 
     fun drop()
-
-    fun dropTwice()
 
     /**
      * pop top into buffer
@@ -101,7 +99,9 @@ interface Stack {
     fun shr()
     fun sar()
 
-    fun sha3(mem: Memory, hashFun: Digest)
+    fun sha3(mem: Memory, digest: Digest)
+    fun callDataLoad(input: ByteArray)
+    fun dataCopy(mem: Memory, data: ByteArray)
 
     fun dup(index: Int)
     fun swap(index: Int)
@@ -114,36 +114,39 @@ interface Stack {
 }
 
 class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
-    override fun memSize(op: Int, len: Int): Int {
-        when (op) {
-            OpCodes.MSTORE -> {
-                val r = popUnsignedInt()
-                if (r < 0)
-                    throw RuntimeException("memory access overflow")
-                if (r + len > Int.MAX_VALUE)
-                    throw RuntimeException("memory access overflow")
-                size++
-                top += SLOT_SIZE
-                return (r + len).toInt()
+    private fun backUnsignedInt(i: Int = 0): Long {
+        if (i < 0 || i >= size)
+            throw RuntimeException("stack underflow")
+        val idx = size - 1 - i
+        for (j in 0 until SLOT_MAX_INDEX) {
+            if (data[idx * SLOT_SIZE + j] != 0) {
+                return -1
             }
-            OpCodes.RETURN -> {
-                val off = popUnsignedInt()
-                val memLen = popUnsignedInt()
-                val total = off + memLen
-                if (total > Int.MAX_VALUE || total < 0)
-                    throw RuntimeException("memory access overflow")
-                size += 2
-                top += SLOT_SIZE * 2
-                return total.toInt()
-            }
-            else -> throw RuntimeException("invalid op = $op")
         }
+        return Integer.toUnsignedLong(data[idx * SLOT_SIZE + SLOT_MAX_INDEX])
+    }
+
+    private fun memSizeByOffAndLen(off: Long, len: Long): Int {
+        val i = off + len
+        if (off < 0 || len < 0 || i < 0)
+            throw RuntimeException("memory access overflow")
+        if (i > Int.MAX_VALUE)
+            throw RuntimeException("memory access overflow")
+        return i.toInt()
     }
 
     private var top: Int = -SLOT_SIZE
 
     override var size: Int = 0
         private set
+
+    override fun popAsAddress(): ByteArray {
+        val r = ByteArray(20)
+        encodeBE(data, top, tempBytes, 0)
+        System.arraycopy(tempBytes, SLOT_BYTE_ARRAY_SIZE - 20, r, 0, 20)
+        dropNocheck()
+        return r
+    }
 
     private var data: IntArray = IntArray(SLOT_SIZE * INITIAL_CAP)
 
@@ -368,6 +371,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun mstore(mem: Memory) {
+        mem.resize(memSizeByOffAndLen(backUnsignedInt(), 32))
         val off = popIntExact()
         if (size == 0)
             throw RuntimeException("stack underflow")
@@ -383,6 +387,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun mload(mem: Memory) {
+        mem.resize(memSizeByOffAndLen(backUnsignedInt(), backUnsignedInt(1)))
         val off = popIntExact()
         if (size == 0)
             throw RuntimeException("stack underflow")
@@ -662,7 +667,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         dropNocheck()
     }
 
-    override fun dropTwice() {
+    private fun dropTwice() {
         if (size < 2)
             throw RuntimeException("stack underflow")
         size -= 2
@@ -743,12 +748,40 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         signedRightShift(data, top, c / INT_BITS, c % INT_BITS)
     }
 
+
     override fun sha3(mem: Memory, digest: Digest) {
+        mem.resize(memSizeByOffAndLen(backUnsignedInt(), backUnsignedInt(1)))
         val off = popIntExact()
         val len = popIntExact()
         digest.digest(mem.data, off, len, tempBytes, 0)
         pushZero()
         decodeBE(tempBytes, 0, data, top)
+    }
+
+    override fun callDataLoad(input: ByteArray) {
+        val offInt = unsignedMin(popUnsignedInt(), input.size.toLong()).toInt()
+        val len = Math.min(32, input.size - offInt)
+        Arrays.fill(tempBytes, 0)
+        System.arraycopy(input, offInt, tempBytes, SLOT_BYTE_ARRAY_SIZE - len, len)
+        pushZero()
+        decodeBE(tempBytes, 0, data, top)
+    }
+
+    private fun unsignedMin(x: Long, y: Long): Long {
+        return if (x + Long.MIN_VALUE < y + Long.MIN_VALUE) {
+            x
+        } else {
+            y
+        }
+    }
+
+    override fun dataCopy(mem: Memory, data: ByteArray) {
+        val memOff = popUnsignedInt()
+        val len = popUnsignedInt()
+        mem.resize(memSizeByOffAndLen(memOff, len))
+        val dataOff = unsignedMin(popUnsignedInt(), data.size.toLong()).toInt()
+        val lenInt = Math.min(len.toInt(), data.size - dataOff)
+        mem.write(memOff.toInt(), data, dataOff, lenInt)
     }
 
     override fun mod() {
