@@ -1,6 +1,7 @@
 package org.tdf.sunflower;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.googlecode.jsonrpc4j.spring.JsonServiceExporter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -273,7 +274,9 @@ public class Start {
 
     @Bean
     public EventBus eventBus() {
-        return new EventBus();
+        return new EventBus(
+                new ThreadFactoryBuilder().setNameFormat("EventBus-%d").build()
+        );
     }
 
     // storage root of contract store

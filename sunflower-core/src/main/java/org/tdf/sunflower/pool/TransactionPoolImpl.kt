@@ -2,16 +2,14 @@ package org.tdf.sunflower.pool
 
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.TickerMode
-import kotlinx.coroutines.channels.ticker
-import kotlinx.coroutines.launch
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import lombok.SneakyThrows
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.tdf.common.event.EventBus
 import org.tdf.common.util.ByteUtil
+import org.tdf.common.util.FixedDelayScheduler
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.TransactionPoolConfig
@@ -29,6 +27,7 @@ import org.tdf.sunflower.vm.CallData.Companion.fromTransaction
 import org.tdf.sunflower.vm.LockableBackend
 import org.tdf.sunflower.vm.VMExecutor
 import java.util.*
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -70,6 +69,7 @@ class TransactionPoolImpl(
     private val pendingReceipts: MutableList<TransactionReceipt> = mutableListOf()
     private var current: Backend? = null
     private var gasUsed: Long = 0L
+    private val executor = FixedDelayScheduler("TransactionPool", config.expiredIn)
 
     private fun resetInternal(best: Header) {
         parentHeader = best
@@ -278,15 +278,13 @@ class TransactionPoolImpl(
     @PostConstruct
     fun initialize() {
         eventBus.subscribe(NewBestBlock::class.java) { event: NewBestBlock -> onNewBestBlock(event) }
-        val ch = ticker(TimeUnit.SECONDS.toMillis(config.expiredIn), 0, mode = TickerMode.FIXED_DELAY)
-        GlobalScope.launch {
-            for (c in ch) {
-                try {
-                    clear()
-                }catch (e: Exception) {
-                    e.printStackTrace()
-                }
+        executor.delay{
+            try {
+                clear()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
+
         }
     }
 }

@@ -1,6 +1,7 @@
 package org.tdf.sunflower.net
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import lombok.extern.slf4j.Slf4j
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -14,6 +15,7 @@ import java.io.IOException
 import java.net.URI
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
 import java.util.function.Consumer
 import java.util.stream.Collectors
 import java.util.stream.Stream
@@ -31,6 +33,7 @@ class PeerServerImpl(// if non-database provided, use memory database
     private val self: PeerImpl
     private val builder: MessageBuilder
     private val netLayer: NetLayer
+
 
     override fun isFull(): Boolean {
         return client.peersCache.isFull

@@ -1,16 +1,17 @@
 package org.tdf.common.event
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
 
 /**
  * lock-free event bus implementation
  */
-class EventBus {
+class EventBus(factory: ThreadFactory) {
     private val listenersLock = false
     private var listeners: Map<Class<*>, List<Consumer<Any>>> = HashMap()
+    private val executor = Executors.newCachedThreadPool(factory)
 
     /**
      * subscribe a listener to event
@@ -40,7 +41,7 @@ class EventBus {
     fun publish(event: Any) {
         val consumers: List<Consumer<Any>> = listeners.getOrDefault(event.javaClass, emptyList())
         for (consumer in consumers) {
-            GlobalScope.launch {
+            executor.submit {
                 try {
                     consumer.accept(event)
                 } catch (e: Exception) {

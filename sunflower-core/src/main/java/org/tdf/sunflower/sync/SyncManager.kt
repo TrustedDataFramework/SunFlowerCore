@@ -1,11 +1,7 @@
 package org.tdf.sunflower.sync
 
 import com.google.common.cache.CacheBuilder
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.TickerMode
-import kotlinx.coroutines.channels.ticker
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
@@ -13,6 +9,7 @@ import org.springframework.stereotype.Component
 import org.tdf.common.event.EventBus
 import org.tdf.common.store.Store
 import org.tdf.common.trie.Trie
+import org.tdf.common.util.FixedDelayScheduler
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.AppConfig
@@ -30,7 +27,8 @@ import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import java.io.Closeable
 import java.util.*
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 import javax.annotation.PostConstruct
@@ -50,7 +48,7 @@ class SyncManager(
     @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes, HexBytes>,
     miner: Miner
 ) : PeerServerListener, Closeable {
-    private val mtx = Mutex()
+    private val mtx = ReentrantLock()
 
     private val queue = TreeSet(Block.FAT_COMPARATOR)
     private val accountTrie: StateTrie<HexBytes, Account>
@@ -102,6 +100,8 @@ class SyncManager(
         return false
     }
 
+    private val messageExecutor = Executors.newCachedThreadPool(ThreadFactoryBuilder().setNameFormat("SyncManagerMessageHandler-%d").build())
+
     private fun broadcastToApproved(body: ByteArray) {
         val peers = peerServer.peers
         for (p in peers) {
@@ -113,27 +113,26 @@ class SyncManager(
     fun init() {
         // TODO: don't send status, proposal and transaction to peer not approved
         peerServer.addListeners(this)
-        val writeTicker = ticker(TimeUnit.SECONDS.toMillis(syncConfig.blockWriteRate), mode = TickerMode.FIXED_DELAY)
-        GlobalScope.launch {
-            for (c in writeTicker) {
+        val writeTicker = FixedDelayScheduler("SyncManagerBlockWriter", syncConfig.blockWriteRate)
+        writeTicker.delay {
                 try {
                     tryWrite()
                 }catch (e: Exception) {
                     e.printStackTrace()
                 }
             }
-        }
 
-        val statusTicker = ticker(TimeUnit.SECONDS.toMillis(syncConfig.heartRate), mode = TickerMode.FIXED_DELAY)
 
-        GlobalScope.launch {
-            for (c in statusTicker) {
+        val statusTicker =  FixedDelayScheduler("SyncManagerStatusSender", syncConfig.heartRate)
+
+        statusTicker.delay {
+
                 try {
                     sendStatus()
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
-            }
+
         }
 
         eventBus.subscribe(NewBlockMined::class.java) { (block) ->
@@ -165,7 +164,7 @@ class SyncManager(
     }
 
     override fun onMessage(context: Context, server: PeerServer) {
-        GlobalScope.launch { repo.getWriter().use { writer -> onMessageInternal(context, server, writer) } }
+        messageExecutor.submit { repo.getWriter().use { writer -> onMessageInternal(context, server, writer) } }
     }
 
     private fun onMessageInternal(context: Context, server: PeerServer, writer: RepositoryReader) {

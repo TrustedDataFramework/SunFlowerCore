@@ -1,15 +1,11 @@
 package org.tdf.sunflower.consensus.poa
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.TickerMode
-import kotlinx.coroutines.channels.ticker
-import kotlinx.coroutines.launch
+
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.tdf.common.crypto.ECKey
-import org.tdf.common.util.BigIntegers
 import org.tdf.common.util.ByteUtil
+import org.tdf.common.util.FixedDelayScheduler
 import org.tdf.common.util.RLPUtil
 import org.tdf.sunflower.consensus.AbstractMiner
 import org.tdf.sunflower.consensus.poa.config.PoAConfig
@@ -19,10 +15,9 @@ import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.types.Transaction
 import java.time.OffsetDateTime
-import java.util.*
-import java.util.concurrent.TimeUnit
 
-class PoAMiner(private val poA: PoA) : AbstractMiner(poA.accountTrie, poA.eventBus, poA.config, poA.transactionPool) {
+class PoAMiner(private val poA: PoA) :
+    AbstractMiner(poA.accountTrie, poA.eventBus, poA.config, poA.transactionPool) {
 
     private val config: PoAConfig
         get() = poA.config
@@ -30,7 +25,9 @@ class PoAMiner(private val poA: PoA) : AbstractMiner(poA.accountTrie, poA.eventB
     val repo: RepositoryService
         get() = poA.repo!!
 
-    private var ch: ReceiveChannel<Unit>? = null
+    private val executor = FixedDelayScheduler("PoAMiner",
+        Math.max(1, poA.config.blockInterval / 2).toLong()
+    )
 
     override fun createHeader(parent: Block): Header {
         return Header
@@ -65,31 +62,18 @@ class PoAMiner(private val poA: PoA) : AbstractMiner(poA.accountTrie, poA.eventB
 
     @Synchronized
     override fun start() {
-        if (ch != null) {
-            return
-        }
-
-        ch = ticker(
-            TimeUnit.SECONDS.toMillis(config.blockInterval.toLong()),
-            mode = TickerMode.FIXED_DELAY
-        )
-
-        GlobalScope.launch {
-            for (c in ch!!) {
-                try {
-                    tryMine()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+        executor.delay {
+            try {
+                this.tryMine()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
 
     @Synchronized
     override fun stop() {
-        if (ch == null) return
-        ch!!.cancel()
-        ch = null
+        executor.shutdownNow()
     }
 
     fun tryMine() {
