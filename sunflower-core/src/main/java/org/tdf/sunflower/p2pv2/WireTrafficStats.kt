@@ -6,8 +6,6 @@ import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelPromise
 import io.netty.channel.socket.DatagramPacket
-import kotlinx.coroutines.channels.TickerMode
-import kotlinx.coroutines.channels.ticker
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.tdf.common.util.CommonUtils.sizeToStr
@@ -19,11 +17,7 @@ import javax.annotation.PreDestroy
 class WireTrafficStats : Runnable {
     private val logger = LoggerFactory.getLogger("net")
 
-    private val ticker = ticker(
-        TimeUnit.SECONDS.toMillis(10L),
-        TimeUnit.SECONDS.toMillis(10L),
-        mode = TickerMode.FIXED_DELAY
-    )
+
     val tcp = TrafficStatHandler()
     val udp = TrafficStatHandler()
 
@@ -42,7 +36,7 @@ class WireTrafficStats : Runnable {
 
     @PreDestroy
     fun close() {
-        ticker.cancel()
+//        ticker.cancel()
     }
 
     @ChannelHandler.Sharable

@@ -2,19 +2,17 @@ package org.tdf.sunflower.net
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.TextNode
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.TickerMode
-import kotlinx.coroutines.channels.ticker
-import kotlinx.coroutines.launch
 import lombok.SneakyThrows
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.tdf.common.store.BatchStore
+import org.tdf.common.util.FixedDelayScheduler
 import org.tdf.sunflower.proto.Code
 import org.tdf.sunflower.proto.Disconnect
 import org.tdf.sunflower.proto.Peers
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.stream.Stream
 import kotlin.streams.toList
@@ -70,28 +68,22 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
         val cache = client.peersCache
         val builder = client.messageBuilder
 
+        val pingTicker = FixedDelayScheduler("PeersManager-Ping", config.discoverRate.toLong())
         // keep self alive
-        val pingTicker = ticker(TimeUnit.SECONDS.toMillis(config.discoverRate.toLong()), mode = TickerMode.FIXED_DELAY)
-        val discoverTicker =
-            ticker(TimeUnit.SECONDS.toMillis(config.discoverRate.toLong()), mode = TickerMode.FIXED_DELAY)
-
-        GlobalScope.launch {
-            for (c in pingTicker) {
-                try {
-                    client.broadcast(builder.buildPing())
-                }catch (e: Exception) {
-                    e.printStackTrace()
-                }
+        pingTicker.delay {
+            try {
+                client.broadcast(builder.buildPing())
+            }catch (e: Exception) {
+                e.printStackTrace()
             }
         }
 
-        GlobalScope.launch {
-            for (c in discoverTicker) {
-                try {
-                    loopPeers(server, client, cache, builder)
-                }catch (e: Exception) {
-                    e.printStackTrace()
-                }
+        val loopTicker = FixedDelayScheduler("PeersManager-Discover", config.discoverRate.toLong())
+        loopTicker.delay {
+            try {
+                loopPeers(server, client, cache, builder)
+            }catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }

@@ -2,10 +2,6 @@ package org.tdf.sunflower.p2pv2.p2p
 
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.TickerMode
-import kotlinx.coroutines.channels.ticker
-import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
@@ -31,12 +27,6 @@ class P2pHandler(
     val VERSION: Byte = 5
 
     private val logger = LoggerFactory.getLogger("net")
-
-    private val pingTicker = ticker(
-        TimeUnit.SECONDS.toMillis(cfg.p2pPingInterval.toLong()),
-        TimeUnit.SECONDS.toMillis(2),
-        mode = TickerMode.FIXED_DELAY
-    )
 
     lateinit var mq: MessageQueue
 
@@ -188,19 +178,18 @@ class P2pHandler(
 
     private fun startTimers() {
         // sample for pinging in background
-        GlobalScope.launch {
-            for (t in pingTicker) {
-                try {
-                    mq.sendMessage(PING_MESSAGE)
-                } catch (t: Throwable) {
-                    logger.error("Unhandled exception", t)
-                }
-            }
-        }
+//        GlobalScope.launch {
+//            for (t in pingTicker) {
+//                try {
+//                    mq.sendMessage(PING_MESSAGE)
+//                } catch (t: Throwable) {
+//                    logger.error("Unhandled exception", t)
+//                }
+//            }
+//        }
     }
 
     fun killTimers() {
-        pingTicker.cancel()
 //        mq.close()
     }
 

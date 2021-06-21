@@ -4,6 +4,7 @@ dependencies {
     testImplementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     compileOnly "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
 
+    implementation "com.google.guava:guava:${guavaVersion}"
     implementation "com.madgag.spongycastle:core:${scastleVersion}"
     implementation "com.madgag.spongycastle:prov:${scastleVersion}"
 
