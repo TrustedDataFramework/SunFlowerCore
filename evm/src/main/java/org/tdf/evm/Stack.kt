@@ -11,6 +11,8 @@ fun interface Digest {
 
 interface Stack {
     val size: Int
+    fun backUnsignedInt(i: Int = 0): Long
+    fun back(i: Int = 0): ByteArray
 
     fun popAsAddress(): ByteArray
 
@@ -120,7 +122,7 @@ interface Stack {
 }
 
 class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
-    private fun backUnsignedInt(i: Int = 0): Long {
+    override fun backUnsignedInt(i: Int): Long {
         if (i < 0 || i >= size)
             throw RuntimeException("stack underflow")
         val idx = size - 1 - i
@@ -130,6 +132,14 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
             }
         }
         return Integer.toUnsignedLong(data[idx * SLOT_SIZE + SLOT_MAX_INDEX])
+    }
+
+    override fun back(i: Int): ByteArray {
+        if (i < 0 || i >= size)
+            throw RuntimeException("stack underflow")
+        val r = ByteArray(SLOT_BYTE_ARRAY_SIZE)
+        encodeBE(data, i * SLOT_SIZE, r, 0)
+        return r
     }
 
     private fun memSizeByOffAndLen(off: Long, len: Long): Int {
@@ -366,10 +376,11 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun dup(index: Int) {
-        if (index >= size)
+        if(index > size)
             throw RuntimeException("stack underflow")
+        val src = size - index
         pushZero()
-        System.arraycopy(data, index * SLOT_SIZE, data, top, SLOT_SIZE)
+        System.arraycopy(data, src * SLOT_SIZE, data, top, SLOT_SIZE)
     }
 
     override fun swap(index: Int) {

@@ -27,6 +27,7 @@ interface Memory {
         if (off < 0 || off + bufSize > size)
             throw RuntimeException("memory access overflow")
 
+
         for (i in 0 until bufSize) {
             this[off + i] = buf[bufOff + i]
         }

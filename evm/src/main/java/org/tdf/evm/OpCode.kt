@@ -1,6 +1,12 @@
 package org.tdf.evm
 
 object OpCodes {
+    val NAMES = arrayOfNulls<String>(256)
+
+    fun nameOf(op: Int): String{
+        return NAMES[op]!!
+    }
+
     /**
      * Halts execution (0x00)
      */
@@ -739,11 +745,673 @@ object OpCodes {
      */
     const val SUICIDE = 0xff
 
-    @JvmStatic
-    val MEM_SIZE = IntArray(SUICIDE + 1)
 
     init {
-        MEM_SIZE[MSTORE] = 32
+        NAMES[STOP] = "STOP"
+
+        NAMES[ADD] = "ADD"
+
+        NAMES[MUL] = "MUL"
+
+        NAMES[SUB] = "SUB"
+
+
+
+
+        NAMES[DIV] = "DIV"
+
+
+
+
+        NAMES[SDIV] = "SDIV"
+
+
+
+
+        NAMES[MOD] = "MOD"
+
+
+
+
+        NAMES[SMOD] = "SMOD"
+
+
+
+
+        NAMES[ADDMOD] = "ADDMOD"
+
+
+
+
+        NAMES[MULMOD] = "MULMOD"
+
+
+
+
+        NAMES[EXP] = "EXP"
+
+
+
+
+        NAMES[SIGNEXTEND] = "SIGNEXTEND"
+
+        // ========================
+        // Bitwise Logic & Comparison Operations
+        // ========================
+
+
+        NAMES[LT] = "LT"
+
+
+
+
+        NAMES[GT] = "GT"
+
+
+
+
+        NAMES[SLT] = "SLT"
+
+
+
+
+        NAMES[SGT] = "SGT"
+
+
+
+
+        NAMES[EQ] = "EQ"
+
+
+
+
+        NAMES[ISZERO] = "ISZERO"
+
+
+
+
+        NAMES[AND] = "AND"
+
+
+
+
+        NAMES[OR] = "OR"
+
+
+
+
+        NAMES[XOR] = "XOR"
+
+
+
+
+        NAMES[NOT] = "NOT"
+
+
+
+
+        NAMES[BYTE] = "BYTE"
+
+
+
+
+        NAMES[SHL] = "SHL"
+
+
+
+
+        NAMES[SHR] = "SHR"
+
+
+
+
+        NAMES[SAR] = "SAR"
+
+        // ========================
+        // Cryptographic Operations
+        // ========================
+
+
+        NAMES[SHA3] = "SHA3"
+
+        // ========================
+        // Environment Information
+        // ========================
+
+
+        NAMES[ADDRESS] = "ADDRESS"
+
+
+
+
+        NAMES[BALANCE] = "BALANCE"
+
+
+
+
+        NAMES[ORIGIN] = "ORIGIN"
+
+
+
+
+        NAMES[CALLER] = "CALLER"
+
+
+        NAMES[CALLVALUE] = "CALLVALUE"
+
+
+
+
+        NAMES[CALLDATALOAD] = "CALLDATALOAD"
+
+
+
+
+        NAMES[CALLDATASIZE] = "CALLDATASIZE"
+
+
+
+
+        NAMES[CALLDATACOPY] = "CALLDATACOPY"
+
+
+
+
+        NAMES[CODESIZE] = "CODESIZE"
+
+
+
+
+        NAMES[CODECOPY] = "CODECOPY"
+
+
+
+
+        NAMES[RETURNDATASIZE] = "RETURNDATASIZE"
+
+
+
+
+        NAMES[RETURNDATACOPY] = "RETURNDATACOPY"
+
+
+
+
+        NAMES[GASPRICE] = "GASPRICE"
+
+
+
+
+        NAMES[EXTCODESIZE] = "EXTCODESIZE"
+
+
+
+
+        NAMES[EXTCODECOPY] = "EXTCODECOPY"
+
+
+
+
+        NAMES[EXTCODEHASH] = "EXTCODEHASH"
+
+        // ========================
+        // Block Information
+        // ========================
+
+
+        NAMES[BLOCKHASH] = "BLOCKHASH"
+
+
+
+
+        NAMES[COINBASE] = "COINBASE"
+
+
+
+
+        NAMES[TIMESTAMP] = "TIMESTAMP"
+
+
+
+
+        NAMES[NUMBER] = "NUMBER"
+
+
+
+
+        NAMES[DIFFICULTY] = "DIFFICULTY"
+
+
+
+
+        NAMES[GASLIMIT] = "GASLIMIT"
+
+        // ========================
+        // Memory, Storage and Flow Operations
+        // ========================
+
+
+        NAMES[POP] = "POP"
+
+
+
+
+        NAMES[MLOAD] = "MLOAD"
+
+
+
+
+        NAMES[MSTORE] = "MSTORE"
+
+
+
+
+        NAMES[MSTORE8] = "MSTORE8"
+
+
+
+
+        NAMES[SLOAD] = "SLOAD"
+
+
+
+
+        NAMES[SSTORE] = "SSTORE"
+
+
+
+
+        NAMES[JUMP] = "JUMP"
+
+
+
+
+        NAMES[JUMPI] = "JUMPI"
+
+
+
+
+        NAMES[PC] = "PC"
+
+
+
+
+        NAMES[MSIZE] = "MSIZE"
+
+
+
+
+        NAMES[GAS] = "GAS"
+
+
+
+
+        NAMES[JUMPDEST] = "JUMPDEST"
+
+        NAMES[PUSH1] = "PUSH1"
+
+
+
+
+        NAMES[PUSH2] = "PUSH2"
+
+
+
+
+        NAMES[PUSH3] = "PUSH3"
+
+
+
+
+        NAMES[PUSH4] = "PUSH4"
+
+
+
+
+        NAMES[PUSH5] = "PUSH5"
+
+
+
+
+        NAMES[PUSH6] = "PUSH6"
+
+
+
+
+        NAMES[PUSH7] = "PUSH7"
+
+
+
+
+        NAMES[PUSH8] = "PUSH8"
+
+
+
+
+        NAMES[PUSH9] = "PUSH9"
+
+
+
+
+        NAMES[PUSH10] = "PUSH10"
+
+
+
+
+        NAMES[PUSH11] = "PUSH11"
+
+
+
+
+        NAMES[PUSH12] = "PUSH12"
+
+
+
+
+        NAMES[PUSH13] = "PUSH13"
+
+
+
+
+        NAMES[PUSH14] = "PUSH14"
+
+
+
+
+        NAMES[PUSH15] = "PUSH15"
+
+
+
+
+        NAMES[PUSH16] = "PUSH16"
+
+
+
+
+        NAMES[PUSH17] = "PUSH17"
+
+
+
+
+        NAMES[PUSH18] = "PUSH18"
+
+
+
+
+        NAMES[PUSH19] = "PUSH19"
+
+
+
+
+        NAMES[PUSH20] = "PUSH20"
+
+
+
+
+        NAMES[PUSH21] = "PUSH21"
+
+
+
+
+        NAMES[PUSH22] = "PUSH22"
+
+
+
+
+        NAMES[PUSH23] = "PUSH23"
+
+
+
+
+        NAMES[PUSH24] = "PUSH24"
+
+
+
+
+        NAMES[PUSH25] = "PUSH25"
+
+
+
+
+        NAMES[PUSH26] = "PUSH26"
+
+
+
+
+        NAMES[PUSH27] = "PUSH27"
+
+
+
+
+        NAMES[PUSH28] = "PUSH28"
+
+
+
+
+        NAMES[PUSH29] = "PUSH29"
+
+
+
+
+        NAMES[PUSH30] = "PUSH30"
+
+
+
+
+        NAMES[PUSH31] = "PUSH31"
+
+
+
+
+        NAMES[PUSH32] = "PUSH32"
+
+        // ========================
+        // Duplicate Nth item from the stack
+        // ========================
+
+
+        NAMES[DUP1] = "DUP1"
+
+
+
+
+        NAMES[DUP2] = "DUP2"
+
+
+
+
+        NAMES[DUP3] = "DUP3"
+
+
+
+
+        NAMES[DUP4] = "DUP4"
+
+
+
+
+        NAMES[DUP5] = "DUP5"
+
+
+
+
+        NAMES[DUP6] = "DUP6"
+
+
+
+
+        NAMES[DUP7] = "DUP7"
+
+
+
+
+        NAMES[DUP8] = "DUP8"
+
+
+
+
+        NAMES[DUP9] = "DUP9"
+
+
+
+
+        NAMES[DUP10] = "DUP10"
+
+
+
+
+        NAMES[DUP11] = "DUP11"
+
+
+
+
+        NAMES[DUP12] = "DUP12"
+
+
+
+
+        NAMES[DUP13] = "DUP13"
+
+
+
+
+        NAMES[DUP14] = "DUP14"
+
+
+
+
+        NAMES[DUP15] = "DUP15"
+
+
+
+
+        NAMES[DUP16] = "DUP16"
+
+        // ========================
+        // Swap the Nth item from the stack with the top
+        // ========================
+
+
+        NAMES[SWAP1] = "SWAP1"
+
+
+
+
+        NAMES[SWAP2] = "SWAP2"
+
+
+
+
+        NAMES[SWAP3] = "SWAP3"
+
+
+
+
+        NAMES[SWAP4] = "SWAP4"
+
+
+
+
+        NAMES[SWAP5] = "SWAP5"
+
+
+
+
+        NAMES[SWAP6] = "SWAP6"
+
+
+
+
+        NAMES[SWAP7] = "SWAP7"
+
+
+
+
+        NAMES[SWAP8] = "SWAP8"
+
+
+
+
+        NAMES[SWAP9] = "SWAP9"
+
+
+
+
+        NAMES[SWAP10] = "SWAP10"
+
+
+
+
+        NAMES[SWAP11] = "SWAP11"
+
+
+
+
+        NAMES[SWAP12] = "SWAP12"
+
+
+
+
+        NAMES[SWAP13] = "SWAP13"
+
+
+
+
+        NAMES[SWAP14] = "SWAP14"
+
+
+
+
+        NAMES[SWAP15] = "SWAP15"
+
+
+
+
+        NAMES[SWAP16] = "SWAP16"
+
+        NAMES[LOG0] = "LOG0"
+
+        NAMES[LOG1] = "LOG1"
+
+        NAMES[LOG2] = "LOG2"
+
+        NAMES[LOG3] = "LOG3"
+
+        NAMES[LOG4] = "LOG4"
+
+        // ========================
+        // System operations
+        // ========================
+
+
+        NAMES[CREATE] = "CREATE"
+
+
+
+
+        NAMES[CALL] = "CALL"
+        // [out_data_size] [out_data_start] [in_data_size] [in_data_start] [value]
+        // [to_addr] [gas] CALL
+
+
+        NAMES[CALLCODE] = "CALLCODE"
+
+
+
+
+        NAMES[RETURN] = "RETURN"
+
+        NAMES[DELEGATECALL] = "DELEGATECALL"
+
+        NAMES[CREATE2] = "CREATE2"
+
+
+        NAMES[STATICCALL] = "STATICCALL"
+
+
+        NAMES[REVERT] = "REVERT"
+
+        NAMES[SUICIDE] = "SUICIDE"
     }
 }
 

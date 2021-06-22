@@ -547,7 +547,7 @@ public class MutableBigInteger {
      * Returns true iff this MutableBigInteger is odd.
      */
     public boolean isOdd() {
-        return isZero() ? false : ((value[offset + intLen - 1] & 1) == 1);
+        return !isZero() && ((value[offset + intLen - 1] & 1) == 1);
     }
 
     /**
@@ -798,7 +798,7 @@ public class MutableBigInteger {
         if (carry > 0) { // Result must grow in length
             resultLen++;
             if (result.length < resultLen) {
-                int temp[] = new int[resultLen];
+                int[] temp = new int[resultLen];
                 // Result one word longer from carry-out; copy low-order
                 // bits into new result.
                 System.arraycopy(result, 0, temp, 1, result.length);
@@ -865,7 +865,7 @@ public class MutableBigInteger {
         if (carry > 0) { // Result must grow in length
             resultLen++;
             if (result.length < resultLen) {
-                int temp[] = new int[resultLen];
+                int[] temp = new int[resultLen];
                 // Result one word longer from carry-out; copy low-order
                 // bits into new result.
                 System.arraycopy(result, 0, temp, 1, result.length);

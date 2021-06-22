@@ -1,8 +1,12 @@
 package org.tdf.evm
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import org.spongycastle.util.encoders.Hex
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
@@ -22,25 +26,6 @@ class MemAccount(
     var code: ByteArray = ByteUtil.EMPTY_BYTE_ARRAY
 )
 
-class EvmContextImpl(
-    override val origin: ByteArray = ZERO_ADDRESS,
-    override val number: Long = 0,
-    override val chainId: Long = 0,
-    override val timestamp: Long = 0,
-    override val difficulty: BigInteger = BigInteger.ZERO,
-    override val blockGasLimit: Long = Long.MAX_VALUE,
-    override val txGasLimit: Long = Long.MAX_VALUE
-) : EvmContext
-
-class MockCallData(
-    override val caller: ByteArray = ZERO_ADDRESS,
-    override val receipt: ByteArray = ZERO_ADDRESS,
-    override val value: BigInteger = BigInteger.ZERO,
-    override val input: ByteArray = ByteUtil.EMPTY_BYTE_ARRAY,
-    override val code: ByteArray = ByteUtil.EMPTY_BYTE_ARRAY
-) : EvmCallData {
-
-}
 
 class MockEvmHost : EvmHost {
     override val digest: Digest = sha3
@@ -69,16 +54,58 @@ class MockEvmHost : EvmHost {
         accounts[HexBytes.fromBytes(address)] = account
     }
 
-    override fun call(caller: ByteArray, receipt: ByteArray, value: BigInteger, input: ByteArray): ByteArray {
+    override fun getCode(addr: ByteArray): ByteArray {
         TODO("Not yet implemented")
     }
 
-    override fun delegateCall(caller: ByteArray, receipt: ByteArray, value: BigInteger, input: ByteArray): ByteArray {
-        TODO("Not yet implemented")
+    override fun call(
+        caller: ByteArray, receipt: ByteArray, input: ByteArray, value: BigInteger, delegate: Boolean
+    ): ByteArray {
+        val contract = getOrCreate(receipt)
+        if(contract.code.isEmpty())
+            throw RuntimeException("not a contract account")
+
+        val callData = EvmCallData(caller, receipt, value, input, contract.code)
+
+        val interpreter = Interpreter(
+            this,
+            EvmContext(),
+            callData
+        )
+
+        interpreter.execute()
+        return interpreter.ret
+    }
+
+    private fun getOrCreate(address: ByteArray): MemAccount {
+        val r = accounts[HexBytes.fromBytes(address)]
+        if(r != null)
+            return r
+
+        val a = MemAccount()
+        accounts[HexBytes.fromBytes(address)] = a
+        return a
     }
 
     override fun drop(address: ByteArray) {
-        TODO("Not yet implemented")
+    }
+
+    override fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray): ByteArray {
+        val cal = getOrCreate(caller)
+        val nonce = cal.nonce
+        cal.nonce++
+        val newAddr = HashUtil.calcNewAddr(caller, ByteUtil.longToBytesNoLeadZeroes(nonce))
+
+        val interpreter = Interpreter(
+            this,
+                EvmContext(),
+                EvmCallData(caller, newAddr, value, emptyByteArray, createCode),
+                System.out
+        )
+
+        interpreter.execute()
+        cal.code = interpreter.ret
+        return newAddr
     }
 }
 
@@ -91,12 +118,25 @@ class VMTests {
             OpCodes.PUSH1, 10, OpCodes.PUSH1, 0, OpCodes.MSTORE, OpCodes.PUSH1, 32, OpCodes.PUSH1, 0, OpCodes.RETURN
         ).map { it.toByte() }.toByteArray()
 
-        val ctx = EvmContextImpl()
+        val ctx = EvmContext()
+        val data = EvmCallData(code = code)
         val mock = MockEvmHost()
-        val executor = Interpreter(mock)
-        val data = MockCallData(code = code)
+        val executor = Interpreter(mock, ctx, data)
 
-        executor.execute(data)
+        executor.execute()
         assert(BigInteger(1, executor.ret).intValueExact() == 10)
+    }
+
+    @Test
+    fun testOwnerContract() {
+        val objectMapper: ObjectMapper = jacksonObjectMapper()
+        val codeJson = TestUtil.readClassPathFile("contracts/owner.json")
+        val node = objectMapper.readValue(codeJson, JsonNode::class.java)
+
+        val code = Hex.decode(node.get("object").asText())
+
+        val mock = MockEvmHost()
+
+        mock.create(ZERO_ADDRESS, BigInteger.ZERO, code)
     }
 }

@@ -5,5 +5,9 @@ dependencies {
     testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}"
     testImplementation "com.madgag.spongycastle:core:${scastleVersion}"
     testImplementation "com.madgag.spongycastle:prov:${scastleVersion}"
+
+    testImplementation "org.slf4j:slf4j-api:${slf4jVersion}"
+// https://mvnrepository.com/artifact/org.slf4j/slf4j-nop
+    testImplementation group: 'org.slf4j', name: 'slf4j-nop', version: '1.7.30'
 }
 
