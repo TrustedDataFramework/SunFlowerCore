@@ -233,6 +233,13 @@ class Interpreter(
         }
     }
 
+    fun ByteArray.hexNoLeadingZero(): String {
+        var i = 
+        for(j in 0 until this.size) {
+
+        }
+    }
+
     private fun logInfo() {
         vmLog?.let {
             it.println("go pc = $pc input = ${callData.input.hex()} code size = ${callData.code.size}")
@@ -326,6 +333,14 @@ class Interpreter(
                     it.println("return offset = $off size = $size value = ${value.hex()}")
                 }
             }
+        }
+    }
+
+    fun afterExecute() {
+        vmLog?.let {
+            it.println("after execute op ${OpCodes.nameOf(op)} pc = $pc")
+
+            if(op >= OpCodes.PUSH1 && op <= OpCodes.PUSH32)
         }
     }
 
