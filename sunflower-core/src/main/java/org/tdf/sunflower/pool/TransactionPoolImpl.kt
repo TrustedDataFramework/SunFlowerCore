@@ -68,12 +68,6 @@ class TransactionPoolImpl(
     private val pendingReceipts: MutableList<TransactionReceipt> = mutableListOf()
 
     private var current: Backend? = null
-
-    // copy of current pending states
-    private var currentCopy: Backend? = null
-
-
-
     private var gasUsed: Long = 0L
     private val executor = FixedDelayScheduler("TransactionPool", config.expiredIn)
 
