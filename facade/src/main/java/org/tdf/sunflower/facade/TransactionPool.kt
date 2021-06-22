@@ -20,5 +20,5 @@ interface TransactionPool {
     // recollect pending data
     fun reset(parent: Header)
 
-    fun current(): Backend
+    fun current(): Backend?
 }

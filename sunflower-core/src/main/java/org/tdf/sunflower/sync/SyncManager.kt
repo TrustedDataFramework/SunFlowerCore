@@ -27,7 +27,6 @@ import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import java.io.Closeable
 import java.util.*
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
@@ -100,7 +99,8 @@ class SyncManager(
         return false
     }
 
-    private val messageExecutor = Executors.newCachedThreadPool(ThreadFactoryBuilder().setNameFormat("SyncManagerMessageHandler-%d").build())
+    private val messageExecutor =
+        Executors.newCachedThreadPool(ThreadFactoryBuilder().setNameFormat("SyncManagerMessageHandler-%d").build())
 
     private fun broadcastToApproved(body: ByteArray) {
         val peers = peerServer.peers
@@ -115,23 +115,23 @@ class SyncManager(
         peerServer.addListeners(this)
         val writeTicker = FixedDelayScheduler("SyncManagerBlockWriter", syncConfig.blockWriteRate)
         writeTicker.delay {
-                try {
-                    tryWrite()
-                }catch (e: Exception) {
-                    e.printStackTrace()
-                }
+            try {
+                tryWrite()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
+        }
 
 
-        val statusTicker =  FixedDelayScheduler("SyncManagerStatusSender", syncConfig.heartRate)
+        val statusTicker = FixedDelayScheduler("SyncManagerStatusSender", syncConfig.heartRate)
 
         statusTicker.delay {
 
-                try {
-                    sendStatus()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+            try {
+                sendStatus()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
 
         }
 
@@ -164,10 +164,12 @@ class SyncManager(
     }
 
     override fun onMessage(context: Context, server: PeerServer) {
-        messageExecutor.submit { repo.getWriter().use { writer -> onMessageInternal(context, server, writer) } }
+        messageExecutor.submit {
+            onMessageInternal(context, server)
+        }
     }
 
-    private fun onMessageInternal(context: Context, server: PeerServer, writer: RepositoryReader) {
+    private fun onMessageInternal(context: Context, server: PeerServer) {
         val o = SyncMessage.decode(context.message)
         if (!o.isPresent) return
         val msg = o.get()
@@ -180,7 +182,9 @@ class SyncManager(
                     return
                 }
                 val s = msg.getBodyAs(Status::class.java)
-                onStatus(context, server, s, writer)
+                repo.getReader().use {
+                    onStatus(context, server, s, it)
+                }
                 return
             }
             SyncMessage.GET_BLOCKS -> {
@@ -191,13 +195,16 @@ class SyncManager(
                 }
                 if (fastSyncing) return
                 val getBlocks = msg.getBodyAs(GetBlocks::class.java)
-                val blocks = writer.getBlocksBetween(
-                    getBlocks.startHeight,
-                    getBlocks.stopHeight,
-                    Math.min(syncConfig.maxBlocksTransfer, getBlocks.limit),
-                    getBlocks.descend
-                )
-                context.response(SyncMessage.encode(SyncMessage.BLOCKS, blocks))
+                repo.getReader().use {
+                    val blocks = it.getBlocksBetween(
+                        getBlocks.startHeight,
+                        getBlocks.stopHeight,
+                        Math.min(syncConfig.maxBlocksTransfer, getBlocks.limit),
+                        getBlocks.descend
+                    )
+                    context.response(SyncMessage.encode(SyncMessage.BLOCKS, blocks))
+                }
+
                 return
             }
             SyncMessage.TRANSACTION -> {
@@ -223,24 +230,26 @@ class SyncManager(
                     context.relay()
                     return
                 }
-                val best = writer.bestHeader
-                if (receivedProposals.asMap().containsKey(proposal.hash)) {
-                    return
-                }
-                receivedProposals.put(proposal.hash, true)
-                context.relay()
-                if (Math.abs(proposal.height - best.height) > syncConfig.maxPendingBlocks) {
-                    return
-                }
-                if (writer.containsHeader(proposal.hash)) return
-                if(!mtx.tryLock())
-                    return
-                log.debug("lock acquired by thread ${Thread.currentThread().id} pos = 1")
-                try {
-                    queue.add(proposal)
-                } finally {
-                    log.debug("lock released by thread ${Thread.currentThread().id} pos = 1")
-                    mtx.unlock()
+                repo.getReader().use {
+                    val best = it.bestHeader
+                    if (receivedProposals.asMap().containsKey(proposal.hash)) {
+                        return
+                    }
+                    receivedProposals.put(proposal.hash, true)
+                    context.relay()
+                    if (Math.abs(proposal.height - best.height) > syncConfig.maxPendingBlocks) {
+                        return
+                    }
+                    if (it.containsHeader(proposal.hash)) return
+                    if (!mtx.tryLock())
+                        return
+                    log.debug("lock acquired by thread ${Thread.currentThread().id} pos = 1")
+                    try {
+                        queue.add(proposal)
+                    } finally {
+                        log.debug("lock released by thread ${Thread.currentThread().id} pos = 1")
+                        mtx.unlock()
+                    }
                 }
                 return
             }
@@ -437,6 +446,8 @@ class SyncManager(
         log.debug("lock acquired by thread ${Thread.currentThread().id} pos = 5")
         val it = queue.iterator()
         try {
+            if (queue.isEmpty())
+                return
             repo.getWriter().use { writer ->
                 val best = writer.bestHeader
                 val orphans: MutableSet<HexBytes> = HashSet()

@@ -3,7 +3,6 @@ package org.tdf.sunflower.pool
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import lombok.SneakyThrows
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -94,7 +93,6 @@ class TransactionPoolImpl(
         gasUsed = 0L
     }
 
-    @SneakyThrows
     private fun clear() {
         val now = System.currentTimeMillis()
         if (!lock.writeLock().tryLock(config.lockTimeout, TimeUnit.SECONDS)) {
@@ -236,19 +234,9 @@ class TransactionPoolImpl(
 
     }
 
-    override fun current(): Backend {
+    override fun current(): Backend? {
         lock.readLock().withLock {
-            repo.getReader().use {
-                return if (current != null) {
-                    this.lock.readLock().lock()
-                    val child = current!!.createChild()
-                    val b = LockableBackend(child, this.lock)
-                    b
-                } else {
-                    val best = it.bestHeader
-                    trie.createBackend(best, best.stateRoot, null, false)
-                }
-            }
+            return current?.createChild()
         }
     }
 

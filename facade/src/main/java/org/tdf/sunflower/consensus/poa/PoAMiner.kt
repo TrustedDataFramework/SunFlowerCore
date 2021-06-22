@@ -80,7 +80,7 @@ class PoAMiner(private val poA: PoA) :
         if (!config.enableMining()) {
             return
         }
-        repo.getReader().use {
+        repo.getWriter().use {
             val best = it.bestBlock
             val now = OffsetDateTime.now().toEpochSecond()
 
@@ -96,6 +96,7 @@ class PoAMiner(private val poA: PoA) :
             val b = createBlock(it.bestBlock, args)
             if (b.block != null) {
                 log.info("mining success block: {}", b.block.header)
+                it.writeBlock(b.block, b.infos)
                 eventBus.publish(NewBlockMined(b.block, b.infos))
             }
         }

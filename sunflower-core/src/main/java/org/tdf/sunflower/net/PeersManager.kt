@@ -2,7 +2,6 @@ package org.tdf.sunflower.net
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.TextNode
-import lombok.SneakyThrows
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.tdf.common.store.BatchStore
@@ -12,8 +11,6 @@ import org.tdf.sunflower.proto.Disconnect
 import org.tdf.sunflower.proto.Peers
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -22,7 +19,6 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
     private var server: PeerServerImpl? = null
 
 
-    @SneakyThrows
     override fun onMessage(context: ContextImpl, server: PeerServerImpl) {
         val client = server.client
         val cache = client.peersCache
