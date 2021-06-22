@@ -295,25 +295,35 @@ class Interpreter(
                 }
                 OpCodes.CALLDATALOAD -> {
                     val off = stack.backUnsignedInt()
-                    if(off < 0 || off + 32 > callData.input.size) {
+                    if (off < 0 || off + 32 > callData.input.size) {
                         it.println("call data load overflows")
                     }
                     val dat = getData(callData.input, off, 32)
                     it.println("calldataload data = ${dat.hex()}")
                 }
                 OpCodes.JUMPI -> {
-                    if(stack.backUnsignedInt(1) == 0L) {
+                    if (stack.backUnsignedInt(1) == 0L) {
                         it.println("jumpi cond = 0, no jump")
                     } else {
                         it.println("jumpi cond = 1, jump to ${stack.backUnsignedInt(1)}")
                     }
                 }
-                OpCodes.JUMPDEST -> {}
+                OpCodes.JUMPDEST -> {
+                }
                 OpCodes.RETURN -> {
-                    val off = if (stack.backUnsignedInt() < 0) { 0 } else { stack.backUnsignedInt().toInt() }
-                    val size = if (stack.backUnsignedInt(1) < 0) { 0 } else { stack.backUnsignedInt(1).toInt() }
-                    val value = ByteArray()
-                    it.println("return offset = $off size = $size value = ")
+                    val off = if (stack.backUnsignedInt() < 0) {
+                        0
+                    } else {
+                        stack.backUnsignedInt().toInt()
+                    }
+                    val size = if (stack.backUnsignedInt(1) < 0) {
+                        0
+                    } else {
+                        stack.backUnsignedInt(1).toInt()
+                    }
+                    val value = ByteArray(size)
+                    memory.read(off, value)
+                    it.println("return offset = $off size = $size value = ${value.hex()}")
                 }
             }
         }
