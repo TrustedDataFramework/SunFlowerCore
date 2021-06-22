@@ -137,8 +137,14 @@ public class JsonRpcImpl implements JsonRpc {
                     header = rd.getBestHeader();
                     break;
                 }
-                case "pending":
-                    return pool.current();
+                case "pending": {
+                    Backend e = pool.current();
+                    if(e == null) {
+                        header = rd.getBestHeader();
+                        break;
+                    }
+                    return e;
+                }
                 case "earliest":
                     header = rd.getGenesis().getHeader();
                     break;

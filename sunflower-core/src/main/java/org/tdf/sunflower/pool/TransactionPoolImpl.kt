@@ -234,19 +234,9 @@ class TransactionPoolImpl(
 
     }
 
-    override fun current(): Backend {
+    override fun current(): Backend? {
         lock.readLock().withLock {
-            repo.getReader().use {
-                return if (current != null) {
-                    this.lock.readLock().lock()
-                    val child = current!!.createChild()
-                    val b = LockableBackend(child, this.lock)
-                    b
-                } else {
-                    val best = it.bestHeader
-                    trie.createBackend(best, best.stateRoot, null, false)
-                }
-            }
+            return current?.createChild()
         }
     }
 
