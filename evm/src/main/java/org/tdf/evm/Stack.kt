@@ -51,6 +51,12 @@ interface Stack {
      */
     fun pop(buf: IntArray, offset: Int = 0)
 
+
+    /**
+     * pop as byte array
+     */
+    fun popAsByteArray(): ByteArray
+
     /**
      * pop as biginteger
      */
@@ -201,6 +207,15 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         System.arraycopy(data, top, buf, offset, SLOT_SIZE)
         size--
         top -= SLOT_SIZE
+    }
+
+    override fun popAsByteArray(): ByteArray {
+        if (size == 0)
+            throw RuntimeException("stack underflow")
+        val r = ByteArray(SLOT_BYTE_ARRAY_SIZE)
+        encodeBE(data, top, r, 0)
+        dropNocheck()
+        return r
     }
 
     override fun popBigInt(signed: Boolean): BigInteger {

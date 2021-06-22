@@ -119,6 +119,27 @@ class Interpreter(val host: EvmHost, val ctx: EvmContext, val callData: EvmCallD
                 OpCodes.CODECOPY -> stack.dataCopy(memory, callData.code)
                 OpCodes.GASPRICE -> stack.push(ctx.gasPrice)
                 OpCodes.EXTCODESIZE -> {
+                    val code = host.getCode(stack.popAsAddress())
+                    stack.pushInt(code.size)
+                }
+                OpCodes.EXTCODECOPY -> {
+                    val code = host.getCode(stack.popAsAddress())
+                    stack.dataCopy(memory, code)
+                }
+                OpCodes.BLOCKHASH, OpCodes.COINBASE -> {
+                    throw RuntimeException("unsupported op code")
+                }
+                OpCodes.TIMESTAMP -> {
+                    stack.pushLong(ctx.timestamp)
+                }
+                OpCodes.NUMBER -> {
+                    stack.pushLong(ctx.number)
+                }
+                OpCodes.DIFFICULTY -> {
+                    stack.push(ctx.difficulty)
+                }
+                OpCodes.GASLIMIT -> {
+                    stack.pushLong(ctx.blockGasLimit)
                 }
                 OpCodes.POP -> stack.drop()
                 OpCodes.MLOAD -> stack.mload(memory)
@@ -126,6 +147,20 @@ class Interpreter(val host: EvmHost, val ctx: EvmContext, val callData: EvmCallD
                     stack.mstore(memory)
                 }
                 OpCodes.MSTORE8 -> stack.mstore8(memory)
+                OpCodes.SLOAD -> {
+                    stack.push(
+                        host.getStorage(
+                            callData.receipt,
+                            stack.popAsByteArray()
+                        )
+                    )
+                }
+                OpCodes.SSTORE -> {
+                    host.setStorage(
+                        callData.receipt,
+                        stack.popAsByteArray(), stack.popAsByteArray()
+                    )
+                }
 
                 OpCodes.RETURN -> {
                     ret = stack.ret(memory)
