@@ -26,13 +26,6 @@ class BackendImpl(
     private val codeCache: MutableMap<HexBytes, HexBytes> = mutableMapOf(),
     override var headerCreatedAt: Long? = null
 ) : Backend {
-
-    private fun clearCache() {
-        codeCache.clear()
-        modifiedAccounts.clear()
-        modifiedStorage.clear()
-    }
-
     // get account without clone
     private fun lookup(address: HexBytes): Account {
         val a = modifiedAccounts[address]
@@ -104,7 +97,7 @@ class BackendImpl(
                     s[key] = value
                 }
             }
-            a.storageRoot = s.commit()
+            a = a.copy(storageRoot = s.commit())
 
             if (!a.isEmpty)
                 tmpTrie[addr] = a
@@ -137,8 +130,7 @@ class BackendImpl(
     }
 
     override fun setBalance(address: HexBytes, balance: Uint256) {
-        val a = lookup(address).copy()
-        a.balance = balance
+        val a = lookup(address).copy(balance = balance)
         modifiedAccounts[address] = a
     }
 
@@ -147,8 +139,7 @@ class BackendImpl(
     }
 
     override fun setNonce(address: HexBytes, nonce: Long) {
-        val a = lookup(address).copy()
-        a.nonce = nonce
+        val a = lookup(address).copy(nonce = nonce)
         modifiedAccounts[address] = a
     }
 
@@ -209,8 +200,7 @@ class BackendImpl(
 
     override fun setCode(address: HexBytes, code: HexBytes) {
         val hash = HashUtil.sha3(code.bytes)
-        val a = lookup(address).copy()
-        a.contractHash = HexBytes.fromBytes(hash)
+        val a = lookup(address).copy(contractHash = HexBytes.fromBytes(hash))
         modifiedAccounts[address] = a
         codeCache[address] = code
     }

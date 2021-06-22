@@ -66,6 +66,7 @@ class TransactionPoolImpl(
     private var parentHeader: Header? = null
     private val pending: MutableList<Transaction> = mutableListOf()
     private val pendingReceipts: MutableList<TransactionReceipt> = mutableListOf()
+
     private var current: Backend? = null
     private var gasUsed: Long = 0L
     private val executor = FixedDelayScheduler("TransactionPool", config.expiredIn)
