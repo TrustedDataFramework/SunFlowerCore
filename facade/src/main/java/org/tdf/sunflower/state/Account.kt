@@ -8,10 +8,10 @@ import org.tdf.common.util.HashUtil
 
 @RlpProps("nonce", "balance", "storageRoot", "contractHash")
 data class Account @RlpCreator constructor(
-    var nonce: Long = 0L,
-    var balance: Uint256 = Uint256.ZERO,
-    var storageRoot: HexBytes = HashUtil.EMPTY_TRIE_HASH_HEX,
-    var contractHash: HexBytes = HashUtil.EMPTY_DATA_HASH_HEX
+    val nonce: Long = 0L,
+    val balance: Uint256 = Uint256.ZERO,
+    val storageRoot: HexBytes = HashUtil.EMPTY_TRIE_HASH_HEX,
+    val contractHash: HexBytes = HashUtil.EMPTY_DATA_HASH_HEX
 ) {
 
     val isEmpty: Boolean

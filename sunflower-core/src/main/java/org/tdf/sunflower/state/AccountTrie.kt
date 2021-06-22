@@ -76,14 +76,14 @@ class AccountTrie(
 
         for (c in (bios + builtins)) {
             val address = c.address
-            val a = Account()
+
             val trie = contractStorageTrie.revert()
             for ((key, value) in c.genesisStorage) {
                 trie[key] = value
             }
             val root = trie.commit()
             trie.flush()
-            a.storageRoot = root
+            val a = Account(storageRoot = root)
             genesisStates[address] = a
         }
 
