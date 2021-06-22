@@ -26,13 +26,6 @@ class BackendImpl(
     private val codeCache: MutableMap<HexBytes, HexBytes> = mutableMapOf(),
     override var headerCreatedAt: Long? = null
 ) : Backend {
-
-    private fun clearCache() {
-        codeCache.clear()
-        modifiedAccounts.clear()
-        modifiedStorage.clear()
-    }
-
     // get account without clone
     private fun lookup(address: HexBytes): Account {
         val a = modifiedAccounts[address]
