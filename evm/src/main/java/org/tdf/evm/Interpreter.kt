@@ -224,6 +224,7 @@ class Interpreter(
                 in OpCodes.SWAP1..OpCodes.SWAP16 -> stack.swap(op - OpCodes.SWAP1 + 1)
             }
 
+            afterExecute()
             pc++
         }
     }
@@ -269,6 +270,10 @@ class Interpreter(
             }
 
             when (op) {
+                OpCodes.MLOAD -> {
+                    val off = stack.backBigInt()
+                    it.println("mload off = $off, stack.push(mem[$off:$off+32]), mem.cap = ${memory.size}")
+                }
                 OpCodes.ADDRESS -> it.println("push address = ${callData.receipt.hex()}")
                 OpCodes.SSTORE -> {
                     key = stack.back(0)
@@ -317,7 +322,7 @@ class Interpreter(
                     if (stack.backUnsignedInt(1) == 0L) {
                         it.println("jumpi cond = 0, no jump")
                     } else {
-                        it.println("jumpi cond = 1, jump to ${stack.backUnsignedInt(1)}")
+                        it.println("jumpi cond = 1, jump to ${stack.backUnsignedInt(0)}")
                     }
                 }
                 OpCodes.JUMPDEST -> {

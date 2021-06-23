@@ -142,7 +142,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         if (i < 0 || i >= size)
             throw RuntimeException("stack underflow")
         val r = ByteArray(SLOT_BYTE_ARRAY_SIZE)
-        encodeBE(data, i * SLOT_SIZE, r, 0)
+        encodeBE(data, (size - 1 - i) * SLOT_SIZE, r, 0)
         return r
     }
 
@@ -256,14 +256,14 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun popUnsignedInt(): Long {
+        val top = this.top
+        drop()
         for (i in 0 until SLOT_MAX_INDEX) {
             if (data[top + i] != 0) {
-                drop()
                 return -1
             }
         }
         val r = data[top + SLOT_MAX_INDEX]
-        drop()
         return Integer.toUnsignedLong(r)
     }
 
@@ -417,7 +417,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun mload(mem: Memory) {
-        mem.resize(memSizeByOffAndLen(backUnsignedInt(), backUnsignedInt(1)))
+        mem.resize(memSizeByOffAndLen(backUnsignedInt(), 32))
         val off = popIntExact()
         if (size == 0)
             throw RuntimeException("stack underflow")
@@ -807,11 +807,12 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
     override fun dataCopy(mem: Memory, data: ByteArray) {
         val memOff = popUnsignedInt()
+        val dataOff = popUnsignedInt()
         val len = popUnsignedInt()
         mem.resize(memSizeByOffAndLen(memOff, len))
-        val dataOff = unsignedMin(popUnsignedInt(), data.size.toLong()).toInt()
-        val lenInt = Math.min(len.toInt(), data.size - dataOff)
-        mem.write(memOff.toInt(), data, dataOff, lenInt)
+        val dataOffInt = unsignedMin(dataOff, data.size.toLong()).toInt()
+        val lenInt = Math.min(len.toInt(), data.size - dataOffInt)
+        mem.write(memOff.toInt(), data, dataOffInt, lenInt)
     }
 
     override fun mod() {
