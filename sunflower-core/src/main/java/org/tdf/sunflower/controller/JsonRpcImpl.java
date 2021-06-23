@@ -231,7 +231,10 @@ public class JsonRpcImpl implements JsonRpc {
     @Override
     public String eth_sendRawTransaction(String rawData) throws Exception {
         Transaction tx = new Transaction(hexToByteArray(rawData));
-        Map<HexBytes, String> errors = pool.collect(tx);
+        Map<HexBytes, String> errors;
+        try(RepositoryReader rd = repo.getReader()) {
+            errors = pool.collect(rd, tx);
+        }
         if (errors.get(tx.getHashHex()) != null)
             throw new RuntimeException(errors.get(tx.getHashHex()));
         return TypeConverter.toJsonHex(tx.getHash());
@@ -242,9 +245,10 @@ public class JsonRpcImpl implements JsonRpc {
         long start = System.currentTimeMillis();
         CallData callData = Objects.requireNonNull(args).toCallData();
         try (
+            RepositoryReader rd = repo.getReader();
             Backend backend = getBackendByBlockId(bnOrId, true)
         ) {
-            VMExecutor executor = new VMExecutor(backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
+            VMExecutor executor = new VMExecutor(rd, backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getExecutionResult());
         } finally {
             System.out.println("eth call use " + (System.currentTimeMillis() - start) + " ms");
@@ -254,8 +258,11 @@ public class JsonRpcImpl implements JsonRpc {
     @Override
     public String eth_estimateGas(CallArguments args) throws Exception {
         CallData callData = Objects.requireNonNull(args).toCallData();
-        try (Backend backend = getBackendByBlockId("latest", true)) {
-            VMExecutor executor = new VMExecutor(backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
+        try (
+            RepositoryReader rd = repo.getReader();
+            Backend backend = getBackendByBlockId("latest", true)
+        ) {
+            VMExecutor executor = new VMExecutor(rd, backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getGasUsed());
         }
     }

@@ -8,9 +8,9 @@ import org.tdf.sunflower.vm.Backend
 
 interface TransactionPool {
     // collect transactions into transaction pool, return errors
-    fun collect(transactions: Collection<Transaction>): Map<HexBytes, String>
-    fun collect(tx: Transaction): Map<HexBytes, String> {
-        return collect(setOf(tx))
+    fun collect(rd: RepositoryReader, transactions: Collection<Transaction>): Map<HexBytes, String>
+    fun collect(rd: RepositoryReader, tx: Transaction): Map<HexBytes, String> {
+        return collect(rd, setOf(tx))
     }
 
     // pop at most n packable transactions

@@ -3,6 +3,7 @@ package org.tdf.sunflower.consensus.pos;
 import lombok.Setter;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
@@ -17,8 +18,8 @@ public class PoSValidator extends AbstractValidator {
     }
 
     @Override
-    public ValidateResult validate(Block block, Block dependency) {
-        BlockValidateResult res = super.commonValidate(block, dependency);
+    public ValidateResult validate(RepositoryReader rd, Block block, Block dependency) {
+        BlockValidateResult res = super.commonValidate(rd, block, dependency);
         if (!res.isSuccess()) return res;
 
         if (
@@ -30,7 +31,7 @@ public class PoSValidator extends AbstractValidator {
     }
 
     @Override
-    public ValidateResult validate(Header dependency, Transaction transaction) {
+    public ValidateResult validate(RepositoryReader rd, Header dependency, Transaction transaction) {
         return ValidateResult.success();
     }
 }

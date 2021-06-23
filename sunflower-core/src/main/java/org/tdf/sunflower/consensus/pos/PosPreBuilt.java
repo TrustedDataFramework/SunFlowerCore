@@ -10,6 +10,7 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.common.util.RLPUtil;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.BuiltinContract;
@@ -95,7 +96,7 @@ public class PosPreBuilt implements BuiltinContract {
 
     @Override
     @SneakyThrows
-    public byte[] call(Backend backend, CallData callData) {
+    public byte[] call(RepositoryReader rd, Backend backend, CallData callData) {
         HexBytes payload = callData.getData();
         Type type = Type.values()[payload.get(0)];
         HexBytes args = payload.slice(1);

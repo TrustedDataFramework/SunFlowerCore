@@ -15,5 +15,5 @@ public interface BlockValidator {
      * @param dependency parent block
      * @return validate result
      */
-    ValidateResult validate(Block block, Block dependency);
+    ValidateResult validate(RepositoryReader rd, Block block, Block dependency);
 }

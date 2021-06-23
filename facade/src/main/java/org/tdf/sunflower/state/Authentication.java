@@ -81,7 +81,7 @@ public class Authentication extends AbstractBuiltIn {
 
     @Override
     @SneakyThrows
-    public List<?> call(Backend backend, CallData callData, String method, Object... args) {
+    public List<?> call(RepositoryReader rd, Backend backend, CallData callData, String method, Object... args) {
 
 
         StorageWrapper wrapper = new StorageWrapper(backend.getAsStore(address));
@@ -168,24 +168,23 @@ public class Authentication extends AbstractBuiltIn {
                 return Collections.emptyList();
             }
             case "getProposer": {
-                try (RepositoryReader rd = repo.getReader()) {
-                    Header parent = rd.getHeaderByHash(backend.getParentHash());
-                    Optional<Proposer> o = Authentication.getProposerInternal(parent, ((BigInteger) args[0]).longValue(), nodes, this.config.getBlockInterval());
-                    Proposer p = o.orElse(new Proposer(Address.empty(), 0, 0));
-                    return Arrays.asList(
-                        p.getAddress().getBytes(),
-                        BigInteger.valueOf(p.getStartTimeStamp()),
-                        BigInteger.valueOf(p.getEndTimeStamp())
-                    );
-                }
+                Header parent = rd.getHeaderByHash(backend.getParentHash());
+                Optional<Proposer> o = Authentication.getProposerInternal(parent, ((BigInteger) args[0]).longValue(), nodes, this.config.getBlockInterval());
+                Proposer p = o.orElse(new Proposer(Address.empty(), 0, 0));
+                return Arrays.asList(
+                    p.getAddress().getBytes(),
+                    BigInteger.valueOf(p.getStartTimeStamp()),
+                    BigInteger.valueOf(p.getEndTimeStamp())
+                );
+
             }
             default:
                 throw new RuntimeException("method not found");
         }
     }
 
-    public Proposer getProposer(HexBytes parentHash, long now) {
-        List<?> li = view(parentHash, "getProposer", BigInteger.valueOf(now));
+    public Proposer getProposer(RepositoryReader rd, HexBytes parentHash, long now) {
+        List<?> li = view(rd, parentHash, "getProposer", BigInteger.valueOf(now));
         byte[] address = (byte[]) li.get(0);
         BigInteger start = (BigInteger) li.get(1);
         BigInteger end = (BigInteger) li.get(2);
@@ -196,8 +195,8 @@ public class Authentication extends AbstractBuiltIn {
         );
     }
 
-    public List<HexBytes> getApproved(HexBytes parentHash) {
-        List<?> li = view(parentHash, "approved");
+    public List<HexBytes> getApproved(RepositoryReader rd, HexBytes parentHash) {
+        List<?> li = view(rd, parentHash, "approved");
         Object[] addresses = (Object[]) li.get(0);
         List<HexBytes> r = new ArrayList<>();
 

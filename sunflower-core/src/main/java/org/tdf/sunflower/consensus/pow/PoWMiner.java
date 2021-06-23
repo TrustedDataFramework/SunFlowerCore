@@ -76,7 +76,10 @@ public class PoWMiner extends AbstractMiner {
 
     @Override
     protected boolean finalizeBlock(Block parent, Block block) {
-        Uint256 nbits = poW.bios.getNBits(parent.getHash());
+        Uint256 nbits;
+        try(RepositoryReader rd = poW.getRepo().getReader()) {
+            nbits = poW.bios.getNBits(rd, parent.getHash());
+        }
         Random rd = new Random();
         byte[] nonce = new byte[8];
         rd.nextBytes(nonce);
@@ -151,6 +154,7 @@ public class PoWMiner extends AbstractMiner {
         Runnable task = () -> {
             try (RepositoryReader rd = poW.getRepo().getReader()) {
                 BlockCreateResult res = createBlock(
+                    rd,
                     rd.getBestBlock(),
                     Collections.emptyMap());
                 if (res.getBlock() != null) {

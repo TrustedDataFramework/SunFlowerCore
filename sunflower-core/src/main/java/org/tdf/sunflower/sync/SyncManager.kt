@@ -217,7 +217,9 @@ class SyncManager(
                 val root = Transaction.calcTxTrie(txs)
                 if (receivedTransactions.asMap().containsKey(root)) return
                 receivedTransactions.put(root, true)
-                transactionPool.collect(txs)
+                repo.getReader().use {
+                    transactionPool.collect(it, txs)
+                }
                 context.relay()
                 return
             }
@@ -361,7 +363,7 @@ class SyncManager(
         }
         for (b in orphans) {
             if (b != null && s.bestBlockHeight >= b.height && b.height > s.prunedHeight && !rd.containsHeader(b.hashPrev)) {
-                SyncManager.log.debug("try to fetch orphans, head height {} hash {}", b.height, b.hash)
+                log.debug("try to fetch orphans, head height {} hash {}", b.height, b.hash)
                 // remote: prune < b <= best
                 val getBlocks = GetBlocks(
                     s.prunedHeight, b.height, true,
@@ -471,7 +473,7 @@ class SyncManager(
                         orphans.add(b.hash)
                         continue
                     }
-                    val res = engine.validator.validate(b, o)
+                    val res = engine.validator.validate(writer, b, o)
                     if (!res.isSuccess) {
                         it.remove()
                         log.error(res.reason)

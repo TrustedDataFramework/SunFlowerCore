@@ -35,10 +35,10 @@ public abstract class AbstractBuiltIn implements BuiltinContract {
     }
 
     @Override
-    public byte[] call(Backend backend, CallData callData) {
+    public byte[] call(RepositoryReader rd, Backend backend, CallData callData) {
         Abi.Function func = getFunction(callData.getData());
         List<?> inputs = func.decode(callData.getData().getBytes());
-        List<?> results = call(backend, callData, func.name, inputs.toArray());
+        List<?> results = call(rd, backend, callData, func.name, inputs.toArray());
         return Abi.Entry.Param.encodeList(func.outputs, results.toArray());
     }
 
@@ -60,14 +60,12 @@ public abstract class AbstractBuiltIn implements BuiltinContract {
     }
 
     @Override
-    public List<?> view(HexBytes blockHash, String method, Object... args) {
-        try (RepositoryReader rd = repo.getReader()) {
-            Header parent = rd.getHeaderByHash(blockHash);
-            Abi.Function func = getFunction(method);
-            byte[] encoded = func.encode(args);
-            CallData callData = CallData.empty();
-            callData.setData(HexBytes.fromBytes(encoded));
-            return call(accounts.createBackend(parent, null, true), callData, method, args);
-        }
+    public List<?> view(RepositoryReader rd, HexBytes blockHash, String method, Object... args) {
+        Header parent = rd.getHeaderByHash(blockHash);
+        Abi.Function func = getFunction(method);
+        byte[] encoded = func.encode(args);
+        CallData callData = CallData.empty();
+        callData.setData(HexBytes.fromBytes(encoded));
+        return call(rd, accounts.createBackend(parent, null, true), callData, method, args);
     }
 }

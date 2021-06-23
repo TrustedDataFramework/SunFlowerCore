@@ -11,6 +11,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.lotusvm.Module;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.runtime.*;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.types.VMResult;
@@ -36,11 +37,16 @@ public class VMExecutor {
                     .maximumWeight(1024L * 1024L * 8L) // 8mb cache for contracts
                     .build();
 
-    public VMExecutor(Backend backend, CallData callData, long gasLimit) {
-        this(backend, callData, new Limit(gasLimit), 0);
+
+
+    public VMExecutor(RepositoryReader rd, Backend backend, CallData callData, long gasLimit) {
+        this(rd, backend, callData, new Limit(gasLimit), 0);
     }
 
-    private VMExecutor(Backend backend, CallData callData, Limit limit, int depth) {
+    private RepositoryReader rd;
+
+    private VMExecutor(RepositoryReader rd, Backend backend, CallData callData, Limit limit, int depth) {
+        this.rd = rd;
         this.backend = backend;
         this.callData = callData;
         this.limit = limit;
@@ -68,7 +74,7 @@ public class VMExecutor {
     public VMExecutor clone() {
         if (depth + 1 == MAX_CALL_DEPTH)
             throw new RuntimeException("vm call depth overflow");
-        return new VMExecutor(backend, callData.clone(), limit, depth + 1);
+        return new VMExecutor(rd, backend, callData.clone(), limit, depth + 1);
     }
 
     public VMResult execute() {
@@ -117,7 +123,7 @@ public class VMExecutor {
             case COINBASE: {
                 backend.addBalance(callData.getTxTo(), callData.getTxValue());
                 for (BuiltinContract bios : backend.getBios().values()) {
-                    return bios.call(backend, callData);
+                    return bios.call(rd, backend, callData);
                 }
                 return ByteUtil.EMPTY_BYTE_ARRAY;
             }
@@ -128,7 +134,7 @@ public class VMExecutor {
                     backend.addBalance(callData.getTo(), callData.getValue());
                     backend.subBalance(callData.getCaller(), callData.getValue());
                     BuiltinContract updater = backend.getBuiltins().get(callData.getTo());
-                    return updater.call(backend, callData);
+                    return updater.call(rd, backend, callData);
                 }
 
                 byte[] code;

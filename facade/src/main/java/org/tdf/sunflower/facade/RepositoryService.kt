@@ -17,8 +17,10 @@ class LogLock(private val lock: Lock, private val name: String = "") : Lock {
     }
 
     override fun lock() {
-        log.info("$name lock by thread ${Thread.currentThread().name}")
+        log.info("$name lock required by thread ${Thread.currentThread().name}")
         lock.lock()
+        log.info("$name lock successfully by thread ${Thread.currentThread().name}")
+
     }
 
     override fun lockInterruptibly() {
@@ -39,8 +41,9 @@ class LogLock(private val lock: Lock, private val name: String = "") : Lock {
     }
 
     override fun unlock() {
-        log.info("$name unlock by thread ${Thread.currentThread().name}")
+        log.info("$name unlock required by thread ${Thread.currentThread().name}")
         lock.unlock()
+        log.info("$name unlock successfully by thread ${Thread.currentThread().name}")
     }
 
     override fun newCondition(): Condition {

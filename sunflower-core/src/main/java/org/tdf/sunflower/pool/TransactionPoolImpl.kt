@@ -113,7 +113,7 @@ class TransactionPoolImpl(
         }
     }
 
-    override fun collect(transactions: Collection<Transaction>): Map<HexBytes, String> {
+    override fun collect(rd: RepositoryReader, transactions: Collection<Transaction>): Map<HexBytes, String> {
         val errors: MutableMap<HexBytes, String> = mutableMapOf()
         writeLock.lock()
         try {
@@ -128,7 +128,7 @@ class TransactionPoolImpl(
                     log.error(e.message)
                     continue
                 }
-                val res = validator!!.validate(parentHeader, transaction)
+                val res = validator!!.validate(rd, parentHeader, transaction)
                 if (res.isSuccess) {
                     cache.add(info)
                     mCache[info.tx.hashHex] = info
@@ -140,14 +140,14 @@ class TransactionPoolImpl(
             }
             if (newCollected.isNotEmpty())
                 eventBus.publish(NewTransactionsCollected(newCollected))
-            execute(errors)
+            execute(rd, errors)
         } finally {
             writeLock.unlock()
         }
         return errors
     }
 
-    private fun execute(errors: MutableMap<HexBytes, String>) {
+    private fun execute(rd: RepositoryReader, errors: MutableMap<HexBytes, String>) {
         val it = cache.iterator()
         if (parentHeader == null) return
         while (it.hasNext()) {
@@ -173,6 +173,7 @@ class TransactionPoolImpl(
                 val child = current!!.createChild()
                 val callData = fromTransaction(t, false)
                 val vmExecutor = VMExecutor(
+                    rd,
                     child, callData,
                     min(t.gasLimitAsU256.toLong(), blockGasLimit)
                 )
