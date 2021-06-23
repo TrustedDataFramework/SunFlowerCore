@@ -7,8 +7,8 @@ import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.AppConfig;
 import org.tdf.sunflower.facade.ConsensusEngine;
-import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.facade.RepositoryReader;
+import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.Address;
@@ -139,7 +139,7 @@ public class JsonRpcImpl implements JsonRpc {
                 }
                 case "pending": {
                     Backend e = pool.current();
-                    if(e == null) {
+                    if (e == null) {
                         header = rd.getBestHeader();
                         break;
                     }
@@ -232,7 +232,7 @@ public class JsonRpcImpl implements JsonRpc {
     public String eth_sendRawTransaction(String rawData) throws Exception {
         Transaction tx = new Transaction(hexToByteArray(rawData));
         Map<HexBytes, String> errors;
-        try(RepositoryReader rd = repo.getReader()) {
+        try (RepositoryReader rd = repo.getReader()) {
             errors = pool.collect(rd, tx);
         }
         if (errors.get(tx.getHashHex()) != null)
@@ -245,8 +245,8 @@ public class JsonRpcImpl implements JsonRpc {
         long start = System.currentTimeMillis();
         CallData callData = Objects.requireNonNull(args).toCallData();
         try (
+            Backend backend = getBackendByBlockId(bnOrId, true);
             RepositoryReader rd = repo.getReader();
-            Backend backend = getBackendByBlockId(bnOrId, true)
         ) {
             VMExecutor executor = new VMExecutor(rd, backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getExecutionResult());
@@ -259,8 +259,8 @@ public class JsonRpcImpl implements JsonRpc {
     public String eth_estimateGas(CallArguments args) throws Exception {
         CallData callData = Objects.requireNonNull(args).toCallData();
         try (
+            Backend backend = getBackendByBlockId("latest", true);
             RepositoryReader rd = repo.getReader();
-            Backend backend = getBackendByBlockId("latest", true)
         ) {
             VMExecutor executor = new VMExecutor(rd, backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getGasUsed());
