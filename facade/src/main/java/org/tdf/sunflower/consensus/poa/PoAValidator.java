@@ -9,6 +9,7 @@ import org.tdf.common.crypto.ECKey;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
@@ -29,8 +30,8 @@ public class PoAValidator extends AbstractValidator {
 
     @Override
     @SneakyThrows
-    public ValidateResult validate(Block block, Block dependency) {
-        BlockValidateResult res = super.commonValidate(block, dependency);
+    public ValidateResult validate(RepositoryReader rd, Block block, Block dependency) {
+        BlockValidateResult res = super.commonValidate(rd, block, dependency);
         if (!res.isSuccess()) return res;
 
         Uint256 fee = res.getFee();
@@ -47,6 +48,7 @@ public class PoAValidator extends AbstractValidator {
 
         if (
             !poA.getMinerContract().getProposer(
+                rd,
                 dependency.getHash(),
                 block.getCreatedAt()
             ).getAddress().equals(block.getBody().get(0).getReceiveHex())
@@ -79,7 +81,7 @@ public class PoAValidator extends AbstractValidator {
 
     // validate pre-pending transaction
     @Override
-    public ValidateResult validate(Header dependency, Transaction transaction) {
+    public ValidateResult validate(RepositoryReader rd, Header dependency, Transaction transaction) {
         if (!poA.getConfig().isControlled())
             return ValidateResult.success();
 
@@ -118,6 +120,7 @@ public class PoAValidator extends AbstractValidator {
         if (!transaction.getSenderHex().equals(farmBaseAdmin)
             && !poA.getValidatorContract()
             .getApproved(
+                rd,
                 dependency.getHash())
             .contains(transaction.getSenderHex()
             )

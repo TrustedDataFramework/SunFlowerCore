@@ -86,6 +86,7 @@ class PoAMiner(private val poA: PoA) :
 
             // 判断是否轮到自己出块
             val p = poA.minerContract.getProposer(
+                it,
                 best.hash,
                 now
             )
@@ -93,7 +94,7 @@ class PoAMiner(private val poA: PoA) :
             log.debug("try to mining at height " + (best.height + 1))
             val args: MutableMap<String, Long?> = HashMap()
             args["createdAt"] = now
-            val b = createBlock(it.bestBlock, args)
+            val b = createBlock(it, it.bestBlock, args)
             if (b.block != null) {
                 log.info("mining success block: {}", b.block.header)
                 it.writeBlock(b.block, b.infos)

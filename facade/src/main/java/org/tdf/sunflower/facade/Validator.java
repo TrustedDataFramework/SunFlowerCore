@@ -8,12 +8,12 @@ import org.tdf.sunflower.types.ValidateResult;
 public interface Validator extends BlockValidator, PendingTransactionValidator {
     Validator NONE = new Validator() {
         @Override
-        public ValidateResult validate(Block block, Block dependency) {
+        public ValidateResult validate(RepositoryReader rd, Block block, Block dependency) {
             return ValidateResult.success();
         }
 
         @Override
-        public ValidateResult validate(Header dependency, Transaction transaction) {
+        public ValidateResult validate(RepositoryReader rd, Header dependency, Transaction transaction) {
             return ValidateResult.success();
         }
     };

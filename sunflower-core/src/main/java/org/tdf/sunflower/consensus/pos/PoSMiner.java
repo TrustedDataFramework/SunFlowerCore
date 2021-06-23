@@ -103,7 +103,7 @@ public class PoSMiner extends AbstractMiner {
 
             if (!o.isPresent()) return;
             log.debug("try to mining at height " + (best.getHeight() + 1));
-            BlockCreateResult res = createBlock(rd.getBestBlock(), Collections.emptyMap());
+            BlockCreateResult res = createBlock(rd, rd.getBestBlock(), Collections.emptyMap());
             if (res.getBlock() != null) {
                 log.info("mining success block: {}", res.getBlock().getHeader());
             }

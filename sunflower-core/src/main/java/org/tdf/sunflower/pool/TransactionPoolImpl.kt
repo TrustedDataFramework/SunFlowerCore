@@ -14,10 +14,7 @@ import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.TransactionPoolConfig
 import org.tdf.sunflower.events.NewBestBlock
 import org.tdf.sunflower.events.NewTransactionsCollected
-import org.tdf.sunflower.facade.ConsensusEngine
-import org.tdf.sunflower.facade.PendingTransactionValidator
-import org.tdf.sunflower.facade.RepositoryService
-import org.tdf.sunflower.facade.TransactionPool
+import org.tdf.sunflower.facade.*
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
@@ -53,6 +50,8 @@ class TransactionPoolImpl(
     // hash -> info
     private val mCache: MutableMap<HexBytes, TransactionInfo> = mutableMapOf()
     private val lock: ReadWriteLock = ReentrantReadWriteLock()
+    private val readLock = LogLock(lock.readLock(), "tp-r")
+    private val writeLock = LogLock(lock.writeLock(), "tp-w")
 
     // dropped transactions
     private val dropped: Cache<HexBytes, Transaction> =
@@ -96,7 +95,7 @@ class TransactionPoolImpl(
 
     private fun clear() {
         val now = System.currentTimeMillis()
-        if (!lock.writeLock().tryLock(config.lockTimeout, TimeUnit.SECONDS)) {
+        if (!writeLock.tryLock(config.lockTimeout, TimeUnit.SECONDS)) {
             return
         }
         try {
@@ -110,13 +109,13 @@ class TransactionPoolImpl(
             cache.removeIf(lambda)
             mCache.values.removeIf(lambda)
         } finally {
-            lock.writeLock().unlock()
+            writeLock.unlock()
         }
     }
 
-    override fun collect(transactions: Collection<Transaction>): Map<HexBytes, String> {
+    override fun collect(rd: RepositoryReader, transactions: Collection<Transaction>): Map<HexBytes, String> {
         val errors: MutableMap<HexBytes, String> = mutableMapOf()
-        lock.writeLock().lock()
+        writeLock.lock()
         try {
             val newCollected: MutableList<Transaction> = mutableListOf()
             for (transaction in transactions) {
@@ -129,7 +128,7 @@ class TransactionPoolImpl(
                     log.error(e.message)
                     continue
                 }
-                val res = validator!!.validate(parentHeader, transaction)
+                val res = validator!!.validate(rd, parentHeader, transaction)
                 if (res.isSuccess) {
                     cache.add(info)
                     mCache[info.tx.hashHex] = info
@@ -141,14 +140,14 @@ class TransactionPoolImpl(
             }
             if (newCollected.isNotEmpty())
                 eventBus.publish(NewTransactionsCollected(newCollected))
-            execute(errors)
+            execute(rd, errors)
         } finally {
-            lock.writeLock().unlock()
+            writeLock.unlock()
         }
         return errors
     }
 
-    private fun execute(errors: MutableMap<HexBytes, String>) {
+    private fun execute(rd: RepositoryReader, errors: MutableMap<HexBytes, String>) {
         val it = cache.iterator()
         if (parentHeader == null) return
         while (it.hasNext()) {
@@ -174,6 +173,7 @@ class TransactionPoolImpl(
                 val child = current!!.createChild()
                 val callData = fromTransaction(t, false)
                 val vmExecutor = VMExecutor(
+                    rd,
                     child, callData,
                     min(t.gasLimitAsU256.toLong(), blockGasLimit)
                 )
@@ -205,7 +205,7 @@ class TransactionPoolImpl(
     }
 
     override fun pop(parentHeader: Header): PendingData {
-        lock.writeLock().lock()
+        writeLock.lock()
         try {
             if (this.parentHeader != null && parentHeader.hash != this.parentHeader!!.hash) {
                 clearPending()
@@ -220,36 +220,36 @@ class TransactionPoolImpl(
             clearPending()
             return r
         } finally {
-            lock.writeLock().unlock()
+            writeLock.unlock()
         }
     }
 
     override fun reset(parent: Header) {
-        if (!lock.writeLock().tryLock())
+        if (!writeLock.tryLock())
             return
         try {
             resetInternal(parent)
         } finally {
-            lock.writeLock().unlock()
+            writeLock.unlock()
         }
 
     }
 
     override fun current(): Backend? {
-        lock.readLock().withLock {
+        readLock.withLock {
             return current?.createChild()
         }
     }
 
     private fun onNewBestBlock(event: NewBestBlock) {
-        if (!lock.writeLock().tryLock()) {
+        if (!writeLock.tryLock()) {
             return
         }
         try {
             if (event.block.stateRoot == this.parentHeader?.stateRoot) return
             resetInternal(event.block.header)
         } finally {
-            lock.writeLock().unlock()
+            writeLock.unlock()
         }
     }
 

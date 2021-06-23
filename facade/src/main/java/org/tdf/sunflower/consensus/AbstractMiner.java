@@ -7,6 +7,7 @@ import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.Miner;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.TransactionPool;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
@@ -43,7 +44,7 @@ public abstract class AbstractMiner implements Miner {
 
     // TODO:  2. 增加打包超时时间
     @SneakyThrows
-    protected BlockCreateResult createBlock(Block parent, Map<String, ?> headerArgs) {
+    protected BlockCreateResult createBlock(RepositoryReader rd, Block parent, Map<String, ?> headerArgs) {
         PendingData p =
             pool.pop(parent.getHeader());
 
@@ -91,7 +92,7 @@ public abstract class AbstractMiner implements Miner {
 
         VMResult res;
 
-        VMExecutor executor = new VMExecutor(tmp, callData, 0);
+        VMExecutor executor = new VMExecutor(rd, tmp, callData, 0);
         res = executor.execute();
 
 

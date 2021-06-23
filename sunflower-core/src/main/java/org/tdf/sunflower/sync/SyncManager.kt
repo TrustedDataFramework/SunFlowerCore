@@ -217,7 +217,9 @@ class SyncManager(
                 val root = Transaction.calcTxTrie(txs)
                 if (receivedTransactions.asMap().containsKey(root)) return
                 receivedTransactions.put(root, true)
-                transactionPool.collect(txs)
+                repo.getReader().use {
+                    transactionPool.collect(it, txs)
+                }
                 context.relay()
                 return
             }
@@ -243,11 +245,9 @@ class SyncManager(
                     if (it.containsHeader(proposal.hash)) return
                     if (!mtx.tryLock())
                         return
-                    log.debug("lock acquired by thread ${Thread.currentThread().id} pos = 1")
                     try {
                         queue.add(proposal)
                     } finally {
-                        log.debug("lock released by thread ${Thread.currentThread().id} pos = 1")
                         mtx.unlock()
                     }
                 }
@@ -285,7 +285,6 @@ class SyncManager(
             return
         }
         if (!mtx.tryLock()) return
-        log.debug("lock acquired by thread ${Thread.currentThread().id} pos = 2")
         try {
             repo.getReader().use { rd ->
                 val best = rd.bestHeader
@@ -301,7 +300,6 @@ class SyncManager(
                 }
             }
         } finally {
-            log.debug("lock released by thread ${Thread.currentThread().id} pos = 2")
             mtx.unlock()
         }
     }
@@ -351,17 +349,15 @@ class SyncManager(
         var orphans: List<Block?> = emptyList()
         // try to sync orphans
         if (mtx.tryLock()) {
-            log.debug("lock acquired by thread ${Thread.currentThread().id} pos = 3")
             orphans = try {
                 getOrphansInternal(rd)
             } finally {
-                log.debug("lock released by thread ${Thread.currentThread().id} = 3")
                 mtx.unlock()
             }
         }
         for (b in orphans) {
             if (b != null && s.bestBlockHeight >= b.height && b.height > s.prunedHeight && !rd.containsHeader(b.hashPrev)) {
-                SyncManager.log.debug("try to fetch orphans, head height {} hash {}", b.height, b.hash)
+                log.debug("try to fetch orphans, head height {} hash {}", b.height, b.hash)
                 // remote: prune < b <= best
                 val getBlocks = GetBlocks(
                     s.prunedHeight, b.height, true,
@@ -409,7 +405,6 @@ class SyncManager(
             if (!mtx.tryLock()) {
                 throw RuntimeException("busy...")
             }
-            log.debug("lock acquired by thread ${Thread.currentThread().id} = 4")
             try {
                 repo.getReader().use { rd ->
                     val ret: MutableList<Block> = ArrayList()
@@ -435,7 +430,6 @@ class SyncManager(
                     return ret
                 }
             } finally {
-                log.debug("lock released by thread ${Thread.currentThread().id} pos = 4")
                 mtx.unlock()
             }
         }
@@ -443,7 +437,6 @@ class SyncManager(
     private fun tryWrite() {
         if (fastSyncing) return
         if (!mtx.tryLock()) return
-        log.debug("lock acquired by thread ${Thread.currentThread().id} pos = 5")
         val it = queue.iterator()
         try {
             if (queue.isEmpty())
@@ -471,7 +464,7 @@ class SyncManager(
                         orphans.add(b.hash)
                         continue
                     }
-                    val res = engine.validator.validate(b, o)
+                    val res = engine.validator.validate(writer, b, o)
                     if (!res.isSuccess) {
                         it.remove()
                         log.error(res.reason)
@@ -483,7 +476,6 @@ class SyncManager(
                 }
             }
         } finally {
-            log.debug("lock released by thread ${Thread.currentThread().id} pos = 5")
             mtx.unlock()
         }
     }

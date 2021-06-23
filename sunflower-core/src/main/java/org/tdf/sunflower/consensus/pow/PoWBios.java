@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.*;
 import org.tdf.sunflower.Start;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.state.AbstractBuiltIn;
 import org.tdf.sunflower.state.Account;
@@ -52,15 +53,16 @@ public class PoWBios extends AbstractBuiltIn {
     }
 
     public Uint256 getNBits(
+        RepositoryReader rd,
         HexBytes parentHash
     ) {
-        List<?> r = view(parentHash, "nbits");
+        List<?> r = view(rd, parentHash, "nbits");
         return Uint256.of((BigInteger) r.get(0));
     }
 
     @Override
     @SneakyThrows
-    public List<?> call(Backend backend, CallData callData, String method, Object... args) {
+    public List<?> call(RepositoryReader rd, Backend backend, CallData callData, String method, Object... args) {
 
 
         if (method.equals("nbits")) {

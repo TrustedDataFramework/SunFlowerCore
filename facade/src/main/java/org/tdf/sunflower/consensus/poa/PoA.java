@@ -101,7 +101,7 @@ public class PoA extends AbstractConsensusEngine {
                                 HexBytes.decode(n.get(i).textValue())
                             );
                             if (!rd.containsTransaction(tx.getHashHex())) {
-                                getTransactionPool().collect(tx);
+                                getTransactionPool().collect(rd, tx);
                             }
                         }
                     } catch (Exception e) {

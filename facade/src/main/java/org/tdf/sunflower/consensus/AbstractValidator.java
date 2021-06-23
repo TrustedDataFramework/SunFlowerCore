@@ -4,6 +4,7 @@ import lombok.NonNull;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.Validator;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
@@ -25,7 +26,7 @@ public abstract class AbstractValidator implements Validator {
         return 0;
     }
 
-    protected BlockValidateResult commonValidate(@NonNull Block block, @NonNull Block parent) {
+    protected BlockValidateResult commonValidate(RepositoryReader rd, @NonNull Block block, @NonNull Block parent) {
         if (block.getBody() == null || block.getBody().isEmpty())
             return BlockValidateResult.fault("missing block body");
 
@@ -86,6 +87,7 @@ public abstract class AbstractValidator implements Validator {
                 VMResult r;
 
                 VMExecutor executor = new VMExecutor(
+                    rd,
                     tmp,
                     CallData.fromTransaction(tx, false),
                     Math.min(getBlockGasLimit() - currentGas, tx.getGasLimitAsU256().longValue())
@@ -109,7 +111,7 @@ public abstract class AbstractValidator implements Validator {
             }
 
             tmp.setHeaderCreatedAt(block.getCreatedAt());
-            VMExecutor executor = new VMExecutor(tmp, CallData.fromTransaction(coinbase, true), 0);
+            VMExecutor executor = new VMExecutor(rd, tmp, CallData.fromTransaction(coinbase, true), 0);
             VMResult r = executor.execute();
             currentGas += r.getGasUsed();
 
