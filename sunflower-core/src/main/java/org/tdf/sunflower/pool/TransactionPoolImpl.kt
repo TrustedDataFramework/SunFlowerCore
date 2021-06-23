@@ -80,7 +80,7 @@ class TransactionPoolImpl(
 
     fun setEngine(engine: ConsensusEngine) {
         validator = engine.validator
-        repo.getReader().use {
+        repo.reader.use {
             resetInternal(it.bestHeader)
         }
     }

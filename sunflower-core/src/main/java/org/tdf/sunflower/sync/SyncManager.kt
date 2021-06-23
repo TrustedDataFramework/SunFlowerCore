@@ -182,7 +182,7 @@ class SyncManager(
                     return
                 }
                 val s = msg.getBodyAs(Status::class.java)
-                repo.getReader().use {
+                repo.reader.use {
                     onStatus(context, server, s, it)
                 }
                 return
@@ -195,7 +195,7 @@ class SyncManager(
                 }
                 if (fastSyncing) return
                 val getBlocks = msg.getBodyAs(GetBlocks::class.java)
-                repo.getReader().use {
+                repo.reader.use {
                     val blocks = it.getBlocksBetween(
                         getBlocks.startHeight,
                         getBlocks.stopHeight,
@@ -217,7 +217,7 @@ class SyncManager(
                 val root = Transaction.calcTxTrie(txs)
                 if (receivedTransactions.asMap().containsKey(root)) return
                 receivedTransactions.put(root, true)
-                repo.getReader().use {
+                repo.reader.use {
                     transactionPool.collect(it, txs)
                 }
                 context.relay()
@@ -232,7 +232,7 @@ class SyncManager(
                     context.relay()
                     return
                 }
-                repo.getReader().use {
+                repo.reader.use {
                     val best = it.bestHeader
                     if (receivedProposals.asMap().containsKey(proposal.hash)) {
                         return
@@ -286,7 +286,7 @@ class SyncManager(
         }
         if (!mtx.tryLock()) return
         try {
-            repo.getReader().use { rd ->
+            repo.reader.use { rd ->
                 val best = rd.bestHeader
                 val sorted = blocks.sortedWith(Block.FAT_COMPARATOR)
                 for (block in sorted) {
@@ -406,7 +406,7 @@ class SyncManager(
                 throw RuntimeException("busy...")
             }
             try {
-                repo.getReader().use { rd ->
+                repo.reader.use { rd ->
                     val ret: MutableList<Block> = ArrayList()
                     val orphans: MutableSet<HexBytes> = HashSet()
                     val noOrphans: MutableSet<HexBytes> = HashSet()
@@ -441,7 +441,7 @@ class SyncManager(
         try {
             if (queue.isEmpty())
                 return
-            repo.getWriter().use { writer ->
+            repo.writer.use { writer ->
                 val best = writer.bestHeader
                 val orphans: MutableSet<HexBytes> = HashSet()
                 while (it.hasNext()) {
@@ -482,7 +482,7 @@ class SyncManager(
 
     fun sendStatus() {
         if (fastSyncing) return
-        repo.getReader().use { rd ->
+        repo.reader.use { rd ->
             val best = rd.bestHeader
             val genesis = rd.genesis
             val status = Status(
