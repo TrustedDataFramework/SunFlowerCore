@@ -98,7 +98,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
             return
         pending.keys
             .stream()
-            .filter { x: PeerImpl? -> !cache.contains(x) }
+            .filter { x: PeerImpl -> !cache.contains(x) }
             .limit(config.maxPeers.toLong())
             .forEach { p: PeerImpl ->
                 log.info("try to connect to peer $p")

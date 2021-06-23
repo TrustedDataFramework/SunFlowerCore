@@ -14,6 +14,10 @@ interface Stack {
     fun backUnsignedInt(i: Int = 0): Long
     fun back(i: Int = 0): ByteArray
 
+    fun backBigInt(i: Int = 0): BigInteger {
+        return BigInteger(1, back(i))
+    }
+
     fun popAsAddress(): ByteArray
 
     // memory size for m

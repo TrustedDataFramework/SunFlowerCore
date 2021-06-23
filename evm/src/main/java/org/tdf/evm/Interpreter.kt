@@ -84,6 +84,7 @@ class Interpreter(
 
     private var memOff: Long = 0
     private var memLen: Long = 0
+    private var key: ByteArray = emptyByteArray
 
     private fun jump(dst: Long) {
         if (dst < 0 || dst >= callData.code.size)
@@ -270,7 +271,7 @@ class Interpreter(
             when (op) {
                 OpCodes.ADDRESS -> it.println("push address = ${callData.receipt.hex()}")
                 OpCodes.SSTORE -> {
-                    val key = stack.back(0)
+                    key = stack.back(0)
                     val value = stack.back(1)
                     it.println("sstore key = ${key.hex()}, value = ${value.hex()}")
                 }
@@ -350,7 +351,16 @@ class Interpreter(
             }
 
             when(op) {
-                OpCodes.ADDRESS -> it.println("push address, stack top = ${stack.back().bnHex()}")
+                OpCodes.ADDRESS -> it.println("push address, stack top = ${stack.back().sliceArray(12 until 32).hex()}")
+                OpCodes.SSTORE -> it.println("sstore success key = ${key.hex()}, value = ${host.getStorage(callData.receipt, key).hex()}")
+                OpCodes.SLOAD -> it.println("sload success stack top = ${stack.back().hex()}")
+                OpCodes.CODECOPY -> it.println("codecopy succes mem.cap = ${memory.size}, mem[${memOff}:${memOff}+${memLen}] = ${memory.copy(memOff.toInt(), (memOff + memLen).toInt()).hex()}")
+                OpCodes.MSTORE -> it.println("mstore success, mem[${memOff}:${memOff}+32] = ${memory.copy(memOff.toInt(), (memOff + 32).toInt()).hex()} ")
+                OpCodes.CALLDATASIZE -> it.println("calldatasize success stack top = ${stack.backUnsignedInt()}")
+                OpCodes.CALLVALUE -> it.println("callvalue success stack top = ${stack.backBigInt()}")
+                OpCodes.CALLDATALOAD -> it.println("calldataload success stack top = ${stack.back().hex()}")
+                OpCodes.JUMPI -> {}
+                OpCodes.RETURN -> {}
             }
         }
     }

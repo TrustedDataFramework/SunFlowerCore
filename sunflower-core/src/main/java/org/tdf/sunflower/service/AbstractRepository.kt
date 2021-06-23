@@ -10,7 +10,6 @@ import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.Header
-import java.util.stream.Collectors
 
 abstract class AbstractRepository
     (context: ApplicationContext) : RepositoryReader, RepositoryWriter {
@@ -40,7 +39,7 @@ abstract class AbstractRepository
     protected abstract fun getBlockFromHeader(header: Header): Block
 
     private fun getBlocksFromHeaders(headers: Collection<Header>): List<Block> {
-        return headers.stream().map { getBlockFromHeader(it) }.collect(Collectors.toList())
+        return headers.map { getBlockFromHeader(it) }
     }
 
     override fun getCanonicalBlock(height: Long): Block? {

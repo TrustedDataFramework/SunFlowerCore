@@ -33,6 +33,16 @@ interface Memory {
         }
     }
 
+    fun copy(off: Int, limit: Int): ByteArray{
+        if(off < 0 || limit < 0)
+            throw RuntimeException("memory access overflow")
+        if(limit < off)
+            throw RuntimeException("memory: limit < off")
+        val r = ByteArray(limit - off)
+        read(off, r)
+        return r
+    }
+
     fun read(off: Int, buf: ByteArray, bufOff: Int = 0, bufSize: Int = buf.size) {
         if (off < 0 || off + bufSize > size)
             throw RuntimeException("memory access overflow")
