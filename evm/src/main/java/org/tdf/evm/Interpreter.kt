@@ -233,11 +233,15 @@ class Interpreter(
         }
     }
 
-    fun ByteArray.hexNoLeadingZero(): String {
-        var i = 
+    fun ByteArray.bnHex(): String {
+        var i = this.size
         for(j in 0 until this.size) {
-
+            if(this[j] != (0).toByte()) {
+                i = j
+                break
+            }
         }
+        return this.sliceArray(i until this.size).hex()
     }
 
     private fun logInfo() {
@@ -290,7 +294,7 @@ class Interpreter(
                 }
                 OpCodes.MSTORE -> {
                     memOff = stack.backUnsignedInt()
-                    val value = stack.back(1).hex()
+                    val value = stack.back(1).bnHex()
 
                     it.println("mstore $value into memory, mem offset = $memOff mem.cap = ${memory.size}")
                 }
@@ -340,7 +344,14 @@ class Interpreter(
         vmLog?.let {
             it.println("after execute op ${OpCodes.nameOf(op)} pc = $pc")
 
-            if(op >= OpCodes.PUSH1 && op <= OpCodes.PUSH32)
+            if(op >= OpCodes.PUSH1 && op <= OpCodes.PUSH32) {
+                it.println("push success, stack top = ${stack.back().bnHex()}")
+                return
+            }
+
+            when(op) {
+                OpCodes.ADDRESS -> it.println("push address, stack top = ${stack.back().bnHex()}")
+            }
         }
     }
 

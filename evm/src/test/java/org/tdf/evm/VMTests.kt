@@ -14,8 +14,9 @@ import java.math.BigInteger
 
 val ZERO_ADDRESS = ByteArray(20)
 
-val sha3 = Digest { src: ByteArray, srcPos: Int, srcLen: Int,
-                    dst: ByteArray, dstPos: Int ->
+val sha3 = Digest {
+        src: ByteArray, srcPos: Int, srcLen: Int,
+        dst: ByteArray, dstPos: Int ->
     HashUtil.sha3(src, srcPos, srcLen, dst, dstPos)
 }
 
