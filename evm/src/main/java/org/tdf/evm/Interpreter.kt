@@ -354,20 +354,10 @@ class Interpreter(
             val stackData = "[" + (0 until stack.size).map { bn -> stack.get(bn).toString(16) }.joinToString(",") + "]"
             it.println("stack = $stackData")
 
-            if(op >= OpCodes.PUSH1 && op <= OpCodes.PUSH32) {
-                it.println("push success, stack top = ${stack.back().bnHex()}")
-                return
-            }
-
             when(op) {
-                OpCodes.ADDRESS -> it.println("push address, stack top = ${stack.back().sliceArray(12 until 32).hex()}")
                 OpCodes.SSTORE -> it.println("sstore success key = ${key.hex()}, value = ${host.getStorage(callData.receipt, key).hex()}")
-                OpCodes.SLOAD -> it.println("sload success stack top = ${stack.back().hex()}")
                 OpCodes.CODECOPY -> it.println("codecopy succes mem.cap = ${memory.size}, mem[${memOff}:${memOff}+${memLen}] = ${memory.copy(memOff.toInt(), (memOff + memLen).toInt()).hex()}")
                 OpCodes.MSTORE -> it.println("mstore success, mem[${memOff}:${memOff}+32] = ${memory.copy(memOff.toInt(), (memOff + 32).toInt()).hex()} ")
-                OpCodes.CALLDATASIZE -> it.println("calldatasize success stack top = ${stack.backUnsignedInt()}")
-                OpCodes.CALLVALUE -> it.println("callvalue success stack top = ${stack.backBigInt()}")
-                OpCodes.CALLDATALOAD -> it.println("calldataload success stack top = ${stack.back().hex()}")
                 OpCodes.JUMPI -> {}
                 OpCodes.RETURN -> {}
             }
