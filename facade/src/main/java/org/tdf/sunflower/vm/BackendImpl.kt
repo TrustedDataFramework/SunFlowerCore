@@ -33,7 +33,7 @@ class BackendImpl(
             return a
         if (parentBackend != null) return parentBackend.lookup(address)
         val aInTrie = trie[address]
-        return aInTrie ?: Account()
+        return aInTrie ?: Account.EMPTY_ACCOUNT
     }
 
     override fun createChild(): BackendImpl {
