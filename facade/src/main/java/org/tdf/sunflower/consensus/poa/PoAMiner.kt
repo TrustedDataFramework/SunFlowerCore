@@ -80,7 +80,7 @@ class PoAMiner(private val poA: PoA) :
         if (!config.enableMining()) {
             return
         }
-        repo.getWriter().use {
+        repo.writer.use {
             val best = it.bestBlock
             val now = OffsetDateTime.now().toEpochSecond()
 

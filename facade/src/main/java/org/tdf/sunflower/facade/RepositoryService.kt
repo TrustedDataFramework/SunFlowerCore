@@ -7,8 +7,8 @@ import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 interface RepositoryService {
-    fun getReader(): RepositoryReader
-    fun getWriter(): RepositoryWriter
+    val reader: RepositoryReader
+    val writer: RepositoryWriter
 }
 
 class LogLock(private val lock: Lock, private val name: String = "") : Lock {
@@ -59,13 +59,15 @@ class RepositoryServiceImpl(private val proxy: RepositoryWriter) : RepositorySer
     private val readLock = LogLock(lock.readLock(), "repo-r")
     private val writeLock = LogLock(lock.writeLock(), "repo-w")
 
-    override fun getReader(): RepositoryReader {
-        readLock.lock()
-        return LockedRepositoryReader(proxy, readLock)
-    }
+    override val reader: RepositoryReader
+        get() {
+            readLock.lock()
+            return LockedRepositoryReader(proxy, readLock)
+        }
 
-    override fun getWriter(): RepositoryWriter {
-        writeLock.lock()
-        return LockedRepositoryWriter(proxy, writeLock)
-    }
+    override val writer: RepositoryWriter
+        get() {
+            writeLock.lock()
+            return LockedRepositoryWriter(proxy, writeLock)
+        }
 }
