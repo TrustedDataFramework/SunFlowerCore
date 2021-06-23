@@ -3,6 +3,7 @@ package org.tdf.evm
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -10,7 +11,13 @@ import org.spongycastle.util.encoders.Hex
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
+import java.io.PrintStream
 import java.math.BigInteger
+import java.nio.file.Files
+import java.nio.file.OpenOption
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
+import java.util.concurrent.atomic.AtomicInteger
 
 val ZERO_ADDRESS = ByteArray(20)
 
@@ -18,6 +25,10 @@ val sha3 = Digest {
         src: ByteArray, srcPos: Int, srcLen: Int,
         dst: ByteArray, dstPos: Int ->
     HashUtil.sha3(src, srcPos, srcLen, dst, dstPos)
+}
+
+internal fun ByteArray.address(): ByteArray {
+    return this.sliceArray((this.size - 20) until this.size)
 }
 
 class MemAccount(
@@ -31,6 +42,19 @@ class MemAccount(
 class MockEvmHost : EvmHost {
     override val digest: Digest = sha3
     private val accounts: MutableMap<HexBytes, MemAccount> = mutableMapOf()
+    private val cnt = AtomicInteger(0)
+
+    private fun getLogFile(): PrintStream{
+        val name = String.format("%04d.log", cnt.incrementAndGet())
+        return PrintStream(
+            Files.newOutputStream(
+                Paths.get(System.getProperty("user.dir"), "logs", name),
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE
+            )
+        )
+    }
 
     override fun getBalance(address: ByteArray): BigInteger {
         return accounts[HexBytes.fromBytes(address)]?.balance ?: BigInteger.ZERO
@@ -71,7 +95,8 @@ class MockEvmHost : EvmHost {
         val interpreter = Interpreter(
             this,
             EvmContext(),
-            callData
+            callData,
+            getLogFile()
         )
 
         interpreter.execute()
@@ -101,11 +126,12 @@ class MockEvmHost : EvmHost {
             this,
                 EvmContext(),
                 EvmCallData(caller, newAddr, value, emptyByteArray, createCode),
-                System.out
+                getLogFile()
         )
 
         interpreter.execute()
-        cal.code = interpreter.ret
+        val con = getOrCreate(newAddr)
+        con.code = interpreter.ret
         return newAddr
     }
 }
@@ -135,9 +161,13 @@ class VMTests {
         val node = objectMapper.readValue(codeJson, JsonNode::class.java)
 
         val code = Hex.decode(node.get("object").asText())
-
+        val owner = Hex.decode("828b82d18E77D380Ad33ae72702E7eFF5476fc17")
         val mock = MockEvmHost()
 
-        mock.create(ZERO_ADDRESS, BigInteger.ZERO, code)
+        val con = mock.create(owner, BigInteger.ZERO, code)
+
+        val r = mock.call(ZERO_ADDRESS, con, Hex.decode("893d20e8"))
+
+        assertEquals(Hex.toHexString(owner), Hex.toHexString(r.address()))
     }
 }

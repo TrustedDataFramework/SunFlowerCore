@@ -18,6 +18,8 @@ interface Stack {
         return BigInteger(1, back(i))
     }
 
+    fun get(i: Int): BigInteger
+
     fun popAsAddress(): ByteArray
 
     // memory size for m
@@ -144,6 +146,11 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         val r = ByteArray(SLOT_BYTE_ARRAY_SIZE)
         encodeBE(data, (size - 1 - i) * SLOT_SIZE, r, 0)
         return r
+    }
+
+    override fun get(i: Int): BigInteger {
+        encodeBE(data, i * SLOT_SIZE, tempBytes, 0)
+        return BigInteger(1, tempBytes)
     }
 
     private fun memSizeByOffAndLen(off: Long, len: Long): Int {
@@ -390,14 +397,14 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun swap(index: Int) {
         if (index >= size)
             throw RuntimeException("stack underflow")
-        if (index == size - 1)
-            return
+
         // op0 = top
+        val i = size - index - 1
         System.arraycopy(data, top, operand0, 0, SLOT_SIZE)
         // top = stack[index]
-        System.arraycopy(data, index * SLOT_SIZE, data, top, SLOT_SIZE)
+        System.arraycopy(data, i * SLOT_SIZE, data, top, SLOT_SIZE)
         // stack[index] = op0
-        System.arraycopy(operand0, 0, data, index * SLOT_SIZE, SLOT_SIZE)
+        System.arraycopy(operand0, 0, data, i * SLOT_SIZE, SLOT_SIZE)
     }
 
     override fun mstore(mem: Memory) {
@@ -792,7 +799,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         val offInt = unsignedMin(popUnsignedInt(), input.size.toLong()).toInt()
         val len = Math.min(32, input.size - offInt)
         Arrays.fill(tempBytes, 0)
-        System.arraycopy(input, offInt, tempBytes, SLOT_BYTE_ARRAY_SIZE - len, len)
+        System.arraycopy(input, offInt, tempBytes, 0, len)
         pushZero()
         decodeBE(tempBytes, 0, data, top)
     }
@@ -812,7 +819,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         mem.resize(memSizeByOffAndLen(memOff, len))
         val dataOffInt = unsignedMin(dataOff, data.size.toLong()).toInt()
         val lenInt = Math.min(len.toInt(), data.size - dataOffInt)
-        mem.write(memOff.toInt(), data, dataOffInt, lenInt)
+        mem.writeRightPad(memOff.toInt(), data, len.toInt(), dataOffInt, lenInt)
     }
 
     override fun mod() {

@@ -230,7 +230,7 @@ class Interpreter(
     }
 
     fun ByteArray.hex(): String {
-        return this.joinToString("") {
+        return "0x" + this.joinToString("") {
             java.lang.String.format("%02x", it)
         }
     }
@@ -316,7 +316,7 @@ class Interpreter(
                         it.println("call data load overflows")
                     }
                     val dat = getData(callData.input, off, 32)
-                    it.println("calldataload data = ${dat.hex()}")
+                    it.println("calldataload data off = ${off} len = 32, input len = ${callData.input.size}, value = ${dat.hex()}")
                 }
                 OpCodes.JUMPI -> {
                     if (stack.backUnsignedInt(1) == 0L) {
@@ -325,6 +325,7 @@ class Interpreter(
                         it.println("jumpi cond = 1, jump to ${stack.backUnsignedInt(0)}")
                     }
                 }
+                OpCodes.JUMP -> it.println("jump to dest ${stack.backBigInt()} dest op = ${OpCodes.nameOf(callData.code[stack.backUnsignedInt().toInt()].toUByte().toInt())}")
                 OpCodes.JUMPDEST -> {
                 }
                 OpCodes.RETURN -> {
@@ -350,6 +351,9 @@ class Interpreter(
         vmLog?.let {
             it.println("after execute op ${OpCodes.nameOf(op)} pc = $pc")
 
+            val stackData = "[" + (0 until stack.size).map { bn -> stack.get(bn).toString(16) }.joinToString(",") + "]"
+            it.println("stack = $stackData")
+
             if(op >= OpCodes.PUSH1 && op <= OpCodes.PUSH32) {
                 it.println("push success, stack top = ${stack.back().bnHex()}")
                 return
@@ -372,7 +376,7 @@ class Interpreter(
 
     private fun getData(input: ByteArray, off: Long, len: Long): ByteArray {
         val offInt = unsignedMin(off, input.size.toLong()).toInt()
-        val lenInt = Math.min(32, input.size - offInt)
+        val lenInt = unsignedMin(len, (input.size - offInt).toLong()).toInt()
         val r = ByteArray(lenInt)
         System.arraycopy(input, offInt, r, 0, lenInt)
         return r
