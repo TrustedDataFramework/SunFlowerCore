@@ -1,6 +1,5 @@
 package org.tdf.sunflower.vm
 
-import org.tdf.common.types.Uint256
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.evm.Digest
@@ -20,10 +19,6 @@ class EvmHostImpl(private val backend: Backend, private val rd: RepositoryReader
 
     override fun getBalance(address: ByteArray): BigInteger {
         return backend.getBalance(HexBytes.fromBytes(address)).value
-    }
-
-    override fun setBalance(address: ByteArray, balance: BigInteger) {
-        backend.setBalance(HexBytes.fromBytes(address), Uint256.Companion.of(balance))
     }
 
     override fun getStorage(address: ByteArray, key: ByteArray): ByteArray {

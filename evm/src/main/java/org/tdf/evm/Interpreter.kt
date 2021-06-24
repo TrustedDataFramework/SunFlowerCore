@@ -43,7 +43,6 @@ interface EvmHost {
 
     // get balance of address, address.length = 20
     fun getBalance(address: ByteArray): BigInteger
-    fun setBalance(address: ByteArray, balance: BigInteger)
 
     fun getStorage(address: ByteArray, key: ByteArray): ByteArray
     fun setStorage(address: ByteArray, key: ByteArray, value: ByteArray)
@@ -240,7 +239,7 @@ class Interpreter(
                     val n = op - OpCodes.LOG0
                     val topics = mutableListOf<ByteArray>()
                     val data = stack.popMemory(memory)
-                    for(i in 0 until n) {
+                    for (i in 0 until n) {
                         topics.add(stack.popAsByteArray())
                     }
                     host.log(callData.receipt, data, topics)
@@ -273,7 +272,6 @@ class Interpreter(
     fun BigInteger.hex(): String {
         return "0x" + this.toString(16)
     }
-
 
 
     private fun logInfo() {
@@ -313,7 +311,11 @@ class Interpreter(
                 OpCodes.SLOAD -> {
                     val loc = stack.back(0)
                     val value = host.getStorage(callData.receipt, loc)
-                    val value32 = if(value.isEmpty()) { ByteArray(32) } else { value }
+                    val value32 = if (value.isEmpty()) {
+                        ByteArray(32)
+                    } else {
+                        value
+                    }
                     it.println("sload key = ${loc.hex()}, value = ${value32.hex()}")
                 }
                 OpCodes.CODECOPY -> {
