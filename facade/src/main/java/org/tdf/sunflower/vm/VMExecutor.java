@@ -124,7 +124,7 @@ public class VMExecutor {
     private static final byte[] WASM_MAGIC = {0x00, 0x61, 0x73, 0x6d};
 
     private boolean isWasm(byte[] bytes) {
-        return Arrays.equals(bytes, 0, WASM_MAGIC.length, WASM_MAGIC, 0, WASM_MAGIC.length);
+        return bytes.length >= WASM_MAGIC.length && Arrays.equals(bytes, 0, WASM_MAGIC.length, WASM_MAGIC, 0, WASM_MAGIC.length);
     }
 
 
