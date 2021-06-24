@@ -71,11 +71,13 @@ class Interpreter(
     val host: EvmHost,
     val ctx: EvmContext,
     val callData: EvmCallData,
-    private val vmLog: PrintStream? = null
+    private val vmLog: PrintStream? = null,
+    maxStackSize: Int = Int.MAX_VALUE,
+    maxMemorySize: Int = Int.MAX_VALUE
 ) {
     var pc: Int = 0
-    private val stack = StackImpl()
-    private val memory = MemoryImpl()
+    private val stack = StackImpl(maxStackSize)
+    private val memory = MemoryImpl(maxMemorySize)
     var ret: ByteArray = emptyByteArray
 
     var reverted: Boolean = false
@@ -137,7 +139,7 @@ class Interpreter(
                 OpCodes.SHA3 -> stack.sha3(memory, host.digest)
                 OpCodes.ADDRESS -> stack.push(callData.receipt)
                 OpCodes.BALANCE -> {
-                    val balance = host.getBalance(stack.popAsAddress())
+                    val balance = host.getBalance(stack.popAddress())
                     stack.push(balance)
                 }
                 OpCodes.ORIGIN -> stack.push(ctx.origin)
@@ -150,11 +152,11 @@ class Interpreter(
                 OpCodes.CODECOPY -> stack.dataCopy(memory, callData.code)
                 OpCodes.GASPRICE -> stack.push(ctx.gasPrice)
                 OpCodes.EXTCODESIZE -> {
-                    val code = host.getCode(stack.popAsAddress())
+                    val code = host.getCode(stack.popAddress())
                     stack.pushInt(code.size)
                 }
                 OpCodes.EXTCODECOPY -> {
-                    val code = host.getCode(stack.popAsAddress())
+                    val code = host.getCode(stack.popAddress())
                     stack.dataCopy(memory, code)
                 }
                 OpCodes.BLOCKHASH, OpCodes.COINBASE -> {
@@ -182,24 +184,24 @@ class Interpreter(
                     stack.push(
                         host.getStorage(
                             callData.receipt,
-                            stack.popAsByteArray()
+                            stack.popBytes()
                         )
                     )
                 }
                 OpCodes.SSTORE -> {
                     host.setStorage(
                         callData.receipt,
-                        stack.popAsByteArray(), stack.popAsByteArray()
+                        stack.popBytes(), stack.popBytes()
                     )
                 }
                 OpCodes.JUMP -> {
-                    jump(stack.popUnsignedInt())
+                    jump(stack.popU32())
                     afterExecute()
                     continue
                 }
                 OpCodes.JUMPI -> {
-                    val dst = stack.popUnsignedInt()
-                    val cond = stack.popUnsignedInt() != 0L
+                    val dst = stack.popU32()
+                    val cond = stack.popU32() != 0L
                     if (cond) {
                         jump(dst)
                         afterExecute()
@@ -240,7 +242,7 @@ class Interpreter(
                     val topics = mutableListOf<ByteArray>()
                     val data = stack.popMemory(memory)
                     for (i in 0 until n) {
-                        topics.add(stack.popAsByteArray())
+                        topics.add(stack.popBytes())
                     }
                     host.log(callData.receipt, data, topics)
                 }
@@ -312,9 +314,9 @@ class Interpreter(
                     it.println("sload key = ${loc.hex()}, value = ${value32.hex()}")
                 }
                 OpCodes.CODECOPY -> {
-                    memOff = stack.backUnsignedInt()
-                    val codeOff = stack.backUnsignedInt(1)
-                    memLen = stack.backUnsignedInt(2)
+                    memOff = stack.backU32()
+                    val codeOff = stack.backU32(1)
+                    memLen = stack.backU32(2)
 
                     it.println(
                         "codecopy into memory, mem[$memOff:$memOff+$memLen] = code[$codeOff:$codeOff+$memLen] mem.cap = ${memory.size} value = ${
@@ -325,7 +327,7 @@ class Interpreter(
                     )
                 }
                 OpCodes.MSTORE -> {
-                    memOff = stack.backUnsignedInt()
+                    memOff = stack.backU32()
                     val value = stack.back(1).bnHex()
 
                     it.println("mstore $value into memory, mem offset = $memOff mem.cap = ${memory.size}")
@@ -337,7 +339,7 @@ class Interpreter(
                     it.println("calldatasize ${callData.input.size} into stack")
                 }
                 OpCodes.CALLDATALOAD -> {
-                    val off = stack.backUnsignedInt()
+                    val off = stack.backU32()
                     if (off < 0 || off + 32 > callData.input.size) {
                         it.println("call data load overflows")
                     }
@@ -345,16 +347,16 @@ class Interpreter(
                     it.println("calldataload data off = ${off} len = 32, input len = ${callData.input.size}, value = ${dat.hex()}")
                 }
                 OpCodes.JUMPI -> {
-                    if (stack.backUnsignedInt(1) == 0L) {
+                    if (stack.backU32(1) == 0L) {
                         it.println("jumpi cond = 0, no jump")
                     } else {
-                        it.println("jumpi cond = 1, jump to ${stack.backUnsignedInt(0)}")
+                        it.println("jumpi cond = 1, jump to ${stack.backU32(0)}")
                     }
                 }
                 OpCodes.JUMP -> it.println(
                     "jump to dest ${stack.backBigInt()} op = ${
                         OpCodes.nameOf(
-                            callData.code[stack.backUnsignedInt().toInt()].toUByte().toInt()
+                            callData.code[stack.backU32().toInt()].toUByte().toInt()
                         )
                     }"
                 )
@@ -364,15 +366,15 @@ class Interpreter(
                     it.println("log${op - OpCodes.LOG0} mem off = ${stack.backBigInt(0)} len = ${stack.backBigInt(1)}, mem.cap = ${memory.size}")
                 }
                 OpCodes.RETURN -> {
-                    val off = if (stack.backUnsignedInt() < 0) {
+                    val off = if (stack.backU32() < 0) {
                         0
                     } else {
-                        stack.backUnsignedInt().toInt()
+                        stack.backU32().toInt()
                     }
-                    val size = if (stack.backUnsignedInt(1) < 0) {
+                    val size = if (stack.backU32(1) < 0) {
                         0
                     } else {
-                        stack.backUnsignedInt(1).toInt()
+                        stack.backU32(1).toInt()
                     }
                     val value = ByteArray(size)
                     memory.read(off, value)

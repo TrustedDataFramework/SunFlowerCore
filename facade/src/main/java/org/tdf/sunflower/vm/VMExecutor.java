@@ -12,6 +12,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.evm.EvmCallData;
 import org.tdf.evm.EvmContext;
 import org.tdf.evm.Interpreter;
+import org.tdf.evm.SlotUtils;
 import org.tdf.lotusvm.Module;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.runtime.Memory;
@@ -44,6 +45,9 @@ public class VMExecutor {
     public static final int MAX_STACK_SIZE = MAX_FRAMES * 4;
     public static final int MAX_LABELS = MAX_FRAMES * 4;
     public static final int MAX_CALL_DEPTH = 8;
+    public static final int EVM_MAX_STACK_SIZE = 1024;
+    // 16 mb
+    public static final int EVM_MAX_MEMORY_SIZE = 1024 * 1024 * 16;
 
     private static String outDirectory = "";
 
@@ -267,7 +271,7 @@ public class VMExecutor {
         EvmContext ctx = new EvmContext();
         EvmHostImpl host = new EvmHostImpl(backend, rd);
 
-        Interpreter interpreter = new Interpreter(host, ctx, evmCallData, getPrintStream());
+        Interpreter interpreter = new Interpreter(host, ctx, evmCallData, getPrintStream(), EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE);
         interpreter.execute();
 
         if (create) {

@@ -11,30 +11,64 @@ fun interface Digest {
 
 interface Stack {
     val size: Int
-    fun backUnsignedInt(i: Int = 0): Long
+
+    /**
+     * peek ith stack item starts from stack top
+     */
+    fun backU32(i: Int = 0): Long
+
+    /**
+     * peek ith stack item starts from stack top
+     */
     fun back(i: Int = 0): ByteArray
 
+    /**
+     * peek ith stack item starts from stack top
+     */
     fun backBigInt(i: Int = 0): BigInteger {
         return BigInteger(1, back(i))
     }
 
+    /**
+     * peek ith stack item starts from stack bottom
+     */
     fun get(i: Int): BigInteger
 
-    fun popAsAddress(): ByteArray
+    /**
+     * pop stack top as an address
+     */
+    fun popAddress(): ByteArray
 
-    // memory size for m
+    /**
+     * push by left padding
+     */
     fun push(buf: ByteArray, offset: Int = 0, len: Int = buf.size)
 
+    /**
+     * push a slot
+     */
     fun push(n: IntArray, offset: Int = 0)
 
+    /**
+     * push a duplicate of mutable integer
+     */
     fun push(n: MutableBigInteger)
 
+    /**
+     * push from boolean
+     */
     fun push(b: Boolean) {
         if (b) pushOne() else pushZero()
     }
 
+    /**
+     * push 0
+     */
     fun pushZero()
 
+    /**
+     * push 1
+     */
     fun pushOne()
 
     /**
@@ -52,6 +86,9 @@ interface Stack {
      */
     fun pushInt(n: Int)
 
+    /**
+     * drop the top
+     */
     fun drop()
 
     /**
@@ -63,7 +100,7 @@ interface Stack {
     /**
      * pop as byte array
      */
-    fun popAsByteArray(): ByteArray
+    fun popBytes(): ByteArray
 
     /**
      * pop as biginteger
@@ -73,10 +110,10 @@ interface Stack {
     /**
      * pop as unsigned integer, return -1 if overflowed
      */
-    fun popUnsignedInt(): Long
+    fun popU32(): Long
 
     fun popIntExact(): Int {
-        val n = popUnsignedInt()
+        val n = popU32()
         if (n < 0)
             throw RuntimeException("integer overflow")
         return n.toInt()
@@ -113,22 +150,63 @@ interface Stack {
     fun shr()
     fun sar()
 
+    /**
+     * off := pop()
+     * len := pop()
+     * push(sha3(mem[off:off+len]))
+     */
     fun sha3(mem: Memory, digest: Digest)
+
+    /**
+     * CALLDATALOAD is right padded
+     * off := min(len(input), pop())
+     * len = min(32, len(input) - off)
+     * push(input[off:len])
+     */
     fun callDataLoad(input: ByteArray)
+
+    /**
+     * CALLDATACOPY, CODECOPY right padded
+     * memOff := pop()
+     * dataOff := pop()
+     * len := pop()
+     * mem[memOff:memOff+len] = data[dataOff:dataOff+len]
+     */
     fun dataCopy(mem: Memory, data: ByteArray)
 
     fun dup(index: Int)
     fun swap(index: Int)
 
-    // memory access
+    /**
+     *  off := pop()
+     *  val := pop()
+     *  mem[off:off+32] = val
+     */
     fun mstore(mem: Memory)
+
+    /**
+     *  off := pop()
+     *  val := u8(pop())
+     *  mem[off] = val
+     */
     fun mstore8(mem: Memory)
+
+    /**
+     * off := pop()
+     * push(mem[off:off+32])
+     */
     fun mload(mem: Memory)
+
+    /**
+     * off := pop()
+     * len := pop()
+     * return mem[off:off+len]
+     */
     fun popMemory(mem: Memory): ByteArray
 }
 
 class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
-    override fun backUnsignedInt(i: Int): Long {
+    override fun backU32(i: Int): Long {
         if (i < 0 || i >= size)
             throw RuntimeException("stack underflow")
         val idx = size - 1 - i
@@ -149,11 +227,13 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun get(i: Int): BigInteger {
+        if (i < 0 || i >= size)
+            throw RuntimeException("stack underflow")
         encodeBE(data, i * SLOT_SIZE, tempBytes, 0)
         return BigInteger(1, tempBytes)
     }
 
-    private fun memSizeByOffAndLen(off: Long, len: Long): Int {
+    private fun toResize(off: Long, len: Long): Int {
         val i = off + len
         if (off < 0 || len < 0 || i < 0)
             throw RuntimeException("memory access overflow")
@@ -167,10 +247,12 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override var size: Int = 0
         private set
 
-    override fun popAsAddress(): ByteArray {
-        val r = ByteArray(20)
+    override fun popAddress(): ByteArray {
+        if (size == 0)
+            throw RuntimeException("stack underflow")
+        val r = ByteArray(ADDRESS_SIZE)
         encodeBE(data, top, tempBytes, 0)
-        System.arraycopy(tempBytes, SLOT_BYTE_ARRAY_SIZE - 20, r, 0, 20)
+        System.arraycopy(tempBytes, SLOT_BYTE_ARRAY_SIZE - ADDRESS_SIZE, r, 0, ADDRESS_SIZE)
         dropNocheck()
         return r
     }
@@ -230,7 +312,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         top -= SLOT_SIZE
     }
 
-    override fun popAsByteArray(): ByteArray {
+    override fun popBytes(): ByteArray {
         if (size == 0)
             throw RuntimeException("stack underflow")
         val r = ByteArray(SLOT_BYTE_ARRAY_SIZE)
@@ -262,7 +344,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         return r
     }
 
-    override fun popUnsignedInt(): Long {
+    override fun popU32(): Long {
         val top = this.top
         drop()
         for (i in 0 until SLOT_MAX_INDEX) {
@@ -387,7 +469,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun dup(index: Int) {
-        if(index > size)
+        if (index > size)
             throw RuntimeException("stack underflow")
         val src = size - index
         pushZero()
@@ -408,7 +490,8 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun mstore(mem: Memory) {
-        mem.resize(memSizeByOffAndLen(backUnsignedInt(), 32))
+        // assert off is valid
+        mem.resize(toResize(backU32(), SLOT_BYTE_ARRAY_SIZE.toLong()))
         val off = popIntExact()
         if (size == 0)
             throw RuntimeException("stack underflow")
@@ -424,7 +507,8 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun mload(mem: Memory) {
-        mem.resize(memSizeByOffAndLen(backUnsignedInt(), 32))
+        // assert off is valid
+        mem.resize(toResize(backU32(), SLOT_BYTE_ARRAY_SIZE.toLong()))
         val off = popIntExact()
         mem.read(off, tempBytes)
         pushZero()
@@ -432,15 +516,11 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun popMemory(mem: Memory): ByteArray {
-        val off = popUnsignedInt()
-        val len = popUnsignedInt()
-        if(off < 0 || len < 0 || off > Int.MAX_VALUE || len > Int.MAX_VALUE)
-            return emptyByteArray
-
-        val offInt = Math.min(off.toInt(), mem.size)
-        val lenInt = Math.min(len.toInt(), mem.size - offInt)
-        val r = ByteArray(lenInt)
-        mem.read(offInt, r)
+        val off = popU32()
+        val len = popU32()
+        mem.resize(toResize(off, len))
+        val r = ByteArray(len.toInt())
+        mem.read(off.toInt(), r)
         return r
     }
 
@@ -540,7 +620,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         if (size < 2)
             throw RuntimeException("stack underflow")
 
-        val n = popUnsignedInt()
+        val n = popU32()
         if (n < 0 || n >= SLOT_BYTE_ARRAY_SIZE)
             return
 
@@ -732,7 +812,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun byte() {
         if (size < 2)
             throw RuntimeException("stack underflow")
-        val i = popUnsignedInt()
+        val i = popU32()
         if (i < 0 || i >= SLOT_BYTE_ARRAY_SIZE) {
             drop()
             pushZero()
@@ -747,7 +827,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun shl() {
         if (size < 2)
             throw RuntimeException("stack underflow")
-        val i = popUnsignedInt()
+        val i = popU32()
         if (i < 0 || i >= SLOT_BITS) {
             drop()
             pushZero()
@@ -760,7 +840,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun shr() {
         if (size < 2)
             throw RuntimeException("stack underflow")
-        val i = popUnsignedInt()
+        val i = popU32()
         if (i < 0 || i >= SLOT_BITS) {
             drop()
             pushZero()
@@ -773,7 +853,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun sar() {
         if (size < 2)
             throw RuntimeException("stack underflow")
-        val i = popUnsignedInt()
+        val i = popU32()
         if (i < 0 || i >= SLOT_BITS) {
             if (data[top] < 0) {
                 drop()
@@ -790,17 +870,20 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
 
     override fun sha3(mem: Memory, digest: Digest) {
-        mem.resize(memSizeByOffAndLen(backUnsignedInt(), backUnsignedInt(1)))
+        mem.resize(toResize(backU32(), backU32(1)))
+        // after resize, mem[off:off+len] will never overflow
         val off = popIntExact()
         val len = popIntExact()
+
         digest.digest(mem.data, off, len, tempBytes, 0)
         pushZero()
         decodeBE(tempBytes, 0, data, top)
     }
 
+
     override fun callDataLoad(input: ByteArray) {
-        val offInt = unsignedMin(popUnsignedInt(), input.size.toLong()).toInt()
-        val len = Math.min(32, input.size - offInt)
+        val offInt = unsignedMin(popU32(), input.size.toLong()).toInt()
+        val len = Math.min(SLOT_BYTE_ARRAY_SIZE, input.size - offInt)
         Arrays.fill(tempBytes, 0)
         System.arraycopy(input, offInt, tempBytes, 0, len)
         pushZero()
@@ -816,10 +899,11 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun dataCopy(mem: Memory, data: ByteArray) {
-        val memOff = popUnsignedInt()
-        val dataOff = popUnsignedInt()
-        val len = popUnsignedInt()
-        mem.resize(memSizeByOffAndLen(memOff, len))
+        val memOff = popU32()
+        val dataOff = popU32()
+        val len = popU32()
+        // assert valid memOff, len
+        mem.resize(toResize(memOff, len))
         val dataOffInt = unsignedMin(dataOff, data.size.toLong()).toInt()
         val lenInt = Math.min(len.toInt(), data.size - dataOffInt)
         mem.writeRightPad(memOff.toInt(), data, len.toInt(), dataOffInt, lenInt)
