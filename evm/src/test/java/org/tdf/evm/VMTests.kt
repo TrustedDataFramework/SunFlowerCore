@@ -59,12 +59,6 @@ class MockEvmHost : EvmHost {
         return accounts[HexBytes.fromBytes(address)]?.balance ?: BigInteger.ZERO
     }
 
-    override fun setBalance(address: ByteArray, balance: BigInteger) {
-        val account = accounts[HexBytes.fromBytes(address)] ?: MemAccount()
-        account.balance = balance
-        accounts[HexBytes.fromBytes(address)] = account
-    }
-
     override fun getStorage(address: ByteArray, key: ByteArray): ByteArray {
         return accounts[HexBytes.fromBytes(address)]
             ?.storage?.let {
