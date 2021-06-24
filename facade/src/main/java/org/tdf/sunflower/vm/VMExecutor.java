@@ -113,11 +113,11 @@ public class VMExecutor {
 
 
         return new VMResult(
-            limit.getGas(),
-            contractAddress,
-            result,
-            Collections.emptyList(),
-            fee
+                limit.getGas(),
+                contractAddress,
+                HexBytes.fromBytes(result),
+                Collections.emptyList(),
+                fee
         );
     }
 

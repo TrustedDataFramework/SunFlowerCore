@@ -106,7 +106,7 @@ public abstract class AbstractMiner implements Miner {
             new Bloom(),
             Collections.emptyList()
         );
-        receipt.setExecutionResult(res.getExecutionResult());
+        receipt.setExecutionResult(res.getExecutionResult().getBytes());
         receipt.setTransaction(coinbase);
         p.getReceipts().add(0, receipt);
 

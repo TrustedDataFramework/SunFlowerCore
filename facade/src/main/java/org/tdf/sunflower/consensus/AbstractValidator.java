@@ -104,7 +104,7 @@ public abstract class AbstractValidator implements Validator {
                     Collections.emptyList()
                 );
                 receipt.setGasUsed(r.getGasUsed());
-                receipt.setExecutionResult(r.getExecutionResult());
+                receipt.setExecutionResult(r.getExecutionResult().getBytes());
                 currentRoot = tmp.merge();
                 receipts.add(receipt);
                 tmp = accountTrie.createBackend(parent.getHeader(), currentRoot, null, false);
@@ -121,7 +121,7 @@ public abstract class AbstractValidator implements Validator {
                 Collections.emptyList()
             );
             receipt.setGasUsed(r.getGasUsed());
-            receipt.setExecutionResult(r.getExecutionResult());
+            receipt.setExecutionResult(r.getExecutionResult().getBytes());
             receipts.add(0, receipt);
 
             HexBytes rootHash = tmp.merge();

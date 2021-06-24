@@ -12,6 +12,7 @@ import org.tdf.common.trie.Trie
 import org.tdf.common.util.FixedDelayScheduler
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.LogLock
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.SyncConfig
 import org.tdf.sunflower.events.NewBlockMined
@@ -47,7 +48,7 @@ class SyncManager(
     @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes, HexBytes>,
     miner: Miner
 ) : PeerServerListener, Closeable {
-    private val mtx = ReentrantLock()
+    private val mtx = LogLock(ReentrantLock(), "sync-queue")
 
     private val queue = TreeSet(Block.FAT_COMPARATOR)
     private val accountTrie: StateTrie<HexBytes, Account>
@@ -66,7 +67,6 @@ class SyncManager(
 
 
     // lock when accounts received, avoid concurrent handling
-    private val fastSyncAddressesLock: Lock = ReentrantLock()
 
     @Volatile
     private var fastSyncBlock: Block? = null
