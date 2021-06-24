@@ -62,4 +62,7 @@ class EvmHostImpl(private val backend: Backend, private val rd: RepositoryReader
     override fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray): ByteArray {
         TODO("Not yet implemented")
     }
+
+    override fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>) {
+    }
 }

@@ -106,7 +106,10 @@ class Interpreter(
             beforeExecute()
 
             when (op) {
-                OpCodes.STOP -> break
+                OpCodes.STOP -> {
+                    afterExecute()
+                    break
+                }
                 OpCodes.ADD -> stack.add()
                 OpCodes.MUL -> stack.mul()
                 OpCodes.SUB -> stack.sub()
@@ -200,6 +203,10 @@ class Interpreter(
                     val cond = stack.popUnsignedInt() != 0L
                     if (cond) {
                         jump(dst)
+                        afterExecute()
+                        continue
+                    } else {
+                        pc++
                         afterExecute()
                         continue
                     }
@@ -350,7 +357,7 @@ class Interpreter(
                     }
                 }
                 OpCodes.JUMP -> it.println(
-                    "jump to dest ${stack.backBigInt()} dest op = ${
+                    "jump to dest ${stack.backBigInt()} op = ${
                         OpCodes.nameOf(
                             callData.code[stack.backUnsignedInt().toInt()].toUByte().toInt()
                         )
@@ -397,7 +404,7 @@ class Interpreter(
                     }"
                 )
                 OpCodes.CODECOPY -> it.println(
-                    "codecopy succes mem.cap = ${memory.size}, mem[${memOff}:${memOff}+${memLen}] = ${
+                    "codecopy success mem.cap = ${memory.size}, mem[${memOff}:${memOff}+${memLen}] = ${
                         memory.copy(
                             memOff.toInt(),
                             (memOff + memLen).toInt()
