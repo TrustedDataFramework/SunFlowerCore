@@ -259,14 +259,7 @@ class Interpreter(
 
 
     fun ByteArray.bnHex(): String {
-        var i = this.size
-        for (j in 0 until this.size) {
-            if (this[j] != (0).toByte()) {
-                i = j
-                break
-            }
-        }
-        return this.hex(i, this.size)
+        return BigInteger(1, this).hex()
     }
 
     fun BigInteger.hex(): String {

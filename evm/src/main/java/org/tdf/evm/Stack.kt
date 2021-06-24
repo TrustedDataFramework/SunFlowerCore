@@ -426,8 +426,6 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun mload(mem: Memory) {
         mem.resize(memSizeByOffAndLen(backUnsignedInt(), 32))
         val off = popIntExact()
-        if (size == 0)
-            throw RuntimeException("stack underflow")
         mem.read(off, tempBytes)
         pushZero()
         decodeBE(tempBytes, 0, data, top)
