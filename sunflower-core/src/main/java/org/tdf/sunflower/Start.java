@@ -19,6 +19,7 @@ import org.springframework.util.ClassUtils;
 import org.tdf.common.event.EventBus;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.*;
+import org.tdf.common.trie.SecureTrie;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
@@ -282,7 +283,7 @@ public class Start {
     // storage root of contract store
     @Bean
     public Trie<HexBytes, HexBytes> contractStorageTrie(DatabaseStoreFactory factory) {
-        return Trie.<HexBytes, HexBytes>builder()
+        Trie<HexBytes, HexBytes> ret = Trie.<HexBytes, HexBytes>builder()
             .keyCodec(Codecs.HEX)
             .valueCodec(Codecs.HEX)
             .store(
@@ -292,6 +293,11 @@ public class Start {
                 )
             )
             .build();
+
+        AppConfig c = AppConfig.get();
+        if(c.isTrieSecure())
+            return new SecureTrie<>(ret);
+        return ret;
     }
 
     // contract hash code -> contract binary

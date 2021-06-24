@@ -60,6 +60,14 @@ public class HashUtil {
         }
     }
 
+    public static HexBytes sha3Hex(HexBytes input) {
+        return HexBytes.fromBytes(sha3(input.getBytes()));
+    }
+
+    public static HexBytes sha3Hex(byte[] input) {
+        return HexBytes.fromBytes(sha3(input));
+    }
+
     public static byte[] sha3(byte[] input) {
         MessageDigest digest;
         try {

@@ -4,9 +4,8 @@ import org.tdf.common.store.Store
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.state.BuiltinContract
-import java.io.Closeable
 
-interface Backend : Closeable {
+interface Backend : AutoCloseable {
     fun subBalance(addr: HexBytes, amount: Uint256) {
         if (getBalance(addr) < amount) throw RuntimeException(
             String.format(
