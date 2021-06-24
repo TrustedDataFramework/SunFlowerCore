@@ -2,7 +2,6 @@ package org.tdf.sunflower.pool
 
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
-import com.google.common.util.concurrent.ThreadFactoryBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -10,6 +9,7 @@ import org.tdf.common.event.EventBus
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.FixedDelayScheduler
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.LogLock
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.TransactionPoolConfig
 import org.tdf.sunflower.events.NewBestBlock
@@ -20,10 +20,8 @@ import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallData.Companion.fromTransaction
-import org.tdf.sunflower.vm.LockableBackend
 import org.tdf.sunflower.vm.VMExecutor
 import java.util.*
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -189,7 +187,7 @@ class TransactionPoolImpl(
                     Bloom(), emptyList()
                 )
                 receipt.setGasUsed(res.gasUsed)
-                receipt.executionResult = res.executionResult
+                receipt.executionResult = res.executionResult.bytes
                 receipt.transaction = t
                 pending.add(t)
                 pendingReceipts.add(receipt)

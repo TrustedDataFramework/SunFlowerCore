@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.util.FastByteComparisons;
 import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
+import org.tdf.common.util.LogLock;
 import org.tdf.sunflower.facade.ConsensusEngine;
 import org.tdf.sunflower.proto.Code;
 import org.tdf.sunflower.proto.Message;
@@ -30,7 +31,7 @@ public class MessageFilter implements Plugin {
     private final Cache<HexBytes, Boolean> cache;
     private final Map<HexBytes, Messages> multiPartCache = new HashMap<>();
     private final PeerServerConfig config;
-    private final Lock multiPartCacheLock = new ReentrantLock();
+    private final Lock multiPartCacheLock = new LogLock(new ReentrantLock(), "p2p-mp");
 
     MessageFilter(PeerServerConfig config, ConsensusEngine consensusEngine) {
         this.cache = CacheBuilder.newBuilder()
