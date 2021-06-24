@@ -14,7 +14,6 @@ import org.tdf.common.util.HexBytes
 import java.io.PrintStream
 import java.math.BigInteger
 import java.nio.file.Files
-import java.nio.file.OpenOption
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.atomic.AtomicInteger
@@ -134,6 +133,9 @@ class MockEvmHost : EvmHost {
         con.code = interpreter.ret
         return newAddr
     }
+
+    override fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>) {
+    }
 }
 
 @RunWith(JUnit4::class)
@@ -161,7 +163,7 @@ class VMTests {
         val node = objectMapper.readValue(codeJson, JsonNode::class.java)
 
         val code = Hex.decode(node.get("object").asText())
-        val owner = Hex.decode("828b82d18E77D380Ad33ae72702E7eFF5476fc17")
+        val owner = Hex.decode("8bb3194c582a9f70bdc079e4c20cde4a7fc3c807")
         val mock = MockEvmHost()
 
         val con = mock.create(owner, BigInteger.ZERO, code)

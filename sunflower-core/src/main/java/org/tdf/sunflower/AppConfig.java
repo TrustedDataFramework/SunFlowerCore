@@ -38,6 +38,7 @@ public class AppConfig {
     private Integer maxContractCallDepth;
     private Uint256 vmGasPrice;
     private Boolean trieSecure;
+    private Boolean vmDebug;
     private final ECKey myKey = new ECKey();
 
     public boolean getEip8(){
@@ -160,6 +161,13 @@ public class AppConfig {
             return this.vmGasPrice;
         this.vmGasPrice = reader.getAsU256("sunflower.vm.gas-price", Uint256.ZERO);
         return this.vmGasPrice;
+    }
+
+    public boolean isVmDebug() {
+        if (this.vmDebug != null)
+            return this.vmDebug;
+        this.vmDebug = reader.getAsBool("sunflower.vm.debug");
+        return this.vmDebug;
     }
 
     public boolean isTrieSecure() {

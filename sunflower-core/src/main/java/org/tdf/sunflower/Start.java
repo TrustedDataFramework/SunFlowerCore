@@ -40,6 +40,7 @@ import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.util.FileUtils;
 import org.tdf.sunflower.util.MapperUtil;
+import org.tdf.sunflower.vm.VMExecutor;
 
 import java.io.File;
 import java.net.URL;
@@ -106,10 +107,18 @@ public class Start {
         app.setDefaultProperties(loadDefaultConfig());
         app.addInitializers(applicationContext -> {
             loadConstants(applicationContext.getEnvironment());
+            if(AppConfig.get().isVmDebug())
+                VMExecutor.enableDebug(
+                    Paths.get(
+                        System.getProperty("user.dir"),
+                        "logs"
+                    ).toString()
+                );
             String path = applicationContext.getEnvironment().getProperty("sunflower.libs");
             if (path == null)
                 return;
             loadLibs(path);
+
         });
         app.run(args);
     }

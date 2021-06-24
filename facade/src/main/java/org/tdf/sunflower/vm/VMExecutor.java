@@ -4,6 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HashUtil;
@@ -25,16 +26,53 @@ import org.tdf.sunflower.vm.abi.SolidityType;
 import org.tdf.sunflower.vm.abi.WbiType;
 import org.tdf.sunflower.vm.hosts.*;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @NoArgsConstructor
+@Slf4j(topic = "vm")
 public class VMExecutor {
     public static final int MAX_FRAMES = 16384;
     public static final int MAX_STACK_SIZE = MAX_FRAMES * 4;
     public static final int MAX_LABELS = MAX_FRAMES * 4;
     public static final int MAX_CALL_DEPTH = 8;
+
+    private static String outDirectory = "";
+
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+
+    public static void enableDebug(String outDirectory) {
+        VMExecutor.outDirectory = outDirectory;
+    }
+
+    @SneakyThrows
+    private static PrintStream getPrintStream() {
+        if(outDirectory.isEmpty())
+            return null;
+
+        String filename = String.format("%04d.log", COUNTER.incrementAndGet());
+        Path path = Paths.get(outDirectory, filename);
+
+        log.info("write vm debug log to file {}", path);
+        OutputStream os = Files.newOutputStream(
+            path,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.TRUNCATE_EXISTING,
+            StandardOpenOption.WRITE
+        );
+
+        return new PrintStream(os);
+    }
+
+
     public static final Cache<HexBytes, byte[]> CACHE =
         CacheBuilder
             .newBuilder()
@@ -229,7 +267,7 @@ public class VMExecutor {
         EvmContext ctx = new EvmContext();
         EvmHostImpl host = new EvmHostImpl(backend, rd);
 
-        Interpreter interpreter = new Interpreter(host, ctx, evmCallData, null);
+        Interpreter interpreter = new Interpreter(host, ctx, evmCallData, getPrintStream());
         interpreter.execute();
 
         if (create) {

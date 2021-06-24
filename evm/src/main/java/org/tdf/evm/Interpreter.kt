@@ -64,6 +64,8 @@ interface EvmHost {
      * create contract, return the address of new contract
      */
     fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray): ByteArray
+
+    fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>)
 }
 
 class Interpreter(
@@ -190,6 +192,7 @@ class Interpreter(
                 }
                 OpCodes.JUMP -> {
                     jump(stack.popUnsignedInt())
+                    afterExecute()
                     continue
                 }
                 OpCodes.JUMPI -> {
@@ -197,6 +200,7 @@ class Interpreter(
                     val cond = stack.popUnsignedInt() != 0L
                     if (cond) {
                         jump(dst)
+                        afterExecute()
                         continue
                     }
                 }
@@ -208,10 +212,12 @@ class Interpreter(
                 }
 
                 OpCodes.RETURN -> {
-                    ret = stack.ret(memory)
+                    ret = stack.popMemory(memory)
+                    afterExecute()
                     break
                 }
                 OpCodes.REVERT -> {
+                    afterExecute()
                     break
                 }
                 // push(code[pc+1:pc+1+n])
@@ -222,6 +228,16 @@ class Interpreter(
                 }
                 in OpCodes.DUP1..OpCodes.DUP16 -> stack.dup(op - OpCodes.DUP1 + 1)
                 in OpCodes.SWAP1..OpCodes.SWAP16 -> stack.swap(op - OpCodes.SWAP1 + 1)
+
+                in OpCodes.LOG0..OpCodes.LOG4 -> {
+                    val n = op - OpCodes.LOG0
+                    val topics = mutableListOf<ByteArray>()
+                    val data = stack.popMemory(memory)
+                    for(i in 0 until n) {
+                        topics.add(stack.popAsByteArray())
+                    }
+                    host.log(callData.receipt, data, topics)
+                }
             }
 
             afterExecute()
@@ -229,22 +245,29 @@ class Interpreter(
         }
     }
 
-    fun ByteArray.hex(): String {
-        return "0x" + this.joinToString("") {
+    fun ByteArray.hex(start: Int = 0, end: Int = this.size): String {
+        return "0x" + this.sliceArray(start until end).joinToString("") {
             java.lang.String.format("%02x", it)
         }
     }
 
+
     fun ByteArray.bnHex(): String {
         var i = this.size
-        for(j in 0 until this.size) {
-            if(this[j] != (0).toByte()) {
+        for (j in 0 until this.size) {
+            if (this[j] != (0).toByte()) {
                 i = j
                 break
             }
         }
-        return this.sliceArray(i until this.size).hex()
+        return this.hex(i, this.size)
     }
+
+    fun BigInteger.hex(): String {
+        return "0x" + this.toString(16)
+    }
+
+
 
     private fun logInfo() {
         vmLog?.let {
@@ -265,14 +288,14 @@ class Interpreter(
                     it.println("push$n overflow, roll back to push$max")
                     n = max
                 }
-                it.println("push ${callData.code.sliceArray(start until start + n).hex()} into stack")
+                it.println("push ${callData.code.hex(start, start + n)} into stack")
                 return
             }
 
             when (op) {
                 OpCodes.MLOAD -> {
                     val off = stack.backBigInt()
-                    it.println("mload off = $off, stack.push(mem[$off:$off+32]), mem.cap = ${memory.size}")
+                    it.println("mload off = $off stack.push(mem[$off:$off+32]), mem.cap = ${memory.size}")
                 }
                 OpCodes.ADDRESS -> it.println("push address = ${callData.receipt.hex()}")
                 OpCodes.SSTORE -> {
@@ -283,7 +306,8 @@ class Interpreter(
                 OpCodes.SLOAD -> {
                     val loc = stack.back(0)
                     val value = host.getStorage(callData.receipt, loc)
-                    it.println("sload key = ${loc.hex()}, value = ${value.hex()}")
+                    val value32 = if(value.isEmpty()) { ByteArray(32) } else { value }
+                    it.println("sload key = ${loc.hex()}, value = ${value32.hex()}")
                 }
                 OpCodes.CODECOPY -> {
                     memOff = stack.backUnsignedInt()
@@ -292,9 +316,9 @@ class Interpreter(
 
                     it.println(
                         "codecopy into memory, mem[$memOff:$memOff+$memLen] = code[$codeOff:$codeOff+$memLen] mem.cap = ${memory.size} value = ${
-                            callData.code.sliceArray(
-                                codeOff.toInt() until codeOff.toInt() + memLen.toInt()
-                            ).hex()
+                            callData.code.hex(
+                                codeOff.toInt(), codeOff.toInt() + memLen.toInt()
+                            )
                         }"
                     )
                 }
@@ -325,8 +349,17 @@ class Interpreter(
                         it.println("jumpi cond = 1, jump to ${stack.backUnsignedInt(0)}")
                     }
                 }
-                OpCodes.JUMP -> it.println("jump to dest ${stack.backBigInt()} dest op = ${OpCodes.nameOf(callData.code[stack.backUnsignedInt().toInt()].toUByte().toInt())}")
+                OpCodes.JUMP -> it.println(
+                    "jump to dest ${stack.backBigInt()} dest op = ${
+                        OpCodes.nameOf(
+                            callData.code[stack.backUnsignedInt().toInt()].toUByte().toInt()
+                        )
+                    }"
+                )
                 OpCodes.JUMPDEST -> {
+                }
+                in OpCodes.LOG0..OpCodes.LOG4 -> {
+                    it.println("log${op - OpCodes.LOG0} mem off = ${stack.backBigInt(0)} len = ${stack.backBigInt(1)}, mem.cap = ${memory.size}")
                 }
                 OpCodes.RETURN -> {
                     val off = if (stack.backUnsignedInt() < 0) {
@@ -351,15 +384,38 @@ class Interpreter(
         vmLog?.let {
             it.println("after execute op ${OpCodes.nameOf(op)} pc = $pc")
 
-            val stackData = "[" + (0 until stack.size).map { bn -> stack.get(bn).toString(16) }.joinToString(",") + "]"
+            val stackData = "[" + (0 until stack.size).map { bn -> stack.get(bn).hex() }.joinToString(",") + "]"
             it.println("stack = $stackData")
 
-            when(op) {
-                OpCodes.SSTORE -> it.println("sstore success key = ${key.hex()}, value = ${host.getStorage(callData.receipt, key).hex()}")
-                OpCodes.CODECOPY -> it.println("codecopy succes mem.cap = ${memory.size}, mem[${memOff}:${memOff}+${memLen}] = ${memory.copy(memOff.toInt(), (memOff + memLen).toInt()).hex()}")
-                OpCodes.MSTORE -> it.println("mstore success, mem[${memOff}:${memOff}+32] = ${memory.copy(memOff.toInt(), (memOff + 32).toInt()).hex()} ")
-                OpCodes.JUMPI -> {}
-                OpCodes.RETURN -> {}
+            when (op) {
+                OpCodes.SSTORE -> it.println(
+                    "sstore success key = ${key.hex()}, value = ${
+                        host.getStorage(
+                            callData.receipt,
+                            key
+                        ).hex()
+                    }"
+                )
+                OpCodes.CODECOPY -> it.println(
+                    "codecopy succes mem.cap = ${memory.size}, mem[${memOff}:${memOff}+${memLen}] = ${
+                        memory.copy(
+                            memOff.toInt(),
+                            (memOff + memLen).toInt()
+                        ).hex()
+                    }"
+                )
+                OpCodes.MSTORE -> it.println(
+                    "mstore success, mem[${memOff}:${memOff}+32] = ${
+                        memory.copy(
+                            memOff.toInt(),
+                            (memOff + 32).toInt()
+                        ).hex()
+                    } mem.cap = ${memory.size}"
+                )
+                OpCodes.JUMPI -> {
+                }
+                OpCodes.RETURN -> {
+                }
             }
         }
     }

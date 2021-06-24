@@ -124,7 +124,7 @@ interface Stack {
     fun mstore(mem: Memory)
     fun mstore8(mem: Memory)
     fun mload(mem: Memory)
-    fun ret(mem: Memory): ByteArray
+    fun popMemory(mem: Memory): ByteArray
 }
 
 class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
@@ -433,11 +433,16 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         decodeBE(tempBytes, 0, data, top)
     }
 
-    override fun ret(mem: Memory): ByteArray {
-        val off = popIntExact()
-        val len = popIntExact()
-        val r = ByteArray(len)
-        mem.read(off, r)
+    override fun popMemory(mem: Memory): ByteArray {
+        val off = popUnsignedInt()
+        val len = popUnsignedInt()
+        if(off < 0 || len < 0 || off > Int.MAX_VALUE || len > Int.MAX_VALUE)
+            return emptyByteArray
+
+        val offInt = Math.min(off.toInt(), mem.size)
+        val lenInt = Math.min(len.toInt(), mem.size - offInt)
+        val r = ByteArray(lenInt)
+        mem.read(offInt, r)
         return r
     }
 
