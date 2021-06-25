@@ -107,7 +107,7 @@ class Interpreter(
     }
 
 
-    fun execute() {
+    fun execute(): ByteArray {
         logInfo()
 
         while (pc < callData.code.size) {
@@ -118,7 +118,7 @@ class Interpreter(
             when (op) {
                 OpCodes.STOP -> {
                     afterExecute()
-                    break
+                    return ret
                 }
                 OpCodes.ADD -> stack.add()
                 OpCodes.MUL -> stack.mul()
@@ -271,7 +271,7 @@ class Interpreter(
                 OpCodes.RETURN -> {
                     ret = stack.popMemory(memory)
                     afterExecute()
-                    break
+                    return ret
                 }
                 OpCodes.REVERT -> {
                     val off = stack.popU32()
@@ -290,6 +290,7 @@ class Interpreter(
             afterExecute()
             pc++
         }
+        return emptyByteArray
     }
 
     fun ByteArray.hex(start: Int = 0, end: Int = this.size): String {
