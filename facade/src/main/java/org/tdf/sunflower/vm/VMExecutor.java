@@ -125,7 +125,7 @@ public class VMExecutor {
     public VMResult execute() {
         // 1. increase sender nonce
         long n = backend.getNonce(callData.getOrigin());
-        if (!backend.getStaticCall() && n != callData.getTxNonce() && callData.getCallType() != CallType.COINBASE)
+        if (n != callData.getTxNonce() && callData.getCallType() != CallType.COINBASE)
             throw new RuntimeException("invalid nonce");
 
         HexBytes contractAddress = Address.empty();

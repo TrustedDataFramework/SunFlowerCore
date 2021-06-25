@@ -254,6 +254,12 @@ class Interpreter(
                     }
                     host.log(callData.receipt, data, topics)
                 }
+                OpCodes.GAS -> {
+                    stack.pushZero()
+                }
+                OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> {
+                    call(op)
+                }
             }
 
             afterExecute()
@@ -400,6 +406,9 @@ class Interpreter(
             it.println("stack = $stackData")
 
             when (op) {
+                OpCodes.CALL, OpCodes.STATICCALL, OpCodes.DELEGATECALL -> {
+                    it.println("${OpCodes.nameOf(op)} success memOff = $memOff menLen = $memLen ret = ${memory.data.hex(memOff.toInt(), (memOff + memLen).toInt())}")
+                }
                 OpCodes.SSTORE -> it.println(
                     "sstore success key = ${key.hex()}, value = ${
                         host.getStorage(
@@ -449,7 +458,7 @@ class Interpreter(
     }
 
     fun call(op: Int) {
-        val temp = stack.popBytes()
+        val temp = stack.popBigInt()
         val addr = stack.popAddress()
         val value = if(op == OpCodes.CALL) { stack.popBigInt() } else { BigInteger.ZERO }
         val inOff = stack.popU32()
@@ -457,10 +466,15 @@ class Interpreter(
         val retOff = stack.popU32()
         val retSize = stack.popU32()
 
+        memOff = retOff
+        memLen = retSize
+
         memory.resize(inOff, inSize)
 
-        val input = memory.copy(inOff.toInt(), inSize.toInt())
+        val input = memory.copy(inOff.toInt(), (inOff + inSize).toInt())
         var ret = emptyByteArray
+
+        vmLog?.println("${OpCodes.nameOf(op).lowercase()} address ${addr.hex()} args = ${input.hex()} value = $value retOffset = $retOff retSize = $retSize temp = $temp mem.cap = ${memory.size}")
 
         when(op) {
             OpCodes.CALL, OpCodes.STATICCALL -> {
@@ -470,6 +484,7 @@ class Interpreter(
                 ret = host.delegate(callData.caller, callData.receipt, addr, input)
             }
         }
+
 
         memory.resize(retOff, retSize)
         if(retSize.toInt() != ret.size)

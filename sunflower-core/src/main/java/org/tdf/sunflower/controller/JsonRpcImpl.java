@@ -249,6 +249,7 @@ public class JsonRpcImpl implements JsonRpc {
             Backend backend = getBackendByBlockId(bnOrId, true);
             RepositoryReader rd = repo.getReader();
         ) {
+            callData.setTxNonce(backend.getNonce(callData.getOrigin()));
             VMExecutor executor = new VMExecutor(rd, backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getExecutionResult());
         } finally {
