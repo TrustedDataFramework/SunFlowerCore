@@ -3,7 +3,7 @@ package org.tdf.evm
 object OpCodes {
     val NAMES = arrayOfNulls<String>(256)
 
-    fun nameOf(op: Int): String{
+    fun nameOf(op: Int): String {
         return NAMES[op]!!
     }
 

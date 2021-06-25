@@ -28,7 +28,11 @@ interface Memory {
             throw RuntimeException("memory access overflow")
 
         for (i in 0 until padTo) {
-            this[off + i] = if(i < bufSize) { buf[bufOff + i] } else { 0 }
+            this[off + i] = if (i < bufSize) {
+                buf[bufOff + i]
+            } else {
+                0
+            }
         }
     }
 
@@ -54,10 +58,10 @@ interface Memory {
         }
     }
 
-    fun copy(off: Int, limit: Int): ByteArray{
-        if(off < 0 || limit < 0)
+    fun copy(off: Int, limit: Int): ByteArray {
+        if (off < 0 || limit < 0)
             throw RuntimeException("memory access overflow")
-        if(limit < off)
+        if (limit < off)
             throw RuntimeException("memory: limit < off")
         val r = ByteArray(limit - off)
         read(off, r)

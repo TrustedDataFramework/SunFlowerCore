@@ -234,7 +234,6 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
 
-
     private var top: Int = -SLOT_SIZE
 
     override var size: Int = 0

@@ -2,6 +2,7 @@ package org.tdf.evm
 
 import java.io.PrintStream
 import java.math.BigInteger
+import java.nio.charset.StandardCharsets
 
 internal val emptyByteArray = ByteArray(0)
 internal val emptyAddress = ByteArray(20)
@@ -158,6 +159,19 @@ class Interpreter(
                 OpCodes.CALLDATACOPY -> stack.dataCopy(memory, callData.input)
                 OpCodes.CODESIZE -> stack.pushInt(callData.code.size)
                 OpCodes.CODECOPY -> stack.dataCopy(memory, callData.code)
+                OpCodes.RETURNDATASIZE -> stack.pushInt(ret.size)
+                OpCodes.RETURNDATACOPY -> {
+                    val memOff = stack.popU32()
+                    val dataOff = stack.popU32()
+                    val len = stack.popU32()
+
+                    if (dataOff < 0 || len < 0 || dataOff + len > ret.size) {
+                        throw RuntimeException("return data out of bounds")
+                    }
+
+                    memory.resize(memOff, len)
+                    memory.write(memOff.toInt(), ret, dataOff.toInt(), len.toInt())
+                }
                 OpCodes.GASPRICE -> stack.push(ctx.gasPrice)
                 OpCodes.EXTCODESIZE -> {
                     val code = host.getCode(stack.popAddress())
@@ -166,6 +180,12 @@ class Interpreter(
                 OpCodes.EXTCODECOPY -> {
                     val code = host.getCode(stack.popAddress())
                     stack.dataCopy(memory, code)
+                }
+                OpCodes.EXTCODEHASH -> {
+                    val code = host.getCode(stack.popAddress())
+                    val bytes = ByteArray(SlotUtils.SLOT_BYTE_ARRAY_SIZE)
+                    host.digest.digest(code, 0, code.size, bytes, 0)
+                    stack.push(bytes)
                 }
                 OpCodes.BLOCKHASH, OpCodes.COINBASE -> {
                     throw RuntimeException("unsupported op code")
@@ -220,21 +240,15 @@ class Interpreter(
                         continue
                     }
                 }
-                OpCodes.JUMPDEST -> {
-
-                }
                 OpCodes.PC -> {
                     stack.pushInt(pc)
                 }
-
-                OpCodes.RETURN -> {
-                    ret = stack.popMemory(memory)
-                    afterExecute()
-                    break
+                OpCodes.MSIZE -> stack.pushInt(memory.size)
+                OpCodes.GAS -> {
+                    stack.pushZero()
                 }
-                OpCodes.REVERT -> {
-                    afterExecute()
-                    break
+                OpCodes.JUMPDEST -> {
+
                 }
                 // push(code[pc+1:pc+1+n])
                 in OpCodes.PUSH1..OpCodes.PUSH32 -> {
@@ -244,7 +258,6 @@ class Interpreter(
                 }
                 in OpCodes.DUP1..OpCodes.DUP16 -> stack.dup(op - OpCodes.DUP1 + 1)
                 in OpCodes.SWAP1..OpCodes.SWAP16 -> stack.swap(op - OpCodes.SWAP1 + 1)
-
                 in OpCodes.LOG0..OpCodes.LOG4 -> {
                     val n = op - OpCodes.LOG0
                     val topics = mutableListOf<ByteArray>()
@@ -254,19 +267,26 @@ class Interpreter(
                     }
                     host.log(callData.receipt, data, topics)
                 }
-                OpCodes.GAS -> {
-                    stack.pushZero()
+
+                OpCodes.RETURN -> {
+                    ret = stack.popMemory(memory)
+                    afterExecute()
+                    break
+                }
+                OpCodes.REVERT -> {
+                    val off = stack.popU32()
+                    val size = stack.popU32()
+                    memory.resize(off, size)
+                    afterExecute()
+                    val reason = String(memory.copy(off.toInt(), (off + size).toInt()), StandardCharsets.UTF_8)
+                    throw RuntimeException("execution reverted reason = $reason")
                 }
                 OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> {
                     call(op)
 
                 }
-                OpCodes.RETURNDATASIZE -> {
-                    stack.pushInt(ret.size)
-                }
                 else -> throw RuntimeException("unhandled op ${OpCodes.nameOf(op)}")
             }
-
             afterExecute()
             pc++
         }
