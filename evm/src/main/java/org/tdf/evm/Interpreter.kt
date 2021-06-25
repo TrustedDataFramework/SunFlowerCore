@@ -87,7 +87,7 @@ class Interpreter(
     var pc: Int = 0
     private val stack = StackImpl(maxStackSize)
     private val memory = MemoryImpl(maxMemorySize)
-    var ret: ByteArray = emptyByteArray
+    private var ret: ByteArray = emptyByteArray
 
     var reverted: Boolean = false
         private set

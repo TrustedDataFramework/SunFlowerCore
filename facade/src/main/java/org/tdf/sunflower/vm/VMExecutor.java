@@ -291,12 +291,12 @@ public class VMExecutor {
         EvmHostImpl host = new EvmHostImpl(this, rd);
 
         Interpreter interpreter = new Interpreter(host, ctx, evmCallData, getPrintStream(), EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE);
-        interpreter.execute();
+        byte[] ret = interpreter.execute();
 
         if (create) {
-            backend.setCode(callData.getTo(), HexBytes.fromBytes(interpreter.getRet()));
+            backend.setCode(callData.getTo(), HexBytes.fromBytes(ret));
         }
-        return create ? ByteUtil.EMPTY_BYTE_ARRAY : interpreter.getRet();
+        return create ? ByteUtil.EMPTY_BYTE_ARRAY :ret;
     }
 
     private byte[] executeWasm(boolean create, byte[] code, byte[] data) {
