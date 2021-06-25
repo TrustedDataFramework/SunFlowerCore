@@ -233,14 +233,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         return BigInteger(1, tempBytes)
     }
 
-    private fun toResize(off: Long, len: Long): Int {
-        val i = off + len
-        if (off < 0 || len < 0 || i < 0)
-            throw RuntimeException("memory access overflow")
-        if (i > Int.MAX_VALUE)
-            throw RuntimeException("memory access overflow")
-        return i.toInt()
-    }
+
 
     private var top: Int = -SLOT_SIZE
 
@@ -491,7 +484,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
     override fun mstore(mem: Memory) {
         // assert off is valid
-        mem.resize(toResize(backU32(), SLOT_BYTE_ARRAY_SIZE.toLong()))
+        mem.resize(backU32(), SLOT_BYTE_ARRAY_SIZE.toLong())
         val off = popIntExact()
         if (size == 0)
             throw RuntimeException("stack underflow")
@@ -508,7 +501,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
     override fun mload(mem: Memory) {
         // assert off is valid
-        mem.resize(toResize(backU32(), SLOT_BYTE_ARRAY_SIZE.toLong()))
+        mem.resize(backU32(), SLOT_BYTE_ARRAY_SIZE.toLong())
         val off = popIntExact()
         mem.read(off, tempBytes)
         pushZero()
@@ -518,7 +511,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun popMemory(mem: Memory): ByteArray {
         val off = popU32()
         val len = popU32()
-        mem.resize(toResize(off, len))
+        mem.resize(off, len)
         val r = ByteArray(len.toInt())
         mem.read(off.toInt(), r)
         return r
@@ -870,7 +863,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
 
     override fun sha3(mem: Memory, digest: Digest) {
-        mem.resize(toResize(backU32(), backU32(1)))
+        mem.resize(backU32(), backU32(1))
         // after resize, mem[off:off+len] will never overflow
         val off = popIntExact()
         val len = popIntExact()
@@ -903,7 +896,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         val dataOff = popU32()
         val len = popU32()
         // assert valid memOff, len
-        mem.resize(toResize(memOff, len))
+        mem.resize(memOff, len)
         val dataOffInt = unsignedMin(dataOff, data.size.toLong()).toInt()
         val lenInt = Math.min(len.toInt(), data.size - dataOffInt)
         mem.writeRightPad(memOff.toInt(), data, len.toInt(), dataOffInt, lenInt)

@@ -53,8 +53,16 @@ interface EvmHost {
         caller: ByteArray,
         receipt: ByteArray,
         input: ByteArray,
+        // when static call = true, value is always zero
         value: BigInteger = BigInteger.ZERO,
-        delegate: Boolean = false
+        staticCall: Boolean = false
+    ): ByteArray
+
+    fun delegate(
+        originCaller: ByteArray,
+        originContract: ByteArray,
+        delegateAddr: ByteArray,
+        input: ByteArray,
     ): ByteArray
 
     fun drop(address: ByteArray)
@@ -438,5 +446,36 @@ class Interpreter(
         } else {
             y
         }
+    }
+
+    fun call(op: Int) {
+        val temp = stack.popBytes()
+        val addr = stack.popAddress()
+        val value = if(op == OpCodes.CALL) { stack.popBigInt() } else { BigInteger.ZERO }
+        val inOff = stack.popU32()
+        val inSize = stack.popU32()
+        val retOff = stack.popU32()
+        val retSize = stack.popU32()
+
+        memory.resize(inOff, inSize)
+
+        val input = memory.copy(inOff.toInt(), inSize.toInt())
+        var ret = emptyByteArray
+
+        when(op) {
+            OpCodes.CALL, OpCodes.STATICCALL -> {
+                ret = host.call(callData.receipt, addr, input, value, op == OpCodes.STATICCALL)
+            }
+            OpCodes.DELEGATECALL -> {
+                ret = host.delegate(callData.caller, callData.receipt, addr, input)
+            }
+        }
+
+        memory.resize(retOff, retSize)
+        if(retSize.toInt() != ret.size)
+            throw RuntimeException("unexpected return size")
+        memory.write(retOff.toInt(), ret, 0, retSize.toInt())
+        stack.push(temp)
+
     }
 }

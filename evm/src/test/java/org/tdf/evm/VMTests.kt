@@ -77,7 +77,7 @@ class MockEvmHost : EvmHost {
     }
 
     override fun call(
-        caller: ByteArray, receipt: ByteArray, input: ByteArray, value: BigInteger, delegate: Boolean
+        caller: ByteArray, receipt: ByteArray, input: ByteArray, value: BigInteger, callOp: Int
     ): ByteArray {
         val contract = getOrCreate(receipt)
         if(contract.code.isEmpty())

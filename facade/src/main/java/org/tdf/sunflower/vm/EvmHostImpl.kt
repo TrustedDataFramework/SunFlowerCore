@@ -1,5 +1,6 @@
 package org.tdf.sunflower.vm
 
+import org.tdf.common.types.Uint256
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.evm.Digest
@@ -13,7 +14,9 @@ val sha3 = Digest {
     HashUtil.sha3(src, srcPos, srcLen, dst, dstPos)
 }
 
-class EvmHostImpl(private val backend: Backend, private val rd: RepositoryReader): EvmHost {
+class EvmHostImpl(private val executor: VMExecutor, private val rd: RepositoryReader): EvmHost {
+    val backend: Backend = executor.backend
+
     override val digest: Digest
         get() = sha3
 
@@ -44,10 +47,37 @@ class EvmHostImpl(private val backend: Backend, private val rd: RepositoryReader
         caller: ByteArray,
         receipt: ByteArray,
         input: ByteArray,
+        // when static call = true, value is always zero
         value: BigInteger,
-        delegate: Boolean
+        staticCall: Boolean,
     ): ByteArray {
-        TODO("Not yet implemented")
+        val ex = executor.clone()
+        ex.callData.caller = HexBytes.fromBytes(caller)
+        ex.callData.to = HexBytes.fromBytes(receipt)
+        ex.callData.data = HexBytes.fromBytes(input)
+        ex.callData.value = Uint256.Companion.of(value)
+
+        if(staticCall) {
+            // since static call will not modify states, no needs to merge
+            ex.backend = ex.backend.createChild()
+            ex.backend.staticCall = true
+        }
+        return ex.executeInternal()
+    }
+
+    override fun delegate(
+        originCaller: ByteArray,
+        originContract: ByteArray,
+        delegateAddr: ByteArray,
+        input: ByteArray
+    ): ByteArray {
+        val ex = executor.clone()
+        ex.callData.caller = HexBytes.fromBytes(originCaller)
+        ex.callData.to = HexBytes.fromBytes(originCaller)
+        ex.callData.data = HexBytes.fromBytes(input)
+        ex.callData.delegateAddr = HexBytes.fromBytes(delegateAddr)
+
+        return ex.executeInternal()
     }
 
     override fun drop(address: ByteArray) {

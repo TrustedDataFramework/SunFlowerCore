@@ -20,6 +20,7 @@ data class CallData(
     var txNonce: Long = 0,
     var gasPrice: Uint256 = Uint256.ZERO,
     var gasLimit: Uint256 = Uint256.ZERO,
+    var delegateAddr: HexBytes = Address.empty()
 ) {
 
     val txNonceAsBytes: ByteArray

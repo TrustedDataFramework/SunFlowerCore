@@ -12,7 +12,6 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.evm.EvmCallData;
 import org.tdf.evm.EvmContext;
 import org.tdf.evm.Interpreter;
-import org.tdf.evm.SlotUtils;
 import org.tdf.lotusvm.Module;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.runtime.Memory;
@@ -59,7 +58,7 @@ public class VMExecutor {
 
     @SneakyThrows
     private static PrintStream getPrintStream() {
-        if(outDirectory.isEmpty())
+        if (outDirectory.isEmpty())
             return null;
 
         String filename = String.format("%04d.log", COUNTER.incrementAndGet());
@@ -126,14 +125,14 @@ public class VMExecutor {
     public VMResult execute() {
         // 1. increase sender nonce
         long n = backend.getNonce(callData.getOrigin());
-        if (!backend.isStatic() && n != callData.getTxNonce() && callData.getCallType() != CallType.COINBASE)
+        if (!backend.getStaticCall() && n != callData.getTxNonce() && callData.getCallType() != CallType.COINBASE)
             throw new RuntimeException("invalid nonce");
 
         HexBytes contractAddress = Address.empty();
 
-        if (callData.getCallType() == CallType.CALL) {
+        if (!backend.getStaticCall() && callData.getCallType() == CallType.CALL) {
             backend.setNonce(callData.getOrigin(), n + 1);
-            // contract deploy nonce will increase internally
+            // contract deploy nonce will increase in executeInternal
         }
 
         if (callData.getCallType() == CallType.CREATE) {
@@ -155,11 +154,11 @@ public class VMExecutor {
 
 
         return new VMResult(
-                limit.getGas(),
-                contractAddress,
-                HexBytes.fromBytes(result),
-                Collections.emptyList(),
-                fee
+            limit.getGas(),
+            contractAddress,
+            HexBytes.fromBytes(result),
+            Collections.emptyList(),
+            fee
         );
     }
 
@@ -180,6 +179,7 @@ public class VMExecutor {
                 }
                 return ByteUtil.EMPTY_BYTE_ARRAY;
             }
+            case DELEGATE:
             case CALL:
             case CREATE: {
                 // is prebuilt
@@ -199,39 +199,58 @@ public class VMExecutor {
                 HexBytes receiver = callData.getTo();
                 boolean create = callData.getCallType() == CallType.CREATE;
 
-                // if this is contract deploy, should create contract account
-                if (create) {
-                    isWasm = isWasm(callData.getData().getBytes());
 
-                    // increase sender nonce
-                    long n = backend.getNonce(callData.getCaller());
+                switch (callData.getCallType()) {
+                    case CREATE: {
+                        isWasm = isWasm(callData.getData().getBytes());
 
-                    if (isWasm) {
-                        try (Module tmpModule = Module.create(callData.getData().getBytes())) {
-                            // validate module
-                            ModuleValidator.INSTANCE.validate(tmpModule, false);
+                        // increase sender nonce
+                        long n = backend.getNonce(callData.getCaller());
 
-                            code = WBI.dropInit(callData.getData().getBytes());
-                            data = WBI.extractInitData(tmpModule);
-                            backend.setCode(receiver, HexBytes.fromBytes(code));
+                        if (isWasm) {
+                            try (Module tmpModule = Module.create(callData.getData().getBytes())) {
+                                // validate module
+                                ModuleValidator.INSTANCE.validate(tmpModule, false);
+
+                                code = WBI.dropInit(callData.getData().getBytes());
+                                data = WBI.extractInitData(tmpModule);
+                                backend.setCode(receiver, HexBytes.fromBytes(code));
+                            }
+                        } else {
+                            code = callData.getData().getBytes();
+                            data = ByteUtil.EMPTY_BYTE_ARRAY;
                         }
-                    } else {
-                        code = callData.getData().getBytes();
-                        data = ByteUtil.EMPTY_BYTE_ARRAY;
-                    }
 
-                    // increase nonce here to avoid conflicts
-                    backend.setNonce(callData.getCaller(), n + 1);
-                } else {
-                    HexBytes hash = backend.getContractHash(receiver);
-                    // this is a transfer transaction
-                    if (hash.equals(HashUtil.EMPTY_DATA_HASH_HEX)) {
-                        code = HexBytes.EMPTY_BYTES;
-                    } else {
-                        code = CACHE.get(backend.getContractHash(receiver), () -> backend.getCode(receiver).getBytes());
+                        // increase nonce here to avoid conflicts
+                        backend.setNonce(callData.getCaller(), n + 1);
+                        break;
                     }
-                    data = callData.getData().getBytes();
-                    isWasm = isWasm(code);
+                    case CALL: {
+                        HexBytes hash = backend.getContractHash(receiver);
+                        // this is a transfer transaction
+                        if (hash.equals(HashUtil.EMPTY_DATA_HASH_HEX)) {
+                            code = HexBytes.EMPTY_BYTES;
+                        } else {
+                            code = CACHE.get(backend.getContractHash(receiver), () -> backend.getCode(receiver).getBytes());
+                        }
+                        data = callData.getData().getBytes();
+                        isWasm = isWasm(code);
+                        break;
+                    }
+                    case DELEGATE: {
+                        HexBytes hash = backend.getContractHash(callData.getDelegateAddr());
+                        // this is a transfer transaction
+                        if (hash.equals(HashUtil.EMPTY_DATA_HASH_HEX)) {
+                            code = HexBytes.EMPTY_BYTES;
+                        } else {
+                            code = CACHE.get(backend.getContractHash(receiver), () -> backend.getCode(receiver).getBytes());
+                        }
+                        data = callData.getData().getBytes();
+                        isWasm = isWasm(code);
+                        break;
+                    }
+                    default:
+                        throw new UnsupportedOperationException();
                 }
 
                 Objects.requireNonNull(code);
@@ -269,7 +288,7 @@ public class VMExecutor {
         );
 
         EvmContext ctx = new EvmContext();
-        EvmHostImpl host = new EvmHostImpl(backend, rd);
+        EvmHostImpl host = new EvmHostImpl(this, rd);
 
         Interpreter interpreter = new Interpreter(host, ctx, evmCallData, getPrintStream(), EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE);
         interpreter.execute();

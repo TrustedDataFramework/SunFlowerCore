@@ -19,7 +19,7 @@ class BackendImpl(
     private val modifiedStorage: MutableMap<HexBytes, MutableMap<HexBytes, HexBytes>> = mutableMapOf(),
     override val builtins: Map<HexBytes, BuiltinContract> = mutableMapOf(),
     override val bios: Map<HexBytes, BuiltinContract> = mutableMapOf(),
-    override val isStatic: Boolean,
+    override var staticCall: Boolean,
 
     // address -> code
     private val codeStore: Store<HexBytes, HexBytes>,
@@ -46,7 +46,7 @@ class BackendImpl(
             mutableMapOf(),
             builtins,
             bios,
-            isStatic,
+            staticCall,
             codeStore,
             mutableMapOf(),
             headerCreatedAt
@@ -130,6 +130,10 @@ class BackendImpl(
     }
 
     override fun setBalance(address: HexBytes, balance: Uint256) {
+        if(getBalance(address) == balance)
+            return
+        if(staticCall)
+            throw RuntimeException("cannot set balance in static call")
         val a = lookup(address).copy(balance = balance)
         modifiedAccounts[address] = a
     }
@@ -139,11 +143,15 @@ class BackendImpl(
     }
 
     override fun setNonce(address: HexBytes, nonce: Long) {
+        if(staticCall)
+            throw RuntimeException("cannot set balance in static call")
         val a = lookup(address).copy(nonce = nonce)
         modifiedAccounts[address] = a
     }
 
     override fun dbSet(address: HexBytes, key: HexBytes, value: HexBytes) {
+        if(staticCall)
+            throw RuntimeException("cannot set balance in static call")
         if (key.size() == 0) throw RuntimeException("invalid key length = 0")
         modifiedStorage.putIfAbsent(address, mutableMapOf())
         modifiedStorage[address]!![key] = value
@@ -176,6 +184,8 @@ class BackendImpl(
     }
 
     override fun dbRemove(address: HexBytes, key: HexBytes) {
+        if(staticCall)
+            throw RuntimeException("cannot set balance in static call")
         if (key.size() == 0) throw RuntimeException("invalid key length = 0")
         dbSet(address, key, HexBytes.empty())
     }
@@ -199,6 +209,8 @@ class BackendImpl(
     }
 
     override fun setCode(address: HexBytes, code: HexBytes) {
+        if(staticCall)
+            throw RuntimeException("cannot set balance in static call")
         val hash = HashUtil.sha3(code.bytes)
         val a = lookup(address).copy(contractHash = HexBytes.fromBytes(hash))
         modifiedAccounts[address] = a

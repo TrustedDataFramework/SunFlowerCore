@@ -143,6 +143,7 @@ public class JsonRpcImpl implements JsonRpc {
                         header = rd.getBestHeader();
                         break;
                     }
+                    e.setStaticCall(isStatic);
                     return e;
                 }
                 case "earliest":
@@ -259,9 +260,10 @@ public class JsonRpcImpl implements JsonRpc {
     public String eth_estimateGas(CallArguments args) throws Exception {
         CallData callData = Objects.requireNonNull(args).toCallData();
         try (
-            Backend backend = getBackendByBlockId("latest", true);
+            Backend backend = getBackendByBlockId("latest", false);
             RepositoryReader rd = repo.getReader();
         ) {
+            callData.setTxNonce(backend.getNonce(callData.getOrigin()));
             VMExecutor executor = new VMExecutor(rd, backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getGasUsed());
         }

@@ -66,12 +66,13 @@ interface Backend : AutoCloseable {
     fun getCode(address: HexBytes): HexBytes
     fun setCode(address: HexBytes, code: HexBytes)
     fun onEvent(address: HexBytes, topics: List<Uint256>, data: ByteArray)
-    val isStatic: Boolean
+    var staticCall: Boolean
     val parentBackend: Backend?
     fun createChild(): Backend
 
     // merge modifications, return the new state root
     fun merge(): HexBytes
+
     fun isContract(address: HexBytes): Boolean {
         val code = getCode(address)
         return code.size() > 0

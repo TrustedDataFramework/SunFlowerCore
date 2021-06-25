@@ -32,6 +32,19 @@ interface Memory {
         }
     }
 
+    fun resize(off: Long, len: Long) {
+        resize(toResize(off, len))
+    }
+
+    fun toResize(off: Long, len: Long): Int {
+        val i = off + len
+        if (off < 0 || len < 0 || i < 0)
+            throw RuntimeException("memory access overflow")
+        if (i > Int.MAX_VALUE)
+            throw RuntimeException("memory access overflow")
+        return i.toInt()
+    }
+
     fun write(off: Int, buf: ByteArray, bufOff: Int = 0, bufSize: Int = buf.size) {
         if (off < 0 || off + bufSize > size)
             throw RuntimeException("memory access overflow")
