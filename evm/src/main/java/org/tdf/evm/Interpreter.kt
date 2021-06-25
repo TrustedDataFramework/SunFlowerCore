@@ -259,7 +259,12 @@ class Interpreter(
                 }
                 OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> {
                     call(op)
+
                 }
+                OpCodes.RETURNDATASIZE -> {
+                    stack.pushInt(ret.size)
+                }
+                else -> throw RuntimeException("unhandled op ${OpCodes.nameOf(op)}")
             }
 
             afterExecute()
@@ -407,7 +412,14 @@ class Interpreter(
 
             when (op) {
                 OpCodes.CALL, OpCodes.STATICCALL, OpCodes.DELEGATECALL -> {
-                    it.println("${OpCodes.nameOf(op)} success memOff = $memOff menLen = $memLen ret = ${memory.data.hex(memOff.toInt(), (memOff + memLen).toInt())}")
+                    it.println(
+                        "${OpCodes.nameOf(op)} success memOff = $memOff menLen = $memLen ret = ${
+                            memory.data.hex(
+                                memOff.toInt(),
+                                (memOff + memLen).toInt()
+                            )
+                        }"
+                    )
                 }
                 OpCodes.SSTORE -> it.println(
                     "sstore success key = ${key.hex()}, value = ${
@@ -460,7 +472,11 @@ class Interpreter(
     fun call(op: Int) {
         val temp = stack.popBigInt()
         val addr = stack.popAddress()
-        val value = if(op == OpCodes.CALL) { stack.popBigInt() } else { BigInteger.ZERO }
+        val value = if (op == OpCodes.CALL) {
+            stack.popBigInt()
+        } else {
+            BigInteger.ZERO
+        }
         val inOff = stack.popU32()
         val inSize = stack.popU32()
         val retOff = stack.popU32()
@@ -472,11 +488,14 @@ class Interpreter(
         memory.resize(inOff, inSize)
 
         val input = memory.copy(inOff.toInt(), (inOff + inSize).toInt())
-        var ret = emptyByteArray
 
-        vmLog?.println("${OpCodes.nameOf(op).lowercase()} address ${addr.hex()} args = ${input.hex()} value = $value retOffset = $retOff retSize = $retSize temp = $temp mem.cap = ${memory.size}")
+        vmLog?.println(
+            "${
+                OpCodes.nameOf(op).lowercase()
+            } address ${addr.hex()} args = ${input.hex()} value = $value retOffset = $retOff retSize = $retSize temp = $temp mem.cap = ${memory.size}"
+        )
 
-        when(op) {
+        when (op) {
             OpCodes.CALL, OpCodes.STATICCALL -> {
                 ret = host.call(callData.receipt, addr, input, value, op == OpCodes.STATICCALL)
             }
@@ -487,10 +506,10 @@ class Interpreter(
 
 
         memory.resize(retOff, retSize)
-        if(retSize.toInt() != ret.size)
+        if (retSize.toInt() != ret.size)
             throw RuntimeException("unexpected return size")
         memory.write(retOff.toInt(), ret, 0, retSize.toInt())
-        stack.push(temp)
+        stack.pushOne()
 
     }
 }
