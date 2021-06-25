@@ -73,10 +73,10 @@ class EvmHostImpl(private val executor: VMExecutor, private val rd: RepositoryRe
     ): ByteArray {
         val ex = executor.clone()
         ex.callData.caller = HexBytes.fromBytes(originCaller)
-        ex.callData.to = HexBytes.fromBytes(originCaller)
+        ex.callData.to = HexBytes.fromBytes(originContract)
         ex.callData.data = HexBytes.fromBytes(input)
         ex.callData.delegateAddr = HexBytes.fromBytes(delegateAddr)
-
+        ex.callData.callType = CallType.DELEGATE
         return ex.executeInternal()
     }
 

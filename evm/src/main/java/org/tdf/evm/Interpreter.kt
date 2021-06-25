@@ -311,7 +311,7 @@ class Interpreter(
 
     private fun logInfo() {
         vmLog?.let {
-            it.println("go pc = $pc input = ${callData.input.hex()} code size = ${callData.code.size}")
+            it.println("go pc = $pc input = ${callData.input.hex()} code size = ${callData.code.size} caller = ${callData.caller.hex()} receipt = ${callData.receipt.hex()} value = ${callData.value}")
             it.println("code = ${callData.code.hex()}")
         }
     }
