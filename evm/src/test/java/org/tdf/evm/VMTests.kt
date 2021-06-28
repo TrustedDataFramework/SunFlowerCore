@@ -77,7 +77,12 @@ class MockEvmHost : EvmHost {
     }
 
     override fun call(
-        caller: ByteArray, receipt: ByteArray, input: ByteArray, value: BigInteger, callOp: Int
+        caller: ByteArray,
+        receipt: ByteArray,
+        input: ByteArray,
+        // when static call = true, value is always zero
+        value: BigInteger,
+        staticCall: Boolean,
     ): ByteArray {
         val contract = getOrCreate(receipt)
         if(contract.code.isEmpty())
@@ -93,7 +98,16 @@ class MockEvmHost : EvmHost {
         )
 
         interpreter.execute()
-        return interpreter.ret
+        return interpreter.execute()
+    }
+
+    override fun delegate(
+        originCaller: ByteArray,
+        originContract: ByteArray,
+        delegateAddr: ByteArray,
+        input: ByteArray
+    ): ByteArray {
+        TODO("Not yet implemented")
     }
 
     private fun getOrCreate(address: ByteArray): MemAccount {
@@ -122,9 +136,9 @@ class MockEvmHost : EvmHost {
                 getLogFile()
         )
 
-        interpreter.execute()
+
         val con = getOrCreate(newAddr)
-        con.code = interpreter.ret
+        con.code = interpreter.execute()
         return newAddr
     }
 
@@ -145,9 +159,7 @@ class VMTests {
         val data = EvmCallData(code = code)
         val mock = MockEvmHost()
         val executor = Interpreter(mock, ctx, data)
-
-        executor.execute()
-        assert(BigInteger(1, executor.ret).intValueExact() == 10)
+        assert(BigInteger(1, executor.execute()).intValueExact() == 10)
     }
 
     @Test

@@ -30,8 +30,8 @@ class U256Register {
     fun sub(left: BigInteger, right: BigInteger): BigInteger {
         slot0.copyFrom(left)
         slot1.copyFrom(right)
-        slot0.sub(slot1)
-        return slot0.toBigInt()
+        SlotUtils.sub(slot0, 0, slot1, 0, slot1, 0);
+        return slot1.toBigInt()
     }
 
     fun mul(left: BigInteger, right: BigInteger): BigInteger {
