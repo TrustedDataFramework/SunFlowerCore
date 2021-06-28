@@ -7,6 +7,24 @@ import java.nio.charset.StandardCharsets
 internal val emptyByteArray = ByteArray(0)
 internal val emptyAddress = ByteArray(20)
 
+interface GasTable {
+    val quickStep: Long
+        get() = 2
+    val fastestStep: Long
+        get() = 3
+
+    val fastStep: Long
+        get() = 5
+    val midStep: Long
+        get() = 8
+
+    val slowStep: Long
+        get() = 10
+
+    val extStep: Long
+        get() = 20
+}
+
 class EvmContext(
     // transaction.sender
     val origin: ByteArray = emptyAddress,
@@ -25,7 +43,7 @@ class EvmContext(
     // gas limit in transaction
     val txGasLimit: Long = 0,
     // gas price
-    val gasPrice: BigInteger = BigInteger.ZERO
+    val gasPrice: BigInteger = BigInteger.ZERO,
 )
 
 /**
@@ -84,8 +102,11 @@ class Interpreter(
     maxStackSize: Int = Int.MAX_VALUE,
     maxMemorySize: Int = Int.MAX_VALUE
 ) {
+    var gasUsed: Long = 0
+        private set
+
     var pc: Int = 0
-    private val stack = StackImpl(maxStackSize)
+    private val stack: Stack = StackImpl(maxStackSize)
     private val memory = MemoryImpl(maxMemorySize)
     private var ret: ByteArray = emptyByteArray
 
@@ -98,6 +119,7 @@ class Interpreter(
     private var memLen: Long = 0
     private var key: ByteArray = emptyByteArray
 
+    // TODO: code segment check
     private fun jump(dst: Long) {
         if (dst < 0 || dst >= callData.code.size)
             throw RuntimeException("jump destination overflow")
@@ -120,6 +142,8 @@ class Interpreter(
                     afterExecute()
                     return ret
                 }
+
+                // arithmetic, pure
                 OpCodes.ADD -> stack.add()
                 OpCodes.MUL -> stack.mul()
                 OpCodes.SUB -> stack.sub()
@@ -145,7 +169,10 @@ class Interpreter(
                 OpCodes.SHL -> stack.shl()
                 OpCodes.SHR -> stack.shr()
                 OpCodes.SAR -> stack.sar()
+
                 OpCodes.SHA3 -> stack.sha3(memory, host.digest)
+
+                // address is left padded
                 OpCodes.ADDRESS -> stack.push(callData.receipt)
                 OpCodes.BALANCE -> {
                     val balance = host.getBalance(stack.popAddress())
@@ -154,24 +181,17 @@ class Interpreter(
                 OpCodes.ORIGIN -> stack.push(ctx.origin)
                 OpCodes.CALLER -> stack.push(callData.caller)
                 OpCodes.CALLVALUE -> stack.push(callData.value)
+
+                // call data load is right padded
                 OpCodes.CALLDATALOAD -> stack.callDataLoad(callData.input)
                 OpCodes.CALLDATASIZE -> stack.pushInt(callData.input.size)
+
+                // right padded
                 OpCodes.CALLDATACOPY -> stack.dataCopy(memory, callData.input)
                 OpCodes.CODESIZE -> stack.pushInt(callData.code.size)
                 OpCodes.CODECOPY -> stack.dataCopy(memory, callData.code)
                 OpCodes.RETURNDATASIZE -> stack.pushInt(ret.size)
-                OpCodes.RETURNDATACOPY -> {
-                    val memOff = stack.popU32()
-                    val dataOff = stack.popU32()
-                    val len = stack.popU32()
-
-                    if (dataOff < 0 || len < 0 || dataOff + len > ret.size) {
-                        throw RuntimeException("return data out of bounds")
-                    }
-
-                    memory.resize(memOff, len)
-                    memory.write(memOff.toInt(), ret, dataOff.toInt(), len.toInt())
-                }
+                OpCodes.RETURNDATACOPY -> stack.dataCopy(memory, ret)
                 OpCodes.GASPRICE -> stack.push(ctx.gasPrice)
                 OpCodes.EXTCODESIZE -> {
                     val code = host.getCode(stack.popAddress())
@@ -250,14 +270,25 @@ class Interpreter(
                 OpCodes.JUMPDEST -> {
 
                 }
-                // push(code[pc+1:pc+1+n])
+                // push(code[pc+1:pc+1+n]), push n is right padded
                 in OpCodes.PUSH1..OpCodes.PUSH32 -> {
-                    val n = Math.min(op - OpCodes.PUSH1 + 1, callData.code.size - pc - 1)
-                    stack.push(callData.code, pc + 1, n)
-                    pc += n
+                    val size = op - OpCodes.PUSH1 + 1
+                    val n = Math.min(size, callData.code.size - pc - 1)
+
+                    if (n == size) {
+                        stack.push(callData.code, pc + 1, n)
+                        pc += size
+                    } else {
+                        val padded = ByteArray(size)
+                        System.arraycopy(callData.code, pc + 1, padded, 0, n)
+                        stack.push(padded)
+                        pc += size
+                    }
                 }
                 in OpCodes.DUP1..OpCodes.DUP16 -> stack.dup(op - OpCodes.DUP1 + 1)
                 in OpCodes.SWAP1..OpCodes.SWAP16 -> stack.swap(op - OpCodes.SWAP1 + 1)
+
+                // TODO: Test log operation
                 in OpCodes.LOG0..OpCodes.LOG4 -> {
                     val n = op - OpCodes.LOG0
                     val topics = mutableListOf<ByteArray>()

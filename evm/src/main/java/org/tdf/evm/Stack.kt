@@ -883,7 +883,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     private fun unsignedMin(x: Long, y: Long): Long {
-        return if (x + Long.MIN_VALUE < y + Long.MIN_VALUE) {
+        return if (x + java.lang.Long.MIN_VALUE < y + java.lang.Long.MIN_VALUE) {
             x
         } else {
             y

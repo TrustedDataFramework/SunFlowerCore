@@ -36,8 +36,8 @@ interface Memory {
         }
     }
 
-    fun resize(off: Long, len: Long) {
-        resize(toResize(off, len))
+    fun resize(off: Long, len: Long): Int {
+        return resize(toResize(off, len))
     }
 
     fun toResize(off: Long, len: Long): Int {
