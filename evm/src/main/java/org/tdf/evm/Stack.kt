@@ -108,7 +108,7 @@ interface Stack {
     fun popBigInt(signed: Boolean = false): BigInteger
 
     /**
-     * pop as unsigned integer, return -1 if overflowed
+     * pop as unsigned integer, return -1 if overflow
      */
     fun popU32(): Long
 
@@ -186,7 +186,7 @@ interface Stack {
 
     /**
      *  off := pop()
-     *  val := u8(pop())
+     *  val := pop() & 0xff
      *  mem[off] = val
      */
     fun mstore8(mem: Memory)
