@@ -97,7 +97,6 @@ class MockEvmHost : EvmHost {
             getLogFile()
         )
 
-        interpreter.execute()
         return interpreter.execute()
     }
 

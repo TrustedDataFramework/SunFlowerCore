@@ -477,7 +477,7 @@ class Interpreter(
     private fun getData(input: ByteArray, off: Long, len: Long): ByteArray {
         val offInt = unsignedMin(off, input.size.toLong()).toInt()
         val lenInt = unsignedMin(len, (input.size - offInt).toLong()).toInt()
-        val r = ByteArray(lenInt)
+        val r = ByteArray(len.toInt())
         System.arraycopy(input, offInt, r, 0, lenInt)
         return r
     }
