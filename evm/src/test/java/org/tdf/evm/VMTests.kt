@@ -18,6 +18,8 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.atomic.AtomicInteger
 
+class TestGasTable: GasTable
+
 val ZERO_ADDRESS = ByteArray(20)
 
 val sha3 = Digest {
@@ -94,10 +96,11 @@ class MockEvmHost : EvmHost {
             this,
             EvmContext(),
             callData,
+            TestGasTable(),
             getLogFile()
         )
 
-        return interpreter.execute()
+        return interpreter.execute().ret
     }
 
     override fun delegate(
@@ -132,12 +135,13 @@ class MockEvmHost : EvmHost {
             this,
                 EvmContext(),
                 EvmCallData(caller, newAddr, value, emptyByteArray, createCode),
+                TestGasTable(),
                 getLogFile()
         )
 
 
         val con = getOrCreate(newAddr)
-        con.code = interpreter.execute()
+        con.code = interpreter.execute().ret
         return newAddr
     }
 
@@ -157,8 +161,8 @@ class VMTests {
         val ctx = EvmContext()
         val data = EvmCallData(code = code)
         val mock = MockEvmHost()
-        val executor = Interpreter(mock, ctx, data)
-        assert(BigInteger(1, executor.execute()).intValueExact() == 10)
+        val executor = Interpreter(mock, ctx, data, TestGasTable())
+        assert(BigInteger(1, executor.execute().ret).intValueExact() == 10)
     }
 
     @Test

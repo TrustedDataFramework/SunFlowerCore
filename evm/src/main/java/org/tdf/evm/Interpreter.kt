@@ -23,7 +23,15 @@ interface GasTable {
 
     val extStep: Long
         get() = 20
+
+    val sha3Gas: Long
+        get() = 30
+
+    val balanceGas: Long
+        get() = 20
 }
+
+
 
 class EvmContext(
     // transaction.sender
@@ -55,6 +63,11 @@ class EvmCallData(
     val value: BigInteger = BigInteger.ZERO,
     val input: ByteArray = emptyByteArray,
     val code: ByteArray = emptyByteArray,
+)
+
+class ExecuteResult(
+    val gasUsed: Long = 0L,
+    val ret: ByteArray = emptyByteArray
 )
 
 interface EvmHost {
@@ -98,13 +111,12 @@ class Interpreter(
     val host: EvmHost,
     val ctx: EvmContext,
     val callData: EvmCallData,
+    val gasTable: GasTable,
     private val vmLog: PrintStream? = null,
     maxStackSize: Int = Int.MAX_VALUE,
     maxMemorySize: Int = Int.MAX_VALUE
 ) {
-    var gasUsed: Long = 0
-        private set
-
+    private var gasUsed: Long = 0
     var pc: Int = 0
     private val stack: Stack = StackImpl(maxStackSize)
     private val memory = MemoryImpl(maxMemorySize)
@@ -119,6 +131,7 @@ class Interpreter(
     private var memLen: Long = 0
     private var key: ByteArray = emptyByteArray
 
+
     // TODO: code segment check
     private fun jump(dst: Long) {
         if (dst < 0 || dst >= callData.code.size)
@@ -129,7 +142,7 @@ class Interpreter(
     }
 
 
-    fun execute(): ByteArray {
+    fun execute(): ExecuteResult {
         logInfo()
 
         while (pc < callData.code.size) {
@@ -140,54 +153,150 @@ class Interpreter(
             when (op) {
                 OpCodes.STOP -> {
                     afterExecute()
-                    return ret
+                    return ExecuteResult(gasUsed, ret)
                 }
 
                 // arithmetic, pure
-                OpCodes.ADD -> stack.add()
-                OpCodes.MUL -> stack.mul()
-                OpCodes.SUB -> stack.sub()
-                OpCodes.DIV -> stack.div()
-                OpCodes.SDIV -> stack.signedDiv()
-                OpCodes.MOD -> stack.mod()
-                OpCodes.SMOD -> stack.signedMod()
-                OpCodes.ADDMOD -> stack.addMod()
-                OpCodes.MULMOD -> stack.mulMod()
+                OpCodes.ADD -> {
+                    stack.add()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.MUL -> {
+                    stack.mul()
+                    gasUsed += gasTable.fastStep
+                }
+                OpCodes.SUB -> {
+                    stack.sub()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.DIV -> {
+                    stack.div()
+                    gasUsed += gasTable.fastStep
+                }
+                OpCodes.SDIV -> {
+                    stack.signedDiv()
+                    gasUsed += gasTable.fastStep
+                }
+                OpCodes.MOD -> {
+                    stack.mod()
+                    gasUsed += gasTable.fastStep
+                }
+                OpCodes.SMOD -> {
+                    stack.signedMod()
+                    gasUsed += gasTable.fastStep
+                }
+                OpCodes.ADDMOD -> {
+                    stack.addMod()
+                    gasUsed += gasTable.midStep
+                }
+                OpCodes.MULMOD -> {
+                    stack.mulMod()
+                    gasUsed += gasTable.midStep
+                }
+                // TODO: exp gas
                 OpCodes.EXP -> stack.exp()
-                OpCodes.SIGNEXTEND -> stack.signExtend()
-                OpCodes.LT -> stack.lt()
-                OpCodes.GT -> stack.gt()
-                OpCodes.SLT -> stack.slt()
-                OpCodes.SGT -> stack.sgt()
-                OpCodes.EQ -> stack.eq()
-                OpCodes.ISZERO -> stack.isZero()
-                OpCodes.AND -> stack.and()
-                OpCodes.OR -> stack.or()
-                OpCodes.XOR -> stack.xor()
-                OpCodes.NOT -> stack.not()
-                OpCodes.BYTE -> stack.byte()
-                OpCodes.SHL -> stack.shl()
-                OpCodes.SHR -> stack.shr()
-                OpCodes.SAR -> stack.sar()
-
-                OpCodes.SHA3 -> stack.sha3(memory, host.digest)
+                OpCodes.SIGNEXTEND -> {
+                    stack.signExtend()
+                    gasUsed += gasTable.fastStep
+                }
+                OpCodes.LT -> {
+                    stack.lt()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.GT -> {
+                    stack.gt()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.SLT -> {
+                    stack.slt()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.SGT -> {
+                    stack.sgt()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.EQ -> {
+                    stack.eq()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.ISZERO -> {
+                    stack.isZero()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.AND -> {
+                    stack.and()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.OR -> {
+                    stack.or()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.XOR -> {
+                    stack.xor()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.NOT -> {
+                    stack.not()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.BYTE -> {
+                    stack.byte()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.SHL -> {
+                    stack.shl()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.SHR -> {
+                    stack.shr()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.SAR -> {
+                    stack.sar()
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.SHA3 -> {
+                    stack.sha3(memory, host.digest)
+                    gasUsed += gasTable.sha3Gas
+                }
 
                 // address is left padded
-                OpCodes.ADDRESS -> stack.push(callData.receipt)
+                OpCodes.ADDRESS -> {
+                    stack.push(callData.receipt)
+                    gasUsed += gasTable.quickStep
+                }
                 OpCodes.BALANCE -> {
                     val balance = host.getBalance(stack.popAddress())
                     stack.push(balance)
+                    gasUsed += gasTable.balanceGas
                 }
-                OpCodes.ORIGIN -> stack.push(ctx.origin)
-                OpCodes.CALLER -> stack.push(callData.caller)
-                OpCodes.CALLVALUE -> stack.push(callData.value)
-
+                OpCodes.ORIGIN -> {
+                    stack.push(ctx.origin)
+                    gasUsed += gasTable.quickStep
+                }
+                OpCodes.CALLER -> {
+                    stack.push(callData.caller)
+                    gasUsed += gasTable.quickStep
+                }
+                OpCodes.CALLVALUE -> {
+                    stack.push(callData.value)
+                    gasUsed += gasTable.quickStep
+                }
                 // call data load is right padded
-                OpCodes.CALLDATALOAD -> stack.callDataLoad(callData.input)
-                OpCodes.CALLDATASIZE -> stack.pushInt(callData.input.size)
+                OpCodes.CALLDATALOAD -> {
+                    stack.callDataLoad(callData.input)
+                    gasUsed += gasTable.fastestStep
+                }
+                OpCodes.CALLDATASIZE -> {
+                    stack.pushInt(callData.input.size)
+                    gasUsed += gasTable.quickStep
+                }
 
                 // right padded
-                OpCodes.CALLDATACOPY -> stack.dataCopy(memory, callData.input)
+                OpCodes.CALLDATACOPY -> {
+                    stack.dataCopy(memory, callData.input)
+                    gasUsed += gasTable.fastestStep
+                }
                 OpCodes.CODESIZE -> stack.pushInt(callData.code.size)
                 OpCodes.CODECOPY -> stack.dataCopy(memory, callData.code)
                 OpCodes.RETURNDATASIZE -> stack.pushInt(ret.size)
@@ -302,7 +411,7 @@ class Interpreter(
                 OpCodes.RETURN -> {
                     ret = stack.popMemory(memory)
                     afterExecute()
-                    return ret
+                    return ExecuteResult(gasUsed, ret)
                 }
                 OpCodes.REVERT -> {
                     val off = stack.popU32()
@@ -314,14 +423,13 @@ class Interpreter(
                 }
                 OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> {
                     call(op)
-
                 }
                 else -> throw RuntimeException("unhandled op ${OpCodes.nameOf(op)}")
             }
             afterExecute()
             pc++
         }
-        return emptyByteArray
+        return ExecuteResult(gasUsed, emptyByteArray)
     }
 
     fun ByteArray.hex(start: Int = 0, end: Int = this.size): String {
@@ -331,13 +439,15 @@ class Interpreter(
     }
 
 
-    fun ByteArray.bnHex(): String {
-        return BigInteger(1, this).hex()
-    }
+    val ByteArray.bnHex: String
+        get() {
+            return BigInteger(1, this).hex
+        }
 
-    fun BigInteger.hex(): String {
-        return "0x" + this.toString(16)
-    }
+    val BigInteger.hex: String
+        get() {
+            return "0x" + this.toString(16)
+        }
 
 
     private fun logInfo() {
@@ -399,7 +509,7 @@ class Interpreter(
                 }
                 OpCodes.MSTORE -> {
                     memOff = stack.backU32()
-                    val value = stack.back(1).bnHex()
+                    val value = stack.back(1).bnHex
 
                     it.println("mstore $value into memory, mem offset = $memOff mem.cap = ${memory.size}")
                 }
@@ -459,7 +569,7 @@ class Interpreter(
         vmLog?.let {
             it.println("after execute op ${OpCodes.nameOf(op)} pc = $pc")
 
-            val stackData = "[" + (0 until stack.size).map { bn -> stack.get(bn).hex() }.joinToString(",") + "]"
+            val stackData = "[" + (0 until stack.size).map { bn -> stack.get(bn).hex }.joinToString(",") + "]"
             it.println("stack = $stackData")
 
             when (op) {
@@ -562,6 +672,5 @@ class Interpreter(
             throw RuntimeException("unexpected return size")
         memory.write(retOff.toInt(), ret, 0, retSize.toInt())
         stack.pushOne()
-
     }
 }
