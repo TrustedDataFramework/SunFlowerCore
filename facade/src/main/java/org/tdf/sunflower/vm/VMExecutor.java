@@ -290,7 +290,7 @@ public class VMExecutor {
         EvmContext ctx = new EvmContext();
         EvmHostImpl host = new EvmHostImpl(this, rd);
 
-        Interpreter interpreter = new Interpreter(host, ctx, evmCallData, getPrintStream(), EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE);
+        Interpreter interpreter = new Interpreter(host, ctx, evmCallData, getPrintStream(), limit ,EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE);
         byte[] ret = interpreter.execute();
 
         if (create) {

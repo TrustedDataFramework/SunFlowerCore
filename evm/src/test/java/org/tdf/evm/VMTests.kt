@@ -83,7 +83,7 @@ class MockEvmHost : EvmHost {
         // when static call = true, value is always zero
         value: BigInteger,
         staticCall: Boolean,
-    ): ExecuteResult {
+    ): ByteArray {
         val contract = getOrCreate(receipt)
         if(contract.code.isEmpty())
             throw RuntimeException("not a contract account")
@@ -105,7 +105,7 @@ class MockEvmHost : EvmHost {
         originContract: ByteArray,
         delegateAddr: ByteArray,
         input: ByteArray
-    ): ExecuteResult {
+    ): ByteArray {
         TODO("Not yet implemented")
     }
 
@@ -137,7 +137,7 @@ class MockEvmHost : EvmHost {
 
 
         val con = getOrCreate(newAddr)
-        con.code = interpreter.execute().ret
+        con.code = interpreter.execute()
         return newAddr
     }
 
@@ -158,7 +158,7 @@ class VMTests {
         val data = EvmCallData(code = code)
         val mock = MockEvmHost()
         val executor = Interpreter(mock, ctx, data)
-        assert(BigInteger(1, executor.execute().ret).intValueExact() == 10)
+        assert(BigInteger(1, executor.execute()).intValueExact() == 10)
     }
 
     @Test
@@ -175,6 +175,6 @@ class VMTests {
 
         val r = mock.call(ZERO_ADDRESS, con, Hex.decode("893d20e8"))
 
-        assertEquals(Hex.toHexString(owner), Hex.toHexString(r.ret.address()))
+        assertEquals(Hex.toHexString(owner), Hex.toHexString(r.address()))
     }
 }

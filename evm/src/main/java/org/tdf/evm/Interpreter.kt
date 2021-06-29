@@ -67,14 +67,14 @@ interface EvmHost {
         // when static call = true, value is always zero
         value: BigInteger = BigInteger.ZERO,
         staticCall: Boolean = false
-    ): ExecuteResult
+    ): ByteArray
 
     fun delegate(
         originCaller: ByteArray,
         originContract: ByteArray,
         delegateAddr: ByteArray,
         input: ByteArray,
-    ): ExecuteResult
+    ): ByteArray
 
     fun drop(address: ByteArray)
 
@@ -86,21 +86,19 @@ interface EvmHost {
     fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>)
 }
 
+fun interface EvmHook{
+    fun onOp(op: Int)
+}
+
 class Interpreter(
     val host: EvmHost,
     val ctx: EvmContext,
     val callData: EvmCallData,
     private val vmLog: PrintStream? = null,
-    private val maxGas: Long = Long.MAX_VALUE,
+    private val hook: EvmHook? = null,
     maxStackSize: Int = Int.MAX_VALUE,
     maxMemorySize: Int = Int.MAX_VALUE
 ) {
-    private var gasUsed: Long = 0
-        set(value) {
-            field = value
-            if(field < 0 || field > maxGas)
-                throw RuntimeException("gas overflow")
-        }
     var pc: Int = 0
     private val stack: Stack = StackImpl(maxStackSize)
     private val memory = MemoryImpl(maxMemorySize)
@@ -126,18 +124,21 @@ class Interpreter(
     }
 
 
-    fun execute(): ExecuteResult {
+    fun execute(): ByteArray {
         logInfo()
 
         while (pc < callData.code.size) {
             op = callData.code[pc].toUByte().toInt()
+            hook?.let {
+                it.onOp(op)
+            }
             beforeExecute()
-            gasUsed += GasTable.commonGas
+
 
             when (op) {
                 OpCodes.STOP -> {
                     afterExecute()
-                    return ExecuteResult(gasUsed, ret)
+                    return ret
                 }
 
                 // arithmetic, pure
@@ -368,7 +369,7 @@ class Interpreter(
                 OpCodes.RETURN -> {
                     ret = stack.popMemory(memory)
                     afterExecute()
-                    return ExecuteResult(gasUsed, ret)
+                    return ret
                 }
                 OpCodes.REVERT -> {
                     val off = stack.popU32()
@@ -386,7 +387,7 @@ class Interpreter(
             afterExecute()
             pc++
         }
-        return ExecuteResult(gasUsed, emptyByteArray)
+        return emptyByteArray
     }
 
     fun ByteArray.hex(start: Int = 0, end: Int = this.size): String {
@@ -616,14 +617,10 @@ class Interpreter(
 
         when (op) {
             OpCodes.CALL, OpCodes.STATICCALL -> {
-                val re = host.call(callData.receipt, addr, input, value, op == OpCodes.STATICCALL)
-                gasUsed += re.gasUsed
-                ret = re.ret
+                ret = host.call(callData.receipt, addr, input, value, op == OpCodes.STATICCALL)
             }
             OpCodes.DELEGATECALL -> {
-                val re = host.delegate(callData.caller, callData.receipt, addr, input)
-                gasUsed += re.gasUsed
-                ret = re.ret
+                ret = host.delegate(callData.caller, callData.receipt, addr, input)
             }
         }
 

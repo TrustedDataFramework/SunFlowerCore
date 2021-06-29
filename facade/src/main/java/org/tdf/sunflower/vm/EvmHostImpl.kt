@@ -5,6 +5,7 @@ import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.evm.Digest
 import org.tdf.evm.EvmHost
+import org.tdf.evm.ExecuteResult
 import org.tdf.sunflower.facade.RepositoryReader
 import java.math.BigInteger
 
