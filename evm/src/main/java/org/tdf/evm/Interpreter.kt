@@ -7,30 +7,9 @@ import java.nio.charset.StandardCharsets
 internal val emptyByteArray = ByteArray(0)
 internal val emptyAddress = ByteArray(20)
 
-interface GasTable {
-    val quickStep: Long
-        get() = 2
-    val fastestStep: Long
-        get() = 3
-
-    val fastStep: Long
-        get() = 5
-    val midStep: Long
-        get() = 8
-
-    val slowStep: Long
-        get() = 10
-
-    val extStep: Long
-        get() = 20
-
-    val sha3Gas: Long
-        get() = 30
-
-    val balanceGas: Long
-        get() = 20
+object GasTable {
+    const val commonGas: Long = 2L
 }
-
 
 
 class EvmContext(
@@ -88,14 +67,14 @@ interface EvmHost {
         // when static call = true, value is always zero
         value: BigInteger = BigInteger.ZERO,
         staticCall: Boolean = false
-    ): ByteArray
+    ): ExecuteResult
 
     fun delegate(
         originCaller: ByteArray,
         originContract: ByteArray,
         delegateAddr: ByteArray,
         input: ByteArray,
-    ): ByteArray
+    ): ExecuteResult
 
     fun drop(address: ByteArray)
 
@@ -111,12 +90,17 @@ class Interpreter(
     val host: EvmHost,
     val ctx: EvmContext,
     val callData: EvmCallData,
-    val gasTable: GasTable,
     private val vmLog: PrintStream? = null,
+    private val maxGas: Long = Long.MAX_VALUE,
     maxStackSize: Int = Int.MAX_VALUE,
     maxMemorySize: Int = Int.MAX_VALUE
 ) {
     private var gasUsed: Long = 0
+        set(value) {
+            field = value
+            if(field < 0 || field > maxGas)
+                throw RuntimeException("gas overflow")
+        }
     var pc: Int = 0
     private val stack: Stack = StackImpl(maxStackSize)
     private val memory = MemoryImpl(maxMemorySize)
@@ -147,8 +131,8 @@ class Interpreter(
 
         while (pc < callData.code.size) {
             op = callData.code[pc].toUByte().toInt()
-
             beforeExecute()
+            gasUsed += GasTable.commonGas
 
             when (op) {
                 OpCodes.STOP -> {
@@ -159,149 +143,122 @@ class Interpreter(
                 // arithmetic, pure
                 OpCodes.ADD -> {
                     stack.add()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.MUL -> {
                     stack.mul()
-                    gasUsed += gasTable.fastStep
                 }
                 OpCodes.SUB -> {
                     stack.sub()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.DIV -> {
                     stack.div()
-                    gasUsed += gasTable.fastStep
                 }
                 OpCodes.SDIV -> {
                     stack.signedDiv()
-                    gasUsed += gasTable.fastStep
                 }
                 OpCodes.MOD -> {
                     stack.mod()
-                    gasUsed += gasTable.fastStep
                 }
                 OpCodes.SMOD -> {
                     stack.signedMod()
-                    gasUsed += gasTable.fastStep
                 }
                 OpCodes.ADDMOD -> {
                     stack.addMod()
-                    gasUsed += gasTable.midStep
                 }
                 OpCodes.MULMOD -> {
                     stack.mulMod()
-                    gasUsed += gasTable.midStep
                 }
                 // TODO: exp gas
                 OpCodes.EXP -> stack.exp()
                 OpCodes.SIGNEXTEND -> {
                     stack.signExtend()
-                    gasUsed += gasTable.fastStep
                 }
                 OpCodes.LT -> {
                     stack.lt()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.GT -> {
                     stack.gt()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.SLT -> {
                     stack.slt()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.SGT -> {
                     stack.sgt()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.EQ -> {
                     stack.eq()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.ISZERO -> {
                     stack.isZero()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.AND -> {
                     stack.and()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.OR -> {
                     stack.or()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.XOR -> {
                     stack.xor()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.NOT -> {
                     stack.not()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.BYTE -> {
                     stack.byte()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.SHL -> {
                     stack.shl()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.SHR -> {
                     stack.shr()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.SAR -> {
                     stack.sar()
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.SHA3 -> {
                     stack.sha3(memory, host.digest)
-                    gasUsed += gasTable.sha3Gas
                 }
 
                 // address is left padded
                 OpCodes.ADDRESS -> {
                     stack.push(callData.receipt)
-                    gasUsed += gasTable.quickStep
                 }
                 OpCodes.BALANCE -> {
                     val balance = host.getBalance(stack.popAddress())
                     stack.push(balance)
-                    gasUsed += gasTable.balanceGas
                 }
                 OpCodes.ORIGIN -> {
                     stack.push(ctx.origin)
-                    gasUsed += gasTable.quickStep
                 }
                 OpCodes.CALLER -> {
                     stack.push(callData.caller)
-                    gasUsed += gasTable.quickStep
                 }
                 OpCodes.CALLVALUE -> {
                     stack.push(callData.value)
-                    gasUsed += gasTable.quickStep
                 }
                 // call data load is right padded
                 OpCodes.CALLDATALOAD -> {
                     stack.callDataLoad(callData.input)
-                    gasUsed += gasTable.fastestStep
                 }
                 OpCodes.CALLDATASIZE -> {
                     stack.pushInt(callData.input.size)
-                    gasUsed += gasTable.quickStep
                 }
 
                 // right padded
                 OpCodes.CALLDATACOPY -> {
                     stack.dataCopy(memory, callData.input)
-                    gasUsed += gasTable.fastestStep
                 }
-                OpCodes.CODESIZE -> stack.pushInt(callData.code.size)
-                OpCodes.CODECOPY -> stack.dataCopy(memory, callData.code)
+                OpCodes.CODESIZE -> {
+                    stack.pushInt(callData.code.size)
+                }
+                OpCodes.CODECOPY -> {
+                    stack.dataCopy(memory, callData.code)
+                }
                 OpCodes.RETURNDATASIZE -> stack.pushInt(ret.size)
                 OpCodes.RETURNDATACOPY -> stack.dataCopy(memory, ret)
-                OpCodes.GASPRICE -> stack.push(ctx.gasPrice)
+                OpCodes.GASPRICE -> {
+                    stack.push(ctx.gasPrice)
+                }
                 OpCodes.EXTCODESIZE -> {
                     val code = host.getCode(stack.popAddress())
                     stack.pushInt(code.size)
@@ -659,10 +616,14 @@ class Interpreter(
 
         when (op) {
             OpCodes.CALL, OpCodes.STATICCALL -> {
-                ret = host.call(callData.receipt, addr, input, value, op == OpCodes.STATICCALL)
+                val re = host.call(callData.receipt, addr, input, value, op == OpCodes.STATICCALL)
+                gasUsed += re.gasUsed
+                ret = re.ret
             }
             OpCodes.DELEGATECALL -> {
-                ret = host.delegate(callData.caller, callData.receipt, addr, input)
+                val re = host.delegate(callData.caller, callData.receipt, addr, input)
+                gasUsed += re.gasUsed
+                ret = re.ret
             }
         }
 

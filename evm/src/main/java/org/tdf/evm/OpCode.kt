@@ -7,6 +7,10 @@ object OpCodes {
         return NAMES[op]!!
     }
 
+    fun isOpCOde(op: Int): Boolean {
+        return NAMES[op] != null
+    }
+
     /**
      * Halts execution (0x00)
      */

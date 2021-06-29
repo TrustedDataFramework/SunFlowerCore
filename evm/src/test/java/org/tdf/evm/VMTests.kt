@@ -18,8 +18,6 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.atomic.AtomicInteger
 
-class TestGasTable: GasTable
-
 val ZERO_ADDRESS = ByteArray(20)
 
 val sha3 = Digest {
@@ -85,7 +83,7 @@ class MockEvmHost : EvmHost {
         // when static call = true, value is always zero
         value: BigInteger,
         staticCall: Boolean,
-    ): ByteArray {
+    ): ExecuteResult {
         val contract = getOrCreate(receipt)
         if(contract.code.isEmpty())
             throw RuntimeException("not a contract account")
@@ -96,11 +94,10 @@ class MockEvmHost : EvmHost {
             this,
             EvmContext(),
             callData,
-            TestGasTable(),
             getLogFile()
         )
 
-        return interpreter.execute().ret
+        return interpreter.execute()
     }
 
     override fun delegate(
@@ -108,7 +105,7 @@ class MockEvmHost : EvmHost {
         originContract: ByteArray,
         delegateAddr: ByteArray,
         input: ByteArray
-    ): ByteArray {
+    ): ExecuteResult {
         TODO("Not yet implemented")
     }
 
@@ -135,7 +132,6 @@ class MockEvmHost : EvmHost {
             this,
                 EvmContext(),
                 EvmCallData(caller, newAddr, value, emptyByteArray, createCode),
-                TestGasTable(),
                 getLogFile()
         )
 
@@ -161,7 +157,7 @@ class VMTests {
         val ctx = EvmContext()
         val data = EvmCallData(code = code)
         val mock = MockEvmHost()
-        val executor = Interpreter(mock, ctx, data, TestGasTable())
+        val executor = Interpreter(mock, ctx, data)
         assert(BigInteger(1, executor.execute().ret).intValueExact() == 10)
     }
 
@@ -179,6 +175,6 @@ class VMTests {
 
         val r = mock.call(ZERO_ADDRESS, con, Hex.decode("893d20e8"))
 
-        assertEquals(Hex.toHexString(owner), Hex.toHexString(r.address()))
+        assertEquals(Hex.toHexString(owner), Hex.toHexString(r.ret.address()))
     }
 }
