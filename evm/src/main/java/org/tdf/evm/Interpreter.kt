@@ -7,11 +7,6 @@ import java.nio.charset.StandardCharsets
 internal val emptyByteArray = ByteArray(0)
 internal val emptyAddress = ByteArray(20)
 
-object GasTable {
-    const val commonGas: Long = 2L
-}
-
-
 class EvmContext(
     // transaction.sender
     val origin: ByteArray = emptyAddress,
@@ -86,7 +81,7 @@ interface EvmHost {
     fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>)
 }
 
-fun interface EvmHook{
+fun interface EvmHook {
     fun onOp(op: Int)
 }
 
@@ -142,173 +137,69 @@ class Interpreter(
                 }
 
                 // arithmetic, pure
-                OpCodes.ADD -> {
-                    stack.add()
-                }
-                OpCodes.MUL -> {
-                    stack.mul()
-                }
-                OpCodes.SUB -> {
-                    stack.sub()
-                }
-                OpCodes.DIV -> {
-                    stack.div()
-                }
-                OpCodes.SDIV -> {
-                    stack.signedDiv()
-                }
-                OpCodes.MOD -> {
-                    stack.mod()
-                }
-                OpCodes.SMOD -> {
-                    stack.signedMod()
-                }
-                OpCodes.ADDMOD -> {
-                    stack.addMod()
-                }
-                OpCodes.MULMOD -> {
-                    stack.mulMod()
-                }
-                // TODO: exp gas
+                OpCodes.ADD -> stack.add()
+                OpCodes.MUL -> stack.mul()
+                OpCodes.SUB -> stack.sub()
+                OpCodes.DIV -> stack.div()
+                OpCodes.SDIV -> stack.signedDiv()
+                OpCodes.MOD -> stack.mod()
+                OpCodes.SMOD -> stack.signedMod()
+                OpCodes.ADDMOD -> stack.addMod()
+                OpCodes.MULMOD -> stack.mulMod()
                 OpCodes.EXP -> stack.exp()
-                OpCodes.SIGNEXTEND -> {
-                    stack.signExtend()
-                }
-                OpCodes.LT -> {
-                    stack.lt()
-                }
-                OpCodes.GT -> {
-                    stack.gt()
-                }
-                OpCodes.SLT -> {
-                    stack.slt()
-                }
-                OpCodes.SGT -> {
-                    stack.sgt()
-                }
-                OpCodes.EQ -> {
-                    stack.eq()
-                }
-                OpCodes.ISZERO -> {
-                    stack.isZero()
-                }
-                OpCodes.AND -> {
-                    stack.and()
-                }
-                OpCodes.OR -> {
-                    stack.or()
-                }
-                OpCodes.XOR -> {
-                    stack.xor()
-                }
-                OpCodes.NOT -> {
-                    stack.not()
-                }
-                OpCodes.BYTE -> {
-                    stack.byte()
-                }
-                OpCodes.SHL -> {
-                    stack.shl()
-                }
-                OpCodes.SHR -> {
-                    stack.shr()
-                }
-                OpCodes.SAR -> {
-                    stack.sar()
-                }
-                OpCodes.SHA3 -> {
-                    stack.sha3(memory, host.digest)
-                }
-
+                OpCodes.SIGNEXTEND -> stack.signExtend()
+                OpCodes.LT -> stack.lt()
+                OpCodes.GT -> stack.gt()
+                OpCodes.SLT -> stack.slt()
+                OpCodes.SGT -> stack.sgt()
+                OpCodes.EQ -> stack.eq()
+                OpCodes.ISZERO -> stack.isZero()
+                OpCodes.AND -> stack.and()
+                OpCodes.OR -> stack.or()
+                OpCodes.XOR -> stack.xor()
+                OpCodes.NOT -> stack.not()
+                OpCodes.BYTE -> stack.byte()
+                OpCodes.SHL -> stack.shl()
+                OpCodes.SHR -> stack.shr()
+                OpCodes.SAR -> stack.sar()
+                OpCodes.SHA3 -> stack.sha3(memory, host.digest)
                 // address is left padded
-                OpCodes.ADDRESS -> {
-                    stack.push(callData.receipt)
-                }
-                OpCodes.BALANCE -> {
-                    val balance = host.getBalance(stack.popAddress())
-                    stack.push(balance)
-                }
-                OpCodes.ORIGIN -> {
-                    stack.push(ctx.origin)
-                }
-                OpCodes.CALLER -> {
-                    stack.push(callData.caller)
-                }
-                OpCodes.CALLVALUE -> {
-                    stack.push(callData.value)
-                }
+                OpCodes.ADDRESS -> stack.push(callData.receipt)
+                OpCodes.BALANCE -> stack.push(host.getBalance(stack.popAddress()))
+                OpCodes.ORIGIN -> stack.push(ctx.origin)
+                OpCodes.CALLER -> stack.push(callData.caller)
+                OpCodes.CALLVALUE -> stack.push(callData.value)
                 // call data load is right padded
-                OpCodes.CALLDATALOAD -> {
-                    stack.callDataLoad(callData.input)
-                }
-                OpCodes.CALLDATASIZE -> {
-                    stack.pushInt(callData.input.size)
-                }
+                OpCodes.CALLDATALOAD -> stack.callDataLoad(callData.input)
+                OpCodes.CALLDATASIZE -> stack.pushInt(callData.input.size)
 
                 // right padded
-                OpCodes.CALLDATACOPY -> {
-                    stack.dataCopy(memory, callData.input)
-                }
-                OpCodes.CODESIZE -> {
-                    stack.pushInt(callData.code.size)
-                }
-                OpCodes.CODECOPY -> {
-                    stack.dataCopy(memory, callData.code)
-                }
+                OpCodes.CALLDATACOPY -> stack.dataCopy(memory, callData.input)
+                OpCodes.CODESIZE -> stack.pushInt(callData.code.size)
+                OpCodes.CODECOPY -> stack.dataCopy(memory, callData.code)
                 OpCodes.RETURNDATASIZE -> stack.pushInt(ret.size)
                 OpCodes.RETURNDATACOPY -> stack.dataCopy(memory, ret)
-                OpCodes.GASPRICE -> {
-                    stack.push(ctx.gasPrice)
-                }
-                OpCodes.EXTCODESIZE -> {
-                    val code = host.getCode(stack.popAddress())
-                    stack.pushInt(code.size)
-                }
-                OpCodes.EXTCODECOPY -> {
-                    val code = host.getCode(stack.popAddress())
-                    stack.dataCopy(memory, code)
-                }
+                OpCodes.GASPRICE -> stack.push(ctx.gasPrice)
+                OpCodes.EXTCODESIZE -> stack.pushInt(host.getCode(stack.popAddress()).size)
+                OpCodes.EXTCODECOPY -> stack.dataCopy(memory, host.getCode(stack.popAddress()))
+
                 OpCodes.EXTCODEHASH -> {
                     val code = host.getCode(stack.popAddress())
                     val bytes = ByteArray(SlotUtils.SLOT_BYTE_ARRAY_SIZE)
                     host.digest.digest(code, 0, code.size, bytes, 0)
                     stack.push(bytes)
                 }
-                OpCodes.BLOCKHASH, OpCodes.COINBASE -> {
-                    throw RuntimeException("unsupported op code")
-                }
-                OpCodes.TIMESTAMP -> {
-                    stack.pushLong(ctx.timestamp)
-                }
-                OpCodes.NUMBER -> {
-                    stack.pushLong(ctx.number)
-                }
-                OpCodes.DIFFICULTY -> {
-                    stack.push(ctx.difficulty)
-                }
-                OpCodes.GASLIMIT -> {
-                    stack.pushLong(ctx.blockGasLimit)
-                }
+                OpCodes.BLOCKHASH, OpCodes.COINBASE -> throw RuntimeException("unsupported op code")
+                OpCodes.TIMESTAMP -> stack.pushLong(ctx.timestamp)
+                OpCodes.NUMBER -> stack.pushLong(ctx.number)
+                OpCodes.DIFFICULTY -> stack.push(ctx.difficulty)
+                OpCodes.GASLIMIT -> stack.pushLong(ctx.blockGasLimit)
                 OpCodes.POP -> stack.drop()
                 OpCodes.MLOAD -> stack.mload(memory)
-                OpCodes.MSTORE -> {
-                    stack.mstore(memory)
-                }
+                OpCodes.MSTORE -> stack.mstore(memory)
                 OpCodes.MSTORE8 -> stack.mstore8(memory)
-                OpCodes.SLOAD -> {
-                    stack.push(
-                        host.getStorage(
-                            callData.receipt,
-                            stack.popBytes()
-                        )
-                    )
-                }
-                OpCodes.SSTORE -> {
-                    host.setStorage(
-                        callData.receipt,
-                        stack.popBytes(), stack.popBytes()
-                    )
-                }
+                OpCodes.SLOAD -> stack.push(host.getStorage(callData.receipt, stack.popBytes()))
+                OpCodes.SSTORE -> host.setStorage(callData.receipt, stack.popBytes(), stack.popBytes())
                 OpCodes.JUMP -> {
                     jump(stack.popU32())
                     afterExecute()
@@ -327,13 +218,9 @@ class Interpreter(
                         continue
                     }
                 }
-                OpCodes.PC -> {
-                    stack.pushInt(pc)
-                }
+                OpCodes.PC -> stack.pushInt(pc)
                 OpCodes.MSIZE -> stack.pushInt(memory.size)
-                OpCodes.GAS -> {
-                    stack.pushZero()
-                }
+                OpCodes.GAS -> stack.pushZero()
                 OpCodes.JUMPDEST -> {
 
                 }
