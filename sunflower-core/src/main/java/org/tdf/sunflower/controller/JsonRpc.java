@@ -2,9 +2,13 @@ package org.tdf.sunflower.controller;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
+import org.tdf.common.types.Uint256;
+import org.tdf.common.util.HexBytes;
+import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.LogInfo;
 import org.tdf.sunflower.types.Transaction;
+import org.tdf.sunflower.vm.CallContext;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.CallType;
 
@@ -152,46 +156,15 @@ public interface JsonRpc {
 
         @JsonIgnore
         @SneakyThrows
+        public CallContext toCallContext(Long nonce) {
+            return JsonRpcUtil.INSTANCE.toCallContext(this, nonce);
+        }
+
+
+        @JsonIgnore
+        @SneakyThrows
         public CallData toCallData() {
-            CallData data = CallData.empty();
-            if (from != null && !from.isEmpty()) {
-                data.setCaller(jsonHexToHexBytes(from));
-                data.setOrigin(jsonHexToHexBytes(from));
-            }
-            if (to != null && !to.isEmpty()) {
-                data.setTxTo(jsonHexToHexBytes(to));
-                data.setTo(jsonHexToHexBytes(to));
-                data.setCallType(CallType.CALL);
-            } else {
-                data.setCallType(CallType.CREATE);
-            }
-            if (gas != null && !gas.isEmpty()) {
-                data.setGasLimit(
-                    jsonHexToU256(gas)
-                );
-            }
-            if (gasPrice != null && !gasPrice.isEmpty()) {
-                data.setGasPrice(
-                    jsonHexToU256(gasPrice)
-                );
-            }
-            if (value != null && !value.isEmpty()) {
-                data.setValue(
-                    jsonHexToU256(value)
-                );
-                data.setTxValue(
-                    jsonHexToU256(value)
-                );
-            }
-            if (this.data != null && !this.data.isEmpty()) {
-                data.setData(
-                    jsonHexToHexBytes(this.data)
-                );
-            }
-            if (nonce != null && !nonce.isEmpty()) {
-                data.setTxNonce(jsonHexToLong(nonce));
-            }
-            return data;
+            return JsonRpcUtil.INSTANCE.toCallData(this);
         }
 
         @Override

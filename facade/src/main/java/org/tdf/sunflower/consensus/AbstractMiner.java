@@ -13,6 +13,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallContext;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
 
@@ -86,13 +87,15 @@ public abstract class AbstractMiner implements Miner {
 
         // add fee to miners account
         coinbase.setValue(coinbase.getValueAsUint().plus(totalFee));
-        CallData callData = CallData.fromTransaction(coinbase, true);
+
+        CallContext ctx = CallContext.fromTx(coinbase);
+        CallData callData = CallData.fromTx(coinbase, true);
         tmp.setHeaderCreatedAt(System.currentTimeMillis() / 1000);
         header.setCreatedAt(tmp.getHeaderCreatedAt());
 
         VMResult res;
 
-        VMExecutor executor = new VMExecutor(rd, tmp, callData, 0);
+        VMExecutor executor = new VMExecutor(rd, tmp, ctx, callData, 0);
         res = executor.execute();
 
 

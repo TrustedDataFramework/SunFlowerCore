@@ -10,6 +10,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallContext;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
 
@@ -89,7 +90,8 @@ public abstract class AbstractValidator implements Validator {
                 VMExecutor executor = new VMExecutor(
                     rd,
                     tmp,
-                    CallData.fromTransaction(tx, false),
+                    CallContext.fromTx(tx),
+                    CallData.fromTx(tx, false),
                     Math.min(getBlockGasLimit() - currentGas, tx.getGasLimitAsU256().longValue())
                 );
                 r = executor.execute();
@@ -111,7 +113,7 @@ public abstract class AbstractValidator implements Validator {
             }
 
             tmp.setHeaderCreatedAt(block.getCreatedAt());
-            VMExecutor executor = new VMExecutor(rd, tmp, CallData.fromTransaction(coinbase, true), 0);
+            VMExecutor executor = new VMExecutor(rd, tmp, CallContext.fromTx(coinbase), CallData.fromTx(coinbase, true), 0);
             VMResult r = executor.execute();
             currentGas += r.getGasUsed();
 

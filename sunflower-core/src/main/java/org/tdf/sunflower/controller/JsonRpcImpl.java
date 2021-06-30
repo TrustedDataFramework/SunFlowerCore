@@ -244,13 +244,17 @@ public class JsonRpcImpl implements JsonRpc {
     @Override
     public String eth_call(CallArguments args, String bnOrId) throws Exception {
         long start = System.currentTimeMillis();
-        CallData callData = Objects.requireNonNull(args).toCallData();
         try (
             Backend backend = getBackendByBlockId(bnOrId, true);
             RepositoryReader rd = repo.getReader();
         ) {
-            callData.setTxNonce(backend.getNonce(callData.getOrigin()));
-            VMExecutor executor = new VMExecutor(rd, backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
+            CallData callData = args.toCallData();
+            VMExecutor executor = new VMExecutor(
+                rd,
+                backend,
+                args.toCallContext(backend.getNonce(callData.getCaller())),
+                args.toCallData(), AppConfig.INSTANCE.getBlockGasLimit()
+            );
             return toJsonHex(executor.execute().getExecutionResult());
         } finally {
             System.out.println("eth call use " + (System.currentTimeMillis() - start) + " ms");
@@ -259,13 +263,12 @@ public class JsonRpcImpl implements JsonRpc {
 
     @Override
     public String eth_estimateGas(CallArguments args) throws Exception {
-        CallData callData = Objects.requireNonNull(args).toCallData();
         try (
             Backend backend = getBackendByBlockId("latest", false);
             RepositoryReader rd = repo.getReader();
         ) {
-            callData.setTxNonce(backend.getNonce(callData.getOrigin()));
-            VMExecutor executor = new VMExecutor(rd, backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
+            CallData callData = args.toCallData();
+            VMExecutor executor = new VMExecutor(rd, backend, args.toCallContext(backend.getNonce(callData.getCaller())), callData, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getGasUsed());
         }
     }

@@ -47,10 +47,37 @@ public class VMExecutor {
     public static final int EVM_MAX_STACK_SIZE = 1024;
     // 16 mb
     public static final int EVM_MAX_MEMORY_SIZE = 1024 * 1024 * 16;
-
-    private static String outDirectory = "";
-
+    public static final Cache<HexBytes, byte[]> CACHE =
+        CacheBuilder
+            .newBuilder()
+            .weigher((k, v) -> ((byte[]) v).length + ((HexBytes) k).size())
+            .maximumWeight(1024L * 1024L * 8L) // 8mb cache for contracts
+            .build();
     private static final AtomicInteger COUNTER = new AtomicInteger();
+    private static final byte[] WASM_MAGIC = {0x00, 0x61, 0x73, 0x6d};
+    private static String outDirectory = "";
+    Backend backend;
+    CallData callData;
+    private CallContext ctx;
+
+    private RepositoryReader rd;
+    // gas limit hook
+    private Limit limit;
+    // call depth
+    private int depth;
+
+    public VMExecutor(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData, long gasLimit) {
+        this(rd, backend, ctx, callData, new Limit(gasLimit), 0);
+    }
+
+    private VMExecutor(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData, Limit limit, int depth) {
+        this.rd = rd;
+        this.backend = backend;
+        this.ctx = ctx;
+        this.callData = callData;
+        this.limit = limit;
+        this.depth = depth;
+    }
 
     public static void enableDebug(String outDirectory) {
         VMExecutor.outDirectory = outDirectory;
@@ -75,29 +102,6 @@ public class VMExecutor {
         return new PrintStream(os);
     }
 
-
-    public static final Cache<HexBytes, byte[]> CACHE =
-        CacheBuilder
-            .newBuilder()
-            .weigher((k, v) -> ((byte[]) v).length + ((HexBytes) k).size())
-            .maximumWeight(1024L * 1024L * 8L) // 8mb cache for contracts
-            .build();
-
-
-    public VMExecutor(RepositoryReader rd, Backend backend, CallData callData, long gasLimit) {
-        this(rd, backend, callData, new Limit(gasLimit), 0);
-    }
-
-    private RepositoryReader rd;
-
-    private VMExecutor(RepositoryReader rd, Backend backend, CallData callData, Limit limit, int depth) {
-        this.rd = rd;
-        this.backend = backend;
-        this.callData = callData;
-        this.limit = limit;
-        this.depth = depth;
-    }
-
     public Backend getBackend() {
         return backend;
     }
@@ -106,39 +110,29 @@ public class VMExecutor {
         return callData;
     }
 
-    Backend backend;
-
-    CallData callData;
-
-    // gas limit hook
-    private Limit limit;
-    // call depth
-    private int depth;
-
-
     public VMExecutor clone() {
         if (depth + 1 == MAX_CALL_DEPTH)
             throw new RuntimeException("vm call depth overflow");
-        return new VMExecutor(rd, backend, callData.clone(), limit, depth + 1);
+        return new VMExecutor(rd, backend, ctx, callData.clone(), limit, depth + 1);
     }
 
     public VMResult execute() {
         // 1. increase sender nonce
-        long n = backend.getNonce(callData.getOrigin());
-        if (n != callData.getTxNonce() && callData.getCallType() != CallType.COINBASE)
+        long n = backend.getNonce(ctx.getOrigin());
+        if (n != ctx.getTxNonce() && callData.getCallType() != CallType.COINBASE)
             throw new RuntimeException("invalid nonce");
 
         HexBytes contractAddress = Address.empty();
 
         if (!backend.getStaticCall() && callData.getCallType() == CallType.CALL) {
-            backend.setNonce(callData.getOrigin(), n + 1);
+            backend.setNonce(ctx.getOrigin(), n + 1);
             // contract deploy nonce will increase in executeInternal
         }
 
         if (callData.getCallType() == CallType.CREATE) {
             contractAddress = HashUtil.calcNewAddrHex(
                 callData.getCaller().getBytes(),
-                callData.getTxNonceAsBytes()
+                ctx.getTxNonceAsBytes()
             );
             callData.setTo(contractAddress);
         }
@@ -149,8 +143,8 @@ public class VMExecutor {
         byte[] result = executeInternal();
 
         // 3. calculate fee and
-        Uint256 fee = Uint256.of(limit.getGas()).times(callData.getGasPrice());
-        backend.subBalance(callData.getOrigin(), fee);
+        Uint256 fee = Uint256.of(limit.getGas()).times(ctx.getGasPrice());
+        backend.subBalance(ctx.getOrigin(), fee);
 
 
         return new VMResult(
@@ -162,8 +156,6 @@ public class VMExecutor {
         );
     }
 
-    private static final byte[] WASM_MAGIC = {0x00, 0x61, 0x73, 0x6d};
-
     private boolean isWasm(byte[] bytes) {
         return bytes.length >= WASM_MAGIC.length && Arrays.equals(bytes, 0, WASM_MAGIC.length, WASM_MAGIC, 0, WASM_MAGIC.length);
     }
@@ -173,9 +165,9 @@ public class VMExecutor {
     public byte[] executeInternal() {
         switch (callData.getCallType()) {
             case COINBASE: {
-                backend.addBalance(callData.getTxTo(), callData.getTxValue());
+                backend.addBalance(callData.getTo(), callData.getValue());
                 for (BuiltinContract bios : backend.getBios().values()) {
-                    return bios.call(rd, backend, callData);
+                    return bios.call(rd, backend, ctx, callData);
                 }
                 return ByteUtil.EMPTY_BYTE_ARRAY;
             }
@@ -187,7 +179,7 @@ public class VMExecutor {
                     backend.addBalance(callData.getTo(), callData.getValue());
                     backend.subBalance(callData.getCaller(), callData.getValue());
                     BuiltinContract updater = backend.getBuiltins().get(callData.getTo());
-                    return updater.call(rd, backend, callData);
+                    return updater.call(rd, backend, ctx, callData);
                 }
 
                 byte[] code;
@@ -257,10 +249,6 @@ public class VMExecutor {
                 // call a non-contract account
                 if (code.length == 0 && !callData.getData().isEmpty())
                     throw new RuntimeException("call receiver not a contract");
-                // transfer to a contract account
-                if (code.length != 0 && callData.getData().isEmpty()) {
-                    throw new RuntimeException("transfer to a contract");
-                }
 
                 backend.addBalance(receiver, callData.getValue());
                 backend.subBalance(callData.getCaller(), callData.getValue());
@@ -290,16 +278,21 @@ public class VMExecutor {
         EvmContext ctx = new EvmContext();
         EvmHostImpl host = new EvmHostImpl(this, rd);
 
-        Interpreter interpreter = new Interpreter(host, ctx, evmCallData, getPrintStream(), limit ,EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE);
+        Interpreter interpreter = new Interpreter(host, ctx, evmCallData, getPrintStream(), limit, EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE);
         byte[] ret = interpreter.execute();
 
         if (create) {
             backend.setCode(callData.getTo(), HexBytes.fromBytes(ret));
         }
-        return create ? ByteUtil.EMPTY_BYTE_ARRAY :ret;
+        return create ? ByteUtil.EMPTY_BYTE_ARRAY : ret;
     }
 
     private byte[] executeWasm(boolean create, byte[] code, byte[] data) {
+        // transfer to a wasm contract account
+        if (callData.getData().isEmpty()) {
+            return ByteUtil.EMPTY_BYTE_ARRAY;
+        }
+
         DBFunctions dbFunctions = new DBFunctions(backend, callData.getTo());
 
         Hosts hosts = new Hosts()
@@ -317,7 +310,7 @@ public class VMExecutor {
             StackAllocator stack =
                 ResourceFactory.createStack(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
             Memory mem = ResourceFactory.createMemory();
-            Module module = Module.create(code);
+            Module module = Module.create(code)
         ) {
             ModuleInstance instance =
                 ModuleInstance

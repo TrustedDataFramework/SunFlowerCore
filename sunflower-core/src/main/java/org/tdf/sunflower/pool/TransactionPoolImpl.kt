@@ -19,7 +19,8 @@ import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.Backend
-import org.tdf.sunflower.vm.CallData.Companion.fromTransaction
+import org.tdf.sunflower.vm.CallContext
+import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.vm.VMExecutor
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -169,10 +170,11 @@ class TransactionPoolImpl(
             // try to execute
             try {
                 val child = current!!.createChild()
-                val callData = fromTransaction(t, false)
+                val ctx = CallContext.fromTx(t)
+                val callData = CallData.fromTx(t, false)
                 val vmExecutor = VMExecutor(
                     rd,
-                    child, callData,
+                    child, ctx, callData,
                     min(t.gasLimitAsU256.toLong(), blockGasLimit)
                 )
 

@@ -11,6 +11,7 @@ import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.StorageWrapper;
 import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallContext;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.abi.Abi;
 
@@ -81,7 +82,7 @@ public class Authentication extends AbstractBuiltIn {
 
     @Override
     @SneakyThrows
-    public List<?> call(RepositoryReader rd, Backend backend, CallData callData, String method, Object... args) {
+    public List<?> call(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData, String method, Object... args) {
 
 
         StorageWrapper wrapper = new StorageWrapper(backend.getAsStore(address));

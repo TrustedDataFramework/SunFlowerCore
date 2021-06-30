@@ -7,6 +7,7 @@ import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.RepositoryService;
 import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallContext;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.abi.Abi;
 
@@ -35,10 +36,10 @@ public abstract class AbstractBuiltIn implements BuiltinContract {
     }
 
     @Override
-    public byte[] call(RepositoryReader rd, Backend backend, CallData callData) {
+    public byte[] call(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData) {
         Abi.Function func = getFunction(callData.getData());
         List<?> inputs = func.decode(callData.getData().getBytes());
-        List<?> results = call(rd, backend, callData, func.name, inputs.toArray());
+        List<?> results = call(rd, backend, ctx, callData, func.name, inputs.toArray());
         return Abi.Entry.Param.encodeList(func.outputs, results.toArray());
     }
 
@@ -66,6 +67,6 @@ public abstract class AbstractBuiltIn implements BuiltinContract {
         byte[] encoded = func.encode(args);
         CallData callData = CallData.empty();
         callData.setData(HexBytes.fromBytes(encoded));
-        return call(rd, accounts.createBackend(parent, null, true), callData, method, args);
+        return call(rd, accounts.createBackend(parent, null, true), CallContext.empty(), callData, method, args);
     }
 }
