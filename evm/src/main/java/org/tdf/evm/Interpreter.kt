@@ -169,6 +169,7 @@ class Interpreter(
                 OpCodes.ORIGIN -> stack.push(ctx.origin)
                 OpCodes.CALLER -> stack.push(callData.caller)
                 OpCodes.CALLVALUE -> stack.push(callData.value)
+
                 // call data load is right padded
                 OpCodes.CALLDATALOAD -> stack.callDataLoad(callData.input)
                 OpCodes.CALLDATASIZE -> stack.pushInt(callData.input.size)
@@ -189,6 +190,7 @@ class Interpreter(
                     host.digest.digest(code, 0, code.size, bytes, 0)
                     stack.push(bytes)
                 }
+
                 OpCodes.BLOCKHASH, OpCodes.COINBASE -> throw RuntimeException("unsupported op code")
                 OpCodes.TIMESTAMP -> stack.pushLong(ctx.timestamp)
                 OpCodes.NUMBER -> stack.pushLong(ctx.number)
@@ -261,9 +263,8 @@ class Interpreter(
                 OpCodes.REVERT -> {
                     val off = stack.popU32()
                     val size = stack.popU32()
-                    memory.resize(off, size)
+                    val reason = String(memory.resizeAndCopy(off, size), StandardCharsets.UTF_8)
                     afterExecute()
-                    val reason = String(memory.copy(off.toInt(), (off + size).toInt()), StandardCharsets.UTF_8)
                     throw RuntimeException("execution reverted reason = $reason")
                 }
                 OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> call(op)
@@ -479,8 +480,7 @@ class Interpreter(
         val value = stack.popBigInt()
         val off = stack.popU32()
         val size = stack.popU32()
-        memory.resize(off, size)
-        val input = memory.copy(off.toInt(), (off + size).toInt())
+        val input = memory.resizeAndCopy(off, size)
         stack.push(host.create(callData.receipt, value, input))
     }
 

@@ -26,7 +26,7 @@ public class TransactionResultDTO {
 
     public TransactionResultDTO(Header h, int index, Transaction tx) {
         hash = toJsonHex(tx.getHash());
-        nonce = toJsonHex(tx.getNonce());
+        nonce = toJsonHexNumber(tx.getNonce());
         blockHash = toJsonHex(h.getHash().getBytes());
         blockNumber = toJsonHex(h.getHeight());
         transactionIndex = toJsonHex(index);
