@@ -32,8 +32,8 @@ public class TransactionResultDTO {
         transactionIndex = toJsonHex(index);
         from = toJsonHex(tx.getSender());
         to = toJsonHex(tx.getReceiveAddress());
-        gas = toJsonHex(tx.getGasLimit());
-        gasPrice = toJsonHex(tx.getGasPrice());
+        gas = toJsonHexNumber(tx.getGasLimit());
+        gasPrice = toJsonHexNumber(tx.getGasPrice());
         value = toJsonHexNumber(tx.getValue());
         input = toJsonHex(tx.getData());
     }
