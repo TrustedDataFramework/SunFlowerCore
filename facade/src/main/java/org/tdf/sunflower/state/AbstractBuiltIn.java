@@ -65,8 +65,7 @@ public abstract class AbstractBuiltIn implements BuiltinContract {
         Header parent = rd.getHeaderByHash(blockHash);
         Abi.Function func = getFunction(method);
         byte[] encoded = func.encode(args);
-        CallData callData = CallData.empty();
-        callData.setData(HexBytes.fromBytes(encoded));
+        CallData callData = Utils.INSTANCE.createCallData(encoded);
         return call(rd, accounts.createBackend(parent, null, true), CallContext.empty(), callData, method, args);
     }
 }

@@ -5,6 +5,7 @@ import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.controller.TypeConverter.*
 import org.tdf.sunflower.state.Address
+import org.tdf.sunflower.types.TransactionInfo
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.vm.CallType
@@ -42,6 +43,7 @@ internal object JsonRpcUtil {
             args.gas.u256(),
         )
     }
+
 
     fun toCallData(args: JsonRpc.CallArguments): CallData {
         return CallData(

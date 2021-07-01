@@ -132,9 +132,9 @@ public class VMExecutor {
         if (callData.getCallType() == CallType.CREATE) {
             contractAddress = HashUtil.calcNewAddrHex(
                 callData.getCaller().getBytes(),
-                ctx.getTxNonceAsBytes()
+                ctx.getTxNonce()
             );
-            callData.setTo(contractAddress);
+            callData = callData.withTo(contractAddress);
         }
 
         // 2. set initial gas by payload size

@@ -2,6 +2,7 @@ package org.tdf.sunflower.controller;
 
 import lombok.Value;
 import org.tdf.sunflower.types.Block;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.types.Transaction;
 
 import static org.tdf.sunflower.controller.TypeConverter.toJsonHex;
@@ -23,11 +24,11 @@ public class TransactionResultDTO {
     public String value;
     public String input;
 
-    public TransactionResultDTO(Block b, int index, Transaction tx) {
+    public TransactionResultDTO(Header h, int index, Transaction tx) {
         hash = toJsonHex(tx.getHash());
         nonce = toJsonHex(tx.getNonce());
-        blockHash = toJsonHex(b.getHash().getBytes());
-        blockNumber = toJsonHex(b.getHeight());
+        blockHash = toJsonHex(h.getHash().getBytes());
+        blockNumber = toJsonHex(h.getHeight());
         transactionIndex = toJsonHex(index);
         from = toJsonHex(tx.getSender());
         to = toJsonHex(tx.getReceiveAddress());

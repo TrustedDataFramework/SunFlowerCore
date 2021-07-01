@@ -266,9 +266,8 @@ class Interpreter(
                     val reason = String(memory.copy(off.toInt(), (off + size).toInt()), StandardCharsets.UTF_8)
                     throw RuntimeException("execution reverted reason = $reason")
                 }
-                OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> {
-                    call(op)
-                }
+                OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> call(op)
+                OpCodes.CREATE -> create()
                 else -> throw RuntimeException("unhandled op ${OpCodes.nameOf(op)}")
             }
             afterExecute()
@@ -474,6 +473,15 @@ class Interpreter(
         } else {
             y
         }
+    }
+
+    fun create() {
+        val value = stack.popBigInt()
+        val off = stack.popU32()
+        val size = stack.popU32()
+        memory.resize(off, size)
+        val input = memory.copy(off.toInt(), (off + size).toInt())
+        stack.push(host.create(callData.receipt, value, input))
     }
 
     fun call(op: Int) {

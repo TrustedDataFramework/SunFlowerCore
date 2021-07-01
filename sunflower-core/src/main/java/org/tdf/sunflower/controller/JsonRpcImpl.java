@@ -287,7 +287,14 @@ public class JsonRpcImpl implements JsonRpc {
 
     @Override
     public TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception {
-        return null;
+        HexBytes hash = TypeConverter.jsonHexToHexBytes(transactionHash);
+        try(RepositoryReader rd = repo.getReader()) {
+            TransactionInfo info = rd.getTransactionInfo(hash);
+            if(info == null)
+                return null;
+            Header h = rd.getHeaderByHash(info.getBlockHashHex());
+            return new TransactionResultDTO(h, info.getIndex(), info.getReceipt().getTransaction());
+        }
     }
 
     @Override
@@ -414,7 +421,7 @@ public class JsonRpcImpl implements JsonRpc {
         List<Object> txes = new ArrayList<>();
         if (fullTx) {
             for (int i = 0; i < block.getBody().size(); i++) {
-                txes.add(new TransactionResultDTO(block, i, block.getBody().get(i)));
+                txes.add(new TransactionResultDTO(block.getHeader(), i, block.getBody().get(i)));
             }
         } else {
             for (Transaction tx : block.getBody()) {

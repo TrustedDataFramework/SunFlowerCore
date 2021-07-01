@@ -14,9 +14,6 @@ data class CallContext(
     val gasPrice: Uint256 = Uint256.ZERO,
     val gasLimit: Uint256 = Uint256.ZERO,
 ) {
-    val txNonceAsBytes: ByteArray
-        get() = ByteUtil.longToBytesNoLeadZeroes(txNonce)
-
     companion object {
         @JvmStatic
         fun empty(): CallContext {
@@ -37,16 +34,20 @@ data class CallContext(
 }
 
 data class CallData(
-    var caller: HexBytes = Address.empty(),
-    var value: Uint256 = Uint256.ZERO,
-    var to: HexBytes = Address.empty(),
-    var callType: CallType = CallType.COINBASE,
-    var data: HexBytes = HexBytes.empty(),
-    var delegateAddr: HexBytes = Address.empty()
+    val caller: HexBytes = Address.empty(),
+    val value: Uint256 = Uint256.ZERO,
+    val to: HexBytes = Address.empty(),
+    val callType: CallType = CallType.COINBASE,
+    val data: HexBytes = HexBytes.empty(),
+    val delegateAddr: HexBytes = Address.empty()
 ) {
 
     fun clone(): CallData {
         return this.copy()
+    }
+
+    fun withTo(to: HexBytes): CallData {
+        return this.copy(to = to)
     }
 
     companion object {
