@@ -6,7 +6,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.spongycastle.util.encoders.Hex;
 import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.ByteArraySet;
 import org.tdf.common.util.HashUtil;
@@ -633,25 +632,4 @@ public abstract class AbstractTrieTest {
         assertTrue(v == null || v.length == 0);
     }
 
-    public static class NoDoubleDeleteStore extends ByteArrayMapStore<byte[]> {
-        @Override
-        public void remove(byte[] bytes) {
-            byte[] v = get(bytes);
-
-            if (v == null || v.length == 0) throw new RuntimeException("key to delete not found");
-            super.remove(bytes);
-        }
-
-        public String toString() {
-            StringBuffer buffer = new StringBuffer();
-            getMap().
-                forEach((k, v) -> {
-                    buffer.append(Hex.toHexString(k));
-                    buffer.append(" = ");
-                    buffer.append(Hex.toHexString(v));
-                    buffer.append("\n");
-                });
-            return buffer.toString();
-        }
-    }
 }

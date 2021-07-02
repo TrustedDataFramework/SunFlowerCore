@@ -1,29 +1,28 @@
-package org.tdf.common.store;
+package org.tdf.common.store
 
 /**
  * Interface represents DB source which is normally the final Source in the chain
  */
-public interface DatabaseStore extends BatchStore<byte[], byte[]> {
+interface DatabaseStore : BatchStore<ByteArray, ByteArray> {
     /**
      * Initializes DB (open table, connection, etc)
      *
      * @param settings DB settings
      */
-    void init(DBSettings settings);
-
+    fun init(settings: DBSettings)
 
     /**
      * @return true if DB connection is alive
      */
-    boolean isAlive();
+    val isAlive: Boolean
 
     /**
      * Closes the DB table/connection
      */
-    void close();
+    fun close()
 
     /**
      * Closes database, destroys its data and finally runs init()
      */
-    void clear();
+    fun clear()
 }
