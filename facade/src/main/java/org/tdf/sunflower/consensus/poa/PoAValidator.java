@@ -32,7 +32,7 @@ public class PoAValidator extends AbstractValidator {
     @SneakyThrows
     public ValidateResult validate(RepositoryReader rd, Block block, Block dependency) {
         BlockValidateResult res = super.commonValidate(rd, block, dependency);
-        if (!res.isSuccess()) return res;
+        if (!res.getSuccess()) return res;
 
         Uint256 fee = res.getFee();
         if (!fee.plus(poA.economicModel.getConsensusRewardAtHeight(dependency.getHeight() + 1)).equals(block.getBody().get(0).getValueAsUint())) {
@@ -43,7 +43,7 @@ public class PoAValidator extends AbstractValidator {
             return ValidateResult.fault("block coinbase not equals to coinbase transaction receiver");
 
         ValidateResult res0 = validateCoinBase(dependency, block.getBody().get(0));
-        if (!res0.isSuccess())
+        if (!res0.getSuccess())
             return res0;
 
         if (

@@ -66,7 +66,6 @@ public abstract class AbstractValidator implements Validator {
         )) {
             return BlockValidateResult.fault("transactions root not match");
         }
-        BlockValidateResult success = BlockValidateResult.success();
 
         Uint256 totalFee = Uint256.ZERO;
         long gas = 0;
@@ -153,10 +152,6 @@ public abstract class AbstractValidator implements Validator {
         for (int i = 0; i < receipts.size(); i++) {
             infos.add(new TransactionInfo(receipts.get(i), block.getHash().getBytes(), i));
         }
-        success.setInfos(infos);
-        success.setResults(results);
-        success.setFee(totalFee);
-        success.setGas(gas);
-        return success;
+        return BlockValidateResult.success(gas, totalFee, results, infos);
     }
 }

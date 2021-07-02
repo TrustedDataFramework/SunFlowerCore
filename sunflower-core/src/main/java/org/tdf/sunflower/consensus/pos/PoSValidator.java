@@ -20,7 +20,7 @@ public class PoSValidator extends AbstractValidator {
     @Override
     public ValidateResult validate(RepositoryReader rd, Block block, Block dependency) {
         BlockValidateResult res = super.commonValidate(rd, block, dependency);
-        if (!res.isSuccess()) return res;
+        if (!res.getSuccess()) return res;
 
         if (
             !posMiner.getProposer(dependency, block.getCreatedAt())

@@ -130,8 +130,8 @@ class TransactionPoolImpl(
                     log.error(e.message)
                     continue
                 }
-                val res = validator!!.validate(rd, parentHeader, transaction)
-                if (res.isSuccess) {
+                val res = validator!!.validate(rd, parentHeader!!, transaction)
+                if (res.success) {
                     cache.add(info)
                     mCache[info.tx.hashHex] = info
                     newCollected.add(transaction)
@@ -273,7 +273,7 @@ class TransactionPoolImpl(
     @PostConstruct
     fun initialize() {
         eventBus.subscribe(NewBestBlock::class.java) { event: NewBestBlock -> onNewBestBlock(event) }
-        executor.delay{
+        executor.delay {
             try {
                 clear()
             } catch (e: Exception) {

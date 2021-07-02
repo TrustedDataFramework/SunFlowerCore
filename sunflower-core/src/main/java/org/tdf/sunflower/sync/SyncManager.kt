@@ -465,7 +465,7 @@ class SyncManager(
                         continue
                     }
                     val res = engine.validator.validate(writer, b, o)
-                    if (!res.isSuccess) {
+                    if (!res.success) {
                         it.remove()
                         log.error(res.reason)
                         continue
