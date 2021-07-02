@@ -23,18 +23,6 @@ interface Memory {
     val data: ByteArray
     val limit: Int
 
-    fun writeRightPad(off: Int, buf: ByteArray, padTo: Int, bufOff: Int = 0, bufSize: Int = buf.size) {
-        if (off < 0 || off + padTo > size)
-            throw RuntimeException("memory access overflow")
-
-        for (i in 0 until padTo) {
-            this[off + i] = if (i < bufSize) {
-                buf[bufOff + i]
-            } else {
-                0
-            }
-        }
-    }
 
     fun resize(off: Long, len: Long)
 

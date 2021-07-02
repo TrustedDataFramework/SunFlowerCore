@@ -20,6 +20,7 @@ import org.tdf.lotusvm.runtime.StackAllocator;
 import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.state.Address;
 import org.tdf.sunflower.state.BuiltinContract;
+import org.tdf.sunflower.types.LogInfo;
 import org.tdf.sunflower.types.VMResult;
 import org.tdf.sunflower.vm.abi.Abi;
 import org.tdf.sunflower.vm.abi.SolidityType;
@@ -66,17 +67,24 @@ public class VMExecutor {
     // call depth
     private int depth;
 
-    public VMExecutor(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData, long gasLimit) {
-        this(rd, backend, ctx, callData, new Limit(gasLimit), 0);
+    private List<LogInfo> logs;
+
+    public List<LogInfo> getLogs() {
+        return logs;
     }
 
-    private VMExecutor(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData, Limit limit, int depth) {
+    public VMExecutor(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData, long gasLimit) {
+        this(rd, backend, ctx, callData, new Limit(gasLimit), 0, new ArrayList<>());
+    }
+
+    private VMExecutor(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData, Limit limit, int depth, List<LogInfo> logs) {
         this.rd = rd;
         this.backend = backend;
         this.ctx = ctx;
         this.callData = callData;
         this.limit = limit;
         this.depth = depth;
+        this.logs = logs;
     }
 
     public static void enableDebug(String outDirectory) {
@@ -113,7 +121,7 @@ public class VMExecutor {
     public VMExecutor clone() {
         if (depth + 1 == MAX_CALL_DEPTH)
             throw new RuntimeException("vm call depth overflow");
-        return new VMExecutor(rd, backend, ctx, callData.clone(), limit, depth + 1);
+        return new VMExecutor(rd, backend, ctx, callData.clone(), limit, depth + 1, logs);
     }
 
     public VMResult execute() {
@@ -151,7 +159,7 @@ public class VMExecutor {
             limit.getGas(),
             contractAddress,
             HexBytes.fromBytes(result),
-            Collections.emptyList(),
+            logs,
             fee
         );
     }

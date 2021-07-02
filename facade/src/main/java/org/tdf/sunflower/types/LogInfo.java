@@ -23,12 +23,11 @@ public class LogInfo implements RlpWritable {
 
     public LogInfo(byte[] rlp) {
         RlpList params = Rlp.decodeList(rlp);
-        RlpList logInfo = params.listAt(0);
 
-        RlpList topics = logInfo.listAt(1);
+        RlpList topics = params.listAt(1);
 
-        this.address = logInfo.bytesAt(0);
-        this.data = logInfo.bytesAt(2);
+        this.address = params.bytesAt(0);
+        this.data = params.bytesAt(2);
 
         for(int i = 0; i < topics.size(); i++){
             byte[] topic = topics.bytesAt(i);

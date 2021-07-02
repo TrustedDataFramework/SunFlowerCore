@@ -78,7 +78,7 @@ public class TransactionReceipt {
         }
 
         for(int i = 0; i < logs.size(); i++) {
-            LogInfo logInfo = new LogInfo(logs.bytesAt(i));
+            LogInfo logInfo = new LogInfo(logs.rawAt(i));
             logInfoList.add(logInfo);
 
         }

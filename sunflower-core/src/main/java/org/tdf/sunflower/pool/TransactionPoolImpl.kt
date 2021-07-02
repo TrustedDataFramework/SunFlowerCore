@@ -66,6 +66,7 @@ class TransactionPoolImpl(
     private val pendingReceipts: MutableList<TransactionReceipt> = mutableListOf()
 
     private var current: Backend? = null
+    private var currentBloom: Bloom = Bloom()
     private var gasUsed: Long = 0L
     private val executor = FixedDelayScheduler("TransactionPool", config.expiredIn)
 
@@ -75,6 +76,7 @@ class TransactionPoolImpl(
         pendingReceipts.clear()
         current = trie.createBackend(parentHeader, null, false)
         gasUsed = 0
+        currentBloom = Bloom()
     }
 
     fun setEngine(engine: ConsensusEngine) {
@@ -90,6 +92,7 @@ class TransactionPoolImpl(
         parentHeader = null
         current = null
         gasUsed = 0L
+        currentBloom = Bloom()
     }
 
     private fun clear() {
@@ -191,6 +194,8 @@ class TransactionPoolImpl(
                 receipt.setGasUsed(res.gasUsed)
                 receipt.executionResult = res.executionResult.bytes
                 receipt.transaction = t
+                receipt.logInfoList = res.logs
+                currentBloom.or(receipt.bloomFilter)
                 pending.add(t)
                 pendingReceipts.add(receipt)
                 this.current = child
@@ -215,7 +220,8 @@ class TransactionPoolImpl(
             val r = PendingData(
                 pending.toMutableList(),
                 pendingReceipts.toMutableList(),
-                current
+                current,
+                currentBloom
             )
             clearPending()
             return r

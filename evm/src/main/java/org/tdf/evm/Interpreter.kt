@@ -164,10 +164,10 @@ class Interpreter(
                 OpCodes.SAR -> stack.sar()
                 OpCodes.SHA3 -> stack.sha3(memory, host.digest)
                 // address is left padded
-                OpCodes.ADDRESS -> stack.push(callData.receipt)
+                OpCodes.ADDRESS -> stack.pushLeftPadding(callData.receipt)
                 OpCodes.BALANCE -> stack.push(host.getBalance(stack.popAddress()))
-                OpCodes.ORIGIN -> stack.push(ctx.origin)
-                OpCodes.CALLER -> stack.push(callData.caller)
+                OpCodes.ORIGIN -> stack.pushLeftPadding(ctx.origin)
+                OpCodes.CALLER -> stack.pushLeftPadding(callData.caller)
                 OpCodes.CALLVALUE -> stack.push(callData.value)
 
                 // call data load is right padded
@@ -188,7 +188,7 @@ class Interpreter(
                     val code = host.getCode(stack.popAddress())
                     val bytes = ByteArray(SlotUtils.SLOT_BYTE_ARRAY_SIZE)
                     host.digest.digest(code, 0, code.size, bytes, 0)
-                    stack.push(bytes)
+                    stack.pushLeftPadding(bytes)
                 }
 
                 OpCodes.BLOCKHASH, OpCodes.COINBASE -> throw RuntimeException("unsupported op code")
@@ -200,7 +200,7 @@ class Interpreter(
                 OpCodes.MLOAD -> stack.mload(memory)
                 OpCodes.MSTORE -> stack.mstore(memory)
                 OpCodes.MSTORE8 -> stack.mstore8(memory)
-                OpCodes.SLOAD -> stack.push(host.getStorage(callData.receipt, stack.popBytes()))
+                OpCodes.SLOAD -> stack.pushLeftPadding(host.getStorage(callData.receipt, stack.popBytes()))
                 OpCodes.SSTORE -> host.setStorage(callData.receipt, stack.popBytes(), stack.popBytes())
                 OpCodes.JUMP -> {
                     jump(stack.popU32())
@@ -230,16 +230,8 @@ class Interpreter(
                 in OpCodes.PUSH1..OpCodes.PUSH32 -> {
                     val size = op - OpCodes.PUSH1 + 1
                     val n = Math.min(size, callData.code.size - pc - 1)
-
-                    if (n == size) {
-                        stack.push(callData.code, pc + 1, n)
-                        pc += size
-                    } else {
-                        val padded = ByteArray(size)
-                        System.arraycopy(callData.code, pc + 1, padded, 0, n)
-                        stack.push(padded)
-                        pc += size
-                    }
+                    stack.pushLeftPadding(callData.code, pc + 1, n)
+                    pc += size
                 }
                 in OpCodes.DUP1..OpCodes.DUP16 -> stack.dup(op - OpCodes.DUP1 + 1)
                 in OpCodes.SWAP1..OpCodes.SWAP16 -> stack.swap(op - OpCodes.SWAP1 + 1)
@@ -283,8 +275,7 @@ class Interpreter(
         }
     }
 
-
-    val ByteArray.bnHex: String
+    private val ByteArray.bnHex: String
         get() {
             return BigInteger(1, this).hex
         }
@@ -481,7 +472,7 @@ class Interpreter(
         val off = stack.popU32()
         val size = stack.popU32()
         val input = memory.resizeAndCopy(off, size)
-        stack.push(host.create(callData.receipt, value, input))
+        stack.pushLeftPadding(host.create(callData.receipt, value, input))
     }
 
     fun call(op: Int) {

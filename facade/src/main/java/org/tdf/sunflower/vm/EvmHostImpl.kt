@@ -6,6 +6,7 @@ import org.tdf.common.util.HexBytes
 import org.tdf.evm.Digest
 import org.tdf.evm.EvmHost
 import org.tdf.sunflower.facade.RepositoryReader
+import org.tdf.sunflower.types.LogInfo
 import java.math.BigInteger
 
 val sha3 = Digest { src: ByteArray, srcPos: Int, srcLen: Int,
@@ -96,5 +97,6 @@ class EvmHostImpl(private val executor: VMExecutor, private val rd: RepositoryRe
     }
 
     override fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>) {
+        executor.logs.add(LogInfo(contract, topics.map { Uint256.Companion.of(it) }, data))
     }
 }

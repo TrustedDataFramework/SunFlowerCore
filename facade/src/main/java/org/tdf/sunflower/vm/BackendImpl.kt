@@ -8,6 +8,7 @@ import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.BuiltinContract
 import org.tdf.sunflower.types.Header
+import org.tdf.sunflower.types.LogInfo
 
 // backend for mining
 class BackendImpl(
@@ -20,11 +21,11 @@ class BackendImpl(
     override val builtins: Map<HexBytes, BuiltinContract> = mutableMapOf(),
     override val bios: Map<HexBytes, BuiltinContract> = mutableMapOf(),
     override var staticCall: Boolean,
-
     // address -> code
     private val codeStore: Store<HexBytes, HexBytes>,
     private val codeCache: MutableMap<HexBytes, HexBytes> = mutableMapOf(),
-    override var headerCreatedAt: Long? = null
+    override var headerCreatedAt: Long? = null,
+    private val _logs: MutableList<LogInfo> = mutableListOf(),
 ) : Backend {
     // get account without clone
     private fun lookup(address: HexBytes): Account {
@@ -49,7 +50,8 @@ class BackendImpl(
             staticCall,
             codeStore,
             mutableMapOf(),
-            headerCreatedAt
+            headerCreatedAt,
+            mutableListOf(),
         )
     }
 

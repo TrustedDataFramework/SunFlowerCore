@@ -42,7 +42,9 @@ interface Stack {
     /**
      * push by left padding
      */
-    fun push(buf: ByteArray, offset: Int = 0, len: Int = buf.size)
+    fun pushLeftPadding(buf: ByteArray, offset: Int = 0, len: Int = buf.size)
+
+    fun pushRightPadding(buf: ByteArray, offset: Int = 0, len: Int = buf.size)
 
     /**
      * push a slot
@@ -277,11 +279,20 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         this.data = tmp
     }
 
-    override fun push(buf: ByteArray, offset: Int, len: Int) {
+    override fun pushLeftPadding(buf: ByteArray, offset: Int, len: Int) {
         if (len > SLOT_BYTE_ARRAY_SIZE)
             throw RuntimeException("byte array size overflow")
         Arrays.fill(tempBytes, 0)
         System.arraycopy(buf, offset, tempBytes, SLOT_BYTE_ARRAY_SIZE - len, len)
+        pushZero()
+        decodeBE(tempBytes, 0, data, top)
+    }
+
+    override fun pushRightPadding(buf: ByteArray, offset: Int, len: Int) {
+        if (len > SLOT_BYTE_ARRAY_SIZE)
+            throw RuntimeException("byte array size overflow")
+        Arrays.fill(tempBytes, 0)
+        System.arraycopy(buf, offset, tempBytes, 0, len)
         pushZero()
         decodeBE(tempBytes, 0, data, top)
     }
@@ -870,7 +881,6 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         decodeBE(tempBytes, 0, data, top)
     }
 
-
     override fun callDataLoad(input: ByteArray) {
         val offInt = unsignedMin(popU32(), input.size.toLong()).toInt()
         val len = Math.min(SLOT_BYTE_ARRAY_SIZE, input.size - offInt)
@@ -885,6 +895,19 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
             x
         } else {
             y
+        }
+    }
+
+    private fun Memory.writeRightPad(off: Int, buf: ByteArray, padTo: Int, bufOff: Int = 0, bufSize: Int = buf.size) {
+        if (off < 0 || off + padTo > this.size)
+            throw RuntimeException("memory access overflow")
+
+        for (i in 0 until padTo) {
+            this[off + i] = if (i < bufSize) {
+                buf[bufOff + i]
+            } else {
+                0
+            }
         }
     }
 

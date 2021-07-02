@@ -109,6 +109,7 @@ public abstract class AbstractMiner implements Miner {
             new Bloom(),
             Collections.emptyList()
         );
+
         receipt.setExecutionResult(res.getExecutionResult().getBytes());
         receipt.setTransaction(coinbase);
         p.getReceipts().add(0, receipt);
@@ -121,6 +122,7 @@ public abstract class AbstractMiner implements Miner {
         b.setReceiptTrieRoot(TransactionReceipt.calcReceiptsTrie(p.getReceipts()));
         // persist modifications of trie to database
         b.resetTransactionsRoot();
+        b.setLogsBloom(HexBytes.fromBytes(p.getBloom().getData()));
 
         // the mined block cannot be modified any more
         if (!finalizeBlock(parent, b)) {

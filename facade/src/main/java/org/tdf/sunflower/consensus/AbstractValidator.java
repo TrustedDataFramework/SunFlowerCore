@@ -75,6 +75,7 @@ public abstract class AbstractValidator implements Validator {
         HexBytes currentRoot;
         long currentGas = 0;
         List<TransactionReceipt> receipts = new ArrayList<>();
+        Bloom bloom = new Bloom();
 
         try {
             Backend tmp = accountTrie.createBackend(parent.getHeader(), null, false);
@@ -107,6 +108,8 @@ public abstract class AbstractValidator implements Validator {
                 );
                 receipt.setGasUsed(r.getGasUsed());
                 receipt.setExecutionResult(r.getExecutionResult().getBytes());
+                receipt.setLogInfoList(r.getLogs());
+                bloom.or(receipt.getBloomFilter());
                 currentRoot = tmp.merge();
                 receipts.add(receipt);
                 tmp = accountTrie.createBackend(parent.getHeader(), currentRoot, null, false);
@@ -134,6 +137,11 @@ public abstract class AbstractValidator implements Validator {
             // validate receipt trie root
             if (!TransactionReceipt.calcReceiptsTrie(receipts).equals(block.getReceiptTrieRoot())) {
                 return BlockValidateResult.fault("receipts trie root not match");
+            }
+
+            // validate bloom
+            if(!bloom.equals(new Bloom(block.getLogsBloom().getBytes()))) {
+                return BlockValidateResult.fault("logs bloom not match");
             }
 
         } catch (Exception e) {
