@@ -11,7 +11,6 @@ import org.tdf.common.util.HexBytes;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiFunction;
 
 import static org.tdf.common.trie.TrieKey.EMPTY;
 
@@ -243,11 +242,11 @@ class Node {
     }
 
     // deep-first scanning
-    void traverse(TrieKey init, BiFunction<TrieKey, Node, Boolean> action) {
+    void traverse(TrieKey init, ScannerAction action) {
         parse();
         Type type = getType();
         if (type == Type.BRANCH) {
-            if (!action.apply(init, this)) return;
+            if (!action.scan(init, this)) return;
             for (int i = 0; i < BRANCH_SIZE - 1; i++) {
                 if (children[i] == null) continue;
                 ((Node) children[i]).traverse(init.concat(TrieKey.single(i)), action);
@@ -256,12 +255,12 @@ class Node {
         }
         if (type == Type.EXTENSION) {
             TrieKey path = init.concat(getKey());
-            if (!action.apply(path, this)) return;
+            if (!action.scan(path, this)) return;
             getExtension().traverse(path, action);
             return;
         }
         // leaf node
-        action.apply(init.concat(getKey()), this);
+        action.scan(init.concat(getKey()), this);
     }
 
     // for test only

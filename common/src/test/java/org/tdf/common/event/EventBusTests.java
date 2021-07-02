@@ -1,5 +1,6 @@
 package org.tdf.common.event;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,7 +15,7 @@ public class EventBusTests {
 
     @Before
     public void init() {
-        bus = new EventBus();
+        bus = new EventBus(new ThreadFactoryBuilder().setNameFormat("event-bus-%d").build());
     }
 
     @Test

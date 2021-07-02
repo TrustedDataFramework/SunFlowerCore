@@ -20,7 +20,7 @@ public class HashTests {
 
         for (int i = 0; i < 100; i++) {
             sr.nextBytes(rand);
-            HashUtil.sha3(rand, 0, rand.length / 2, dst);
+            HashUtil.sha3(rand, 0, rand.length / 2, dst, 0);
             assertArrayEquals(dst, HashUtil.sha3(rand, 0, rand.length / 2));
         }
     }

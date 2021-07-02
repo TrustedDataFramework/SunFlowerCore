@@ -70,7 +70,7 @@ public abstract class AbstractTrieTest {
             assert values.contains(s.getBytes());
         }
 
-        assert trie.size() == 5;
+        assert trie.getSize() == 5;
     }
 
     @Test

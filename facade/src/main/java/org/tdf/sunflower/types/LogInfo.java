@@ -37,7 +37,7 @@ public class LogInfo implements RlpWritable {
 
     public LogInfo(byte[] address, List<Uint256> topics, byte[] data) {
         this.address = (address != null) ? address : new byte[]{};
-        this.topics = (topics != null) ? topics : new ArrayList<Uint256>();
+        this.topics = (topics != null) ? topics : new ArrayList<>();
         this.data = (data != null) ? data : new byte[]{};
     }
 
