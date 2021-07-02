@@ -64,7 +64,7 @@ class TrieImpl<K, V> private constructor(
             kCodec, vCodec, null
         )
         val v = store[rootHash.bytes]
-        if (v == null || v.size == 0) throw RuntimeException("rollback failed, root hash not exists")
+        if (v == null || v.isEmpty()) throw RuntimeException("rollback failed, root hash not exists")
         return TrieImpl(
             store, kCodec, vCodec,
             Node.fromRootHash(rootHash.bytes, ReadOnlyStore.of(store))
