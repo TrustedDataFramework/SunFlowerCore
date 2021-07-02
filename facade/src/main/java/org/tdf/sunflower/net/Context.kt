@@ -1,33 +1,31 @@
-package org.tdf.sunflower.net;
-
-import java.util.Collection;
+package org.tdf.sunflower.net
 
 // context for communicating with peer server and listener
-public interface Context {
+interface Context {
     // exit listeners chain
-    void exit();
+    fun exit()
 
     // disconnect to the peer
-    void disconnect();
+    fun disconnect()
 
     // block the peer for a while
-    void block();
+    fun block()
 
     // keep the connection alive
-    void keep();
+    fun keep()
 
     // response to the remote peer
-    void response(byte[] message);
+    fun response(message: ByteArray)
 
     // batch response
-    void response(Collection<byte[]> messages);
+    fun response(messages: Collection<ByteArray>)
 
     // relay the received message
-    void relay();
+    fun relay()
 
     // get the message received from channel
-    byte[] getMessage();
+    val message: ByteArray
 
     // get remote peer
-    Peer getRemote();
+    val remote: Peer
 }

@@ -64,4 +64,9 @@ public class DatabaseStoreFactoryImpl implements DatabaseStoreFactory {
     public String getName() {
         return config.getName();
     }
+
+    @Override
+    public void cleanup() {
+
+    }
 }

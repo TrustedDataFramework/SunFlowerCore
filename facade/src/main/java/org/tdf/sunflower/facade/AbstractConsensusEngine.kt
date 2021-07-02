@@ -11,92 +11,51 @@ import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.ConsensusConfig
 
 abstract class AbstractConsensusEngine : ConsensusEngine {
-    // contract storage trie
-    var contractStorageTrie: Trie<HexBytes, HexBytes>? = null
+    // contract storage trie, injected before init() called
+    lateinit var contractStorageTrie: Trie<HexBytes, HexBytes>
 
-    // a map between hash and wasm byte code
-    var contractCodeStore: Store<HexBytes, HexBytes>? = null
+    // a map between hash and wasm byte code, injected before init() called
+    lateinit var contractCodeStore: Store<HexBytes, HexBytes>
 
     // sub class should set miner explicitly when init() called
-    private var miner: Miner? = null
+    override var miner: Miner = Miner.NONE
 
     // sub class should set validator explicitly when init() called
-    private var validator: Validator? = null
+    override var validator: Validator = Validator.NONE
 
     // account stateTrie will be injected before init() called
-    var accountTrie: StateTrie<HexBytes, Account>? = null
+    lateinit var accountTrie: StateTrie<HexBytes, Account>
 
     // sub class should set genesis block explicitly when init() called
-    private var genesisBlock: Block? = null
+    override var genesisBlock: Block = Block()
 
     // event bus will be injected before init() called
-    var eventBus: EventBus? = null
+    lateinit var eventBus: EventBus
 
     // transaction pool will be injected before init() called
-    var transactionPool: TransactionPool? = null
+    lateinit var transactionPool: TransactionPool
 
     // sunflowerRepository will be injected before init() called
-    var repo: RepositoryService? = null
+    lateinit var repo: RepositoryService
 
     // sub class should set peer server listener explicitly when init() called
-    private var peerServerListener = PeerServerListener.NONE
+    override var peerServerListener = PeerServerListener.NONE
 
     open val alloc: Map<HexBytes, Account>
         get() = emptyMap()
 
-    open val builtins: List<BuiltinContract?>?
+    open val builtins: List<BuiltinContract>
         get() = emptyList()
-    open val bios: List<BuiltinContract?>?
+    open val bios: List<BuiltinContract>
         get() = emptyList()
 
-    override fun getMiner(): Miner {
-        return miner!!
-    }
-
-    override fun getValidator(): Validator {
-        return validator!!
-    }
-
-    override fun getGenesisBlock(): Block {
-        return genesisBlock!!
-    }
-
-    override fun getPeerServerListener(): PeerServerListener {
-        return peerServerListener
-    }
-
-    fun setMiner(miner: Miner?) {
-        this.miner = miner
-    }
-
-    fun setValidator(validator: Validator?) {
-        this.validator = validator
-    }
-
-    fun setGenesisBlock(genesisBlock: Block?) {
-        this.genesisBlock = genesisBlock
-    }
-
-    fun setPeerServerListener(peerServerListener: PeerServerListener) {
-        this.peerServerListener = peerServerListener
-    }
 
     companion object {
         @JvmField
         val NONE: AbstractConsensusEngine = object : AbstractConsensusEngine() {
             override fun init(config: ConsensusConfig) {
-                if (transactionPool == null) throw RuntimeException("transaction pool not injected")
-                if (repo == null) throw RuntimeException("consortium repository not injected")
-                if (eventBus == null) {
-                    throw RuntimeException("event bus not injected")
-                }
-                setMiner(Miner.NONE)
-                setValidator(Validator.NONE)
-                setGenesisBlock(Block())
-                peerServerListener = PeerServerListener.NONE
             }
-
-            override fun getName(): String {
+            override val name: String get() {
                 return "none"
             }
         }
