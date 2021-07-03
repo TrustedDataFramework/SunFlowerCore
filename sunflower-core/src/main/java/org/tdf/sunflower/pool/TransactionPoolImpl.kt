@@ -74,7 +74,7 @@ class TransactionPoolImpl(
         parentHeader = best
         pending.clear()
         pendingReceipts.clear()
-        current = trie.createBackend(parentHeader, null, false)
+        current = trie.createBackend(best, null, false)
         gasUsed = 0
         currentBloom = Bloom()
     }

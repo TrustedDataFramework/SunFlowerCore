@@ -154,7 +154,7 @@ public class JsonRpcImpl implements JsonRpc {
                     header = rd.getCanonicalHeader(h);
                     break;
             }
-            return accountTrie.createBackend(header, System.currentTimeMillis() / 1000, isStatic);
+            return accountTrie.createBackend(header, System.currentTimeMillis() / 1000, isStatic, header.getStateRoot());
         }
 
     }

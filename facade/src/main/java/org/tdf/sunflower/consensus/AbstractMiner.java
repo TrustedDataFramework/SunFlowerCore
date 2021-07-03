@@ -74,7 +74,7 @@ public abstract class AbstractMiner implements Miner {
 
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
         Backend tmp = p.getCurrent() == null ?
-            accountTrie.createBackend(parent.getHeader(), parent.getStateRoot(), null, false)
+            accountTrie.createBackend(parent.getHeader(), null, false, parent.getStateRoot())
             : p.getCurrent();
         List<Transaction> transactionList = p.getPending();
         b.setBody(transactionList);

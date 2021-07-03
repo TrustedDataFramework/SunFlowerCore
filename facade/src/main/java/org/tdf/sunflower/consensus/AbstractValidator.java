@@ -77,7 +77,7 @@ public abstract class AbstractValidator implements Validator {
         Bloom bloom = new Bloom();
 
         try {
-            Backend tmp = accountTrie.createBackend(parent.getHeader(), null, false);
+            Backend tmp = accountTrie.createBackend(parent.getHeader(), null, false, parent.getStateRoot());
             Transaction coinbase = block.getBody().get(0);
 
 
@@ -111,7 +111,7 @@ public abstract class AbstractValidator implements Validator {
                 bloom.or(receipt.getBloomFilter());
                 currentRoot = tmp.merge();
                 receipts.add(receipt);
-                tmp = accountTrie.createBackend(parent.getHeader(), currentRoot, null, false);
+                tmp = accountTrie.createBackend(parent.getHeader(), null, false, currentRoot);
             }
 
             tmp.setHeaderCreatedAt(block.getCreatedAt());
