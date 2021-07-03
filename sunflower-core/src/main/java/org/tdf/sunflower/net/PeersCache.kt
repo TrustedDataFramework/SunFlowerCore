@@ -4,7 +4,6 @@ import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.types.Transaction
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.function.Predicate
 
 // helper to avoid generic array
 // kademlia k-bucket
@@ -21,10 +20,10 @@ class PeersCache(
     private val self: PeerImpl,
     private val config: PeerServerConfig
 ) {
-    val buckets = arrayOfNulls<Bucket>(Transaction.ADDRESS_LENGTH * 8)
-    var bootstraps: MutableMap<PeerImpl, Boolean> = ConcurrentHashMap()
-    var blocked: MutableMap<PeerImpl, Boolean> = ConcurrentHashMap()
-    var trusted: MutableMap<PeerImpl, Boolean> = ConcurrentHashMap()
+    private val buckets = arrayOfNulls<Bucket>(Transaction.ADDRESS_LENGTH * 8)
+    val bootstraps: MutableMap<PeerImpl, Boolean> = ConcurrentHashMap()
+    private val blocked: MutableMap<PeerImpl, Boolean> = ConcurrentHashMap()
+    val trusted: MutableMap<PeerImpl, Boolean> = ConcurrentHashMap()
 
     fun size(): Int {
         return buckets.filterNotNull().sumOf { it.size }
@@ -144,14 +143,13 @@ class PeersCache(
     fun half(peer: PeerImpl) {
         val idx = self.subTree(peer)
         if (buckets[idx] == null) return
-        Optional.ofNullable(
-            buckets[idx]!![peer.id]
-        ).map { b: PeerChannel -> b.peer }.filter(Predicate { p: PeerImpl ->
-            p.score -= if (p.score < 8) p.score else 8
-            p.score /= 2
-            p.score == 0L
-        })
-            .ifPresent { x: PeerImpl -> remove(x.id, " the score of $x is 0") }
+
+        buckets[idx]!![peer.id]
+            ?.peer?.takeIf { p ->
+                p.score -= if (p.score < 8) p.score else 8
+                p.score /= 2
+                p.score == 0L
+            }?.let { remove(it.id, " the score of $it is 0") }
     }
 
     // decrease score of all peer
@@ -180,7 +178,9 @@ class PeersCache(
     val isFull: Boolean
         get() = size() >= config.maxPeers
 
-    // get all connected channels
+    /**
+     * get all connected channels
+     */
     val channels: List<Channel>
         get() = buckets
             .filterNotNull()
@@ -196,7 +196,7 @@ class PeersCache(
     // get channel by peer id
     fun getChannel(id: HexBytes): Channel? {
         val idx = self.subTree(id.bytes)
-        return buckets[idx]?.let { it[id] }?.channel?.takeIf { it.isAlive }
+        return buckets[idx]?.get(id)?.channel?.takeIf { it.isAlive }
     }
 
     fun hasBlocked(peer: PeerImpl): Boolean {

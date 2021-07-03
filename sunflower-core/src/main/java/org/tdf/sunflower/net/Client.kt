@@ -1,5 +1,6 @@
 package org.tdf.sunflower.net
 
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.tdf.sunflower.proto.Code
 import org.tdf.sunflower.proto.Message
@@ -7,24 +8,15 @@ import java.net.URI
 import java.util.function.Consumer
 
 class Client(
-    self: PeerImpl,
-    config: PeerServerConfig,
-    messageBuilder: MessageBuilder,
-    netLayer: NetLayer
+    val self: PeerImpl,
+    val config: PeerServerConfig,
+    val builder: MessageBuilder,
+    private val netLayer: NetLayer,
 ) : ChannelListener {
-    private val config: PeerServerConfig
-    private val netLayer: NetLayer
-    private val self: PeerImpl
-    private val builder: MessageBuilder
-    var messageBuilder: MessageBuilder
-    var peersCache: PeersCache
+    val peersCache: PeersCache = PeersCache(self, config)
 
     // listener for channel event
-    private var listener = ChannelListener.NONE
-    fun withListener(listener: ChannelListener): Client {
-        this.listener = listener
-        return this
-    }
+    var listener = ChannelListener.NONE
 
     fun broadcast(message: Message) {
         peersCache.channels.forEach { it.write(message) }
@@ -53,19 +45,20 @@ class Client(
     // functional interface for connect to bootstrap and trusted peer
     // consumer may be called more than once
     // usually called when server starts
-    private fun connect(host: String, port: Int, connectionConsumer: Consumer<PeerImpl>) {
+    private fun connect(host: String, port: Int, cb: Consumer<PeerImpl>) {
         val remote = getChannel(host, port, listener, object : ChannelListener {
             override fun onConnect(remote: PeerImpl, channel: Channel) {
-                connectionConsumer.accept(remote)
+                cb.accept(remote)
                 addPeer(remote, channel)
             }
 
             override fun onMessage(message: Message, channel: Channel) {}
             override fun onError(throwable: Throwable, channel: Channel) {}
             override fun onClose(channel: Channel) {}
-        })?.remote // if the connection had already created, onConnect will not triggered
+        })?.remote
+        // if the connection had already created, onConnect will not triggered
         // but the peer will be handled here
-        remote?.let { connectionConsumer.accept(it) }
+        remote?.let { cb.accept(it) }
     }
 
     // try to get channel from cache, if channel not exists in cache,
@@ -93,9 +86,9 @@ class Client(
         if (ch != null) return ch
         ch = netLayer
             .createChannel(host, port, *listeners)
-            ?.takeIf { it.isAlive }
-        ch?.write(messageBuilder.buildPing())
-        return ch
+
+        ch?.write(builder.buildPing())
+        return ch?.takeIf { it.isAlive }
     }
 
     override fun onConnect(remote: PeerImpl, channel: Channel) {
@@ -147,20 +140,12 @@ class Client(
                     it.write(builder.buildMessage(Code.ANOTHER, message.ttl - 1, msg))
                     return@forEach
                 }
-                it.write(messageBuilder.buildRelay(message))
+                it.write(builder.buildRelay(message))
             }
     }
 
-    init {
-        peersCache = PeersCache(self, config)
-        this.config = config
-        this.messageBuilder = messageBuilder
-        this.netLayer = netLayer
-        this.self = self
-        builder = MessageBuilder(self, config)
-    }
 
     companion object {
-        val log = LoggerFactory.getLogger("net")
+        val log: Logger = LoggerFactory.getLogger("net")
     }
 }

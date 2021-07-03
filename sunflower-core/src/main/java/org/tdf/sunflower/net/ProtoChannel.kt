@@ -1,26 +1,43 @@
 package org.tdf.sunflower.net
 
+import io.grpc.stub.StreamObserver
 import org.slf4j.LoggerFactory
 import org.tdf.sunflower.net.PeerImpl.Companion.parse
 import org.tdf.sunflower.proto.Message
 import java.util.concurrent.CopyOnWriteArrayList
 
+interface ChannelOut {
+    fun write(message: Message)
+    fun close()
+}
+
+
+class GrpcChannel(messageBuilder: MessageBuilder, out: ChannelOut): ProtoChannel(messageBuilder, out), StreamObserver<Message> {
+    override fun onNext(value: Message) {
+        message(value)
+    }
+
+    override fun onError(t: Throwable) {
+        error(t)
+    }
+
+    override fun onCompleted() {
+        close("closed by remote")
+    }
+
+}
+
 // communicating channel with peer
-class ProtoChannel(private val messageBuilder: MessageBuilder) : Channel {
+open class ProtoChannel(private val messageBuilder: MessageBuilder, val out: ChannelOut) : Channel {
     @Volatile
     override var isClosed = false
-        private set
+        protected set
 
     override var remote: PeerImpl? = null
-    private var out: ChannelOut? = null
 
     @Volatile
     private var pinged = false
     private var listeners: MutableList<ChannelListener> = CopyOnWriteArrayList()
-
-    fun setOut(out: ChannelOut) {
-        this.out = out
-    }
 
     override fun message(message: Message) {
         if (isClosed) return
@@ -39,11 +56,11 @@ class ProtoChannel(private val messageBuilder: MessageBuilder) : Channel {
             close("invalid peer " + message.remotePeer)
             return
         }
-        pinged = true
 
+        pinged = true
         listeners.forEach {
             if (isClosed) return
-            it.onConnect(remote, this)
+            it.onConnect(remote!!, this)
         }
     }
 
@@ -59,14 +76,14 @@ class ProtoChannel(private val messageBuilder: MessageBuilder) : Channel {
         if (isClosed) return
         isClosed = true
         if (reason.isNotEmpty()) {
-            out!!.write(messageBuilder.buildDisconnect(reason))
+            out.write(messageBuilder.buildDisconnect(reason))
             log.error("close channel to $remote reason is $reason")
         }
         listeners.forEach { it.onClose(this) }
         listeners.clear()
 
         try {
-            out!!.close()
+            out.close()
         } catch (ignore: Exception) {
         }
     }
@@ -77,7 +94,7 @@ class ProtoChannel(private val messageBuilder: MessageBuilder) : Channel {
             return
         }
         try {
-            out!!.write(message)
+            out.write(message)
         } catch (e: Throwable) {
             e.printStackTrace()
             log.error(e.message)
@@ -90,10 +107,6 @@ class ProtoChannel(private val messageBuilder: MessageBuilder) : Channel {
         this.listeners.addAll(listeners)
     }
 
-    interface ChannelOut {
-        fun write(message: Message)
-        fun close()
-    }
 
     companion object {
         private val log = LoggerFactory.getLogger("net")

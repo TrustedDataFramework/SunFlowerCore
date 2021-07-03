@@ -20,7 +20,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
     override fun onMessage(context: ContextImpl, server: PeerServerImpl) {
         val client = server.client
         val cache = client.peersCache
-        val builder = client.messageBuilder
+        val builder = client.builder
         context.keep()
         when (context.msg.code) {
             Code.PING -> {
@@ -58,7 +58,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
         this.server = server
         val client = server.client
         val cache = client.peersCache
-        val builder = client.messageBuilder
+        val builder = client.builder
 
         val pingTicker = FixedDelayScheduler("PeersManager-Ping", config.discoverRate.toLong())
         // keep self alive
@@ -106,7 +106,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
     private fun lookup() {
         val client = server!!.client
         val cache = client.peersCache
-        val builder = client.messageBuilder
+        val builder = client.builder
         if (!config.isEnableDiscovery) {
             // keep channel to bootstraps and trusted alive
             val keys = cache.bootstraps.keys + cache.trusted.keys

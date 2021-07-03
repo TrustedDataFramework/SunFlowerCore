@@ -14,6 +14,7 @@ import java.io.IOException
 import java.net.URI
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.function.Consumer
 import java.util.stream.Stream
 
 @Slf4j(topic = "net")
@@ -139,8 +140,10 @@ class PeerServerImpl(// if non-database provided, use memory database
         } else {
             WebSocketNetLayer(self.port, builder)
         }
-        client = Client(self, config, builder, netLayer).withListener(this)
-        netLayer.setHandler { c: Channel -> c.addListeners(client, this) }
+        client = Client(self, config, builder, netLayer)
+        client.listener = this
+
+        netLayer.handler = Consumer { it.addListeners(client, this) }
 
         // loading plugins
         plugins.add(MessageFilter(config, consensusEngine))

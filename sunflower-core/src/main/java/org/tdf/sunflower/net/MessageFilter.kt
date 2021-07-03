@@ -3,28 +3,51 @@ package org.tdf.sunflower.net
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import org.slf4j.LoggerFactory
-import org.tdf.common.util.FastByteComparisons
-import org.tdf.common.util.HashUtil
-import org.tdf.common.util.HexBytes
-import org.tdf.common.util.LogLock
+import org.tdf.common.util.*
 import org.tdf.sunflower.facade.ConsensusEngine
 import org.tdf.sunflower.proto.Code
 import org.tdf.sunflower.proto.Message
-import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
-import java.util.function.Predicate
+
+private class MultiParts(val total: Int, val writeAt: Long) {
+    val multiParts: Array<Message?> = arrayOfNulls(total)
+
+    fun size(): Int {
+        return multiParts.filterNotNull().count()
+    }
+
+    fun merge(): Message {
+        val byteArraySize = multiParts.sumOf { it?.body?.size() ?: 0 }
+        val total = ByteArray(byteArraySize)
+        var current = 0
+        for (part in multiParts) {
+            val p = part!!.body.toByteArray()
+            System.arraycopy(p, 0, total, current, p.size)
+            current += p.size
+        }
+        if (!FastByteComparisons.equal(
+                HashUtil.sha3(total),
+                multiParts[0]!!.signature.toByteArray()
+            )
+        ) {
+            throw RuntimeException("merge failed")
+        }
+        return Message.parseFrom(total)
+    }
+}
 
 /**
  * message filter
  */
-class MessageFilter internal constructor(config: PeerServerConfig, consensusEngine: ConsensusEngine) : Plugin {
+class MessageFilter internal constructor(private val config: PeerServerConfig, consensusEngine: ConsensusEngine) :
+    Plugin {
+    private val scheduler = FixedDelayScheduler("msg-filter", config.cacheExpiredAfter.toLong())
+
     private val consensusEngine: ConsensusEngine
-    private val cache: Cache<HexBytes, Boolean>
-    private val multiPartCache: MutableMap<HexBytes, Messages> = HashMap()
-    private val config: PeerServerConfig
+    private val cache: Cache<HexBytes, Boolean> = CacheBuilder.newBuilder()
+        .maximumSize((config.maxPeers * 8).toLong()).build()
+    private val multiPartCache: MutableMap<HexBytes, MultiParts> = HashMap()
     private val multiPartCacheLock: Lock = LogLock(ReentrantLock(), "p2p-mp")
     override fun onMessage(context: ContextImpl, server: PeerServerImpl) {
         // cache multi part message
@@ -44,10 +67,7 @@ class MessageFilter internal constructor(config: PeerServerConfig, consensusEngi
             try {
                 val messages = multiPartCache.getOrDefault(
                     key,
-                    Messages(
-                        arrayOfNulls(
-                            context.msg.ttl.toInt()
-                        ),
+                    MultiParts(
                         context.msg.ttl.toInt(),
                         now
                     )
@@ -109,50 +129,22 @@ class MessageFilter internal constructor(config: PeerServerConfig, consensusEngi
     override fun onNewPeer(peer: PeerImpl, server: PeerServerImpl) {}
     override fun onDisconnect(peer: PeerImpl, server: PeerServerImpl) {}
     override fun onStop(server: PeerServerImpl) {}
-    private class Messages(val multiParts: Array<Message?>, val total: Int, val writeAt: Long) {
-        fun size(): Int {
-            return Arrays.stream(multiParts).filter(Predicate { obj: Message? -> Objects.nonNull(obj) }).count()
-                .toInt()
-        }
 
-        fun merge(): Message {
-            val byteArraySize = multiParts.sumOf { it?.body?.size() ?: 0 }
-            val total = ByteArray(byteArraySize)
-            var current = 0
-            for (part in multiParts) {
-                val p = part!!.body.toByteArray()
-                System.arraycopy(p, 0, total, current, p.size)
-                current += p.size
-            }
-            if (!FastByteComparisons.equal(
-                    HashUtil.sha3(total),
-                    multiParts[0]!!.signature.toByteArray()
-                )
-            ) {
-                throw RuntimeException("merge failed")
-            }
-            return Message.parseFrom(total)
-        }
-    }
 
     companion object {
         private val log = LoggerFactory.getLogger("net")
     }
 
     init {
-        cache = CacheBuilder.newBuilder()
-            .maximumSize((config.maxPeers * 8).toLong()).build()
-        this.config = config
-        Executors.newSingleThreadScheduledExecutor()
-            .scheduleWithFixedDelay({
-                multiPartCacheLock.lock()
-                val now = System.currentTimeMillis() / 1000
-                try {
-                    multiPartCache.entries.removeIf { (_, value) -> now - value.writeAt > config.cacheExpiredAfter }
-                } finally {
-                    multiPartCacheLock.unlock()
-                }
-            }, config.cacheExpiredAfter.toLong(), config.cacheExpiredAfter.toLong(), TimeUnit.SECONDS)
+        scheduler.delay {
+            multiPartCacheLock.lock()
+            val now = System.currentTimeMillis() / 1000
+            try {
+                multiPartCache.entries.removeIf { (_, value) -> now - value.writeAt > config.cacheExpiredAfter }
+            } finally {
+                multiPartCacheLock.unlock()
+            }
+        }
         this.consensusEngine = consensusEngine
     }
 }

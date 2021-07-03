@@ -8,9 +8,7 @@ import org.java_websocket.handshake.ServerHandshake
 import org.java_websocket.server.WebSocketServer
 import org.slf4j.LoggerFactory
 import org.tdf.sunflower.ApplicationConstants
-import org.tdf.sunflower.net.ProtoChannel.ChannelOut
 import org.tdf.sunflower.proto.Message
-import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.URI
 import java.nio.ByteBuffer
@@ -18,15 +16,64 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
+private class WebSocketClient(host: String, port: Int, builder: MessageBuilder) : WebSocketClient(
+    URI("ws", "", host, port, "", "", "")
+) {
+    val channel: ProtoChannel = ProtoChannel(builder, WebSocketClientChannelOut(this))
+    override fun onOpen(ignored: ServerHandshake) {}
+    override fun onMessage(bytes: ByteBuffer) {
+        try {
+            channel.message(Message.parseFrom(bytes))
+        } catch (e: InvalidProtocolBufferException) {
+            channel.error(e)
+        }
+    }
+
+    override fun onMessage(message: String) {}
+    override fun onClose(code: Int, reason: String, remote: Boolean) {
+        channel.close("websocket connection closed by remote")
+    }
+
+    override fun onError(ex: Exception) {
+        channel.error(ex)
+    }
+
+}
+
+
+internal class WebSocketChannelOut(private val conn: WebSocket) : ChannelOut {
+    override fun write(message: Message) {
+        conn.send(message.toByteArray())
+    }
+
+    override fun close() {
+        try {
+            conn.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}
+
+internal class WebSocketClientChannelOut(private val client: WebSocketClient) : ChannelOut {
+    override fun write(message: Message) {
+        client.send(message.toByteArray())
+    }
+
+    override fun close() {
+        client.close()
+    }
+}
+
 // net layer implemented by websocket
 class WebSocketNetLayer internal constructor(port: Int, private val builder: MessageBuilder) :
     WebSocketServer(InetSocketAddress(port)), NetLayer {
     private val channels: MutableMap<WebSocket, Channel> = ConcurrentHashMap()
-    private var channelHandler: Consumer<Channel>? = null
+    override var handler: Consumer<Channel> = Consumer { }
+
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
-        val ch = ProtoChannel(builder)
-        ch.setOut(WebSocketChannelOut(conn))
-        channelHandler!!.accept(ch)
+        val ch = ProtoChannel(builder, WebSocketChannelOut(conn))
+        handler.accept(ch)
         channels[conn] = ch
     }
 
@@ -53,13 +100,10 @@ class WebSocketNetLayer internal constructor(port: Int, private val builder: Mes
     }
 
     override fun onStart() {}
-    override fun setHandler(channelHandler: Consumer<Channel>) {
-        this.channelHandler = channelHandler
-    }
 
     override fun createChannel(host: String, port: Int, vararg listeners: ChannelListener): Channel? {
         return try {
-            val client = Client(host, port, builder)
+            val client = WebSocketClient(host, port, builder)
             client.channel.addListeners(*listeners)
             if (client.connectBlocking(1, TimeUnit.SECONDS)) {
                 client.channel
@@ -70,7 +114,6 @@ class WebSocketNetLayer internal constructor(port: Int, private val builder: Mes
         }
     }
 
-    @Throws(IOException::class)
     override fun close() {
         try {
             stop(ApplicationConstants.MAX_SHUTDOWN_WAITING.toInt() * 1000)
@@ -80,57 +123,6 @@ class WebSocketNetLayer internal constructor(port: Int, private val builder: Mes
         }
     }
 
-    private class WebSocketClientChannelOut(private val client: Client) : ChannelOut {
-        override fun write(message: Message) {
-            client.send(message.toByteArray())
-        }
-
-        override fun close() {
-            client.close()
-        }
-    }
-
-    private class Client(host: String?, port: Int, builder: MessageBuilder?) : WebSocketClient(
-        URI("ws", "", host, port, "", "", "")
-    ) {
-        val channel: ProtoChannel
-        override fun onOpen(ignored: ServerHandshake) {}
-        override fun onMessage(bytes: ByteBuffer) {
-            try {
-                channel.message(Message.parseFrom(bytes))
-            } catch (e: InvalidProtocolBufferException) {
-                channel.error(e)
-            }
-        }
-
-        override fun onMessage(message: String) {}
-        override fun onClose(code: Int, reason: String, remote: Boolean) {
-            channel.close("websocket connection closed by remote")
-        }
-
-        override fun onError(ex: Exception) {
-            channel.error(ex)
-        }
-
-        init {
-            channel = ProtoChannel(builder!!)
-            channel.setOut(WebSocketClientChannelOut(this))
-        }
-    }
-
-    private class WebSocketChannelOut(private val conn: WebSocket) : ChannelOut {
-        override fun write(message: Message) {
-            conn.send(message.toByteArray())
-        }
-
-        override fun close() {
-            try {
-                conn.close()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
 
     companion object {
         private val log = LoggerFactory.getLogger("net")

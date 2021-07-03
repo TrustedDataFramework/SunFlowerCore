@@ -9,7 +9,7 @@ interface NetLayer : Closeable {
     fun start()
 
     // register channel incoming handler, server side api
-    fun setHandler(channelHandler: Consumer<Channel>)
+    var handler: Consumer<Channel>
 
     // create a channel, client side api
     fun createChannel(host: String, port: Int, vararg listeners: ChannelListener): Channel?
