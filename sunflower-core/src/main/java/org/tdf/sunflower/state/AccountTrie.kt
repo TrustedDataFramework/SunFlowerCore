@@ -20,23 +20,19 @@ class AccountTrie(
     val contractStorageTrie: Trie<HexBytes, HexBytes>,
     secure: Boolean
 ) : AbstractStateTrie<HexBytes, Account>() {
-    private var trie: Trie<HexBytes, Account>
-
-    override fun getTrie(): Trie<HexBytes, Account> {
-        return trie
-    }
+    override val trie: Trie<HexBytes, Account>
 
     var bios: Map<HexBytes, BuiltinContract> = emptyMap()
     var builtins: Map<HexBytes, BuiltinContract> = emptyMap()
 
-    private val trieStore: Store<ByteArray, ByteArray>
+    override val trieStore: Store<ByteArray, ByteArray>
 
 
     override fun createBackend(
         parent: Header,
-        root: HexBytes,
         newBlockCreatedAt: Long?,
-        isStatic: Boolean
+        isStatic: Boolean,
+        root: HexBytes,
     ): Backend {
         return BackendImpl(
             parent,
@@ -56,12 +52,14 @@ class AccountTrie(
 
     init {
         trieStore = NoDeleteStore(db, ByteUtil::isNullOrZeroArray)
-        trie = Trie.builder<HexBytes, Account>()
+        var trie = Trie.builder<HexBytes, Account>()
             .store(trieStore)
             .keyCodec(Codecs.newRLPCodec(HexBytes::class.java))
             .valueCodec(Codecs.newRLPCodec(Account::class.java))
             .build()
-        if (secure) trie = SecureTrie(trie);
+        if (secure)
+            trie = SecureTrie(trie)
+        this.trie = trie
     }
 
     override fun init(
@@ -102,9 +100,6 @@ class AccountTrie(
     }
 
 
-    override fun getTrieStore(): Store<ByteArray, ByteArray> {
-        return trieStore
-    }
 
     companion object {
         private val log = LoggerFactory.getLogger("trie")

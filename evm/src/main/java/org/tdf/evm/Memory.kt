@@ -23,31 +23,11 @@ interface Memory {
     val data: ByteArray
     val limit: Int
 
-    fun writeRightPad(off: Int, buf: ByteArray, padTo: Int, bufOff: Int = 0, bufSize: Int = buf.size) {
-        if (off < 0 || off + padTo > size)
-            throw RuntimeException("memory access overflow")
 
-        for (i in 0 until padTo) {
-            this[off + i] = if (i < bufSize) {
-                buf[bufOff + i]
-            } else {
-                0
-            }
-        }
-    }
+    fun resize(off: Long, len: Long)
 
-    fun resize(off: Long, len: Long) {
-        resize(toResize(off, len))
-    }
+    fun resizeAndCopy(off: Long, len: Long): ByteArray
 
-    fun toResize(off: Long, len: Long): Int {
-        val i = off + len
-        if (off < 0 || len < 0 || i < 0)
-            throw RuntimeException("memory access overflow")
-        if (i > Int.MAX_VALUE)
-            throw RuntimeException("memory access overflow")
-        return i.toInt()
-    }
 
     fun write(off: Int, buf: ByteArray, bufOff: Int = 0, bufSize: Int = buf.size) {
         if (off < 0 || off + bufSize > size)
@@ -78,6 +58,25 @@ interface Memory {
 }
 
 class MemoryImpl(override val limit: Int = Int.MAX_VALUE) : Memory {
+    private fun toResize(off: Long, len: Long): Int {
+        val i = off + len
+        if (off < 0 || len < 0 || i < 0)
+            throw RuntimeException("memory access overflow")
+        if (i > Int.MAX_VALUE)
+            throw RuntimeException("memory access overflow")
+        return i.toInt()
+    }
+
+    override fun resize(off: Long, len: Long) {
+        resize(toResize(off, len))
+    }
+
+    override fun resizeAndCopy(off: Long, len: Long): ByteArray {
+        resize(toResize(off, len))
+        val r = ByteArray(len.toInt())
+        read(off.toInt(), r)
+        return r
+    }
     override fun resize(size: Int): Int {
         if (size < 0 || size > limit)
             throw RuntimeException("memory size exceeds limit")

@@ -58,7 +58,7 @@ class PropertyReader(val properties: PropertyLike) {
 
     fun getAsAddress(property: String): HexBytes {
         val s = properties.getProperty(property)
-        val minerCoinBase = HexBytes.fromHex(s)
+        val minerCoinBase = HexBytes.fromHex(s!!)
         if (minerCoinBase.size() != Transaction.ADDRESS_LENGTH) throw RuntimeException("invalid coinbase address $minerCoinBase")
         return minerCoinBase
     }

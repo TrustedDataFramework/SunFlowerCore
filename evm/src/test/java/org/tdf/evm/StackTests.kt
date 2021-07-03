@@ -237,7 +237,7 @@ val stackExp = StackBinaryOp(
 val stackDup = StackBinaryOp(
     { _, r -> r },
     fun(stack: Stack): BigInteger {
-        stack.dup(stack.size - 2)
+        stack.dup(2)
         return stack.popBigInt()
     }
 )

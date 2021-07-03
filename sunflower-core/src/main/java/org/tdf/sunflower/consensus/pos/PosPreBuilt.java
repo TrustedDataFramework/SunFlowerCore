@@ -16,6 +16,7 @@ import org.tdf.sunflower.state.AccountTrie;
 import org.tdf.sunflower.state.BuiltinContract;
 import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallContext;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.abi.Abi;
 
@@ -96,7 +97,7 @@ public class PosPreBuilt implements BuiltinContract {
 
     @Override
     @SneakyThrows
-    public byte[] call(RepositoryReader rd, Backend backend, CallData callData) {
+    public byte[] call(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData) {
         HexBytes payload = callData.getData();
         Type type = Type.values()[payload.get(0)];
         HexBytes args = payload.slice(1);
@@ -119,13 +120,13 @@ public class PosPreBuilt implements BuiltinContract {
                     e.getValue();
 
                 n.vote = n.vote.plus(callData.getValue());
-                n.txHash.add(callData.getTxHash());
+                n.txHash.add(ctx.getTxHash());
                 if (e.getKey() < 0)
                     nodeInfos.add(n);
                 else
                     nodeInfos.set(e.getKey(), n);
-                voteInfos.set(callData.getTxHash(), new VoteInfo(
-                    callData.getTxHash(), callData.getCaller(),
+                voteInfos.set(ctx.getTxHash(), new VoteInfo(
+                    ctx.getTxHash(), callData.getCaller(),
                     args, callData.getValue()
                 ));
                 break;

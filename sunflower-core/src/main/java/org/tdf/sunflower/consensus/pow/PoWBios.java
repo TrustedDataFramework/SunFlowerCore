@@ -14,6 +14,7 @@ import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallContext;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.CallType;
 import org.tdf.sunflower.vm.abi.Abi;
@@ -62,7 +63,7 @@ public class PoWBios extends AbstractBuiltIn {
 
     @Override
     @SneakyThrows
-    public List<?> call(RepositoryReader rd, Backend backend, CallData callData, String method, Object... args) {
+    public List<?> call(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData, String method, Object... args) {
 
 
         if (method.equals("nbits")) {

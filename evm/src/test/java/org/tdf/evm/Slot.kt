@@ -29,7 +29,3 @@ fun IntArray.toBigInt(): BigInteger {
 fun IntArray.add(slot: IntArray) {
     SlotUtils.add(this, 0, slot, 0, this, 0)
 }
-
-fun IntArray.sub(slot: IntArray) {
-    SlotUtils.sub(this, 0, slot, 0, this, 0)
-}

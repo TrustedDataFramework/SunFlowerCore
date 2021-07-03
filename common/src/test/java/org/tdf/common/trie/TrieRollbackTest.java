@@ -11,7 +11,6 @@ import org.tdf.common.store.NoDoubleDeleteStore;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.ByteArrayMap;
 import org.tdf.common.util.ByteUtil;
-import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
 
 import java.io.File;

@@ -154,7 +154,7 @@ public class JsonRpcImpl implements JsonRpc {
                     header = rd.getCanonicalHeader(h);
                     break;
             }
-            return accountTrie.createBackend(header, System.currentTimeMillis() / 1000, isStatic);
+            return accountTrie.createBackend(header, System.currentTimeMillis() / 1000, isStatic, header.getStateRoot());
         }
 
     }
@@ -244,13 +244,17 @@ public class JsonRpcImpl implements JsonRpc {
     @Override
     public String eth_call(CallArguments args, String bnOrId) throws Exception {
         long start = System.currentTimeMillis();
-        CallData callData = Objects.requireNonNull(args).toCallData();
         try (
             Backend backend = getBackendByBlockId(bnOrId, true);
             RepositoryReader rd = repo.getReader();
         ) {
-            callData.setTxNonce(backend.getNonce(callData.getOrigin()));
-            VMExecutor executor = new VMExecutor(rd, backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
+            CallData callData = args.toCallData();
+            VMExecutor executor = new VMExecutor(
+                rd,
+                backend,
+                args.toCallContext(backend.getNonce(callData.getCaller())),
+                args.toCallData(), AppConfig.INSTANCE.getBlockGasLimit()
+            );
             return toJsonHex(executor.execute().getExecutionResult());
         } finally {
             System.out.println("eth call use " + (System.currentTimeMillis() - start) + " ms");
@@ -259,13 +263,12 @@ public class JsonRpcImpl implements JsonRpc {
 
     @Override
     public String eth_estimateGas(CallArguments args) throws Exception {
-        CallData callData = Objects.requireNonNull(args).toCallData();
         try (
             Backend backend = getBackendByBlockId("latest", false);
             RepositoryReader rd = repo.getReader();
         ) {
-            callData.setTxNonce(backend.getNonce(callData.getOrigin()));
-            VMExecutor executor = new VMExecutor(rd, backend, callData, AppConfig.INSTANCE.getBlockGasLimit());
+            CallData callData = args.toCallData();
+            VMExecutor executor = new VMExecutor(rd, backend, args.toCallContext(backend.getNonce(callData.getCaller())), callData, AppConfig.INSTANCE.getBlockGasLimit());
             return toJsonHex(executor.execute().getGasUsed());
         }
     }
@@ -284,7 +287,14 @@ public class JsonRpcImpl implements JsonRpc {
 
     @Override
     public TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception {
-        return null;
+        HexBytes hash = TypeConverter.jsonHexToHexBytes(transactionHash);
+        try(RepositoryReader rd = repo.getReader()) {
+            TransactionInfo info = rd.getTransactionInfo(hash);
+            if(info == null)
+                return null;
+            Header h = rd.getHeaderByHash(info.getBlockHashHex());
+            return new TransactionResultDTO(h, info.getIndex(), info.getReceipt().getTransaction());
+        }
     }
 
     @Override
@@ -411,7 +421,7 @@ public class JsonRpcImpl implements JsonRpc {
         List<Object> txes = new ArrayList<>();
         if (fullTx) {
             for (int i = 0; i < block.getBody().size(); i++) {
-                txes.add(new TransactionResultDTO(block, i, block.getBody().get(i)));
+                txes.add(new TransactionResultDTO(block.getHeader(), i, block.getBody().get(i)));
             }
         } else {
             for (Transaction tx : block.getBody()) {

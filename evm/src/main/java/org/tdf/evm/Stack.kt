@@ -42,7 +42,9 @@ interface Stack {
     /**
      * push by left padding
      */
-    fun push(buf: ByteArray, offset: Int = 0, len: Int = buf.size)
+    fun pushLeftPadding(buf: ByteArray, offset: Int = 0, len: Int = buf.size)
+
+    fun pushRightPadding(buf: ByteArray, offset: Int = 0, len: Int = buf.size)
 
     /**
      * push a slot
@@ -108,7 +110,7 @@ interface Stack {
     fun popBigInt(signed: Boolean = false): BigInteger
 
     /**
-     * pop as unsigned integer, return -1 if overflowed
+     * pop as unsigned integer, return -1 if overflow
      */
     fun popU32(): Long
 
@@ -186,7 +188,7 @@ interface Stack {
 
     /**
      *  off := pop()
-     *  val := u8(pop())
+     *  val := pop() & 0xff
      *  mem[off] = val
      */
     fun mstore8(mem: Memory)
@@ -277,11 +279,20 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         this.data = tmp
     }
 
-    override fun push(buf: ByteArray, offset: Int, len: Int) {
+    override fun pushLeftPadding(buf: ByteArray, offset: Int, len: Int) {
         if (len > SLOT_BYTE_ARRAY_SIZE)
             throw RuntimeException("byte array size overflow")
         Arrays.fill(tempBytes, 0)
         System.arraycopy(buf, offset, tempBytes, SLOT_BYTE_ARRAY_SIZE - len, len)
+        pushZero()
+        decodeBE(tempBytes, 0, data, top)
+    }
+
+    override fun pushRightPadding(buf: ByteArray, offset: Int, len: Int) {
+        if (len > SLOT_BYTE_ARRAY_SIZE)
+            throw RuntimeException("byte array size overflow")
+        Arrays.fill(tempBytes, 0)
+        System.arraycopy(buf, offset, tempBytes, 0, len)
         pushZero()
         decodeBE(tempBytes, 0, data, top)
     }
@@ -483,13 +494,14 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
     override fun mstore(mem: Memory) {
         // assert off is valid
-        mem.resize(backU32(), SLOT_BYTE_ARRAY_SIZE.toLong())
-        val off = popIntExact()
+        val off = popU32()
+        mem.resize(off, SLOT_BYTE_ARRAY_SIZE.toLong())
+
         if (size == 0)
             throw RuntimeException("stack underflow")
         encodeBE(data, top, tempBytes, 0)
         drop()
-        mem.write(off, tempBytes)
+        mem.write(off.toInt(), tempBytes)
     }
 
     override fun mstore8(mem: Memory) {
@@ -500,9 +512,9 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
     override fun mload(mem: Memory) {
         // assert off is valid
-        mem.resize(backU32(), SLOT_BYTE_ARRAY_SIZE.toLong())
-        val off = popIntExact()
-        mem.read(off, tempBytes)
+        val off = popU32()
+        mem.resize(off, SLOT_BYTE_ARRAY_SIZE.toLong())
+        mem.read(off.toInt(), tempBytes)
         pushZero()
         decodeBE(tempBytes, 0, data, top)
     }
@@ -510,10 +522,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun popMemory(mem: Memory): ByteArray {
         val off = popU32()
         val len = popU32()
-        mem.resize(off, len)
-        val r = ByteArray(len.toInt())
-        mem.read(off.toInt(), r)
-        return r
+        return mem.resizeAndCopy(off, len)
     }
 
 
@@ -862,16 +871,15 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
 
     override fun sha3(mem: Memory, digest: Digest) {
-        mem.resize(backU32(), backU32(1))
+        val off = popU32()
+        val len  = popU32()
+        mem.resize(off, len)
         // after resize, mem[off:off+len] will never overflow
-        val off = popIntExact()
-        val len = popIntExact()
 
-        digest.digest(mem.data, off, len, tempBytes, 0)
+        digest.digest(mem.data, off.toInt(), len.toInt(), tempBytes, 0)
         pushZero()
         decodeBE(tempBytes, 0, data, top)
     }
-
 
     override fun callDataLoad(input: ByteArray) {
         val offInt = unsignedMin(popU32(), input.size.toLong()).toInt()
@@ -883,10 +891,23 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     private fun unsignedMin(x: Long, y: Long): Long {
-        return if (x + Long.MIN_VALUE < y + Long.MIN_VALUE) {
+        return if (x + java.lang.Long.MIN_VALUE < y + java.lang.Long.MIN_VALUE) {
             x
         } else {
             y
+        }
+    }
+
+    private fun Memory.writeRightPad(off: Int, buf: ByteArray, padTo: Int, bufOff: Int = 0, bufSize: Int = buf.size) {
+        if (off < 0 || off + padTo > this.size)
+            throw RuntimeException("memory access overflow")
+
+        for (i in 0 until padTo) {
+            this[off + i] = if (i < bufSize) {
+                buf[bufOff + i]
+            } else {
+                0
+            }
         }
     }
 

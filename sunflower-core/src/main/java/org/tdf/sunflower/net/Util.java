@@ -4,6 +4,7 @@ import com.google.common.primitives.Bytes;
 import lombok.SneakyThrows;
 import org.tdf.common.util.BigEndian;
 import org.tdf.sunflower.proto.Message;
+import org.tdf.sunflower.types.Transaction;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -54,5 +55,33 @@ public class Util {
         }
         InetAddress.getByName(externalIp);
         return externalIp;
+    }
+
+    public static int distance(byte[] left, byte[] right) {
+        int res = 0;
+        byte[] bits = new byte[Transaction.ADDRESS_LENGTH];
+        for (int i = 0; i < bits.length; i++) {
+            bits[i] = (byte) (left[i] ^ right[i]);
+        }
+        for (int i = 0; i < bits.length; i++) {
+            for (int j = 0; j < 7; j++) {
+                res += ((1 << j) & bits[i]) >>> j;
+            }
+        }
+        return res;
+    }
+
+    public static int subTree(byte[] left, byte[] right) {
+        byte[] bits = new byte[Transaction.ADDRESS_LENGTH];
+        byte mask = (byte) (1 << 7);
+        for (int i = 0; i < bits.length; i++) {
+            bits[i] = (byte) (left[i] ^ right[i]);
+        }
+        for (int i = 0; i < Transaction.ADDRESS_LENGTH * 8; i++) {
+            if ((bits[i / 8] & (mask >>> (i % 8))) != 0) {
+                return i;
+            }
+        }
+        return 0;
     }
 }

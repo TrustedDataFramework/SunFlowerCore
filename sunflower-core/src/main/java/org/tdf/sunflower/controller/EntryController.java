@@ -163,7 +163,7 @@ public class EntryController {
 
     @GetMapping(value = "/peers", produces = MediaType.APPLICATION_JSON_VALUE)
     public PeersInfo peers() {
-        return new PeersInfo(peerServer.getPeers(), peerServer.getBootStraps());
+        return new PeersInfo(peerServer.getPeers(), peerServer.getBootstraps());
     }
 
     @GetMapping(value = "/miners", produces = MediaType.APPLICATION_JSON_VALUE)

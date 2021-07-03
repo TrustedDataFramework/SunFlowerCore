@@ -4,6 +4,7 @@ import org.tdf.common.util.ByteUtil;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallContext;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.abi.Abi;
 
@@ -18,11 +19,11 @@ public interface BuiltinContract {
         return Collections.emptyMap();
     }
 
-    default byte[] call(RepositoryReader rd, Backend backend, CallData callData) {
+    default byte[] call(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData) {
         return ByteUtil.EMPTY_BYTE_ARRAY;
     }
 
-    default List<?> call(RepositoryReader rd, Backend backend, CallData callData, String method, Object... args) {
+    default List<?> call(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData, String method, Object... args) {
         return Collections.emptyList();
     }
 

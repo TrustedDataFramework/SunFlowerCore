@@ -11,8 +11,6 @@ import org.tdf.sunflower.proto.Disconnect
 import org.tdf.sunflower.proto.Peers
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.stream.Stream
-import kotlin.streams.toList
 
 class PeersManager internal constructor(private val config: PeerServerConfig) : Plugin {
     private val pending: MutableMap<PeerImpl, Boolean> = ConcurrentHashMap()
@@ -22,9 +20,9 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
     override fun onMessage(context: ContextImpl, server: PeerServerImpl) {
         val client = server.client
         val cache = client.peersCache
-        val builder = client.messageBuilder
+        val builder = client.builder
         context.keep()
-        when (context.message.code) {
+        when (context.msg.code) {
             Code.PING -> {
                 context.channel.write(builder.buildPong())
                 return
@@ -38,17 +36,15 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
             Code.PEERS -> {
                 if (!config.isEnableDiscovery) return
 
-                Peers.parseFrom(context.message.body).peersList.stream()
-                    .map { url: String? -> PeerImpl.parse(url) }
-                    .filter { obj: Optional<PeerImpl?> -> obj.isPresent }
-                    .map { obj: Optional<PeerImpl?> -> obj.get() }
+                Peers.parseFrom(context.msg.body).peersList
+                    .mapNotNull { url: String -> PeerImpl.parse(url) }
                     .filter { x: PeerImpl -> !cache.contains(x) && x != server.self && x.protocol == server.self.protocol }
                     .forEach { x: PeerImpl -> pending[x] = true }
                 return
             }
             Code.DISCONNECT -> {
-                val reason = Disconnect.parseFrom(context.message.body).reason
-                if (reason != null && !reason.isEmpty()) PeersManager.log.error("disconnect from peer " + context.getRemote() + " reason is " + reason)
+                val reason = Disconnect.parseFrom(context.msg.body).reason
+                if (reason != null && reason.isNotEmpty()) log.error("disconnect from peer " + context.remote + " reason is " + reason)
                 context.channel.close()
                 return
             }
@@ -62,14 +58,14 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
         this.server = server
         val client = server.client
         val cache = client.peersCache
-        val builder = client.messageBuilder
+        val builder = client.builder
 
         val pingTicker = FixedDelayScheduler("PeersManager-Ping", config.discoverRate.toLong())
         // keep self alive
         pingTicker.delay {
             try {
                 client.broadcast(builder.buildPing())
-            }catch (e: Exception) {
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
@@ -78,7 +74,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
         loopTicker.delay {
             try {
                 loopPeers(server, client, cache, builder)
-            }catch (e: Exception) {
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
@@ -86,7 +82,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
 
     private fun loopPeers(server: PeerServerImpl, client: Client, cache: PeersCache, builder: MessageBuilder) {
         // persist peers
-        (server.peerStore as BatchStore<String?, JsonNode?>)
+        (server.peerStore as BatchStore<String, JsonNode>)
             .putAll(
                 client.peersCache.peers
                     .map { AbstractMap.SimpleEntry(it.id.toHex(), TextNode(it.encodeURI())) }
@@ -110,7 +106,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
     private fun lookup() {
         val client = server!!.client
         val cache = client.peersCache
-        val builder = client.messageBuilder
+        val builder = client.builder
         if (!config.isEnableDiscovery) {
             // keep channel to bootstraps and trusted alive
             val keys = cache.bootstraps.keys + cache.trusted.keys
@@ -128,9 +124,9 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
             return
         }
         // query for peers from bootstraps and trusted when neighbours is empty
-        Stream.of(cache.bootstraps, cache.trusted)
-            .flatMap { x: Map<PeerImpl?, Boolean?> -> x.keys.stream() }
-            .forEach { p: PeerImpl? -> client.dial(p, builder.buildLookup()) }
+        arrayOf(cache.bootstraps, cache.trusted)
+            .flatMap { it.keys }
+            .forEach { client.dial(it, builder.buildLookup()) }
     }
 
     override fun onNewPeer(peer: PeerImpl, server: PeerServerImpl) {}

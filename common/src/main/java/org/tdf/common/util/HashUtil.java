@@ -180,6 +180,10 @@ public class HashUtil {
         return sha3omit12(Rlp.encodeElements(encSender, encNonce));
     }
 
+    public static HexBytes calcNewAddrHex(byte[] addr, long nonce) {
+        return HexBytes.fromBytes(calcNewAddr(addr, ByteUtil.longToBytesNoLeadZeroes(nonce)));
+    }
+
     public static HexBytes calcNewAddrHex(byte[] addr, byte[] nonce) {
         return HexBytes.fromBytes(calcNewAddr(addr, nonce));
     }

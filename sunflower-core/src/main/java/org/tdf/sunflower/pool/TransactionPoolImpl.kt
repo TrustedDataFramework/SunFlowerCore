@@ -19,7 +19,8 @@ import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.Backend
-import org.tdf.sunflower.vm.CallData.Companion.fromTransaction
+import org.tdf.sunflower.vm.CallContext
+import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.vm.VMExecutor
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -65,6 +66,7 @@ class TransactionPoolImpl(
     private val pendingReceipts: MutableList<TransactionReceipt> = mutableListOf()
 
     private var current: Backend? = null
+    private var currentBloom: Bloom = Bloom()
     private var gasUsed: Long = 0L
     private val executor = FixedDelayScheduler("TransactionPool", config.expiredIn)
 
@@ -72,8 +74,9 @@ class TransactionPoolImpl(
         parentHeader = best
         pending.clear()
         pendingReceipts.clear()
-        current = trie.createBackend(parentHeader, null, false)
+        current = trie.createBackend(best, null, false)
         gasUsed = 0
+        currentBloom = Bloom()
     }
 
     fun setEngine(engine: ConsensusEngine) {
@@ -89,6 +92,7 @@ class TransactionPoolImpl(
         parentHeader = null
         current = null
         gasUsed = 0L
+        currentBloom = Bloom()
     }
 
     private fun clear() {
@@ -126,8 +130,8 @@ class TransactionPoolImpl(
                     log.error(e.message)
                     continue
                 }
-                val res = validator!!.validate(rd, parentHeader, transaction)
-                if (res.isSuccess) {
+                val res = validator!!.validate(rd, parentHeader!!, transaction)
+                if (res.success) {
                     cache.add(info)
                     mCache[info.tx.hashHex] = info
                     newCollected.add(transaction)
@@ -169,10 +173,11 @@ class TransactionPoolImpl(
             // try to execute
             try {
                 val child = current!!.createChild()
-                val callData = fromTransaction(t, false)
+                val ctx = CallContext.fromTx(t)
+                val callData = CallData.fromTx(t, false)
                 val vmExecutor = VMExecutor(
                     rd,
-                    child, callData,
+                    child, ctx, callData,
                     min(t.gasLimitAsU256.toLong(), blockGasLimit)
                 )
 
@@ -189,6 +194,8 @@ class TransactionPoolImpl(
                 receipt.setGasUsed(res.gasUsed)
                 receipt.executionResult = res.executionResult.bytes
                 receipt.transaction = t
+                receipt.logInfoList = res.logs
+                currentBloom.or(receipt.bloomFilter)
                 pending.add(t)
                 pendingReceipts.add(receipt)
                 this.current = child
@@ -213,7 +220,8 @@ class TransactionPoolImpl(
             val r = PendingData(
                 pending.toMutableList(),
                 pendingReceipts.toMutableList(),
-                current
+                current,
+                currentBloom
             )
             clearPending()
             return r
@@ -265,7 +273,7 @@ class TransactionPoolImpl(
     @PostConstruct
     fun initialize() {
         eventBus.subscribe(NewBestBlock::class.java) { event: NewBestBlock -> onNewBestBlock(event) }
-        executor.delay{
+        executor.delay {
             try {
                 clear()
             } catch (e: Exception) {

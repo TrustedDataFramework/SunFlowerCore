@@ -31,7 +31,7 @@ public class TriePerformanceTest {
         long end = System.currentTimeMillis();
         System.out.println("insert " + n + " use " + (end - start) + " ms");
         start = System.currentTimeMillis();
-        int size = trie.size();
+        int size = trie.getSize();
         end = System.currentTimeMillis();
         System.out.println("count " + size + " use " + (end - start) + " ms");
     }

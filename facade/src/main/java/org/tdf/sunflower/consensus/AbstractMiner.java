@@ -13,6 +13,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallContext;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
 
@@ -73,7 +74,7 @@ public abstract class AbstractMiner implements Miner {
 
         Transaction coinbase = createCoinBase(parent.getHeight() + 1);
         Backend tmp = p.getCurrent() == null ?
-            accountTrie.createBackend(parent.getHeader(), parent.getStateRoot(), null, false)
+            accountTrie.createBackend(parent.getHeader(), null, false, parent.getStateRoot())
             : p.getCurrent();
         List<Transaction> transactionList = p.getPending();
         b.setBody(transactionList);
@@ -86,13 +87,15 @@ public abstract class AbstractMiner implements Miner {
 
         // add fee to miners account
         coinbase.setValue(coinbase.getValueAsUint().plus(totalFee));
-        CallData callData = CallData.fromTransaction(coinbase, true);
+
+        CallContext ctx = CallContext.fromTx(coinbase);
+        CallData callData = CallData.fromTx(coinbase, true);
         tmp.setHeaderCreatedAt(System.currentTimeMillis() / 1000);
         header.setCreatedAt(tmp.getHeaderCreatedAt());
 
         VMResult res;
 
-        VMExecutor executor = new VMExecutor(rd, tmp, callData, 0);
+        VMExecutor executor = new VMExecutor(rd, tmp, ctx, callData, 0);
         res = executor.execute();
 
 
@@ -106,6 +109,7 @@ public abstract class AbstractMiner implements Miner {
             new Bloom(),
             Collections.emptyList()
         );
+
         receipt.setExecutionResult(res.getExecutionResult().getBytes());
         receipt.setTransaction(coinbase);
         p.getReceipts().add(0, receipt);
@@ -118,6 +122,7 @@ public abstract class AbstractMiner implements Miner {
         b.setReceiptTrieRoot(TransactionReceipt.calcReceiptsTrie(p.getReceipts()));
         // persist modifications of trie to database
         b.resetTransactionsRoot();
+        b.setLogsBloom(HexBytes.fromBytes(p.getBloom().getData()));
 
         // the mined block cannot be modified any more
         if (!finalizeBlock(parent, b)) {

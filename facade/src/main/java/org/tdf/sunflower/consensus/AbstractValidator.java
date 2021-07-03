@@ -10,6 +10,7 @@ import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallContext;
 import org.tdf.sunflower.vm.CallData;
 import org.tdf.sunflower.vm.VMExecutor;
 
@@ -65,7 +66,6 @@ public abstract class AbstractValidator implements Validator {
         )) {
             return BlockValidateResult.fault("transactions root not match");
         }
-        BlockValidateResult success = BlockValidateResult.success();
 
         Uint256 totalFee = Uint256.ZERO;
         long gas = 0;
@@ -74,9 +74,10 @@ public abstract class AbstractValidator implements Validator {
         HexBytes currentRoot;
         long currentGas = 0;
         List<TransactionReceipt> receipts = new ArrayList<>();
+        Bloom bloom = new Bloom();
 
         try {
-            Backend tmp = accountTrie.createBackend(parent.getHeader(), null, false);
+            Backend tmp = accountTrie.createBackend(parent.getHeader(), null, false, parent.getStateRoot());
             Transaction coinbase = block.getBody().get(0);
 
 
@@ -89,7 +90,8 @@ public abstract class AbstractValidator implements Validator {
                 VMExecutor executor = new VMExecutor(
                     rd,
                     tmp,
-                    CallData.fromTransaction(tx, false),
+                    CallContext.fromTx(tx),
+                    CallData.fromTx(tx, false),
                     Math.min(getBlockGasLimit() - currentGas, tx.getGasLimitAsU256().longValue())
                 );
                 r = executor.execute();
@@ -105,13 +107,15 @@ public abstract class AbstractValidator implements Validator {
                 );
                 receipt.setGasUsed(r.getGasUsed());
                 receipt.setExecutionResult(r.getExecutionResult().getBytes());
+                receipt.setLogInfoList(r.getLogs());
+                bloom.or(receipt.getBloomFilter());
                 currentRoot = tmp.merge();
                 receipts.add(receipt);
-                tmp = accountTrie.createBackend(parent.getHeader(), currentRoot, null, false);
+                tmp = accountTrie.createBackend(parent.getHeader(), null, false, currentRoot);
             }
 
             tmp.setHeaderCreatedAt(block.getCreatedAt());
-            VMExecutor executor = new VMExecutor(rd, tmp, CallData.fromTransaction(coinbase, true), 0);
+            VMExecutor executor = new VMExecutor(rd, tmp, CallContext.fromTx(coinbase), CallData.fromTx(coinbase, true), 0);
             VMResult r = executor.execute();
             currentGas += r.getGasUsed();
 
@@ -134,6 +138,11 @@ public abstract class AbstractValidator implements Validator {
                 return BlockValidateResult.fault("receipts trie root not match");
             }
 
+            // validate bloom
+            if(!bloom.equals(new Bloom(block.getLogsBloom().getBytes()))) {
+                return BlockValidateResult.fault("logs bloom not match");
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
             return BlockValidateResult.fault("contract evaluation failed or " + e.getMessage());
@@ -143,10 +152,6 @@ public abstract class AbstractValidator implements Validator {
         for (int i = 0; i < receipts.size(); i++) {
             infos.add(new TransactionInfo(receipts.get(i), block.getHash().getBytes(), i));
         }
-        success.setInfos(infos);
-        success.setResults(results);
-        success.setFee(totalFee);
-        success.setGas(gas);
-        return success;
+        return BlockValidateResult.success(gas, totalFee, results, infos);
     }
 }

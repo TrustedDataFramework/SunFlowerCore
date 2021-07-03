@@ -1,7 +1,6 @@
 package org.tdf.sunflower.net
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.google.common.util.concurrent.ThreadFactoryBuilder
 import lombok.extern.slf4j.Slf4j
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -15,61 +14,60 @@ import java.io.IOException
 import java.net.URI
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Executors
 import java.util.function.Consumer
-import java.util.stream.Collectors
 import java.util.stream.Stream
 
 @Slf4j(topic = "net")
 class PeerServerImpl(// if non-database provided, use memory database
     val peerStore: JsonStore,
-    val consensusEngine: ConsensusEngine,
+    consensusEngine: ConsensusEngine,
     val properties: Properties
 ) : ChannelListener, PeerServer {
     private val plugins: MutableList<Plugin> = CopyOnWriteArrayList()
     private var config: PeerServerConfig
 
     val client: Client
-    private val self: PeerImpl
+
+    override lateinit var self: PeerImpl
+        private set
+
     private val builder: MessageBuilder
     private val netLayer: NetLayer
 
 
-    override fun isFull(): Boolean {
-        return client.peersCache.isFull
-    }
+    override val isFull: Boolean
+        get() {
+            return client.peersCache.isFull
+        }
 
-    override fun getSelf(): Peer {
-        return self
-    }
 
     override fun dial(peer: Peer, message: ByteArray) {
         builder.buildAnother(message, 1, peer)
-            .forEach(Consumer { m: Message? -> client.dial(peer, m) })
+            .forEach { client.dial(peer, it) }
     }
 
     override fun broadcast(message: ByteArray) {
         client.peersCache.channels
-            .filter { ch: Channel -> ch.remote.isPresent }
+            .filter { ch: Channel -> ch.remote != null }
             .forEach { ch: Channel ->
-                builder.buildAnother(message, config.maxTTL, ch.remote.get())
-                    .forEach(Consumer { message: Message? -> ch.write(message) })
+                builder.buildAnother(message, config.maxTTL, ch.remote!!)
+                    .forEach { ch.write(it) }
             }
     }
 
-    override fun getBootStraps(): List<Peer> {
-        return ArrayList<Peer>(client.peersCache.bootstraps.keys)
-    }
+    override val bootstraps: List<Peer>
+        get() = client.peersCache.bootstraps.keys.toList()
 
-    override fun getPeers(): List<Peer> {
-        return client.peersCache.peers.collect(Collectors.toList())
-    }
+
+    override val peers: List<Peer>
+        get() = client.peersCache.peers
 
     override fun addListeners(vararg peerServerListeners: PeerServerListener) {
         for (listener in peerServerListeners) {
             plugins.add(PluginWrapper(listener))
         }
     }
+
 
     override fun start() {
         plugins.forEach { it.onStart(this) }
@@ -89,13 +87,13 @@ class PeerServerImpl(// if non-database provided, use memory database
         peerStore.forEach { k: Map.Entry<String, JsonNode> ->
             if ("self" == k.key)
                 return
-            val peer = PeerImpl.parse(k.value.asText()).get()
+            val peer = PeerImpl.parse(k.value.asText())!!
             client.dial(peer.host, peer.port, builder.buildPing())
         }
     }
 
     init {
-        val mapper = MapperUtil.PROPS_MAPPER;
+        val mapper = MapperUtil.PROPS_MAPPER
         try {
             config = mapper.readPropertiesAs(properties, PeerServerConfig::class.java)
             if (config.maxTTL <= 0)
@@ -130,14 +128,11 @@ class PeerServerImpl(// if non-database provided, use memory database
         }
         try {
             // find valid private key from 1.properties 2.persist 3. generate
-            var sk = if (config.privateKey == null) null else config.privateKey.bytes
-            if (sk == null || sk.isEmpty()) {
-                sk = ECKey().privKeyBytes
-            }
+            val sk = config.privateKey?.bytes ?: ECKey().privKeyBytes
             self = PeerImpl.createSelf(config.address, sk)
         } catch (e: Exception) {
             e.printStackTrace()
-            throw RuntimeException("failed to load peer server invalid address " + config.getAddress())
+            throw RuntimeException("failed to load peer server invalid address " + config.address)
         }
         builder = MessageBuilder(self, config)
         netLayer = if ("grpc" == config.name.trim { it <= ' ' }.lowercase()) {
@@ -145,8 +140,10 @@ class PeerServerImpl(// if non-database provided, use memory database
         } else {
             WebSocketNetLayer(self.port, builder)
         }
-        client = Client(self, config, builder, netLayer).withListener(this)
-        netLayer.setHandler { c: Channel -> c.addListeners(client, this) }
+        client = Client(self, config, builder, netLayer)
+        client.listener = this
+
+        netLayer.handler = Consumer { it.addListeners(client, this) }
 
         // loading plugins
         plugins.add(MessageFilter(config, consensusEngine))
@@ -162,16 +159,13 @@ class PeerServerImpl(// if non-database provided, use memory database
 
     override fun onMessage(message: Message, channel: Channel) {
         val peer = channel.remote
-        if (!peer.isPresent) {
+        if (peer == null) {
             channel.close("failed to parse peer " + message.remotePeer)
             throw RuntimeException("failed to parse peer")
         }
-        val context = ContextImpl.builder()
-            .channel(channel)
-            .client(client)
-            .message(message)
-            .builder(builder)
-            .remote(peer.get()).build()
+        val context =
+            ContextImpl(channel = channel, client = client, msg = message, builder = builder, remote = peer)
+
         for (plugin in plugins) {
             if (context.exited) break
             try {
@@ -184,9 +178,9 @@ class PeerServerImpl(// if non-database provided, use memory database
 
     override fun onError(throwable: Throwable, channel: Channel) {}
     override fun onClose(channel: Channel) {
-        if (channel.remote.isPresent) {
+        if (channel.remote != null) {
             for (plugin in plugins) {
-                plugin.onDisconnect(channel.remote.get(), this)
+                plugin.onDisconnect(channel.remote!!, this)
             }
         }
     }
@@ -203,7 +197,7 @@ class PeerServerImpl(// if non-database provided, use memory database
         }
         if (externalIP != null && Util.ping(externalIP, self.port)) {
             log.info("ping $externalIP success, set as your host")
-            self.host = externalIP
+            self = self.copy(host = externalIP)
             return
         }
         var bindIP: String? = null
@@ -213,7 +207,7 @@ class PeerServerImpl(// if non-database provided, use memory database
             log.error("get bind ip failed")
         }
         if (bindIP != null) {
-            self.host = bindIP
+            self = self.copy(host = bindIP)
         }
     }
 

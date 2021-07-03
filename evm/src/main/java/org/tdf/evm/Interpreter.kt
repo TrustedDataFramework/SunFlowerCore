@@ -25,7 +25,7 @@ class EvmContext(
     // gas limit in transaction
     val txGasLimit: Long = 0,
     // gas price
-    val gasPrice: BigInteger = BigInteger.ZERO
+    val gasPrice: BigInteger = BigInteger.ZERO,
 )
 
 /**
@@ -37,6 +37,11 @@ class EvmCallData(
     val value: BigInteger = BigInteger.ZERO,
     val input: ByteArray = emptyByteArray,
     val code: ByteArray = emptyByteArray,
+)
+
+class ExecuteResult(
+    val gasUsed: Long = 0L,
+    val ret: ByteArray = emptyByteArray
 )
 
 interface EvmHost {
@@ -76,16 +81,21 @@ interface EvmHost {
     fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>)
 }
 
+fun interface EvmHook {
+    fun onOp(op: Int)
+}
+
 class Interpreter(
     val host: EvmHost,
     val ctx: EvmContext,
     val callData: EvmCallData,
     private val vmLog: PrintStream? = null,
+    private val hook: EvmHook? = null,
     maxStackSize: Int = Int.MAX_VALUE,
     maxMemorySize: Int = Int.MAX_VALUE
 ) {
     var pc: Int = 0
-    private val stack = StackImpl(maxStackSize)
+    private val stack: Stack = StackImpl(maxStackSize)
     private val memory = MemoryImpl(maxMemorySize)
     private var ret: ByteArray = emptyByteArray
 
@@ -98,6 +108,8 @@ class Interpreter(
     private var memLen: Long = 0
     private var key: ByteArray = emptyByteArray
 
+
+    // TODO: code segment check
     private fun jump(dst: Long) {
         if (dst < 0 || dst >= callData.code.size)
             throw RuntimeException("jump destination overflow")
@@ -112,14 +124,19 @@ class Interpreter(
 
         while (pc < callData.code.size) {
             op = callData.code[pc].toUByte().toInt()
-
+            hook?.let {
+                it.onOp(op)
+            }
             beforeExecute()
+
 
             when (op) {
                 OpCodes.STOP -> {
                     afterExecute()
                     return ret
                 }
+
+                // arithmetic, pure
                 OpCodes.ADD -> stack.add()
                 OpCodes.MUL -> stack.mul()
                 OpCodes.SUB -> stack.sub()
@@ -146,82 +163,45 @@ class Interpreter(
                 OpCodes.SHR -> stack.shr()
                 OpCodes.SAR -> stack.sar()
                 OpCodes.SHA3 -> stack.sha3(memory, host.digest)
-                OpCodes.ADDRESS -> stack.push(callData.receipt)
-                OpCodes.BALANCE -> {
-                    val balance = host.getBalance(stack.popAddress())
-                    stack.push(balance)
-                }
-                OpCodes.ORIGIN -> stack.push(ctx.origin)
-                OpCodes.CALLER -> stack.push(callData.caller)
+                // address is left padded
+                OpCodes.ADDRESS -> stack.pushLeftPadding(callData.receipt)
+                OpCodes.BALANCE -> stack.push(host.getBalance(stack.popAddress()))
+                OpCodes.ORIGIN -> stack.pushLeftPadding(ctx.origin)
+                OpCodes.CALLER -> stack.pushLeftPadding(callData.caller)
                 OpCodes.CALLVALUE -> stack.push(callData.value)
+
+                // call data load is right padded
                 OpCodes.CALLDATALOAD -> stack.callDataLoad(callData.input)
                 OpCodes.CALLDATASIZE -> stack.pushInt(callData.input.size)
+
+                // right padded
                 OpCodes.CALLDATACOPY -> stack.dataCopy(memory, callData.input)
                 OpCodes.CODESIZE -> stack.pushInt(callData.code.size)
                 OpCodes.CODECOPY -> stack.dataCopy(memory, callData.code)
                 OpCodes.RETURNDATASIZE -> stack.pushInt(ret.size)
-                OpCodes.RETURNDATACOPY -> {
-                    val memOff = stack.popU32()
-                    val dataOff = stack.popU32()
-                    val len = stack.popU32()
-
-                    if (dataOff < 0 || len < 0 || dataOff + len > ret.size) {
-                        throw RuntimeException("return data out of bounds")
-                    }
-
-                    memory.resize(memOff, len)
-                    memory.write(memOff.toInt(), ret, dataOff.toInt(), len.toInt())
-                }
+                OpCodes.RETURNDATACOPY -> stack.dataCopy(memory, ret)
                 OpCodes.GASPRICE -> stack.push(ctx.gasPrice)
-                OpCodes.EXTCODESIZE -> {
-                    val code = host.getCode(stack.popAddress())
-                    stack.pushInt(code.size)
-                }
-                OpCodes.EXTCODECOPY -> {
-                    val code = host.getCode(stack.popAddress())
-                    stack.dataCopy(memory, code)
-                }
+                OpCodes.EXTCODESIZE -> stack.pushInt(host.getCode(stack.popAddress()).size)
+                OpCodes.EXTCODECOPY -> stack.dataCopy(memory, host.getCode(stack.popAddress()))
+
                 OpCodes.EXTCODEHASH -> {
                     val code = host.getCode(stack.popAddress())
                     val bytes = ByteArray(SlotUtils.SLOT_BYTE_ARRAY_SIZE)
                     host.digest.digest(code, 0, code.size, bytes, 0)
-                    stack.push(bytes)
+                    stack.pushLeftPadding(bytes)
                 }
-                OpCodes.BLOCKHASH, OpCodes.COINBASE -> {
-                    throw RuntimeException("unsupported op code")
-                }
-                OpCodes.TIMESTAMP -> {
-                    stack.pushLong(ctx.timestamp)
-                }
-                OpCodes.NUMBER -> {
-                    stack.pushLong(ctx.number)
-                }
-                OpCodes.DIFFICULTY -> {
-                    stack.push(ctx.difficulty)
-                }
-                OpCodes.GASLIMIT -> {
-                    stack.pushLong(ctx.blockGasLimit)
-                }
+
+                OpCodes.BLOCKHASH, OpCodes.COINBASE -> throw RuntimeException("unsupported op code")
+                OpCodes.TIMESTAMP -> stack.pushLong(ctx.timestamp)
+                OpCodes.NUMBER -> stack.pushLong(ctx.number)
+                OpCodes.DIFFICULTY -> stack.push(ctx.difficulty)
+                OpCodes.GASLIMIT -> stack.pushLong(ctx.blockGasLimit)
                 OpCodes.POP -> stack.drop()
                 OpCodes.MLOAD -> stack.mload(memory)
-                OpCodes.MSTORE -> {
-                    stack.mstore(memory)
-                }
+                OpCodes.MSTORE -> stack.mstore(memory)
                 OpCodes.MSTORE8 -> stack.mstore8(memory)
-                OpCodes.SLOAD -> {
-                    stack.push(
-                        host.getStorage(
-                            callData.receipt,
-                            stack.popBytes()
-                        )
-                    )
-                }
-                OpCodes.SSTORE -> {
-                    host.setStorage(
-                        callData.receipt,
-                        stack.popBytes(), stack.popBytes()
-                    )
-                }
+                OpCodes.SLOAD -> stack.pushLeftPadding(host.getStorage(callData.receipt, stack.popBytes()))
+                OpCodes.SSTORE -> host.setStorage(callData.receipt, stack.popBytes(), stack.popBytes())
                 OpCodes.JUMP -> {
                     jump(stack.popU32())
                     afterExecute()
@@ -240,24 +220,23 @@ class Interpreter(
                         continue
                     }
                 }
-                OpCodes.PC -> {
-                    stack.pushInt(pc)
-                }
+                OpCodes.PC -> stack.pushInt(pc)
                 OpCodes.MSIZE -> stack.pushInt(memory.size)
-                OpCodes.GAS -> {
-                    stack.pushZero()
-                }
+                OpCodes.GAS -> stack.pushZero()
                 OpCodes.JUMPDEST -> {
 
                 }
-                // push(code[pc+1:pc+1+n])
+                // push(code[pc+1:pc+1+n]), push n is right padded
                 in OpCodes.PUSH1..OpCodes.PUSH32 -> {
-                    val n = Math.min(op - OpCodes.PUSH1 + 1, callData.code.size - pc - 1)
-                    stack.push(callData.code, pc + 1, n)
-                    pc += n
+                    val size = op - OpCodes.PUSH1 + 1
+                    val n = Math.min(size, callData.code.size - pc - 1)
+                    stack.pushLeftPadding(callData.code, pc + 1, n)
+                    pc += size
                 }
                 in OpCodes.DUP1..OpCodes.DUP16 -> stack.dup(op - OpCodes.DUP1 + 1)
                 in OpCodes.SWAP1..OpCodes.SWAP16 -> stack.swap(op - OpCodes.SWAP1 + 1)
+
+                // TODO: Test log operation
                 in OpCodes.LOG0..OpCodes.LOG4 -> {
                     val n = op - OpCodes.LOG0
                     val topics = mutableListOf<ByteArray>()
@@ -276,15 +255,12 @@ class Interpreter(
                 OpCodes.REVERT -> {
                     val off = stack.popU32()
                     val size = stack.popU32()
-                    memory.resize(off, size)
+                    val reason = String(memory.resizeAndCopy(off, size), StandardCharsets.UTF_8)
                     afterExecute()
-                    val reason = String(memory.copy(off.toInt(), (off + size).toInt()), StandardCharsets.UTF_8)
                     throw RuntimeException("execution reverted reason = $reason")
                 }
-                OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> {
-                    call(op)
-
-                }
+                OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> call(op)
+                OpCodes.CREATE -> create()
                 else -> throw RuntimeException("unhandled op ${OpCodes.nameOf(op)}")
             }
             afterExecute()
@@ -299,14 +275,15 @@ class Interpreter(
         }
     }
 
+    private val ByteArray.bnHex: String
+        get() {
+            return BigInteger(1, this).hex
+        }
 
-    fun ByteArray.bnHex(): String {
-        return BigInteger(1, this).hex()
-    }
-
-    fun BigInteger.hex(): String {
-        return "0x" + this.toString(16)
-    }
+    val BigInteger.hex: String
+        get() {
+            return "0x" + this.toString(16)
+        }
 
 
     private fun logInfo() {
@@ -368,7 +345,7 @@ class Interpreter(
                 }
                 OpCodes.MSTORE -> {
                     memOff = stack.backU32()
-                    val value = stack.back(1).bnHex()
+                    val value = stack.back(1).bnHex
 
                     it.println("mstore $value into memory, mem offset = $memOff mem.cap = ${memory.size}")
                 }
@@ -428,7 +405,7 @@ class Interpreter(
         vmLog?.let {
             it.println("after execute op ${OpCodes.nameOf(op)} pc = $pc")
 
-            val stackData = "[" + (0 until stack.size).map { bn -> stack.get(bn).hex() }.joinToString(",") + "]"
+            val stackData = "[" + (0 until stack.size).map { bn -> stack.get(bn).hex }.joinToString(",") + "]"
             it.println("stack = $stackData")
 
             when (op) {
@@ -477,7 +454,7 @@ class Interpreter(
     private fun getData(input: ByteArray, off: Long, len: Long): ByteArray {
         val offInt = unsignedMin(off, input.size.toLong()).toInt()
         val lenInt = unsignedMin(len, (input.size - offInt).toLong()).toInt()
-        val r = ByteArray(lenInt)
+        val r = ByteArray(len.toInt())
         System.arraycopy(input, offInt, r, 0, lenInt)
         return r
     }
@@ -488,6 +465,14 @@ class Interpreter(
         } else {
             y
         }
+    }
+
+    fun create() {
+        val value = stack.popBigInt()
+        val off = stack.popU32()
+        val size = stack.popU32()
+        val input = memory.resizeAndCopy(off, size)
+        stack.pushLeftPadding(host.create(callData.receipt, value, input))
     }
 
     fun call(op: Int) {
@@ -531,6 +516,5 @@ class Interpreter(
             throw RuntimeException("unexpected return size")
         memory.write(retOff.toInt(), ret, 0, retSize.toInt())
         stack.pushOne()
-
     }
 }
