@@ -15,10 +15,10 @@ object Codecs {
         { it.toByteArray(StandardCharsets.UTF_8) }
     ) { String(it, StandardCharsets.UTF_8) }
 
-    var IDENTITY: Codec<*> = newInstance(Function.identity(), Function.identity())
+    val IDENTITY: Codec<*> = newInstance(Function.identity(), Function.identity())
 
     @JvmField
-    var HEX = newInstance({ it.bytes }) { HexBytes.fromBytes(it) }
+    val HEX = newInstance({ it.bytes }) { HexBytes.fromBytes(it) }
 
     @JvmStatic
     fun <K> newRLPCodec(clazz: Class<K>): Codec<K> {

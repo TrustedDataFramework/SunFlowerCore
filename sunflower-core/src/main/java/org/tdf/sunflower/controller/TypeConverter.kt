@@ -65,30 +65,6 @@ internal val HexBytes.jsonHexNum: String get() = this.bytes.jsonHexNum
 internal val BigInteger.jsonHex: String get() = "0x" + this.toString(16)
 
 object TypeConverter {
-    fun hexToBigInteger(input: String): BigInteger {
-        return if (input.startsWith("0x")) {
-            BigInteger(input.substring(2), 16)
-        } else {
-            BigInteger(input, 10)
-        }
-    }
-
-    fun hexToByteArray(x: String): ByteArray {
-        return ByteUtil.hexStringToBytes(x)
-    }
-
-
-    private fun fromHex(x: String): String {
-        var x = x
-        if (x.startsWith("0x")) {
-            x = x.substring(2)
-        }
-        if (x.length % 2 != 0) x = "0$x"
-        return x
-    }
-
-
-
     fun toJsonHex(x: Long?): String? {
         return if (x == null) null else "0x" + java.lang.Long.toHexString(x)
     }
@@ -96,11 +72,5 @@ object TypeConverter {
     @JvmStatic
     fun toJsonHex(n: BigInteger): String {
         return "0x" + n.toString(16)
-    }
-
-
-
-    fun jsonHexToHexBytes(x: String?): HexBytes {
-        return HexBytes.fromBytes(ByteUtil.hexStringToBytes(x))
     }
 }

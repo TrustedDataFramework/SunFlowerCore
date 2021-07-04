@@ -17,7 +17,6 @@ interface Codec<K> {
             return Codecs.IDENTITY as Codec<ByteArray>
         }
 
-        @JvmStatic
         fun <K> newInstance(
             encoder: Function<in K, ByteArray>,
             decoder: Function<ByteArray, out K>

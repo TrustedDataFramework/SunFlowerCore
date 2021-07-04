@@ -7,7 +7,6 @@ import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.facade.ConsensusEngine
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
-import java.lang.UnsupportedOperationException
 import org.tdf.sunflower.controller.JsonRpc.CallArguments
 import org.tdf.sunflower.vm.VMExecutor
 import org.tdf.sunflower.AppConfig
@@ -17,7 +16,6 @@ import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.types.Transaction
 import org.tdf.sunflower.vm.Backend
-import java.lang.Exception
 import java.math.BigInteger
 import java.util.*
 
@@ -38,8 +36,7 @@ class JsonRpcImpl(
             } else if ("pending".equals(id, ignoreCase = true)) {
                 null
             } else {
-                val blockNumber = TypeConverter.hexToBigInteger(id).toLong()
-                rd.getCanonicalBlock(blockNumber)
+                rd.getCanonicalBlock(id.jsonHex.long)
             }
         }
     }
@@ -85,7 +82,7 @@ class JsonRpcImpl(
     }
 
     override fun eth_hashrate(): String {
-        return TypeConverter.toJsonHex(BigInteger.ZERO)
+        return BigInteger.ZERO.jsonHex
     }
 
     override fun eth_gasPrice(): String {
@@ -118,8 +115,7 @@ class JsonRpcImpl(
                 }
                 "earliest" -> header = rd.genesis.header
                 else -> {
-                    val h = TypeConverter.hexToBigInteger(blockId).toInt()
-                    header = rd.getCanonicalHeader(h.toLong())!!
+                    header = rd.getCanonicalHeader(blockId.jsonHex.long)!!
                 }
             }
             return accountTrie.createBackend(header, System.currentTimeMillis() / 1000, isStatic, header.stateRoot)
@@ -127,11 +123,9 @@ class JsonRpcImpl(
     }
 
     override fun eth_getBalance(address: String, block: String): String {
-        Objects.requireNonNull(address, "address is required")
         getBackendByBlockId(block, true).use { repo ->
-            val addressAsByteArray = TypeConverter.hexToByteArray(address)
-            val balance = repo.getBalance(HexBytes.fromBytes(addressAsByteArray))
-            return TypeConverter.toJsonHex(balance.value)
+            val balance = repo.getBalance(address.jsonHex.hex)
+            return balance.value.jsonHex
         }
     }
 
@@ -170,7 +164,7 @@ class JsonRpcImpl(
 
     override fun eth_getCode(addr: String, bnOrId: String): String {
         getBackendByBlockId(bnOrId, true).use { backend ->
-            val code = backend.getCode(TypeConverter.jsonHexToHexBytes(addr))
+            val code = backend.getCode(addr.jsonHex.hex)
             return code.jsonHex
         }
     }
@@ -185,7 +179,7 @@ class JsonRpcImpl(
     }
 
     override fun eth_sendRawTransaction(rawData: String): String {
-        val tx = Transaction(TypeConverter.hexToByteArray(rawData))
+        val tx = Transaction(rawData.jsonHex.bytes)
         val errors = repo.reader.use { pool.collect(it, tx) }
         if (errors[tx.hashHex] != null)
             throw RuntimeException(errors[tx.hashHex])
@@ -241,8 +235,8 @@ class JsonRpcImpl(
     }
 
 
-    override fun eth_getTransactionByHash(transactionHash: String?): TransactionResultDTO? {
-        val hash = TypeConverter.jsonHexToHexBytes(transactionHash)
+    override fun eth_getTransactionByHash(transactionHash: String): TransactionResultDTO? {
+        val hash = transactionHash.jsonHex.hex
         repo.reader.use { rd ->
             val info = rd.getTransactionInfo(hash) ?: return null
             val h = rd.getHeaderByHash(info.blockHashHex)!!
@@ -260,9 +254,8 @@ class JsonRpcImpl(
         return null
     }
 
-    @Throws(Exception::class)
-    override fun eth_getTransactionReceipt(transactionHash: String?): TransactionReceiptDTO? {
-        val hash = TypeConverter.jsonHexToHexBytes(transactionHash)
+    override fun eth_getTransactionReceipt(transactionHash: String): TransactionReceiptDTO? {
+        val hash = transactionHash.jsonHex.hex
         repo.reader.use { rd ->
             val info = rd.getTransactionInfo(hash)
             val tx = info?.receipt?.transaction
@@ -309,7 +302,6 @@ class JsonRpcImpl(
         return arrayOfNulls(0)
     }
 
-    @Throws(Exception::class)
     override fun eth_getLogs(fr: JsonRpc.FilterRequest?): Array<Any?>? {
         return arrayOfNulls(0)
     }
@@ -318,7 +310,6 @@ class JsonRpcImpl(
         return null
     }
 
-    @Throws(Exception::class)
     override fun eth_submitWork(nonce: String?, header: String?, digest: String?): Boolean {
         return false
     }
@@ -331,7 +322,7 @@ class JsonRpcImpl(
         return null
     }
 
-    protected fun getBlockResult(block: Block, fullTx: Boolean): BlockResult {
+    private fun getBlockResult(block: Block, fullTx: Boolean): BlockResult {
         val br = BlockResult(
             block.height.jsonHex, block.hash.jsonHex, block.hashPrev.jsonHex,
             block.nonce.jsonHex, block.unclesHash.jsonHex, block.logsBloom.jsonHex,

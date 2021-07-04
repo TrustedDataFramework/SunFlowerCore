@@ -12,6 +12,7 @@ dependencies {
     compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-properties:${jacksonVersion}"
     compileOnly "com.google.guava:guava:${guavaVersion}"
     implementation "org.tdf:lotusvm:${lotusvmVersion}"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}"
     api "org.apache.commons:commons-lang3:${commonsLang3Version}"
     implementation "com.madgag.spongycastle:core:${scastleVersion}"
     implementation "com.madgag.spongycastle:prov:${scastleVersion}"

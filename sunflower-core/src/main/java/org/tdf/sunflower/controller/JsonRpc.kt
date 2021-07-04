@@ -8,7 +8,6 @@ import org.tdf.sunflower.types.LogInfo
 import org.tdf.sunflower.types.Transaction
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
-import java.util.*
 
 interface JsonRpc {
     fun web3_clientVersion(): String
@@ -60,7 +59,7 @@ interface JsonRpc {
     fun eth_getBlockByNumber(bnOrId: String?, fullTransactionObjects: Boolean?): BlockResult?
 
 
-    fun eth_getTransactionByHash(transactionHash: String?): TransactionResultDTO?
+    fun eth_getTransactionByHash(transactionHash: String): TransactionResultDTO?
 
 
     fun eth_getTransactionByBlockHashAndIndex(blockHash: String?, index: String?): TransactionResultDTO?
@@ -69,7 +68,7 @@ interface JsonRpc {
     fun eth_getTransactionByBlockNumberAndIndex(bnOrId: String?, index: String?): TransactionResultDTO?
 
 
-    fun eth_getTransactionReceipt(transactionHash: String?): TransactionReceiptDTO?
+    fun eth_getTransactionReceipt(transactionHash: String): TransactionReceiptDTO?
 
 
     fun ethj_getTransactionReceipt(transactionHash: String?): TransactionReceiptDTOExt?
@@ -183,14 +182,14 @@ interface JsonRpc {
     )
 
     class LogFilterElement(logInfo: LogInfo, b: Block?, txIndex: Int?, tx: Transaction, logIdx: Int) {
-        var logIndex: String
-        var transactionIndex: String?
+        var logIndex: String = logIdx.jsonHex
+        var transactionIndex: String? = txIndex?.jsonHex
         var transactionHash: String
-        var blockHash: String?
-        var blockNumber: String?
+        var blockHash: String? = b?.hash?.jsonHex
+        var blockNumber: String? = b?.height?.jsonHex
         var address: String
         var data: String
-        var topics: Array<String?>
+        var topics: Array<String>
         override fun toString(): String {
             return "LogFilterElement{" +
                     "logIndex='" + logIndex + '\'' +
@@ -200,22 +199,19 @@ interface JsonRpc {
                     ", transactionIndex='" + transactionIndex + '\'' +
                     ", address='" + address + '\'' +
                     ", data='" + data + '\'' +
-                    ", topics=" + Arrays.toString(topics) +
+                    ", topics=" + topics.contentToString() +
                     '}'
         }
 
         init {
-            logIndex = logIdx.jsonHex
-            blockNumber = b?.height?.jsonHex
-            blockHash = b?.hash?.jsonHex
-            transactionIndex = txIndex?.jsonHex
             transactionHash = tx.hash.jsonHex
             address = tx.receiveAddress.jsonHex
             data = logInfo.data.jsonHex
-            topics = arrayOfNulls(logInfo.topics.size)
+            val topics: Array<String?> = arrayOfNulls(logInfo.topics.size)
             for (i in topics.indices) {
                 topics[i] = logInfo.topics[i].getData().jsonHex
             }
+            this.topics = topics.requireNoNulls()
         }
     }
 }

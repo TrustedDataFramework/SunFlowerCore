@@ -10,7 +10,7 @@ import java.util.function.Consumer
  */
 class EventBus(factory: ThreadFactory) {
     private val listenersLock = false
-    private var listeners: Map<Class<*>, List<Consumer<Any>>> = HashMap()
+    private var listeners: Map<Class<*>, List<Consumer<Any>>> = mutableMapOf()
     private val executor = Executors.newCachedThreadPool(factory)
 
     /**
@@ -53,7 +53,7 @@ class EventBus(factory: ThreadFactory) {
 
     private fun copy(listeners: Map<Class<*>, List<Consumer<Any>>>): MutableMap<Class<*>, MutableList<Consumer<Any>>> {
         val ret: MutableMap<Class<*>, MutableList<Consumer<Any>>> = HashMap()
-        listeners.forEach { (k: Class<*>, v: List<Consumer<Any>>?) -> ret[k] = ArrayList(v) }
+        listeners.forEach { (k: Class<*>, v: List<Consumer<Any>>) -> ret[k] = v.toMutableList() }
         return ret
     }
 }

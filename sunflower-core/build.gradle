@@ -6,6 +6,7 @@ plugins {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-properties"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}"
     implementation "commons-io:commons-io:${commonIOVersion}"
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
