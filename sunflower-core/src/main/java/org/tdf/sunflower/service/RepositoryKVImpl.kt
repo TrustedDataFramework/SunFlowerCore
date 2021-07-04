@@ -203,33 +203,33 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     }
 
     init {
-        transactionsStore = StoreWrapper<HexBytes, Transaction, Any, Any>(
+        transactionsStore = StoreWrapper<HexBytes, Transaction>(
             factory.create('b'),
             Codecs.HEX,
             Transaction.TransactionCodec()
         )
 
-        headerStore = StoreWrapper<HexBytes, Header, Any, Any>(
+        headerStore = StoreWrapper<HexBytes, Header>(
             factory.create('h'),
             Codecs.HEX,
             Codecs.newRLPCodec(Header::class.java)
         )
-        transactionsRoot = StoreWrapper<HexBytes, Array<HexBytes>, Any, Any>(
+        transactionsRoot = StoreWrapper<HexBytes, Array<HexBytes>>(
             factory.create('t'),
             Codecs.HEX,
             Codecs.newRLPCodec(Array<HexBytes>::class.java)
         )
-        heightIndex = StoreWrapper<Long, Array<HexBytes>, Any, Any>(
+        heightIndex = StoreWrapper<Long, Array<HexBytes>>(
             factory.create('i'),
             Codecs.newRLPCodec(Long::class.java),
             Codecs.newRLPCodec(Array<HexBytes>::class.java)
         )
-        status = StoreWrapper<String, Header, Any, Any>(
+        status = StoreWrapper<String, Header>(
             factory.create('s'),
             Codecs.STRING,
             Codecs.newRLPCodec(Header::class.java)
         )
-        transactionInfos = StoreWrapper<HexBytes, Array<TransactionInfo>, Any, Any>(
+        transactionInfos = StoreWrapper<HexBytes, Array<TransactionInfo>>(
             factory.create('f'),
             Codecs.HEX,
             Codecs.newRLPCodec(Array<TransactionInfo>::class.java)

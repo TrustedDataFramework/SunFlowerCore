@@ -91,7 +91,6 @@ data class PeerImpl(
         // if private key is missing, generate key automatically
         // create self as peer from input
         // if private key is missing, generate key automatically
-        @JvmOverloads
         fun createSelf(u: URI, privateKey: ByteArray = ECKey().privKeyBytes): PeerImpl {
             if (u.rawUserInfo != null && !u.rawUserInfo.isEmpty()) {
                 throw RuntimeException(u.userInfo + " should be empty")

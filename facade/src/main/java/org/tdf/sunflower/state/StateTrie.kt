@@ -16,7 +16,7 @@ import org.tdf.sunflower.vm.Backend
 </S></ID> */
 interface StateTrie<ID, S> {
     // get an optional state at a root hash
-    operator fun get(rootHash: HexBytes, id: ID): S
+    fun get(rootHash: HexBytes, id: ID): S?
 
     // init genesis states
     fun init(

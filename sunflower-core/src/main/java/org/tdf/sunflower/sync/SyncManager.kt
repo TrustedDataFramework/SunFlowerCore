@@ -508,7 +508,7 @@ class SyncManager(
     init {
         //        this.fastSyncing = syncConfig.getFastSyncHeight() > 0
 //            && repository.getBestHeader().getHeight() == 0;
-        fastSyncHash = HexBytes.fromBytes(syncConfig.fastSyncHash)
+        fastSyncHash = syncConfig.fastSyncHashHex
         fastSyncHeight = syncConfig.fastSyncHeight
         this.accountTrie = accountTrie
         limiters = Limiters(syncConfig.rateLimits)

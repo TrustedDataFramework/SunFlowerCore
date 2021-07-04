@@ -16,18 +16,11 @@ public class Hosts {
     private ContextHost contextHost;
     private DBFunctions dbFunctions;
     private Transfer transfer;
-    @Getter
-    private EventHost eventHost;
     private Reflect reflect;
     private U256Host u256Host;
 
     public Hosts() {
         this.u256Host = new U256Host();
-    }
-
-    public Hosts withEvent(Backend backend, HexBytes address) {
-        this.eventHost = new EventHost(backend, address);
-        return this;
     }
 
     public Hosts withReflect(Reflect reflect) {
@@ -55,9 +48,6 @@ public class Hosts {
 
         if (reflect != null)
             all.add(this.reflect);
-
-        if (eventHost != null)
-            all.add(this.eventHost);
 
         if (contextHost != null) {
             all.add(contextHost);

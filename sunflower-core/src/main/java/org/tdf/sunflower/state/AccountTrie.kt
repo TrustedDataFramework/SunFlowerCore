@@ -15,7 +15,7 @@ import org.tdf.sunflower.vm.BackendImpl
 
 
 class AccountTrie(
-    val db: Store<ByteArray, ByteArray>,
+    override val db: Store<ByteArray, ByteArray>,
     private val contractCodeStore: Store<HexBytes, HexBytes>,
     val contractStorageTrie: Trie<HexBytes, HexBytes>,
     secure: Boolean
@@ -94,11 +94,6 @@ class AccountTrie(
         tmp.flush()
         return r
     }
-
-    public override fun getDB(): Store<ByteArray, ByteArray> {
-        return db
-    }
-
 
 
     companion object {

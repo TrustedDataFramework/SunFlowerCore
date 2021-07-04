@@ -309,10 +309,8 @@ public class VMExecutor {
                 callData.getTo()
             )
             .withReflect(new Reflect(this))
-            .withContext(new ContextHost(backend, callData))
-            .withDB(dbFunctions)
-            .withEvent(backend, callData.getTo());
-
+            .withContext(new ContextHost(callData))
+            .withDB(dbFunctions);
 
         try (
             StackAllocator stack =
