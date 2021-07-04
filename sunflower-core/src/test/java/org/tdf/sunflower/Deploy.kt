@@ -1,7 +1,6 @@
 package org.tdf.sunflower
 
 import com.google.common.io.ByteStreams
-import com.google.common.io.Files
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.controller.TypeConverter.toJsonHex
@@ -10,10 +9,8 @@ import org.web3j.crypto.*
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameter
 import org.web3j.protocol.http.HttpService
-import java.io.File
 import java.io.FileInputStream
 import java.math.BigInteger
-import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 
 const val path = "C:\\Users\\sal\\Desktop\\dev\\inlined.wasm"
