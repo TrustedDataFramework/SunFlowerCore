@@ -3,7 +3,7 @@ package org.tdf.common.trie
 import org.tdf.common.store.Store
 import org.tdf.common.util.HexBytes
 
-class ReadOnlyTrie<K, V> (private val delegate: AbstractTrie<K, V>) : Trie<K, V> by delegate {
+class ReadOnlyTrie<K, V> (private val delegate: Trie<K, V>) : Trie<K, V> by delegate {
     override fun revert(rootHash: HexBytes, store: Store<ByteArray, ByteArray>): Trie<K, V> {
         throw UnsupportedOperationException()
     }
@@ -33,11 +33,10 @@ class ReadOnlyTrie<K, V> (private val delegate: AbstractTrie<K, V>) : Trie<K, V>
     }
 
     companion object {
-        @JvmStatic
         fun <K, V> of(trie: Trie<K, V>): Trie<K, V> {
             if (trie is ReadOnlyTrie<*, *>) return trie
             if (trie.isDirty) throw UnsupportedOperationException()
-            return ReadOnlyTrie(trie as AbstractTrie<K, V>)
+            return ReadOnlyTrie(trie)
         }
     }
 }

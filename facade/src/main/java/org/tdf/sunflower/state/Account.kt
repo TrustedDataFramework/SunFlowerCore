@@ -18,11 +18,10 @@ data class Account @RlpCreator constructor(
         get() = nonce == 0L && balance.isZero && contractHash == HashUtil.EMPTY_DATA_HASH_HEX && storageRoot == HashUtil.EMPTY_TRIE_HASH_HEX
 
     companion object {
-        val EMPTY_ACCOUNT = Account()
+        private val EMPTY_ACCOUNT = Account()
 
-        @JvmStatic
-        fun emptyAccount(balance: Uint256): Account {
-            return Account(0, balance, HashUtil.EMPTY_TRIE_HASH_HEX, HashUtil.EMPTY_DATA_HASH_HEX)
+        fun empty(): Account {
+            return EMPTY_ACCOUNT
         }
     }
 }

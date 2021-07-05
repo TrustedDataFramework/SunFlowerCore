@@ -5,7 +5,6 @@ import org.tdf.common.types.Uint256
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.state.Account
-import org.tdf.sunflower.state.Account.Companion.emptyAccount
 import java.math.BigInteger
 
 internal fun String.hex(): HexBytes {
@@ -40,7 +39,7 @@ abstract class AbstractGenesis(protected var parsed: JsonNode) {
                 val k = it.next()
                 val v = alloc[k].asText()
                 val balance = Uint256.of(v.bn())
-                r[k.hex()] = emptyAccount(balance)
+                r[k.hex()] = Account(balance = balance)
             }
             return r
         }
