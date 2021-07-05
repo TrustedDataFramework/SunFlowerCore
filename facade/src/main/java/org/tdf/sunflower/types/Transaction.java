@@ -10,6 +10,7 @@ import org.tdf.common.crypto.ECKey;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.trie.TrieImpl;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
@@ -52,12 +53,7 @@ public class Transaction implements RlpWritable {
     }
 
     public static HexBytes calcTxTrie(List<Transaction> transactions) {
-        Trie<byte[], byte[]> txsState = Trie
-                .<byte[], byte[]>builder()
-                .keyCodec(Codec.identity())
-                .valueCodec(Codec.identity())
-                .store(new ByteArrayMapStore<>())
-                .build();
+        Trie<byte[], byte[]> txsState = new TrieImpl<>();
 
         if (transactions == null || transactions.isEmpty())
             return HexBytes.fromBytes(HashUtil.EMPTY_TRIE_HASH);

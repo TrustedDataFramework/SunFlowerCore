@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.common.TrieUtil;
 import org.tdf.common.serialize.Codec;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.ByteArrayMapStore;
@@ -21,7 +22,7 @@ public class SecureTrieTest {
 
     @Before
     public void before() {
-        notSecured = Trie.<byte[], String>builder()
+        notSecured = TrieUtil.<byte[], String>builder()
             .keyCodec(Codec.identity())
             .valueCodec(Codecs.STRING)
             .store(new NoDeleteStore<>(new ByteArrayMapStore<>(), x -> x == null || x.length == 0))

@@ -20,7 +20,7 @@ import static org.tdf.common.trie.TrieKey.EMPTY;
  * https://medium.com/shyft-network-media/understanding-trie-databases-in-ethereum-9f03d2c3325d
  * https://github.com/ethereum/wiki/wiki/Patricia-Tree#optimization
  */
-class Node {
+public class Node {
     static final int BRANCH_SIZE = 17;
     // rlp encoded of this node, for serialization
     byte[] rlp;

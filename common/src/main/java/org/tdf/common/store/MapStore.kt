@@ -5,16 +5,9 @@ package org.tdf.common.store
  *
  * @param <K> key type
 </K> */
-open class MapStore<K, V> : BatchStore<K, V>, IterableStore<K, V> {
-    protected val cache: MutableMap<K, V>
+open class MapStore<K, V>(val cache: MutableMap<K, V>) : BatchStore<K, V>, IterableStore<K, V> {
 
-    constructor() {
-        cache = mutableMapOf()
-    }
-
-    constructor(map: MutableMap<K, V>) {
-        this.cache = map
-    }
+    constructor() : this(mutableMapOf())
 
     override fun get(k: K): V? {
         return cache[k]

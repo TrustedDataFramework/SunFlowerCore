@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
+import static org.tdf.common.TrieUtil.newInstance;
 import static org.tdf.common.util.HashUtil.EMPTY_TRIE_HASH;
 
 @RunWith(JUnit4.class)
@@ -184,7 +185,7 @@ public abstract class AbstractTrieTest {
 
     @Test
     public void testDeleteCompletellyDiferentItems() {
-        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        TrieImpl<byte[], byte[]> trie = newInstance(new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
 
         String val_1 = "1000000000000000000000000000000000000000000000000000000000000000";
         String val_2 = "2000000000000000000000000000000000000000000000000000000000000000";
@@ -262,7 +263,7 @@ public abstract class AbstractTrieTest {
 
     @Test
     public void testMassiveDelete() {
-        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
+        TrieImpl<byte[], byte[]> trie = newInstance(new NoDoubleDeleteStore(), Codec.identity(), Codec.identity());
         byte[] rootHash1 = null;
         for (int i = 0; i < 11000; i++) {
             trie.set(HashUtil.sha3(intToBytes(i)), HashUtil.sha3(intToBytes(i + 1000000)));
@@ -510,7 +511,7 @@ public abstract class AbstractTrieTest {
         boolean performance = false;
         int n = 1000000;
         if (!performance) return;
-        TrieImpl<byte[], byte[]> trie = TrieImpl.newInstance(
+        TrieImpl<byte[], byte[]> trie = newInstance(
 //            HashUtil::sha256,
             new NoDoubleDeleteStore(),
             Codec.identity(),

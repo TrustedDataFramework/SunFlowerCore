@@ -10,7 +10,7 @@ import java.security.SecureRandom;
 public class TriePerformanceTest {
     public static void main(String[] args) {
         int n = 10_000_00;
-        Trie<byte[], byte[]> trie = Trie.<byte[], byte[]>builder()
+        Trie<byte[], byte[]> trie = TrieUtil.<byte[], byte[]>builder()
             .store(new ByteArrayMapStore<>())
             .keyCodec(Codec.identity())
             .valueCodec(Codec.identity())

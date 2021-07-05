@@ -1,10 +1,9 @@
 package org.tdf.common.store
 
-import org.tdf.common.util.RLPUtil.decode
-import org.tdf.common.util.HexBytes
 import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.serialize.Codec
-import org.tdf.common.util.ByteUtil
+import org.tdf.common.util.HexBytes
+import org.tdf.common.util.RLPUtil.decode
 import java.util.*
 
 class PrefixStore<K, V>(
@@ -17,38 +16,41 @@ class PrefixStore<K, V>(
         val encoded = kCodec.encoder.apply(k)
         val withPrefix = verifyAndPrefix(encoded)
         val v = contractStorage[withPrefix]
-        return if (v == null || v.size() == 0) null else vCodec.decoder.apply(v.bytes)
+        return if (v == null || v.isEmpty) null else vCodec.decoder.apply(v.bytes)
     }
 
     private fun verifyAndPrefix(key: ByteArray): HexBytes {
-        if (key.size == 0) throw RuntimeException("invalid key, length = 0")
-        return HexBytes.fromBytes(ByteUtil.merge(prefix.bytes, key))
+        if (key.isEmpty()) throw RuntimeException("invalid key, length = 0")
+        return (prefix.bytes + key).hex()
     }
 
     override fun set(k: K, v: V) {
         val encoded = kCodec.encoder.apply(k)
         val withPrefix = verifyAndPrefix(encoded)
         addKey(encoded)
-        contractStorage[withPrefix] = HexBytes.fromBytes(vCodec.encoder.apply(v))
+        contractStorage[withPrefix] = vCodec.encoder.apply(v).hex()
     }
 
     private fun keySet(): TreeSet<HexBytes> {
         val keys = contractStorage[prefix]
         return if (keys == null || keys.size() == 0) TreeSet() else TreeSet(
-            Arrays.asList(*decode(keys, Array<HexBytes>::class.java))
+            decode(
+                keys,
+                Array<HexBytes>::class.java
+            ).toList()
         )
     }
 
     private fun addKey(key: ByteArray) {
         val keySet = keySet()
-        keySet.add(HexBytes.fromBytes(key))
-        contractStorage[prefix] = HexBytes.fromBytes(Rlp.encode(keySet.toTypedArray()))
+        keySet.add(key.hex())
+        contractStorage[prefix] = Rlp.encode(keySet.toTypedArray()).hex()
     }
 
     private fun removeKey(key: ByteArray) {
         val keySet = keySet()
-        keySet.remove(HexBytes.fromBytes(key))
-        contractStorage[prefix] = HexBytes.fromBytes(Rlp.encode(keySet.toTypedArray()))
+        keySet.remove(key.hex())
+        contractStorage[prefix] = Rlp.encode(keySet.toTypedArray()).hex()
     }
 
     override fun remove(k: K) {
@@ -63,7 +65,7 @@ class PrefixStore<K, V>(
     }
 
     override fun iterator(): Iterator<Map.Entry<K, V>> {
-        val map: MutableMap<K, V> = HashMap()
+        val map: MutableMap<K, V> = mutableMapOf()
         for (key in keySet()) {
             map[kCodec.decoder.apply(key.bytes)] = vCodec.decoder.apply(
                 contractStorage[verifyAndPrefix(key.bytes)]!!.bytes

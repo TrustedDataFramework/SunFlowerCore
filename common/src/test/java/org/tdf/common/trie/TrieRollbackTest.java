@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.common.TrieUtil;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.NoDeleteStore;
@@ -43,7 +44,7 @@ public class TrieRollbackTest {
         noDelete = new NoDeleteStore<>(delegate, ByteUtil::isNullOrZeroArray);
         database = new NoDoubleDeleteStore<>(noDelete, ByteUtil::isNullOrZeroArray);
 
-        trie = Trie.<String, String>builder()
+        trie = TrieUtil.<String, String>builder()
             .store(database)
             .keyCodec(Codecs.STRING)
             .valueCodec(Codecs.STRING)

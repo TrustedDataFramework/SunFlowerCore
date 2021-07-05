@@ -10,12 +10,13 @@ import org.tdf.common.crypto.ECKey
 import org.tdf.common.types.Uint256
 import org.tdf.sunflower.types.ConsensusConfig
 import org.tdf.sunflower.util.FileUtils
+import org.tdf.sunflower.util.MapperUtil
 
 class AppConfig(private val properties: PropertyLike) {
     constructor(env: Environment): this(EnvWrapper(env))
 
     private val reader = PropertyReader(properties)
-    
+
     val myKey = ECKey()
 
     val eip8: Boolean
@@ -57,7 +58,7 @@ class AppConfig(private val properties: PropertyLike) {
         get() = reader.getAsInt("sunflower.cache.p2p.proposal", 128)
 
     val blockGasLimit: Long by lazy {
-            val objectMapper = ObjectMapper()
+            val objectMapper = MapperUtil.OBJECT_MAPPER
                 .enable(JsonParser.Feature.ALLOW_COMMENTS)
             val `in` = FileUtils.getInputStream(
                 properties.getProperty("sunflower.consensus.genesis")
@@ -76,6 +77,9 @@ class AppConfig(private val properties: PropertyLike) {
         get() = reader.getAsBool("sunflower.vm.debug")
     val isTrieSecure: Boolean
         get() = reader.getAsBool("sunflower.trie.secure")
+
+    val dbType: String
+        get() = reader.getAsLowerCased("sunflower.database.block-store").takeIf { it.isNotEmpty() } ?: "kv"
 
     companion object {
         @JvmStatic

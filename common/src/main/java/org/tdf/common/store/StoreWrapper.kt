@@ -4,7 +4,7 @@ import org.tdf.common.serialize.Codec
 import java.util.AbstractMap
 
 /**
- * delegate `Store<U, R>` as `Store<K, V>`
+ * delegate `Store<ByteArray, ByteArray>` as `Store<K, V>`
  *
  * @param <K> type of key
  * @param <V> type of value

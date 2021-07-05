@@ -13,11 +13,11 @@ interface Codec<K> {
 
     companion object {
         @JvmStatic
-        fun identity(): Codec<ByteArray> {
-            return Codecs.IDENTITY as Codec<ByteArray>
+        fun <K> identity(): Codec<K> {
+            return Codecs.IDENTITY as Codec<K>
         }
 
-        fun <K> newInstance(
+        fun <K> create(
             encoder: Function<in K, ByteArray>,
             decoder: Function<ByteArray, out K>
         ): Codec<K> {

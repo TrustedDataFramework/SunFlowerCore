@@ -1,6 +1,5 @@
 package org.tdf.common.event
 
-import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
@@ -25,7 +24,7 @@ class EventBus(factory: ThreadFactory) {
 
             // copy when write, avoid concurrent modifications
             val copied = copy(listeners)
-            copied.putIfAbsent(eventType, ArrayList())
+            copied.putIfAbsent(eventType, mutableListOf())
             copied[eventType]!!.add(
                 listener as Consumer<Any>
             )
@@ -52,7 +51,7 @@ class EventBus(factory: ThreadFactory) {
     }
 
     private fun copy(listeners: Map<Class<*>, List<Consumer<Any>>>): MutableMap<Class<*>, MutableList<Consumer<Any>>> {
-        val ret: MutableMap<Class<*>, MutableList<Consumer<Any>>> = HashMap()
+        val ret: MutableMap<Class<*>, MutableList<Consumer<Any>>> = mutableMapOf()
         listeners.forEach { (k: Class<*>, v: List<Consumer<Any>>) -> ret[k] = v.toMutableList() }
         return ret
     }

@@ -5,6 +5,7 @@ import com.github.salpadding.rlpstream.RlpList;
 import com.github.salpadding.rlpstream.StreamId;
 import com.github.salpadding.rlpstream.annotation.RlpCreator;
 import org.tdf.common.trie.Trie;
+import org.tdf.common.trie.TrieImpl;
 import org.tdf.common.types.Uint256;
 import org.tdf.common.util.BigIntegers;
 import org.tdf.common.util.ByteUtil;
@@ -29,8 +30,7 @@ import static org.tdf.common.util.ByteUtil.toHexString;
 public class TransactionReceipt {
 
     public static HexBytes calcReceiptsTrie(List<TransactionReceipt> receipts) {
-        Trie<byte[], byte[]> receiptsTrie = Trie.getDefault();
-
+        Trie<byte[], byte[]> receiptsTrie = new TrieImpl<>();
         if (receipts == null || receipts.isEmpty())
             return HashUtil.EMPTY_TRIE_HASH_HEX;
 

@@ -7,6 +7,7 @@ import org.tdf.sunflower.facade.PropertiesWrapper
 import org.tdf.common.util.HexBytes
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.tdf.sunflower.util.FileUtils
+import org.tdf.sunflower.util.MapperUtil
 import java.util.*
 
 open class ConsensusConfig(val properties: PropertyLike) {
@@ -42,7 +43,7 @@ open class ConsensusConfig(val properties: PropertyLike) {
 
 
     val genesisJson: JsonNode by lazy {
-        val objectMapper = ObjectMapper()
+        val objectMapper = MapperUtil.OBJECT_MAPPER
             .enable(JsonParser.Feature.ALLOW_COMMENTS)
         val stream = FileUtils.getInputStream(properties.getProperty("genesis")!!)
         objectMapper.readValue(stream, JsonNode::class.java)

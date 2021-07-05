@@ -3,16 +3,17 @@ package org.tdf.common.trie
 import org.tdf.common.util.HexBytes
 import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.serialize.Codec
+import org.tdf.common.store.ByteArrayMapStore
 import org.tdf.common.store.ReadOnlyStore
 import org.tdf.common.store.Store
 import java.util.function.BiFunction
 
 // enhanced radix tree
-class TrieImpl<K, V> private constructor(
-    override var store: Store<ByteArray, ByteArray>,
-    override var kCodec: Codec<K>,
-    override var vCodec: Codec<V>,
-    private var root: Node?
+class TrieImpl<K, V> (
+    override var store: Store<ByteArray, ByteArray> = ByteArrayMapStore(),
+    override var kCodec: Codec<K> = Codec.identity(),
+    override var vCodec: Codec<V> = Codec.identity(),
+    private var root: Node? = null
 ) : AbstractTrie<K, V>() {
 
     override fun getFromBytes(key: ByteArray?): V? {
@@ -117,22 +118,6 @@ class TrieImpl<K, V> private constructor(
                 return@traverseTrie traverser.apply(k.toNormal(), n.value)
             }
             true
-        }
-    }
-
-    companion object {
-        @JvmStatic
-        fun <K, V> newInstance(
-            store: Store<ByteArray, ByteArray>,
-            keyCodec: Codec<K>,
-            valueCodec: Codec<V>
-        ): TrieImpl<K, V> {
-            return TrieImpl(
-                store,
-                keyCodec,
-                valueCodec,
-                null
-            )
         }
     }
 }

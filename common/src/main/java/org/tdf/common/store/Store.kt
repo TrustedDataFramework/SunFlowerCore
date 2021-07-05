@@ -18,7 +18,7 @@ interface Store<K, V> {
     operator fun get(k: K): V?
 
     /**
-     * puts key-value pair into store, remove key in the store if v is trap-like
+     * puts key-value pair into store, remove key in the store if v is empty byte array
      *
      * @param k key of key-value mapping
      * @param v value of key-value mapping

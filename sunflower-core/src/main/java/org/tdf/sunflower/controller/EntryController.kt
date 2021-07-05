@@ -17,7 +17,6 @@ import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.state.Address
 import org.tdf.sunflower.state.Address.empty
-import org.tdf.sunflower.sync.SyncManager
 import org.tdf.sunflower.types.*
 import java.util.function.Function
 
@@ -27,7 +26,6 @@ class EntryController constructor(
     private val accountTrie: AccountTrie,
     private val peerServer: PeerServer,
     private val repo: RepositoryService,
-    private val syncManager: SyncManager,
     private val consensusEngine: ConsensusEngine,
 ) {
 
@@ -50,17 +48,7 @@ class EntryController constructor(
         return func1.apply(HexBytes.fromHex(hashOrHeight))
     }
 
-    private fun Block.v1(): BlockV1{
-        return BlockV1.fromV2(this)
-    }
 
-    private fun Header.v1(): HeaderV1{
-        return HeaderV1.fromV2(this)
-    }
-
-    private fun Transaction.v1(): TransactionV1 {
-        return TransactionV1.fromV2(this)
-    }
 
     @GetMapping(value = ["/block/{hashOrHeight}"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getBlock(@PathVariable hashOrHeight: String): BlockV1? {
@@ -71,7 +59,7 @@ class EntryController constructor(
     }
 
     @GetMapping(value = ["/header/{hashOrHeight}"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getHeaders(@PathVariable hashOrHeight: String): HeaderV1? {
+    fun getHeader(@PathVariable hashOrHeight: String): HeaderV1? {
         repo.reader.use { rd ->
             val h = getBlockOrHeader(rd, hashOrHeight, { rd.getCanonicalHeader(it) }, { rd.getHeaderByHash(it) })
             return h?.v1()
@@ -80,9 +68,7 @@ class EntryController constructor(
 
     @GetMapping(value = ["/transaction/{hash}"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getTransaction(@PathVariable hash: String): TransactionV1? {
-        repo.reader.use { rd ->
-            return rd.getTransaction(HexBytes.fromHex(hash))?.v1()
-        }
+        return repo.reader.use { it.getTransaction(HexBytes.fromHex(hash))?.v1() }
     }
 
     @GetMapping(value = ["/account/{addressOrPublicKey}"], produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -99,16 +85,6 @@ class EntryController constructor(
         return PeersInfo(peerServer.peers, peerServer.bootstraps)
     }
 
-    @GetMapping(value = ["/miners"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun miners(): List<HexBytes> {
-        return emptyList()
-    }
-
-    @GetMapping(value = ["/orphan"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun orphans(): List<Block> {
-        return syncManager.orphans
-    }
-
 
     // if thread node not receive farm base transaciont and gateway node restarted
     // needs to construct the transaction
@@ -121,7 +97,8 @@ class EntryController constructor(
             .map { HexBytes.fromBytes(it.encoded) }
     }
 
-    class PeersInfo(var peers: List<Peer>, var bootstraps: List<Peer>)
+    data class PeersInfo(val peers: List<Peer>, val bootstraps: List<Peer>)
+
     data class AccountView(
         val address: HexBytes, // for normal account this field is continuous integer
         // for contract account this field is nonce of deploy transaction
@@ -149,5 +126,17 @@ class EntryController constructor(
 
     companion object {
         private val log = LoggerFactory.getLogger("rpc")
+    }
+
+    private fun Block.v1(): BlockV1{
+        return BlockV1.fromV2(this)
+    }
+
+    private fun Header.v1(): HeaderV1{
+        return HeaderV1.fromV2(this)
+    }
+
+    private fun Transaction.v1(): TransactionV1 {
+        return TransactionV1.fromV2(this)
     }
 }
