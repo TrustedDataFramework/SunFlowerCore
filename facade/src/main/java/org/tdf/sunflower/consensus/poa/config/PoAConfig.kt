@@ -1,0 +1,33 @@
+package org.tdf.sunflower.consensus.poa.config
+
+import org.tdf.common.crypto.ECKey
+import org.tdf.sunflower.facade.PropertyLike
+import org.tdf.sunflower.types.ConsensusConfig
+import org.tdf.common.util.HexBytes
+
+class PoAConfig(properties: PropertyLike) : ConsensusConfig(properties) {
+    val threadId: Int
+        get() = reader.getAsInt("thread-id", 0)
+
+    val farmBaseAdmin: HexBytes?
+        get() = reader.getAsAddress("farm-base-admin")
+
+    val gatewayNode: String
+        get() = reader.getAsNonNull("gateway-node")
+
+    override val minerCoinBase: HexBytes?
+        get() {
+            val key = privateKey?.bytes?.let { ECKey.fromPrivate(it) }
+            return key?.address?.let { HexBytes.fromBytes(it) }
+        }
+
+    val controlled: Boolean
+        get() = threadId != 0
+
+    companion object {
+        @JvmStatic
+        fun from(c: ConsensusConfig): PoAConfig {
+            return PoAConfig(c.properties)
+        }
+    }
+}

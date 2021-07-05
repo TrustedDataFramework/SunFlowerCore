@@ -23,7 +23,7 @@ class PoAMiner(private val poA: PoA) :
         get() = poA.config
 
     val repo: RepositoryService
-        get() = poA.repo!!
+        get() = poA.repo
 
     private val executor = FixedDelayScheduler("PoAMiner",
         Math.max(1, poA.config.blockInterval / 2).toLong()
@@ -42,7 +42,7 @@ class PoAMiner(private val poA: PoA) :
 
     override fun finalizeBlock(parent: Block, block: Block): Boolean {
         val rawHash = PoaUtils.getRawHash(block.header)
-        val key = ECKey.fromPrivate(config.privateKey.bytes)
+        val key = ECKey.fromPrivate(config.privateKey!!.bytes)
         val sig = key.sign(rawHash)
         block.extraData = RLPUtil.encode(
             arrayOf<Any>(
@@ -54,7 +54,7 @@ class PoAMiner(private val poA: PoA) :
         if (config.threadId == PoA.GATEWAY_ID) {
             for (i in 1 until block.body.size) {
                 val tx = block.body[i]
-                poA.farmBaseTransactions.put(tx.hashHex, tx)
+                poA.cache.put(tx.hashHex, tx)
             }
         }
         return true
@@ -76,8 +76,8 @@ class PoAMiner(private val poA: PoA) :
         executor.shutdownNow()
     }
 
-    fun tryMine() {
-        if (!config.enableMining()) {
+    private fun tryMine() {
+        if (!config.enableMining) {
             return
         }
         repo.writer.use {
@@ -106,8 +106,8 @@ class PoAMiner(private val poA: PoA) :
     override fun createCoinBase(height: Long): Transaction {
         return Transaction.builder()
             .nonce(ByteUtil.longToBytesNoLeadZeroes(height))
-            .value(poA.economicModel.getConsensusRewardAtHeight(height).noLeadZeroesData)
-            .receiveAddress(config.minerCoinBase.bytes)
+            .value(poA.model.rewardAt(height).noLeadZeroesData)
+            .receiveAddress(config.minerCoinBase!!.bytes)
             .gasPrice(ByteUtil.EMPTY_BYTE_ARRAY)
             .gasLimit(ByteUtil.EMPTY_BYTE_ARRAY)
             .build()

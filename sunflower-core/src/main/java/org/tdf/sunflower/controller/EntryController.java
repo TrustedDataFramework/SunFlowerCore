@@ -219,7 +219,7 @@ public class EntryController {
     public List<HexBytes> farmBaseTransactions() {
         PoA poa = (PoA) consensusEngine;
         return poa
-                .farmBaseTransactions
+                .cache
                 .asMap()
                 .values()
                 .stream()

@@ -85,7 +85,7 @@ public class PoSMiner extends AbstractMiner {
     }
 
     public void tryMine() {
-        if (!config.enableMining() || stopped) {
+        if (!config.getEnableMining() || stopped) {
             return;
         }
         if (config.getMinerCoinBase() == null || config.getMinerCoinBase().size() != ADDRESS_LENGTH) {

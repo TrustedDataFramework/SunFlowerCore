@@ -7,11 +7,13 @@ import java.math.BigInteger
 
 class PropertyReader(val properties: PropertyLike) {
     fun getAsLowerCased(property: String): String {
-
         val s = properties.getProperty(property)
         return (s ?: "").trim { it <= ' ' }.lowercase()
     }
 
+    /**
+     * get property as non null
+     */
     fun getAsNonNull(property: String): String {
         val s = properties.getProperty(property)
         return (s ?: "").trim { it <= ' ' }
@@ -42,10 +44,10 @@ class PropertyReader(val properties: PropertyLike) {
         return if (s == null || s.trim { it <= ' ' }.isEmpty()) defaultValue else s.trim { it <= ' ' }.toInt()
     }
 
-    fun getAsPrivate(property: String): HexBytes {
-        val s = properties.getProperty(property) ?: throw RuntimeException("property $property not found")
-        val k = HexBytes.fromHex(s.trim { it <= ' ' })
-        if (k.size() != 32) throw RuntimeException("invalid private key size: $k")
+    fun getAsPrivate(property: String): HexBytes? {
+        val s = properties.getProperty(property)
+        val k = s?.trim { it <= ' ' }?.hex()
+        if (k != null && k.size() != 32) throw RuntimeException("invalid private key size: $k")
         return k
     }
 
@@ -56,10 +58,15 @@ class PropertyReader(val properties: PropertyLike) {
         return s.trim { it <= ' ' }.toLong()
     }
 
-    fun getAsAddress(property: String): HexBytes {
+    fun getAsAddress(property: String): HexBytes? {
         val s = properties.getProperty(property)
-        val minerCoinBase = HexBytes.fromHex(s!!)
-        if (minerCoinBase.size() != Transaction.ADDRESS_LENGTH) throw RuntimeException("invalid coinbase address $minerCoinBase")
+        val minerCoinBase = s?.hex()
+        if (minerCoinBase != null && minerCoinBase.size() != Transaction.ADDRESS_LENGTH)
+            throw RuntimeException("invalid coinbase address $minerCoinBase")
         return minerCoinBase
+    }
+
+    private fun String.hex(): HexBytes {
+        return HexBytes.fromHex(this)
     }
 }
