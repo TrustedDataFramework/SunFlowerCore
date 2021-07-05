@@ -15,7 +15,8 @@ abstract class AbstractRepository
     (context: ApplicationContext) : RepositoryReader, RepositoryWriter {
     protected val eventBus: EventBus = context.getBean(EventBus::class.java)
     protected val factory: DatabaseStoreFactory = context.getBean(DatabaseStoreFactory::class.java)
-    var accountTrie: StateTrie<HexBytes, Account>? = null
+
+    lateinit var accountTrie: StateTrie<HexBytes, Account>
 
     var genesisCache: Block? = null
 

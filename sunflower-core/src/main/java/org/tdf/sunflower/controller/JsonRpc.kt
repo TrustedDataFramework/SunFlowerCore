@@ -18,7 +18,7 @@ interface JsonRpc {
     fun net_peerCount(): String
     fun net_listening(): Boolean
     fun eth_protocolVersion(): String
-    fun eth_syncing(): Any
+    fun eth_syncing(): Boolean
     fun eth_coinbase(): String
     fun eth_mining(): Boolean
     fun eth_hashrate(): String
@@ -28,15 +28,13 @@ interface JsonRpc {
 
     fun eth_getBalance(address: String, block: String): String
 
-    fun eth_getLastBalance(address: String): String
-
     fun eth_getStorageAt(address: String, storageIdx: String, blockId: String): String
 
     fun eth_getTransactionCount(address: String, blockId: String): String
 
-    fun eth_getBlockTransactionCountByHash(blockHash: String): String
+    fun eth_getBlockTransactionCountByHash(blockHash: String): String?
 
-    fun eth_getBlockTransactionCountByNumber(bnOrId: String): String
+    fun eth_getBlockTransactionCountByNumber(bnOrId: String): String?
 
     fun eth_getUncleCountByBlockHash(blockHash: String): String
 
@@ -54,24 +52,21 @@ interface JsonRpc {
 
     fun eth_estimateGas(args: CallArguments?): String?
 
-    fun eth_getBlockByHash(blockHash: String?, fullTransactionObjects: Boolean?): BlockResult?
+    fun eth_getBlockByHash(blockHash: String, fullTx: Boolean?): BlockResult?
 
-    fun eth_getBlockByNumber(bnOrId: String?, fullTransactionObjects: Boolean?): BlockResult?
+    fun eth_getBlockByNumber(bnOrId: String, fullTx: Boolean?): BlockResult?
 
 
     fun eth_getTransactionByHash(transactionHash: String): TransactionResultDTO?
 
 
-    fun eth_getTransactionByBlockHashAndIndex(blockHash: String?, index: String?): TransactionResultDTO?
+    fun eth_getTransactionByBlockHashAndIndex(blockHash: String, index: String): TransactionResultDTO?
 
 
-    fun eth_getTransactionByBlockNumberAndIndex(bnOrId: String?, index: String?): TransactionResultDTO?
+    fun eth_getTransactionByBlockNumberAndIndex(bnOrId: String, index: String): TransactionResultDTO?
 
 
     fun eth_getTransactionReceipt(transactionHash: String): TransactionReceiptDTO?
-
-
-    fun ethj_getTransactionReceipt(transactionHash: String?): TransactionReceiptDTOExt?
 
 
     fun eth_getUncleByBlockHashAndIndex(blockHash: String?, uncleIdx: String?): BlockResult?

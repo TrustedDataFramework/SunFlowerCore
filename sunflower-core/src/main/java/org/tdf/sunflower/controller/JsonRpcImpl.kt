@@ -1,23 +1,22 @@
 package org.tdf.sunflower.controller
 
 import org.springframework.stereotype.Service
-import org.tdf.sunflower.state.AccountTrie
-import org.tdf.sunflower.facade.RepositoryService
-import org.tdf.sunflower.facade.TransactionPool
-import org.tdf.sunflower.facade.ConsensusEngine
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
-import org.tdf.sunflower.controller.JsonRpc.CallArguments
-import org.tdf.sunflower.vm.VMExecutor
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.controller.JsonRpc.BlockResult
+import org.tdf.sunflower.controller.JsonRpc.CallArguments
+import org.tdf.sunflower.facade.ConsensusEngine
+import org.tdf.sunflower.facade.RepositoryService
+import org.tdf.sunflower.facade.TransactionPool
+import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.state.Address
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.types.Transaction
 import org.tdf.sunflower.vm.Backend
+import org.tdf.sunflower.vm.VMExecutor
 import java.math.BigInteger
-import java.util.*
 
 
 @Service
@@ -62,14 +61,14 @@ class JsonRpcImpl(
     }
 
     override fun net_listening(): Boolean {
-        return false
+        return true
     }
 
     override fun eth_protocolVersion(): String {
-        return "farmbase"
+        return "66"
     }
 
-    override fun eth_syncing(): Any {
+    override fun eth_syncing(): Boolean {
         return false
     }
 
@@ -98,7 +97,7 @@ class JsonRpcImpl(
     }
 
     private fun getBackendByBlockId(blockId: String, isStatic: Boolean): Backend {
-        var header: Header
+        val header: Header
         repo.reader.use { rd ->
             when (blockId.trim()) {
                 "latest" -> {
@@ -123,35 +122,37 @@ class JsonRpcImpl(
     }
 
     override fun eth_getBalance(address: String, block: String): String {
-        getBackendByBlockId(block, true).use { repo ->
-            val balance = repo.getBalance(address.jsonHex.hex)
+        getBackendByBlockId(block, true).use {
+            val balance = it.getBalance(address.jsonHex.hex)
             return balance.value.jsonHex
         }
     }
 
 
-    override fun eth_getLastBalance(address: String): String {
-        return eth_getBalance(address, "latest")
-    }
-    
     override fun eth_getStorageAt(address: String, storageIdx: String, blockId: String): String {
-        TODO("NOT IMPLEMENTED")
+        return getBackendByBlockId(blockId, true).use {
+            it.dbGet(address.jsonHex.hex, storageIdx.jsonHex.hex).jsonHex
+        }
     }
 
-    
+
     override fun eth_getTransactionCount(address: String, blockId: String): String {
         getBackendByBlockId(blockId, true).use { backend ->
             return backend.getNonce(address.jsonHex.hex).jsonHex
         }
     }
 
-    override fun eth_getBlockTransactionCountByHash(blockHash: String): String {
-        TODO("NOT IMPLEMENTED")
+    override fun eth_getBlockTransactionCountByHash(blockHash: String): String? {
+        repo.reader.use {
+            return it.getBlockByHash(blockHash.jsonHex.hex)?.body?.size?.jsonHex
+        }
     }
 
 
-    override fun eth_getBlockTransactionCountByNumber(bnOrId: String): String {
-        TODO("NOT IMPLEMENTED")
+    override fun eth_getBlockTransactionCountByNumber(bnOrId: String): String? {
+        repo.reader.use {
+            return it.getCanonicalBlock(bnOrId.jsonHex.long)?.body?.size?.jsonHex
+        }
     }
 
     override fun eth_getUncleCountByBlockHash(blockHash: String): String {
@@ -226,12 +227,12 @@ class JsonRpcImpl(
         return getBlockResult(this, fullTx ?: false)
     }
 
-    override fun eth_getBlockByHash(blockHash: String?, fullTransactionObjects: Boolean?): BlockResult? {
-        return getByJsonBlockId(blockHash ?: "latest")?.result(fullTransactionObjects)
+    override fun eth_getBlockByHash(blockHash: String, fullTx: Boolean?): BlockResult? {
+        return getByJsonBlockId(blockHash)?.result(fullTx)
     }
 
-    override fun eth_getBlockByNumber(bnOrId: String?, fullTransactionObjects: Boolean?): BlockResult? {
-        return getByJsonBlockId(bnOrId ?: "latest")?.result(fullTransactionObjects)
+    override fun eth_getBlockByNumber(bnOrId: String, fullTx: Boolean?): BlockResult? {
+        return getByJsonBlockId(bnOrId)?.result(fullTx)
     }
 
 
@@ -244,14 +245,24 @@ class JsonRpcImpl(
         }
     }
 
-
-    override fun eth_getTransactionByBlockHashAndIndex(blockHash: String?, index: String?): TransactionResultDTO? {
-        return null
+    override fun eth_getTransactionByBlockHashAndIndex(blockHash: String, index: String): TransactionResultDTO? {
+        return getTxByIndex(blockHash, index, true)
     }
 
+    private fun getTxByIndex(bnOrId: String, index: String, hash: Boolean = false): TransactionResultDTO? {
+        val json = bnOrId.jsonHex
+        repo.reader.use { rd ->
+            val b = if (hash) rd.getBlockByHash(json.hex) else rd.getCanonicalBlock(json.long)
+            val tx = b?.body?.getOrNull(index.jsonHex.int)
+            val info = tx?.hashHex?.let { rd.getTransactionInfo(it) }
+            if (b == null || tx == null || info == null)
+                return null
+            return TransactionResultDTO.create(b.header, info.index, info.receipt.transaction)
+        }
+    }
 
-    override fun eth_getTransactionByBlockNumberAndIndex(bnOrId: String?, index: String?): TransactionResultDTO? {
-        return null
+    override fun eth_getTransactionByBlockNumberAndIndex(bnOrId: String, index: String): TransactionResultDTO? {
+        return getTxByIndex(bnOrId, index)
     }
 
     override fun eth_getTransactionReceipt(transactionHash: String): TransactionReceiptDTO? {
@@ -262,12 +273,8 @@ class JsonRpcImpl(
             val b = if (info == null) null else rd.getBlockByHash(HexBytes.fromBytes(info.blockHash))
             if (info == null || tx == null || b == null) return null
             info.setTransaction(tx)
-            return TransactionReceiptDTO(b, info)
+            return TransactionReceiptDTO.create(b, info)
         }
-    }
-
-    override fun ethj_getTransactionReceipt(transactionHash: String?): TransactionReceiptDTOExt? {
-        throw UnsupportedOperationException()
     }
 
     override fun eth_getUncleByBlockHashAndIndex(blockHash: String?, uncleIdx: String?): BlockResult? {
@@ -328,7 +335,7 @@ class JsonRpcImpl(
             block.nonce.jsonHex, block.unclesHash.jsonHex, block.logsBloom.jsonHex,
             block.transactionsRoot.jsonHex, block.stateRoot.jsonHex, block.receiptTrieRoot.jsonHex,
             block.coinbase.jsonHex, block.difficulty.bytes.jsonHexNum, BigInteger.ZERO.jsonHex,
-            block.extraData?.jsonHex, null,  block.gasLimit.jsonHexNum,
+            block.extraData?.jsonHex, null, block.gasLimit.jsonHexNum,
             block.gasUsed.jsonHex, block.createdAt.jsonHex
         )
 

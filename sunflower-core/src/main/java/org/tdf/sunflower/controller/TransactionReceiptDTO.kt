@@ -5,71 +5,56 @@ import org.tdf.sunflower.controller.JsonRpc.LogFilterElement
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.TransactionInfo
 
-open class TransactionReceiptDTO(block: Block?, txInfo: TransactionInfo) {
+data class TransactionReceiptDTO(
     val transactionHash // hash of the transaction.
-            : String?
+    : String? = null,
     val transactionIndex // integer of the transactions index position in the block.
-            : String
-    var blockHash // hash of the block where this transaction was in.
-            : String? = null
-    var blockNumber // block number where this transaction was in.
-            : String? = null
+    : String? = null,
+    val blockHash // hash of the block where this transaction was in.
+    : String? = null,
+    val blockNumber // block number where this transaction was in.
+    : String? = null,
     val from // 20 Bytes - address of the sender.
-            : String?
+    : String? = null,
     val to // 20 Bytes - address of the receiver. null when its a contract creation transaction.
-            : String?
+    : String? = null,
     val cumulativeGasUsed // The total amount of gas used when this transaction was executed in the block.
-            : String
+    : String? = null,
     val gasUsed // The amount of gas used by this specific transaction alone.
-            : String
+    : String? = null,
     val contractAddress // The contract address created, if the transaction was a contract creation, otherwise  null .
-            : String?
+    : String? = null,
     val logs // Array of log objects, which this transaction generated.
-            : Array<LogFilterElement?>
+    : List<LogFilterElement>? = null,
     val logsBloom // 256 Bytes - Bloom filter for light clients to quickly retrieve related logs.
-            : String?
-
+    : String? = null,
     @JsonInclude(JsonInclude.Include.NON_NULL)
     val status //  either 1 (success) or 0 (failure) (post Byzantium)
-            : String
+    : String? = null,
+) {
 
 
-    init {
-        val receipt = txInfo.receipt
-        transactionHash = receipt.transaction.hash.jsonHex
-        transactionIndex = txInfo.index.jsonHex
-        cumulativeGasUsed = receipt.cumulativeGas.jsonHexNum
-        gasUsed = receipt.gasUsed.jsonHexNum
-        contractAddress = receipt.transaction.contractAddress.jsonHex
+    companion object {
 
-        from = receipt.transaction.sender.jsonHex
-        to = receipt.transaction.receiveAddress.jsonHex
-        logs = arrayOfNulls(receipt.logInfoList.size)
+        fun create(block: Block?, txInfo: TransactionInfo): TransactionReceiptDTO {
+            val receipt = txInfo.receipt
+            val tx = receipt.transaction
+            val logs: Array<LogFilterElement?> = arrayOfNulls(receipt.logInfoList.size)
 
-        if (block != null) {
-            blockNumber = block.height.jsonHex
-            blockHash = txInfo.blockHash.jsonHex
-        } else {
-            blockNumber = null
-            blockHash = null
-        }
+            for (i in logs.indices) {
+                val logInfo = receipt.logInfoList[i]
+                logs[i] = LogFilterElement(
+                    logInfo, block, txInfo.index,
+                    txInfo.receipt.transaction, i
+                )
+            }
 
-        for (i in logs.indices) {
-            val logInfo = receipt.logInfoList[i]
-            logs[i] = LogFilterElement(
-                logInfo, block, txInfo.index,
-                txInfo.receipt.transaction, i
+            return TransactionReceiptDTO(
+                tx.hash.jsonHex, txInfo.index.jsonHex, txInfo.blockHash?.jsonHex,
+                block?.height?.jsonHex, tx.sender.jsonHex, tx.receiveAddress.jsonHex,
+                receipt.cumulativeGas.jsonHexNum, receipt.gasUsed.jsonHexNum, tx.contractAddress?.jsonHex,
+                logs.toList().requireNoNulls(), receipt.bloomFilter.data.jsonHex, (1).jsonHex
             )
         }
-        logsBloom = receipt.bloomFilter.data.jsonHex
-        status = "0x1"
-
-//        if (receipt.hasTxStatus()) { // post Byzantium
-//            root = null;
-//            status = receipt.isTxStatusOK() ? "0x1" : "0x0";
-//            root = toJsonHex(receipt.getPostTxState());
-//        } else { // pre Byzantium
-//            status = null;
-//        }
     }
 }

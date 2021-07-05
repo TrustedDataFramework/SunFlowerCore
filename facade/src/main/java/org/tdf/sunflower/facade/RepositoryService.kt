@@ -9,7 +9,7 @@ interface RepositoryService {
 }
 
 class RepositoryServiceImpl(private val proxy: RepositoryWriter) : RepositoryService {
-    val lock = ReentrantReadWriteLock()
+    private val lock = ReentrantReadWriteLock()
     private val readLock = LogLock(lock.readLock(), "repo-r")
     private val writeLock = LogLock(lock.writeLock(), "repo-w")
 

@@ -75,7 +75,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
             for (bytes in idx) {
                 val h = headerStore[bytes]!!
                 ret.add(h)
-                if (ret.size > limit)
+                if (ret.size == limit)
                     return ret
             }
         }
@@ -88,18 +88,8 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
 
     private fun setCanonicalHashAt(height: Long, hash: HexBytes) {
         val set = heightIndex[height]?.toMutableSet() ?: mutableSetOf()
-        set.add(hash)
-        val arr = set.toTypedArray()
-        // i >= 0
-        val i = arr.indexOf(hash)
-
-        // now array contains at least one element
-        val t = arr[0]
-
-        // swap index, make hash canonical
-        arr[0] = hash
-        arr[i] = t
-        heightIndex[height] = arr
+        set.remove(hash)
+        heightIndex[height] = arrayOf(hash) + set.toTypedArray()
     }
 
     override fun getHeadersByHeight(height: Long): List<Header> {
@@ -146,8 +136,8 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
 
     private fun writeBlockNoReset(block: Block, infos: List<TransactionInfo>) {
         // ensure the state root exists
-        val v = accountTrie!!.trieStore[block.stateRoot.bytes]
-        if (block.stateRoot != accountTrie!!.trie.nullHash
+        val v = accountTrie.trieStore[block.stateRoot.bytes]
+        if (block.stateRoot != accountTrie.trie.nullHash
             && (v == null || v.isEmpty())
         ) {
             throw RuntimeException("unexpected error: account trie " + block.stateRoot + " not synced")
@@ -177,9 +167,12 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
         transactionsRoot[block.transactionsRoot] = txHashes
 
         // save header index
-        val headerHashes: MutableSet<HexBytes> = heightIndex[block.height]?.toMutableSet() ?: mutableSetOf()
+        val headerHashes: MutableList<HexBytes>
+            = heightIndex[block.height]?.toMutableList() ?: mutableListOf()
+        headerHashes.remove(block.hash)
         headerHashes.add(block.hash)
         heightIndex[block.height] = headerHashes.toTypedArray()
+
         log.info("write block at height " + block.height + " " + block.header.hash + " to database success")
     }
 
@@ -219,12 +212,12 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
             Codecs.hex,
             Codecs.rlp(Array<HexBytes>::class.java)
         )
-        heightIndex = StoreWrapper<Long, Array<HexBytes>>(
+        heightIndex = StoreWrapper(
             factory.create('i'),
             Codecs.rlp(Long::class.java),
             Codecs.rlp(Array<HexBytes>::class.java)
         )
-        status = StoreWrapper<String, Header>(
+        status = StoreWrapper(
             factory.create('s'),
             Codecs.string,
             Codecs.rlp(Header::class.java)
