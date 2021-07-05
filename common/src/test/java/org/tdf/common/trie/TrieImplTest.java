@@ -10,7 +10,7 @@ import static org.tdf.common.TrieUtil.newInstance;
 @RunWith(JUnit4.class)
 public class TrieImplTest extends AbstractTrieTest {
     Trie<String, String> newStringTrie() {
-        return newInstance(new NoDoubleDeleteStore(), Codecs.STRING, Codecs.STRING);
+        return newInstance(new NoDoubleDeleteStore(), Codecs.string, Codecs.string);
     }
 
     Trie<byte[], byte[]> newBytesTrie() {

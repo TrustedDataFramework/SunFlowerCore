@@ -26,15 +26,6 @@ class SecureTrie<K, V>(delegate: Trie<K, V>) : Trie<K, V> by delegate {
         return SecureTrie(delegate.revert(rootHash, store))
     }
 
-    override fun revert(rootHash: HexBytes): Trie<K, V> {
-        return SecureTrie(delegate.revert(rootHash))
-    }
-
-    override fun revert(): Trie<K, V> {
-        return SecureTrie(delegate.revert())
-    }
-
-
     override fun traverse(traverser: BiFunction<in K, in V, Boolean>) {
         throw UnsupportedOperationException("not supported in secure trie")
     }

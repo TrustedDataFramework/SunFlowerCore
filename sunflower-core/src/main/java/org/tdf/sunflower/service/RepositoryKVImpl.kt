@@ -205,34 +205,34 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     init {
         transactionsStore = StoreWrapper<HexBytes, Transaction>(
             factory.create('b'),
-            Codecs.HEX,
+            Codecs.hex,
             Transaction.TransactionCodec()
         )
 
         headerStore = StoreWrapper<HexBytes, Header>(
             factory.create('h'),
-            Codecs.HEX,
-            Codecs.newRLPCodec(Header::class.java)
+            Codecs.hex,
+            Codecs.rlp(Header::class.java)
         )
         transactionsRoot = StoreWrapper<HexBytes, Array<HexBytes>>(
             factory.create('t'),
-            Codecs.HEX,
-            Codecs.newRLPCodec(Array<HexBytes>::class.java)
+            Codecs.hex,
+            Codecs.rlp(Array<HexBytes>::class.java)
         )
         heightIndex = StoreWrapper<Long, Array<HexBytes>>(
             factory.create('i'),
-            Codecs.newRLPCodec(Long::class.java),
-            Codecs.newRLPCodec(Array<HexBytes>::class.java)
+            Codecs.rlp(Long::class.java),
+            Codecs.rlp(Array<HexBytes>::class.java)
         )
         status = StoreWrapper<String, Header>(
             factory.create('s'),
-            Codecs.STRING,
-            Codecs.newRLPCodec(Header::class.java)
+            Codecs.string,
+            Codecs.rlp(Header::class.java)
         )
         transactionInfos = StoreWrapper<HexBytes, Array<TransactionInfo>>(
             factory.create('f'),
-            Codecs.HEX,
-            Codecs.newRLPCodec(Array<TransactionInfo>::class.java)
+            Codecs.hex,
+            Codecs.rlp(Array<TransactionInfo>::class.java)
         )
     }
 }

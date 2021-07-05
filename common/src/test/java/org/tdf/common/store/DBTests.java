@@ -24,7 +24,7 @@ public abstract class DBTests {
     public void before() {
         databaseStore = getDB();
         databaseStore.init(DBSettings.DEFAULT);
-        wrapped = new StoreWrapper<>(databaseStore, Codecs.STRING, Codecs.STRING);
+        wrapped = new StoreWrapper<>(databaseStore, Codecs.string, Codecs.string);
     }
 
     @After

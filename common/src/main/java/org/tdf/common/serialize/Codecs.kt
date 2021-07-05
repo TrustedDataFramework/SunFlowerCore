@@ -11,17 +11,16 @@ object Codecs {
      * Converter from string to byte array and vice versa
      */
     @JvmField
-    val STRING = create(
+    val string = create(
         { it.toByteArray(StandardCharsets.UTF_8) }
     ) { String(it, StandardCharsets.UTF_8) }
 
-    val IDENTITY: Codec<*> = create(Function.identity(), Function.identity())
+    val identity: Codec<*> = create(Function.identity(), Function.identity())
 
-    @JvmField
-    val HEX = create({ it.bytes }) { HexBytes.fromBytes(it) }
+    val hex = create({ it.bytes }) { HexBytes.fromBytes(it) }
 
     @JvmStatic
-    fun <K> newRLPCodec(clazz: Class<K>): Codec<K> {
+    fun <K> rlp(clazz: Class<K>): Codec<K> {
         return create({ Rlp.encode(it) }) { Rlp.decode(it, clazz) }
     }
 }

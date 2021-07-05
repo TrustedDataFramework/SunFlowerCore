@@ -5,7 +5,7 @@ import com.github.salpadding.rlpstream.annotation.RlpCreator
 import com.github.salpadding.rlpstream.annotation.RlpProps
 import org.slf4j.LoggerFactory
 import org.tdf.common.serialize.Codecs
-import org.tdf.common.serialize.Codecs.newRLPCodec
+import org.tdf.common.serialize.Codecs.rlp
 import org.tdf.common.store.PrefixStore
 import org.tdf.common.store.Store
 import org.tdf.common.types.Uint256
@@ -56,8 +56,8 @@ class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract 
         return PrefixStore(
             contractStore,
             VOTE_INFO_KEY,
-            Codecs.HEX,
-            newRLPCodec(VoteInfo::class.java)
+            Codecs.hex,
+            rlp(VoteInfo::class.java)
         )
     }
 

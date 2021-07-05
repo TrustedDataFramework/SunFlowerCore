@@ -24,8 +24,7 @@ class BackendImpl(
     // address -> code
     private val codeStore: Store<HexBytes, HexBytes>,
     private val codeCache: MutableMap<HexBytes, HexBytes> = mutableMapOf(),
-    override var headerCreatedAt: Long? = null,
-    private val _logs: MutableList<LogInfo> = mutableListOf(),
+    override var headerCreatedAt: Long? = null
 ) : Backend {
     // get account without clone
     private fun lookup(address: HexBytes): Account {
@@ -51,7 +50,6 @@ class BackendImpl(
             codeStore,
             mutableMapOf(),
             headerCreatedAt,
-            mutableListOf(),
         )
     }
 
@@ -218,6 +216,4 @@ class BackendImpl(
         modifiedAccounts[address] = a
         codeCache[address] = code
     }
-
-    override fun onEvent(address: HexBytes, topics: List<Uint256>, data: ByteArray) {}
 }

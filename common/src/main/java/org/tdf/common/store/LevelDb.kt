@@ -140,21 +140,18 @@ class LevelDb(
 
     override fun get(k: ByteArray): ByteArray? {
         resetDbLock.readLock().withLock {
-            if (log.isTraceEnabled) log.trace(
-                "~> LevelDbDataSource.get(): " + directory + ", key: " + k.hex()
-            )
+            if (log.isTraceEnabled)
+                log.trace("~> LevelDbDataSource.get(): " + directory + ", key: " + k.hex())
             return try {
                 val ret = db[k]
-                if (log.isTraceEnabled) log.trace(
-                    "<~ LevelDbDataSource.get(): " + directory + ", key: " + k.hex() + ", " + (ret?.size ?: "null")
-                )
+                if (log.isTraceEnabled)
+                    log.trace("<~ LevelDbDataSource.get(): " + directory + ", key: " + k.hex() + ", " + (ret?.size ?: "null"))
                 ret ?: ByteUtil.EMPTY_BYTE_ARRAY
             } catch (e: DBException) {
                 log.warn("Exception. Retrying again...", e)
                 val ret = db[k]
-                if (log.isTraceEnabled) log.trace(
-                    "<~ LevelDbDataSource.get(): " + directory + ", key: " + k.hex() + ", " + (ret?.size ?: "null")
-                )
+                if (log.isTraceEnabled)
+                    log.trace("<~ LevelDbDataSource.get(): " + directory + ", key: " + k.hex() + ", " + (ret?.size ?: "null"))
                 ret ?: ByteUtil.EMPTY_BYTE_ARRAY
             }
         }

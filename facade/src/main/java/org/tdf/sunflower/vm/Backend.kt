@@ -66,7 +66,6 @@ interface Backend : AutoCloseable {
     fun dbRemove(address: HexBytes, key: HexBytes)
     fun getCode(address: HexBytes): HexBytes
     fun setCode(address: HexBytes, code: HexBytes)
-    fun onEvent(address: HexBytes, topics: List<Uint256>, data: ByteArray)
     var staticCall: Boolean
     val parentBackend: Backend?
     fun createChild(): Backend

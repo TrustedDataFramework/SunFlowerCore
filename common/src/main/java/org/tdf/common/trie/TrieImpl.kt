@@ -16,16 +16,15 @@ class TrieImpl<K, V> (
     private var root: Node? = null
 ) : AbstractTrie<K, V>() {
 
-    override fun getFromBytes(key: ByteArray?): V? {
-        require(!(key == null || key.isEmpty())) { "key cannot be null" }
-        if (root == null) return null
-        val v = root!![TrieKey.fromNormal(key)]
+    override fun getFromBytes(key: ByteArray): V? {
+        require(key.isNotEmpty()) { "key cannot be null" }
+        val v = root?.get(TrieKey.fromNormal(key))
         return if (v == null || v.isEmpty()) null else vCodec.decoder.apply(v)
     }
 
-    override fun putBytes(key: ByteArray?, value: ByteArray?) {
-        require(!(key == null || key.isEmpty())) { "key cannot be null" }
-        if (value == null || value.isEmpty()) {
+    override fun putBytes(key: ByteArray, value: ByteArray) {
+        require(key.isNotEmpty()) { "key cannot be null" }
+        if (value.isEmpty()) {
             removeBytes(key)
             return
         }
@@ -36,8 +35,8 @@ class TrieImpl<K, V> (
         root!!.insert(TrieKey.fromNormal(key), value, store)
     }
 
-    override fun removeBytes(key: ByteArray?) {
-        require(!(key == null || key.isEmpty())) { "key cannot be null" }
+    override fun removeBytes(key: ByteArray) {
+        require(key.isNotEmpty()) { "key cannot be null" }
         if (root == null) return
         root = root!!.delete(TrieKey.fromNormal(key), store)
     }
@@ -91,26 +90,16 @@ class TrieImpl<K, V> (
         return dump.pairs
     }
 
-    @get:Throws(RuntimeException::class)
     override val rootHash: HexBytes
         get() {
             if (root == null) return nullHash
-            if (root!!.isDirty || root!!.hash == null) throw RuntimeException("the trie is dirty or root hash is null")
+            if (root!!.isDirty || root!!.hash == null)
+                throw RuntimeException("the trie is dirty or root hash is null")
             return HexBytes.fromBytes(root!!.hash)
         }
     override val isDirty: Boolean
-        get() = root != null && root!!.isDirty
+        get() = root?.isDirty == true
 
-    override fun revert(rootHash: HexBytes): TrieImpl<K, V> {
-        return revert(rootHash, store)
-    }
-
-    override fun revert(): TrieImpl<K, V> {
-        return TrieImpl(
-            store, kCodec, vCodec,
-            null
-        )
-    }
 
     override fun traverseInternal(traverser: BiFunction<ByteArray, ByteArray, Boolean>) {
         traverseTrie { k: TrieKey, n: Node ->

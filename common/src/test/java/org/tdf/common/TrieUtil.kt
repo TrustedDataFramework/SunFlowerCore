@@ -42,13 +42,13 @@ object TrieUtil {
         }
 
         fun build(): Trie<K, V> {
-            return TrieImpl.newInstance(store!!, keyCodec!!, valueCodec!!)
+            return newInstance(store!!, keyCodec!!, valueCodec!!)
         }
     }
 
     @JvmStatic
-    fun <K, V> builder(): Trie.Builder<K, V> {
-        return Trie.Builder()
+    fun <K, V> builder(): Builder<K, V> {
+        return Builder()
     }
 
     @JvmStatic

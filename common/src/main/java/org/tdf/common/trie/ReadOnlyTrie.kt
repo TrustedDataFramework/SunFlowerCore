@@ -8,14 +8,6 @@ class ReadOnlyTrie<K, V> (private val delegate: Trie<K, V>) : Trie<K, V> by dele
         throw UnsupportedOperationException()
     }
 
-    override fun revert(rootHash: HexBytes): Trie<K, V> {
-        throw UnsupportedOperationException()
-    }
-
-    override fun revert(): Trie<K, V> {
-        throw UnsupportedOperationException()
-    }
-
     override fun commit(): HexBytes {
         throw UnsupportedOperationException()
     }

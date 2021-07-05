@@ -204,8 +204,8 @@ open class Start {
             NoDeleteStore(
                 factory.create('o')
             ) { it == null || it.isEmpty() },
-            Codecs.HEX,
-            Codecs.HEX
+            Codecs.hex,
+            Codecs.hex
         )
         val c = AppConfig.get()
         return if (c.isTrieSecure) SecureTrie(ret) else ret
@@ -216,8 +216,8 @@ open class Start {
     open fun contractCodeStore(factory: DatabaseStoreFactory): Store<HexBytes, HexBytes> {
         return StoreWrapper(
             factory.create('c'),
-            Codecs.HEX,
-            Codecs.HEX
+            Codecs.hex,
+            Codecs.hex
         )
     }
 

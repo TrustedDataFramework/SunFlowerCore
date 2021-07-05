@@ -97,8 +97,8 @@ public class Abi extends ArrayList<Abi.Entry> {
             public String internalType;
 
             public static byte[] encodeList(List<Param> inputs, Object... args) {
-                if (args.length > inputs.size())
-                    throw new RuntimeException("Too many arguments: " + args.length + " > " + inputs.size());
+                if (args.length != inputs.size())
+                    throw new RuntimeException("invalid arguments: " + args.length + " != " + inputs.size());
 
                 int staticSize = 0;
                 int dynamicCnt = 0;

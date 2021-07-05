@@ -41,7 +41,6 @@ object WBI {
     }
 
     // the __init section is dropped before inject
-    @JvmStatic
     fun inject(create: Boolean, abi: Abi, i: ModuleInstance, input: HexBytes): InjectResult {
         var function: String? = null
         var entry: Abi.Entry? = null
@@ -157,5 +156,5 @@ object WBI {
         return malloc(instance, WbiType.ADDRESS, address.bytes)
     }
 
-    data class InjectResult(val name: String, val entry: Abi.Entry?, val pointers: LongArray, val executable: Boolean);
+    class InjectResult(val name: String, val entry: Abi.Entry?, val pointers: LongArray, val executable: Boolean);
 }

@@ -46,8 +46,8 @@ public class TrieRollbackTest {
 
         trie = TrieUtil.<String, String>builder()
             .store(database)
-            .keyCodec(Codecs.STRING)
-            .valueCodec(Codecs.STRING)
+            .keyCodec(Codecs.string)
+            .valueCodec(Codecs.string)
             .build();
 
         roots = new ArrayList<>();

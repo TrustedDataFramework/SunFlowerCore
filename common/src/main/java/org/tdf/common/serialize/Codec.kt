@@ -14,7 +14,7 @@ interface Codec<K> {
     companion object {
         @JvmStatic
         fun <K> identity(): Codec<K> {
-            return Codecs.IDENTITY as Codec<K>
+            return Codecs.identity as Codec<K>
         }
 
         fun <K> create(

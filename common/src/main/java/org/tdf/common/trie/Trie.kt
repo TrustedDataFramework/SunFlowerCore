@@ -1,11 +1,8 @@
 package org.tdf.common.trie
 
-import org.tdf.common.serialize.Codec
-import org.tdf.common.serialize.Codec.Companion.identity
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.HashUtil
 import java.util.AbstractMap.SimpleImmutableEntry
-import org.tdf.common.store.ByteArrayMapStore
 import org.tdf.common.store.Store
 import java.util.function.BiFunction
 import java.util.function.Function
@@ -22,23 +19,8 @@ interface Trie<K, V> : Store<K, V> {
      * @return trie with root hash
      * @throws RuntimeException if the root hash not found in the store or rollback failed
      */
-    fun revert(rootHash: HexBytes, store: Store<ByteArray, ByteArray>): Trie<K, V>
+    fun revert(rootHash: HexBytes = this.nullHash, store: Store<ByteArray, ByteArray> = this.store): Trie<K, V>
 
-    /**
-     * rollback to a previous trie
-     *
-     * @param rootHash previous trie's root hash
-     * @return trie with root hash
-     * @throws RuntimeException if the root hash not found in the store or roll back failed
-     */
-    fun revert(rootHash: HexBytes): Trie<K, V>
-
-    /**
-     * rollback to an empty trie
-     *
-     * @return an empty trie
-     */
-    fun revert(): Trie<K, V>
 
     /**
      * commit modifications and build a new trie

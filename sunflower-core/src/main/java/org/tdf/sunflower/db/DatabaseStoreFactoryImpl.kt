@@ -5,7 +5,6 @@ import org.iq80.leveldb.impl.Iq80DBFactory
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.tdf.common.store.*
-import org.tdf.common.store.DBSettings.Companion.newInstance
 import org.tdf.sunflower.DatabaseConfig
 import org.tdf.sunflower.facade.DatabaseStoreFactory
 
@@ -47,9 +46,9 @@ class DatabaseStoreFactoryImpl(config: DatabaseConfig) : DatabaseStoreFactory {
             }
         }
         base.init(
-            newInstance()
-                .withMaxOpenFiles(config.maxOpenFiles)
-                .withMaxThreads(Math.max(1, Runtime.getRuntime().availableProcessors() / 2))
+            DBSettings(
+                config.maxOpenFiles, Math.max(1, Runtime.getRuntime().availableProcessors() / 2)
+            )
         )
         if (config.isReset) {
             base.clear()

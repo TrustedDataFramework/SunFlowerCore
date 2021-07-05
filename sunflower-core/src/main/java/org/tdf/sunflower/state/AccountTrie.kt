@@ -55,8 +55,8 @@ class AccountTrie(
         trieStore = NoDeleteStore(db, ByteUtil::isNullOrZeroArray)
         var trie: Trie<HexBytes, Account> = TrieImpl(
             trieStore,
-            Codecs.newRLPCodec(HexBytes::class.java),
-            Codecs.newRLPCodec(Account::class.java),
+            Codecs.rlp(HexBytes::class.java),
+            Codecs.rlp(Account::class.java),
         )
         if (secure)
             trie = SecureTrie(trie)
@@ -68,8 +68,8 @@ class AccountTrie(
         bios: List<BuiltinContract>,
         builtins: List<BuiltinContract>
     ): HexBytes {
-        this.builtins = builtins.map { Pair(it.address, it) }.toMap()
-        this.bios = bios.map { Pair(it.address, it) }.toMap()
+        this.builtins = builtins.associateBy { it.address }
+        this.bios = bios.associateBy { it.address }
 
         val genesisStates: MutableMap<HexBytes, Account> = alloc.toMutableMap()
 

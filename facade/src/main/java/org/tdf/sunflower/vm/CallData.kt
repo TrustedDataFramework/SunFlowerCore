@@ -46,10 +46,6 @@ data class CallData(
         return this.copy()
     }
 
-    fun withTo(to: HexBytes): CallData {
-        return this.copy(to = to)
-    }
-
     companion object {
         @JvmStatic
         fun empty(): CallData {

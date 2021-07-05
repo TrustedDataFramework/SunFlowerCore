@@ -10,9 +10,10 @@ abstract class AbstractTrie<K, V> : Trie<K, V> {
     abstract val vCodec: Codec<V>
     abstract override val store: Store<ByteArray, ByteArray>
 
-    abstract fun getFromBytes(key: ByteArray?): V?
-    abstract fun putBytes(key: ByteArray?, value: ByteArray?)
-    abstract fun removeBytes(key: ByteArray?)
+    abstract fun getFromBytes(key: ByteArray): V?
+
+    abstract fun putBytes(key: ByteArray, value: ByteArray)
+    abstract fun removeBytes(key: ByteArray)
     override fun set(k: K, v: V) {
         putBytes(kCodec.encoder.apply(k), vCodec.encoder.apply(v))
     }
@@ -28,17 +29,17 @@ abstract class AbstractTrie<K, V> : Trie<K, V> {
     }
 
     override fun traverse(traverser: BiFunction<in K, in V, Boolean>) {
-        traverseInternal { k: ByteArray?, v: ByteArray? ->
+        traverseInternal { k: ByteArray, v: ByteArray ->
             traverser.apply(
-                kCodec.decoder.apply(k!!), vCodec.decoder.apply(v!!)
+                kCodec.decoder.apply(k), vCodec.decoder.apply(v)
             )
         }
     }
 
     override fun traverseValue(traverser: Function<in V, Boolean>) {
-        traverseInternal { k: ByteArray?, v: ByteArray? ->
+        traverseInternal { _: ByteArray, v: ByteArray ->
             traverser.apply(
-                vCodec.decoder.apply(v!!)
+                vCodec.decoder.apply(v)
             )
         }
     }
