@@ -10,7 +10,7 @@ package org.tdf.sunflower.controller
  * "message": "success"
  * }
  */
-class Response<T> private constructor(val code: Int, val data: T, val message: String) {
+data class Response<T> (val code: Int, val data: T, val message: String) {
 
     enum class Code(val code: Int, val message: String) {
         SUCCESS(200, "success"), INTERNAL_ERROR(500, "internal error");

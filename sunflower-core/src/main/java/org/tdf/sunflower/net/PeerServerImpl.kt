@@ -21,7 +21,7 @@ import java.util.stream.Stream
 class PeerServerImpl(// if non-database provided, use memory database
     val peerStore: JsonStore,
     consensusEngine: ConsensusEngine,
-    val properties: Properties
+    properties: Properties
 ) : ChannelListener, PeerServer {
     private val plugins: MutableList<Plugin> = CopyOnWriteArrayList()
     private var config: PeerServerConfig

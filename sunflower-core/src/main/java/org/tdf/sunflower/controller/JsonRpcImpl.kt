@@ -27,15 +27,12 @@ class JsonRpcImpl(
     private val engine: ConsensusEngine
 ) : JsonRpc {
     private fun getByJsonBlockId(id: String): Block? {
-        repo.reader.use { rd ->
-            return if ("earliest".equals(id, ignoreCase = true)) {
-                rd.genesis
-            } else if ("latest".equals(id, ignoreCase = true)) {
-                rd.bestBlock
-            } else if ("pending".equals(id, ignoreCase = true)) {
-                null
-            } else {
-                rd.getCanonicalBlock(id.jsonHex.long)
+        return repo.reader.use {
+            when(id.trim().lowercase()) {
+                "earliest" -> it.genesis
+                "latest" -> it.bestBlock
+                "pending" -> null
+                else -> it.getCanonicalBlock(id.jsonHex.long)
             }
         }
     }
@@ -191,10 +188,10 @@ class JsonRpcImpl(
         val start = System.currentTimeMillis()
         try {
             getBackendByBlockId(bnOrId, true).use { backend ->
-                repo.reader.use { rd ->
+                repo.reader.use {
                     val cd = args.toCallData()
                     val executor = VMExecutor(
-                        rd,
+                        it,
                         backend,
                         args.toCallContext(backend.getNonce(cd.caller)),
                         cd, AppConfig.INSTANCE.blockGasLimit
@@ -207,7 +204,7 @@ class JsonRpcImpl(
         }
     }
 
-    override fun eth_estimateGas(args: CallArguments?): String? {
+    override fun eth_estimateGas(args: CallArguments?): String {
         getBackendByBlockId("latest", false).use { backend ->
             repo.reader.use { rd ->
                 val callData = args!!.toCallData()

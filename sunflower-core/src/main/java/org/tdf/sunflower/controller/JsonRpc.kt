@@ -50,7 +50,7 @@ interface JsonRpc {
 
     fun eth_call(args: CallArguments, bnOrId: String): String
 
-    fun eth_estimateGas(args: CallArguments?): String?
+    fun eth_estimateGas(args: CallArguments?): String
 
     fun eth_getBlockByHash(blockHash: String, fullTx: Boolean?): BlockResult?
 

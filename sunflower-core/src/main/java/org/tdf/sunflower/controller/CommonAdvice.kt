@@ -38,7 +38,7 @@ class CommonAdvice : ResponseBodyAdvice<Any?> {
         selectedConverterType: Class<out HttpMessageConverter<*>>,
         request: ServerHttpRequest,
         response: ServerHttpResponse
-    ): Any? {
+    ): Any {
         return if (body is ByteArray ||
             body is CharSequence ||
             body is Response<*>

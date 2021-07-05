@@ -19,7 +19,6 @@ object Codecs {
 
     val hex = create({ it.bytes }) { HexBytes.fromBytes(it) }
 
-    @JvmStatic
     fun <K> rlp(clazz: Class<K>): Codec<K> {
         return create({ Rlp.encode(it) }) { Rlp.decode(it, clazz) }
     }

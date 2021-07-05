@@ -1,10 +1,8 @@
 package org.tdf.sunflower.net
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.TextNode
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.tdf.common.store.BatchStore
 import org.tdf.common.util.FixedDelayScheduler
 import org.tdf.sunflower.proto.Code
 import org.tdf.sunflower.proto.Disconnect
@@ -14,8 +12,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class PeersManager internal constructor(private val config: PeerServerConfig) : Plugin {
     private val pending: MutableMap<PeerImpl, Boolean> = ConcurrentHashMap()
-    private var server: PeerServerImpl? = null
-
+    private lateinit var server: PeerServerImpl
 
     override fun onMessage(context: ContextImpl, server: PeerServerImpl) {
         val client = server.client
@@ -35,11 +32,10 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
             }
             Code.PEERS -> {
                 if (!config.isEnableDiscovery) return
-
                 Peers.parseFrom(context.msg.body).peersList
-                    .mapNotNull { url: String -> PeerImpl.parse(url) }
-                    .filter { x: PeerImpl -> !cache.contains(x) && x != server.self && x.protocol == server.self.protocol }
-                    .forEach { x: PeerImpl -> pending[x] = true }
+                    .mapNotNull { PeerImpl.parse(it) }
+                    .filter { !cache.contains(it) && it != server.self && it.protocol == server.self.protocol }
+                    .forEach { pending[it] = true }
                 return
             }
             Code.DISCONNECT -> {
@@ -48,9 +44,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
                 context.channel.close()
                 return
             }
-            else -> {
-
-            }
+            else -> return
         }
     }
 
@@ -82,47 +76,48 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
 
     private fun loopPeers(server: PeerServerImpl, client: Client, cache: PeersCache, builder: MessageBuilder) {
         // persist peers
-        (server.peerStore as BatchStore<String, JsonNode>)
-            .putAll(
-                client.peersCache.peers
-                    .map { AbstractMap.SimpleEntry(it.id.toHex(), TextNode(it.encodeURI())) }
-                    .toList()
-            )
+        server.peerStore.putAll(
+            client.peersCache.peers.map { AbstractMap.SimpleEntry(it.id.toHex(), TextNode(it.encodeURI())) }
+        )
+
         lookup()
         cache.half()
         if (!config.isEnableDiscovery)
             return
+
         pending.keys
-            .stream()
-            .filter { x: PeerImpl -> !cache.contains(x) }
-            .limit(config.maxPeers.toLong())
-            .forEach { p: PeerImpl ->
-                log.info("try to connect to peer $p")
-                client.dial(p, builder.buildPing())
+            .filter {!cache.contains(it) }
+            .take(config.maxPeers)
+            .forEach {
+                log.info("try to connect to peer $it")
+                client.dial(it, builder.buildPing())
             }
         pending.clear()
     }
 
     private fun lookup() {
-        val client = server!!.client
+        val client = server.client
         val cache = client.peersCache
         val builder = client.builder
+
         if (!config.isEnableDiscovery) {
             // keep channel to bootstraps and trusted alive
             val keys = cache.bootstraps.keys + cache.trusted.keys
             for (key in keys) {
                 if (cache.contains(key))
                     continue
-                server!!.client.dial(key, builder.buildPing())
+                server.client.dial(key, builder.buildPing())
             }
             return
         }
+
         // query for neighbours when neighbours is not empty
         if (cache.size() > 0) {
             client.broadcast(builder.buildLookup())
             cache.trusted.keys.forEach { client.dial(it, builder.buildPing()) }
             return
         }
+
         // query for peers from bootstraps and trusted when neighbours is empty
         arrayOf(cache.bootstraps, cache.trusted)
             .flatMap { it.keys }

@@ -19,8 +19,8 @@ public class PrefixStoreTest {
         PrefixStore<String, String> p = new PrefixStore<>(
             s,
             HexBytes.fromBytes("aaa".getBytes(StandardCharsets.US_ASCII)),
-            Codecs.rlp(String.class),
-            Codecs.rlp(String.class)
+            Codecs.INSTANCE.rlp(String.class),
+            Codecs.INSTANCE.rlp(String.class)
         );
 
         p.set("aaa", "bbb");
