@@ -53,7 +53,7 @@ class SyncManager(
     private val queue = TreeSet(Block.FAT_COMPARATOR)
     private val accountTrie: StateTrie<HexBytes, Account>
     private val fastSyncHeight: Long
-    private val fastSyncHash: HexBytes
+    private val fastSyncHash: HexBytes?
     private val contractStorageTrie: Trie<HexBytes, HexBytes>
     private val contractCodeStore: Store<HexBytes, HexBytes>
     private val miner: Miner
@@ -508,10 +508,10 @@ class SyncManager(
     init {
         //        this.fastSyncing = syncConfig.getFastSyncHeight() > 0
 //            && repository.getBestHeader().getHeight() == 0;
-        fastSyncHash = syncConfig.fastSyncHashHex
+        fastSyncHash = syncConfig.fastSyncHash
         fastSyncHeight = syncConfig.fastSyncHeight
         this.accountTrie = accountTrie
-        limiters = Limiters(syncConfig.rateLimits)
+        limiters = Limiters(syncConfig.statusLimit, syncConfig.blocksLimit)
         this.contractStorageTrie = contractStorageTrie
         this.contractCodeStore = contractCodeStore
         this.miner = miner

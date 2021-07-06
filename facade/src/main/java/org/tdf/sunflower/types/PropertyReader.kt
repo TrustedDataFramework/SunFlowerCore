@@ -51,6 +51,13 @@ class PropertyReader(val properties: PropertyLike) {
         return k
     }
 
+    fun getAsLong(property: String, defaultValue: Long): Long {
+        val s = properties.getProperty(property)
+        if (s == null || s.trim { it <= ' ' }.isEmpty())
+            return defaultValue
+        return s.trim { it <= ' ' }.toLong()
+    }
+
     fun getAsLong(property: String): Long {
         val s = properties.getProperty(property)
         if (s == null || s.trim { it <= ' ' }

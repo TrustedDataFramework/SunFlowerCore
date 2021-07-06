@@ -50,12 +50,8 @@ class AppConfig(private val properties: PropertyLike) {
         }
     }
 
-    val trieCacheSize: Int
-        get() = reader.getAsInt("sunflower.cache.trie", 32)
-    val p2pTransactionCacheSize: Int
-        get() = reader.getAsInt("sunflower.cache.p2p.transaction", 128)
-    val p2pProposalCacheSize: Int
-        get() = reader.getAsInt("sunflower.cache.p2p.proposal", 128)
+    val p2pTransactionCacheSize: Int = reader.getAsInt("sunflower.cache.p2p.transaction")
+    val p2pProposalCacheSize: Int = reader.getAsInt("sunflower.cache.p2p.proposal")
 
     val blockGasLimit: Long by lazy {
             val objectMapper = MapperUtil.OBJECT_MAPPER
@@ -67,16 +63,10 @@ class AppConfig(private val properties: PropertyLike) {
            if (n["gasLimit"] == null) ConsensusConfig.DEFAULT_BLOCK_GAS_LIMIT else n["gasLimit"].asLong()
         }
 
-    val maxFrames: Long
-        get() = reader.getAsLong("sunflower.vm.max-frames")
-    val maxContractCallDepth: Int
-        get() = reader.getAsInt("sunflower.vm.max-contract-call-depth")
-    val vmGasPrice: Uint256
-        get() = reader.getAsU256("sunflower.vm.gas-price", Uint256.ZERO)
-    val isVmDebug: Boolean
-        get() = reader.getAsBool("sunflower.vm.debug")
-    val isTrieSecure: Boolean
-        get() = reader.getAsBool("sunflower.trie.secure")
+
+    val vmGasPrice: Uint256 = reader.getAsU256("sunflower.vm.gas-price", Uint256.ZERO)
+    val isVmDebug: Boolean = reader.getAsBool("sunflower.vm.debug")
+    val isTrieSecure: Boolean = reader.getAsBool("sunflower.trie.secure")
 
     companion object {
         @JvmStatic

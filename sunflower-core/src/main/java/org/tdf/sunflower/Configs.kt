@@ -24,13 +24,16 @@ object ConsensusProperties : Properties() {
 
 @ConfigurationProperties(prefix = "sunflower.database")
 @Component
-class DatabaseConfig: Properties() {
-    val rd = PropertyReader(PropertiesWrapper(this))
-    val name: String get() = rd.getAsLowerCased("name")
-    val maxOpenFiles: Int get() = rd.getAsInt("max-open-files")
-    val directory: String get() = rd.getAsNonNull("directory")
-    val reset: Boolean get() = rd.getAsBool("reset")
-    val blockStore: String get() = rd.getAsNonNull("block-store")
+class DatabaseConfigProperties: Properties()
+
+@Component
+class DatabaseConfig(properties: DatabaseConfigProperties) {
+    val rd = PropertyReader(PropertiesWrapper(properties))
+    val name: String = rd.getAsLowerCased("name")
+    val maxOpenFiles: Int = rd.getAsInt("max-open-files")
+    val directory: String = rd.getAsNonNull("directory")
+    val reset: Boolean = rd.getAsBool("reset")
+    val blockStore: String = rd.getAsNonNull("block-store")
 }
 
 @ConfigurationProperties(prefix = "sunflower")

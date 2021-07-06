@@ -3,21 +3,25 @@ package org.tdf.sunflower
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.stereotype.Component
 import org.tdf.common.util.HexBytes
+import org.tdf.sunflower.facade.PropertiesWrapper
+import org.tdf.sunflower.types.PropertyReader
+import java.util.*
 
 @ConfigurationProperties(prefix = "sunflower.sync")
 @Component
-data class SyncConfig (
-    var heartRate: Long = 0,
-    var blockWriteRate: Long = 0,
-    var maxPendingBlocks: Long = 0,
-    var maxBlocksTransfer: Int = 0,
-    var pruneHash: String = "",
-    var fastSyncHeight: Long = 0,
-    var lockTimeout: Long = 0,
-    var fastSyncHash: String = "",
-    var maxAccountsTransfer: Int = 0,
-    var rateLimits: Map<String, Double> = mutableMapOf()
-) {
-    val fastSyncHashHex: HexBytes
-        get() = HexBytes.fromHex(fastSyncHash)
+class SyncConfigProperties: Properties()
+
+@Component
+class SyncConfig (properties: SyncConfigProperties)  {
+    val rd = PropertyReader(PropertiesWrapper(properties))
+    val heartRate: Long = rd.getAsLong("heart-rate")
+    val blockWriteRate: Long = rd.getAsLong("block-write-rate")
+    val maxPendingBlocks: Long  = rd.getAsLong("max-pending-blocks")
+    val maxBlocksTransfer: Int  = rd.getAsInt("max-blocks-transfer")
+    val pruneHash: HexBytes? = rd.getAsNonNull("prune-hash").takeIf { it.isNotEmpty() }?.let { HexBytes.fromHex(it) }
+    val fastSyncHeight: Long = rd.getAsLong("fast-sync-height", 0)
+    val fastSyncHash: HexBytes? = rd.getAsNonNull("fast-sync-hash").takeIf { it.isNotEmpty() }?.let { HexBytes.fromHex(it) }
+    val maxAccountsTransfer: Int = rd.getAsInt("max-accounts-transfer")
+    val statusLimit: Long = rd.getAsLong("rate-limits.status", 0)
+    val blocksLimit: Long = rd.getAsLong("rate-limits.get-blocks", 0)
 }
