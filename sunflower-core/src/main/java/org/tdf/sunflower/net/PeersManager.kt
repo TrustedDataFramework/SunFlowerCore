@@ -31,7 +31,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
                 return
             }
             Code.PEERS -> {
-                if (!config.isEnableDiscovery) return
+                if (!config.discovery) return
                 Peers.parseFrom(context.msg.body).peersList
                     .mapNotNull { PeerImpl.parse(it) }
                     .filter { !cache.contains(it) && it != server.self && it.protocol == server.self.protocol }
@@ -82,7 +82,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
 
         lookup()
         cache.half()
-        if (!config.isEnableDiscovery)
+        if (!config.discovery)
             return
 
         pending.keys
@@ -100,7 +100,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
         val cache = client.peersCache
         val builder = client.builder
 
-        if (!config.isEnableDiscovery) {
+        if (!config.discovery) {
             // keep channel to bootstraps and trusted alive
             val keys = cache.bootstraps.keys + cache.trusted.keys
             for (key in keys) {

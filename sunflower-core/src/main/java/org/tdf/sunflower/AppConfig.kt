@@ -78,9 +78,6 @@ class AppConfig(private val properties: PropertyLike) {
     val isTrieSecure: Boolean
         get() = reader.getAsBool("sunflower.trie.secure")
 
-    val dbType: String
-        get() = reader.getAsLowerCased("sunflower.database.block-store").takeIf { it.isNotEmpty() } ?: "kv"
-
     companion object {
         @JvmStatic
         fun get(): AppConfig {

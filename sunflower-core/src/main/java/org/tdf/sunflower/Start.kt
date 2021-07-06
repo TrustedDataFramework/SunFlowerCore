@@ -50,11 +50,11 @@ import java.util.*
 open class Start {
     @Bean
     open fun sunflowerRepository(
+        cfg: DatabaseConfig,
         context: ApplicationContext,
         accountTrie: AccountTrie,
     ): RepositoryServiceImpl {
-        val type = AppConfig.get().dbType
-        when (type) {
+        when (val type = cfg.blockStore) {
             "rdbms" -> {
                 throw UnsupportedOperationException()
             }
@@ -65,8 +65,8 @@ open class Start {
                     kv
                 )
             }
+            else -> throw RuntimeException("unknown block store type: $type")
         }
-        throw RuntimeException("unknown block store type: $type")
     }
 
     @Bean

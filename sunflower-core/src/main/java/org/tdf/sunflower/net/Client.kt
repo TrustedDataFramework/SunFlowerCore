@@ -92,7 +92,7 @@ class Client(
     }
 
     override fun onConnect(remote: PeerImpl, channel: Channel) {
-        if (!config.isEnableDiscovery &&
+        if (!config.discovery &&
             !peersCache.bootstraps.containsKey(remote) &&
             !peersCache.trusted.containsKey(remote)
         ) {

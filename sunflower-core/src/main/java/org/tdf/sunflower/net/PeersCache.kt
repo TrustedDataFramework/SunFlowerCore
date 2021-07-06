@@ -124,7 +124,7 @@ class PeersCache(
         // trusted peer will not be blocked
         if (trusted.containsKey(peer)) return
         // if peer discovery is disabled, bootstrap peer are treat as trusted peer
-        if (!config.isEnableDiscovery && bootstraps.containsKey(peer)) return
+        if (!config.discovery && bootstraps.containsKey(peer)) return
         // if the peer had been blocked before,
         // reset the score of this peer as EVIL_SCORE
         if (blocked.containsKey(peer)) {

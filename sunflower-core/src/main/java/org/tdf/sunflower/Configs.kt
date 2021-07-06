@@ -2,6 +2,8 @@ package org.tdf.sunflower
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.stereotype.Component
+import org.tdf.sunflower.facade.PropertiesWrapper
+import org.tdf.sunflower.types.PropertyReader
 import java.util.*
 
 object ApplicationConstants {
@@ -22,13 +24,14 @@ object ConsensusProperties : Properties() {
 
 @ConfigurationProperties(prefix = "sunflower.database")
 @Component
-data class DatabaseConfig(
-    var name: String = "",
-    var maxOpenFiles: Int = 0,
-    var directory: String = "",
-    var isReset: Boolean = false,
-    var blockStore: String = "",
-)
+class DatabaseConfig: Properties() {
+    val rd = PropertyReader(PropertiesWrapper(this))
+    val name: String get() = rd.getAsLowerCased("name")
+    val maxOpenFiles: Int get() = rd.getAsInt("max-open-files")
+    val directory: String get() = rd.getAsNonNull("directory")
+    val reset: Boolean get() = rd.getAsBool("reset")
+    val blockStore: String get() = rd.getAsNonNull("block-store")
+}
 
 @ConfigurationProperties(prefix = "sunflower")
 @Component

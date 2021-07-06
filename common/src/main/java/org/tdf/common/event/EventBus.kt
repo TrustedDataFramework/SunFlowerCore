@@ -21,13 +21,12 @@ class EventBus(factory: ThreadFactory) {
     </T> */
     fun <T> subscribe(eventType: Class<T>, listener: Consumer<in T>) {
         synchronized(listenersLock) {
-
             // copy when write, avoid concurrent modifications
             val copied = copy(listeners)
-            copied.putIfAbsent(eventType, mutableListOf())
-            copied[eventType]!!.add(
-                listener as Consumer<Any>
-            )
+            val li: MutableList<Consumer<Any>> = copied[eventType] ?: mutableListOf()
+
+            li.add(listener as Consumer<Any>)
+            copied[eventType] = li
             listeners = copied
         }
     }

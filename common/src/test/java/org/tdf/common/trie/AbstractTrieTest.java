@@ -57,10 +57,12 @@ public abstract class AbstractTrieTest {
         Arrays.asList("test", "toaster", "toasting", "slow", "slowly")
             .forEach(x -> trie.set(x.getBytes(), x.getBytes()));
 
-        Set<byte[]> keys = trie.stream()
+        Set<byte[]> keys = trie.entries()
+            .stream()
             .map(Map.Entry::getKey)
             .collect(Collectors.toCollection(ByteArraySet::new));
-        Set<byte[]> values = trie.stream()
+        Set<byte[]> values = trie.entries()
+            .stream()
             .map(Map.Entry::getValue)
             .collect(Collectors.toCollection(ByteArraySet::new));
         for (String s : Arrays.asList("test", "toaster", "toasting", "slow", "slowly")

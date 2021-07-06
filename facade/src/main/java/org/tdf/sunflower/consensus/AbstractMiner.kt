@@ -21,7 +21,7 @@ abstract class AbstractMiner(
     protected val accountTrie: StateTrie<HexBytes, Account>,
     protected val eventBus: EventBus,
     private val config: ConsensusConfig,
-    protected val pool: TransactionPool
+    private val pool: TransactionPool
 ) : Miner {
 
     protected abstract fun createCoinBase(height: Long): Transaction

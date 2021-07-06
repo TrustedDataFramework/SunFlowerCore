@@ -1,9 +1,10 @@
 package org.tdf.common.trie
 
+import org.tdf.common.store.ReadonlyStore
 import org.tdf.common.store.Store
 import org.tdf.common.util.HexBytes
 
-class ReadOnlyTrie<K, V> (private val delegate: Trie<K, V>) : Trie<K, V> by delegate {
+class ReadOnlyTrie<K, V> (private val delegate: Trie<K, V>) : Trie<K, V> by delegate, ReadonlyStore<K, V> {
     override fun revert(rootHash: HexBytes, store: Store<ByteArray, ByteArray>): Trie<K, V> {
         throw UnsupportedOperationException()
     }

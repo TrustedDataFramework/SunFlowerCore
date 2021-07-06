@@ -66,6 +66,17 @@ class PropertyReader(val properties: PropertyLike) {
         return minerCoinBase
     }
 
+    fun getAsList(prefix: String): List<String> {
+        val r = mutableListOf<String>()
+        var i = 0
+        while (true) {
+            val v = properties.getProperty("$prefix.$i") ?: break
+            r.add(v)
+            i++
+        }
+        return r
+    }
+
     private fun String.hex(): HexBytes {
         return HexBytes.fromHex(this)
     }

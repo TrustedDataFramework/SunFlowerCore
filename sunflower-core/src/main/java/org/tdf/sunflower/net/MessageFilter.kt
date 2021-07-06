@@ -86,13 +86,6 @@ class MessageFilter internal constructor(private val config: PeerServerConfig, c
 
         // filter invalid signatures
 
-        // reject peer in black list and not in whitelist
-        if (config.isBlocked(context.remote.id)) {
-            log.error("the peer " + context.remote + " has been blocked")
-            context.disconnect()
-            return
-        }
-
         // reject blocked peer
         if (server.client.peersCache.hasBlocked(context.remote)) {
             log.error("the peer " + context.remote + " has been blocked")

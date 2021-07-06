@@ -69,21 +69,21 @@ interface Trie<K, V> : Store<K, V> {
     val isDirty: Boolean
 
     val size: Int get() {
-        val count = IntArray(1)
-        traverseValue { v: V ->
-            count[0]++
+        var c = 0
+        traverseValue {
+            c++
             true
         }
-        return count[0]
+        return c
     }
 
-    fun stream(): Stream<Map.Entry<K, V>> {
-        val builder: Stream.Builder<Map.Entry<K, V>> = Stream.builder()
+    fun entries(): List<Map.Entry<K, V>> {
+        val r: MutableList<Map.Entry<K, V>> = mutableListOf()
         traverse { k: K, v: V ->
-            builder.accept(SimpleImmutableEntry(k, v))
+            r.add(SimpleImmutableEntry(k, v))
             true
         }
-        return builder.build()
+        return r
     }
 
     fun traverse(traverser: BiFunction<in K, in V, Boolean>)

@@ -8,7 +8,9 @@ import org.tdf.common.crypto.ECKey
 import org.tdf.common.store.JsonStore
 import org.tdf.sunflower.facade.ConsensusEngine
 import org.tdf.sunflower.facade.PeerServerListener
+import org.tdf.sunflower.facade.PropertiesWrapper
 import org.tdf.sunflower.proto.Message
+import org.tdf.sunflower.types.PropertyReader
 import org.tdf.sunflower.util.MapperUtil
 import java.io.IOException
 import java.net.URI
@@ -50,7 +52,7 @@ class PeerServerImpl(// if non-database provided, use memory database
         client.peersCache.channels
             .filter { ch: Channel -> ch.remote != null }
             .forEach { ch: Channel ->
-                builder.buildAnother(message, config.maxTTL, ch.remote!!)
+                builder.buildAnother(message, config.maxTTL.toLong(), ch.remote!!)
                     .forEach { ch.write(it) }
             }
     }
@@ -93,29 +95,14 @@ class PeerServerImpl(// if non-database provided, use memory database
     }
 
     init {
-        val mapper = MapperUtil.PROPS_MAPPER
         try {
-            config = mapper.readPropertiesAs(properties, PeerServerConfig::class.java)
-            if (config.maxTTL <= 0)
-                config.maxTTL = PeerServerConfig.DEFAULT_MAX_TTL
-            if (config.maxPeers <= 0)
-                config.maxPeers = PeerServerConfig.DEFAULT_MAX_PEERS
+            config = PeerServerConfig(PropertyReader(PropertiesWrapper(properties)))
         } catch (e: Exception) {
-            var schema = ""
-            try {
-                // create a example properties for error log
-                schema = mapper.writeValueAsProperties(
-                    PeerServerConfig.builder()
-                        .bootstraps(listOf(URI("node://localhost:9955")))
-                        .build()
-                ).toString()
-            } catch (ignored: Exception) {
-            }
             throw RuntimeException(
-                "load properties failed :$properties expecting $schema"
+                "load properties failed"
             )
         }
-        if (!config.isEnableDiscovery &&
+        if (!config.discovery &&
             Stream.of(config.bootstraps, config.trusted)
                 .filter { obj: List<URI?>? -> Objects.nonNull(obj) }
                 .map { obj: List<URI?> -> obj.size }
@@ -128,7 +115,7 @@ class PeerServerImpl(// if non-database provided, use memory database
         }
         try {
             // find valid private key from 1.properties 2.persist 3. generate
-            val sk = config.privateKey?.bytes ?: ECKey().privKeyBytes
+            val sk = config.privateKey.bytes
             self = PeerImpl.createSelf(config.address, sk)
         } catch (e: Exception) {
             e.printStackTrace()

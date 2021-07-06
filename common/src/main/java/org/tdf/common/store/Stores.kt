@@ -48,7 +48,15 @@ class MemoryDatabaseStore : ByteArrayMapStore<ByteArray>(), DatabaseStore {
     }
 }
 
-class ReadOnlyStore<K, V> private constructor(private val delegate: Store<K, V>) : Store<K, V> by delegate {
+interface ReadonlyStore<K, V>: Store<K, V> {
+    companion object {
+        fun <K, V> of(delegate: Store<K, V>): Store<K, V> {
+            return if (delegate is ReadonlyStore) delegate else ReadOnlyStoreImpl(delegate)
+        }
+    }
+}
+
+internal class ReadOnlyStoreImpl<K, V> (private val delegate: Store<K, V>) : Store<K, V> by delegate, ReadonlyStore<K, V> {
     override fun set(k: K, v: V) {
         throw UnsupportedOperationException(READ_ONLY_TIP)
     }
@@ -63,10 +71,5 @@ class ReadOnlyStore<K, V> private constructor(private val delegate: Store<K, V>)
 
     companion object {
         private const val READ_ONLY_TIP = "the store is read only"
-        fun <K, V> of(delegate: Store<K, V>): Store<K, V> {
-            return if (delegate is ReadOnlyStore<*, *> || delegate is ReadOnlyTrie<*, *>) delegate else ReadOnlyStore(
-                delegate
-            )
-        }
     }
 }

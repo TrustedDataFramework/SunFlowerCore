@@ -34,7 +34,6 @@ class DatabaseStoreFactoryImpl(config: DatabaseConfig) : DatabaseStoreFactory {
     }
 
     init {
-        if (config.name.isEmpty()) config.name = ""
         this.config = config
         when (config.name.trim { it <= ' ' }.lowercase()) {
             "leveldb-jni", "leveldb" -> base = LevelDb(JniDBFactory.factory, config.directory)
@@ -50,7 +49,7 @@ class DatabaseStoreFactoryImpl(config: DatabaseConfig) : DatabaseStoreFactory {
                 config.maxOpenFiles, Math.max(1, Runtime.getRuntime().availableProcessors() / 2)
             )
         )
-        if (config.isReset) {
+        if (config.reset) {
             base.clear()
         }
     }

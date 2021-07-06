@@ -65,18 +65,21 @@ data class PeerImpl(
             }
         }
 
+        private fun URI.protocol(): String {
+            return this.scheme ?: throw RuntimeException("missing protocol name $this, e.g. enode://192.168.1.1:7010")
+        }
+
+        private fun URI.port(): Int {
+            return this.port.takeIf { it > 0 } ?: throw RuntimeException("missing port number $this")
+        }
+
         // parse peer from uri like protocol://id@host:port
         // the id should be an ec public key
         @SneakyThrows
         private fun parseInternal(url: String): PeerImpl {
             val u = URI(url.trim { it <= ' ' })
-            val scheme = u.scheme
-            val protocol = if (scheme == null || scheme == "") PeerServerConfig.DEFAULT_PROTOCOL else scheme
-            var port = u.port
-
-            if (port <= 0) {
-                port = PeerServerConfig.DEFAULT_PORT
-            }
+            val protocol = u.protocol()
+            val port = u.port()
 
             val host = u.host
             if (u.rawUserInfo == null || u.rawUserInfo.isEmpty()) throw RuntimeException("parse peer failed: missing public key")
@@ -92,14 +95,12 @@ data class PeerImpl(
         // create self as peer from input
         // if private key is missing, generate key automatically
         fun createSelf(u: URI, privateKey: ByteArray = ECKey().privKeyBytes): PeerImpl {
-            if (u.rawUserInfo != null && !u.rawUserInfo.isEmpty()) {
+            if (u.rawUserInfo != null && u.rawUserInfo.isNotEmpty()) {
                 throw RuntimeException(u.userInfo + " should be empty")
             }
-            val scheme = u.scheme
-            val protocol = if (scheme == null || scheme == "") PeerServerConfig.DEFAULT_PROTOCOL else scheme
-            var port = u.port
+            val protocol = u.protocol()
+            val port = u.port()
             val host = if (u.host == null || u.host.trim { it <= ' ' } == "") "localhost" else u.host
-            port = if (port <= 0) PeerServerConfig.DEFAULT_PORT else port
             val id = Address.fromPrivate(privateKey)
             return PeerImpl(privateKey, protocol, host, port, id)
         }

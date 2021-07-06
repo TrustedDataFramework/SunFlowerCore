@@ -4,7 +4,8 @@ import org.tdf.common.util.HexBytes
 import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.serialize.Codec
 import org.tdf.common.store.ByteArrayMapStore
-import org.tdf.common.store.ReadOnlyStore
+import org.tdf.common.store.ReadOnlyStoreImpl
+import org.tdf.common.store.ReadonlyStore
 import org.tdf.common.store.Store
 import java.util.function.BiFunction
 
@@ -67,7 +68,7 @@ class TrieImpl<K, V> (
         if (v == null || v.isEmpty()) throw RuntimeException("rollback failed, root hash not exists")
         return TrieImpl(
             store, kCodec, vCodec,
-            Node.fromRootHash(rootHash.bytes, ReadOnlyStore.of(store))
+            Node.fromRootHash(rootHash.bytes, ReadonlyStore.of(store))
         )
     }
 
