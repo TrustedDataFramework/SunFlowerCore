@@ -36,6 +36,7 @@ import org.tdf.sunflower.pool.TransactionPoolImpl
 import org.tdf.sunflower.service.RepositoryKVImpl
 import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.types.ConsensusConfig
+import org.tdf.sunflower.types.PropertyReader
 import org.tdf.sunflower.util.FileUtils
 import org.tdf.sunflower.util.MapperUtil
 import org.tdf.sunflower.vm.VMExecutor
@@ -121,10 +122,8 @@ open class Start {
         @Qualifier("contractStorageTrie") contractStorageTrie: Trie<HexBytes?, HexBytes?>?,
         @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes?, HexBytes?>?
     ): ConsensusEngine {
-        var name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME)
-        name = name ?: ""
-        val engine: ConsensusEngine
-        engine = when (name.trim { it <= ' ' }.lowercase()) {
+        val name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME) ?: "poa"
+        val engine: ConsensusEngine = when (name.trim { it <= ' ' }.lowercase()) {
             ApplicationConstants.CONSENSUS_NONE -> {
                 log.warn("none consensus engine selected, please ensure you are in test mode")
                 AbstractConsensusEngine.NONE
@@ -147,7 +146,7 @@ open class Start {
                 PoA()
             }
         }
-        injectApplicationContext(context, engine as AbstractConsensusEngine)
+        inject(context, engine as AbstractConsensusEngine)
         engine.init(ConsensusConfig(consensusProperties))
         val nonNullFields = arrayOf("Miner", "Validator", "AccountTrie", "GenesisBlock", "PeerServerListener")
         for (field in nonNullFields) {
@@ -158,11 +157,10 @@ open class Start {
         }
 
         // init accountTrie and genesis block
-        val abstractEngine = engine
-        val root = accountTrie.init(abstractEngine.alloc, abstractEngine.bios, abstractEngine.builtins)
+        val root = accountTrie.init(engine.alloc, engine.bios, engine.builtins)
         val g = engine.genesisBlock
         g.stateRoot = root
-        repoSrv.writer.use { writer -> writer.saveGenesis(g) }
+        repoSrv.writer.use { it.saveGenesis(g) }
         transactionPool.setEngine(engine)
         return engine
     }
@@ -174,16 +172,16 @@ open class Start {
         engine: ConsensusEngine,
         factory: DatabaseStoreFactory
     ): PeerServer {
-        var name = properties.getProperty("name")
-        name = name ?: ""
-        if (name.trim { it <= ' ' }.toLowerCase() == "none") {
+        val rd = PropertyReader(PropertiesWrapper(properties))
+        if (rd.getAsLowerCased("name") == "none") {
             return PeerServer.NONE
         }
-        var persist = properties.getProperty("persist")
-        persist = persist?.trim { it <= ' ' }?.toLowerCase() ?: ""
-        val store = if ("true" == persist && "memory" != factory.name) JsonStore(
+
+        val persist = rd.getAsBool("persist")
+        val store = if (persist && "memory" != factory.name) JsonStore(
             Paths.get(factory.directory, "peers.json").toString(), MAPPER
         ) else JsonStore("\$memory", MAPPER)
+
         val peerServer: PeerServer = PeerServerImpl(store, engine, properties)
         peerServer.addListeners(engine.peerServerListener)
         peerServer.start()
@@ -222,7 +220,7 @@ open class Start {
     }
 
     // inject application context into consensus engine
-    private fun injectApplicationContext(
+    private fun inject(
         context: ApplicationContext,
         engine: AbstractConsensusEngine
     ) {
