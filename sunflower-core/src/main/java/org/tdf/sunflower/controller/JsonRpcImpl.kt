@@ -337,17 +337,17 @@ class JsonRpcImpl(
         )
 
         // TODO: estimate size
-        val txes: MutableList<Any> = ArrayList()
+        val txs: MutableList<Any> = ArrayList()
         if (fullTx) {
             for (i in block.body.indices) {
-                txes.add(TransactionResultDTO.create(block.header, i, block.body[i]))
+                txs.add(TransactionResultDTO.create(block.header, i, block.body[i]))
             }
         } else {
             for (tx in block.body) {
-                txes.add(tx.hash.jsonHex)
+                txs.add(tx.hash.jsonHex)
             }
         }
-        br.transactions = txes.toTypedArray()
+        br.transactions = txs.toTypedArray()
         val ul = emptyList<String>()
         br.uncles = ul.toTypedArray()
         return br

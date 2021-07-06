@@ -2,13 +2,11 @@ package org.tdf.sunflower.types;
 
 import com.github.salpadding.rlpstream.*;
 import com.github.salpadding.rlpstream.annotation.RlpCreator;
-import lombok.Builder;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.tdf.common.crypto.ECDSASignature;
 import org.tdf.common.crypto.ECKey;
 import org.tdf.common.serialize.Codec;
-import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.trie.Trie;
 import org.tdf.common.trie.TrieImpl;
 import org.tdf.common.types.Uint256;
@@ -48,10 +46,6 @@ public class Transaction implements RlpWritable {
 
     private static final Logger log = org.slf4j.LoggerFactory.getLogger("tx");
 
-    public static TransactionBuilder builder() {
-        return new TransactionBuilder();
-    }
-
     public static HexBytes calcTxTrie(List<Transaction> transactions) {
         Trie<byte[], byte[]> txsState = new TrieImpl<>();
 
@@ -67,13 +61,14 @@ public class Transaction implements RlpWritable {
 
     public static final int HASH_LENGTH = 32;
     public static final int ADDRESS_LENGTH = 20;
-    private static final BigInteger DEFAULT_GAS_PRICE = new BigInteger("10000000000000");
-    private static final BigInteger DEFAULT_BALANCE_GAS = new BigInteger("21000");
+
     /**
      * Since EIP-155, we could encode chainId in V
      */
-    private static final int CHAIN_ID_INC = 35;
-    private static final int LOWER_REAL_V = 27;
+    static final int CHAIN_ID_INC = 35;
+    static final int LOWER_REAL_V = 27;
+
+
     protected byte[] sendAddress;
     /* Tx in encoded form */
     protected byte[] rlpEncoded;
@@ -138,15 +133,6 @@ public class Transaction implements RlpWritable {
         parsed = true;
     }
 
-    /**
-     * Warning: this transaction would not be protected by replay-attack protection mechanism
-     * Use {@link Transaction#Transaction(byte[], byte[], byte[], byte[], byte[], byte[], Integer)} constructor instead
-     * and specify the desired chainID
-     */
-    @Builder
-    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
-        this(nonce, gasPrice, gasLimit, receiveAddress, value, data, null);
-    }
 
     public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
                        byte[] r, byte[] s, byte v, Integer chainId) {
@@ -165,43 +151,8 @@ public class Transaction implements RlpWritable {
         this(nonce, gasPrice, gasLimit, receiveAddress, value, data, r, s, v, null);
     }
 
-    /**
-     * @deprecated Use {@link Transaction#createDefault(String, BigInteger, BigInteger, Integer)} instead
-     */
-    @Deprecated
-    public static Transaction createDefault(String to, BigInteger amount, BigInteger nonce) {
-        return create(to, amount, nonce, DEFAULT_GAS_PRICE, DEFAULT_BALANCE_GAS);
-    }
 
-    public static Transaction createDefault(String to, BigInteger amount, BigInteger nonce, Integer chainId) {
-        return create(to, amount, nonce, DEFAULT_GAS_PRICE, DEFAULT_BALANCE_GAS, chainId);
-    }
-
-    /**
-     * @deprecated use {@link Transaction#create(String, BigInteger, BigInteger, BigInteger, BigInteger, Integer)} instead
-     */
-    @Deprecated
-    public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit) {
-        return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
-                BigIntegers.asUnsignedByteArray(gasPrice),
-                BigIntegers.asUnsignedByteArray(gasLimit),
-                HexBytes.decode(to),
-                BigIntegers.asUnsignedByteArray(amount),
-                null);
-    }
-
-    public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice,
-                                     BigInteger gasLimit, Integer chainId) {
-        return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
-                BigIntegers.asUnsignedByteArray(gasPrice),
-                BigIntegers.asUnsignedByteArray(gasLimit),
-                HexBytes.decode(to),
-                BigIntegers.asUnsignedByteArray(amount),
-                null,
-                chainId);
-    }
-
-    private Integer extractChainIdFromRawSignature(BigInteger bv, byte[] r, byte[] s) {
+    static Integer extractChainIdFromRawSignature(BigInteger bv, byte[] r, byte[] s) {
         if (r == null && s == null) return bv.intValue();  // EIP 86
         if (bv.bitLength() > 31)
             return Integer.MAX_VALUE; // chainId is limited to 31 bits, longer are not valid for now
@@ -210,7 +161,7 @@ public class Transaction implements RlpWritable {
         return (int) ((v - CHAIN_ID_INC) / 2);
     }
 
-    private byte getRealV(BigInteger bv) {
+    static byte getRealV(BigInteger bv) {
         if (bv.bitLength() > 31) return 0; // chainId is limited to 31 bits, longer are not valid for now
         long v = bv.longValue();
         if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) return (byte) v;
@@ -459,35 +410,7 @@ public class Transaction implements RlpWritable {
         this.rlpEncoded = null;
     }
 
-    @Override
-    public String toString() {
-        return toString(Integer.MAX_VALUE);
-    }
 
-    public String toString(int maxDataSize) {
-        rlpParse();
-        String dataS;
-        if (data == null) {
-            dataS = "";
-        } else if (data.length < maxDataSize) {
-            dataS = ByteUtil.toHexString(data);
-        } else {
-            dataS = ByteUtil.toHexString(Arrays.copyOfRange(data, 0, maxDataSize)) +
-                    "... (" + data.length + " bytes)";
-        }
-        return "TransactionData [" + "hash=" + ByteUtil.toHexString(hash) +
-                "  nonce=" + ByteUtil.toHexString(nonce) +
-                ", gasPrice=" + ByteUtil.toHexString(gasPrice) +
-                ", gas=" + ByteUtil.toHexString(gasLimit) +
-                ", receiveAddress=" + ByteUtil.toHexString(receiveAddress) +
-                ", sendAddress=" + ByteUtil.toHexString(getSender()) +
-                ", value=" + ByteUtil.toHexString(value) +
-                ", data=" + dataS +
-                ", signatureV=" + (signature == null ? "" : signature.v) +
-                ", signatureR=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.r))) +
-                ", signatureS=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.s))) +
-                "]";
-    }
 
     /**
      * For signatures you have to keep also
@@ -563,86 +486,5 @@ public class Transaction implements RlpWritable {
         this.hash = HashUtil.sha3(rlpEncoded);
 
         return rlpEncoded;
-    }
-
-    @Override
-    public int hashCode() {
-
-        byte[] hash = this.getHash();
-        int hashCode = 0;
-
-        for (int i = 0; i < hash.length; ++i) {
-            hashCode += hash[i] * i;
-        }
-
-        return hashCode;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-
-        if (!(obj instanceof Transaction)) return false;
-        Transaction tx = (Transaction) obj;
-
-        return tx.hashCode() == this.hashCode();
-    }
-
-    @Override
-    protected Transaction clone() {
-        return new Transaction(getEncoded());
-    }
-
-    public static void main(String[] args) {
-
-    }
-
-    public static class TransactionBuilder {
-        private byte[] nonce;
-        private byte[] gasPrice;
-        private byte[] gasLimit;
-        private byte[] receiveAddress;
-        private byte[] value;
-        private byte[] data;
-
-        TransactionBuilder() {
-        }
-
-        public Transaction.TransactionBuilder nonce(byte[] nonce) {
-            this.nonce = nonce;
-            return this;
-        }
-
-        public Transaction.TransactionBuilder gasPrice(byte[] gasPrice) {
-            this.gasPrice = gasPrice;
-            return this;
-        }
-
-        public Transaction.TransactionBuilder gasLimit(byte[] gasLimit) {
-            this.gasLimit = gasLimit;
-            return this;
-        }
-
-        public Transaction.TransactionBuilder receiveAddress(byte[] receiveAddress) {
-            this.receiveAddress = receiveAddress;
-            return this;
-        }
-
-        public Transaction.TransactionBuilder value(byte[] value) {
-            this.value = value;
-            return this;
-        }
-
-        public Transaction.TransactionBuilder data(byte[] data) {
-            this.data = data;
-            return this;
-        }
-
-        public Transaction build() {
-            return new Transaction(nonce, gasPrice, gasLimit, receiveAddress, value, data);
-        }
-
-        public String toString() {
-            return "Transaction.TransactionBuilder(nonce=" + Arrays.toString(this.nonce) + ", gasPrice=" + Arrays.toString(this.gasPrice) + ", gasLimit=" + Arrays.toString(this.gasLimit) + ", receiveAddress=" + Arrays.toString(this.receiveAddress) + ", value=" + Arrays.toString(this.value) + ", data=" + Arrays.toString(this.data) + ")";
-        }
     }
 }
