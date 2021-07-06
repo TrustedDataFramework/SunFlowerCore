@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import org.tdf.sunflower.types.AbstractGenesis
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.types.Block
-import org.tdf.sunflower.types.Header
+import org.tdf.sunflower.types.HeaderImpl
 
 internal fun String.hex(): HexBytes {
     return HexBytes.fromHex(this)
@@ -21,10 +21,10 @@ class Genesis(parsed: JsonNode) : AbstractGenesis(parsed) {
     override val block: Block
         get() {
             if (nbits.size() != 32) throw RuntimeException("invalid nbits size should be 32")
-            val h = Header.builder()
-                .hashPrev(parentHash)
-                .createdAt(timestamp)
-                .build()
+            val h = HeaderImpl(
+                hashPrev = parentHash,
+                createdAt = timestamp
+            )
             return Block(h)
         }
 }

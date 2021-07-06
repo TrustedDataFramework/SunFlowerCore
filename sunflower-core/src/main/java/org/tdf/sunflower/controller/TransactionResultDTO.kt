@@ -22,15 +22,15 @@ data class TransactionResultDTO(
         fun create(h: Header, index: Int, tx: Transaction): TransactionResultDTO {
             return TransactionResultDTO(
                 tx.hash.jsonHex,
-                tx.nonce.jsonHexNum,
+                tx.nonce.jsonHex,
                 h.hash.jsonHex,
                 h.height.jsonHex,
                 index.jsonHex,
                 tx.sender.jsonHex,
                 tx.receiveAddress.jsonHex,
-                tx.gasLimit.jsonHexNum,
-                tx.gasPrice.jsonHexNum,
-                tx.value.jsonHexNum,
+                tx.gasLimit.jsonHex,
+                tx.gasPrice.jsonHex,
+                tx.value.jsonHex,
                 tx.data.jsonHex
             )
         }

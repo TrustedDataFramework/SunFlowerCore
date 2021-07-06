@@ -8,10 +8,7 @@ import org.tdf.common.store.StoreWrapper
 import org.tdf.common.util.FastByteComparisons
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.events.NewBestBlock
-import org.tdf.sunflower.types.Block
-import org.tdf.sunflower.types.Header
-import org.tdf.sunflower.types.Transaction
-import org.tdf.sunflower.types.TransactionInfo
+import org.tdf.sunflower.types.*
 import java.util.*
 
 class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
@@ -46,9 +43,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     override fun getBlockFromHeader(header: Header): Block {
         val txHashes = transactionsRoot[header.transactionsRoot]
             ?: throw RuntimeException("transactions of header $header not found")
-        val ret = Block(header)
-        ret.body = txHashes.map { transactionsStore[it]!! }
-        return ret
+        return Block(header, txHashes.map { transactionsStore[it]!! })
     }
 
     override fun containsHeader(hash: HexBytes): Boolean {
@@ -150,20 +145,20 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
         for (i in block.body.indices) {
             val t = block.body[i]
             // save transaction
-            transactionsStore[t.hashHex] = t
+            transactionsStore[t.hash] = t
             val info = infos[i]
-            val found = transactionInfos[t.hashHex]
+            val found = transactionInfos[t.hash]
             val founds: MutableList<TransactionInfo> = found?.toMutableList() ?: mutableListOf()
             if (founds.none
                 { FastByteComparisons.equal(it.blockHash, info.blockHash) }
             ) {
                 founds.add(info)
             }
-            transactionInfos[t.hashHex] = founds.toTypedArray()
+            transactionInfos[t.hash] = founds.toTypedArray()
         }
 
         // save transaction root -> tx hashes
-        val txHashes: Array<HexBytes> = block.body.map { it.hashHex }.toTypedArray()
+        val txHashes: Array<HexBytes> = block.body.map { it.hash }.toTypedArray()
         transactionsRoot[block.transactionsRoot] = txHashes
 
         // save header index
@@ -199,7 +194,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
         transactionsStore = StoreWrapper<HexBytes, Transaction>(
             factory.create('b'),
             Codecs.hex,
-            Transaction.TransactionCodec()
+            Transaction.Companion
         )
 
         headerStore = StoreWrapper<HexBytes, Header>(

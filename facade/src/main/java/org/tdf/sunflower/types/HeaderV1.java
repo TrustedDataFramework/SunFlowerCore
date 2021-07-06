@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
+import org.jetbrains.annotations.NotNull;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
@@ -18,11 +19,11 @@ public class HeaderV1 implements Chained {
         HeaderV1 r = new HeaderV1(
             1,
             header.getHashPrev(),
-            header.transactionsRoot,
-            header.stateRoot,
-            header.height,
-            header.createdAt,
-            header.extraData
+            header.getTransactionsRoot(),
+            header.getStateRoot(),
+            header.getHeight(),
+            header.getCreatedAt(),
+            header.getExtraData()
         );
         r.hash = header.getHash();
         return r;
@@ -138,5 +139,19 @@ public class HeaderV1 implements Chained {
         return 0;
     }
 
+    @Override
+    public boolean isParentOf(@NotNull Chained another) {
+        return false;
+    }
+
+    @Override
+    public boolean isChildOf(@NotNull Chained another) {
+        return false;
+    }
+
+    @Override
+    public boolean isChildOf(@NotNull HexBytes hash) {
+        return false;
+    }
 }
 

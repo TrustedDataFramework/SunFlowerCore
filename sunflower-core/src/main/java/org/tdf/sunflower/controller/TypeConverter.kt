@@ -58,6 +58,8 @@ internal val Int.jsonHex: String get() =  "0x" + java.lang.Long.toHexString(this
 
 internal val Long.jsonHex: String get() = "0x" + java.lang.Long.toHexString(this)
 
+internal val Uint256.jsonHex: String get() = "0x" + this.value.toString(16)
+
 internal val HexBytes.jsonHex: String get() = this.bytes.jsonHex
 
 internal val HexBytes.jsonHexNum: String get() = this.bytes.jsonHexNum

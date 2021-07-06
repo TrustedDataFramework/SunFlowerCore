@@ -15,7 +15,7 @@ class PoAConfig(properties: PropertyLike) : ConsensusConfig(properties) {
     val gatewayNode: String
         get() = reader.getAsNonNull("gateway-node")
 
-    override val minerCoinBase: HexBytes?
+    val minerCoinBase: HexBytes?
         get() {
             val key = privateKey?.bytes?.let { ECKey.fromPrivate(it) }
             return key?.address?.let { HexBytes.fromBytes(it) }

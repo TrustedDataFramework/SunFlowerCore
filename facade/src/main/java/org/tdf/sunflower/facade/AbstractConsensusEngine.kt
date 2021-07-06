@@ -9,6 +9,7 @@ import org.tdf.sunflower.state.BuiltinContract
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.ConsensusConfig
+import org.tdf.sunflower.types.HeaderImpl
 
 abstract class AbstractConsensusEngine : ConsensusEngine {
     // contract storage trie, injected before init() called
@@ -27,7 +28,7 @@ abstract class AbstractConsensusEngine : ConsensusEngine {
     lateinit var accountTrie: StateTrie<HexBytes, Account>
 
     // sub class should set genesis block explicitly when init() called
-    override var genesisBlock: Block = Block()
+    override var genesisBlock: Block = Block(HeaderImpl())
 
     // event bus will be injected before init() called
     lateinit var eventBus: EventBus

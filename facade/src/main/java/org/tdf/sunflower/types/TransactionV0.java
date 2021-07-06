@@ -23,30 +23,30 @@ import java.util.function.Function;
 import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.tdf.common.util.ByteUtil.ZERO_BYTE_ARRAY;
 
-public class Transaction implements RlpWritable {
+public class TransactionV0 implements RlpWritable {
     @Override
     public int writeToBuf(RlpBuffer rlpBuffer) {
         return rlpBuffer.writeRaw(getEncoded());
     }
 
-    public static final class TransactionCodec implements Codec<Transaction> {
-        public static Function<? super Transaction, byte[]> ENCODER = Transaction::getEncoded;
-        public static Function<byte[], ? extends Transaction> DECODER = Transaction::new;
+    public static final class TransactionCodec implements Codec<TransactionV0> {
+        public static Function<? super TransactionV0, byte[]> ENCODER = TransactionV0::getEncoded;
+        public static Function<byte[], ? extends TransactionV0> DECODER = TransactionV0::new;
 
         @Override
-        public Function<? super Transaction, byte[]> getEncoder() {
+        public Function<? super TransactionV0, byte[]> getEncoder() {
             return ENCODER;
         }
 
         @Override
-        public Function<byte[], ? extends Transaction> getDecoder() {
+        public Function<byte[], ? extends TransactionV0> getDecoder() {
             return DECODER;
         }
     }
 
     private static final Logger log = org.slf4j.LoggerFactory.getLogger("tx");
 
-    public static HexBytes calcTxTrie(List<Transaction> transactions) {
+    public static HexBytes calcTxTrie(List<TransactionV0> transactions) {
         Trie<byte[], byte[]> txsState = new TrieImpl<>();
 
         if (transactions == null || transactions.isEmpty())
@@ -102,18 +102,18 @@ public class Transaction implements RlpWritable {
     private ECDSASignature signature;
     private byte[] rawHash;
 
-    public Transaction(byte[] rawData) {
+    public TransactionV0(byte[] rawData) {
         this.rlpEncoded = rawData;
         parsed = false;
     }
 
     @RlpCreator
-    public static Transaction fromRlpStream(byte[] bin, long streamId) {
-        return new Transaction(StreamId.rawOf(bin, streamId));
+    public static TransactionV0 fromRlpStream(byte[] bin, long streamId) {
+        return new TransactionV0(StreamId.rawOf(bin, streamId));
     }
 
-    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
-                       Integer chainId) {
+    public TransactionV0(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
+                         Integer chainId) {
         this.nonce = nonce;
         this.gasPrice = gasPrice;
         this.gasLimit = gasLimit;
@@ -134,8 +134,8 @@ public class Transaction implements RlpWritable {
     }
 
 
-    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
-                       byte[] r, byte[] s, byte v, Integer chainId) {
+    public TransactionV0(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
+                         byte[] r, byte[] s, byte v, Integer chainId) {
         this(nonce, gasPrice, gasLimit, receiveAddress, value, data, chainId);
         this.signature = ECDSASignature.fromComponents(r, s, v);
     }
@@ -143,11 +143,11 @@ public class Transaction implements RlpWritable {
 
     /**
      * Warning: this transaction would not be protected by replay-attack protection mechanism
-     * Use {@link Transaction#Transaction(byte[], byte[], byte[], byte[], byte[], byte[], byte[], byte[], byte, Integer)}
+     * Use {@link TransactionV0#TransactionV0(byte[], byte[], byte[], byte[], byte[], byte[], byte[], byte[], byte, Integer)}
      * constructor instead and specify the desired chainID
      */
-    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
-                       byte[] r, byte[] s, byte v) {
+    public TransactionV0(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
+                         byte[] r, byte[] s, byte v) {
         this(nonce, gasPrice, gasLimit, receiveAddress, value, data, r, s, v, null);
     }
 
@@ -373,11 +373,6 @@ public class Transaction implements RlpWritable {
     public boolean isContractCreation() {
         rlpParse();
         return this.receiveAddress == null || Arrays.equals(this.receiveAddress, EMPTY_BYTE_ARRAY);
-    }
-
-    public ECKey getKey() {
-        byte[] hash = getRawHash();
-        return ECKey.recoverFromSignature(signature.v, signature, hash);
     }
 
     @SneakyThrows

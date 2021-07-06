@@ -23,7 +23,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING;
-import static org.tdf.sunflower.types.Transaction.ADDRESS_LENGTH;
 
 
 @Slf4j(topic = "miner")
@@ -47,14 +46,13 @@ public class PoSMiner extends AbstractMiner {
     }
 
     @Override
-    protected Header createHeader(Block parent) {
-        return Header.builder()
-            .build();
+    protected Header createHeader(Block parent, long createdAt) {
+        return new HeaderImpl();
     }
 
     @Override
-    protected boolean finalizeBlock(Block parent, Block block) {
-        return true;
+    protected Block finalizeBlock(Block parent, Block block) {
+        return block;
     }
 
 
@@ -88,8 +86,8 @@ public class PoSMiner extends AbstractMiner {
         if (!config.getEnableMining() || stopped) {
             return;
         }
-        if (config.getMinerCoinBase() == null || config.getMinerCoinBase().size() != ADDRESS_LENGTH) {
-            log.warn("pos miner: invalid coinbase address {}", config.getMinerCoinBase());
+        if (config.getMinerAddress() == null) {
+            log.warn("pos miner: invalid coinbase address {}", config.getMinerAddress());
             return;
         }
 
@@ -103,7 +101,7 @@ public class PoSMiner extends AbstractMiner {
 
             if (!o.isPresent()) return;
             log.debug("try to mining at height " + (best.getHeight() + 1));
-            BlockCreateResult res = createBlock(rd, rd.getBestBlock(), Collections.emptyMap());
+            BlockCreateResult res = createBlock(rd, rd.getBestBlock(), System.currentTimeMillis() / 1000);
             if (res.getBlock() != null) {
                 log.info("mining success block: {}", res.getBlock().getHeader());
             }
@@ -119,6 +117,6 @@ public class PoSMiner extends AbstractMiner {
 
 
     protected Transaction createCoinBase(long height) {
-        return Transaction.builder().build();
+        return new Transaction();
     }
 }

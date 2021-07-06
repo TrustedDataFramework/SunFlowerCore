@@ -104,7 +104,7 @@ class TransactionPoolImpl(
             val lambda = Predicate { info: TransactionInfo ->
                 val remove = (now - info.receivedAt) / 1000 > config.expiredIn
                 if (remove) {
-                    dropped.put(info.tx.hashHex, info.tx)
+                    dropped.put(info.tx.hash, info.tx)
                 }
                 remove
             }
@@ -121,23 +121,28 @@ class TransactionPoolImpl(
         try {
             val newCollected: MutableList<Transaction> = mutableListOf()
             for (transaction in transactions) {
-                if (transaction.gasPriceAsU256 < appCfg.vmGasPrice) throw RuntimeException("transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}")
+                if (transaction.gasPrice < appCfg.vmGasPrice) throw RuntimeException("transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}")
                 val info = TransactionInfo(System.currentTimeMillis(), transaction)
-                if (cache.contains(info) || dropped.asMap().containsKey(transaction.hashHex)) continue
+                if (cache.contains(info) || dropped.asMap().containsKey(transaction.hash)) continue
                 try {
-                    transaction.verify()
+                    transaction.validate()
                 } catch (e: Exception) {
                     log.error(e.message)
+                    errors[transaction.hash] = e.message ?: "validate transaction failed"
+                    continue
+                }
+                if(!transaction.verifySig) {
+                    errors[transaction.hash] = "validate signature failed"
                     continue
                 }
                 val res = validator!!.validate(rd, parentHeader!!, transaction)
                 if (res.success) {
                     cache.add(info)
-                    mCache[info.tx.hashHex] = info
+                    mCache[info.tx.hash] = info
                     newCollected.add(transaction)
                 } else {
                     log.error(res.reason)
-                    errors[transaction.hashHex] = res.reason
+                    errors[transaction.hash] = res.reason
                 }
             }
             if (newCollected.isNotEmpty())
@@ -154,15 +159,15 @@ class TransactionPoolImpl(
         if (parentHeader == null) return
         while (it.hasNext()) {
             val t = it.next().tx
-            val prevNonce = current!!.getNonce(t.senderHex)
-            if (t.nonceAsLong < prevNonce) {
+            val prevNonce = current!!.getNonce(t.sender)
+            if (t.nonce < prevNonce) {
                 it.remove()
-                errors[t.hashHex] = "nonce is too small"
-                mCache.remove(t.hashHex)
-                dropped.put(t.hashHex, t)
+                errors[t.hash] = "nonce is too small"
+                mCache.remove(t.hash)
+                dropped.put(t.hash, t)
                 continue
             }
-            if (t.nonceAsLong != prevNonce) {
+            if (t.nonce != prevNonce) {
                 continue
             }
 
@@ -178,7 +183,7 @@ class TransactionPoolImpl(
                 val vmExecutor = VMExecutor(
                     rd,
                     child, ctx, callData,
-                    min(t.gasLimitAsU256.toLong(), blockGasLimit)
+                    min(t.gasLimit, blockGasLimit)
                 )
 
                 val res = vmExecutor.execute()
@@ -201,10 +206,10 @@ class TransactionPoolImpl(
                 this.current = child
                 this.gasUsed += res.gasUsed
             } catch (e: Exception) {
-                errors[t.hashHex] = e.message ?: ""
+                errors[t.hash] = e.message ?: ""
             } finally {
                 it.remove()
-                mCache.remove(t.hashHex)
+                mCache.remove(t.hash)
             }
         }
     }
@@ -261,12 +266,12 @@ class TransactionPoolImpl(
 
     internal class TransactionInfo(val receivedAt: Long, val tx: Transaction) : Comparable<TransactionInfo> {
         override fun compareTo(other: TransactionInfo): Int {
-            var cmp = tx.senderHex.compareTo(other.tx.senderHex)
+            var cmp = tx.sender.compareTo(other.tx.sender)
             if (cmp != 0) return cmp
-            cmp = tx.nonceAsLong.compareTo(other.tx.nonceAsLong)
+            cmp = tx.nonce.compareTo(other.tx.nonce)
             if (cmp != 0) return cmp
-            cmp = -tx.gasPriceAsU256.compareTo(other.tx.gasPriceAsU256)
-            return if (cmp != 0) cmp else tx.hashHex.compareTo(other.tx.hashHex)
+            cmp = -tx.gasPrice.compareTo(other.tx.gasPrice)
+            return if (cmp != 0) cmp else tx.hash.compareTo(other.tx.hash)
         }
     }
 

@@ -1,7 +1,6 @@
 package org.tdf.sunflower.vm
 
 import org.tdf.common.types.Uint256
-import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.state.Address
@@ -23,11 +22,11 @@ data class CallContext(
         @JvmStatic
         fun fromTx(tx: Transaction): CallContext {
             return CallContext(
-                tx.senderHex,
-                tx.hashHex,
-                tx.nonceAsLong,
-                tx.gasPriceAsU256,
-                tx.gasLimitAsU256
+                tx.sender,
+                tx.hash,
+                tx.nonce,
+                tx.gasPrice,
+                Uint256.of(tx.gasLimit)
             )
         }
     }
@@ -55,16 +54,16 @@ data class CallData(
         @JvmStatic
         fun fromTx(tx: Transaction, coinbase: Boolean): CallData {
             var t = CallType.COINBASE
-            val origin = if (coinbase) Address.empty() else tx.senderHex
+            val origin = if (coinbase) Address.empty() else tx.sender
             if (!coinbase) {
-                t = if (tx.receiveHex.isEmpty) CallType.CREATE else CallType.CALL
+                t = if (tx.receiveAddress.isEmpty) CallType.CREATE else CallType.CALL
             }
             return CallData(
                 origin,
-                tx.valueAsUint,
-                tx.receiveHex,
+                tx.value,
+                tx.receiveAddress,
                 t,
-                tx.dataHex,
+                tx.data,
             )
         }
     }

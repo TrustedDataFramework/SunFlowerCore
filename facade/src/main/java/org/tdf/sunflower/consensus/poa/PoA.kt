@@ -60,10 +60,8 @@ class PoA : AbstractConsensusEngine() {
                         var n = mapper.readValue(responseStream, JsonNode::class.java)
                         n = n["data"]
                         for (i in 0 until n.size()) {
-                            val tx = Transaction(
-                                HexBytes.decode(n[i].textValue())
-                            )
-                            if (!rd.containsTransaction(tx.hashHex)) {
+                            val tx = Transaction.create(HexBytes.decode(n[i].textValue()))
+                            if (!rd.containsTransaction(tx.hash)) {
                                 transactionPool.collect(rd, tx)
                             }
                         }

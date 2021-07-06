@@ -4,7 +4,6 @@ package org.tdf.sunflower.consensus.poa
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.tdf.common.crypto.ECKey
-import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.FixedDelayScheduler
 import org.tdf.common.util.RLPUtil
 import org.tdf.sunflower.consensus.AbstractMiner
@@ -13,6 +12,7 @@ import org.tdf.sunflower.events.NewBlockMined
 import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.Header
+import org.tdf.sunflower.types.HeaderImpl
 import org.tdf.sunflower.types.Transaction
 import java.time.OffsetDateTime
 
@@ -29,23 +29,22 @@ class PoAMiner(private val poA: PoA) :
         Math.max(1, poA.config.blockInterval / 2).toLong()
     )
 
-    override fun createHeader(parent: Block): Header {
-        return Header
-            .builder()
-            .height(parent.height + 1)
-            .createdAt(System.currentTimeMillis() / 1000)
-            .coinbase(config.minerCoinBase)
-            .hashPrev(parent.hash)
-            .gasLimit(parent.gasLimit)
-            .build()
+    override fun createHeader(parent: Block, createdAt: Long): Header {
+        return HeaderImpl(
+            height = parent.height + 1,
+            createdAt = createdAt,
+            coinbase = config.minerCoinBase!!,
+            hashPrev = parent.hash,
+            gasLimit = parent.gasLimit,
+        )
     }
 
-    override fun finalizeBlock(parent: Block, block: Block): Boolean {
+    override fun finalizeBlock(parent: Block, block: Block): Block {
         val rawHash = PoaUtils.getRawHash(block.header)
         val key = ECKey.fromPrivate(config.privateKey!!.bytes)
         val sig = key.sign(rawHash)
-        block.extraData = RLPUtil.encode(
-            arrayOf<Any>(
+        val extraData = RLPUtil.encode(
+            arrayOf(
                 sig.v,
                 sig.r,
                 sig.s
@@ -54,10 +53,10 @@ class PoAMiner(private val poA: PoA) :
         if (config.threadId == PoA.GATEWAY_ID) {
             for (i in 1 until block.body.size) {
                 val tx = block.body[i]
-                poA.cache.put(tx.hashHex, tx)
+                poA.cache.put(tx.hash, tx)
             }
         }
-        return true
+        return Block(block.header.impl.copy(extraData = extraData), block.body)
     }
 
     @Synchronized
@@ -92,9 +91,7 @@ class PoAMiner(private val poA: PoA) :
             )
             if (p.address != config.minerCoinBase) return
             log.debug("try to mining at height " + (best.height + 1))
-            val args: MutableMap<String, Long?> = HashMap()
-            args["createdAt"] = now
-            val b = createBlock(it, it.bestBlock, args)
+            val b = createBlock(it, it.bestBlock, now)
             if (b.block != null) {
                 log.info("mining success block: {}", b.block.header)
                 it.writeBlock(b.block, b.infos)
@@ -104,13 +101,12 @@ class PoAMiner(private val poA: PoA) :
     }
 
     override fun createCoinBase(height: Long): Transaction {
-        return Transaction.builder()
-            .nonce(ByteUtil.longToBytesNoLeadZeroes(height))
-            .value(poA.model.rewardAt(height).noLeadZeroesData)
-            .receiveAddress(config.minerCoinBase!!.bytes)
-            .gasPrice(ByteUtil.EMPTY_BYTE_ARRAY)
-            .gasLimit(ByteUtil.EMPTY_BYTE_ARRAY)
-            .build()
+        return Transaction(
+            nonce = height,
+            value = poA.model.rewardAt(height),
+            receiveAddress = config.minerCoinBase!!,
+
+        )
     }
 
     companion object {

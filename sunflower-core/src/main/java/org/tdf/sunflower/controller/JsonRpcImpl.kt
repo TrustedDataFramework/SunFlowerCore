@@ -177,10 +177,10 @@ class JsonRpcImpl(
     }
 
     override fun eth_sendRawTransaction(rawData: String): String {
-        val tx = Transaction(rawData.jsonHex.bytes)
+        val tx = Transaction.create(rawData.jsonHex.bytes)
         val errors = repo.reader.use { pool.collect(it, tx) }
-        if (errors[tx.hashHex] != null)
-            throw RuntimeException(errors[tx.hashHex])
+        if (errors[tx.hash] != null)
+            throw RuntimeException(errors[tx.hash])
         return tx.hash.jsonHex
     }
 
@@ -251,7 +251,7 @@ class JsonRpcImpl(
         repo.reader.use { rd ->
             val b = if (hash) rd.getBlockByHash(json.hex) else rd.getCanonicalBlock(json.long)
             val tx = b?.body?.getOrNull(index.jsonHex.int)
-            val info = tx?.hashHex?.let { rd.getTransactionInfo(it) }
+            val info = tx?.hash?.let { rd.getTransactionInfo(it) }
             if (b == null || tx == null || info == null)
                 return null
             return TransactionResultDTO.create(b.header, info.index, info.receipt.transaction)
@@ -332,7 +332,7 @@ class JsonRpcImpl(
             block.nonce.jsonHex, block.unclesHash.jsonHex, block.logsBloom.jsonHex,
             block.transactionsRoot.jsonHex, block.stateRoot.jsonHex, block.receiptTrieRoot.jsonHex,
             block.coinbase.jsonHex, block.difficulty.bytes.jsonHexNum, BigInteger.ZERO.jsonHex,
-            block.extraData?.jsonHex, null, block.gasLimit.jsonHexNum,
+            block.extraData.jsonHex, null, block.gasLimit.jsonHex,
             block.gasUsed.jsonHex, block.createdAt.jsonHex
         )
 

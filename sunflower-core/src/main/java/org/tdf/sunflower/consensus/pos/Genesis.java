@@ -21,11 +21,7 @@ public class Genesis extends AbstractGenesis {
 
     @JsonIgnore
     public Block getBlock() {
-        Header h = Header.builder()
-            .hashPrev(getParentHash())
-            .createdAt(getTimestamp())
-            .build();
-        return new Block(h);
+        return null;
     }
 
     @Value

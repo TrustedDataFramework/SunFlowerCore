@@ -26,19 +26,18 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
         // a block should contains exactly one coin base transaction
 
         // validate coinbase
-        if (block.coinbase != block.body[0].receiveHex) {
+        if (block.coinbase != block.body[0].receiveAddress) {
             return fault("block coinbase not equals to coinbase tx receiver")
         }
         var isCoinbase = true
         for (t in block.body) {
             // validate transaction signature
-            if (!isCoinbase && t.signature == null) return fault("unsigned transaction is not allowed here")
             try {
-                t.verify()
+                t.validate()
             } catch (e: Exception) {
                 return fault(e.message!!)
             }
-            if (!isCoinbase && !t.verifySig()) {
+            if (!isCoinbase && !t.verifySig) {
                 return fault("verify signature failed")
             }
             isCoinbase = false
@@ -70,10 +69,10 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                     tmp,
                     CallContext.fromTx(tx),
                     CallData.fromTx(tx, false),
-                    Math.min(blockGasLimit - currentGas, tx.gasLimitAsU256.toLong())
+                    Math.min(blockGasLimit - currentGas, tx.gasLimit)
                 )
                 r = executor.execute()
-                results[HexBytes.fromBytes(tx.hash)] = r
+                results[tx.hash] = r
                 totalFee += r.fee
                 currentGas += r.gasUsed
                 val receipt = TransactionReceipt(

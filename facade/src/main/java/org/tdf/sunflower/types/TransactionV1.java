@@ -29,18 +29,18 @@ public class TransactionV1 {
     public static TransactionV1 fromV2(Transaction t) {
         TransactionV1 r = new TransactionV1(
             1,
-            t.getReceiveHex().isEmpty() ? Type.CONTRACT_DEPLOY.code : (t.getDataHex().isEmpty() ? Type.TRANSFER.code : Type.CONTRACT_CALL.code),
+            t.getReceiveAddress().isEmpty() ? Type.CONTRACT_DEPLOY.code : (t.getData().isEmpty() ? Type.TRANSFER.code : Type.CONTRACT_CALL.code),
             System.currentTimeMillis() / 1000,
-            t.getNonceAsLong(),
-            t.getSenderHex(),
-            t.getGasLimitAsU256().longValue(),
-            t.getGasPriceAsU256(),
-            t.getValueAsUint(),
-            t.getDataHex(),
-            t.getReceiveHex(),
+            t.getNonce(),
+            t.getSender(),
+            t.getGasLimit(),
+            t.getGasPrice(),
+            t.getValue(),
+            t.getData(),
+            t.getReceiveAddress(),
             EMPTY_SIG
         );
-        r.hash = t.getHashHex();
+        r.hash = t.getHash();
         return r;
     }
 

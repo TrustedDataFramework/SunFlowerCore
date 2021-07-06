@@ -10,10 +10,7 @@ import org.tdf.sunflower.consensus.poa.PoaUtils.getRawHash
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
-import org.tdf.sunflower.types.Block
-import org.tdf.sunflower.types.Header
-import org.tdf.sunflower.types.Transaction
-import org.tdf.sunflower.types.ValidateResult
+import org.tdf.sunflower.types.*
 import org.tdf.sunflower.types.ValidateResult.Companion.fault
 import org.tdf.sunflower.types.ValidateResult.Companion.success
 import java.util.*
@@ -23,7 +20,7 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
         val res = super.commonValidate(rd, block, dependency)
         if (!res.success) return res
         val fee = res.fee
-        if (fee + poA.model.rewardAt(dependency.height + 1) != block.body[0].valueAsUint
+        if (fee + poA.model.rewardAt(dependency.height + 1) != block.body[0].value
         ) {
             return fault(
                 "reward of coin base transaction should be " + poA.model.rewardAt(
@@ -31,15 +28,15 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
                 )
             )
         }
-        if (block.coinbase != block.body[0].receiveHex) return fault("block coinbase not equals to coinbase transaction receiver")
+        if (block.coinbase != block.body[0].receiveAddress) return fault("block coinbase not equals to coinbase transaction receiver")
         val res0 = validateCoinBase(dependency, block.body[0])
         if (!res0.success) return res0
         if (poA.minerContract.getProposer(
                 rd,
                 dependency.hash,
                 block.createdAt
-            ).address != block.body[0].receiveHex
-        ) return fault("invalid proposer " + block.body[0].senderHex)
+            ).address != block.body[0].receiveAddress
+        ) return fault("invalid proposer " + block.body[0].sender)
 
         // validate signature
         val vrs = Rlp.decodeList(block.extraData.bytes)
@@ -65,12 +62,12 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
         if (!poA.config.controlled) return success()
         val farmBaseAdmin = poA.config.farmBaseAdmin
         if (poA.config.threadId == PoA.GATEWAY_ID) { // for gateway node, only accept transaction from farm-base admin
-            if (Objects.requireNonNull(transaction.chainId) != PoA.GATEWAY_ID || transaction.senderHex != farmBaseAdmin) {
+            if (Objects.requireNonNull(transaction.chainId) != PoA.GATEWAY_ID || transaction.sender != farmBaseAdmin) {
                 return fault(
                     String.format(
                         "farmbase only accept admin transaction with network id = %s, while from = %s, network id = %s",
                         PoA.GATEWAY_ID,
-                        transaction.senderHex,
+                        transaction.sender,
                         transaction.chainId
                     )
                 )
@@ -87,24 +84,24 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
                     )
                 )
             }
-            if (transaction.chainId == PoA.GATEWAY_ID && transaction.senderHex != farmBaseAdmin) {
+            if (transaction.chainId == PoA.GATEWAY_ID && transaction.sender != farmBaseAdmin) {
                 return fault("transaction with zero version should received from farmbase")
             }
         }
-        return if (transaction.senderHex != farmBaseAdmin
+        return if (transaction.sender != farmBaseAdmin
             && !poA.validatorContract
                 .getApproved(
                     rd,
                     dependency.hash
                 )
                 .contains(
-                    transaction.senderHex
+                    transaction.sender
                 )
         ) fault("from address is not approved") else success()
     }
 
     private fun validateCoinBase(parent: Block, coinBase: Transaction): ValidateResult {
-        return if (coinBase.nonceAsLong != parent.height + 1) fault("nonce of coin base should be " + parent.height + 1) else success()
+        return if (coinBase.nonce != parent.height + 1) fault("nonce of coin base should be " + parent.height + 1) else success()
     }
 
     override val blockGasLimit: Long

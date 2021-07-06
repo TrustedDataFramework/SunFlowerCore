@@ -29,7 +29,6 @@ import org.tdf.sunflower.types.*
 import java.io.Closeable
 import java.util.*
 import java.util.concurrent.Executors
-import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 import javax.annotation.PostConstruct
 import kotlin.math.abs
@@ -276,7 +275,6 @@ class SyncManager(
     private fun onBlocks(blocks: List<Block>) {
         if (fastSyncing) {
             for (b in blocks) {
-                b.resetTransactionsRoot()
                 if (b.hash == fastSyncHash) {
                     fastSyncBlock = b
                     return
@@ -294,7 +292,6 @@ class SyncManager(
                     //                if (block.getHeight() <= repository.getPrunedHeight())
 //                    continue;
                     if (abs(block.height - best.height) > syncConfig.maxPendingBlocks) break
-                    block.resetTransactionsRoot()
                     if (rd.containsHeader(block.hash)) continue
                     queue.add(block)
                 }

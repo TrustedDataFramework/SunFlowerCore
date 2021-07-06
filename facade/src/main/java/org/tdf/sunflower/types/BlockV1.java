@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 import org.tdf.common.types.Chained;
 import org.tdf.common.util.EpochSecondDeserializer;
 import org.tdf.common.util.EpochSecondsSerializer;
@@ -111,5 +112,20 @@ public class BlockV1 implements Chained {
 
     public HexBytes getHash() {
         return header.getHash();
+    }
+
+    @Override
+    public boolean isParentOf(@NotNull Chained another) {
+        return false;
+    }
+
+    @Override
+    public boolean isChildOf(@NotNull Chained another) {
+        return false;
+    }
+
+    @Override
+    public boolean isChildOf(@NotNull HexBytes hash) {
+        return false;
     }
 }

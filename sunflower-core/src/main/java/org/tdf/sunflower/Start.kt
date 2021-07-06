@@ -159,8 +159,7 @@ open class Start {
         // init accountTrie and genesis block
         val root = accountTrie.init(engine.alloc, engine.bios, engine.builtins)
         val g = engine.genesisBlock
-        g.stateRoot = root
-        repoSrv.writer.use { it.saveGenesis(g) }
+        repoSrv.writer.use { it.saveGenesis(g.copy(header = g.header.impl.copy(stateRoot = root))) }
         transactionPool.setEngine(engine)
         return engine
     }
