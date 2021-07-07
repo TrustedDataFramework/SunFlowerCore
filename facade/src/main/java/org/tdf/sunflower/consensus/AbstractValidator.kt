@@ -61,7 +61,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
         val results: MutableMap<HexBytes, VMResult> = mutableMapOf()
         var currentRoot: HexBytes
         var currentGas: Long = 0
-        val receipts: MutableList<TransactionReceipt> = ArrayList()
+        val receipts: MutableList<TransactionReceipt> = mutableListOf()
         try {
             var tmp = accountTrie.createBackend(parent.header,  false, parent.stateRoot)
             val coinbase = block.body[0]

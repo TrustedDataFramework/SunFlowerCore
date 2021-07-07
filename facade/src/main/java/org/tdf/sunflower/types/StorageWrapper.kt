@@ -59,7 +59,7 @@ class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexB
         val prefixed = verifyAndPrefix(key)
         val h = store[prefixed]
         if (h == null || h.isEmpty) return defaultValue
-        val ret: MutableList<T> = ArrayList()
+        val ret: MutableList<T> = mutableListOf()
         val li = Rlp.decodeList(h.bytes)
         for (i in 0 until li.size()) {
             ret.add(li.rawAt(i).decode(clazz))

@@ -60,7 +60,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     }
 
     override fun getHeadersBetween(startHeight: Long, stopHeight: Long, limit: Int, descend: Boolean): List<Header> {
-        val ret: MutableList<Header> = ArrayList()
+        val ret: MutableList<Header> = mutableListOf()
         val range = if (descend) {
             stopHeight downTo startHeight
         } else {

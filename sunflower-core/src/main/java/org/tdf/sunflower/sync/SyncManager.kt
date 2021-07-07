@@ -374,8 +374,8 @@ class SyncManager(
         }
     }
 
-    private fun getOrphansInternal(rd: RepositoryReader): List<Block?> {
-        val orphanHeads: MutableList<Block?> = ArrayList()
+    private fun getOrphansInternal(rd: RepositoryReader): List<Block> {
+        val orphanHeads: MutableList<Block> = mutableListOf()
         val orphans: MutableSet<HexBytes> = HashSet()
         val noOrphans: MutableSet<HexBytes> = HashSet()
         for (block in queue) {
@@ -404,7 +404,7 @@ class SyncManager(
             }
             try {
                 repo.reader.use { rd ->
-                    val ret: MutableList<Block> = ArrayList()
+                    val ret: MutableList<Block> = mutableListOf()
                     val orphans: MutableSet<HexBytes> = HashSet()
                     val noOrphans: MutableSet<HexBytes> = HashSet()
                     for (block in queue) {

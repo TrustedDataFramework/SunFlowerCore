@@ -54,7 +54,7 @@ data class VMExecutor(
         ctx,
         callData,
         Limit(gasLimit),
-        ArrayList<LogInfo>()
+        mutableListOf()
     )
 
     fun clone(): VMExecutor {
