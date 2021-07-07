@@ -195,7 +195,7 @@ interface JsonRpc {
                     b?.height?.jsonHex,
                     tx.receiveAddress.takeIf { !it.isEmpty }?.jsonHex ?: tx.contractAddress?.jsonHex,
                     info.data.jsonHex,
-                    info.topics.map { it.dataHex.jsonHex }
+                    info.topics.map { it.data.jsonHex }
                 )
             }
         }

@@ -295,7 +295,7 @@ public class TransactionV0 implements RlpWritable {
     }
 
     public void setValue(Uint256 value) {
-        setValue(value.getNoLeadZeroesData());
+        setValue(value.getNoLeading());
     }
 
     public byte[] getReceiveAddress() {

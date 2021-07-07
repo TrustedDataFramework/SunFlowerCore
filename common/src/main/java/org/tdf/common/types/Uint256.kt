@@ -65,17 +65,14 @@ class Uint256 private constructor(val value: BigInteger) : Number(), RlpWritable
      *
      * @return instance data
      */
-    fun getData(): ByteArray {
-        return BigIntegers.asUnsignedByteArray(32, value)
+    val data: ByteArray by lazy {
+        BigIntegers.asUnsignedByteArray(32, value)
     }
 
-    val dataHex: HexBytes
-        get() = HexBytes.fromBytes(getData())
 
-
-    val noLeadZeroesData: ByteArray
-        get() = BigIntegers.asUnsignedByteArray(value)
-
+    val noLeading: ByteArray by lazy {
+        BigIntegers.asUnsignedByteArray(value)
+    }
 
     val isZero: Boolean
         get() = if (this === ZERO) true else this.compareTo(ZERO) == 0

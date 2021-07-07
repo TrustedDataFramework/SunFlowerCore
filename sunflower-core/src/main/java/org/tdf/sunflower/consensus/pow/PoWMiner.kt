@@ -5,6 +5,7 @@ import org.tdf.common.types.Uint256
 import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.consensus.AbstractMiner
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING
 import java.lang.Runnable
 import java.lang.InterruptedException
@@ -57,9 +58,9 @@ class PoWMiner(
         var b = block
         poW.repo.reader.use { rd -> nbits = poW.bios.getNBits(rd, parent.hash) }
         val rd = Random()
-        log.info("start finish pow target = {}", nbits.dataHex)
+        log.info("start finish pow target = {}", nbits.data.hex())
         working = true
-        while (PoW.compare(PoW.getPoWHash(b), nbits.getData()) > 0) {
+        while (PoW.compare(PoW.getPoWHash(b), nbits.data) > 0) {
             if (!working) {
                 log.info("mining canceled")
                 return null

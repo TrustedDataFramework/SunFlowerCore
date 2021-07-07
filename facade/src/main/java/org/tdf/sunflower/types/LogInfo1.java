@@ -14,14 +14,14 @@ import java.util.List;
 
 import static org.tdf.common.util.ByteUtil.toHexString;
 
-public class LogInfo implements RlpWritable {
+public class LogInfo1 implements RlpWritable {
 
 
     byte[] address = new byte[]{};
     List<Uint256> topics = new ArrayList<>();
     byte[] data = new byte[]{};
 
-    public LogInfo(byte[] rlp) {
+    public LogInfo1(byte[] rlp) {
         RlpList params = Rlp.decodeList(rlp);
 
         RlpList topics = params.listAt(1);
@@ -35,7 +35,7 @@ public class LogInfo implements RlpWritable {
         }
     }
 
-    public LogInfo(byte[] address, List<Uint256> topics, byte[] data) {
+    public LogInfo1(byte[] address, List<Uint256> topics, byte[] data) {
         this.address = (address != null) ? address : new byte[]{};
         this.topics = (topics != null) ? topics : new ArrayList<>();
         this.data = (data != null) ? data : new byte[]{};

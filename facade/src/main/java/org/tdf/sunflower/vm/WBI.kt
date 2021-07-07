@@ -142,7 +142,7 @@ object WBI {
 
     @JvmStatic
     fun malloc(instance: ModuleInstance, s: Uint256): Int {
-        val bin = s.noLeadZeroesData
+        val bin = s.noLeading
         return malloc(instance, WbiType.UINT_256, bin)
     }
 

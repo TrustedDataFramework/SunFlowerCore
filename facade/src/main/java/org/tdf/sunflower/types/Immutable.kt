@@ -207,8 +207,42 @@ data class Block(val header: Header, val body: List<Transaction> = emptyList()) 
             return@Comparator a.hash.compareTo(b.hash)
         }
     }
+}
 
 
+data class LogInfo(
+    val address: HexBytes = Address.empty(),
+    val topics: List<Uint256>,
+    val data: HexBytes = HexBytes.empty()
+): RlpWritable {
+    override fun writeToBuf(buf: RlpBuffer): Int {
+        return buf.writeObject(arrayOf(address, topics, data))
+    }
+
+    val encoded: ByteArray by lazy {
+        Rlp.encode(this)
+    }
+
+    val bloom: Bloom by lazy {
+        val ret = Bloom.create(address.bytes.sha3())
+        for (topic in topics) {
+            ret.or(Bloom.create(topic.data.sha3()))
+        }
+        ret
+    }
+
+    companion object {
+        @RlpCreator
+        @JvmStatic
+        fun create(bin: ByteArray, streamId: Long): LogInfo{
+            val li = StreamId.asList(bin, streamId)
+            return LogInfo(
+                li.hex(0),
+                li.valueAt(1, Array<Uint256>::class.java).toList(),
+                li.hex(2)
+            )
+        }
+    }
 }
 
 fun RlpList.hex(i: Int): HexBytes {

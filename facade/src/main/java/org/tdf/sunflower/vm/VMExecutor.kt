@@ -37,11 +37,11 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 data class VMExecutor(
-    val rd: RepositoryReader,
-    val backend: Backend,
+    var rd: RepositoryReader,
+    var backend: Backend,
     val ctx: CallContext,
-    val callData: CallData,
-    val limit: Limit,
+    var callData: CallData,
+    var limit: Limit,
     val logs: MutableList<LogInfo>,
     val depth: Int = 0,
 ) {
