@@ -39,7 +39,7 @@ abstract class AbstractMiner(
         // get a trie at parent block's state
         // modifications to the trie will not persisted until flush() called
         val coinbase = createCoinBase(parent.height + 1)
-        val tmp = current ?: accountTrie.createBackend(parent.header, createdAt, false, parent.stateRoot)
+        val tmp = current ?: accountTrie.createBackend(parent.header,false, parent.stateRoot)
 
         val totalFee = receipts
             .map { it.transaction.gasPrice * it.gasUsedAsU256 }

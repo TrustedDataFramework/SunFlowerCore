@@ -3,6 +3,7 @@ package org.tdf.sunflower.controller
 import org.springframework.stereotype.Service
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.sha3
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.controller.JsonRpc.BlockResult
 import org.tdf.sunflower.controller.JsonRpc.CallArguments
@@ -42,7 +43,7 @@ class JsonRpcImpl(
     }
 
     override fun web3_sha3(data: String): String {
-        return HashUtil.sha3(data.jsonHex.bytes).jsonHex
+        return data.jsonHex.bytes.sha3().jsonHex
     }
 
     override fun net_version(): String {
@@ -114,7 +115,7 @@ class JsonRpcImpl(
                     header = rd.getCanonicalHeader(blockId.jsonHex.long)!!
                 }
             }
-            return accountTrie.createBackend(header, System.currentTimeMillis() / 1000, isStatic, header.stateRoot)
+            return accountTrie.createBackend(header, isStatic)
         }
     }
 

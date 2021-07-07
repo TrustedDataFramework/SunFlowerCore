@@ -5,10 +5,10 @@ import org.tdf.common.trie.Trie
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.sha3
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.BuiltinContract
 import org.tdf.sunflower.types.Header
-import org.tdf.sunflower.types.LogInfo
 
 // backend for mining
 class BackendImpl(
@@ -24,7 +24,6 @@ class BackendImpl(
     // address -> code
     private val codeStore: Store<HexBytes, HexBytes>,
     private val codeCache: MutableMap<HexBytes, HexBytes> = mutableMapOf(),
-    override var headerCreatedAt: Long? = null
 ) : Backend {
     // get account without clone
     private fun lookup(address: HexBytes): Account {
@@ -49,7 +48,6 @@ class BackendImpl(
             staticCall,
             codeStore,
             mutableMapOf(),
-            headerCreatedAt,
         )
     }
 
@@ -211,8 +209,7 @@ class BackendImpl(
     override fun setCode(address: HexBytes, code: HexBytes) {
         if(staticCall)
             throw RuntimeException("cannot set balance in static call")
-        val hash = HashUtil.sha3(code.bytes)
-        val a = lookup(address).copy(contractHash = HexBytes.fromBytes(hash))
+        val a = lookup(address).copy(contractHash = code.sha3())
         modifiedAccounts[address] = a
         codeCache[address] = code
     }

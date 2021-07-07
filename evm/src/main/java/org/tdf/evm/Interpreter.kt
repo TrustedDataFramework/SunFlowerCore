@@ -192,7 +192,7 @@ class Interpreter(
                 }
 
                 OpCodes.BLOCKHASH, OpCodes.COINBASE -> throw RuntimeException("unsupported op code")
-                OpCodes.TIMESTAMP -> stack.pushLong(ctx.timestamp)
+                OpCodes.TIMESTAMP -> throw RuntimeException("unsupported op code")
                 OpCodes.NUMBER -> stack.pushLong(ctx.number)
                 OpCodes.DIFFICULTY -> stack.push(ctx.difficulty)
                 OpCodes.GASLIMIT -> stack.pushLong(ctx.blockGasLimit)

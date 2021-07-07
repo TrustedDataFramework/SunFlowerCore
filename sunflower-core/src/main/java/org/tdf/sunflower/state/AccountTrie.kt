@@ -31,7 +31,6 @@ class AccountTrie(
 
     override fun createBackend(
         parent: Header,
-        newBlockCreatedAt: Long?,
         isStatic: Boolean,
         root: HexBytes,
     ): Backend {
@@ -47,7 +46,6 @@ class AccountTrie(
             isStatic,
             contractCodeStore,
             mutableMapOf(),
-            newBlockCreatedAt
         )
     }
 

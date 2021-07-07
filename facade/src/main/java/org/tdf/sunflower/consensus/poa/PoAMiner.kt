@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.FixedDelayScheduler
 import org.tdf.common.util.RLPUtil
+import org.tdf.common.util.hex
+import org.tdf.common.util.rlp
 import org.tdf.sunflower.consensus.AbstractMiner
 import org.tdf.sunflower.consensus.poa.config.PoAConfig
 import org.tdf.sunflower.events.NewBlockMined
@@ -43,20 +45,20 @@ class PoAMiner(private val poA: PoA) :
         val rawHash = PoaUtils.getRawHash(block.header)
         val key = ECKey.fromPrivate(config.privateKey!!.bytes)
         val sig = key.sign(rawHash)
-        val extraData = RLPUtil.encode(
+        val extraData =
             arrayOf(
                 sig.v,
                 sig.r,
                 sig.s
-            )
-        )
+            ).rlp()
+
         if (config.threadId == PoA.GATEWAY_ID) {
             for (i in 1 until block.body.size) {
                 val tx = block.body[i]
                 poA.cache.put(tx.hash, tx)
             }
         }
-        return Block(block.header.impl.copy(extraData = extraData), block.body)
+        return Block(block.header.impl.copy(extraData = extraData.hex()), block.body)
     }
 
     @Synchronized

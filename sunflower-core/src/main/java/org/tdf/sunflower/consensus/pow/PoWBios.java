@@ -89,8 +89,6 @@ public class PoWBios extends AbstractBuiltIn {
                 )
             )
         );
-
-        ts.add(backend.getHeaderCreatedAt());
         log.debug("timestamps = {}", Start.MAPPER.writeValueAsString(ts));
         if (ts.size() == config.getBlocksPerEra()) {
             long x = ts.get(ts.size() - 1) - ts.get(0);
@@ -119,7 +117,7 @@ public class PoWBios extends AbstractBuiltIn {
             backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, RLPUtil.encode(ts));
         }
 
-        return Collections.emptyList();
+        throw new RuntimeException("pow");
     }
 
     @Override

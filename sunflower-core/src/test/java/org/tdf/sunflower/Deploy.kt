@@ -4,6 +4,7 @@ import com.google.common.io.ByteStreams
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.controller.TypeConverter.toJsonHex
+import org.tdf.sunflower.controller.jsonHex
 import org.tdf.sunflower.vm.abi.Abi
 import org.web3j.crypto.*
 import org.web3j.protocol.Web3j
@@ -591,10 +592,10 @@ class Web3Wallet(private val web3: Web3j, val privateKey: String): Web3j by web3
     val address = key.address
 
     fun create(data: ByteArray): String{
-        val nonce = web3.ethGetTransactionCount(toJsonHex(address), DefaultBlockParameter.valueOf("pending")).send().transactionCount
-        val raw = RawTransaction.createTransaction(nonce, BigInteger.ZERO, BigInteger.valueOf(Integer.MAX_VALUE.toLong()), "0x", toJsonHex(data))
+        val nonce = web3.ethGetTransactionCount(address.jsonHex, DefaultBlockParameter.valueOf("pending")).send().transactionCount
+        val raw = RawTransaction.createTransaction(nonce, BigInteger.ZERO, BigInteger.valueOf(Integer.MAX_VALUE.toLong()), "0x", data.jsonHex)
         val signedMessage = TransactionEncoder.signMessage(raw, 102L, Credentials.create(privateKey));
-        val hex = toJsonHex(signedMessage)
+        val hex = signedMessage.jsonHex
         return web3.ethSendRawTransaction(hex).send().transactionHash
     }
 
@@ -607,7 +608,7 @@ class Web3Contract(private val w: Web3Wallet, val addr: String, val abi: String)
     val abiEncoder = Abi.fromJson(abi)
 
     fun call(method: String, vararg args: Any): String {
-        val nonce = w.ethGetTransactionCount(toJsonHex(w.address), DefaultBlockParameter.valueOf("pending")).send().transactionCount
+        val nonce = w.ethGetTransactionCount(w.address.jsonHex, DefaultBlockParameter.valueOf("pending")).send().transactionCount
         val encoded = abiEncoder.findFunction { it.name == method }
             .encode(args)
         val raw = RawTransaction.createTransaction(
@@ -616,10 +617,10 @@ class Web3Contract(private val w: Web3Wallet, val addr: String, val abi: String)
             BigInteger.valueOf(Integer.MAX_VALUE.toLong()),
             addr,
             BigInteger.ZERO,
-            toJsonHex(encoded)
+            encoded.jsonHex
         )
         val signedMessage = TransactionEncoder.signMessage(raw, 102L, Credentials.create(w.privateKey));
-        val hex = toJsonHex(signedMessage)
+        val hex = signedMessage.jsonHex
         return w.ethSendRawTransaction(hex).send().transactionHash
     }
 }

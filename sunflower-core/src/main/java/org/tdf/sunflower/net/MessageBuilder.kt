@@ -5,6 +5,7 @@ import com.google.protobuf.Timestamp
 import org.tdf.common.util.ByteUtil
 import java.util.concurrent.atomic.AtomicLong
 import org.tdf.common.util.HashUtil
+import org.tdf.common.util.sha3
 import org.tdf.sunflower.proto.*
 import org.tdf.sunflower.proto.Nothing
 
@@ -50,7 +51,7 @@ class MessageBuilder(val self: PeerImpl, private val config: PeerServerConfig) {
         var current = 0
         val multiParts: MutableList<Message> = mutableListOf()
         val builder = Message.newBuilder()
-        val hash = HashUtil.sha3(serialized)
+        val hash = serialized.sha3()
         var i = 0
         val total = serialized.size / config.maxPacketSize +
                 if (serialized.size % config.maxPacketSize == 0) 0 else 1

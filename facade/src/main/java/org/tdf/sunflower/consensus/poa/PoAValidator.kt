@@ -10,10 +10,12 @@ import org.tdf.sunflower.consensus.poa.PoaUtils.getRawHash
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
-import org.tdf.sunflower.types.*
+import org.tdf.sunflower.types.Block
+import org.tdf.sunflower.types.Header
+import org.tdf.sunflower.types.Transaction
+import org.tdf.sunflower.types.ValidateResult
 import org.tdf.sunflower.types.ValidateResult.Companion.fault
 import org.tdf.sunflower.types.ValidateResult.Companion.success
-import java.util.*
 
 class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: PoA) : AbstractValidator(accountTrie) {
     override fun validate(rd: RepositoryReader, block: Block, dependency: Block): ValidateResult {
@@ -61,8 +63,10 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
     override fun validate(rd: RepositoryReader, dependency: Header, transaction: Transaction): ValidateResult {
         if (!poA.config.controlled) return success()
         val farmBaseAdmin = poA.config.farmBaseAdmin
-        if (poA.config.threadId == PoA.GATEWAY_ID) { // for gateway node, only accept transaction from farm-base admin
-            if (Objects.requireNonNull(transaction.chainId) != PoA.GATEWAY_ID || transaction.sender != farmBaseAdmin) {
+
+        if (poA.config.threadId == PoA.GATEWAY_ID) {
+            // for gateway node, only accept transaction from farm-base admin
+            if (transaction.chainId != PoA.GATEWAY_ID || transaction.sender != farmBaseAdmin) {
                 return fault(
                     String.format(
                         "farmbase only accept admin transaction with network id = %s, while from = %s, network id = %s",

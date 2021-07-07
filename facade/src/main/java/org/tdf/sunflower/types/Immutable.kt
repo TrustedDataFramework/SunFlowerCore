@@ -11,17 +11,14 @@ import org.tdf.common.trie.TrieImpl
 import org.tdf.common.types.Chained
 import org.tdf.common.types.Hashed
 import org.tdf.common.types.Uint256
-import org.tdf.common.util.BigIntegers
-import org.tdf.common.util.ByteUtil
-import org.tdf.common.util.HashUtil
-import org.tdf.common.util.HexBytes
+import org.tdf.common.util.*
 import org.tdf.sunflower.state.Address
 import org.tdf.sunflower.types.TxUtils.*
 import java.math.BigInteger
 import java.util.function.Function
 
 
-interface Header: Chained {
+interface Header : Chained {
     /**
      * hash of parent block
      */
@@ -79,11 +76,11 @@ interface Header: Chained {
     val encoded: ByteArray
     override val hash: HexBytes
 
-    companion object: Codec<Header> {
+    companion object : Codec<Header> {
         override val encoder: Function<in Header, ByteArray>
             get() = Function { it.encoded }
         override val decoder: Function<ByteArray, out Header>
-            get() =  Function { Rlp.decode(it, HeaderImpl::class.java) }
+            get() = Function { Rlp.decode(it, HeaderImpl::class.java) }
 
     }
 
@@ -167,19 +164,32 @@ data class HeaderImpl @RlpCreator constructor(
 ) : Header {
 
     override val encoded: ByteArray by lazy {
-        Rlp.encode(this)
+        rlp()
     }
 
-    override val hash: HexBytes by lazy{
-        HashUtil.sha3Hex(encoded)
+    override val hash: HexBytes by lazy {
+        encoded.sha3().hex()
     }
     override val impl: HeaderImpl
         get() = this
 }
 
-data class Block(val header: Header, val body: List<Transaction> = emptyList()): Header by header {
+
+@RlpProps("header", "body")
+data class Block(val header: Header, val body: List<Transaction> = emptyList()) : Header by header {
     companion object {
-        val BEST_COMPARATOR : Comparator<Block> = Comparator { a, b ->
+
+        @RlpCreator
+        @JvmStatic
+        fun create(bin: ByteArray, streamId: Long): Block {
+            val li = StreamId.asList(bin, streamId)
+            return Block(
+                li.valueAt(0, HeaderImpl::class.java),
+                li.valueAt(1, Array<Transaction>::class.java).toList()
+            )
+        }
+
+        val BEST_COMPARATOR: Comparator<Block> = Comparator { a, b ->
             if (a.height != b.height)
                 return@Comparator a.height.compareTo(b.height)
             if (a.body.size != b.body.size) {
@@ -188,7 +198,7 @@ data class Block(val header: Header, val body: List<Transaction> = emptyList()):
             return@Comparator a.hash.compareTo(b.hash)
         }
 
-        val FAT_COMPARATOR : Comparator<Block> = Comparator { a, b ->
+        val FAT_COMPARATOR: Comparator<Block> = Comparator { a, b ->
             if (a.height != b.height)
                 return@Comparator a.height.compareTo(b.height)
             if (a.body.size != b.body.size) {
@@ -250,18 +260,18 @@ data class Transaction(
         }
 
         fun create(li: RlpList): Transaction {
-            require(li.size() <= 9) { "Too many RLP elements" }
+            require(li.size() == 9 || li.size() == 6) { "Invalid RLP elements count ${li.size()}" }
 
             var chainId: Int? = null
             var sig: ECDSASignature? = null
-            if (li.size() >= 7 && li.bytesAt(6).isNotEmpty()) {
+            if (li.size() == 9) {
                 val vData = li.bytesAt(6)
                 val v = ByteUtil.bytesToBigInteger(vData)
                 val r = li.bytesAt(7)
                 val s = li.bytesAt(8)
                 chainId = extractChainIdFromRawSignature(v, r, s)
 
-                if (r.isNotEmpty() && s.isNotEmpty())
+                if (r.isEmpty() || s.isEmpty())
                     throw RuntimeException("invalid transaction, missing signature")
                 sig = ECDSASignature.fromComponents(r, s, getRealV(v))
             }
@@ -296,18 +306,18 @@ data class Transaction(
     }
 
     fun validate() {
-        require(receiveAddress.size() == ADDRESS_LENGTH) { "Receive address is not valid" }
+        require(receiveAddress.size() == 0 || receiveAddress.size() == ADDRESS_LENGTH) { "Receive address is not valid" }
         require(signature?.r?.unsigned()?.size ?: 0 <= HASH_LENGTH) { "Signature R is not valid" }
         require(signature?.s?.unsigned()?.size ?: 0 <= HASH_LENGTH) { "Signature S is not valid" }
         require(sender.size() == ADDRESS_LENGTH) { "Sender is not valid" }
     }
 
     val sender: HexBytes by lazy {
-        HexBytes.fromBytes(ECKey.signatureToAddress(rawHash, signature))
+        signature?.let { ECKey.signatureToAddress(rawHash, it) }?.hex() ?: Address.empty()
     }
 
     val rawHash: ByteArray by lazy {
-        HashUtil.sha3(encodedRaw)
+        encodedRaw.sha3()
     }
 
     val creation: Boolean = receiveAddress.isEmpty
@@ -324,13 +334,11 @@ data class Transaction(
     }
 
     val encodedRaw: ByteArray by lazy {
-        Rlp.encode(
-            arrayOf(
-                nonce, gasPrice, gasLimit,
-                receiveAddress, value, data,
-                chainId, 0, 0
-            )
-        )
+        arrayOf(
+            nonce, gasPrice, gasLimit,
+            receiveAddress, value, data,
+            chainId, 0, 0
+        ).rlp()
     }
 
     val encoded: ByteArray by lazy {
@@ -338,9 +346,14 @@ data class Transaction(
     }
 
     override fun writeToBuf(buf: RlpBuffer): Int {
-        val v: Int = getV(chainId, signature)
-        val r = signature?.r ?: BigInteger.ZERO
-        val s = signature?.s ?: BigInteger.ZERO
+        val sig = signature ?: return buf.writeObjects(
+            nonce, gasPrice, gasLimit,
+            receiveAddress.bytes, value, data.bytes
+        )
+
+        val v: Int = getV(chainId, sig)
+        val r = sig.r
+        val s = sig.s
 
         return buf.writeObjects(
             nonce, gasPrice, gasLimit,

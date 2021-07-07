@@ -10,6 +10,8 @@ import org.tdf.sunflower.types.StorageWrapper
 import org.tdf.sunflower.consensus.Proposer
 import org.tdf.sunflower.vm.abi.Abi
 import com.github.salpadding.rlpstream.Rlp
+import org.tdf.common.util.ascii
+import org.tdf.common.util.hex
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallContext
@@ -173,8 +175,8 @@ class Authentication(
 
         val abi: Abi = Abi.fromJson(ABI_JSON)
 
-        val NODES_KEY = "nodes".ascii()
-        val PENDING_NODES_KEY = "pending".ascii()
+        val NODES_KEY = "nodes".ascii().hex()
+        val PENDING_NODES_KEY = "pending".ascii().hex()
 
         fun divideAndCeil(a: Int, b: Int): Int {
             val ret = a / b

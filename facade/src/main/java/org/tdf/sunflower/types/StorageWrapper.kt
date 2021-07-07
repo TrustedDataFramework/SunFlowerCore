@@ -2,9 +2,7 @@ package org.tdf.sunflower.types
 
 import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.store.Store
-import org.tdf.common.util.HexBytes
-import org.tdf.common.util.RLPUtil
-import org.tdf.sunflower.state.hex
+import org.tdf.common.util.*
 import java.util.*
 
 class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexBytes, HexBytes>) {
@@ -17,18 +15,14 @@ class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexB
     private fun keySet(): MutableSet<HexBytes> {
         if (prefix.isEmpty) throw UnsupportedOperationException()
         val keys = store[prefix]
-        return if (keys == null || keys.isEmpty) TreeSet() else TreeSet(
-            RLPUtil.decode(
-                keys,
-                Array<HexBytes>::class.java
-            ).toList()
-        )
+        return if (keys == null || keys.isEmpty) TreeSet() else
+            TreeSet(keys.decode(Array<HexBytes>::class.java).toList())
     }
 
     private fun addKey(key: HexBytes) {
         val keySet = keySet()
         keySet.add(key)
-        store[prefix] = Rlp.encode(keySet).hex()
+        store[prefix] = keySet.rlp().hex()
     }
 
     fun save(key: HexBytes, o: Any) {
@@ -37,13 +31,13 @@ class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexB
         if (!prefix.isEmpty) {
             addKey(key)
         }
-        store[prefixed] = RLPUtil.encode(o)
+        store[prefixed] = o.rlp().hex()
     }
 
     private fun removeKey(key: HexBytes) {
         val keySet = keySet()
         keySet.remove(key)
-        store[prefix] = HexBytes.fromBytes(Rlp.encode(keySet))
+        store[prefix] = keySet.rlp().hex()
     }
 
     fun remove(key: HexBytes) {
@@ -58,7 +52,7 @@ class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexB
     operator fun <T> get(key: HexBytes, clazz: Class<T>, defaultValue: T): T {
         val prefixed = verifyAndPrefix(key)
         val h = store[prefixed] ?: return defaultValue
-        return RLPUtil.decode(h, clazz)
+        return h.decode(clazz)
     }
 
     fun <T> getList(key: HexBytes, clazz: Class<T>, defaultValue: MutableList<T>?): MutableList<T>? {
@@ -68,9 +62,7 @@ class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexB
         val ret: MutableList<T> = ArrayList()
         val li = Rlp.decodeList(h.bytes)
         for (i in 0 until li.size()) {
-            ret.add(
-                Rlp.decode(li.rawAt(i), clazz)
-            )
+            ret.add(li.rawAt(i).decode(clazz))
         }
         return ret
     }
@@ -82,9 +74,7 @@ class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexB
         val ret = TreeSet<T>()
         val li = Rlp.decodeList(h.bytes)
         for (i in 0 until li.size()) {
-            ret.add(
-                Rlp.decode(li.rawAt(i), clazz)
-            )
+            ret.add(li.rawAt(i).decode(clazz))
         }
         return ret
     }

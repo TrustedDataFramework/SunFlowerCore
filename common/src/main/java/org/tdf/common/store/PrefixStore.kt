@@ -4,6 +4,7 @@ import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.serialize.Codec
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.RLPUtil.decode
+import org.tdf.common.util.hex
 import java.util.*
 
 class PrefixStore<K, V>(

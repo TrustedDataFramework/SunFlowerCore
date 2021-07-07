@@ -30,7 +30,6 @@ interface Backend : AutoCloseable {
     fun getBalance(address: HexBytes): Uint256
 
     // only used for bios contract
-    var headerCreatedAt: Long?
     fun setBalance(address: HexBytes, balance: Uint256)
     fun getNonce(address: HexBytes): Long
     fun setNonce(address: HexBytes, nonce: Long)
@@ -73,10 +72,6 @@ interface Backend : AutoCloseable {
     // merge modifications, return the new state root
     fun merge(): HexBytes
 
-    fun isContract(address: HexBytes): Boolean {
-        val code = getCode(address)
-        return code.size() > 0
-    }
 
     fun getAsStore(address: HexBytes): Store<HexBytes, HexBytes> {
         return object : Store<HexBytes, HexBytes> {

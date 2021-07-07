@@ -21,7 +21,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
         get() = 0
 
     protected fun commonValidate(rd: RepositoryReader, block: Block, parent: Block): BlockValidateResult {
-        if (block.body == null || block.body.isEmpty()) return fault("missing block body")
+        if (block.body.isEmpty()) return fault("missing block body")
 
         // a block should contains exactly one coin base transaction
 
@@ -59,7 +59,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
         val receipts: MutableList<TransactionReceipt> = ArrayList()
         val bloom = Bloom()
         try {
-            var tmp = accountTrie.createBackend(parent.header, null, false, parent.stateRoot)
+            var tmp = accountTrie.createBackend(parent.header,  false, parent.stateRoot)
             val coinbase = block.body[0]
             for (tx in block.body.subList(1, block.body.size)) {
                 if (currentGas > blockGasLimit) return fault("block gas overflow")
@@ -85,9 +85,9 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                 bloom.or(receipt.bloomFilter)
                 currentRoot = tmp.merge()
                 receipts.add(receipt)
-                tmp = accountTrie.createBackend(parent.header, null, false, currentRoot)
+                tmp = accountTrie.createBackend(parent.header,  root = currentRoot)
             }
-            tmp.headerCreatedAt = block.createdAt
+
             val executor = VMExecutor(rd, tmp, CallContext.fromTx(coinbase), CallData.fromTx(coinbase, true), 0)
             val r = executor.execute()
             currentGas += r.gasUsed

@@ -2,6 +2,7 @@ package org.tdf.sunflower.state
 
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.sunflower.types.Transaction
 
 object Address {
