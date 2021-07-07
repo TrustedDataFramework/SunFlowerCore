@@ -198,7 +198,11 @@ data class VMExecutor(
             input,
             code
         )
-        val ctx = EvmContext()
+        val ctx = EvmContext(
+            origin = ctx.origin.bytes,
+            number = backend.height,
+            chainId = ctx.chainId
+        )
         val host = EvmHostImpl(this, rd)
         val interpreter =
             Interpreter(host, ctx, evmCallData, printStream, limit, EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE)

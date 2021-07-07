@@ -4,7 +4,6 @@ import org.tdf.common.util.HexBytes
 import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.serialize.Codec
 import org.tdf.common.store.ByteArrayMapStore
-import org.tdf.common.store.ReadOnlyStoreImpl
 import org.tdf.common.store.ReadonlyStore
 import org.tdf.common.store.Store
 import java.util.function.BiFunction

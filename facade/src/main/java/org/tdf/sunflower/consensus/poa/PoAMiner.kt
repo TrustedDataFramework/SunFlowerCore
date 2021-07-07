@@ -21,6 +21,9 @@ import java.time.OffsetDateTime
 class PoAMiner(private val poA: PoA) :
     AbstractMiner(poA.accountTrie, poA.eventBus, poA.config, poA.transactionPool) {
 
+    override val chainId: Int
+        get() = poA.chainId
+
     private val config: PoAConfig
         get() = poA.config
 

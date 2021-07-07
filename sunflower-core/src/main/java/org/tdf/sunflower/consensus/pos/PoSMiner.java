@@ -119,4 +119,9 @@ public class PoSMiner extends AbstractMiner {
     protected Transaction createCoinBase(long height) {
         return new Transaction();
     }
+
+    @Override
+    protected int getChainId() {
+        return pos.getChainId();
+    }
 }

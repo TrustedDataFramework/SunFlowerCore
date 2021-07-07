@@ -1,6 +1,5 @@
 package org.tdf.sunflower.state
 
-import org.tdf.sunflower.vm.CallContext.Companion.empty
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.facade.RepositoryReader
@@ -45,7 +44,7 @@ abstract class AbstractBuiltIn protected constructor(
         return call(
             rd,
             accounts.createBackend(parent, isStatic = true),
-            empty(),
+            CallContext(),
             callData,
             method,
             *args

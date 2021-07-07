@@ -12,21 +12,18 @@ data class CallContext(
     val txNonce: Long = 0,
     val gasPrice: Uint256 = Uint256.ZERO,
     val gasLimit: Uint256 = Uint256.ZERO,
+    val chainId: Int = 0,
 ) {
     companion object {
         @JvmStatic
-        fun empty(): CallContext {
-            return CallContext()
-        }
-
-        @JvmStatic
-        fun fromTx(tx: Transaction): CallContext {
+        fun fromTx(tx: Transaction, chainId: Int = tx.chainId ?: 0): CallContext {
             return CallContext(
                 tx.sender,
                 tx.hash,
                 tx.nonce,
                 tx.gasPrice,
-                Uint256.of(tx.gasLimit)
+                Uint256.of(tx.gasLimit),
+                chainId
             )
         }
     }

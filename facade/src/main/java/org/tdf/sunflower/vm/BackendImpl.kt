@@ -24,6 +24,7 @@ class BackendImpl(
     // address -> code
     private val codeStore: Store<HexBytes, HexBytes>,
     private val codeCache: MutableMap<HexBytes, HexBytes> = mutableMapOf(),
+    override val height: Long = parent.height + 1,
 ) : Backend {
     // get account without clone
     private fun lookup(address: HexBytes): Account {
@@ -118,8 +119,6 @@ class BackendImpl(
         return lookup(address).contractHash
     }
 
-    override val height: Long
-        get() = parent.height + 1
     override val parentHash: HexBytes
         get() = parent.hash
 

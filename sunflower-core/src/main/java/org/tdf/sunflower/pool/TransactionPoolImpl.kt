@@ -50,7 +50,7 @@ class TransactionPoolImpl(
     private val writeLock = LogLock(lock.writeLock(), "tp-w")
 
     // dropped transactions
-    private val dropped: Cache<HexBytes, String> =
+    override val dropped: Cache<HexBytes, Pair<Transaction, String>> =
         CacheBuilder.newBuilder()
             .expireAfterWrite(config.expiredIn, TimeUnit.SECONDS)
             .build()
@@ -68,6 +68,7 @@ class TransactionPoolImpl(
 
     private val clearScheduler = FixedDelayScheduler("txPool-clear", config.expiredIn)
     private val executeScheduler = FixedDelayScheduler("txPool-execute", 1)
+    private lateinit var engine: ConsensusEngine
 
     private fun resetInternal(best: Header) {
         parentHeader = best
@@ -80,6 +81,7 @@ class TransactionPoolImpl(
 
     fun setEngine(engine: ConsensusEngine) {
         validator = engine.validator
+        this.engine = engine
         repo.reader.use {
             resetInternal(it.bestHeader)
         }
@@ -106,7 +108,7 @@ class TransactionPoolImpl(
             cache.removeIf { info: TransactionInfo ->
                 val remove = (now - info.receivedAt) / 1000 > config.expiredIn
                 if (remove) {
-                    dropped.put(info.tx.hash, "transaction timeout")
+                    dropped.put(info.tx.hash, Pair(info.tx, "transaction timeout"))
                 }
                 remove
             }
@@ -117,17 +119,20 @@ class TransactionPoolImpl(
 
     override fun collect(rd: RepositoryReader, transactions: Collection<Transaction>): Map<HexBytes, String> {
         val errors: MutableMap<HexBytes, String> = mutableMapOf()
-        writeLock.lock()
-        try {
+
+        writeLock.withLock {
             val newCollected: MutableList<Transaction> = mutableListOf()
             for (tx in transactions) {
+                if (pending.any { it.hash == tx.hash } || rd.containsTransaction(tx.hash))
+                    continue
+
                 if (tx.gasPrice < appCfg.vmGasPrice) {
                     errors[tx.hash] = "transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}"
                     continue
                 }
                 val err = dropped.asMap()[tx.hash]
                 if (err != null) {
-                    errors[tx.hash] = err
+                    errors[tx.hash] = err.second
                     continue
                 }
 
@@ -140,12 +145,18 @@ class TransactionPoolImpl(
                     errors[tx.hash] = e.message ?: "validate transaction failed"
                     continue
                 }
-                if (!tx.verifySig) {
+                if (tx.vrs == null || !tx.verifySig) {
                     errors[tx.hash] = "validate signature failed"
                     continue
                 }
 
-                val res = validator.validate(rd, parentHeader!!, tx)
+                if (tx.chainId != engine.chainId) {
+                    errors[tx.hash] = "invalid chainId ${tx.chainId}"
+                    continue
+                }
+
+                val h = parentHeader ?: return errors
+                val res = validator.validate(rd, h, tx)
                 if (res.success) {
                     cache.add(info)
                     newCollected.add(tx)
@@ -155,25 +166,22 @@ class TransactionPoolImpl(
             }
             execute(rd)
             transactions.forEach { t ->
-                dropped.asMap()[t.hash]?.let { errors[t.hash] = it }
+                dropped.asMap()[t.hash]?.let { errors[t.hash] = it.second }
             }
             if (newCollected.isNotEmpty())
                 eventBus.publish(NewTransactionsCollected(newCollected))
-        } finally {
-            writeLock.unlock()
+            return errors
         }
-        return errors
     }
 
     private fun execute(rd: RepositoryReader) {
         val it = cache.iterator()
-        if (parentHeader == null) return
         while (it.hasNext()) {
             val t = it.next().tx
             val prevNonce = current!!.getNonce(t.sender)
             if (t.nonce < prevNonce) {
                 it.remove()
-                dropped.asMap()[t.hash] = "nonce is too small"
+                dropped.asMap()[t.hash] = Pair(t, "nonce is too small")
                 continue
             }
 
@@ -198,7 +206,7 @@ class TransactionPoolImpl(
 
                 if (res.gasUsed > blockGasLimit) {
                     it.remove()
-                    dropped.asMap()[t.hash] = "gas overflows block gas limit"
+                    dropped.asMap()[t.hash] = Pair(t, "gas overflows block gas limit")
                     continue
                 }
 
@@ -222,16 +230,16 @@ class TransactionPoolImpl(
                 pendingReceipts.add(receipt)
                 this.current = child
                 this.gasUsed += res.gasUsed
+                it.remove()
             } catch (e: Exception) {
-                dropped.asMap()[t.hash] = e.message ?: "execute tx error"
+                dropped.asMap()[t.hash] = Pair(t, e.message ?: "execute tx error")
                 it.remove()
             }
         }
     }
 
     override fun pop(parentHeader: Header): PendingData {
-        writeLock.lock()
-        try {
+        writeLock.withLock {
             if (this.parentHeader != null && parentHeader.hash != this.parentHeader!!.hash) {
                 clearPending()
                 log.warn("parent header is not equal, drop pending")
@@ -245,20 +253,13 @@ class TransactionPoolImpl(
             )
             clearPending()
             return r
-        } finally {
-            writeLock.unlock()
         }
     }
 
     override fun reset(parent: Header) {
-        if (!writeLock.tryLock())
-            return
-        try {
+        writeLock.withLock {
             resetInternal(parent)
-        } finally {
-            writeLock.unlock()
         }
-
     }
 
     override fun current(): Backend? {

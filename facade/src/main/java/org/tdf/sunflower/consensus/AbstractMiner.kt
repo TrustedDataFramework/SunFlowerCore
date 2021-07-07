@@ -24,6 +24,7 @@ abstract class AbstractMiner(
     protected abstract fun createCoinBase(height: Long): Transaction
     protected abstract fun createHeader(parent: Block, createdAt: Long): Header
     protected abstract fun finalizeBlock(parent: Block, block: Block): Block?
+    protected abstract val chainId: Int
 
     // TODO:  2. 增加打包超时时间
     protected fun createBlock(rd: RepositoryReader, parent: Block, createdAt: Long = System.currentTimeMillis() / 1000): BlockCreateResult {
@@ -50,7 +51,7 @@ abstract class AbstractMiner(
         val c = coinbase.copy(value = coinbase.value + totalFee)
         val body = transactionList.toMutableList()
         body.add(0, c)
-        val ctx = CallContext.fromTx(c)
+        val ctx = CallContext.fromTx(c, chainId)
         val callData = CallData.fromTx(c, true)
 
 

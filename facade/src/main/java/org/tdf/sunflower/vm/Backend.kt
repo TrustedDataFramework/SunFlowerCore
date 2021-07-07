@@ -4,7 +4,6 @@ import org.tdf.common.store.Store
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.state.BuiltinContract
-import org.tdf.sunflower.types.LogInfo
 
 interface Backend : AutoCloseable {
     fun subBalance(addr: HexBytes, amount: Uint256) {

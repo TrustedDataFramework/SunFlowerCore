@@ -23,6 +23,9 @@ class PoWMiner(
     private val threadPool = Executors.newWorkStealingPool() as ForkJoinPool
     private lateinit var minerExecutor: ScheduledExecutorService
 
+    override val chainId: Int
+        get() = poW.chainId
+
     @Volatile
     private var stopped = false
 

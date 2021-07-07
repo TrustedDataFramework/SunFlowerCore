@@ -1,5 +1,6 @@
 package org.tdf.sunflower.facade
 
+import com.google.common.cache.Cache
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.types.PendingData
@@ -21,4 +22,6 @@ interface TransactionPool {
     fun reset(parent: Header)
 
     fun current(): Backend?
+
+    val dropped: Cache<HexBytes, Pair<Transaction, String>>
 }

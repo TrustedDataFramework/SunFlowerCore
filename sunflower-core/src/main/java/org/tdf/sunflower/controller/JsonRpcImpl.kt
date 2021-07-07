@@ -1,7 +1,6 @@
 package org.tdf.sunflower.controller
 
 import org.springframework.stereotype.Service
-import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.sha3
 import org.tdf.sunflower.AppConfig
@@ -194,7 +193,7 @@ class JsonRpcImpl(
                     val executor = VMExecutor(
                         it,
                         backend,
-                        args.toCallContext(backend.getNonce(cd.caller)),
+                        args.toCallContext(backend.getNonce(cd.caller), engine.chainId),
                         cd, AppConfig.INSTANCE.blockGasLimit
                     )
                     return executor.execute().executionResult.jsonHex
@@ -212,7 +211,7 @@ class JsonRpcImpl(
                 val executor = VMExecutor(
                     rd,
                     backend,
-                    args.toCallContext(backend.getNonce(callData.caller)),
+                    args.toCallContext(backend.getNonce(callData.caller), engine.chainId),
                     callData,
                     AppConfig.INSTANCE.blockGasLimit
                 )
@@ -265,6 +264,13 @@ class JsonRpcImpl(
 
     override fun eth_getTransactionReceipt(transactionHash: String): TransactionReceiptDTO? {
         val hash = transactionHash.jsonHex.hex
+
+        val p = pool.dropped.asMap()[hash]
+
+        if(p != null) {
+            return TransactionReceiptDTO.failed(p.first, p.second)
+        }
+
         repo.reader.use { rd ->
             val info = rd.getTransactionInfo(hash)
             val tx = info?.receipt?.transaction
@@ -328,15 +334,6 @@ class JsonRpcImpl(
     }
 
     private fun getBlockResult(block: Block, fullTx: Boolean): BlockResult {
-        val br = BlockResult(
-            block.height.jsonHex, block.hash.jsonHex, block.hashPrev.jsonHex,
-            block.nonce.jsonHex, block.unclesHash.jsonHex, block.logsBloom.jsonHex,
-            block.transactionsRoot.jsonHex, block.stateRoot.jsonHex, block.receiptTrieRoot.jsonHex,
-            block.coinbase.jsonHex, block.difficulty.bytes.jsonHexNum, BigInteger.ZERO.jsonHex,
-            block.extraData.jsonHex, null, block.gasLimit.jsonHex,
-            block.gasUsed.jsonHex, block.createdAt.jsonHex
-        )
-
         // TODO: estimate size
         val txs: MutableList<Any> = ArrayList()
         if (fullTx) {
@@ -348,9 +345,14 @@ class JsonRpcImpl(
                 txs.add(tx.hash.jsonHex)
             }
         }
-        br.transactions = txs.toTypedArray()
-        val ul = emptyList<String>()
-        br.uncles = ul.toTypedArray()
-        return br
+
+        return BlockResult(
+            block.height.jsonHex, block.hash.jsonHex, block.hashPrev.jsonHex,
+            block.nonce.jsonHex, block.unclesHash.jsonHex, block.logsBloom.jsonHex,
+            block.transactionsRoot.jsonHex, block.stateRoot.jsonHex, block.receiptTrieRoot.jsonHex,
+            block.coinbase.jsonHex, block.difficulty.bytes.jsonHexNum, BigInteger.ZERO.jsonHex,
+            block.extraData.jsonHex, null, block.gasLimit.jsonHex,
+            block.gasUsed.jsonHex, block.createdAt.jsonHex, txs, emptyList()
+        )
     }
 }

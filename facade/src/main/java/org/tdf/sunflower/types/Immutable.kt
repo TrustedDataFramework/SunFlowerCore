@@ -112,7 +112,7 @@ data class HeaderImpl @RlpCreator constructor(
     /**
      * uncles list = rlp([])
      */
-    override val unclesHash: HexBytes = HexBytes.fromBytes(HashUtil.EMPTY_LIST_HASH),
+    override val unclesHash: HexBytes = HashUtil.EMPTY_LIST_HASH.hex(),
     /**
      * miner
      */
@@ -219,6 +219,20 @@ fun RlpList.u256(i: Int): Uint256 {
     return Uint256.of(this.bytesAt(i))
 }
 
+typealias VRS = Triple<BigInteger, HexBytes, HexBytes>
+
+val VRS.v get() = first
+val VRS.r get() = second
+val VRS.s get() = third
+
+internal fun VRS.signature(): ECDSASignature {
+    return ECDSASignature.fromComponents(r.bytes, s.bytes, getRealV(v))
+}
+
+internal fun VRS.chainId(): Int {
+    return extractChainIdFromRawSignature(v, r.bytes, s.bytes)
+}
+
 data class Transaction(
     val nonce: Long = 0,
     val gasPrice: Uint256 = Uint256.ZERO,
@@ -226,8 +240,7 @@ data class Transaction(
     val receiveAddress: HexBytes = Address.empty(),
     val value: Uint256 = Uint256.ZERO,
     val data: HexBytes = HexBytes.empty(),
-    val chainId: Int? = null,
-    val signature: ECDSASignature? = null,
+    val vrs: VRS? = null
 ) : RlpWritable, Hashed {
     companion object : Codec<Transaction> {
         const val HASH_LENGTH = 32
@@ -242,9 +255,10 @@ data class Transaction(
         @JvmStatic
         fun calcTxTrie(transactions: List<Transaction>): HexBytes {
             val txsState: Trie<ByteArray, ByteArray> = TrieImpl()
-            if (transactions.isEmpty()) return HexBytes.fromBytes(HashUtil.EMPTY_TRIE_HASH)
+            if (transactions.isEmpty())
+                return HashUtil.EMPTY_TRIE_HASH_HEX
             for (i in transactions.indices) {
-                txsState[Rlp.encodeInt(i)] = transactions[i].encoded
+                txsState[i.rlp()] = transactions[i].encoded
             }
             return txsState.commit()
         }
@@ -262,18 +276,16 @@ data class Transaction(
         fun create(li: RlpList): Transaction {
             require(li.size() == 9 || li.size() == 6) { "Invalid RLP elements count ${li.size()}" }
 
-            var chainId: Int? = null
-            var sig: ECDSASignature? = null
+
+            var vrs: VRS? = null
             if (li.size() == 9) {
                 val vData = li.bytesAt(6)
                 val v = ByteUtil.bytesToBigInteger(vData)
                 val r = li.bytesAt(7)
                 val s = li.bytesAt(8)
-                chainId = extractChainIdFromRawSignature(v, r, s)
-
                 if (r.isEmpty() || s.isEmpty())
                     throw RuntimeException("invalid transaction, missing signature")
-                sig = ECDSASignature.fromComponents(r, s, getRealV(v))
+                vrs = VRS(v, r.hex(), s.hex())
             }
 
 
@@ -281,7 +293,7 @@ data class Transaction(
                 li.longAt(0), li.u256(1),
                 li.longAt(2).takeIf { it >= 0 } ?: throw RuntimeException("gas limit exceeds Long.MAX_VALUE"),
                 li.hex(3), li.u256(4), li.hex(5),
-                chainId, sig
+                vrs
             )
         }
 
@@ -291,18 +303,23 @@ data class Transaction(
             get() = Function { Rlp.decode(it, Transaction::class.java) }
     }
 
-    private fun RlpBuffer.writeObjects(vararg objects: Any): Int {
-        return this.writeObject(arrayOf(objects))
-    }
-
     private fun BigInteger.unsigned(): ByteArray {
         return BigIntegers.asUnsignedByteArray(this)
     }
 
     val verifySig: Boolean by lazy {
-        val key = ECKey.signatureToKey(rawHash, signature)
+        val sig = signature ?: return@lazy false
+        val key = ECKey.signatureToKey(rawHash, sig)
         // verify signature
         key.verify(rawHash, signature)
+    }
+
+    val signature: ECDSASignature? by lazy {
+        vrs?.signature()
+    }
+
+    val chainId: Int? by lazy {
+        vrs?.chainId()
     }
 
     fun validate() {
@@ -334,10 +351,14 @@ data class Transaction(
     }
 
     val encodedRaw: ByteArray by lazy {
+        // encoded raw of unsigned transaction
+        val cid = chainId ?: return@lazy arrayOf(nonce, gasPrice, gasLimit, receiveAddress, value, data).rlp()
+
+        // encoded raw of signed transaction
         arrayOf(
             nonce, gasPrice, gasLimit,
             receiveAddress, value, data,
-            chainId, 0, 0
+            cid, 0, 0
         ).rlp()
     }
 
@@ -346,19 +367,23 @@ data class Transaction(
     }
 
     override fun writeToBuf(buf: RlpBuffer): Int {
-        val sig = signature ?: return buf.writeObjects(
-            nonce, gasPrice, gasLimit,
-            receiveAddress.bytes, value, data.bytes
+        val sig = signature ?: return buf.writeObject(
+            arrayOf(
+                nonce, gasPrice, gasLimit,
+                receiveAddress.bytes, value, data.bytes
+            )
         )
 
         val v: Int = getV(chainId, sig)
         val r = sig.r
         val s = sig.s
 
-        return buf.writeObjects(
-            nonce, gasPrice, gasLimit,
-            receiveAddress.bytes, value, data.bytes,
-            v, r, s
+        return buf.writeObject(
+            arrayOf(
+                nonce, gasPrice, gasLimit,
+                receiveAddress.bytes, value, data.bytes,
+                v, r, s
+            )
         )
     }
 }

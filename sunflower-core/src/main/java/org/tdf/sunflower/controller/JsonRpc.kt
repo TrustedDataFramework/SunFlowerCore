@@ -107,8 +107,8 @@ interface JsonRpc {
     ) {
 
         @JsonIgnore
-        fun toCallContext(nonce: Long?): CallContext {
-            return toCallContext(this, nonce)
+        fun toCallContext(nonce: Long?, chainId: Int): CallContext {
+            return JsonRpcUtil.toCallContext(this, nonce, chainId)
         }
 
         @JsonIgnore
@@ -118,52 +118,51 @@ interface JsonRpc {
     }
 
     data class BlockResult(
-
-        var number // QUANTITY - the block number. null when its pending block.
+        val number // QUANTITY - the block number. null when its pending block.
         : String? = null,
 
-        var hash // DATA, 32 Bytes - hash of the block. null when its pending block.
+        val hash // DATA, 32 Bytes - hash of the block. null when its pending block.
         : String? = null,
 
-        var parentHash // DATA, 32 Bytes - hash of the parent block.
+        val parentHash // DATA, 32 Bytes - hash of the parent block.
         : String? = null,
 
-        var nonce // DATA, 8 Bytes - hash of the generated proof-of-work. null when its pending block.
+        val nonce // DATA, 8 Bytes - hash of the generated proof-of-work. null when its pending block.
         : String? = null,
 
-        var sha3Uncles // DATA, 32 Bytes - SHA3 of the uncles data in the block.
+        val sha3Uncles // DATA, 32 Bytes - SHA3 of the uncles data in the block.
         : String? = null,
 
-        var logsBloom // DATA, 256 Bytes - the bloom filter for the logs of the block. null when its pending block.
+        val logsBloom // DATA, 256 Bytes - the bloom filter for the logs of the block. null when its pending block.
         : String? = null,
 
-        var transactionsRoot // DATA, 32 Bytes - the root of the transaction trie of the block.
+        val transactionsRoot // DATA, 32 Bytes - the root of the transaction trie of the block.
         : String? = null,
 
-        var stateRoot // DATA, 32 Bytes - the root of the final state trie of the block.
+        val stateRoot // DATA, 32 Bytes - the root of the final state trie of the block.
         : String? = null,
-        var receiptsRoot // DATA, 32 Bytes - the root of the receipts trie of the block.
+        val receiptsRoot // DATA, 32 Bytes - the root of the receipts trie of the block.
         : String? = null,
-        var miner // DATA, 20 Bytes - the address of the beneficiary to whom the mining rewards were given.
+        val miner // DATA, 20 Bytes - the address of the beneficiary to whom the mining rewards were given.
         : String? = null,
-        var difficulty // QUANTITY - integer of the difficulty for this block.
+        val difficulty // QUANTITY - integer of the difficulty for this block.
         : String? = null,
-        var totalDifficulty // QUANTITY - integer of the total difficulty of the chain until this block.
+        val totalDifficulty // QUANTITY - integer of the total difficulty of the chain until this block.
         : String? = null,
-        var extraData // DATA - the "extra data" field of this block
+        val extraData // DATA - the "extra data" field of this block
         : String? = null,
-        var size //QUANTITY - integer the size of this block in bytes.
+        val size //QUANTITY - integer the size of this block in bytes.
         : String? = null,
-        var gasLimit //: QUANTITY - the maximum gas allowed in this block.
+        val gasLimit //: QUANTITY - the maximum gas allowed in this block.
         : String? = null,
-        var gasUsed // QUANTITY - the total used gas by all transactions in this block.
+        val gasUsed // QUANTITY - the total used gas by all transactions in this block.
         : String? = null,
-        var timestamp //: QUANTITY - the unix timestamp for when the block was collated.
+        val timestamp //: QUANTITY - the unix timestamp for when the block was collated.
         : String? = null,
-        var transactions //: Array - Array of transaction objects, or 32 Bytes transaction hashes depending on the last given parameter.
-        : Array<Any> = emptyArray(),
-        var uncles //: Array - Array of uncle hashes.
-        : Array<String> = emptyArray(),
+        val transactions //: Array - Array of transaction objects, or 32 Bytes transaction hashes depending on the last given parameter.
+        : List<Any>? = null,
+        val uncles //: Array - Array of uncle hashes.
+        : List<String>? = null,
     )
 
 
@@ -176,37 +175,29 @@ interface JsonRpc {
         : String? = null,
     )
 
-    class LogFilterElement(logInfo: LogInfo, b: Block?, txIndex: Int?, tx: Transaction, logIdx: Int) {
-        var logIndex: String = logIdx.jsonHex
-        var transactionIndex: String? = txIndex?.jsonHex
-        var transactionHash: String
-        var blockHash: String? = b?.hash?.jsonHex
-        var blockNumber: String? = b?.height?.jsonHex
-        var address: String
-        var data: String
-        var topics: Array<String>
-        override fun toString(): String {
-            return "LogFilterElement{" +
-                    "logIndex='" + logIndex + '\'' +
-                    ", blockNumber='" + blockNumber + '\'' +
-                    ", blockHash='" + blockHash + '\'' +
-                    ", transactionHash='" + transactionHash + '\'' +
-                    ", transactionIndex='" + transactionIndex + '\'' +
-                    ", address='" + address + '\'' +
-                    ", data='" + data + '\'' +
-                    ", topics=" + topics.contentToString() +
-                    '}'
-        }
-
-        init {
-            transactionHash = tx.hash.jsonHex
-            address = tx.receiveAddress.jsonHex
-            data = logInfo.data.jsonHex
-            val topics: Array<String?> = arrayOfNulls(logInfo.topics.size)
-            for (i in topics.indices) {
-                topics[i] = logInfo.topics[i].getData().jsonHex
+    data class LogFilterElement(
+        val logIndex: String? = null,
+        val transactionIndex: String? = null,
+        val transactionHash: String? = null,
+        val blockHash: String? = null,
+        val blockNumber: String? = null,
+        val address: String? = null,
+        val data: String? = null,
+        val topics: List<String>? = null
+    ) {
+        companion object {
+            fun create(info: LogInfo, b: Block?, txIndex: Int?, tx: Transaction, logIdx: Int): LogFilterElement {
+                return LogFilterElement(
+                    logIdx.jsonHex,
+                    txIndex?.jsonHex,
+                    tx.hash.jsonHex,
+                    b?.hash?.jsonHex,
+                    b?.height?.jsonHex,
+                    tx.receiveAddress.takeIf { !it.isEmpty }?.jsonHex ?: tx.contractAddress?.jsonHex,
+                    info.data.jsonHex,
+                    info.topics.map { it.dataHex.jsonHex }
+                )
             }
-            this.topics = topics.requireNoNulls()
         }
     }
 }

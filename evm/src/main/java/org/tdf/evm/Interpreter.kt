@@ -15,8 +15,7 @@ class EvmContext(
     val number: Long = 0,
 
     // chain id
-    val chainId: Long = 0,
-    val timestamp: Long = 0,
+    val chainId: Int = 0,
     val difficulty: BigInteger = BigInteger.ZERO,
 
     // gas limit in block
@@ -255,9 +254,9 @@ class Interpreter(
                 OpCodes.REVERT -> {
                     val off = stack.popU32()
                     val size = stack.popU32()
-                    val reason = String(memory.resizeAndCopy(off, size), StandardCharsets.UTF_8)
+                    val reason = String(memory.resizeAndCopy(off, size), StandardCharsets.US_ASCII)
                     afterExecute()
-                    throw RuntimeException("execution reverted reason = $reason")
+                    throw RuntimeException(reason.trimEnd { it <= ' ' }.trimStart { it <= ' ' })
                 }
                 OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> call(op)
                 OpCodes.CREATE -> create()
