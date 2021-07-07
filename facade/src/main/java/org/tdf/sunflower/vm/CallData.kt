@@ -11,7 +11,6 @@ data class CallContext(
     val txHash: HexBytes = HashUtil.EMPTY_DATA_HASH_HEX,
     val txNonce: Long = 0,
     val gasPrice: Uint256 = Uint256.ZERO,
-    val gasLimit: Uint256 = Uint256.ZERO,
     val chainId: Int = 0,
 ) {
     companion object {
@@ -22,7 +21,6 @@ data class CallContext(
                 tx.hash,
                 tx.nonce,
                 tx.gasPrice,
-                Uint256.of(tx.gasLimit),
                 chainId
             )
         }

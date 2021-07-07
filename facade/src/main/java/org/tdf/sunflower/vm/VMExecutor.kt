@@ -37,13 +37,13 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 data class VMExecutor(
-    var rd: RepositoryReader,
-    var backend: Backend,
-    var ctx: CallContext,
-    var callData: CallData,
-    var limit: Limit,
-    var logs: MutableList<LogInfo>,
-    var depth: Int = 0,
+    val rd: RepositoryReader,
+    val backend: Backend,
+    val ctx: CallContext,
+    val callData: CallData,
+    val limit: Limit,
+    val logs: MutableList<LogInfo>,
+    val depth: Int = 0,
 ) {
     // gas limit hook
 
@@ -201,7 +201,8 @@ data class VMExecutor(
         val ctx = EvmContext(
             origin = ctx.origin.bytes,
             number = backend.height,
-            chainId = ctx.chainId
+            chainId = ctx.chainId,
+            gasPrice = ctx.gasPrice.value,
         )
         val host = EvmHostImpl(this, rd)
         val interpreter =

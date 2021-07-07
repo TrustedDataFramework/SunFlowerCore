@@ -38,7 +38,6 @@ internal object JsonRpcUtil {
             HashUtil.EMPTY_DATA_HASH_HEX,
             nonce ?: args.nonce.number(),
             args.gasPrice.u256(),
-            args.gas.u256(),
             chainId
         )
     }

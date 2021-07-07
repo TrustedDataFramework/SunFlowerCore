@@ -29,6 +29,10 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
         if (block.coinbase != block.body[0].receiveAddress) {
             return fault("block coinbase not equals to coinbase tx receiver")
         }
+
+        if(block.gasLimit != rd.genesis.gasLimit)
+            return fault("invalid block gas limit")
+
         var isCoinbase = true
         for (t in block.body) {
             // validate transaction signature

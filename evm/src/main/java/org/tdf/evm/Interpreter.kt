@@ -17,12 +17,6 @@ class EvmContext(
     // chain id
     val chainId: Int = 0,
     val difficulty: BigInteger = BigInteger.ZERO,
-
-    // gas limit in block
-    val blockGasLimit: Long = 0,
-
-    // gas limit in transaction
-    val txGasLimit: Long = 0,
     // gas price
     val gasPrice: BigInteger = BigInteger.ZERO,
 )
@@ -194,7 +188,7 @@ class Interpreter(
                 OpCodes.TIMESTAMP -> throw RuntimeException("unsupported op code")
                 OpCodes.NUMBER -> stack.pushLong(ctx.number)
                 OpCodes.DIFFICULTY -> stack.push(ctx.difficulty)
-                OpCodes.GASLIMIT -> stack.pushLong(ctx.blockGasLimit)
+                OpCodes.GASLIMIT -> stack.push(SlotUtils.NEGATIVE_ONE)
                 OpCodes.POP -> stack.drop()
                 OpCodes.MLOAD -> stack.mload(memory)
                 OpCodes.MSTORE -> stack.mstore(memory)
