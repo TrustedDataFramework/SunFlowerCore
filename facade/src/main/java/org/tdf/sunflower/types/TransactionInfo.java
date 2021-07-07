@@ -11,6 +11,8 @@ public class TransactionInfo implements RlpWritable {
     byte[] parentBlockHash;
     int index;
 
+    public Transaction transaction;
+
     public TransactionInfo(TransactionReceipt receipt, byte[] blockHash, int index) {
         this.receipt = receipt;
         this.blockHash = blockHash;
@@ -35,12 +37,9 @@ public class TransactionInfo implements RlpWritable {
 
         blockHash = txInfo.bytesAt(1);
         index = Rlp.decodeInt(txInfo.rawAt(2));
-        receipt = new TransactionReceipt(receiptRLP);
+        receipt = Rlp .decode(receiptRLP, TransactionReceipt.class);
     }
 
-    public void setTransaction(Transaction tx) {
-        receipt.setTransaction(tx);
-    }
 
     /* [receipt, blockHash, index] */
     public byte[] getEncoded() {

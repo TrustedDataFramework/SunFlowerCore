@@ -27,9 +27,9 @@ import static org.tdf.common.util.ByteUtil.toHexString;
  * and the cumulative gas used in the block containing the transaction receipt
  * as of immediately after the transaction has happened,
  */
-public class TransactionReceipt {
+public class TransactionReceipt1 {
 
-    public static HexBytes calcReceiptsTrie(List<TransactionReceipt> receipts) {
+    public static HexBytes calcReceiptsTrie(List<TransactionReceipt1> receipts) {
         Trie<byte[], byte[]> receiptsTrie = new TrieImpl<>();
         if (receipts == null || receipts.isEmpty())
             return HashUtil.EMPTY_TRIE_HASH_HEX;
@@ -52,16 +52,16 @@ public class TransactionReceipt {
     /* Tx Receipt in encoded form */
     private byte[] rlpEncoded;
 
-    public TransactionReceipt() {
+    public TransactionReceipt1() {
     }
 
     @RlpCreator
-    public static TransactionReceipt fromRlpStream(byte[] bin, long streamId) {
+    public static TransactionReceipt1 fromRlpStream(byte[] bin, long streamId) {
         RlpList li = StreamId.asList(bin, streamId, 7);
-        return new TransactionReceipt(li);
+        return new TransactionReceipt1(li);
     }
 
-    public TransactionReceipt(RlpList receipt) {
+    public TransactionReceipt1(RlpList receipt) {
         RlpList logs = receipt.listAt(3);
 
 
@@ -86,11 +86,11 @@ public class TransactionReceipt {
     }
 
 
-    public TransactionReceipt(byte[] rlp) {
+    public TransactionReceipt1(byte[] rlp) {
         this(Rlp.decodeList(rlp));
     }
 
-    public TransactionReceipt(byte[] cumulativeGas,
+    public TransactionReceipt1(byte[] cumulativeGas,
                               Bloom bloomFilter, List<LogInfo> logInfoList) {
         setTxStatus(true);
         this.cumulativeGas = cumulativeGas;

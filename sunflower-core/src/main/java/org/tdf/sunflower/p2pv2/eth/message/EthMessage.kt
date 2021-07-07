@@ -48,7 +48,7 @@ class ReceiptsMessage(val receipts: List<List<TransactionReceipt>>) : EthMessage
     RlpWritable {
     override fun writeToBuf(buf: RlpBuffer): Int {
         val li = receipts.map {
-            it.map { x -> x.getEncoded(true) }
+            it.map { x -> x.trie }
         }
         val blocks = li.map { Rlp.encodeElements(it) }
         return buf.writeElements(*blocks.toTypedArray())

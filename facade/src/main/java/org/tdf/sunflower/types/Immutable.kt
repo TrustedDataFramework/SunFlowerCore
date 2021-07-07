@@ -209,6 +209,42 @@ data class Block(val header: Header, val body: List<Transaction> = emptyList()) 
     }
 }
 
+@RlpProps("postTxState", "cumulativeGas", "logInfoList", "gasUsed", "result")
+data class TransactionReceipt @RlpCreator constructor(
+    val postTxState: HexBytes = HexBytes.empty(),
+    val cumulativeGas: Long = 0,
+    val logInfoList: List<LogInfo> = emptyList(),
+    val gasUsed: Long = 0,
+    val result: HexBytes = HexBytes.empty(),
+) {
+    val bloom: Bloom by lazy {
+        val b = Bloom()
+        logInfoList.forEach {
+            b.or(it.bloom)
+        }
+        b
+    }
+
+    val trie: ByteArray by lazy {
+        Rlp.encode(arrayOf(postTxState, cumulativeGas, bloom.data, logInfoList))
+    }
+
+    val encoded: ByteArray by lazy {
+        rlp()
+    }
+
+    companion object {
+        fun calcTrie(receipts: List<TransactionReceipt>): HexBytes {
+            val receiptsTrie: Trie<ByteArray, ByteArray> = TrieImpl()
+            if (receipts.isEmpty()) return HashUtil.EMPTY_TRIE_HASH_HEX
+            for (i in receipts.indices) {
+                receiptsTrie[i.rlp()] = receipts[i].trie
+            }
+            return receiptsTrie.commit()
+        }
+    }
+}
+
 
 data class LogInfo(
     val address: HexBytes = Address.empty(),

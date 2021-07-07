@@ -5,6 +5,7 @@ import org.tdf.common.types.Uint256
 import org.tdf.common.util.ByteUtil
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.u256
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.facade.Miner
@@ -28,10 +29,11 @@ abstract class AbstractMiner(
 
     // TODO:  2. 增加打包超时时间
     protected fun createBlock(rd: RepositoryReader, parent: Block, createdAt: Long = System.currentTimeMillis() / 1000): BlockCreateResult {
-        val (transactionList, rs, current, bloom) = pool.pop(parent.header)
+        val (txs, rs, current, bloom) = pool.pop(parent.header)
+        val zipped = txs.zip(rs)
         val receipts = rs.toMutableList()
 
-        if (!config.allowEmptyBlock && transactionList.isEmpty()) {
+        if (!config.allowEmptyBlock && txs.isEmpty()) {
             pool.reset(parent.header)
             return BlockCreateResult.empty()
         }
@@ -42,14 +44,14 @@ abstract class AbstractMiner(
         val coinbase = createCoinBase(parent.height + 1)
         val tmp = current ?: accountTrie.createBackend(parent.header,false, parent.stateRoot)
 
-        val totalFee = receipts
-            .map { it.transaction.gasPrice * it.gasUsedAsU256 }
+        val totalFee = zipped
+            .map { it.first.gasPrice * it.second.gasUsed.u256() }
             .reduceOrNull { x, y -> x + y }
             ?: Uint256.ZERO
 
         // add fee to miners account
         val c = coinbase.copy(value = coinbase.value + totalFee)
-        val body = transactionList.toMutableList()
+        val body = txs.toMutableList()
         body.add(0, c)
         val ctx = CallContext.fromTx(c, chainId)
         val callData = CallData.fromTx(c, true)
@@ -58,18 +60,20 @@ abstract class AbstractMiner(
         val res: VMResult
         val executor = VMExecutor(rd, tmp, ctx, callData, 0)
         res = executor.execute()
-        val lastGas = if (receipts.isEmpty()) 0 else receipts[receipts.size - 1].cumulativeGasLong
+        val lastGas = if (receipts.isEmpty()) 0 else receipts[receipts.size - 1].cumulativeGas
+
         val receipt = TransactionReceipt( // coinbase consume none gas
-            ByteUtil.longToBytesNoLeadZeroes(res.gasUsed + lastGas),
-            Bloom(), emptyList()
+            cumulativeGas =  res.gasUsed + lastGas,
+            logInfoList = res.logs,
+            gasUsed = res.gasUsed,
+            result = res.executionResult
         )
-        receipt.executionResult = res.executionResult.bytes
-        receipt.transaction = coinbase
+
         receipts.add(0, receipt)
 
         // calculate state root and receipts root
         val stateRoot = tmp.merge()
-        val receiptTrieRoot = TransactionReceipt.calcReceiptsTrie(receipts)
+        val receiptTrieRoot = TransactionReceipt.calcTrie(receipts)
         val txRoot = Transaction.calcTxTrie(body)
         // persist modifications of trie to database
 

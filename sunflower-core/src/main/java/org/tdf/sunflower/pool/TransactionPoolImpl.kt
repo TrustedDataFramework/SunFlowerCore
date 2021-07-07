@@ -9,7 +9,6 @@ import org.tdf.common.event.EventBus
 import org.tdf.common.util.FixedDelayScheduler
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.LogLock
-import org.tdf.common.util.bytes
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.TransactionPoolConfig
 import org.tdf.sunflower.events.NewBestBlock
@@ -216,16 +215,13 @@ class TransactionPoolImpl(
                 }
 
                 val receipt = TransactionReceipt(
-                    (gasUsed + res.gasUsed).bytes(),
-                    Bloom(), emptyList()
+                    cumulativeGas = gasUsed + res.gasUsed,
+                    logInfoList = res.logs,
+                    gasUsed = res.gasUsed,
+                    result = res.executionResult
                 )
 
-                receipt.setGasUsed(res.gasUsed)
-                receipt.executionResult = res.executionResult.bytes
-                receipt.transaction = t
-                receipt.logInfoList = res.logs
-
-                currentBloom.or(receipt.bloomFilter)
+                currentBloom.or(receipt.bloom)
                 pending.add(t)
                 pendingReceipts.add(receipt)
                 this.current = child

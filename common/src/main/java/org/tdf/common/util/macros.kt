@@ -1,6 +1,7 @@
 package org.tdf.common.util
 
 import com.github.salpadding.rlpstream.Rlp
+import org.tdf.common.types.Uint256
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
@@ -46,4 +47,8 @@ fun String.ascii(): ByteArray {
 
 fun Long.bytes(): ByteArray {
     return ByteUtil.longToBytesNoLeadZeroes(this)
+}
+
+fun Long.u256(): Uint256 {
+    return Uint256.of(this)
 }

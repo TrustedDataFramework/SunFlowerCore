@@ -238,7 +238,7 @@ class JsonRpcImpl(
         repo.reader.use { rd ->
             val info = rd.getTransactionInfo(hash) ?: return null
             val h = rd.getHeaderByHash(info.blockHashHex)!!
-            return TransactionResultDTO.create(h, info.index, info.receipt.transaction)
+            return TransactionResultDTO.create(h, info.index, info.transaction)
         }
     }
 
@@ -254,7 +254,7 @@ class JsonRpcImpl(
             val info = tx?.hash?.let { rd.getTransactionInfo(it) }
             if (b == null || tx == null || info == null)
                 return null
-            return TransactionResultDTO.create(b.header, info.index, info.receipt.transaction)
+            return TransactionResultDTO.create(b.header, info.index, info.transaction)
         }
     }
 
@@ -273,10 +273,10 @@ class JsonRpcImpl(
 
         repo.reader.use { rd ->
             val info = rd.getTransactionInfo(hash)
-            val tx = info?.receipt?.transaction
+            val tx = info?.transaction
             val b = if (info == null) null else rd.getBlockByHash(HexBytes.fromBytes(info.blockHash))
             if (info == null || tx == null || b == null) return null
-            info.setTransaction(tx)
+            info.transaction = tx
             return TransactionReceiptDTO.create(b, info)
         }
     }

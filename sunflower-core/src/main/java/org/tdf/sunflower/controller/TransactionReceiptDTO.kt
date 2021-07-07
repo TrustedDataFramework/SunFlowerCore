@@ -48,22 +48,22 @@ data class TransactionReceiptDTO(
 
         fun create(block: Block?, txInfo: TransactionInfo): TransactionReceiptDTO {
             val receipt = txInfo.receipt
-            val tx = receipt.transaction
+            val tx = txInfo.transaction
             val logs: Array<LogFilterElement?> = arrayOfNulls(receipt.logInfoList.size)
 
             for (i in logs.indices) {
                 val logInfo = receipt.logInfoList[i]
                 logs[i] = LogFilterElement.create(
                     logInfo, block, txInfo.index,
-                    txInfo.receipt.transaction, i
+                    txInfo.transaction, i
                 )
             }
 
             return TransactionReceiptDTO(
                 tx.hash.jsonHex, txInfo.index.jsonHex, txInfo.blockHash?.jsonHex,
                 block?.height?.jsonHex, tx.sender.jsonHex, tx.receiveAddress.takeIf { !it.isEmpty }?.jsonHex,
-                receipt.cumulativeGas.jsonHexNum, receipt.gasUsed.jsonHexNum, tx.contractAddress?.jsonHex,
-                logs.toList().requireNoNulls(), receipt.bloomFilter.data.jsonHex, (1).jsonHex
+                receipt.cumulativeGas.jsonHex, receipt.gasUsed.jsonHex, tx.contractAddress?.jsonHex,
+                logs.toList().requireNoNulls(), receipt.bloom.data.jsonHex, (1).jsonHex
             )
         }
     }

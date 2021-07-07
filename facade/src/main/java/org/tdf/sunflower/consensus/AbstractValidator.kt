@@ -80,13 +80,11 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                 totalFee += r.fee
                 currentGas += r.gasUsed
                 val receipt = TransactionReceipt(
-                    ByteUtil.longToBytesNoLeadZeroes(currentGas),
-                    Bloom(), emptyList()
+                    cumulativeGas = currentGas,
+                    logInfoList = r.logs,
+                    gasUsed = r.gasUsed,
+                    result = r.executionResult
                 )
-                receipt.setGasUsed(r.gasUsed)
-                receipt.executionResult = r.executionResult.bytes
-                receipt.logInfoList = r.logs
-                bloom.or(receipt.bloomFilter)
                 currentRoot = tmp.merge()
                 receipts.add(receipt)
                 tmp = accountTrie.createBackend(parent.header,  root = currentRoot)
@@ -95,12 +93,14 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             val executor = VMExecutor(rd, tmp, CallContext.fromTx(coinbase), CallData.fromTx(coinbase, true), 0)
             val r = executor.execute()
             currentGas += r.gasUsed
+
             val receipt = TransactionReceipt(
-                ByteUtil.longToBytesNoLeadZeroes(currentGas),
-                Bloom(), emptyList()
+                cumulativeGas = currentGas,
+                logInfoList = r.logs,
+                gasUsed = r.gasUsed,
+                result = r.executionResult
             )
-            receipt.setGasUsed(r.gasUsed)
-            receipt.executionResult = r.executionResult.bytes
+
             receipts.add(0, receipt)
             val rootHash = tmp.merge()
             if (rootHash != block.stateRoot) {
@@ -108,7 +108,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             }
 
             // validate receipt trie root
-            if (TransactionReceipt.calcReceiptsTrie(receipts) != block.receiptTrieRoot) {
+            if (TransactionReceipt.calcTrie(receipts) != block.receiptTrieRoot) {
                 return fault("receipts trie root not match")
             }
 
