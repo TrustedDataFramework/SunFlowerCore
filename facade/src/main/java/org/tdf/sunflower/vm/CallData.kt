@@ -51,12 +51,12 @@ data class CallData(
             var t = CallType.COINBASE
             val origin = if (coinbase) Address.empty() else tx.sender
             if (!coinbase) {
-                t = if (tx.receiveAddress.isEmpty) CallType.CREATE else CallType.CALL
+                t = if (tx.to.isEmpty) CallType.CREATE else CallType.CALL
             }
             return CallData(
                 origin,
                 tx.value,
-                tx.receiveAddress,
+                tx.to,
                 t,
                 tx.data,
             )

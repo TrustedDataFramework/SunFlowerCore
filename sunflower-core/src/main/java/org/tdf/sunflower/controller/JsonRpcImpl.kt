@@ -1,14 +1,11 @@
 package org.tdf.sunflower.controller
 
 import org.springframework.stereotype.Service
-import org.tdf.common.util.HexBytes
 import org.tdf.common.util.sha3
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.controller.JsonRpc.BlockResult
 import org.tdf.sunflower.controller.JsonRpc.CallArguments
-import org.tdf.sunflower.facade.ConsensusEngine
-import org.tdf.sunflower.facade.RepositoryService
-import org.tdf.sunflower.facade.TransactionPool
+import org.tdf.sunflower.facade.*
 import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.state.Address
 import org.tdf.sunflower.types.Block
@@ -237,8 +234,8 @@ class JsonRpcImpl(
         val hash = transactionHash.jsonHex.hex
         repo.reader.use { rd ->
             val info = rd.getTransactionInfo(hash) ?: return null
-            val h = rd.getHeaderByHash(info.blockHashHex)!!
-            return TransactionResultDTO.create(h, info.index, info.transaction)
+            val h = rd.getHeaderByHash(info.blockHash)!!
+            return TransactionResultDTO.create(h, info.i, info.tx)
         }
     }
 
@@ -254,7 +251,7 @@ class JsonRpcImpl(
             val info = tx?.hash?.let { rd.getTransactionInfo(it) }
             if (b == null || tx == null || info == null)
                 return null
-            return TransactionResultDTO.create(b.header, info.index, info.transaction)
+            return TransactionResultDTO.create(b.header, info.i, info.tx)
         }
     }
 
@@ -272,11 +269,8 @@ class JsonRpcImpl(
         }
 
         repo.reader.use { rd ->
-            val info = rd.getTransactionInfo(hash)
-            val tx = info?.transaction
-            val b = if (info == null) null else rd.getBlockByHash(HexBytes.fromBytes(info.blockHash))
-            if (info == null || tx == null || b == null) return null
-            info.transaction = tx
+            val info = rd.getTransactionInfo(hash) ?: return null
+            val b = rd.getBlockByHash(info.blockHash) ?: return null
             return TransactionReceiptDTO.create(b, info)
         }
     }

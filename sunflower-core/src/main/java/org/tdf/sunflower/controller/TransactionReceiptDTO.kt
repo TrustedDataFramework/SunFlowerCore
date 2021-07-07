@@ -2,9 +2,9 @@ package org.tdf.sunflower.controller
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import org.tdf.sunflower.controller.JsonRpc.LogFilterElement
+import org.tdf.sunflower.facade.*
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.Transaction
-import org.tdf.sunflower.types.TransactionInfo
 
 data class TransactionReceiptDTO(
     val transactionHash // hash of the transaction.
@@ -40,28 +40,28 @@ data class TransactionReceiptDTO(
             return TransactionReceiptDTO(
                 transactionHash = tx.hash.jsonHex,
                 from = tx.sender.jsonHex,
-                to = tx.receiveAddress.takeIf { !it.isEmpty }?.jsonHex,
+                to = tx.to.takeIf { !it.isEmpty }?.jsonHex,
                 contractAddress = tx.contractAddress?.jsonHex,
                 status = "0x0"
             )
         }
 
-        fun create(block: Block?, txInfo: TransactionInfo): TransactionReceiptDTO {
-            val receipt = txInfo.receipt
-            val tx = txInfo.transaction
+        fun create(block: Block?, info: TransactionInfo): TransactionReceiptDTO {
+            val receipt = info.receipt
+            val tx = info.tx
             val logs: Array<LogFilterElement?> = arrayOfNulls(receipt.logInfoList.size)
 
             for (i in logs.indices) {
                 val logInfo = receipt.logInfoList[i]
                 logs[i] = LogFilterElement.create(
-                    logInfo, block, txInfo.index,
-                    txInfo.transaction, i
+                    logInfo, block, info.i,
+                    info.tx, i
                 )
             }
 
             return TransactionReceiptDTO(
-                tx.hash.jsonHex, txInfo.index.jsonHex, txInfo.blockHash?.jsonHex,
-                block?.height?.jsonHex, tx.sender.jsonHex, tx.receiveAddress.takeIf { !it.isEmpty }?.jsonHex,
+                tx.hash.jsonHex, info.i.jsonHex, info.blockHash.jsonHex,
+                block?.height?.jsonHex, tx.sender.jsonHex, tx.to.takeIf { !it.isEmpty }?.jsonHex,
                 receipt.cumulativeGas.jsonHex, receipt.gasUsed.jsonHex, tx.contractAddress?.jsonHex,
                 logs.toList().requireNoNulls(), receipt.bloom.data.jsonHex, (1).jsonHex
             )

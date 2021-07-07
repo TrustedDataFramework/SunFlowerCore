@@ -5,9 +5,11 @@ import org.springframework.context.ApplicationContext
 import org.tdf.common.serialize.Codecs
 import org.tdf.common.store.Store
 import org.tdf.common.store.StoreWrapper
-import org.tdf.common.util.FastByteComparisons
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.events.NewBestBlock
+import org.tdf.sunflower.facade.TransactionInfo
+import org.tdf.sunflower.facade.blockHash
+import org.tdf.sunflower.facade.index
 import org.tdf.sunflower.types.*
 import java.util.*
 
@@ -30,7 +32,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     private val status: Store<String, Header>
 
     // transaction hash -> receipts
-    private val transactionInfos: Store<HexBytes, Array<TransactionInfo>>
+    private val transactionIndices: Store<HexBytes, Array<TransactionIndex>>
 
 
     override fun saveGenesis(b: Block) {
@@ -147,14 +149,14 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
             // save transaction
             transactionsStore[t.hash] = t
             val info = infos[i]
-            val found = transactionInfos[t.hash]
-            val founds: MutableList<TransactionInfo> = found?.toMutableList() ?: mutableListOf()
+            val found = transactionIndices[t.hash]
+            val founds: MutableList<TransactionIndex> = found?.toMutableList() ?: mutableListOf()
             if (founds.none
-                { FastByteComparisons.equal(it.blockHash, info.blockHash) }
+                { it.blockHash == info.blockHash }
             ) {
-                founds.add(info)
+                founds.add(info.index)
             }
-            transactionInfos[t.hash] = founds.toTypedArray()
+            transactionIndices[t.hash] = founds.toTypedArray()
         }
 
         // save transaction root -> tx hashes
@@ -177,12 +179,9 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     }
 
     override fun getTransactionInfo(hash: HexBytes): TransactionInfo? {
-        val infos = transactionInfos[hash] ?: emptyArray()
-        val i = infos.firstOrNull { isCanonical(it.blockHashHex) }
-        i?.let {
-            it.receipt.transaction = transactionsStore[hash]
-        }
-        return i
+        val infos = transactionIndices[hash] ?: emptyArray()
+        val i = infos.firstOrNull { isCanonical(it.blockHash) } ?: return null
+        return TransactionInfo(i, transactionsStore[hash]!!)
     }
 
     companion object {
@@ -217,10 +216,10 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
             Codecs.string,
             Header.Companion
         )
-        transactionInfos = StoreWrapper<HexBytes, Array<TransactionInfo>>(
+        transactionIndices = StoreWrapper<HexBytes, Array<TransactionIndex>>(
             factory.create('f'),
             Codecs.hex,
-            Codecs.rlp(Array<TransactionInfo>::class.java)
+            Codecs.rlp(Array<TransactionIndex>::class.java)
         )
     }
 }

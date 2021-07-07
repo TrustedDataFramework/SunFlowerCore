@@ -4,6 +4,14 @@ import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.types.*
 import java.io.Closeable
 
+typealias TransactionInfo = Pair<TransactionIndex, Transaction>
+
+val TransactionInfo.index: TransactionIndex get() = first
+val TransactionInfo.tx: Transaction get() = second
+val TransactionInfo.receipt get() = first.receipt
+val TransactionInfo.blockHash: HexBytes get() = first.blockHash
+val TransactionInfo.i: Int get() = first.i
+
 interface RepositoryReader : Closeable {
     val genesis: Block
     fun containsHeader(hash: HexBytes): Boolean
@@ -34,7 +42,7 @@ interface RepositoryReader : Closeable {
     fun getTransactionInfo(hash: HexBytes): TransactionInfo?
 
     fun getTransaction(hash: HexBytes): Transaction? {
-        return getTransactionInfo(hash)?.receipt?.transaction
+        return getTransactionInfo(hash)?.tx
     }
 
     // is transaction exists
@@ -44,3 +52,4 @@ interface RepositoryReader : Closeable {
 
     }
 }
+

@@ -1,6 +1,8 @@
 package org.tdf.sunflower.types
 
-data class BlockCreateResult(val block: Block?, val infos: List<TransactionInfo>) {
+import org.tdf.sunflower.facade.TransactionInfo
+
+data class BlockCreateResult(val block: Block?, val indices: List<TransactionInfo>) {
     val isEmpty: Boolean
         get() = this === EMPTY || block == null
 

@@ -29,7 +29,7 @@ public class TransactionV1 {
     public static TransactionV1 fromV2(Transaction t) {
         TransactionV1 r = new TransactionV1(
             1,
-            t.getReceiveAddress().isEmpty() ? Type.CONTRACT_DEPLOY.code : (t.getData().isEmpty() ? Type.TRANSFER.code : Type.CONTRACT_CALL.code),
+            t.getTo().isEmpty() ? Type.CONTRACT_DEPLOY.code : (t.getData().isEmpty() ? Type.TRANSFER.code : Type.CONTRACT_CALL.code),
             System.currentTimeMillis() / 1000,
             t.getNonce(),
             t.getSender(),
@@ -37,7 +37,7 @@ public class TransactionV1 {
             t.getGasPrice(),
             t.getValue(),
             t.getData(),
-            t.getReceiveAddress(),
+            t.getTo(),
             EMPTY_SIG
         );
         r.hash = t.getHash();

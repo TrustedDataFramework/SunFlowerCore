@@ -2,13 +2,13 @@ package org.tdf.sunflower.consensus
 
 import org.tdf.common.types.Uint256
 import org.tdf.sunflower.types.BlockValidateResult.Companion.fault
-import org.tdf.common.util.ByteUtil
 import org.tdf.sunflower.types.BlockValidateResult.Companion.success
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.facade.RepositoryReader
+import org.tdf.sunflower.facade.TransactionInfo
 import org.tdf.sunflower.facade.Validator
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.CallContext
@@ -27,7 +27,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
         // a block should contains exactly one coin base transaction
 
         // validate coinbase
-        if (block.coinbase != block.body[0].receiveAddress) {
+        if (block.coinbase != block.body[0].to) {
             return fault("block coinbase not equals to coinbase tx receiver")
         }
 
@@ -120,10 +120,12 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             e.printStackTrace()
             return fault("contract evaluation failed or " + e.message)
         }
-        val infos: MutableList<TransactionInfo> = ArrayList()
+        val indices: MutableList<TransactionInfo> = mutableListOf()
         for (i in receipts.indices) {
-            infos.add(TransactionInfo(receipts[i], block.hash.bytes, i))
+            indices.add(
+                TransactionInfo(TransactionIndex(receipts[i], block.hash, i), block.body[i])
+            )
         }
-        return success(gas, totalFee, results, infos)
+        return success(gas, totalFee, results, indices)
     }
 }

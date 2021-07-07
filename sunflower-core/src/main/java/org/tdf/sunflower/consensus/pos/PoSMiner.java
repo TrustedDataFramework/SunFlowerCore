@@ -16,7 +16,6 @@ import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.*;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -105,7 +104,7 @@ public class PoSMiner extends AbstractMiner {
             if (res.getBlock() != null) {
                 log.info("mining success block: {}", res.getBlock().getHeader());
             }
-            getEventBus().publish(new NewBlockMined(res.getBlock(), res.getInfos()));
+            getEventBus().publish(new NewBlockMined(res.getBlock(), res.getIndices()));
         } catch (Exception e) {
             e.printStackTrace();
         }

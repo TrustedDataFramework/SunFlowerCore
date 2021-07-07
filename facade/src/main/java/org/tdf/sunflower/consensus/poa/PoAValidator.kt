@@ -30,14 +30,14 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
                 )
             )
         }
-        if (block.coinbase != block.body[0].receiveAddress) return fault("block coinbase not equals to coinbase transaction receiver")
+        if (block.coinbase != block.body[0].to) return fault("block coinbase not equals to coinbase transaction receiver")
         val res0 = validateCoinBase(dependency, block.body[0])
         if (!res0.success) return res0
         if (poA.minerContract.getProposer(
                 rd,
                 dependency.hash,
                 block.createdAt
-            ).address != block.body[0].receiveAddress
+            ).address != block.body[0].to
         ) return fault("invalid proposer " + block.body[0].sender)
 
         // validate signature

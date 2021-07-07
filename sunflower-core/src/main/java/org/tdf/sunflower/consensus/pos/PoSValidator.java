@@ -24,7 +24,7 @@ public class PoSValidator extends AbstractValidator {
 
         if (
             !posMiner.getProposer(dependency, block.getCreatedAt())
-                .map(x -> x.getAddress().equals(block.getBody().get(0).getReceiveAddress()))
+                .map(x -> x.getAddress().equals(block.getBody().get(0).getTo()))
                 .orElse(false)
         ) return ValidateResult.fault("invalid proposer " + block.getBody().get(0).getSender());
         return res;

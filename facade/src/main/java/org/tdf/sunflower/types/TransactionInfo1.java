@@ -4,7 +4,7 @@ import com.github.salpadding.rlpstream.*;
 import com.github.salpadding.rlpstream.annotation.RlpCreator;
 import org.tdf.common.util.HexBytes;
 
-public class TransactionInfo implements RlpWritable {
+public class TransactionInfo1 implements RlpWritable {
     TransactionReceipt receipt;
     byte[] blockHash;
     // user for pending transaction
@@ -13,7 +13,7 @@ public class TransactionInfo implements RlpWritable {
 
     public Transaction transaction;
 
-    public TransactionInfo(TransactionReceipt receipt, byte[] blockHash, int index) {
+    public TransactionInfo1(TransactionReceipt receipt, byte[] blockHash, int index) {
         this.receipt = receipt;
         this.blockHash = blockHash;
         this.index = index;
@@ -22,16 +22,16 @@ public class TransactionInfo implements RlpWritable {
     /**
      * Creates a pending tx info
      */
-    public TransactionInfo(TransactionReceipt receipt) {
+    public TransactionInfo1(TransactionReceipt receipt) {
         this.receipt = receipt;
     }
 
     @RlpCreator
-    public static TransactionInfo fromRlpStream(byte[] bin, long streamId) {
-        return new TransactionInfo(StreamId.rawOf(bin, streamId));
+    public static TransactionInfo1 fromRlpStream(byte[] bin, long streamId) {
+        return new TransactionInfo1(StreamId.rawOf(bin, streamId));
     }
 
-    public TransactionInfo(byte[] rlp) {
+    public TransactionInfo1(byte[] rlp) {
         RlpList txInfo = Rlp.decodeList(rlp);
         byte[] receiptRLP = txInfo.rawAt(0);
 

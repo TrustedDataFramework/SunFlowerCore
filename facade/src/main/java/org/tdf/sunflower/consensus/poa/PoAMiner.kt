@@ -5,7 +5,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.FixedDelayScheduler
-import org.tdf.common.util.RLPUtil
 import org.tdf.common.util.hex
 import org.tdf.common.util.rlp
 import org.tdf.sunflower.consensus.AbstractMiner
@@ -99,8 +98,8 @@ class PoAMiner(private val poA: PoA) :
             val b = createBlock(it, it.bestBlock, now)
             if (b.block != null) {
                 log.info("mining success block: {}", b.block.header)
-                it.writeBlock(b.block, b.infos)
-                eventBus.publish(NewBlockMined(b.block, b.infos))
+                it.writeBlock(b.block, b.indices)
+                eventBus.publish(NewBlockMined(b.block, b.indices))
             }
         }
     }
@@ -109,7 +108,7 @@ class PoAMiner(private val poA: PoA) :
         return Transaction(
             nonce = height,
             value = poA.model.rewardAt(height),
-            receiveAddress = config.minerCoinBase!!,
+            to = config.minerCoinBase!!,
 
         )
     }

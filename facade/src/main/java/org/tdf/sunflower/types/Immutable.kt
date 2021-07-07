@@ -315,7 +315,7 @@ data class Transaction(
     val nonce: Long = 0,
     val gasPrice: Uint256 = Uint256.ZERO,
     val gasLimit: Long = 0,
-    val receiveAddress: HexBytes = Address.empty(),
+    val to: HexBytes = Address.empty(),
     val value: Uint256 = Uint256.ZERO,
     val data: HexBytes = HexBytes.empty(),
     val vrs: VRS? = null
@@ -401,7 +401,7 @@ data class Transaction(
     }
 
     fun validate() {
-        require(receiveAddress.size() == 0 || receiveAddress.size() == ADDRESS_LENGTH) { "Receive address is not valid" }
+        require(to.size() == 0 || to.size() == ADDRESS_LENGTH) { "Receive address is not valid" }
         require(signature?.r?.unsigned()?.size ?: 0 <= HASH_LENGTH) { "Signature R is not valid" }
         require(signature?.s?.unsigned()?.size ?: 0 <= HASH_LENGTH) { "Signature S is not valid" }
         require(sender.size() == ADDRESS_LENGTH) { "Sender is not valid" }
@@ -415,7 +415,7 @@ data class Transaction(
         encodedRaw.sha3()
     }
 
-    val creation: Boolean = receiveAddress.isEmpty
+    val creation: Boolean = to.isEmpty
 
     val contractAddress: HexBytes?
         get() {
@@ -430,12 +430,12 @@ data class Transaction(
 
     val encodedRaw: ByteArray by lazy {
         // encoded raw of unsigned transaction
-        val cid = chainId ?: return@lazy arrayOf(nonce, gasPrice, gasLimit, receiveAddress, value, data).rlp()
+        val cid = chainId ?: return@lazy arrayOf(nonce, gasPrice, gasLimit, to, value, data).rlp()
 
         // encoded raw of signed transaction
         arrayOf(
             nonce, gasPrice, gasLimit,
-            receiveAddress, value, data,
+            to, value, data,
             cid, 0, 0
         ).rlp()
     }
@@ -448,7 +448,7 @@ data class Transaction(
         val sig = signature ?: return buf.writeObject(
             arrayOf(
                 nonce, gasPrice, gasLimit,
-                receiveAddress.bytes, value, data.bytes
+                to.bytes, value, data.bytes
             )
         )
 
@@ -459,9 +459,16 @@ data class Transaction(
         return buf.writeObject(
             arrayOf(
                 nonce, gasPrice, gasLimit,
-                receiveAddress.bytes, value, data.bytes,
+                to.bytes, value, data.bytes,
                 v, r, s
             )
         )
     }
 }
+
+@RlpProps("receipt", "blockHash", "index")
+data class TransactionIndex @RlpCreator constructor(
+    val receipt: TransactionReceipt,
+    val blockHash: HexBytes,
+    val i: Int,
+)

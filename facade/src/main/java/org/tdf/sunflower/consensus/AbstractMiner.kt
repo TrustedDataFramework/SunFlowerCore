@@ -2,7 +2,6 @@ package org.tdf.sunflower.consensus
 
 import org.tdf.common.event.EventBus
 import org.tdf.common.types.Uint256
-import org.tdf.common.util.ByteUtil
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
@@ -11,6 +10,7 @@ import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.facade.Miner
 import org.tdf.sunflower.facade.RepositoryReader
+import org.tdf.sunflower.facade.TransactionInfo
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
@@ -86,7 +86,7 @@ abstract class AbstractMiner(
         val blk = finalizeBlock(parent, Block(header, body)) ?: return BlockCreateResult.empty()
         // the mined block cannot be modified any more
 
-        val infos = receipts.mapIndexed { i, r -> TransactionInfo(r, blk.hash.bytes, i) }
+        val infos = receipts.mapIndexed { i, r -> TransactionInfo(TransactionIndex(r, blk.hash, i), blk.body[i]) }
         return BlockCreateResult(blk, infos)
     }
 }

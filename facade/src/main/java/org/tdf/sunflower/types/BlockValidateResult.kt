@@ -2,6 +2,7 @@ package org.tdf.sunflower.types
 
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
+import org.tdf.sunflower.facade.TransactionInfo
 
 class BlockValidateResult(
     success: Boolean, reason: String,
@@ -21,9 +22,9 @@ class BlockValidateResult(
             gas: Long = 0,
             fee: Uint256 = Uint256.ZERO,
             results: Map<HexBytes, VMResult> = emptyMap(),
-            infos: List<TransactionInfo> = emptyList()
+            indices: List<TransactionInfo> = emptyList()
         ): BlockValidateResult {
-            return BlockValidateResult(true, "", gas, fee, results, infos)
+            return BlockValidateResult(true, "", gas, fee, results, indices)
         }
     }
 }

@@ -1,7 +1,6 @@
 package org.tdf.sunflower.controller
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import org.tdf.sunflower.controller.JsonRpcUtil.toCallContext
 import org.tdf.sunflower.controller.JsonRpcUtil.toCallData
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.LogInfo
@@ -193,7 +192,7 @@ interface JsonRpc {
                     tx.hash.jsonHex,
                     b?.hash?.jsonHex,
                     b?.height?.jsonHex,
-                    tx.receiveAddress.takeIf { !it.isEmpty }?.jsonHex ?: tx.contractAddress?.jsonHex,
+                    tx.to.takeIf { !it.isEmpty }?.jsonHex ?: tx.contractAddress?.jsonHex,
                     info.data.jsonHex,
                     info.topics.map { it.data.jsonHex }
                 )
