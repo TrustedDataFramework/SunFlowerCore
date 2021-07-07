@@ -6,6 +6,7 @@ import org.tdf.common.util.ByteUtil
 import org.tdf.sunflower.types.BlockValidateResult.Companion.success
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.Validator
@@ -61,7 +62,6 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
         var currentRoot: HexBytes
         var currentGas: Long = 0
         val receipts: MutableList<TransactionReceipt> = ArrayList()
-        val bloom = Bloom()
         try {
             var tmp = accountTrie.createBackend(parent.header,  false, parent.stateRoot)
             val coinbase = block.body[0]
@@ -112,10 +112,10 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                 return fault("receipts trie root not match")
             }
 
-            // validate bloom
-            if (bloom != Bloom(block.logsBloom.bytes)) {
+            if(TransactionReceipt.bloomOf(receipts).data.hex() != block.logsBloom)
                 return fault("logs bloom not match")
-            }
+
+            // validate bloom
         } catch (e: Exception) {
             e.printStackTrace()
             return fault("contract evaluation failed or " + e.message)

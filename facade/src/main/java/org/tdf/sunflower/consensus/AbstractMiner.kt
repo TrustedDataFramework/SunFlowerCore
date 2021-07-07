@@ -5,6 +5,7 @@ import org.tdf.common.types.Uint256
 import org.tdf.common.util.ByteUtil
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.common.util.u256
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.facade.TransactionPool
@@ -29,7 +30,7 @@ abstract class AbstractMiner(
 
     // TODO:  2. 增加打包超时时间
     protected fun createBlock(rd: RepositoryReader, parent: Block, createdAt: Long = System.currentTimeMillis() / 1000): BlockCreateResult {
-        val (txs, rs, current, bloom) = pool.pop(parent.header)
+        val (txs, rs, current) = pool.pop(parent.header)
         val zipped = txs.zip(rs)
         val receipts = rs.toMutableList()
 
@@ -79,7 +80,7 @@ abstract class AbstractMiner(
 
         header = header.impl.copy(
             stateRoot = stateRoot, receiptTrieRoot = receiptTrieRoot, transactionsRoot = txRoot,
-            logsBloom = HexBytes.fromBytes(bloom.data)
+            logsBloom = TransactionReceipt.bloomOf(receipts).data.hex()
         )
 
         val blk = finalizeBlock(parent, Block(header, body)) ?: return BlockCreateResult.empty()

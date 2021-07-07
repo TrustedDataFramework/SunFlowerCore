@@ -42,7 +42,7 @@ class TransactionPoolImpl(
     }
 
     // waiting
-    private val cache: TreeSet<TransactionInfo> = TreeSet()
+    private val cache: TreeSet<PendingInfo> = TreeSet()
 
     private val lock: ReadWriteLock = ReentrantReadWriteLock()
     private val readLock = LogLock(lock.readLock(), "tp-r")
@@ -62,7 +62,6 @@ class TransactionPoolImpl(
     private val pendingReceipts: MutableList<TransactionReceipt> = mutableListOf()
 
     private var current: Backend? = null
-    private var currentBloom: Bloom = Bloom()
     private var gasUsed: Long = 0L
 
     private val clearScheduler = FixedDelayScheduler("txPool-clear", config.expiredIn)
@@ -75,7 +74,6 @@ class TransactionPoolImpl(
         pendingReceipts.clear()
         current = trie.createBackend(best)
         gasUsed = 0
-        currentBloom = Bloom()
     }
 
     fun setEngine(engine: ConsensusEngine) {
@@ -92,7 +90,6 @@ class TransactionPoolImpl(
         parentHeader = null
         current = null
         gasUsed = 0L
-        currentBloom = Bloom()
     }
 
     /**
@@ -104,7 +101,7 @@ class TransactionPoolImpl(
             return
         }
         try {
-            cache.removeIf { info: TransactionInfo ->
+            cache.removeIf { info: PendingInfo ->
                 val remove = (now - info.receivedAt) / 1000 > config.expiredIn
                 if (remove) {
                     dropped.put(info.tx.hash, Pair(info.tx, "transaction timeout"))
@@ -135,7 +132,7 @@ class TransactionPoolImpl(
                     continue
                 }
 
-                val info = TransactionInfo(System.currentTimeMillis(), tx)
+                val info = PendingInfo(System.currentTimeMillis(), tx)
                 if (cache.contains(info)) continue
 
                 try {
@@ -221,7 +218,6 @@ class TransactionPoolImpl(
                     result = res.executionResult
                 )
 
-                currentBloom.or(receipt.bloom)
                 pending.add(t)
                 pendingReceipts.add(receipt)
                 this.current = child
@@ -245,7 +241,6 @@ class TransactionPoolImpl(
                 pending.toMutableList(),
                 pendingReceipts.toMutableList(),
                 current,
-                currentBloom
             )
             clearPending()
             return r
@@ -276,8 +271,8 @@ class TransactionPoolImpl(
         }
     }
 
-    internal class TransactionInfo(val receivedAt: Long, val tx: Transaction) : Comparable<TransactionInfo> {
-        override fun compareTo(other: TransactionInfo): Int {
+    internal class PendingInfo(val receivedAt: Long, val tx: Transaction) : Comparable<PendingInfo> {
+        override fun compareTo(other: PendingInfo): Int {
             var cmp = -tx.gasPrice.compareTo(other.tx.gasPrice)
             if (cmp != 0) return cmp
             cmp = tx.sender.compareTo(other.tx.sender)

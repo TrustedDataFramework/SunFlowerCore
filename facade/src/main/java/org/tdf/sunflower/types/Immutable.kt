@@ -242,6 +242,14 @@ data class TransactionReceipt @RlpCreator constructor(
             }
             return receiptsTrie.commit()
         }
+
+        fun bloomOf(receipts: List<TransactionReceipt>): Bloom {
+            val r = Bloom()
+            receipts.forEach {
+                r.or(it.bloom)
+            }
+            return r
+        }
     }
 }
 
