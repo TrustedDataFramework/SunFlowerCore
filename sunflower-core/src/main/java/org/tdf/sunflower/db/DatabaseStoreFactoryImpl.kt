@@ -9,19 +9,19 @@ import org.tdf.sunflower.DatabaseConfig
 import org.tdf.sunflower.facade.DatabaseStoreFactory
 
 @Component
-class DatabaseStoreFactoryImpl(config: DatabaseConfig) : DatabaseStoreFactory {
-    private val created: MutableSet<String> = mutableSetOf()
-    private val config: DatabaseConfig
+class DatabaseStoreFactoryImpl(private val config: DatabaseConfig) : DatabaseStoreFactory {
+    private val created: MutableSet<Byte> = mutableSetOf()
     private var base: DatabaseStore
     override val directory: String
         get() = config.directory
 
     override fun create(prefix: Char): Store<ByteArray, ByteArray> {
-        val str = String(charArrayOf(prefix))
-        if (created.contains(str))
-            throw RuntimeException("this prefix had been used")
-        created.add(str)
-        return BasePrefixStore(base, byteArrayOf(prefix.code.toByte()))
+        val b = prefix.code.toByte()
+        if (created.contains(b))
+            throw RuntimeException("this prefix $prefix had been used")
+        created.add(b)
+
+        return BasePrefixStore(base, byteArrayOf(b))
     }
 
     override val name: String
@@ -34,7 +34,6 @@ class DatabaseStoreFactoryImpl(config: DatabaseConfig) : DatabaseStoreFactory {
     }
 
     init {
-        this.config = config
         when (config.name.trim { it <= ' ' }.lowercase()) {
             "leveldb-jni", "leveldb" -> base = LevelDb(JniDBFactory.factory, config.directory)
             "memory" -> base = MemoryDatabaseStore()

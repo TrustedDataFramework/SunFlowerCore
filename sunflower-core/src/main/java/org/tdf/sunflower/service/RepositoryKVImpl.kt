@@ -190,18 +190,18 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
     }
 
     init {
-        transactionsStore = StoreWrapper<HexBytes, Transaction>(
+        transactionsStore = StoreWrapper(
             factory.create('b'),
             Codecs.hex,
             Transaction.Companion
         )
 
-        headerStore = StoreWrapper<HexBytes, Header>(
+        headerStore = StoreWrapper(
             factory.create('h'),
             Codecs.hex,
             Header.Companion
         )
-        transactionsRoot = StoreWrapper<HexBytes, Array<HexBytes>>(
+        transactionsRoot = StoreWrapper(
             factory.create('t'),
             Codecs.hex,
             Codecs.rlp(Array<HexBytes>::class.java)
@@ -216,7 +216,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
             Codecs.string,
             Header.Companion
         )
-        transactionIndices = StoreWrapper<HexBytes, Array<TransactionIndex>>(
+        transactionIndices = StoreWrapper(
             factory.create('f'),
             Codecs.hex,
             Codecs.rlp(Array<TransactionIndex>::class.java)

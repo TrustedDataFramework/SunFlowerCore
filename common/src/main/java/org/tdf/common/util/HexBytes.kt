@@ -78,6 +78,7 @@ class HexBytes private constructor(val bytes: ByteArray) : Comparable<HexBytes>,
 
 
         @RlpCreator
+        @JvmStatic
         fun create(bin: ByteArray, streamId: Long): HexBytes {
             return fromBytes(StreamId.asBytes(bin, streamId))
         }
