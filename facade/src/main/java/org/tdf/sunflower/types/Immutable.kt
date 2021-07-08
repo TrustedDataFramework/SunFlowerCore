@@ -463,7 +463,7 @@ data class Transaction(
     }
 }
 
-@RlpProps("receipt", "blockHash", "index")
+@RlpProps("receipt", "blockHash", "i")
 data class TransactionIndex @RlpCreator constructor(
     val receipt: TransactionReceipt,
     val blockHash: HexBytes,
