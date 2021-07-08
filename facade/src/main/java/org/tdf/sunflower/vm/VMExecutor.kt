@@ -4,10 +4,7 @@ import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import org.slf4j.LoggerFactory
 import org.tdf.common.types.Uint256
-import org.tdf.common.util.ByteUtil
-import org.tdf.common.util.HashUtil
-import org.tdf.common.util.HexBytes
-import org.tdf.common.util.bytes
+import org.tdf.common.util.*
 import org.tdf.evm.EvmCallData
 import org.tdf.evm.EvmContext
 import org.tdf.evm.Interpreter
@@ -106,9 +103,6 @@ data class VMExecutor(
                 Arrays.equals(bytes, 0, WASM_MAGIC.size, WASM_MAGIC, 0, WASM_MAGIC.size)
     }
 
-    private fun ByteArray.hex(): HexBytes {
-        return HexBytes.fromBytes(this)
-    }
 
     fun executeInternal(): ByteArray {
         return when (callData.callType) {
