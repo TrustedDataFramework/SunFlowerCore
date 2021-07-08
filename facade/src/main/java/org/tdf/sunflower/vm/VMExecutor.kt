@@ -85,7 +85,7 @@ data class VMExecutor(
         val result = executeInternal()
 
         // 3. calculate fee and
-        val fee = Uint256.of(limit.gas).times(ctx.gasPrice)
+        val fee = Uint256.of(limit.gas) * ctx.gasPrice
         backend.subBalance(ctx.origin, fee)
 
         return VMResult(

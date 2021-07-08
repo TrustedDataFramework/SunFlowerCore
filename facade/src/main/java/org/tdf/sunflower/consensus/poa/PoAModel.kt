@@ -1,7 +1,6 @@
 package org.tdf.sunflower.consensus.poa
 
 import org.tdf.common.types.Uint256
-import org.tdf.common.types.Uint256.Companion.of
 import org.tdf.sunflower.consensus.EconomicModel
 
 class PoAModel : EconomicModel {
@@ -11,7 +10,7 @@ class PoAModel : EconomicModel {
         for (i in 0 until era) {
             reward = reward * 52218182 / 100000000
         }
-        return of(reward)
+        return Uint256.of(reward)
     }
 
     companion object {

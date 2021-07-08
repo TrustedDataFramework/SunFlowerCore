@@ -7,11 +7,13 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static org.tdf.common.types.Constants.WORD_SIZE;
+
 public class ByteUtil {
 
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     public static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
-    public static final HexBytes ZEROS_32 = HexBytes.fromBytes(new byte[32]);
+    public static final HexBytes ZEROS_32 = HexBytes.fromBytes(new byte[WORD_SIZE]);
 
 
     /**
@@ -173,15 +175,6 @@ public class ByteUtil {
     }
 
 
-
-    public static byte[] xor(byte[] b1, byte[] b2) {
-        if (b1.length != b2.length) throw new RuntimeException("Array sizes differ");
-        byte[] ret = new byte[b1.length];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = (byte) (b1[i] ^ b2[i]);
-        }
-        return ret;
-    }
 
 
     /**
