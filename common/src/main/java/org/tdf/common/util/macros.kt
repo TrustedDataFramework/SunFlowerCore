@@ -5,6 +5,19 @@ import org.tdf.common.types.Uint256
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
+/**
+ * abi encoded selector part
+ */
+fun ByteArray.selector(): ByteArray {
+    return sliceArray(0 until 4)
+}
+
+/**
+ * abi encoded without selector
+ */
+fun ByteArray.unselect(): ByteArray {
+    return sliceArray(4 until size)
+}
 
 /**
  * decode from rlp
@@ -51,4 +64,12 @@ fun Long.bytes(): ByteArray {
 
 fun Long.u256(): Uint256 {
     return Uint256.of(this)
+}
+
+fun BigInteger.bytes(): ByteArray{
+    return BigIntegers.asUnsignedByteArray(this)
+}
+
+fun BigInteger.bytes(i: Int): ByteArray{
+    return BigIntegers.asUnsignedByteArray(i, this)
 }

@@ -265,7 +265,7 @@ class JsonRpcImpl(
         val p = pool.dropped.asMap()[hash]
 
         if(p != null) {
-            return TransactionReceiptDTO.failed(p.first, p.second)
+            return TransactionReceiptDTO.failed(p.first)
         }
 
         repo.reader.use { rd ->

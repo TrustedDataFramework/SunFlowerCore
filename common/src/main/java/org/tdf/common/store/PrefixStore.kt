@@ -17,7 +17,7 @@ class PrefixStore<K, V>(
         val encoded = kCodec.encoder.apply(k)
         val withPrefix = verifyAndPrefix(encoded)
         val v = contractStorage[withPrefix]
-        return if (v == null || v.isEmpty) null else vCodec.decoder.apply(v.bytes)
+        return if (v == null || v.isEmpty()) null else vCodec.decoder.apply(v.bytes)
     }
 
     private fun verifyAndPrefix(key: ByteArray): HexBytes {
@@ -34,7 +34,7 @@ class PrefixStore<K, V>(
 
     private fun keySet(): TreeSet<HexBytes> {
         val keys = contractStorage[prefix]
-        return if (keys == null || keys.size() == 0) TreeSet() else TreeSet(
+        return if (keys == null || keys.size == 0) TreeSet() else TreeSet(
             decode(
                 keys,
                 Array<HexBytes>::class.java

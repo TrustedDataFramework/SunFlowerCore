@@ -90,7 +90,7 @@ class BackendImpl(
             val s = contractStorageTrie.revert(a.storageRoot)
             val map: Map<HexBytes, HexBytes> = storage.getOrDefault(addr, emptyMap())
             for ((key, value) in map) {
-                if (value.size() == 0) {
+                if (value.size == 0) {
                     s.remove(key)
                 } else {
                     s[key] = value
@@ -149,13 +149,13 @@ class BackendImpl(
     override fun dbSet(address: HexBytes, key: HexBytes, value: HexBytes) {
         if(staticCall)
             throw RuntimeException("cannot set balance in static call")
-        if (key.size() == 0) throw RuntimeException("invalid key length = 0")
+        if (key.size == 0) throw RuntimeException("invalid key length = 0")
         modifiedStorage.putIfAbsent(address, mutableMapOf())
         modifiedStorage[address]!![key] = value
     }
 
     override fun dbGet(address: HexBytes, key: HexBytes): HexBytes {
-        if (key.size() == 0) throw RuntimeException("invalid key length = 0")
+        if (key.size == 0) throw RuntimeException("invalid key length = 0")
 
         // if has modified
         if (modifiedStorage.containsKey(address)) {
@@ -175,15 +175,15 @@ class BackendImpl(
     }
 
     override fun dbHas(address: HexBytes, key: HexBytes): Boolean {
-        if (key.size() == 0) throw RuntimeException("invalid key length = 0")
+        if (key.size == 0) throw RuntimeException("invalid key length = 0")
         val value = dbGet(address, key)
-        return value.size() != 0
+        return value.size != 0
     }
 
     override fun dbRemove(address: HexBytes, key: HexBytes) {
         if(staticCall)
             throw RuntimeException("cannot set balance in static call")
-        if (key.size() == 0) throw RuntimeException("invalid key length = 0")
+        if (key.size == 0) throw RuntimeException("invalid key length = 0")
         dbSet(address, key, HexBytes.empty())
     }
 

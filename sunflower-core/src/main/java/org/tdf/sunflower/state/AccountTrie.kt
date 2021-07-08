@@ -50,7 +50,7 @@ class AccountTrie(
     }
 
     init {
-        trieStore = NoDeleteStore(db, ByteUtil::isNullOrZeroArray)
+        trieStore = NoDeleteStore(db) { it == null || it.isEmpty() }
         var trie: Trie<HexBytes, Account> = TrieImpl(
             trieStore,
             Codecs.rlp(HexBytes::class.java),

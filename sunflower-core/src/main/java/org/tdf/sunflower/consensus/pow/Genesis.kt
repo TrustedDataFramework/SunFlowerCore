@@ -20,7 +20,7 @@ class Genesis(parsed: JsonNode) : AbstractGenesis(parsed) {
 
     override val block: Block
         get() {
-            if (nbits.size() != 32) throw RuntimeException("invalid nbits size should be 32")
+            if (nbits.size != 32) throw RuntimeException("invalid nbits size should be 32")
             val h = HeaderImpl(
                 hashPrev = parentHash,
                 createdAt = timestamp

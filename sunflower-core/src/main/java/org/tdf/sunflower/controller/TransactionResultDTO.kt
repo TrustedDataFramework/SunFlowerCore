@@ -27,7 +27,7 @@ data class TransactionResultDTO(
                 h.height.jsonHex,
                 index.jsonHex,
                 tx.sender.jsonHex,
-                tx.to.takeIf { !it.isEmpty }?.jsonHex,
+                tx.to.takeIf { !it.isEmpty() }?.jsonHex,
                 tx.gasLimit.jsonHex,
                 tx.gasPrice.jsonHex,
                 tx.value.jsonHex,

@@ -47,7 +47,7 @@ class PropertyReader(val properties: PropertyLike) {
     fun getAsPrivate(property: String): HexBytes? {
         val s = properties.getProperty(property)
         val k = s?.trim { it <= ' ' }?.hex()
-        if (k != null && k.size() != 32) throw RuntimeException("invalid private key size: $k")
+        if (k != null && k.size != 32) throw RuntimeException("invalid private key size: $k")
         return k
     }
 
@@ -68,7 +68,7 @@ class PropertyReader(val properties: PropertyLike) {
     fun getAsAddress(property: String): HexBytes? {
         val s = properties.getProperty(property)
         val minerCoinBase = s?.hex()
-        if (minerCoinBase != null && minerCoinBase.size() != Transaction.ADDRESS_LENGTH)
+        if (minerCoinBase != null && minerCoinBase.size != Transaction.ADDRESS_LENGTH)
             throw RuntimeException("invalid coinbase address $minerCoinBase")
         return minerCoinBase
     }

@@ -7,6 +7,7 @@ import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.vm.abi.Abi
 import org.tdf.common.util.FastByteComparisons
 import org.tdf.common.util.hex
+import org.tdf.common.util.selector
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallContext
 
@@ -17,7 +18,7 @@ abstract class AbstractBuiltIn protected constructor(
 ) : BuiltinContract {
 
     protected fun getSelector(data: HexBytes): ByteArray {
-        return data.slice(0, 4).bytes
+        return data.bytes.selector()
     }
 
     override fun call(rd: RepositoryReader, backend: Backend, ctx: CallContext, callData: CallData): ByteArray {

@@ -84,7 +84,7 @@ data class PeerImpl(
             val host = u.host
             if (u.rawUserInfo == null || u.rawUserInfo.isEmpty()) throw RuntimeException("parse peer failed: missing public key")
             val id = HexBytes.fromHex(u.rawUserInfo)
-            if (id.size() != Transaction.ADDRESS_LENGTH) {
+            if (id.size != Transaction.ADDRESS_LENGTH) {
                 throw RuntimeException("peer " + url + " address should be " + Transaction.ADDRESS_LENGTH)
             }
             return PeerImpl(null, protocol, host, port, id)

@@ -16,7 +16,7 @@ object Address {
     @JvmStatic
     fun of(hex: String): HexBytes {
         val ret = hex.hex()
-        if (ret.size() == Transaction.ADDRESS_LENGTH) return ret
+        if (ret.size == Transaction.ADDRESS_LENGTH) return ret
         throw RuntimeException("invalid hex, not an address")
     }
 

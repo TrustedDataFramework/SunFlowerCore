@@ -12,6 +12,7 @@ import org.tdf.common.types.Uint256
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.RLPUtil
+import org.tdf.common.util.hex
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.state.BuiltinContract
@@ -76,7 +77,8 @@ class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract 
     override fun call(rd: RepositoryReader, backend: Backend, ctx: CallContext, callData: CallData): ByteArray {
         val payload = callData.data
         val type = Type.values()[payload[0]]
-        val args = payload.slice(1)
+        val args = payload.bytes.sliceArray(1 until payload.size).hex()
+
         val nodeInfos: MutableList<NodeInfo> =
             RLPUtil.decode(backend.dbGet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY), Array<NodeInfo>::class.java)
                 .toMutableList()

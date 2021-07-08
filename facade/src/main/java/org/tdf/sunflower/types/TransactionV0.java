@@ -118,7 +118,7 @@ public class TransactionV0 implements RlpWritable {
         this.gasPrice = gasPrice;
         this.gasLimit = gasLimit;
         this.receiveAddress = receiveAddress;
-        if (ByteUtil.isSingleZero(value)) {
+        if (value.length == 1 && value[0] == 0) {
             this.value = EMPTY_BYTE_ARRAY;
         } else {
             this.value = value;

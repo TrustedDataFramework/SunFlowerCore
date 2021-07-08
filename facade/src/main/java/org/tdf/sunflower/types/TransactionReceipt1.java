@@ -171,8 +171,15 @@ public class TransactionReceipt1 {
     }
 
     public boolean isValid() {
-        return ByteUtil.byteArrayToLong(gasUsed) > 0;
+        return byteArrayToLong(gasUsed) > 0;
     }
+
+    public static long byteArrayToLong(byte[] b) {
+        if (b == null || b.length == 0)
+            return 0;
+        return new BigInteger(1, b).longValue();
+    }
+
 
     public boolean isSuccessful() {
         return error.isEmpty();

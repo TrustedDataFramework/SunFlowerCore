@@ -381,10 +381,6 @@ data class Transaction(
             get() = Function { Rlp.decode(it, Transaction::class.java) }
     }
 
-    private fun BigInteger.unsigned(): ByteArray {
-        return BigIntegers.asUnsignedByteArray(this)
-    }
-
     val verifySig: Boolean by lazy {
         val sig = signature ?: return@lazy false
         val key = ECKey.signatureToKey(rawHash, sig)
@@ -401,10 +397,11 @@ data class Transaction(
     }
 
     fun validate() {
-        require(to.size() == 0 || to.size() == ADDRESS_LENGTH) { "Receive address is not valid" }
-        require(signature?.r?.unsigned()?.size ?: 0 <= HASH_LENGTH) { "Signature R is not valid" }
-        require(signature?.s?.unsigned()?.size ?: 0 <= HASH_LENGTH) { "Signature S is not valid" }
-        require(sender.size() == ADDRESS_LENGTH) { "Sender is not valid" }
+        require(to.size == 0 || to.size == ADDRESS_LENGTH) { "Receive address is not valid" }
+        require(signature?.r?.bytes()?.size ?: 0 <= HASH_LENGTH) { "Signature R is not valid" }
+        require(signature?.s?.bytes()?.size ?: 0 <= HASH_LENGTH) { "Signature S is not valid" }
+        require(sender.size == ADDRESS_LENGTH) { "Sender is not valid" }
+        require(gasLimit >= 0) { "gas limit cannot overflow" }
     }
 
     val sender: HexBytes by lazy {
@@ -415,13 +412,13 @@ data class Transaction(
         encodedRaw.sha3()
     }
 
-    val creation: Boolean = to.isEmpty
+    val creation: Boolean = to.isEmpty()
 
     val contractAddress: HexBytes?
         get() {
             if (!creation)
                 return null
-            return HashUtil.calcNewAddrHex(sender.bytes, nonce)
+            return HashUtil.calcNewAddr(sender.bytes, nonce.bytes()).hex()
         }
 
     override val hash: HexBytes by lazy {

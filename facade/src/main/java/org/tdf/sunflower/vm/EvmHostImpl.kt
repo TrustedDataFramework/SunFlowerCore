@@ -3,6 +3,7 @@ package org.tdf.sunflower.vm
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.bytes
 import org.tdf.evm.Digest
 import org.tdf.evm.EvmHost
 import org.tdf.sunflower.facade.RepositoryReader
@@ -90,7 +91,7 @@ class EvmHostImpl(private val executor: VMExecutor, private val rd: RepositoryRe
 
     override fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray): ByteArray {
         val ex = executor.clone()
-        val addr = HashUtil.calcNewAddrHex(caller, backend.getNonce(HexBytes.fromBytes(caller)))
+        val addr = HashUtil.calcNewAddr(caller, backend.getNonce(caller.hex()).bytes()).hex()
         ex.callData = CallData(caller.hex(), value.u256(), addr, CallType.CREATE, createCode.hex())
         ex.executeInternal()
         return addr.bytes

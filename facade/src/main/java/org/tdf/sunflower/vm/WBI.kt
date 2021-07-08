@@ -1,8 +1,7 @@
 package org.tdf.sunflower.vm
 
 import org.tdf.common.types.Uint256
-import org.tdf.common.util.ByteUtil
-import org.tdf.common.util.HexBytes
+import org.tdf.common.util.*
 import org.tdf.lotusvm.ModuleInstance
 import org.tdf.lotusvm.Module
 import org.tdf.sunflower.vm.abi.Abi
@@ -55,12 +54,12 @@ object WBI {
 
         // 3. for contract call, find function by signature
         if (!create) {
-            val sig = input.slice(0, 4).bytes
+            val sig = input.bytes.selector()
             val f = abi.findFunction { x: Abi.Function -> x.encodeSignature().contentEquals(sig) }!!
             entry = f
             function = f.name
             // drop signature parts
-            encoded = input.slice(4)
+            encoded = input.bytes.unselect().hex()
         }
 
         // params == null -> abi not found
@@ -124,7 +123,6 @@ object WBI {
         throw RuntimeException("unexpected")
     }
 
-    @JvmStatic
     fun malloc(instance: ModuleInstance, type: Long, bin: ByteArray): Int {
         val ptr = instance.execute(WBI_MALLOC, bin.size.toLong())[0]
         instance.memory.write(ptr.toInt(), bin)
@@ -134,24 +132,20 @@ object WBI {
         return r
     }
 
-    @JvmStatic
     fun malloc(instance: ModuleInstance, s: String): Int {
         val bin = s.toByteArray(StandardCharsets.UTF_8)
         return malloc(instance, WbiType.STRING, bin)
     }
 
-    @JvmStatic
     fun malloc(instance: ModuleInstance, s: Uint256): Int {
         val bin = s.noLeading
         return malloc(instance, WbiType.UINT_256, bin)
     }
 
-    @JvmStatic
     fun mallocBytes(instance: ModuleInstance, bin: HexBytes): Int {
         return malloc(instance, WbiType.BYTES, bin.bytes)
     }
 
-    @JvmStatic
     fun mallocAddress(instance: ModuleInstance, address: HexBytes): Int {
         return malloc(instance, WbiType.ADDRESS, address.bytes)
     }

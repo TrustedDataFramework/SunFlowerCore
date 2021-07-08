@@ -192,7 +192,7 @@ interface JsonRpc {
                     tx.hash.jsonHex,
                     b?.hash?.jsonHex,
                     b?.height?.jsonHex,
-                    tx.to.takeIf { !it.isEmpty }?.jsonHex ?: tx.contractAddress?.jsonHex,
+                    tx.to.takeIf { !it.isEmpty() }?.jsonHex ?: tx.contractAddress?.jsonHex,
                     info.data.jsonHex,
                     info.topics.map { it.data.jsonHex }
                 )

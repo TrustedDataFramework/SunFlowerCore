@@ -36,11 +36,11 @@ data class TransactionReceiptDTO(
 
 
     companion object {
-        fun failed(tx: Transaction, reason: String): TransactionReceiptDTO {
+        fun failed(tx: Transaction): TransactionReceiptDTO {
             return TransactionReceiptDTO(
                 transactionHash = tx.hash.jsonHex,
                 from = tx.sender.jsonHex,
-                to = tx.to.takeIf { !it.isEmpty }?.jsonHex,
+                to = tx.to.takeIf { !it.isEmpty() }?.jsonHex,
                 contractAddress = tx.contractAddress?.jsonHex,
                 status = "0x0"
             )
@@ -61,7 +61,7 @@ data class TransactionReceiptDTO(
 
             return TransactionReceiptDTO(
                 tx.hash.jsonHex, info.i.jsonHex, info.blockHash.jsonHex,
-                block?.height?.jsonHex, tx.sender.jsonHex, tx.to.takeIf { !it.isEmpty }?.jsonHex,
+                block?.height?.jsonHex, tx.sender.jsonHex, tx.to.takeIf { !it.isEmpty() }?.jsonHex,
                 receipt.cumulativeGas.jsonHex, receipt.gasUsed.jsonHex, tx.contractAddress?.jsonHex,
                 logs.toList().requireNoNulls(), receipt.bloom.data.jsonHex, (1).jsonHex
             )

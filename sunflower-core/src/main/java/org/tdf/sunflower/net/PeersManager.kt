@@ -77,7 +77,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
     private fun loopPeers(server: PeerServerImpl, client: Client, cache: PeersCache, builder: MessageBuilder) {
         // persist peers
         server.peerStore.putAll(
-            client.peersCache.peers.map { AbstractMap.SimpleEntry(it.id.toHex(), TextNode(it.encodeURI())) }
+            client.peersCache.peers.map { AbstractMap.SimpleEntry(it.id.hex, TextNode(it.encodeURI())) }
         )
 
         lookup()

@@ -7,6 +7,7 @@ import org.tdf.common.types.Uint256
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.bytes
 import org.tdf.evm.EvmCallData
 import org.tdf.evm.EvmContext
 import org.tdf.evm.Interpreter
@@ -74,10 +75,10 @@ data class VMExecutor(
             // contract deploy nonce will increase in executeInternal
         }
         if (callData.callType === CallType.CREATE) {
-            contractAddress = HashUtil.calcNewAddrHex(
+            contractAddress = HashUtil.calcNewAddr(
                 callData.caller.bytes,
-                ctx.txNonce
-            )
+                ctx.txNonce.bytes()
+            ).hex()
             callData = callData.copy(to = contractAddress)
         }
 
@@ -181,7 +182,7 @@ data class VMExecutor(
                     else -> throw UnsupportedOperationException()
                 }
                 // call a non-contract account
-                if (code.isEmpty() && !callData.data.isEmpty) throw RuntimeException("call receiver not a contract")
+                if (code.isEmpty() && !callData.data.isEmpty()) throw RuntimeException("call receiver not a contract")
                 backend.addBalance(receiver, callData.value)
                 backend.subBalance(callData.caller, callData.value)
                 if (code.isEmpty()) return ByteUtil.EMPTY_BYTE_ARRAY
@@ -216,7 +217,7 @@ data class VMExecutor(
 
     private fun executeWasm(create: Boolean, code: ByteArray, data: ByteArray): ByteArray {
         // transfer to a wasm contract account
-        if (callData.data.isEmpty) {
+        if (callData.data.isEmpty()) {
             return ByteUtil.EMPTY_BYTE_ARRAY
         }
         val dbFunctions = DBFunctions(backend, callData.to)
@@ -318,7 +319,7 @@ data class VMExecutor(
 
         val CACHE: Cache<HexBytes, ByteArray> = CacheBuilder
             .newBuilder()
-            .weigher { k: Any, v: Any -> (v as ByteArray).size + (k as HexBytes).size() }
+            .weigher { k: Any, v: Any -> (v as ByteArray).size + (k as HexBytes).size }
             .maximumWeight(1024L * 1024L * 8L) // 8mb cache for contracts
             .build()
 

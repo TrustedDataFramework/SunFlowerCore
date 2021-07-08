@@ -9,13 +9,13 @@ class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexB
     constructor(store: Store<HexBytes, HexBytes>) : this(HexBytes.empty(), store)
 
     private fun verifyAndPrefix(key: HexBytes): HexBytes {
-        return prefix.concat(key)
+        return prefix + key
     }
 
     private fun keySet(): MutableSet<HexBytes> {
-        if (prefix.isEmpty) throw UnsupportedOperationException()
+        if (prefix.isEmpty()) throw UnsupportedOperationException()
         val keys = store[prefix]
-        return if (keys == null || keys.isEmpty) TreeSet() else
+        return if (keys == null || keys.isEmpty()) TreeSet() else
             TreeSet(keys.decode(Array<HexBytes>::class.java).toList())
     }
 
@@ -28,7 +28,7 @@ class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexB
     fun save(key: HexBytes, o: Any) {
         val prefixed = verifyAndPrefix(key)
         // if this is prefix store, add key
-        if (!prefix.isEmpty) {
+        if (!prefix.isEmpty()) {
             addKey(key)
         }
         store[prefixed] = o.rlp().hex()
@@ -43,7 +43,7 @@ class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexB
     fun remove(key: HexBytes) {
         val prefixed = verifyAndPrefix(key)
         // if this is prefix store, add key
-        if (!prefix.isEmpty) {
+        if (!prefix.isEmpty()) {
             removeKey(key)
         }
         store.remove(prefixed)
@@ -58,7 +58,7 @@ class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexB
     fun <T> getList(key: HexBytes, clazz: Class<T>, defaultValue: MutableList<T>?): MutableList<T>? {
         val prefixed = verifyAndPrefix(key)
         val h = store[prefixed]
-        if (h == null || h.isEmpty) return defaultValue
+        if (h == null || h.isEmpty()) return defaultValue
         val ret: MutableList<T> = mutableListOf()
         val li = Rlp.decodeList(h.bytes)
         for (i in 0 until li.size()) {
@@ -70,7 +70,7 @@ class StorageWrapper(private val prefix: HexBytes, private val store: Store<HexB
     fun <T : Comparable<T>> getSet(key: HexBytes, clazz: Class<T>, defaultValue: MutableSet<T>?): MutableSet<T>? {
         val prefixed = verifyAndPrefix(key)
         val h = store[prefixed]
-        if (h == null || h.isEmpty) return defaultValue
+        if (h == null || h.isEmpty()) return defaultValue
         val ret = TreeSet<T>()
         val li = Rlp.decodeList(h.bytes)
         for (i in 0 until li.size()) {
