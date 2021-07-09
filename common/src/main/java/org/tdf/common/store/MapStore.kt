@@ -18,13 +18,7 @@ open class MapStore<K, V>(val cache: MutableMap<K, V>) : BatchStore<K, V>, Itera
     }
 
     override fun putAll(rows: Collection<Map.Entry<K, V>>) {
-        rows.forEach { (key, value) ->
-            if (value == null) {
-                cache.remove(key)
-                return@forEach
-            }
-            cache[key] = value
-        }
+        rows.forEach { cache[it.key] = it.value }
     }
 
     override fun remove(k: K) {

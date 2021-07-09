@@ -1,7 +1,5 @@
 package org.tdf.common.store
 
-import org.tdf.common.util.hex
-
 class BasePrefixStore(
     private val wrapped: Store<ByteArray, ByteArray>,
     val prefix: ByteArray

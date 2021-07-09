@@ -1,12 +1,11 @@
 package org.tdf.common.trie
 
-import org.tdf.common.util.HexBytes
-import org.tdf.common.util.HashUtil
-import java.util.AbstractMap.SimpleImmutableEntry
 import org.tdf.common.store.Store
+import org.tdf.common.util.HashUtil
+import org.tdf.common.util.HexBytes
+import java.util.AbstractMap.SimpleImmutableEntry
 import java.util.function.BiFunction
 import java.util.function.Function
-import java.util.stream.Stream
 
 interface Trie<K, V> : Store<K, V> {
     val store: Store<ByteArray, ByteArray>
@@ -68,14 +67,15 @@ interface Trie<K, V> : Store<K, V> {
      */
     val isDirty: Boolean
 
-    val size: Int get() {
-        var c = 0
-        traverseValue {
-            c++
-            true
+    val size: Int
+        get() {
+            var c = 0
+            traverseValue {
+                c++
+                true
+            }
+            return c
         }
-        return c
-    }
 
     fun entries(): List<Map.Entry<K, V>> {
         val r: MutableList<Map.Entry<K, V>> = mutableListOf()

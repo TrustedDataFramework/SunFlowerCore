@@ -88,11 +88,11 @@ public abstract class AbstractTrieTest {
 
         trie.set(ca, dude);
         assertEquals(dude, trie.get(ca));
-        assertEquals(ROOT_HASH_BEFORE, trie.commit().toHex());
+        assertEquals(ROOT_HASH_BEFORE, trie.commit().getHex());
 
         trie.remove(ca);
         assertNull(trie.get(ca));
-        assertEquals(ROOT_HASH_AFTER, trie.commit().toHex());
+        assertEquals(ROOT_HASH_AFTER, trie.commit().getHex());
     }
 
     @Test
@@ -106,11 +106,11 @@ public abstract class AbstractTrieTest {
 
         trie.set(cat, dog);
         assertEquals(dog, trie.get(cat));
-        assertEquals(ROOT_HASH_BEFORE, trie.commit().toHex());
+        assertEquals(ROOT_HASH_BEFORE, trie.commit().getHex());
 
         trie.remove(cat);
         assertNull(trie.get(cat));
-        assertEquals(ROOT_HASH_AFTER, trie.commit().toHex());
+        assertEquals(ROOT_HASH_AFTER, trie.commit().getHex());
     }
 
     @Test
@@ -124,11 +124,11 @@ public abstract class AbstractTrieTest {
 
         trie.set(dog, test);
         assertEquals(test, trie.get(dog));
-        assertEquals(ROOT_HASH_BEFORE, trie.commit().toHex());
+        assertEquals(ROOT_HASH_BEFORE, trie.commit().getHex());
 
         trie.remove(dog);
         assertNull("", trie.get(dog));
-        assertEquals(ROOT_HASH_AFTER, trie.commit().toHex());
+        assertEquals(ROOT_HASH_AFTER, trie.commit().getHex());
     }
 
     @Test
@@ -142,11 +142,11 @@ public abstract class AbstractTrieTest {
 
         trie.set(dog, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(dog));
-        assertEquals(ROOT_HASH_BEFORE, trie.commit().toHex());
+        assertEquals(ROOT_HASH_BEFORE, trie.commit().getHex());
 
         trie.remove(dog);
         assertNull(trie.get(dog));
-        assertEquals(ROOT_HASH_AFTER, trie.commit().toHex());
+        assertEquals(ROOT_HASH_AFTER, trie.commit().getHex());
     }
 
     @Test
@@ -160,11 +160,11 @@ public abstract class AbstractTrieTest {
 
         trie.set(cat, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(cat));
-        assertEquals(ROOT_HASH_BEFORE, trie.commit().toHex());
+        assertEquals(ROOT_HASH_BEFORE, trie.commit().getHex());
 
         trie.remove(cat);
         assertNull(trie.get(cat));
-        assertEquals(ROOT_HASH_AFTER, trie.commit().toHex());
+        assertEquals(ROOT_HASH_AFTER, trie.commit().getHex());
     }
 
     @Test
@@ -178,11 +178,11 @@ public abstract class AbstractTrieTest {
 
         trie.set(ca, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(ca));
-        assertEquals(ROOT_HASH_BEFORE, trie.commit().toHex());
+        assertEquals(ROOT_HASH_BEFORE, trie.commit().getHex());
 
         trie.remove(ca);
         assertNull(trie.get(ca));
-        assertEquals(ROOT_HASH_AFTER, trie.commit().toHex());
+        assertEquals(ROOT_HASH_AFTER, trie.commit().getHex());
     }
 
     @Test
@@ -196,11 +196,11 @@ public abstract class AbstractTrieTest {
         trie.set(Hex.decode(val_1), Hex.decode(val_1));
         trie.set(Hex.decode(val_2), Hex.decode(val_2));
 
-        String root1 = trie.commit().toHex();
+        String root1 = trie.commit().getHex();
 
         trie.set(Hex.decode(val_3), Hex.decode(val_3));
         trie.remove(Hex.decode(val_3));
-        String root1_ = trie.commit().toHex();
+        String root1_ = trie.commit().getHex();
 
         Assert.assertEquals(root1, root1_);
     }
@@ -226,15 +226,15 @@ public abstract class AbstractTrieTest {
 
         trie.set(test, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(test));
-        assertEquals(ROOT_HASH_BEFORE, trie.commit().toHex());
+        assertEquals(ROOT_HASH_BEFORE, trie.commit().getHex());
 
         trie.remove(dog);
         assertNull(trie.get(dog));
-        assertEquals(ROOT_HASH_AFTER1, trie.commit().toHex());
+        assertEquals(ROOT_HASH_AFTER1, trie.commit().getHex());
 
         trie.remove(test);
         assertNull(trie.get(test));
-        assertEquals(ROOT_HASH_AFTER2, trie.commit().toHex());
+        assertEquals(ROOT_HASH_AFTER2, trie.commit().getHex());
     }
 
     @Test
@@ -252,15 +252,15 @@ public abstract class AbstractTrieTest {
 
         trie.set(cat, LONG_STRING);
         assertEquals(LONG_STRING, trie.get(cat));
-        assertEquals(ROOT_HASH_BEFORE, trie.commit().toHex());
+        assertEquals(ROOT_HASH_BEFORE, trie.commit().getHex());
 
         trie.remove(ca);
         assertNull(trie.get(ca));
-        assertEquals(ROOT_HASH_AFTER1, trie.commit().toHex());
+        assertEquals(ROOT_HASH_AFTER1, trie.commit().getHex());
 
         trie.remove(cat);
         assertNull(trie.get(cat));
-        assertEquals(ROOT_HASH_AFTER2, trie.commit().toHex());
+        assertEquals(ROOT_HASH_AFTER2, trie.commit().getHex());
     }
 
     @Test
@@ -285,17 +285,17 @@ public abstract class AbstractTrieTest {
     public void testDeleteAll() {
         String ROOT_HASH_BEFORE = "a84739b4762ddf15e3acc4e6957e5ab2bbfaaef00fe9d436a7369c6f058ec90d";
         Trie<String, String> trie = newStringTrie();
-        assertEquals(ROOT_HASH_EMPTY, trie.commit().toHex());
+        assertEquals(ROOT_HASH_EMPTY, trie.commit().getHex());
 
         trie.set(ca, dude);
         trie.set(cat, dog);
         trie.set(doge, LONG_STRING);
-        assertEquals(ROOT_HASH_BEFORE, trie.commit().toHex());
+        assertEquals(ROOT_HASH_BEFORE, trie.commit().getHex());
 
         trie.remove(ca);
         trie.remove(cat);
         trie.remove(doge);
-        assertEquals(ROOT_HASH_EMPTY, trie.commit().toHex());
+        assertEquals(ROOT_HASH_EMPTY, trie.commit().getHex());
     }
 
     @Test
@@ -305,11 +305,11 @@ public abstract class AbstractTrieTest {
 
         trie1.set(doge, LONG_STRING);
         trie2.set(doge, LONG_STRING);
-        assertEquals(trie1.commit().toHex(), trie2.commit().toHex());
+        assertEquals(trie1.commit().getHex(), trie2.commit().getHex());
 
         trie1.set(dog, LONG_STRING);
         trie2.set(cat, LONG_STRING);
-        assertNotEquals(trie1.commit().toHex(), trie2.commit().toHex());
+        assertNotEquals(trie1.commit().getHex(), trie2.commit().getHex());
     }
 
     @Test
@@ -317,7 +317,7 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie = newStringTrie();
         trie.set("A", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
-        assertEquals("d23786fb4a010da3ce639d66d5e904a11dbc02746d1ce25029e53290cabf28ab", trie.commit().toHex());
+        assertEquals("d23786fb4a010da3ce639d66d5e904a11dbc02746d1ce25029e53290cabf28ab", trie.commit().getHex());
     }
 
     @Test
@@ -325,10 +325,10 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie = newStringTrie();
         Trie<String, String> impl = trie;
         trie.set("doe", "reindeer");
-        assertEquals("11a0327cfcc5b7689b6b6d727e1f5f8846c1137caaa9fc871ba31b7cce1b703e", impl.commit().toHex());
+        assertEquals("11a0327cfcc5b7689b6b6d727e1f5f8846c1137caaa9fc871ba31b7cce1b703e", impl.commit().getHex());
 
         trie.set("dog", "puppy");
-        assertEquals("05ae693aac2107336a79309e0c60b24a7aac6aa3edecaef593921500d33c63c4", impl.commit().toHex());
+        assertEquals("05ae693aac2107336a79309e0c60b24a7aac6aa3edecaef593921500d33c63c4", impl.commit().getHex());
 
         Trie<String, String> trie2 = impl;
         assert trie2.get("dog").equals("puppy");
@@ -344,7 +344,7 @@ public abstract class AbstractTrieTest {
         trie.set("horse", "stallion");
         trie.set("dog", "puppy");
 
-        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", trie.commit().toHex());
+        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", trie.commit().getHex());
     }
 
 
@@ -360,7 +360,7 @@ public abstract class AbstractTrieTest {
         trie.set("dog", "puppy");
         trie.remove("shaman");
 
-        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", trie.commit().toHex());
+        assertEquals("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84", trie.commit().getHex());
     }
 
 
@@ -371,7 +371,7 @@ public abstract class AbstractTrieTest {
         trie.set("food", "bat");
         trie.set("food", "bass");
 
-        assertEquals("17beaa1648bafa633cda809c90c04af50fc8aed3cb40d16efbddee6fdf63c4c3", trie.commit().toHex());
+        assertEquals("17beaa1648bafa633cda809c90c04af50fc8aed3cb40d16efbddee6fdf63c4c3", trie.commit().getHex());
     }
 
     @Test
@@ -381,7 +381,7 @@ public abstract class AbstractTrieTest {
         trie.set("be", "e");
         trie.set("dog", "puppy");
         trie.set("bed", "d");
-        assertEquals("3f67c7a47520f79faa29255d2d3c084a7a6df0453116ed7232ff10277a8be68b", trie.commit().toHex());
+        assertEquals("3f67c7a47520f79faa29255d2d3c084a7a6df0453116ed7232ff10277a8be68b", trie.commit().getHex());
     }
 
     @Test
@@ -389,10 +389,10 @@ public abstract class AbstractTrieTest {
         Trie<String, String> trie = newStringTrie();
 
         trie.set("test", "test");
-        assertEquals("85d106d4edff3b7a4889e91251d0a87d7c17a1dda648ebdba8c6060825be23b8", trie.commit().toHex());
+        assertEquals("85d106d4edff3b7a4889e91251d0a87d7c17a1dda648ebdba8c6060825be23b8", trie.commit().getHex());
 
         trie.set("te", "testy");
-        assertEquals("8452568af70d8d140f58d941338542f645fcca50094b20f3c3d8c3df49337928", trie.commit().toHex());
+        assertEquals("8452568af70d8d140f58d941338542f645fcca50094b20f3c3d8c3df49337928", trie.commit().getHex());
     }
 
     @Test
@@ -470,7 +470,7 @@ public abstract class AbstractTrieTest {
         }
 
 
-        assert "cfd77c0fcb037adefce1f4e2eb94381456a4746379d2896bb8f309c620436d30".equals(trieSingle.commit().toHex());
+        assert "cfd77c0fcb037adefce1f4e2eb94381456a4746379d2896bb8f309c620436d30".equals(trieSingle.commit().getHex());
 
     }
 
@@ -501,7 +501,7 @@ public abstract class AbstractTrieTest {
         storage.set(key3, val3);
         storage.set(key4, val4);
 
-        String hash = storage.commit().toHex();
+        String hash = storage.commit().getHex();
 
         System.out.println(hash);
         Assert.assertEquals("517eaccda568f3fa24915fed8add49d3b743b3764c0bc495b19a47c54dbc3d62", hash);
@@ -547,13 +547,13 @@ public abstract class AbstractTrieTest {
 
         trie.set("dog", "puppy");
         System.out.println();
-        Assert.assertEquals("ed6e08740e4a267eca9d4740f71f573e9aabbcc739b16a2fa6c1baed5ec21278", trie.commit().toHex());
+        Assert.assertEquals("ed6e08740e4a267eca9d4740f71f573e9aabbcc739b16a2fa6c1baed5ec21278", trie.commit().getHex());
 
         trie.set("do", "verb");
-        Assert.assertEquals("779db3986dd4f38416bfde49750ef7b13c6ecb3e2221620bcad9267e94604d36", trie.commit().toHex());
+        Assert.assertEquals("779db3986dd4f38416bfde49750ef7b13c6ecb3e2221620bcad9267e94604d36", trie.commit().getHex());
 
         trie.set("doggiestan", "aeswome_place");
-        Assert.assertEquals("8bd5544747b4c44d1274aa99a6293065fe319b3230e800203317e4c75a770099", trie.commit().toHex());
+        Assert.assertEquals("8bd5544747b4c44d1274aa99a6293065fe319b3230e800203317e4c75a770099", trie.commit().getHex());
     }
 
     // this case relates to a bug which led us to conflict on Morden network (block #486248)
@@ -608,7 +608,7 @@ public abstract class AbstractTrieTest {
         // FIX:
         // Supply Node initialization with raw rlp value
 
-        assertEquals("36e350d9a1d9c02d5bc4539a05e51890784ea5d2b675a0b26725dbbdadb4d6e2", trie.commit().toHex());
+        assertEquals("36e350d9a1d9c02d5bc4539a05e51890784ea5d2b675a0b26725dbbdadb4d6e2", trie.commit().getHex());
     }
 
     @Test

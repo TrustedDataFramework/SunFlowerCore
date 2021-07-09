@@ -20,7 +20,7 @@ class LevelDb(
 
     private lateinit var dbSettings: DBSettings
 
-    override var isAlive = false
+    override var alive = false
         private set
     private val resetDbLock: ReadWriteLock = ReentrantReadWriteLock()
 
@@ -28,7 +28,7 @@ class LevelDb(
         dbSettings = settings
         resetDbLock.writeLock().withLock {
             log.debug("~> LevelDbDataSource.init(): $directory")
-            if (isAlive) return
+            if (alive) return
             val options = Options()
             options.createIfMissing(true)
             options.compressionType(CompressionType.NONE)
@@ -62,7 +62,7 @@ class LevelDb(
                         throw e
                     }
                 }
-                isAlive = true
+                alive = true
             } catch (ioe: IOException) {
                 log.error(ioe.message, ioe)
                 throw RuntimeException("Can't initialize database", ioe)
@@ -73,11 +73,11 @@ class LevelDb(
 
     override fun close() {
         resetDbLock.writeLock().withLock {
-            if (!isAlive) return
+            if (!alive) return
             try {
                 log.debug("Close db: {}", directory)
                 db.close()
-                isAlive = false
+                alive = false
             } catch (e: IOException) {
                 log.error("Failed to find the db file on the close: {} ", directory)
             }
@@ -145,13 +145,17 @@ class LevelDb(
             return try {
                 val ret = db[k]
                 if (log.isTraceEnabled)
-                    log.trace("<~ LevelDbDataSource.get(): " + directory + ", key: " + k.hex() + ", " + (ret?.size ?: "null"))
+                    log.trace(
+                        "<~ LevelDbDataSource.get(): " + directory + ", key: " + k.hex() + ", " + (ret?.size ?: "null")
+                    )
                 ret ?: ByteUtil.EMPTY_BYTE_ARRAY
             } catch (e: DBException) {
                 log.warn("Exception. Retrying again...", e)
                 val ret = db[k]
                 if (log.isTraceEnabled)
-                    log.trace("<~ LevelDbDataSource.get(): " + directory + ", key: " + k.hex() + ", " + (ret?.size ?: "null"))
+                    log.trace(
+                        "<~ LevelDbDataSource.get(): " + directory + ", key: " + k.hex() + ", " + (ret?.size ?: "null")
+                    )
                 ret ?: ByteUtil.EMPTY_BYTE_ARRAY
             }
         }

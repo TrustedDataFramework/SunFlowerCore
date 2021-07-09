@@ -1,14 +1,14 @@
 package org.tdf.common.util
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import org.tdf.common.util.HexBytesUtil.HexBytesDeserializer
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import org.tdf.common.util.HexBytesUtil.HexBytesSerializer
-import com.github.salpadding.rlpstream.RlpWritable
 import com.github.salpadding.rlpstream.RlpBuffer
-import com.github.salpadding.rlpstream.annotation.RlpCreator
+import com.github.salpadding.rlpstream.RlpWritable
 import com.github.salpadding.rlpstream.StreamId
+import com.github.salpadding.rlpstream.annotation.RlpCreator
 import org.spongycastle.util.encoders.Hex
+import org.tdf.common.util.HexBytesUtil.HexBytesDeserializer
+import org.tdf.common.util.HexBytesUtil.HexBytesSerializer
 
 /**
  * hex bytes helper for json marshal/unmarshal

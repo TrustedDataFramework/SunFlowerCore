@@ -1,18 +1,19 @@
 package org.tdf.common.trie
 
-import org.tdf.common.util.HexBytes
 import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.serialize.Codec
 import org.tdf.common.store.ByteArrayMapStore
 import org.tdf.common.store.ReadonlyStore
 import org.tdf.common.store.Store
+import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import java.util.function.BiFunction
 
 // enhanced radix tree
-class TrieImpl<K, V> (
-    override var store: Store<ByteArray, ByteArray> = ByteArrayMapStore(),
-    override var kCodec: Codec<K> = Codec.identity(),
-    override var vCodec: Codec<V> = Codec.identity(),
+class TrieImpl<K, V>(
+    override val store: Store<ByteArray, ByteArray> = ByteArrayMapStore(),
+    override val kCodec: Codec<K> = Codec.identity(),
+    override val vCodec: Codec<V> = Codec.identity(),
     private var root: Node? = null
 ) : AbstractTrie<K, V>() {
 
@@ -37,8 +38,8 @@ class TrieImpl<K, V> (
 
     override fun removeBytes(key: ByteArray) {
         require(key.isNotEmpty()) { "key cannot be null" }
-        if (root == null) return
-        root = root!!.delete(TrieKey.fromNormal(key), store)
+        val r = root ?: return
+        root = r.delete(TrieKey.fromNormal(key), store)
     }
 
     fun clear() {
@@ -46,12 +47,12 @@ class TrieImpl<K, V> (
     }
 
     override fun commit(): HexBytes {
-        if (root == null) return nullHash
-        if (!root!!.isDirty) return HexBytes.fromBytes(root!!.hash)
-        val hash = Rlp.decodeBytes(this.root!!.commit(store, true))
-        if (root!!.isDirty || root!!.hash == null)
+        val r = root ?: return nullHash
+        if (!r.isDirty) return HexBytes.fromBytes(r.hash)
+        val hash = Rlp.decodeBytes(r.commit(store, true))
+        if (r.isDirty || r.hash == null)
             throw RuntimeException("unexpected error: still dirty after commit")
-        return HexBytes.fromBytes(hash)
+        return hash.hex()
     }
 
     override fun flush() {
@@ -63,8 +64,8 @@ class TrieImpl<K, V> (
             store,
             kCodec, vCodec, null
         )
-        val v = store[rootHash.bytes]
-        if (v == null || v.isEmpty()) throw RuntimeException("rollback failed, root hash not exists")
+        store[rootHash.bytes]?.takeIf { it.isNotEmpty() }
+            ?: throw RuntimeException("rollback failed, root hash not exists")
         return TrieImpl(
             store, kCodec, vCodec,
             Node.fromRootHash(rootHash.bytes, ReadonlyStore.of(store))
@@ -72,8 +73,8 @@ class TrieImpl<K, V> (
     }
 
     private fun traverseTrie(action: ScannerAction) {
-        if (root == null) return
-        root!!.traverse(TrieKey.EMPTY, action)
+        val r = root ?: return
+        r.traverse(TrieKey.EMPTY, action)
     }
 
     override fun dumpKeys(): Set<HexBytes> {
@@ -92,10 +93,10 @@ class TrieImpl<K, V> (
 
     override val rootHash: HexBytes
         get() {
-            if (root == null) return nullHash
-            if (root!!.isDirty || root!!.hash == null)
+            val r = root ?: return nullHash
+            if (r.isDirty || r.hash == null)
                 throw RuntimeException("the trie is dirty or root hash is null")
-            return HexBytes.fromBytes(root!!.hash)
+            return r.hash.hex()
         }
     override val isDirty: Boolean
         get() = root?.isDirty == true

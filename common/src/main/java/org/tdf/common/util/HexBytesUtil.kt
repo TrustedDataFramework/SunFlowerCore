@@ -1,12 +1,12 @@
 package org.tdf.common.util
 
-import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
 internal object HexBytesUtil {
     internal class HexBytesSerializer : StdSerializer<HexBytes>(HexBytes::class.java) {
@@ -21,12 +21,12 @@ internal object HexBytesUtil {
             if (node.isNull) return HexBytes.empty()
             var encoded = node.asText()
             if (encoded == null || encoded.isEmpty()) {
-                return  HexBytes.empty()
+                return HexBytes.empty()
             }
             if (encoded.startsWith("0x")) {
                 encoded = encoded.substring(2)
             }
-            return  HexBytes.fromHex(encoded)
+            return HexBytes.fromHex(encoded)
         }
     }
 }

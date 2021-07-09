@@ -2,7 +2,6 @@ package org.tdf.common.trie
 
 import org.spongycastle.util.encoders.Hex
 import org.tdf.common.store.ByteArrayMapStore
-import java.lang.StringBuffer
 
 class NoDoubleDeleteStore : ByteArrayMapStore<ByteArray?>() {
     override fun remove(k: ByteArray) {

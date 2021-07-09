@@ -66,10 +66,10 @@ fun Long.u256(): Uint256 {
     return Uint256.of(this)
 }
 
-fun BigInteger.bytes(): ByteArray{
+fun BigInteger.bytes(): ByteArray {
     return BigIntegers.asUnsignedByteArray(this)
 }
 
-fun BigInteger.bytes(i: Int): ByteArray{
+fun BigInteger.bytes(i: Int): ByteArray {
     return BigIntegers.asUnsignedByteArray(i, this)
 }

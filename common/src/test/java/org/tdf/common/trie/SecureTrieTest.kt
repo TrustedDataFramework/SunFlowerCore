@@ -1,20 +1,21 @@
 package org.tdf.common.trie
 
-import org.tdf.common.TrieUtil.builder
-import org.tdf.common.serialize.Codec.Companion.identity
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+import org.tdf.common.TrieUtil.builder
+import org.tdf.common.serialize.Codec.Companion.identity
 import org.tdf.common.serialize.Codecs
-import org.tdf.common.store.NoDeleteStore
 import org.tdf.common.store.ByteArrayMapStore
+import org.tdf.common.store.NoDeleteStore
 
 
 @RunWith(JUnit4::class)
 class SecureTrieTest {
     private lateinit var notSecured: Trie<ByteArray, String>
     private lateinit var secured: Trie<ByteArray, String>
+
     @Before
     fun before() {
         notSecured = builder<ByteArray, String>()

@@ -1,14 +1,14 @@
 package org.tdf.common.util
 
-import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import org.tdf.common.types.Uint256
 import java.math.BigInteger
 
 class IntSerializer : StdSerializer<Number>(Number::class.java) {
     override fun serialize(value: Number, gen: JsonGenerator, provider: SerializerProvider) {
-        val v: BigInteger = when(value) {
+        val v: BigInteger = when (value) {
             is Uint256 -> value.value
             is Long -> BigInteger.valueOf(value)
             is Byte -> return gen.writeNumber(value.toInt())

@@ -128,7 +128,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
     override fun onDisconnect(peer: PeerImpl, server: PeerServerImpl) {}
 
     override fun onStop(server: PeerServerImpl) {
-
+        server.peerStore.flush()
     }
 
     companion object {

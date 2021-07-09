@@ -21,12 +21,12 @@ interface Codec<K> {
             encoder: Function<in K, ByteArray>,
             decoder: Function<ByteArray, out K>
         ): Codec<K> {
-            return object : Codec<K> {
-                override val encoder: Function<in K, ByteArray>
-                    get() = encoder
-                override val decoder: Function<ByteArray, out K>
-                    get() = decoder
-            }
+            return CodecImpl(encoder, decoder)
         }
     }
 }
+
+internal class CodecImpl<K>(
+    override val encoder: Function<in K, ByteArray>,
+    override val decoder: Function<ByteArray, out K>
+) : Codec<K>

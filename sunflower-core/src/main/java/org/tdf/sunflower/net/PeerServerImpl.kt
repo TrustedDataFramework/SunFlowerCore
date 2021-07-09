@@ -79,12 +79,9 @@ class PeerServerImpl(// if non-database provided, use memory database
             "peer server is listening on " +
                     self.encodeURI()
         )
-        if (config.bootstraps != null) {
-            client.bootstrap(config.bootstraps)
-        }
-        if (config.trusted != null) {
-            client.trust(config.trusted)
-        }
+        client.bootstrap(config.bootstraps)
+        client.trust(config.trusted)
+
         // connect to stored peers when server restarts
         peerStore.forEach { k: Map.Entry<String, JsonNode> ->
             if ("self" == k.key)

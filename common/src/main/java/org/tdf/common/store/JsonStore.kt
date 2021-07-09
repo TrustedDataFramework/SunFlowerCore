@@ -70,12 +70,10 @@ class JsonStore(private val jsonFile: String, private val mapper: ObjectMapper) 
 
     override operator fun set(k: String, v: JsonNode) {
         node[k] = v
-        sync()
     }
 
     override fun remove(k: String) {
         node.remove(k)
-        sync()
     }
 
     override fun flush() {
@@ -83,10 +81,7 @@ class JsonStore(private val jsonFile: String, private val mapper: ObjectMapper) 
     }
 
     override fun putAll(rows: Collection<Map.Entry<String, JsonNode>>) {
-        for ((key, value) in rows) {
-            node[Objects.requireNonNull(key)] = Objects.requireNonNull(value)
-        }
-        sync()
+        rows.forEach { node[it.key] = it.value }
     }
 
     override fun iterator(): Iterator<Map.Entry<String, JsonNode>> {

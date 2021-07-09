@@ -3,7 +3,7 @@ package org.tdf.common.store
 /**
  * Interface represents DB source which is normally the final Source in the chain
  */
-interface DatabaseStore : BatchStore<ByteArray, ByteArray> {
+interface DatabaseStore : BatchStore<ByteArray, ByteArray>, AutoCloseable {
     /**
      * Initializes DB (open table, connection, etc)
      *
@@ -14,12 +14,12 @@ interface DatabaseStore : BatchStore<ByteArray, ByteArray> {
     /**
      * @return true if DB connection is alive
      */
-    val isAlive: Boolean
+    val alive: Boolean
 
     /**
      * Closes the DB table/connection
      */
-    fun close()
+    override fun close()
 
     /**
      * Closes database, destroys its data and finally runs init()

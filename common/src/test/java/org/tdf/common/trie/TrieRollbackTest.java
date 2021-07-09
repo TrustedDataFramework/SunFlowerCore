@@ -80,7 +80,7 @@ public class TrieRollbackTest {
             trie.flush();
             roots.add(rootHash);
             nodes.add(trie.dump());
-            dumps.put(rootHash.toHex(), dump(trie));
+            dumps.put(rootHash.getHex(), dump(trie));
         }
     }
 
@@ -93,7 +93,7 @@ public class TrieRollbackTest {
     public void test1() {
         for (HexBytes rootHash : roots) {
             trie = trie.revert(rootHash, database);
-            assert equals(dump(trie), dumps.get(rootHash.toHex()));
+            assert equals(dump(trie), dumps.get(rootHash.getHex()));
         }
         for (int i = 0; i < roots.size() - 1; i++) {
             trie = trie.revert(roots.get(i), database);
@@ -110,7 +110,7 @@ public class TrieRollbackTest {
 
             Store<byte[], byte[]> db = new ByteArrayMapStore<>(m);
             Trie<String, String> trie1 = trie.revert(roots.get(i), db);
-            assert equals(dumps.get(roots.get(i).toHex()), dump(trie1));
+            assert equals(dumps.get(roots.get(i).getHex()), dump(trie1));
         }
     }
 

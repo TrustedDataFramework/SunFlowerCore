@@ -40,5 +40,4 @@ interface Store<K, V> {
      * Source didn't change
      */
     fun flush()
-
 }
