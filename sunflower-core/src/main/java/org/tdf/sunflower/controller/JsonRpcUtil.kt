@@ -3,7 +3,7 @@ package org.tdf.sunflower.controller
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
-import org.tdf.sunflower.state.Address
+import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.vm.CallType
@@ -21,7 +21,7 @@ internal object JsonRpcUtil {
     }
 
     private fun String?.address(): HexBytes {
-        return this.notEmptyOrNull()?.jsonHex?.hex ?: Address.empty()
+        return this.notEmptyOrNull()?.jsonHex?.hex ?: AddrUtil.empty()
     }
 
     private fun String?.u256(): Uint256 {

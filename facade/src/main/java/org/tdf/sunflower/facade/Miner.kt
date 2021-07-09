@@ -1,13 +1,13 @@
 package org.tdf.sunflower.facade
 
-import org.tdf.common.util.HexBytes
-import org.tdf.sunflower.state.Address
+import org.tdf.sunflower.state.AddrUtil
+import org.tdf.sunflower.types.Address
 
 interface Miner {
     fun start()
     fun stop()
-    val minerAddress: HexBytes
-        get() = Address.empty()
+    val address: Address
+        get() = AddrUtil.empty()
 
     companion object {
         val NONE: Miner = object : Miner {

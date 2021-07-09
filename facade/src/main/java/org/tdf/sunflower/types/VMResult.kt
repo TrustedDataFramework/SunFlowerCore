@@ -2,11 +2,11 @@ package org.tdf.sunflower.types
 
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
-import org.tdf.sunflower.state.Address
+import org.tdf.sunflower.state.AddrUtil
 
 class VMResult(
     val gasUsed: Long = 0,
-    val contractAddress: HexBytes = Address.empty(),
+    val contractAddress: HexBytes = AddrUtil.empty(),
     val executionResult: HexBytes = HexBytes.empty(),
     val logs: List<LogInfo> = emptyList(),
     val fee: Uint256 = Uint256.ZERO

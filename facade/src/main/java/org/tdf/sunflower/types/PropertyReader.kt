@@ -66,12 +66,12 @@ class PropertyReader(val properties: PropertyLike) {
         return s.trim { it <= ' ' }.toLong()
     }
 
-    fun getAsAddress(property: String): HexBytes? {
+    fun getAsAddress(property: String): Address? {
         val s = properties.getProperty(property)
-        val minerCoinBase = s?.hex()
-        if (minerCoinBase != null && minerCoinBase.size != Transaction.ADDRESS_LENGTH)
-            throw RuntimeException("invalid coinbase address $minerCoinBase")
-        return minerCoinBase
+        val addr = s?.hex()
+        if (addr != null && addr.size != Transaction.ADDRESS_LENGTH)
+            throw RuntimeException("invalid address $addr length is ${addr.size}")
+        return addr
     }
 
     fun getAsList(prefix: String): List<String> {

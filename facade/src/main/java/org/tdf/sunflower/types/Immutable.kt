@@ -12,47 +12,50 @@ import org.tdf.common.types.Chained
 import org.tdf.common.types.Hashed
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.*
-import org.tdf.sunflower.state.Address
+import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.types.TxUtils.*
 import java.math.BigInteger
 import java.util.function.Function
 
+typealias Address = HexBytes
+typealias H256 = HexBytes
+typealias H2048 = HexBytes
 
 interface Header : Chained {
     /**
      * hash of parent block
      */
-    override val hashPrev: HexBytes
+    override val hashPrev: H256
 
     /**
      * uncles list = rlp([])
      */
-    val unclesHash: HexBytes
+    val unclesHash: H256
 
     /**
      * miner
      */
-    val coinbase: HexBytes
+    val coinbase: Address
 
     /**
      * root hash of state trie
      */
-    val stateRoot: HexBytes
+    val stateRoot: H256
 
     /**
      * root hash of transaction trie
      */
-    val transactionsRoot: HexBytes
+    val transactionsRoot: H256
 
     /**
      * receipts root
      */
-    val receiptTrieRoot: HexBytes
+    val receiptTrieRoot: H256
 
     /**
      * logs bloom
      */
-    val logsBloom: HexBytes
+    val logsBloom: H2048
 
     /**
      * difficulty value = EMPTY_BYTES
@@ -74,7 +77,8 @@ interface Header : Chained {
     val mixHash: HexBytes
     val nonce: Long
     val encoded: ByteArray
-    override val hash: HexBytes
+
+    override val hash: H256
 
     companion object : Codec<Header> {
         override val encoder: Function<in Header, ByteArray>
@@ -108,32 +112,32 @@ data class HeaderImpl @RlpCreator constructor(
     /**
      * hash of parent block
      */
-    override val hashPrev: HexBytes = ByteUtil.ZEROS_32,
+    override val hashPrev: H256 = ByteUtil.ZEROS_32,
     /**
      * uncles list = rlp([])
      */
-    override val unclesHash: HexBytes = HashUtil.EMPTY_LIST_HASH.hex(),
+    override val unclesHash: H256 = HashUtil.EMPTY_LIST_HASH.hex(),
     /**
      * miner
      */
-    override val coinbase: HexBytes = Address.empty(),
+    override val coinbase: Address = AddrUtil.empty(),
     /**
      * root hash of state trie
      */
-    override val stateRoot: HexBytes = HashUtil.EMPTY_TRIE_HASH_HEX,
+    override val stateRoot: H256 = HashUtil.EMPTY_TRIE_HASH_HEX,
     /**
      * root hash of transaction trie
      */
-    override val transactionsRoot: HexBytes = HashUtil.EMPTY_TRIE_HASH_HEX,
+    override val transactionsRoot: H256 = HashUtil.EMPTY_TRIE_HASH_HEX,
 
     /**
      * receipts root
      */
-    override val receiptTrieRoot: HexBytes = HashUtil.EMPTY_TRIE_HASH_HEX,
+    override val receiptTrieRoot: H256 = HashUtil.EMPTY_TRIE_HASH_HEX,
     /**
      * logs bloom
      */
-    override val logsBloom: HexBytes = Bloom.EMPTY,
+    override val logsBloom: H2048 = Bloom.EMPTY,
 
     /**
      * difficulty value = EMPTY_BYTES
@@ -167,7 +171,7 @@ data class HeaderImpl @RlpCreator constructor(
         rlp()
     }
 
-    override val hash: HexBytes by lazy {
+    override val hash: H256 by lazy {
         encoded.sha3().hex()
     }
     override val impl: HeaderImpl
@@ -234,7 +238,7 @@ data class TransactionReceipt @RlpCreator constructor(
     }
 
     companion object {
-        fun calcTrie(receipts: List<TransactionReceipt>): HexBytes {
+        fun calcTrie(receipts: List<TransactionReceipt>): H256 {
             val receiptsTrie: Trie<ByteArray, ByteArray> = TrieImpl()
             if (receipts.isEmpty()) return HashUtil.EMPTY_TRIE_HASH_HEX
             for (i in receipts.indices) {
@@ -255,7 +259,7 @@ data class TransactionReceipt @RlpCreator constructor(
 
 
 data class LogInfo(
-    val address: HexBytes = Address.empty(),
+    val address: Address = AddrUtil.empty(),
     val topics: List<Uint256>,
     val data: HexBytes = HexBytes.empty()
 ): RlpWritable {
@@ -315,7 +319,7 @@ data class Transaction(
     val nonce: Long = 0,
     val gasPrice: Uint256 = Uint256.ZERO,
     val gasLimit: Long = 0,
-    val to: HexBytes = Address.empty(),
+    val to: Address = AddrUtil.empty(),
     val value: Uint256 = Uint256.ZERO,
     val data: HexBytes = HexBytes.empty(),
     val vrs: VRS? = null
@@ -404,8 +408,8 @@ data class Transaction(
         require(gasLimit >= 0) { "gas limit cannot overflow" }
     }
 
-    val sender: HexBytes by lazy {
-        signature?.let { ECKey.signatureToAddress(rawHash, it) }?.hex() ?: Address.empty()
+    val sender: Address by lazy {
+        signature?.let { ECKey.signatureToAddress(rawHash, it) }?.hex() ?: AddrUtil.empty()
     }
 
     val rawHash: ByteArray by lazy {
@@ -414,14 +418,14 @@ data class Transaction(
 
     val creation: Boolean = to.isEmpty()
 
-    val contractAddress: HexBytes?
+    val contractAddress: Address?
         get() {
             if (!creation)
                 return null
             return HashUtil.calcNewAddr(sender.bytes, nonce.bytes()).hex()
         }
 
-    override val hash: HexBytes by lazy {
+    override val hash: H256 by lazy {
         encoded.sha3().hex()
     }
 

@@ -3,11 +3,11 @@ package org.tdf.sunflower.vm
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
-import org.tdf.sunflower.state.Address
+import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.types.Transaction
 
 data class CallContext(
-    val origin: HexBytes = Address.empty(),
+    val origin: HexBytes = AddrUtil.empty(),
     val txHash: HexBytes = HashUtil.EMPTY_DATA_HASH_HEX,
     val txNonce: Long = 0,
     val gasPrice: Uint256 = Uint256.ZERO,
@@ -28,12 +28,12 @@ data class CallContext(
 }
 
 data class CallData(
-    val caller: HexBytes = Address.empty(),
+    val caller: HexBytes = AddrUtil.empty(),
     val value: Uint256 = Uint256.ZERO,
-    val to: HexBytes = Address.empty(),
+    val to: HexBytes = AddrUtil.empty(),
     val callType: CallType = CallType.COINBASE,
     val data: HexBytes = HexBytes.empty(),
-    val delegateAddr: HexBytes = Address.empty()
+    val delegateAddr: HexBytes = AddrUtil.empty()
 ) {
 
     fun clone(): CallData {
@@ -49,7 +49,7 @@ data class CallData(
         @JvmStatic
         fun fromTx(tx: Transaction, coinbase: Boolean): CallData {
             var t = CallType.COINBASE
-            val origin = if (coinbase) Address.empty() else tx.sender
+            val origin = if (coinbase) AddrUtil.empty() else tx.sender
             if (!coinbase) {
                 t = if (tx.to.isEmpty()) CallType.CREATE else CallType.CALL
             }

@@ -13,7 +13,7 @@ import org.tdf.lotusvm.ModuleInstance
 import org.tdf.lotusvm.runtime.ResourceFactory.createMemory
 import org.tdf.lotusvm.runtime.ResourceFactory.createStack
 import org.tdf.sunflower.facade.RepositoryReader
-import org.tdf.sunflower.state.Address
+import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.types.LogInfo
 import org.tdf.sunflower.types.VMResult
 import org.tdf.sunflower.vm.ModuleValidator.validate
@@ -66,7 +66,7 @@ data class VMExecutor(
         if (n != ctx.txNonce && callData.callType !== CallType.COINBASE)
             throw RuntimeException("invalid nonce")
 
-        var contractAddress: HexBytes = Address.empty()
+        var contractAddress: HexBytes = AddrUtil.empty()
         if (!backend.staticCall && callData.callType === CallType.CALL) {
             backend.setNonce(ctx.origin, n + 1)
             // contract deploy nonce will increase in executeInternal

@@ -1,6 +1,6 @@
 package org.tdf.sunflower.state
 
-import org.tdf.sunflower.state.Address.empty
+import org.tdf.sunflower.state.AddrUtil.empty
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.types.ConsensusConfig

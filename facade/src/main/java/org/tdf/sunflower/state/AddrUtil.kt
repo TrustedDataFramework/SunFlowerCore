@@ -5,7 +5,7 @@ import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
 import org.tdf.sunflower.types.Transaction
 
-object Address {
+object AddrUtil {
     val EMPTY: HexBytes = ByteArray(Transaction.ADDRESS_LENGTH).hex()
 
     @JvmStatic

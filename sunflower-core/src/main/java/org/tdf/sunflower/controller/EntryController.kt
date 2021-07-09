@@ -16,8 +16,8 @@ import org.tdf.sunflower.net.Peer
 import org.tdf.sunflower.net.PeerServer
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.AccountTrie
-import org.tdf.sunflower.state.Address
-import org.tdf.sunflower.state.Address.empty
+import org.tdf.sunflower.state.AddrUtil
+import org.tdf.sunflower.state.AddrUtil.empty
 import org.tdf.sunflower.types.*
 import java.util.function.Function
 
@@ -74,7 +74,7 @@ class EntryController constructor(
 
     @GetMapping(value = ["/account/{addressOrPublicKey}"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getAccount(@PathVariable addressOrPublicKey: String): AccountView {
-        val addressHex = Address.of(addressOrPublicKey)
+        val addressHex = AddrUtil.of(addressOrPublicKey)
         repo.reader.use { rd ->
             val a = accountTrie.get(rd.bestHeader.stateRoot, addressHex) ?: Account.empty()
             return AccountView.fromAccount(addressHex, a)

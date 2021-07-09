@@ -7,7 +7,7 @@ import org.tdf.sunflower.controller.JsonRpc.BlockResult
 import org.tdf.sunflower.controller.JsonRpc.CallArguments
 import org.tdf.sunflower.facade.*
 import org.tdf.sunflower.state.AccountTrie
-import org.tdf.sunflower.state.Address
+import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.types.Transaction
@@ -67,7 +67,7 @@ class JsonRpcImpl(
     }
 
     override fun eth_coinbase(): String {
-        return Address.empty().jsonHex
+        return AddrUtil.empty().jsonHex
     }
 
     override fun eth_mining(): Boolean {

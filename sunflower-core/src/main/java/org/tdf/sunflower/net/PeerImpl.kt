@@ -5,7 +5,7 @@ import lombok.SneakyThrows
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
-import org.tdf.sunflower.state.Address
+import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.types.Transaction
 import java.net.URI
 
@@ -15,7 +15,7 @@ data class PeerImpl(
     override val protocol: String = "",
     override val host: String = "",
     override val port: Int = 0,
-    override val id: HexBytes = Address.empty(),
+    override val id: HexBytes = AddrUtil.empty(),
 ) : Peer, Comparable<PeerImpl> {
     var score: Long = 0
 
@@ -102,7 +102,7 @@ data class PeerImpl(
             val protocol = u.protocol()
             val port = u.port()
             val host = if (u.host == null || u.host.trim { it <= ' ' } == "") "localhost" else u.host
-            val id = Address.fromPrivate(privateKey)
+            val id = AddrUtil.fromPrivate(privateKey)
             return PeerImpl(privateKey, protocol, host, port, id)
         }
 
