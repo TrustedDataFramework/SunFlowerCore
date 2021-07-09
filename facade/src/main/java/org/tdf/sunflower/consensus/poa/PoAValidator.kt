@@ -5,6 +5,7 @@ import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.crypto.ECDSASignature
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.sunflower.consensus.AbstractValidator
 import org.tdf.sunflower.consensus.poa.PoaUtils.getRawHash
 import org.tdf.sunflower.facade.RepositoryReader
@@ -48,7 +49,7 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
         val signature = ECDSASignature.fromComponents(r, s, v)
         val rawHash = getRawHash(block.header)
         // validate signer
-        val signer = HexBytes.fromBytes(ECKey.signatureToAddress(rawHash, signature))
+        val signer = ECKey.signatureToAddress(rawHash, signature).hex()
         if (signer != block.coinbase) {
             return fault("signer not equals to coinbase")
         }

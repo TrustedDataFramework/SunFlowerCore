@@ -48,7 +48,7 @@ class TrieImpl<K, V>(
 
     override fun commit(): HexBytes {
         val r = root ?: return nullHash
-        if (!r.isDirty) return HexBytes.fromBytes(r.hash)
+        if (!r.isDirty) return r.hash.hex()
         val hash = Rlp.decodeBytes(r.commit(store, true))
         if (r.isDirty || r.hash == null)
             throw RuntimeException("unexpected error: still dirty after commit")

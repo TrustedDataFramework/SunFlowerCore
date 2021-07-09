@@ -26,7 +26,7 @@ internal object HexBytesUtil {
             if (encoded.startsWith("0x")) {
                 encoded = encoded.substring(2)
             }
-            return HexBytes.fromHex(encoded)
+            return encoded.hex()
         }
     }
 }

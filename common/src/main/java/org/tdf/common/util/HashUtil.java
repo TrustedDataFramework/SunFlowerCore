@@ -46,27 +46,6 @@ public class HashUtil {
         EMPTY_DATA_HASH_HEX = HexBytes.fromBytes(EMPTY_DATA_HASH);
     }
 
-    /**
-     * @param input - data for hashing
-     * @return - sha256 hash of the data
-     */
-    public static byte[] sha256(byte[] input) {
-        try {
-            MessageDigest sha256digest = MessageDigest.getInstance("SHA-256");
-            return sha256digest.digest(input);
-        } catch (NoSuchAlgorithmException e) {
-            LOG.error("Can't find such algorithm", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static HexBytes sha3Hex(HexBytes input) {
-        return HexBytes.fromBytes(sha3(input.getBytes()));
-    }
-
-    public static HexBytes sha3Hex(byte[] input) {
-        return HexBytes.fromBytes(sha3(input));
-    }
 
     public static byte[] sha3(byte[] input) {
         MessageDigest digest;
@@ -139,21 +118,6 @@ public class HashUtil {
     }
 
     /**
-     * @param data - message to hash
-     * @return - reipmd160 hash of the message
-     */
-    public static byte[] ripemd160(byte[] data) {
-        Digest digest = new RIPEMD160Digest();
-        if (data != null) {
-            byte[] resBuf = new byte[digest.getDigestSize()];
-            digest.update(data, 0, data.length);
-            digest.doFinal(resBuf, 0);
-            return resBuf;
-        }
-        throw new NullPointerException("Can't hash a NULL value");
-    }
-
-    /**
      * Calculates RIGTMOST160(SHA3(input)). This is used in address
      * calculations. *
      *
@@ -205,50 +169,4 @@ public class HashUtil {
         return sha3omit12(data);
     }
 
-    /**
-     * @param input -
-     * @return -
-     * @see #doubleDigest(byte[], int, int)
-     */
-    public static byte[] doubleDigest(byte[] input) {
-        return doubleDigest(input, 0, input.length);
-    }
-
-    /**
-     * Calculates the SHA-256 hash of the given byte range, and then hashes the
-     * resulting hash again. This is standard procedure in Bitcoin. The
-     * resulting hash is in big endian form.
-     *
-     * @param input  -
-     * @param offset -
-     * @param length -
-     * @return -
-     */
-    public static byte[] doubleDigest(byte[] input, int offset, int length) {
-        try {
-            MessageDigest sha256digest = MessageDigest.getInstance("SHA-256");
-            sha256digest.reset();
-            sha256digest.update(input, offset, length);
-            byte[] first = sha256digest.digest();
-            return sha256digest.digest(first);
-        } catch (NoSuchAlgorithmException e) {
-            LOG.error("Can't find such algorithm", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * @return - generate random 32 byte hash
-     */
-    public static byte[] randomHash() {
-
-        byte[] randomHash = new byte[32];
-        Random random = new Random();
-        random.nextBytes(randomHash);
-        return randomHash;
-    }
-
-    public static String shortHash(byte[] hash) {
-        return HexBytes.encode(hash).substring(0, 6);
-    }
 }

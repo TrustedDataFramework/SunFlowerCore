@@ -85,7 +85,7 @@ object WBI {
                 }
                 "address" -> {
                     val addr = inputs[j] as ByteArray
-                    ret[j] = mallocAddress(i, HexBytes.fromBytes(addr)).toLong()
+                    ret[j] = mallocAddress(i, addr.hex()).toLong()
                 }
                 else -> {
                     if (p.type.name.endsWith("]") || p.type.name.endsWith(")")) {
@@ -93,7 +93,7 @@ object WBI {
                     }
                     if (p.type.name.startsWith("bytes")) {
                         val data = inputs[j] as ByteArray
-                        ret[j] = mallocBytes(i, HexBytes.fromBytes(data)).toLong()
+                        ret[j] = mallocBytes(i, data.hex()).toLong()
                     }
                 }
             }
@@ -117,7 +117,7 @@ object WBI {
                 return Uint256.of(bin)
             }
             WbiType.BYTES, WbiType.ADDRESS -> {
-                return HexBytes.fromBytes(bin)
+                return bin.hex()
             }
         }
         throw RuntimeException("unexpected")

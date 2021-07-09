@@ -4,12 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.sunflower.state.Account
 import java.math.BigInteger
-
-internal fun String.hex(): HexBytes {
-    return HexBytes.fromHex(this)
-}
 
 internal fun String.bn(): BigInteger {
     return if (this.startsWith("0x")) BigInteger(this.substring(2), 16) else BigInteger(this)

@@ -3,7 +3,7 @@ package org.tdf.common.store
 import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.serialize.Codec
 import org.tdf.common.util.HexBytes
-import org.tdf.common.util.RLPUtil.decode
+import org.tdf.common.util.decode
 import org.tdf.common.util.hex
 import java.util.*
 
@@ -35,8 +35,7 @@ class PrefixStore<K, V>(
     private fun keySet(): TreeSet<HexBytes> {
         val keys = contractStorage[prefix]
         return if (keys == null || keys.size == 0) TreeSet() else TreeSet(
-            decode(
-                keys,
+            keys.decode(
                 Array<HexBytes>::class.java
             ).toList()
         )

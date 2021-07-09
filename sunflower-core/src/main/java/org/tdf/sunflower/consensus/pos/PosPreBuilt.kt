@@ -9,10 +9,8 @@ import org.tdf.common.serialize.Codecs.rlp
 import org.tdf.common.store.PrefixStore
 import org.tdf.common.store.Store
 import org.tdf.common.types.Uint256
-import org.tdf.common.util.ByteUtil
-import org.tdf.common.util.HexBytes
-import org.tdf.common.util.RLPUtil
-import org.tdf.common.util.hex
+import org.tdf.common.util.*
+import org.tdf.sunflower.consensus.pos.ascii
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.state.BuiltinContract
@@ -37,13 +35,7 @@ class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract 
 
     fun getNodes(stateRoot: HexBytes): List<HexBytes> {
         val v = getValue(stateRoot, NODE_INFO_KEY)!!
-        return RLPUtil.decode(v, Array<NodeInfo>::class.java).map { it.address }
-    }
-
-    fun getNodeInfos(stateRoot: HexBytes): List<NodeInfo> {
-        val v = getValue(stateRoot, NODE_INFO_KEY)
-        return RLPUtil.decode(v!!, Array<NodeInfo>::class.java).toList()
-
+        return v.decode(Array<NodeInfo>::class.java).map { it.address }
     }
 
     fun getVoteInfo(stateRoot: HexBytes, txHash: HexBytes): VoteInfo? {
@@ -69,8 +61,8 @@ class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract 
             val map: MutableMap<HexBytes, HexBytes> = HashMap()
             val nodeInfos = nodes.values.toMutableList()
             nodeInfos.sortWith{ obj: NodeInfo, o: NodeInfo -> obj.compareTo(o) }
-            map[NODE_INFO_KEY] = RLPUtil.encode(nodeInfos)
-            map[VOTE_INFO_KEY] = HexBytes.fromBytes(Rlp.encodeElements())
+            map[NODE_INFO_KEY] = nodeInfos.rlp().hex()
+            map[VOTE_INFO_KEY] = emptyArray<Any>().rlp().hex()
             return map
         }
 
@@ -80,7 +72,7 @@ class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract 
         val args = payload.bytes.sliceArray(1 until payload.size).hex()
 
         val nodeInfos: MutableList<NodeInfo> =
-            RLPUtil.decode(backend.dbGet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY), Array<NodeInfo>::class.java)
+            backend.dbGet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY).decode(Array<NodeInfo>::class.java)
                 .toMutableList()
 
 
@@ -125,7 +117,7 @@ class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract 
         }
         nodeInfos.sortWith { obj: NodeInfo, o: NodeInfo -> obj.compareTo(o) }
         nodeInfos.reverse()
-        backend.dbSet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY, RLPUtil.encode(nodeInfos))
+        backend.dbSet(Constants.POS_CONTRACT_ADDR, NODE_INFO_KEY, nodeInfos.rlp().hex())
         return ByteUtil.EMPTY_BYTE_ARRAY
     }
 

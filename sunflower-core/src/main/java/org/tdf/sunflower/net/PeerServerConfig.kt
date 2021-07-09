@@ -2,6 +2,7 @@ package org.tdf.sunflower.net
 
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.sunflower.types.PropertyReader
 import java.net.URI
 
@@ -36,5 +37,5 @@ class PeerServerConfig(private val reader: PropertyReader) {
     val discoverRate: Int = reader.getAsPositive("discover-rate")
     val maxPacketSize: Int = reader.getAsPositive("max-packet-size")
     val cacheExpiredAfter: Int = reader.getAsPositive("cache-expired-after")
-    val privateKey: HexBytes = reader.getAsPrivate("private-key") ?: HexBytes.fromBytes(ECKey().privKeyBytes)
+    val privateKey: HexBytes = reader.getAsPrivate("private-key") ?: ECKey().privKeyBytes.hex()
 }

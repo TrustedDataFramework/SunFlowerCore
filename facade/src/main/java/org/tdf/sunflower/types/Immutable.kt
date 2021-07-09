@@ -422,7 +422,7 @@ data class Transaction(
         }
 
     override val hash: HexBytes by lazy {
-        HashUtil.sha3Hex(encoded)
+        encoded.sha3().hex()
     }
 
     val encodedRaw: ByteArray by lazy {

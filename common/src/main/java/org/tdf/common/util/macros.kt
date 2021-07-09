@@ -62,7 +62,15 @@ fun Long.bytes(): ByteArray {
     return ByteUtil.longToBytesNoLeadZeroes(this)
 }
 
+fun ByteArray.u256(): Uint256 {
+    return Uint256.of(this)
+}
+
 fun Long.u256(): Uint256 {
+    return Uint256.of(this)
+}
+
+fun BigInteger.u256(): Uint256 {
     return Uint256.of(this)
 }
 

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.MessageQueue
@@ -142,7 +143,7 @@ class ChannelImpl @Autowired constructor(
 
 
     override fun initWithNode(nodeId: ByteArray, remotePort: Int) {
-        dev.info("init with node nodeId = ${HexBytes.fromBytes(nodeId)} remote port = ${remotePort}, remote host = ${inetSocketAddress.hostName}")
+        dev.info("init with node nodeId = ${nodeId.hex()} remote port = ${remotePort}, remote host = ${inetSocketAddress.hostName}")
         _node = Node(nodeId, inetSocketAddress.hostString, remotePort)
         nodeStatistics = nodeManager.getNodeStatistics(node)
     }

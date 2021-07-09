@@ -198,7 +198,7 @@ class Uint256 private constructor(val value: BigInteger) : Number(), RlpWritable
 
         @JvmStatic
         @RlpCreator
-        fun fromStream(bin: ByteArray, streamId: Long): Uint256 {
+        fun create(bin: ByteArray, streamId: Long): Uint256 {
             return Uint256(StreamId.asBigInteger(bin, streamId))
         }
 
@@ -210,10 +210,8 @@ class Uint256 private constructor(val value: BigInteger) : Number(), RlpWritable
         }
 
         @JvmStatic
-        fun of(data: ByteArray?): Uint256 {
-            if (data == null || data.isEmpty()) {
-                return ZERO
-            }
+        fun of(d: ByteArray?): Uint256 {
+            val data = d ?: return ZERO
             val leadingZeroBits = ByteUtil.numberOfLeadingZeros(data)
             val valueBits = 8 * data.size - leadingZeroBits
             if (valueBits <= 8) {

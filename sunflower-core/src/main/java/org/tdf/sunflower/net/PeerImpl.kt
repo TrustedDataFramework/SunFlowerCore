@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import lombok.SneakyThrows
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.sunflower.state.Address
 import org.tdf.sunflower.types.Transaction
 import java.net.URI
@@ -83,7 +84,7 @@ data class PeerImpl(
 
             val host = u.host
             if (u.rawUserInfo == null || u.rawUserInfo.isEmpty()) throw RuntimeException("parse peer failed: missing public key")
-            val id = HexBytes.fromHex(u.rawUserInfo)
+            val id = u.rawUserInfo.hex()
             if (id.size != Transaction.ADDRESS_LENGTH) {
                 throw RuntimeException("peer " + url + " address should be " + Transaction.ADDRESS_LENGTH)
             }

@@ -84,8 +84,8 @@ public class PoWBios extends AbstractBuiltIn {
         // find function by selector
         List<Long> ts = new ArrayList<>(
             Arrays.asList(
-                RLPUtil.decode(
-                    backend.dbGet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY), Long[].class
+                Rlp.decode(
+                    backend.dbGet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY).getBytes(), Long[].class
                 )
             )
         );
@@ -114,7 +114,7 @@ public class PoWBios extends AbstractBuiltIn {
             backend.dbSet(Constants.POW_BIOS_ADDR, N_BITS_KEY, HexBytes.fromBytes(BigIntegers.asUnsignedByteArray(nbits)));
             backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, HexBytes.fromBytes(Rlp.encodeElements()));
         } else {
-            backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, RLPUtil.encode(ts));
+            backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, HexBytes.fromBytes(Rlp.encode(ts)));
         }
 
         throw new RuntimeException("pow");

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.IntSerializer
+import org.tdf.common.util.hex
 import org.tdf.sunflower.consensus.poa.PoA
 import org.tdf.sunflower.facade.ConsensusEngine
 import org.tdf.sunflower.facade.RepositoryReader
@@ -45,7 +46,7 @@ class EntryController constructor(
         if (height != null) {
             return func.apply(height)
         }
-        return func1.apply(HexBytes.fromHex(hashOrHeight))
+        return func1.apply(hashOrHeight.hex())
     }
 
 
@@ -68,7 +69,7 @@ class EntryController constructor(
 
     @GetMapping(value = ["/transaction/{hash}"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getTransaction(@PathVariable hash: String): TransactionV1? {
-        return repo.reader.use { it.getTransaction(HexBytes.fromHex(hash))?.v1() }
+        return repo.reader.use { it.getTransaction(hash.hex())?.v1() }
     }
 
     @GetMapping(value = ["/account/{addressOrPublicKey}"], produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -94,7 +95,7 @@ class EntryController constructor(
         return poa.cache
             .asMap()
             .values
-            .map { HexBytes.fromBytes(it.encoded) }
+            .map { it.encoded.hex() }
     }
 
     data class PeersInfo(val peers: List<Peer>, val bootstraps: List<Peer>)

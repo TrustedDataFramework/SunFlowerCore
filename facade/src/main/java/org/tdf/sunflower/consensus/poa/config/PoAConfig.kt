@@ -4,6 +4,7 @@ import org.tdf.common.crypto.ECKey
 import org.tdf.sunflower.facade.PropertyLike
 import org.tdf.sunflower.types.ConsensusConfig
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 
 class PoAConfig(properties: PropertyLike) : ConsensusConfig(properties) {
     val threadId: Int
@@ -18,7 +19,7 @@ class PoAConfig(properties: PropertyLike) : ConsensusConfig(properties) {
     val minerCoinBase: HexBytes?
         get() {
             val key = privateKey?.bytes?.let { ECKey.fromPrivate(it) }
-            return key?.address?.let { HexBytes.fromBytes(it) }
+            return key?.address?.hex()
         }
 
     val controlled: Boolean

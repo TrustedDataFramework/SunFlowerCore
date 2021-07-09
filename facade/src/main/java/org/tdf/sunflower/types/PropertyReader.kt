@@ -2,6 +2,7 @@ package org.tdf.sunflower.types
 
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.sunflower.facade.PropertyLike
 import java.math.BigInteger
 
@@ -82,9 +83,5 @@ class PropertyReader(val properties: PropertyLike) {
             i++
         }
         return r
-    }
-
-    private fun String.hex(): HexBytes {
-        return HexBytes.fromHex(this)
     }
 }

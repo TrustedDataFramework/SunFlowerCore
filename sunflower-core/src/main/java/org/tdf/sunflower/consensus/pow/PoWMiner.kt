@@ -39,7 +39,7 @@ class PoWMiner(
 
     override fun createCoinBase(height: Long): Transaction {
         return Transaction(
-            data = HexBytes.fromBytes(PoWBios.UPDATE.encode()),
+            data = PoWBios.UPDATE.encode().hex(),
             nonce = height
         )
     }

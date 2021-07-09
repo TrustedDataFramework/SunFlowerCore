@@ -1,9 +1,7 @@
 package org.tdf.sunflower.vm
 
 import org.tdf.common.types.Uint256
-import org.tdf.common.util.HashUtil
-import org.tdf.common.util.HexBytes
-import org.tdf.common.util.bytes
+import org.tdf.common.util.*
 import org.tdf.evm.Digest
 import org.tdf.evm.EvmHost
 import org.tdf.sunflower.facade.RepositoryReader
@@ -22,35 +20,28 @@ class EvmHostImpl(private val executor: VMExecutor, private val rd: RepositoryRe
         get() = sha3
 
     override fun getBalance(address: ByteArray): BigInteger {
-        return backend.getBalance(HexBytes.fromBytes(address)).value
+        return backend.getBalance(address.hex()).value
     }
 
     override fun getStorage(address: ByteArray, key: ByteArray): ByteArray {
         return backend.dbGet(
-            HexBytes.fromBytes(address),
-            HexBytes.fromBytes(key)
+            address.hex(),
+            key.hex()
         ).bytes
     }
 
     override fun setStorage(address: ByteArray, key: ByteArray, value: ByteArray) {
         backend.dbSet(
-            HexBytes.fromBytes(address),
-            HexBytes.fromBytes(key),
-            HexBytes.fromBytes(value)
+            address.hex(),
+            key.hex(),
+            value.hex()
         )
     }
 
     override fun getCode(addr: ByteArray): ByteArray {
-        return backend.getCode(HexBytes.fromBytes(addr)).bytes
+        return backend.getCode(addr.hex()).bytes
     }
 
-    private fun ByteArray.hex(): HexBytes {
-        return HexBytes.fromBytes(this)
-    }
-
-    private fun BigInteger.u256(): Uint256 {
-        return Uint256.Companion.of(this)
-    }
 
     override fun call(
         caller: ByteArray,
@@ -98,6 +89,6 @@ class EvmHostImpl(private val executor: VMExecutor, private val rd: RepositoryRe
     }
 
     override fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>) {
-        executor.logs.add(LogInfo(contract.hex(), topics.map { Uint256.Companion.of(it) }, data.hex()))
+        executor.logs.add(LogInfo(contract.hex(), topics.map { it.u256() }, data.hex()))
     }
 }

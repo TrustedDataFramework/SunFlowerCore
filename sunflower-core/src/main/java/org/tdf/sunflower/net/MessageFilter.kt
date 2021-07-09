@@ -26,11 +26,7 @@ private class MultiParts(val total: Int, val writeAt: Long) {
             System.arraycopy(p, 0, total, current, p.size)
             current += p.size
         }
-        if (!FastByteComparisons.equal(
-                HashUtil.sha3(total),
-                multiParts[0]!!.signature.toByteArray()
-            )
-        ) {
+        if (total.sha3().hex() != multiParts[0]!!.signature.toByteArray().hex()) {
             throw RuntimeException("merge failed")
         }
         return Message.parseFrom(total)
@@ -63,7 +59,7 @@ class MessageFilter internal constructor(private val config: PeerServerConfig, c
         if (context.msg.code == Code.MULTI_PART) {
             multiPartCacheLock.lock()
             val now = System.currentTimeMillis() / 1000
-            val key = HexBytes.fromBytes(context.msg.signature.toByteArray())
+            val key = context.msg.signature.toByteArray().hex()
             try {
                 val messages = multiPartCache.getOrDefault(
                     key,
@@ -104,7 +100,7 @@ class MessageFilter internal constructor(private val config: PeerServerConfig, c
             context.exit()
             return
         }
-        val hash = HexBytes.fromBytes(HashUtil.sha3(Util.getRawForSign(context.msg)))
+        val hash = Util.getRawForSign(context.msg).sha3().hex()
 
         // filter message had been received
         if (cache.asMap().containsKey(hash)) {
