@@ -5,7 +5,6 @@ import org.tdf.common.types.Constants.NONCE_SIZE
 import org.tdf.common.types.Uint256
 import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.consensus.AbstractMiner
-import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
 import org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING
 import java.lang.Runnable
@@ -48,7 +47,7 @@ class PoWMiner(
     override fun createHeader(parent: Block, createdAt: Long): Header {
         return HeaderImpl(
             hashPrev = parent.hash,
-            coinbase = config.minerAddress!!,
+            coinbase = config.coinbase!!,
             createdAt = createdAt,
             height = parent.height + 1
         )
@@ -106,8 +105,8 @@ class PoWMiner(
         if (!config.enableMining || stopped) {
             return
         }
-        if (config.minerAddress == null) {
-            log.warn("pow miner: invalid coinbase address {}", config.minerAddress)
+        if (config.coinbase == null) {
+            log.warn("pow miner: invalid coinbase address {}", config.coinbase)
             return
         }
         if (working || task != null) return

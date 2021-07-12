@@ -86,18 +86,6 @@ class EntryController constructor(
         return PeersInfo(peerServer.peers, peerServer.bootstraps)
     }
 
-
-    // if thread node not receive farm base transaciont and gateway node restarted
-    // needs to construct the transaction
-    @GetMapping(value = ["/farmBaseTransactions"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun farmBaseTransactions(): List<HexBytes> {
-        val poa = consensusEngine as PoA
-        return poa.cache
-            .asMap()
-            .values
-            .map { it.encoded.hex() }
-    }
-
     data class PeersInfo(val peers: List<Peer>, val bootstraps: List<Peer>)
 
     data class AccountView(

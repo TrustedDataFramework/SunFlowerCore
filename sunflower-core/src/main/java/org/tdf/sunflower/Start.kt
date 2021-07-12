@@ -78,11 +78,18 @@ open class Start {
     @Bean
     open fun miner(
         engine: ConsensusEngine,  // this dependency asserts the peer server had been initialized
-        peerServer: PeerServer
+        peerServer: PeerServer,
+        cfg: ConsensusConfig
     ): Miner {
         val miner = engine.miner
-        miner.start()
+        if(cfg.enableMining)
+            miner.start()
         return miner
+    }
+
+    @Bean
+    open fun consensusConfig(properties: ConsensusProperties): ConsensusConfig {
+        return ConsensusConfig(properties)
     }
 
     @Bean
@@ -111,7 +118,7 @@ open class Start {
 
     @Bean
     open fun consensusEngine(
-        consensusProperties: ConsensusProperties,
+        cfg: ConsensusConfig,
         repoSrv: RepositoryServiceImpl,
         transactionPool: TransactionPoolImpl,
         databaseStoreFactory: DatabaseStoreFactory,
@@ -122,8 +129,7 @@ open class Start {
         @Qualifier("contractStorageTrie") contractStorageTrie: Trie<HexBytes?, HexBytes?>?,
         @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes?, HexBytes?>?
     ): ConsensusEngine {
-        val name = consensusProperties.getProperty(ConsensusProperties.CONSENSUS_NAME) ?: "poa"
-        val engine: ConsensusEngine = when (name.trim { it <= ' ' }.lowercase()) {
+        val engine: ConsensusEngine = when (cfg.name) {
             ApplicationConstants.CONSENSUS_NONE -> {
                 log.warn("none consensus engine selected, please ensure you are in test mode")
                 AbstractConsensusEngine.NONE
@@ -135,11 +141,11 @@ open class Start {
             ApplicationConstants.CONSENSUS_POW -> PoW()
             ApplicationConstants.CONSENSUS_POS -> PoS()
             else -> try {
-                customClassLoader.loadClass(name).create() as ConsensusEngine
+                customClassLoader.loadClass(cfg.name).create() as ConsensusEngine
             } catch (e: Exception) {
                 e.printStackTrace()
                 log.error(
-                    "none available consensus configured by sunflower.consensus.name=" + name +
+                    "none available consensus configured by sunflower.consensus.name=" + cfg.name +
                             " please provide available consensus engine"
                 )
                 log.error("roll back to poa consensus")
@@ -147,7 +153,7 @@ open class Start {
             }
         }
         inject(context, engine as AbstractConsensusEngine)
-        engine.init(ConsensusConfig(consensusProperties))
+        engine.init(cfg)
         val nonNullFields = arrayOf("Miner", "Validator", "AccountTrie", "GenesisBlock", "PeerServerListener")
         for (field in nonNullFields) {
             val method = "get$field"

@@ -62,47 +62,7 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
 
     // validate pre-pending transaction
     override fun validate(rd: RepositoryReader, dependency: Header, transaction: Transaction): ValidateResult {
-        if (!poA.config.controlled) return success()
-        val farmBaseAdmin = poA.config.farmBaseAdmin
-
-        if (poA.config.threadId == PoA.GATEWAY_ID) {
-            // for gateway node, only accept transaction from farm-base admin
-            if (transaction.chainId != PoA.GATEWAY_ID || transaction.sender != farmBaseAdmin) {
-                return fault(
-                    String.format(
-                        "farmbase only accept admin transaction with network id = %s, while from = %s, network id = %s",
-                        PoA.GATEWAY_ID,
-                        transaction.sender,
-                        transaction.chainId
-                    )
-                )
-            }
-
-            // for thread node, only accept transaction with thread id or gateway id
-        } else {
-            if (transaction.chainId != PoA.GATEWAY_ID && transaction.chainId != poA.config.threadId) {
-                return fault(
-                    String.format(
-                        "this thread only accept transaction with thread id = %s, while id = %s received",
-                        poA.config.threadId,
-                        transaction.chainId
-                    )
-                )
-            }
-            if (transaction.chainId == PoA.GATEWAY_ID && transaction.sender != farmBaseAdmin) {
-                return fault("transaction with zero version should received from farmbase")
-            }
-        }
-        return if (transaction.sender != farmBaseAdmin
-            && !poA.validatorContract
-                .getApproved(
-                    rd,
-                    dependency.hash
-                )
-                .contains(
-                    transaction.sender
-                )
-        ) fault("from address is not approved") else success()
+        return success()
     }
 
     private fun validateCoinBase(parent: Block, coinBase: Transaction): ValidateResult {

@@ -33,7 +33,7 @@ open class ConsensusConfig(val properties: PropertyLike) {
         return reader.getAsBool("allow-empty-block")
     }
 
-    open val minerAddress: HexBytes?
+    open val coinbase: HexBytes?
         get() = reader.getAsAddress("miner-coin-base")
 
     val blocksPerEra: Int

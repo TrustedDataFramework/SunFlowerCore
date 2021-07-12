@@ -16,8 +16,6 @@ class Genesis(parsed: JsonNode) : AbstractGenesis(parsed) {
 
     val miners: List<HexBytes>
         get() = getAddressList("miners")
-    val validators: List<HexBytes>
-        get() = getAddressList("validators")
 
     override val block: Block
         @JsonIgnore

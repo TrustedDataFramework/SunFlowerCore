@@ -85,8 +85,8 @@ public class PoSMiner extends AbstractMiner {
         if (!config.getEnableMining() || stopped) {
             return;
         }
-        if (config.getMinerAddress() == null) {
-            log.warn("pos miner: invalid coinbase address {}", config.getMinerAddress());
+        if (config.getCoinbase() == null) {
+            log.warn("pos miner: invalid coinbase address {}", config.getCoinbase());
             return;
         }
 
