@@ -4,10 +4,12 @@ package org.tdf.sunflower.consensus.poa
 import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.crypto.ECDSASignature
 import org.tdf.common.crypto.ECKey
+import org.tdf.common.util.BigEndian
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
+import org.tdf.common.util.u256
 import org.tdf.sunflower.consensus.AbstractValidator
-import org.tdf.sunflower.consensus.poa.PoaUtils.getRawHash
+import org.tdf.sunflower.consensus.poa.PoAUtils.getRawHash
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
@@ -31,7 +33,7 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
                 )
             )
         }
-        if (block.coinbase != block.body[0].to) return fault("block coinbase not equals to coinbase transaction receiver")
+
         val res0 = validateCoinBase(dependency, block.body[0])
         if (!res0.success) return res0
         if (poA.minerContract.getProposer(
@@ -39,12 +41,11 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
                 dependency.hash,
                 block.createdAt
             ).address != block.body[0].to
-        ) return fault("invalid proposer " + block.body[0].sender)
+        ) return fault("invalid proposer " + block.body[0].to)
 
         // validate signature
-        val vrs = Rlp.decodeList(block.extraData.bytes)
-        val v = Rlp.decodeByte(vrs.rawAt(0))
-        val r = vrs.bytesAt(1)
+        val v = BigEndian.decodeInt64(block.nonce.bytes, 0)
+        val r = block.extraData.bytes.u256()
         val s = vrs.bytesAt(2)
         val signature = ECDSASignature.fromComponents(r, s, v)
         val rawHash = getRawHash(block.header)

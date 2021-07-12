@@ -81,11 +81,11 @@ data class VMExecutor(
 
         // 2. set initial gas by payload size
         if (callData.callType !== CallType.COINBASE)
-            limit.initialGas = backend.getInitialGas(callData.callType === CallType.CREATE, callData.data.bytes)
+            limit.initialGas = backend.getInitialGas(callData.callType == CallType.CREATE, callData.data.bytes)
         val result = executeInternal()
 
         // 3. calculate fee and
-        val fee = Uint256.of(limit.gas) * ctx.gasPrice
+        val fee = limit.gas.u256() * ctx.gasPrice
         backend.subBalance(ctx.origin, fee)
 
         return VMResult(
@@ -109,12 +109,11 @@ data class VMExecutor(
             CallType.COINBASE -> {
                 backend.addBalance(callData.to, callData.value)
                 for (bios in backend.bios.values) {
-                    return bios.call(rd, backend, ctx, callData)
+                    bios.call(rd, backend, ctx, callData)
                 }
                 ByteUtil.EMPTY_BYTE_ARRAY
             }
-            CallType.DELEGATE, CallType.CALL, CallType.CREATE -> {
-
+            else -> {
                 // is prebuilt
                 if (backend.builtins.containsKey(callData.to)) {
                     backend.addBalance(callData.to, callData.value)
@@ -323,7 +322,7 @@ data class VMExecutor(
         private var outDirectory = ""
 
         fun enableDebug(outDirectory: String) {
-           this.outDirectory = outDirectory
+            this.outDirectory = outDirectory
         }
 
         private val printStream: PrintStream?

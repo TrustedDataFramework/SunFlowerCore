@@ -13,6 +13,4 @@ object MapperUtil {
         .enable(SerializationFeature.INDENT_OUTPUT)
         .enable(JsonParser.Feature.ALLOW_COMMENTS)
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    val PROPS_MAPPER = JavaPropsMapper()
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) as JavaPropsMapper
 }

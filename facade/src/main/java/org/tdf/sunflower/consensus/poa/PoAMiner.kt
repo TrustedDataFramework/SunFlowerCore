@@ -4,8 +4,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.FixedDelayScheduler
-import org.tdf.common.util.hex
-import org.tdf.common.util.rlp
 import org.tdf.sunflower.consensus.AbstractMiner
 import org.tdf.sunflower.consensus.poa.config.PoAConfig
 import org.tdf.sunflower.events.NewBlockMined
@@ -43,17 +41,9 @@ class PoAMiner(private val poa: PoA) :
     }
 
     override fun finalizeBlock(parent: Block, block: Block): Block {
-        val rawHash = PoaUtils.getRawHash(block.header)
         val key = ECKey.fromPrivate(config.privateKey?.bytes ?: throw RuntimeException("poa miner: private key not set"))
-        val sig = key.sign(rawHash)
-        val extraData =
-            arrayOf(
-                sig.v,
-                sig.r,
-                sig.s
-            ).rlp()
-
-        return Block(block.header.impl.copy(extraData = extraData.hex()), block.body)
+        val signed = PoAUtils.sign(key, block)
+        return Block(signed, block.body)
     }
 
     @Synchronized
@@ -80,7 +70,6 @@ class PoAMiner(private val poa: PoA) :
             val best = it.bestBlock
             val now = OffsetDateTime.now().toEpochSecond()
 
-            // 判断是否轮到自己出块
             val p = poa.minerContract.getProposer(
                 it,
                 best.hash,

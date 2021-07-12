@@ -46,9 +46,9 @@ public class Bloom {
     }
 
     public boolean matches(Bloom topicBloom) {
-        Bloom copy = copy();
-        copy.or(topicBloom);
-        return this.equals(copy);
+        Bloom copied = copy();
+        copied.or(topicBloom);
+        return this.equals(copied);
     }
 
     public byte[] getData() {

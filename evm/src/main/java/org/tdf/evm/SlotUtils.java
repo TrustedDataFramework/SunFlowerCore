@@ -5,7 +5,7 @@ import java.math.BigInteger;
 /**
  * slot is a 256bit arithmetic unit
  */
-public final class SlotUtils {
+public class SlotUtils {
     public static final int SLOT_SIZE = 8;
     public static final int SLOT_MAX_INDEX = SLOT_SIZE - 1;
     public static final long LONG_MASK = 0xffffffffL;

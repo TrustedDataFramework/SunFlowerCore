@@ -78,6 +78,10 @@ fun Long.bytes(): ByteArray {
     return ByteUtil.longToBytesNoLeadZeroes(this)
 }
 
+fun Long.bytes8(): ByteArray {
+    return BigEndian.encodeInt64(this)
+}
+
 fun ByteArray.u256(): Uint256 {
     return Uint256.of(this)
 }

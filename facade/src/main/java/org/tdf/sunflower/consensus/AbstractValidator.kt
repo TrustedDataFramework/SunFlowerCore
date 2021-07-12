@@ -1,36 +1,39 @@
 package org.tdf.sunflower.consensus
 
 import org.tdf.common.types.Uint256
-import org.tdf.sunflower.types.BlockValidateResult.Companion.fault
-import org.tdf.sunflower.types.BlockValidateResult.Companion.success
-import org.tdf.sunflower.state.StateTrie
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
-import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.TransactionInfo
 import org.tdf.sunflower.facade.Validator
+import org.tdf.sunflower.state.Account
+import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
+import org.tdf.sunflower.types.BlockValidateResult.Companion.fault
+import org.tdf.sunflower.types.BlockValidateResult.Companion.success
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.vm.VMExecutor
-import java.lang.Exception
 
 abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, Account>) : Validator {
     open val blockGasLimit: Long
         get() = 0
 
     protected fun commonValidate(rd: RepositoryReader, block: Block, parent: Block): BlockValidateResult {
-        if (block.body.isEmpty()) return fault("missing block body")
+        block.validate().let {
+            if (!it.success)
+                return fault(it.reason)
+        }
 
         // a block should contains exactly one coin base transaction
+        if (block.body.isEmpty()) return fault("missing block body")
 
         // validate coinbase
         if (block.coinbase != block.body[0].to) {
             return fault("block coinbase not equals to coinbase tx receiver")
         }
 
-        if(block.gasLimit != rd.genesis.gasLimit)
+        if (block.gasLimit != rd.genesis.gasLimit)
             return fault("invalid block gas limit")
 
         var isCoinbase = true
@@ -56,20 +59,18 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             return fault("transactions root not match")
         }
         var totalFee = Uint256.ZERO
-        val gas: Long = 0
         val results: MutableMap<HexBytes, VMResult> = mutableMapOf()
-        var currentRoot: HexBytes
+        val currentBackend = accountTrie.createBackend(parent.header, false, parent.stateRoot)
         var currentGas: Long = 0
         val receipts: MutableList<TransactionReceipt> = mutableListOf()
         try {
-            var tmp = accountTrie.createBackend(parent.header,  false, parent.stateRoot)
             val coinbase = block.body[0]
             for (tx in block.body.subList(1, block.body.size)) {
                 if (currentGas > blockGasLimit) return fault("block gas overflow")
                 var r: VMResult
                 val executor = VMExecutor(
                     rd,
-                    tmp,
+                    currentBackend,
                     CallContext.fromTx(tx),
                     CallData.fromTx(tx, false),
                     Math.min(blockGasLimit - currentGas, tx.gasLimit)
@@ -84,12 +85,11 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                     gasUsed = r.gasUsed,
                     result = r.executionResult
                 )
-                currentRoot = tmp.merge()
                 receipts.add(receipt)
-                tmp = accountTrie.createBackend(parent.header,  root = currentRoot)
             }
 
-            val executor = VMExecutor(rd, tmp, CallContext.fromTx(coinbase), CallData.fromTx(coinbase, true), 0)
+            val executor =
+                VMExecutor(rd, currentBackend, CallContext.fromTx(coinbase), CallData.fromTx(coinbase, true), 0)
             val r = executor.execute()
             currentGas += r.gasUsed
 
@@ -101,7 +101,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             )
 
             receipts.add(0, receipt)
-            val rootHash = tmp.merge()
+            val rootHash = currentBackend.merge()
             if (rootHash != block.stateRoot) {
                 return fault("state trie root not match")
             }
@@ -111,10 +111,10 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                 return fault("receipts trie root not match")
             }
 
-            if(TransactionReceipt.bloomOf(receipts).data.hex() != block.logsBloom)
+            // validate bloom
+            if (TransactionReceipt.bloomOf(receipts).data.hex() != block.logsBloom)
                 return fault("logs bloom not match")
 
-            // validate bloom
         } catch (e: Exception) {
             e.printStackTrace()
             return fault("contract evaluation failed or " + e.message)
@@ -125,6 +125,6 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                 TransactionInfo(TransactionIndex(receipts[i], block.hash, i), block.body[i])
             )
         }
-        return success(gas, totalFee, results, indices)
+        return success(currentGas, totalFee, results, indices)
     }
 }

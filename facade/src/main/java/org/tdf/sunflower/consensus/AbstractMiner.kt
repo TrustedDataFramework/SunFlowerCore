@@ -61,7 +61,7 @@ abstract class AbstractMiner(
         val res: VMResult
         val executor = VMExecutor(rd, tmp, ctx, callData, 0)
         res = executor.execute()
-        val lastGas = if (receipts.isEmpty()) 0 else receipts[receipts.size - 1].cumulativeGas
+        val lastGas = receipts.getOrNull(receipts.size - 1)?.cumulativeGas ?: 0L
 
         val receipt = TransactionReceipt( // coinbase consume none gas
             cumulativeGas =  res.gasUsed + lastGas,

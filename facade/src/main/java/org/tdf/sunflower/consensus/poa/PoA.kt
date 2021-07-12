@@ -13,7 +13,7 @@ import org.tdf.sunflower.types.ConsensusConfig
 
 // poa is a minimal non-trivial consensus engine
 class PoA : AbstractConsensusEngine() {
-    val model = PoAModel()
+    val model = EmptyModel()
 
     lateinit var config: PoAConfig
     lateinit var genesis: Genesis

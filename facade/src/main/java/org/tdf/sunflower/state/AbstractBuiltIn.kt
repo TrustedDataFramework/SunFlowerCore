@@ -17,7 +17,7 @@ abstract class AbstractBuiltIn protected constructor(
     protected var repo: RepositoryService
 ) : BuiltinContract {
 
-    protected fun getSelector(data: HexBytes): ByteArray {
+    private fun getSelector(data: HexBytes): ByteArray {
         return data.bytes.selector()
     }
 
@@ -28,12 +28,12 @@ abstract class AbstractBuiltIn protected constructor(
         return Abi.Entry.Param.encodeList(func.outputs, *results.toTypedArray())
     }
 
-    protected fun getFunction(data: HexBytes): Abi.Function {
+    private fun getFunction(data: HexBytes): Abi.Function {
         val selector = getSelector(data)
         return abi.findFunction { FastByteComparisons.equal(it.encodeSignature(), selector) }!!
     }
 
-    protected fun getFunction(method: String): Abi.Function {
+    private fun getFunction(method: String): Abi.Function {
         return abi.findFunction { it.name == method }!!
     }
 

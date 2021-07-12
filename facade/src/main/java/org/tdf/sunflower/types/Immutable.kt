@@ -9,6 +9,7 @@ import org.tdf.common.serialize.Codec
 import org.tdf.common.trie.Trie
 import org.tdf.common.trie.TrieImpl
 import org.tdf.common.types.Chained
+import org.tdf.common.types.Constants.WORD_SIZE
 import org.tdf.common.types.Hashed
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.*
@@ -85,6 +86,24 @@ interface Header : Chained {
     }
 
     val impl: HeaderImpl
+
+    fun validate(): ValidateResult {
+        if (hashPrev.size != WORD_SIZE || stateRoot.size != WORD_SIZE || mixHash.size != WORD_SIZE ||
+            transactionsRoot.size != WORD_SIZE || receiptsRoot.size != WORD_SIZE || unclesHash.size != WORD_SIZE
+        )
+            return ValidateResult.fault("invalid hash size")
+        if (unclesHash != HashUtil.EMPTY_LIST_HASH.hex())
+            return ValidateResult.fault("uncles is not allowed")
+        if (coinbase.size != Transaction.ADDRESS_LENGTH)
+            return ValidateResult.fault("invalid size of coinbase")
+        if (difficulty != 0L)
+            return ValidateResult.fault("difficulty is not allowed")
+        if (height < 0 || gasLimit < 0 || gasUsed < 0 || createdAt < 0)
+            return ValidateResult.fault("overflow Long.MAX")
+        if (extraData.size > WORD_SIZE)
+            return ValidateResult.fault("extra data size overflow")
+        return ValidateResult.success()
+    }
 }
 
 @RlpProps(
@@ -262,7 +281,7 @@ data class LogInfo(
     val address: Address = AddrUtil.empty(),
     val topics: List<H256>,
     val data: HexBytes = HexBytes.empty()
-): RlpWritable {
+) : RlpWritable {
     override fun writeToBuf(buf: RlpBuffer): Int {
         return buf.writeObject(arrayOf(address, topics, data))
     }
@@ -282,7 +301,7 @@ data class LogInfo(
     companion object {
         @RlpCreator
         @JvmStatic
-        fun create(bin: ByteArray, streamId: Long): LogInfo{
+        fun create(bin: ByteArray, streamId: Long): LogInfo {
             val li = StreamId.asList(bin, streamId)
             return LogInfo(
                 li.hex(0),
