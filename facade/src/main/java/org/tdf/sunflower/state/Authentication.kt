@@ -1,7 +1,7 @@
 package org.tdf.sunflower.state
 
+import org.tdf.common.util.*
 import org.tdf.sunflower.state.AddrUtil.empty
-import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.types.ConsensusConfig
 import org.tdf.sunflower.facade.RepositoryReader
@@ -9,25 +9,23 @@ import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.types.StorageWrapper
 import org.tdf.sunflower.consensus.Proposer
 import org.tdf.sunflower.vm.abi.Abi
-import com.github.salpadding.rlpstream.Rlp
-import org.tdf.common.util.ascii
-import org.tdf.common.util.hex
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallContext
 import java.math.BigInteger
 import java.util.*
+import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 /**
  * used for node join/exit
  */
 class Authentication(
     private val nodes: Collection<HexBytes>,
-    contractAddress: HexBytes,
+    address: HexBytes,
     accounts: StateTrie<HexBytes, Account>,
     repo: RepositoryService,
     private val config: ConsensusConfig
-) : AbstractBuiltIn(contractAddress, accounts, repo) {
+) : AbstractBuiltIn(address, accounts, repo) {
 
     override val abi: Abi
         get() = Authentication.abi
@@ -44,12 +42,12 @@ class Authentication(
         val nodes = wrapper.getList(NODES_KEY, HexBytes::class.java, mutableListOf())!!
         val pending = StorageWrapper(PENDING_NODES_KEY, backend.getAsStore(address))
         return when (method) {
-            "approved" -> nodes.map { it.bytes }
+            "approved" -> listOf(nodes.map { it.bytes })
             "pending" -> {
                 val dstBytes = args[0] as ByteArray
                 val dst = HexBytes.fromBytes(dstBytes)
                 val r = pending.getSet(dst, HexBytes::class.java, TreeSet())!!
-                r.map { it.bytes }
+                listOf(r.map { it.bytes })
             }
             "join" -> {
                 val fromAddr = callData.caller
@@ -63,13 +61,6 @@ class Authentication(
             }
             "approve" -> {
                 val toApprove = (args[0] as ByteArray).hex()
-                if (callData.to == Constants.VALIDATOR_CONTRACT_ADDR) {
-                    if (nodes.contains(toApprove)) return emptyList<Any>()
-                    pending.remove(toApprove)
-                    nodes.add(toApprove)
-                    wrapper.save(NODES_KEY, nodes)
-                    return emptyList<Any>()
-                }
                 if (!nodes.contains(callData.caller)) {
                     throw RuntimeException("authentication contract error: cannot approve " + callData.caller + " is not in nodes list")
                 }
@@ -97,22 +88,32 @@ class Authentication(
                 emptyList<Any>()
             }
             "getProposer" -> {
-                val parent = rd.getHeaderByHash(backend.parentHash)
+                val parent = rd.getHeaderByHash(backend.parentHash) ?: throw RuntimeException("block not found")
+                println("args = ${args.contentToString()}")
+                val x = args[0]
+                when(x) {
+                    is Array<*> -> {
+                        x.forEach { println(it) }
+                    }
+                }
                 val o =
-                    getProposerInternal(parent, (args[0] as BigInteger).toLong(), nodes, config.blockInterval.toLong())
-                val o1 = o ?: Proposer(empty(), 0, 0)
+                    getProposerInternal(
+                        parent, (args[0] as BigInteger).toLong(),
+                        nodes, config.blockInterval.toLong()
+                    )
+                        ?: emptyProposer
                 listOf(
-                    o1.address.bytes,
-                    BigInteger.valueOf(o1.startTimeStamp),
-                    BigInteger.valueOf(o1.endTimeStamp)
+                    o.address.bytes,
+                    o.startTimeStamp.bn(),
+                    o.endTimeStamp.bn()
                 )
             }
             else -> throw RuntimeException("method not found")
         }
     }
 
-    fun getProposer(rd: RepositoryReader?, parentHash: HexBytes?, now: Long): Proposer {
-        val li = view(rd!!, parentHash!!, "getProposer", BigInteger.valueOf(now))
+    fun getProposer(rd: RepositoryReader, parentHash: HexBytes, now: Long): Proposer {
+        val li = view(rd, parentHash, "getProposer", BigInteger.valueOf(now))
         val address = li[0] as ByteArray
         val start = li[1] as BigInteger
         val end = li[2] as BigInteger
@@ -123,31 +124,25 @@ class Authentication(
         )
     }
 
-    fun getApproved(rd: RepositoryReader, parentHash: HexBytes): List<HexBytes> {
-        val li = view(rd, parentHash, "approved")
-        val addresses = li[0] as Array<Any>
-        val r: MutableList<HexBytes> = ArrayList()
-        for (bytes in addresses) {
-            r.add(HexBytes.fromBytes(bytes as ByteArray))
-        }
-        return r
-    }
 
     override val genesisStorage: Map<HexBytes, HexBytes>
         get() {
             val ret = HashMap<HexBytes, HexBytes>()
-            ret[NODES_KEY] = HexBytes.fromBytes(Rlp.encode(nodes))
+            ret[NODES_KEY] = nodes.rlp().hex()
             return ret
         }
 
     companion object {
+
+        val emptyProposer: Proposer = Proposer(empty(), 0, 0)
+
         private fun getProposerInternal(
-            parent: Header?,
+            parent: Header,
             currentEpochSeconds: Long,
             minerAddresses: List<HexBytes>,
             blockInterval: Long
         ): Proposer? {
-            if (currentEpochSeconds - parent!!.createdAt < blockInterval) {
+            if (currentEpochSeconds - parent.createdAt < blockInterval) {
                 return null
             }
             if (parent.height == 0L) {

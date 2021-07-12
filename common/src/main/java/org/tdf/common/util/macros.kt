@@ -14,6 +14,10 @@ fun ByteArray.selector(): ByteArray {
     return sliceArray(0 until 4)
 }
 
+fun Long.bn(): BigInteger{
+    return BigInteger.valueOf(this)
+}
+
 /**
  * abi encoded without selector
  */

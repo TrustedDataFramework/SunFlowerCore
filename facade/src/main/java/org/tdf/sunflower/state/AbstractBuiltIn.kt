@@ -23,8 +23,8 @@ abstract class AbstractBuiltIn protected constructor(
 
     override fun call(rd: RepositoryReader, backend: Backend, ctx: CallContext, callData: CallData): ByteArray {
         val func = getFunction(callData.data)
-        val inputs = func.decode(callData.data.bytes)
-        val results = call(rd, backend, ctx, callData, func.name, inputs.toTypedArray())
+        val inputs: Array<Any> = func.decode(callData.data.bytes).map { it as Any }.toTypedArray()
+        val results = call(rd, backend, ctx, callData, func.name, *inputs)
         return Abi.Entry.Param.encodeList(func.outputs, *results.toTypedArray())
     }
 
