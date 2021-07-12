@@ -343,8 +343,8 @@ class JsonRpcImpl(
         return BlockResult(
             block.height.jsonHex, block.hash.jsonHex, block.hashPrev.jsonHex,
             block.nonce.jsonHex, block.unclesHash.jsonHex, block.logsBloom.jsonHex,
-            block.transactionsRoot.jsonHex, block.stateRoot.jsonHex, block.receiptTrieRoot.jsonHex,
-            block.coinbase.jsonHex, block.difficulty.bytes.jsonHexNum, BigInteger.ZERO.jsonHex,
+            block.transactionsRoot.jsonHex, block.stateRoot.jsonHex, block.receiptsRoot.jsonHex,
+            block.coinbase.jsonHex, block.difficulty.jsonHex, BigInteger.ZERO.jsonHex,
             block.extraData.jsonHex, null, block.gasLimit.jsonHex,
             block.gasUsed.jsonHex, block.createdAt.jsonHex, txs, emptyList()
         )

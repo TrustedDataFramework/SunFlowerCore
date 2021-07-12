@@ -10,6 +10,10 @@ import org.spongycastle.util.encoders.Hex
 import org.tdf.common.util.HexBytesUtil.HexBytesDeserializer
 import org.tdf.common.util.HexBytesUtil.HexBytesSerializer
 
+typealias Address = HexBytes
+typealias H256 = HexBytes
+typealias H2048 = HexBytes
+
 /**
  * hex bytes helper for json marshal/unmarshal
  * non-null immutable wrapper fo byte[] inspired by ByteArrayWrapper

@@ -1,6 +1,7 @@
 package org.tdf.sunflower.consensus.pow
 
 import org.slf4j.LoggerFactory
+import org.tdf.common.types.Constants.NONCE_SIZE
 import org.tdf.common.types.Uint256
 import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.consensus.AbstractMiner
@@ -58,6 +59,7 @@ class PoWMiner(
         var b = block
         poW.repo.reader.use { rd -> nbits = poW.bios.getNBits(rd, parent.hash) }
         val rd = Random()
+        val nonce = ByteArray(NONCE_SIZE)
         log.info("start finish pow target = {}", nbits.data.hex())
         working = true
         while (PoW.compare(PoW.getPoWHash(b), nbits.data) > 0) {
@@ -65,7 +67,8 @@ class PoWMiner(
                 log.info("mining canceled")
                 return null
             }
-            b = b.copy(header = b.header.impl.copy(nonce = rd.nextLong()))
+            rd.nextBytes(nonce)
+            b = b.copy(header = b.header.impl.copy(nonce = nonce.hex()))
         }
         log.info("pow success")
         working = false

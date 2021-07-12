@@ -79,7 +79,7 @@ abstract class AbstractMiner(
         // persist modifications of trie to database
 
         header = header.impl.copy(
-            stateRoot = stateRoot, receiptTrieRoot = receiptTrieRoot, transactionsRoot = txRoot,
+            stateRoot = stateRoot, receiptsRoot = receiptTrieRoot, transactionsRoot = txRoot,
             logsBloom = TransactionReceipt.bloomOf(receipts).data.hex()
         )
 

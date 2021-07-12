@@ -109,7 +109,6 @@ class PoAMiner(private val poA: PoA) :
             nonce = height,
             value = poA.model.rewardAt(height),
             to = config.minerCoinBase!!,
-
         )
     }
 

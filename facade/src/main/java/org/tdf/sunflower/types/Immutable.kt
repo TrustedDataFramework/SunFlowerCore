@@ -17,10 +17,6 @@ import org.tdf.sunflower.types.TxUtils.*
 import java.math.BigInteger
 import java.util.function.Function
 
-typealias Address = HexBytes
-typealias H256 = HexBytes
-typealias H2048 = HexBytes
-
 interface Header : Chained {
     /**
      * hash of parent block
@@ -50,7 +46,7 @@ interface Header : Chained {
     /**
      * receipts root
      */
-    val receiptTrieRoot: H256
+    val receiptsRoot: H256
 
     /**
      * logs bloom
@@ -60,7 +56,7 @@ interface Header : Chained {
     /**
      * difficulty value = EMPTY_BYTES
      */
-    val difficulty: HexBytes
+    val difficulty: Long
 
     /**
      * block height
@@ -75,7 +71,7 @@ interface Header : Chained {
     val createdAt: Long
     val extraData: HexBytes
     val mixHash: HexBytes
-    val nonce: Long
+    val nonce: HexBytes
     val encoded: ByteArray
 
     override val hash: H256
@@ -97,7 +93,7 @@ interface Header : Chained {
     "coinbase",
     "stateRoot",
     "transactionsRoot",
-    "receiptTrieRoot",
+    "receiptsRoot",
     "logsBloom",
     "difficulty",
     "height",
@@ -133,7 +129,7 @@ data class HeaderImpl @RlpCreator constructor(
     /**
      * receipts root
      */
-    override val receiptTrieRoot: H256 = HashUtil.EMPTY_TRIE_HASH_HEX,
+    override val receiptsRoot: H256 = HashUtil.EMPTY_TRIE_HASH_HEX,
     /**
      * logs bloom
      */
@@ -142,7 +138,7 @@ data class HeaderImpl @RlpCreator constructor(
     /**
      * difficulty value = EMPTY_BYTES
      */
-    override val difficulty: HexBytes = HexBytes.empty(),
+    override val difficulty: Long = 0,
 
     /**
      * block height
@@ -161,10 +157,10 @@ data class HeaderImpl @RlpCreator constructor(
     override val extraData: HexBytes = HexBytes.empty(),
 
     // = 32byte
-    override val mixHash: HexBytes = HexBytes.empty(),
+    override val mixHash: HexBytes = ByteUtil.ZEROS_32,
 
     // = 8byte
-    override val nonce: Long = 0
+    override val nonce: HexBytes = emptyNonce
 ) : Header {
 
     override val encoded: ByteArray by lazy {
@@ -176,6 +172,10 @@ data class HeaderImpl @RlpCreator constructor(
     }
     override val impl: HeaderImpl
         get() = this
+
+    companion object {
+        val emptyNonce = ByteArray(8).hex()
+    }
 }
 
 
@@ -213,9 +213,9 @@ data class Block(val header: Header, val body: List<Transaction> = emptyList()) 
     }
 }
 
-@RlpProps("postTxState", "cumulativeGas", "logInfoList", "gasUsed", "result")
+@RlpProps("status", "cumulativeGas", "logInfoList", "gasUsed", "result")
 data class TransactionReceipt @RlpCreator constructor(
-    val postTxState: HexBytes = HexBytes.empty(),
+    val status: Int = 1,
     val cumulativeGas: Long = 0,
     val logInfoList: List<LogInfo> = emptyList(),
     val gasUsed: Long = 0,
@@ -230,7 +230,7 @@ data class TransactionReceipt @RlpCreator constructor(
     }
 
     val trie: ByteArray by lazy {
-        Rlp.encode(arrayOf(postTxState, cumulativeGas, bloom.data, logInfoList))
+        arrayOf(status, cumulativeGas, bloom.data, logInfoList).rlp()
     }
 
     val encoded: ByteArray by lazy {
@@ -260,7 +260,7 @@ data class TransactionReceipt @RlpCreator constructor(
 
 data class LogInfo(
     val address: Address = AddrUtil.empty(),
-    val topics: List<Uint256>,
+    val topics: List<H256>,
     val data: HexBytes = HexBytes.empty()
 ): RlpWritable {
     override fun writeToBuf(buf: RlpBuffer): Int {
@@ -274,7 +274,7 @@ data class LogInfo(
     val bloom: Bloom by lazy {
         val ret = Bloom.create(address.bytes.sha3())
         for (topic in topics) {
-            ret.or(Bloom.create(topic.data.sha3()))
+            ret.or(Bloom.create(topic.sha3().bytes))
         }
         ret
     }
@@ -286,7 +286,7 @@ data class LogInfo(
             val li = StreamId.asList(bin, streamId)
             return LogInfo(
                 li.hex(0),
-                li.valueAt(1, Array<Uint256>::class.java).toList(),
+                li.valueAt(1, Array<HexBytes>::class.java).map { it.h256() },
                 li.hex(2)
             )
         }

@@ -15,7 +15,6 @@ import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.vm.VMExecutor
 import java.lang.Exception
-import java.util.ArrayList
 
 abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, Account>) : Validator {
     open val blockGasLimit: Long
@@ -108,7 +107,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             }
 
             // validate receipt trie root
-            if (TransactionReceipt.calcTrie(receipts) != block.receiptTrieRoot) {
+            if (TransactionReceipt.calcTrie(receipts) != block.receiptsRoot) {
                 return fault("receipts trie root not match")
             }
 

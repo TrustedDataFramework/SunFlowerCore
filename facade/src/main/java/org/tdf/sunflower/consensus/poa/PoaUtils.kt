@@ -8,7 +8,7 @@ object PoaUtils {
     fun getRawHash(header: Header): ByteArray {
         return arrayOf(
                 header.hashPrev, header.unclesHash, header.coinbase, header.stateRoot,
-                header.transactionsRoot, header.receiptTrieRoot, header.logsBloom, header.difficulty,
+                header.transactionsRoot, header.receiptsRoot, header.logsBloom, header.difficulty,
                 header.height, header.gasLimit, header.gasUsed, header.createdAt,
                 header.mixHash, header.nonce
             ).rlp().sha3()

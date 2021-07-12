@@ -1,7 +1,7 @@
 package org.tdf.sunflower.facade
 
+import org.tdf.common.util.Address
 import org.tdf.sunflower.state.AddrUtil
-import org.tdf.sunflower.types.Address
 
 interface Miner {
     fun start()

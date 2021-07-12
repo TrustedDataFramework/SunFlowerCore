@@ -1,9 +1,11 @@
 package org.tdf.common.util
 
 import com.github.salpadding.rlpstream.Rlp
+import org.tdf.common.types.Constants
 import org.tdf.common.types.Uint256
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
+
 
 /**
  * abi encoded selector part
@@ -24,6 +26,12 @@ fun ByteArray.unselect(): ByteArray {
  */
 fun <T> HexBytes.decode(clazz: Class<T>): T {
     return Rlp.decode(this.bytes, clazz)
+}
+
+fun HexBytes.h256(): H256 {
+    if(this.size != Constants.WORD_SIZE)
+        throw RuntimeException("invalid word size")
+    return this
 }
 
 /**
@@ -52,6 +60,14 @@ fun Any?.rlp(): ByteArray {
 
 fun String.hex(): HexBytes {
     return HexBytes.fromHex(this)
+}
+
+fun String.u256(): Uint256 {
+    return if (this.startsWith("0x")) {
+        Uint256.of(this.substring(2), 16)
+    } else {
+        Uint256.of(this)
+    }
 }
 
 fun String.ascii(): ByteArray {

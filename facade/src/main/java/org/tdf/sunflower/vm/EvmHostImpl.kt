@@ -89,6 +89,6 @@ class EvmHostImpl(private val executor: VMExecutor, private val rd: RepositoryRe
     }
 
     override fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>) {
-        executor.logs.add(LogInfo(contract.hex(), topics.map { it.u256() }, data.hex()))
+        executor.logs.add(LogInfo(contract.hex(), topics.map { it.hex().h256() }, data.hex()))
     }
 }
