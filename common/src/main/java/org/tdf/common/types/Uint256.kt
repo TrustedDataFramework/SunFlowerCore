@@ -13,7 +13,6 @@ import com.github.salpadding.rlpstream.annotation.RlpCreator
 import org.tdf.common.types.Constants.WORD_SIZE
 import org.tdf.common.types.Uint256.Uint256Deserializer
 import org.tdf.common.util.ByteUtil
-import org.tdf.common.util.HexBytes
 import org.tdf.common.util.IntSerializer
 import org.tdf.common.util.bytes
 import java.math.BigInteger
@@ -212,36 +211,27 @@ class Uint256 private constructor(val value: BigInteger) : Number(), RlpWritable
         @JvmStatic
         fun of(d: ByteArray?): Uint256 {
             val data = d ?: return ZERO
-            val leadingZeroBits = ByteUtil.numberOfLeadingZeros(data)
-            val valueBits = 8 * data.size - leadingZeroBits
-            if (valueBits <= 8) {
-                if (data[data.size - 1] == (0).toByte()) return ZERO
-                if (data[data.size - 1] == (1).toByte()) return ONE
-            }
-            return if (data.size <= WORD_SIZE) Uint256(BigInteger(1, data)) else {
+            if (data.isEmpty())
+                return ZERO
+            if (data.size > WORD_SIZE)
                 throw RuntimeException(
                     String.format(
                         "Data word can't exceed 32 bytes: 0x%s",
                         ByteUtil.toHexString(data)
                     )
                 )
-            }
-        }
-
-        @JvmStatic
-        fun of(data: String): Uint256 {
-            return of(HexBytes.decode(data))
+            return Uint256(BigInteger(1, data))
         }
 
         @JvmStatic
         fun of(num: Int): Uint256 {
-            return of(BigInteger.valueOf(num.toLong()))
+            return of(num.toLong())
         }
 
         @JvmStatic
         fun of(num: Long): Uint256 {
             require(num >= 0) { "num should be non-negative" }
-            return of(BigInteger.valueOf(num))
+            return Uint256(BigInteger.valueOf(num))
         }
     }
 }

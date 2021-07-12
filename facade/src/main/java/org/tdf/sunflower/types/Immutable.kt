@@ -298,7 +298,7 @@ fun RlpList.hex(i: Int): HexBytes {
 }
 
 fun RlpList.u256(i: Int): Uint256 {
-    return Uint256.of(this.bytesAt(i))
+    return this.valueAt(i, Uint256::class.java)
 }
 
 typealias VRS = Triple<BigInteger, HexBytes, HexBytes>

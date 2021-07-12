@@ -63,11 +63,7 @@ fun String.hex(): HexBytes {
 }
 
 fun String.u256(): Uint256 {
-    return if (this.startsWith("0x")) {
-        Uint256.of(this.substring(2), 16)
-    } else {
-        Uint256.of(this)
-    }
+    return Uint256.of(this.hex().bytes)
 }
 
 fun String.ascii(): ByteArray {
