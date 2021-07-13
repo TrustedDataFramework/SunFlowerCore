@@ -152,7 +152,7 @@ data class VMExecutor(
                     else -> throw UnsupportedOperationException()
                 }
                 // call a non-contract account
-                if (code.isEmpty() && !callData.data.isEmpty()) throw RuntimeException("call receiver not a contract")
+                if (code.isEmpty() && !callData.data.isEmpty()) throw RuntimeException("call receiver ${callData.to} not a contract call data = ${callData.data}")
                 backend.addBalance(receiver, callData.value)
                 backend.subBalance(callData.caller, callData.value)
                 if (code.isEmpty()) return ByteUtil.EMPTY_BYTE_ARRAY

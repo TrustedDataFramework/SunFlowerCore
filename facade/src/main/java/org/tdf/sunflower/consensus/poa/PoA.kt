@@ -5,10 +5,7 @@ import org.tdf.sunflower.consensus.poa.config.Genesis
 import org.tdf.sunflower.consensus.poa.config.PoAConfig
 import org.tdf.sunflower.consensus.poa.config.PoAConfig.Companion.from
 import org.tdf.sunflower.facade.AbstractConsensusEngine
-import org.tdf.sunflower.state.Account
-import org.tdf.sunflower.state.Authentication
-import org.tdf.sunflower.state.BuiltinContract
-import org.tdf.sunflower.state.Constants
+import org.tdf.sunflower.state.*
 import org.tdf.sunflower.types.ConsensusConfig
 
 // poa is a minimal non-trivial consensus engine
@@ -39,6 +36,7 @@ class PoA : AbstractConsensusEngine() {
             this.config
         )
         builtins.add(minerContract)
+        builtins.add(LoggingContract(accountTrie, repo))
         miner = PoAMiner(this)
         validator = PoAValidator(accountTrie, this)
     }

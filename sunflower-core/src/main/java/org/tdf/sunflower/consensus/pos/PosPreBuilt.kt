@@ -121,6 +121,17 @@ class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract 
         return ByteUtil.EMPTY_BYTE_ARRAY
     }
 
+    override fun call(
+        rd: RepositoryReader,
+        backend: Backend,
+        ctx: CallContext,
+        callData: CallData,
+        method: String,
+        vararg args: Any
+    ): List<*> {
+        TODO("Not yet implemented")
+    }
+
     override val abi: Abi
         get() = Abi.fromJson("[]")
 
