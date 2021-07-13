@@ -55,7 +55,6 @@ class MessageQueueImpl : MessageQueue, Loggers {
     }
 
 
-
     override fun activate(ctx: ChannelHandlerContext) {
 //        this.ctx = ctx
 //        timerTask = ticker(10, 10, mode = TickerMode.FIXED_DELAY)

@@ -3,8 +3,6 @@ package org.tdf.sunflower.state
 import org.tdf.common.store.Store
 import org.tdf.common.trie.Trie
 import org.tdf.common.util.HexBytes
-import org.tdf.sunflower.state.Account
-import org.tdf.sunflower.state.BuiltinContract
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.vm.Backend
 

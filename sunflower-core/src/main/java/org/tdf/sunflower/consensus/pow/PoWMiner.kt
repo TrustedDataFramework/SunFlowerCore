@@ -3,16 +3,13 @@ package org.tdf.sunflower.consensus.pow
 import org.slf4j.LoggerFactory
 import org.tdf.common.types.Constants.NONCE_SIZE
 import org.tdf.common.types.Uint256
-import org.tdf.sunflower.facade.TransactionPool
-import org.tdf.sunflower.consensus.AbstractMiner
 import org.tdf.common.util.hex
 import org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING
-import java.lang.Runnable
-import java.lang.InterruptedException
-import org.tdf.sunflower.events.NewBlockMined
+import org.tdf.sunflower.consensus.AbstractMiner
 import org.tdf.sunflower.events.NewBestBlock
+import org.tdf.sunflower.events.NewBlockMined
+import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.types.*
-import java.lang.Exception
 import java.util.*
 import java.util.concurrent.*
 

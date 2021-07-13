@@ -7,7 +7,6 @@ import io.netty.handler.timeout.ReadTimeoutHandler
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
-import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.p2pv2.Loggers

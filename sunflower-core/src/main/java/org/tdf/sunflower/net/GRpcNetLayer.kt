@@ -23,8 +23,9 @@ class GRpcChannelOut(var out: StreamObserver<Message>? = null) : ChannelOut {
     }
 }
 
-class GRpcNetLayer internal constructor(private val port: Int, private val builder: MessageBuilder) : EntryImplBase(), NetLayer {
-    override var handler: Consumer<Channel> = Consumer {  }
+class GRpcNetLayer internal constructor(private val port: Int, private val builder: MessageBuilder) : EntryImplBase(),
+    NetLayer {
+    override var handler: Consumer<Channel> = Consumer { }
     private lateinit var server: Server
 
     override fun start() {
@@ -67,7 +68,6 @@ class GRpcNetLayer internal constructor(private val port: Int, private val build
             e.printStackTrace()
         }
     }
-
 
 
     companion object {

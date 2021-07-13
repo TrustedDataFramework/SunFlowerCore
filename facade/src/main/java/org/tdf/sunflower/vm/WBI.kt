@@ -2,8 +2,8 @@ package org.tdf.sunflower.vm
 
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.*
-import org.tdf.lotusvm.ModuleInstance
 import org.tdf.lotusvm.Module
+import org.tdf.lotusvm.ModuleInstance
 import org.tdf.sunflower.vm.abi.Abi
 import org.tdf.sunflower.vm.abi.WbiType
 import java.io.ByteArrayOutputStream
@@ -36,7 +36,7 @@ object WBI {
 
     @JvmStatic
     fun extractInitData(m: Module): ByteArray {
-        return m.customSections.firstOrNull { it.name == INIT_SECTION_NAME } ?.data ?: ByteUtil.EMPTY_BYTE_ARRAY
+        return m.customSections.firstOrNull { it.name == INIT_SECTION_NAME }?.data ?: ByteUtil.EMPTY_BYTE_ARRAY
     }
 
     // the __init section is dropped before inject

@@ -77,6 +77,7 @@ class MemoryImpl(override val limit: Int = Int.MAX_VALUE) : Memory {
         read(off.toInt(), r)
         return r
     }
+
     override fun resize(size: Int): Int {
         if (size < 0 || size > limit)
             throw RuntimeException("memory size exceeds limit")

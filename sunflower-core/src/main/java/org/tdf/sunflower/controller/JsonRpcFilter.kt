@@ -8,7 +8,6 @@ import org.tdf.common.util.ByteUtil
 import org.tdf.sunflower.util.MapperUtil
 import java.io.*
 import java.nio.charset.Charset
-import java.util.*
 import java.util.function.Consumer
 import javax.servlet.*
 import javax.servlet.http.HttpServletRequest

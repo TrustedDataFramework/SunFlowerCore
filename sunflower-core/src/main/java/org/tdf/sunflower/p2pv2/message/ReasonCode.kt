@@ -1,7 +1,5 @@
 package org.tdf.sunflower.p2pv2.message
 
-import java.util.*
-
 /**
  * Reason is an optional integer specifying one
  * of a number of reasons for disconnect

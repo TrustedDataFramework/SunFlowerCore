@@ -12,7 +12,8 @@ interface ChannelOut {
 }
 
 
-class GrpcChannel(messageBuilder: MessageBuilder, out: ChannelOut): ProtoChannel(messageBuilder, out), StreamObserver<Message> {
+class GrpcChannel(messageBuilder: MessageBuilder, out: ChannelOut) : ProtoChannel(messageBuilder, out),
+    StreamObserver<Message> {
     override fun onNext(value: Message) {
         message(value)
     }

@@ -1,10 +1,11 @@
 package org.tdf.sunflower.consensus.poa
 
 
-import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.crypto.ECDSASignature
 import org.tdf.common.crypto.ECKey
-import org.tdf.common.util.*
+import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
+import org.tdf.common.util.long
 import org.tdf.sunflower.consensus.AbstractValidator
 import org.tdf.sunflower.consensus.poa.PoAUtils.getRawHash
 import org.tdf.sunflower.facade.RepositoryReader
@@ -18,6 +19,7 @@ import org.tdf.sunflower.types.ValidateResult.Companion.fault
 import org.tdf.sunflower.types.ValidateResult.Companion.success
 
 class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: PoA) : AbstractValidator(accountTrie) {
+    override val chainId: Int = poA.chainId
     override fun validate(rd: RepositoryReader, block: Block, dependency: Block): ValidateResult {
         val res = super.commonValidate(rd, block, dependency)
         if (!res.success) return res
@@ -44,7 +46,7 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
         val v = block.nonce.bytes.long()
         val r = block.extraData.bytes
         val s = block.mixHash.bytes
-        if(v > UByte.MAX_VALUE.toLong())
+        if (v > UByte.MAX_VALUE.toLong())
             return fault("invalid v in vrs")
 
         val signature = ECDSASignature.fromComponents(r, s, v.toUByte().toByte())

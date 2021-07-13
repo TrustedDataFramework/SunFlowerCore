@@ -1,9 +1,8 @@
 package org.tdf.sunflower.vm
 
-import org.tdf.lotusvm.types.ExportSection
-import org.tdf.lotusvm.types.ImportType
-import org.tdf.lotusvm.Module;
+import org.tdf.lotusvm.Module
 import org.tdf.lotusvm.types.ExportType
+import org.tdf.lotusvm.types.ImportType
 import org.tdf.sunflower.vm.abi.Abi
 import java.nio.charset.StandardCharsets
 

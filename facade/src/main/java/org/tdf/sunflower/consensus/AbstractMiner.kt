@@ -2,15 +2,15 @@ package org.tdf.sunflower.consensus
 
 import org.tdf.common.event.EventBus
 import org.tdf.common.types.Uint256
-import org.tdf.sunflower.state.StateTrie
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
 import org.tdf.common.util.u256
-import org.tdf.sunflower.state.Account
-import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.facade.Miner
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.TransactionInfo
+import org.tdf.sunflower.facade.TransactionPool
+import org.tdf.sunflower.state.Account
+import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
@@ -29,7 +29,11 @@ abstract class AbstractMiner(
     protected abstract val chainId: Int
 
     // TODO:  2. 增加打包超时时间
-    protected fun createBlock(rd: RepositoryReader, parent: Block, createdAt: Long = System.currentTimeMillis() / 1000): BlockCreateResult {
+    protected fun createBlock(
+        rd: RepositoryReader,
+        parent: Block,
+        createdAt: Long = System.currentTimeMillis() / 1000
+    ): BlockCreateResult {
         val (txs, rs, current) = pool.pop(parent.header)
         val zipped = txs.zip(rs)
         val receipts = rs.toMutableList()
@@ -43,7 +47,7 @@ abstract class AbstractMiner(
         // get a trie at parent block's state
         // modifications to the trie will not persisted until flush() called
         val coinbase = createCoinBase(parent.height + 1)
-        val tmp = current ?: accountTrie.createBackend(parent.header,false, parent.stateRoot)
+        val tmp = current ?: accountTrie.createBackend(parent.header, false, parent.stateRoot)
 
         val totalFee = zipped
             .map { it.first.gasPrice * it.second.gasUsed.u256() }
@@ -64,7 +68,7 @@ abstract class AbstractMiner(
         val lastGas = receipts.getOrNull(receipts.size - 1)?.cumulativeGas ?: 0L
 
         val receipt = TransactionReceipt( // coinbase consume none gas
-            cumulativeGas =  res.gasUsed + lastGas,
+            cumulativeGas = res.gasUsed + lastGas,
             logInfoList = res.logs,
             gasUsed = res.gasUsed,
             result = res.executionResult

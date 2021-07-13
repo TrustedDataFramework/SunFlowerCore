@@ -13,7 +13,6 @@ import org.tdf.sunflower.p2pv2.client.Capability
 import org.tdf.sunflower.p2pv2.eth.EthVersion.Companion.fromCode
 import org.tdf.sunflower.p2pv2.message.ReasonCode
 import org.tdf.sunflower.p2pv2.message.StaticMessages
-import org.tdf.sunflower.p2pv2.message.StaticMessages.Companion.PING_MESSAGE
 import org.tdf.sunflower.p2pv2.server.Channel
 import java.util.*
 import java.util.concurrent.*

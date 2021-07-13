@@ -1,12 +1,12 @@
 package org.tdf.sunflower.vm.hosts
 
 import org.tdf.common.types.Uint256
-import org.tdf.sunflower.vm.WBI.peek
 import org.tdf.common.util.HexBytes
 import org.tdf.lotusvm.runtime.HostFunction
 import org.tdf.lotusvm.types.FunctionType
 import org.tdf.lotusvm.types.ValueType
 import org.tdf.sunflower.vm.Backend
+import org.tdf.sunflower.vm.WBI.peek
 import org.tdf.sunflower.vm.abi.WbiType
 
 class Transfer(private val backend: Backend, private val contractAddress: HexBytes) :

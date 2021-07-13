@@ -4,14 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode
 import lombok.extern.slf4j.Slf4j
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.tdf.common.crypto.ECKey
 import org.tdf.common.store.JsonStore
 import org.tdf.sunflower.facade.ConsensusEngine
 import org.tdf.sunflower.facade.PeerServerListener
 import org.tdf.sunflower.facade.PropertiesWrapper
 import org.tdf.sunflower.proto.Message
 import org.tdf.sunflower.types.PropertyReader
-import org.tdf.sunflower.util.MapperUtil
 import java.io.IOException
 import java.net.URI
 import java.util.*

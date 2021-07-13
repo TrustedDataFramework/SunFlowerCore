@@ -25,7 +25,7 @@ class JsonRpcImpl(
 ) : JsonRpc {
     private fun getByJsonBlockId(id: String): Block? {
         return repo.reader.use {
-            when(id.trim().lowercase()) {
+            when (id.trim().lowercase()) {
                 "earliest" -> it.genesis
                 "latest" -> it.bestBlock
                 "pending" -> null
@@ -264,7 +264,7 @@ class JsonRpcImpl(
 
         val p = pool.dropped.asMap()[hash]
 
-        if(p != null) {
+        if (p != null) {
             return TransactionReceiptDTO.failed(p.first)
         }
 

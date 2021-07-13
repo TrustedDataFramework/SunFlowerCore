@@ -9,7 +9,6 @@ import org.tdf.sunflower.p2pv2.Loggers
 import org.tdf.sunflower.p2pv2.Node
 import org.tdf.sunflower.p2pv2.client.PeerClient
 import java.net.InetAddress
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 

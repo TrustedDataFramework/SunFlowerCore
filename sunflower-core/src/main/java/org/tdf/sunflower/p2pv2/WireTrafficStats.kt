@@ -9,7 +9,6 @@ import io.netty.channel.socket.DatagramPacket
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.tdf.common.util.CommonUtils.sizeToStr
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import javax.annotation.PreDestroy
 

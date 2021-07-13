@@ -1,12 +1,12 @@
 package org.tdf.sunflower.vm.hosts
 
-import org.tdf.sunflower.vm.WBI.peek
-import org.tdf.sunflower.vm.WBI.mallocBytes
 import org.tdf.common.util.HexBytes
 import org.tdf.lotusvm.runtime.HostFunction
 import org.tdf.lotusvm.types.FunctionType
 import org.tdf.lotusvm.types.ValueType
 import org.tdf.sunflower.vm.Backend
+import org.tdf.sunflower.vm.WBI.mallocBytes
+import org.tdf.sunflower.vm.WBI.peek
 import org.tdf.sunflower.vm.abi.WbiType
 
 class DBFunctions(val backend: Backend, private val address: HexBytes) : HostFunction("_db", FUNCTION_TYPE) {

@@ -189,6 +189,7 @@ class Interpreter(
                 OpCodes.NUMBER -> stack.pushLong(ctx.number)
                 OpCodes.DIFFICULTY -> stack.push(ctx.difficulty)
                 OpCodes.GASLIMIT -> stack.push(SlotUtils.NEGATIVE_ONE)
+                OpCodes.CHAINID -> stack.pushInt(ctx.chainId)
                 OpCodes.POP -> stack.drop()
                 OpCodes.MLOAD -> stack.mload(memory)
                 OpCodes.MSTORE -> stack.mstore(memory)

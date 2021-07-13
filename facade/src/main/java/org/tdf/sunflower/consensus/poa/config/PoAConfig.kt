@@ -2,9 +2,9 @@ package org.tdf.sunflower.consensus.poa.config
 
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.Address
+import org.tdf.common.util.hex
 import org.tdf.sunflower.facade.PropertyLike
 import org.tdf.sunflower.types.ConsensusConfig
-import org.tdf.common.util.hex
 
 class PoAConfig(properties: PropertyLike) : ConsensusConfig(properties) {
     override val coinbase: Address?

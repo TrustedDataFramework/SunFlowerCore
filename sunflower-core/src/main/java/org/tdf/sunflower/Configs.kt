@@ -24,7 +24,7 @@ object ConsensusProperties : Properties() {
 
 @ConfigurationProperties(prefix = "sunflower.database")
 @Component
-class DatabaseConfigProperties: Properties()
+class DatabaseConfigProperties : Properties()
 
 @Component
 class DatabaseConfig(properties: DatabaseConfigProperties) {

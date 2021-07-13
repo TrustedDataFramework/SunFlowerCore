@@ -5,7 +5,6 @@ import org.tdf.common.store.Store
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.sha3
 import java.util.function.BiFunction
-import java.util.function.Function
 
 /**
  * https://medium.com/codechain/secure-tree-why-state-tries-key-is-256-bits-1276beb68485
@@ -24,14 +23,14 @@ class SecureTrie<K, V>(delegate: Trie<K, V>) : Trie<K, V> by delegate {
     private val delegate: AbstractTrie<K, V>;
 
     init {
-        when(delegate) {
+        when (delegate) {
             is SecureTrie<K, V> -> throw RuntimeException("already a secure trie")
             is AbstractTrie<K, V> -> this.delegate = delegate
             else -> throw RuntimeException("unsupported type ${delegate.javaClass}")
         }
     }
 
-    private fun K.bytes(): ByteArray{
+    private fun K.bytes(): ByteArray {
         return delegate.kCodec.encoder.apply(this).sha3()
     }
 

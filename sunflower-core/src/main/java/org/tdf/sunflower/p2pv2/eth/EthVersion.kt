@@ -1,7 +1,6 @@
 package org.tdf.sunflower.p2pv2.eth
 
 import org.tdf.sunflower.p2pv2.eth.message.EthMessageCodes
-import java.util.*
 
 
 enum class EthVersion(val code: Int, val maxMsgCode: Int) {

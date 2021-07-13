@@ -14,32 +14,37 @@ internal value class JsonHex(private val s: String) {
 
     val bytes: ByteArray get() = ByteUtil.hexStringToBytes(s)
 
-    val long: Long get() {
-        if (!s.startsWith("0x")) throw RuntimeException("Incorrect hex syntax")
-        val x = s.substring(2)
-        return x.toLong(16)
-    }
+    val long: Long
+        get() {
+            if (!s.startsWith("0x")) throw RuntimeException("Incorrect hex syntax")
+            val x = s.substring(2)
+            return x.toLong(16)
+        }
 
-    val int: Int get() {
-        if (!s.startsWith("0x")) throw RuntimeException("Incorrect hex syntax")
-        val x = s.substring(2)
-        return x.toInt(16)
-    }
+    val int: Int
+        get() {
+            if (!s.startsWith("0x")) throw RuntimeException("Incorrect hex syntax")
+            val x = s.substring(2)
+            return x.toInt(16)
+        }
 
-    val u256: Uint256 get() {
-        return Uint256.of(ByteUtil.hexStringToBytes(s))
-    }
+    val u256: Uint256
+        get() {
+            return Uint256.of(ByteUtil.hexStringToBytes(s))
+        }
 
-    val hex: HexBytes get() {
-        return HexBytes.fromBytes(ByteUtil.hexStringToBytes(s))
-    }
+    val hex: HexBytes
+        get() {
+            return HexBytes.fromBytes(ByteUtil.hexStringToBytes(s))
+        }
 }
 
-internal val String.jsonHex: JsonHex get(){
-    return JsonHex(this)
-}
+internal val String.jsonHex: JsonHex
+    get() {
+        return JsonHex(this)
+    }
 
-internal fun String?.bytes(): ByteArray{
+internal fun String?.bytes(): ByteArray {
     return ByteUtil.hexStringToBytes(this)
 }
 
@@ -54,7 +59,7 @@ internal val ByteArray?.jsonHexNum: String
         return "0x" + (if (hex.isEmpty()) "0" else hex)
     }
 
-internal val Int.jsonHex: String get() =  "0x" + java.lang.Long.toHexString(this.toLong())
+internal val Int.jsonHex: String get() = "0x" + java.lang.Long.toHexString(this.toLong())
 
 internal val Long.jsonHex: String get() = "0x" + java.lang.Long.toHexString(this)
 

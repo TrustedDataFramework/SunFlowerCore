@@ -6,7 +6,7 @@ import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.message.MessageDecoder
 import org.tdf.sunflower.p2pv2.message.StaticMessages
 
-object P2PMessageDecoder : MessageDecoder<P2pMessageCodes>, Loggers{
+object P2PMessageDecoder : MessageDecoder<P2pMessageCodes>, Loggers {
     override fun decode(code: P2pMessageCodes, encoded: ByteArray): P2pMessage {
         dev.info("create p2p message code = $code")
         val r: P2pMessage = when (code) {

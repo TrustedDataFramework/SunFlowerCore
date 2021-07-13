@@ -14,7 +14,6 @@ import org.spongycastle.crypto.params.KeyParameter
 import org.spongycastle.crypto.params.ParametersWithIV
 import org.tdf.common.util.RLPUtil
 import java.io.*
-import java.util.*
 import kotlin.experimental.xor
 
 class FrameCodec(secrets: EncryptionHandshake.Secrets) {

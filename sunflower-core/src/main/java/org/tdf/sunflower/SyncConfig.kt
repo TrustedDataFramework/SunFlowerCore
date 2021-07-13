@@ -10,15 +10,15 @@ import java.util.*
 
 @ConfigurationProperties(prefix = "sunflower.sync")
 @Component
-class SyncConfigProperties: Properties()
+class SyncConfigProperties : Properties()
 
 @Component
-class SyncConfig (properties: SyncConfigProperties)  {
+class SyncConfig(properties: SyncConfigProperties) {
     val rd = PropertyReader(PropertiesWrapper(properties))
     val heartRate: Long = rd.getAsLong("heart-rate")
     val blockWriteRate: Long = rd.getAsLong("block-write-rate")
-    val maxPendingBlocks: Long  = rd.getAsLong("max-pending-blocks")
-    val maxBlocksTransfer: Int  = rd.getAsInt("max-blocks-transfer")
+    val maxPendingBlocks: Long = rd.getAsLong("max-pending-blocks")
+    val maxBlocksTransfer: Int = rd.getAsInt("max-blocks-transfer")
     val pruneHash: HexBytes? = rd.getAsNonNull("prune-hash").takeIf { it.isNotEmpty() }?.hex()
     val fastSyncHeight: Long = rd.getAsLong("fast-sync-height", 0)
     val fastSyncHash: HexBytes? = rd.getAsNonNull("fast-sync-hash").takeIf { it.isNotEmpty() }?.hex()

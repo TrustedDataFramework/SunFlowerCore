@@ -56,9 +56,11 @@ abstract class AbstractConsensusEngine : ConsensusEngine {
         val NONE: AbstractConsensusEngine = object : AbstractConsensusEngine() {
             override fun init(config: ConsensusConfig) {
             }
-            override val name: String get() {
-                return "none"
-            }
+
+            override val name: String
+                get() {
+                    return "none"
+                }
         }
     }
 }

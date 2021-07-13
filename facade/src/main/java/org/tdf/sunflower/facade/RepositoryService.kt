@@ -30,8 +30,8 @@ class RepositoryServiceImpl(private val proxy: RepositoryWriter) : RepositorySer
         }
 
     override fun reader(timeout: Long, unit: TimeUnit): RepositoryReader? {
-       if(!readLock.tryLock(timeout, unit))
-           return null
+        if (!readLock.tryLock(timeout, unit))
+            return null
         return LockedRepositoryReader(proxy, readLock)
     }
 }

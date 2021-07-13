@@ -1,6 +1,8 @@
 package org.tdf.sunflower.p2pv2.p2p
 
-import com.github.salpadding.rlpstream.*
+import com.github.salpadding.rlpstream.RlpBuffer
+import com.github.salpadding.rlpstream.RlpWritable
+import com.github.salpadding.rlpstream.StreamId
 import com.github.salpadding.rlpstream.annotation.RlpCreator
 import com.github.salpadding.rlpstream.annotation.RlpProps
 import org.tdf.common.util.HexBytes
@@ -66,7 +68,8 @@ class PongMessage @RlpCreator constructor() : P2pMessage(P2pMessageCodes.PONG), 
     }
 }
 
-class DisconnectMessage(var reason: ReasonCode = ReasonCode.UNKNOWN) : P2pMessage(P2pMessageCodes.DISCONNECT), RlpWritable{
+class DisconnectMessage(var reason: ReasonCode = ReasonCode.UNKNOWN) : P2pMessage(P2pMessageCodes.DISCONNECT),
+    RlpWritable {
     companion object {
         @JvmStatic
         @RlpCreator

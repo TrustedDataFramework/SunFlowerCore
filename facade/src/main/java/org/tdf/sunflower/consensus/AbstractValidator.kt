@@ -19,6 +19,8 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
     open val blockGasLimit: Long
         get() = 0
 
+    abstract val chainId: Int
+
     protected fun commonValidate(rd: RepositoryReader, block: Block, parent: Block): BlockValidateResult {
         block.validate().let {
             if (!it.success)
@@ -89,7 +91,13 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             }
 
             val executor =
-                VMExecutor(rd, currentBackend, CallContext.fromTx(coinbase), CallData.fromTx(coinbase, true), 0)
+                VMExecutor(
+                    rd,
+                    currentBackend,
+                    CallContext.fromTx(coinbase, chainId),
+                    CallData.fromTx(coinbase, true),
+                    0
+                )
             val r = executor.execute()
             currentGas += r.gasUsed
 

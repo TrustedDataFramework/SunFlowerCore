@@ -26,7 +26,8 @@ class PoAMiner(private val poa: PoA) :
     val repo: RepositoryService
         get() = poa.repo
 
-    private val executor = FixedDelayScheduler("PoAMiner",
+    private val executor = FixedDelayScheduler(
+        "PoAMiner",
         Math.max(1, poa.config.blockInterval / 2).toLong()
     )
 
@@ -41,7 +42,8 @@ class PoAMiner(private val poa: PoA) :
     }
 
     override fun finalizeBlock(parent: Block, block: Block): Block {
-        val key = ECKey.fromPrivate(config.privateKey?.bytes ?: throw RuntimeException("poa miner: private key not set"))
+        val key =
+            ECKey.fromPrivate(config.privateKey?.bytes ?: throw RuntimeException("poa miner: private key not set"))
         val signed = PoAUtils.sign(key, block)
         return Block(signed, block.body)
     }

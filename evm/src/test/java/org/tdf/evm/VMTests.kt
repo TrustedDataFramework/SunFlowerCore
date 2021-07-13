@@ -20,9 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 val ZERO_ADDRESS = ByteArray(20)
 
-val sha3 = Digest {
-        src: ByteArray, srcPos: Int, srcLen: Int,
-        dst: ByteArray, dstPos: Int ->
+val sha3 = Digest { src: ByteArray, srcPos: Int, srcLen: Int,
+                    dst: ByteArray, dstPos: Int ->
     HashUtil.sha3(src, srcPos, srcLen, dst, dstPos)
 }
 
@@ -43,7 +42,7 @@ class MockEvmHost : EvmHost {
     private val accounts: MutableMap<HexBytes, MemAccount> = mutableMapOf()
     private val cnt = AtomicInteger(0)
 
-    private fun getLogFile(): PrintStream{
+    private fun getLogFile(): PrintStream {
         val name = String.format("%04d.log", cnt.incrementAndGet())
         return PrintStream(
             Files.newOutputStream(
@@ -85,7 +84,7 @@ class MockEvmHost : EvmHost {
         staticCall: Boolean,
     ): ByteArray {
         val contract = getOrCreate(receipt)
-        if(contract.code.isEmpty())
+        if (contract.code.isEmpty())
             throw RuntimeException("not a contract account")
 
         val callData = EvmCallData(caller, receipt, value, input, contract.code)
@@ -111,7 +110,7 @@ class MockEvmHost : EvmHost {
 
     private fun getOrCreate(address: ByteArray): MemAccount {
         val r = accounts[HexBytes.fromBytes(address)]
-        if(r != null)
+        if (r != null)
             return r
 
         val a = MemAccount()
@@ -130,9 +129,9 @@ class MockEvmHost : EvmHost {
 
         val interpreter = Interpreter(
             this,
-                EvmContext(),
-                EvmCallData(caller, newAddr, value, emptyByteArray, createCode),
-                getLogFile()
+            EvmContext(),
+            EvmCallData(caller, newAddr, value, emptyByteArray, createCode),
+            getLogFile()
         )
 
 

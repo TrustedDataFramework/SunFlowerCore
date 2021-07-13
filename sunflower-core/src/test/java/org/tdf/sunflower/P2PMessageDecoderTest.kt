@@ -1,13 +1,13 @@
 package org.tdf.sunflower
 
 import org.junit.Test
-import org.tdf.sunflower.p2pv2.p2p.P2PMessageDecoder.decode
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.common.util.HexBytes
+import org.tdf.sunflower.p2pv2.P2pMessageCodes
 import org.tdf.sunflower.p2pv2.message.Message
 import org.tdf.sunflower.p2pv2.p2p.HelloMessage
+import org.tdf.sunflower.p2pv2.p2p.P2PMessageDecoder.decode
 
 @RunWith(JUnit4::class)
 class P2PMessageDecoderTest {

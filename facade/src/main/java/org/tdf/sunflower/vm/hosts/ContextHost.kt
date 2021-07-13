@@ -1,11 +1,11 @@
 package org.tdf.sunflower.vm.hosts
 
-import org.tdf.sunflower.vm.WBI.mallocAddress
-import org.tdf.sunflower.vm.WBI.malloc
-import org.tdf.sunflower.vm.CallData
 import org.tdf.lotusvm.runtime.HostFunction
 import org.tdf.lotusvm.types.FunctionType
 import org.tdf.lotusvm.types.ValueType
+import org.tdf.sunflower.vm.CallData
+import org.tdf.sunflower.vm.WBI.malloc
+import org.tdf.sunflower.vm.WBI.mallocAddress
 
 class ContextHost(
     private val callData: CallData

@@ -2,19 +2,18 @@ package org.tdf.sunflower
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import org.tdf.sunflower.facade.DatabaseStoreFactory
 import org.tdf.sunflower.facade.Miner
 import org.tdf.sunflower.net.PeerServer
-import org.tdf.sunflower.facade.DatabaseStoreFactory
-import java.lang.Exception
 import javax.annotation.PreDestroy
 
 // resource cleaner
 @Component
-class Stop (
+class Stop(
     private val miner: Miner,
     private val peerServer: PeerServer,
     private val factory: DatabaseStoreFactory
-){
+) {
     @PreDestroy
     @Throws(Exception::class)
     fun onDestroy() {

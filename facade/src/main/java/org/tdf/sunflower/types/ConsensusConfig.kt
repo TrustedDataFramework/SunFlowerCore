@@ -2,10 +2,9 @@ package org.tdf.sunflower.types
 
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.JsonNode
-import org.tdf.sunflower.facade.PropertyLike
-import org.tdf.sunflower.facade.PropertiesWrapper
 import org.tdf.common.util.HexBytes
-import com.fasterxml.jackson.databind.ObjectMapper
+import org.tdf.sunflower.facade.PropertiesWrapper
+import org.tdf.sunflower.facade.PropertyLike
 import org.tdf.sunflower.util.FileUtils
 import org.tdf.sunflower.util.MapperUtil
 import java.util.*
@@ -22,16 +21,18 @@ open class ConsensusConfig(val properties: PropertyLike) {
     val blockInterval: Int
         get() = reader.getAsInt("block-interval")
 
-    val enableMining: Boolean get() {
-        return reader.getAsBool("enable-mining")
-    }
+    val enableMining: Boolean
+        get() {
+            return reader.getAsBool("enable-mining")
+        }
 
     val privateKey: HexBytes?
         get() = reader.getAsPrivate("private-key")
 
-    val allowEmptyBlock: Boolean get() {
-        return reader.getAsBool("allow-empty-block")
-    }
+    val allowEmptyBlock: Boolean
+        get() {
+            return reader.getAsBool("allow-empty-block")
+        }
 
     open val coinbase: HexBytes?
         get() = reader.getAsAddress("miner-coin-base")

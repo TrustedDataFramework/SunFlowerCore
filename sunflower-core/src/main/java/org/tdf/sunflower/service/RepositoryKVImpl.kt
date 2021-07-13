@@ -164,8 +164,7 @@ class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
         transactionsRoot[block.transactionsRoot] = txHashes
 
         // save header index
-        val headerHashes: MutableList<HexBytes>
-            = heightIndex[block.height]?.toMutableList() ?: mutableListOf()
+        val headerHashes: MutableList<HexBytes> = heightIndex[block.height]?.toMutableList() ?: mutableListOf()
         headerHashes.remove(block.hash)
         headerHashes.add(block.hash)
         heightIndex[block.height] = headerHashes.toTypedArray()

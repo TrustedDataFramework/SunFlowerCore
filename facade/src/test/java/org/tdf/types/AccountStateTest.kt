@@ -1,13 +1,13 @@
 package org.tdf.types
 
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-import org.tdf.sunflower.state.Account
 import com.github.salpadding.rlpstream.Rlp
 import org.junit.Assert
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 import org.spongycastle.util.encoders.Hex
 import org.tdf.common.types.Uint256
+import org.tdf.sunflower.state.Account
 import java.math.BigInteger
 
 @RunWith(JUnit4::class)

@@ -3,12 +3,14 @@ package org.tdf.sunflower.controller
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.IntSerializer
 import org.tdf.common.util.hex
-import org.tdf.sunflower.consensus.poa.PoA
 import org.tdf.sunflower.facade.ConsensusEngine
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.RepositoryService
@@ -48,7 +50,6 @@ class EntryController constructor(
         }
         return func1.apply(hashOrHeight.hex())
     }
-
 
 
     @GetMapping(value = ["/block/{hashOrHeight}"], produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -117,11 +118,11 @@ class EntryController constructor(
         private val log = LoggerFactory.getLogger("rpc")
     }
 
-    private fun Block.v1(): BlockV1{
+    private fun Block.v1(): BlockV1 {
         return BlockV1.fromV2(this)
     }
 
-    private fun Header.v1(): HeaderV1{
+    private fun Header.v1(): HeaderV1 {
         return HeaderV1.fromV2(this)
     }
 

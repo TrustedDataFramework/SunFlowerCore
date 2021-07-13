@@ -2,18 +2,17 @@ package org.tdf.sunflower
 
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.JsonNode
-import org.tdf.sunflower.facade.PropertyLike
-import org.tdf.sunflower.types.PropertyReader
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.core.env.Environment
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.types.Uint256
+import org.tdf.sunflower.facade.PropertyLike
 import org.tdf.sunflower.types.ConsensusConfig
+import org.tdf.sunflower.types.PropertyReader
 import org.tdf.sunflower.util.FileUtils
 import org.tdf.sunflower.util.MapperUtil
 
 class AppConfig(private val properties: PropertyLike) {
-    constructor(env: Environment): this(EnvWrapper(env))
+    constructor(env: Environment) : this(EnvWrapper(env))
 
     private val reader = PropertyReader(properties)
 
@@ -54,14 +53,14 @@ class AppConfig(private val properties: PropertyLike) {
     val p2pProposalCacheSize: Int = reader.getAsInt("sunflower.cache.p2p.proposal")
 
     val blockGasLimit: Long by lazy {
-            val objectMapper = MapperUtil.OBJECT_MAPPER
-                .enable(JsonParser.Feature.ALLOW_COMMENTS)
-            val `in` = FileUtils.getInputStream(
-                properties.getProperty("sunflower.consensus.genesis")
-            )
-            val n = objectMapper.readValue(`in`, JsonNode::class.java)
-           if (n["gasLimit"] == null) ConsensusConfig.DEFAULT_BLOCK_GAS_LIMIT else n["gasLimit"].asLong()
-        }
+        val objectMapper = MapperUtil.OBJECT_MAPPER
+            .enable(JsonParser.Feature.ALLOW_COMMENTS)
+        val `in` = FileUtils.getInputStream(
+            properties.getProperty("sunflower.consensus.genesis")
+        )
+        val n = objectMapper.readValue(`in`, JsonNode::class.java)
+        if (n["gasLimit"] == null) ConsensusConfig.DEFAULT_BLOCK_GAS_LIMIT else n["gasLimit"].asLong()
+    }
 
 
     val vmGasPrice: Uint256 = reader.getAsU256("sunflower.vm.gas-price", Uint256.ZERO)

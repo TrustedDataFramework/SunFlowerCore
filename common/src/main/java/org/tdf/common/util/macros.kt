@@ -15,7 +15,7 @@ fun ByteArray.selector(): ByteArray {
     return sliceArray(0 until 4)
 }
 
-fun Long.bn(): BigInteger{
+fun Long.bn(): BigInteger {
     return BigInteger.valueOf(this)
 }
 
@@ -34,7 +34,7 @@ fun <T> HexBytes.decode(clazz: Class<T>): T {
 }
 
 fun HexBytes.h256(): H256 {
-    if(this.size != Constants.WORD_SIZE)
+    if (this.size != Constants.WORD_SIZE)
         throw RuntimeException("invalid word size")
     return this
 }

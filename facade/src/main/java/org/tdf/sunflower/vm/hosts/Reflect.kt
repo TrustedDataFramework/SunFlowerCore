@@ -1,6 +1,7 @@
 package org.tdf.sunflower.vm.hosts
 
 import org.tdf.common.util.HexBytes
+import org.tdf.lotusvm.Module
 import org.tdf.lotusvm.runtime.HostFunction
 import org.tdf.lotusvm.types.FunctionType
 import org.tdf.lotusvm.types.ValueType
@@ -8,7 +9,6 @@ import org.tdf.sunflower.vm.ModuleValidator
 import org.tdf.sunflower.vm.VMExecutor
 import org.tdf.sunflower.vm.WBI
 import org.tdf.sunflower.vm.abi.WbiType
-import org.tdf.lotusvm.Module
 
 class Reflect(private val executor: VMExecutor) : HostFunction("_reflect", FUNCTION_TYPE) {
     override fun execute(vararg args: Long): Long {
@@ -23,16 +23,16 @@ class Reflect(private val executor: VMExecutor) : HostFunction("_reflect", FUNCT
             UPDATE -> {
                 val code = WBI.peek(instance, args[3].toInt(), WbiType.BYTES) as HexBytes
                 // validate code
-                 Module.create(code.bytes).use {
-                     ModuleValidator.validate(it, true)
-                     // drop init code
-                     executor
-                         .backend
-                         .setCode(
-                             executor.callData.to,
-                             HexBytes.fromBytes(WBI.dropInit(code.bytes))
-                         )
-                     return 0
+                Module.create(code.bytes).use {
+                    ModuleValidator.validate(it, true)
+                    // drop init code
+                    executor
+                        .backend
+                        .setCode(
+                            executor.callData.to,
+                            HexBytes.fromBytes(WBI.dropInit(code.bytes))
+                        )
+                    return 0
                 }
             }
             else -> throw RuntimeException("reflect failed: unexpected $t")

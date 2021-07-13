@@ -3,7 +3,6 @@ package org.tdf.sunflower.controller
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseBody
-import java.lang.Exception
 
 /**
  * Global Exception handler

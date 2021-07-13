@@ -1,9 +1,9 @@
 package org.tdf.sunflower.consensus.pow
 
 import com.fasterxml.jackson.databind.JsonNode
-import org.tdf.sunflower.types.AbstractGenesis
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
+import org.tdf.sunflower.types.AbstractGenesis
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.HeaderImpl
 

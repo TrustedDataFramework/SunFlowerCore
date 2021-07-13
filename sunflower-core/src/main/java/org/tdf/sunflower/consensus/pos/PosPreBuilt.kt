@@ -1,6 +1,5 @@
 package org.tdf.sunflower.consensus.pos
 
-import com.github.salpadding.rlpstream.Rlp
 import com.github.salpadding.rlpstream.annotation.RlpCreator
 import com.github.salpadding.rlpstream.annotation.RlpProps
 import org.slf4j.LoggerFactory
@@ -60,7 +59,7 @@ class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract 
         get() {
             val map: MutableMap<HexBytes, HexBytes> = HashMap()
             val nodeInfos = nodes.values.toMutableList()
-            nodeInfos.sortWith{ obj: NodeInfo, o: NodeInfo -> obj.compareTo(o) }
+            nodeInfos.sortWith { obj: NodeInfo, o: NodeInfo -> obj.compareTo(o) }
             map[NODE_INFO_KEY] = nodeInfos.rlp().hex()
             map[VOTE_INFO_KEY] = emptyArray<Any>().rlp().hex()
             return map
@@ -93,7 +92,8 @@ class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract 
                 if (callData.value != Uint256.ZERO)
                     throw RuntimeException("amount of cancel vote should be 0")
 
-                val voteInfo = voteInfos[args] ?: throw RuntimeException("$args voting business does not exist and cannot be withdrawn")
+                val voteInfo = voteInfos[args]
+                    ?: throw RuntimeException("$args voting business does not exist and cannot be withdrawn")
                 voteInfos.remove(args)
                 if (voteInfo.from != callData.caller) {
                     throw RuntimeException("vote transaction from " + voteInfo.from + " not equals to " + callData.caller)
@@ -133,7 +133,7 @@ class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract 
         val address: HexBytes = HexBytes.empty(),
         val vote: Uint256 = Uint256.ZERO,
         val txHash: List<HexBytes> = emptyList()
-    ): Comparable<NodeInfo> {
+    ) : Comparable<NodeInfo> {
         override fun compareTo(other: NodeInfo): Int {
             return vote.compareTo(other.vote)
         }
@@ -146,7 +146,7 @@ class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract 
         val from: HexBytes = HexBytes.empty(),
         val to: HexBytes = HexBytes.empty(),
         val amount: Uint256 = Uint256.ZERO
-    ): Comparable<VoteInfo> {
+    ) : Comparable<VoteInfo> {
         override fun compareTo(other: VoteInfo): Int {
             return txHash.compareTo(other.txHash)
         }

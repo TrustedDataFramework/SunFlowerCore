@@ -872,7 +872,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
     override fun sha3(mem: Memory, digest: Digest) {
         val off = popU32()
-        val len  = popU32()
+        val len = popU32()
         mem.resize(off, len)
         // after resize, mem[off:off+len] will never overflow
 

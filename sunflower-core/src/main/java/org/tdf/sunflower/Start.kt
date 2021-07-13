@@ -82,7 +82,7 @@ open class Start {
         cfg: ConsensusConfig
     ): Miner {
         val miner = engine.miner
-        if(cfg.enableMining)
+        if (cfg.enableMining)
             miner.start()
         return miner
     }

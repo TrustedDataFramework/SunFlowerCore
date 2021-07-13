@@ -7,7 +7,6 @@ import org.tdf.common.store.Store
 import org.tdf.common.trie.SecureTrie
 import org.tdf.common.trie.Trie
 import org.tdf.common.trie.TrieImpl
-import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.Start
 import org.tdf.sunflower.types.Header

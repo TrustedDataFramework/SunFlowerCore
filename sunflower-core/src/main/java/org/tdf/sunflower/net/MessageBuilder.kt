@@ -3,11 +3,10 @@ package org.tdf.sunflower.net
 import com.google.protobuf.ByteString
 import com.google.protobuf.Timestamp
 import org.tdf.common.util.ByteUtil
-import java.util.concurrent.atomic.AtomicLong
-import org.tdf.common.util.HashUtil
 import org.tdf.common.util.sha3
 import org.tdf.sunflower.proto.*
 import org.tdf.sunflower.proto.Nothing
+import java.util.concurrent.atomic.AtomicLong
 
 class MessageBuilder(val self: PeerImpl, private val config: PeerServerConfig) {
     private val nonce = AtomicLong()

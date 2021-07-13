@@ -1,17 +1,17 @@
 package org.tdf.sunflower.state
 
 import org.tdf.common.util.*
-import org.tdf.sunflower.state.AddrUtil.empty
-import org.tdf.sunflower.facade.RepositoryService
-import org.tdf.sunflower.types.ConsensusConfig
-import org.tdf.sunflower.facade.RepositoryReader
-import org.tdf.sunflower.vm.CallData
-import org.tdf.sunflower.types.StorageWrapper
 import org.tdf.sunflower.consensus.Proposer
-import org.tdf.sunflower.vm.abi.Abi
+import org.tdf.sunflower.facade.RepositoryReader
+import org.tdf.sunflower.facade.RepositoryService
+import org.tdf.sunflower.state.AddrUtil.empty
+import org.tdf.sunflower.types.ConsensusConfig
 import org.tdf.sunflower.types.Header
+import org.tdf.sunflower.types.StorageWrapper
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallContext
+import org.tdf.sunflower.vm.CallData
+import org.tdf.sunflower.vm.abi.Abi
 import java.math.BigInteger
 import java.util.*
 
@@ -89,7 +89,7 @@ class Authentication(
             "getProposer" -> {
                 val parent = rd.getHeaderByHash(backend.parentHash) ?: throw RuntimeException("block not found")
                 val x = args[0]
-                when(x) {
+                when (x) {
                     is Array<*> -> {
                         x.forEach { println(it) }
                     }
@@ -155,9 +155,9 @@ class Authentication(
             val startTime = parent.createdAt + step * blockInterval
             val endTime = startTime + blockInterval
             return Proposer(
-                    minerAddresses[currentIndex],
-                    startTime,
-                    endTime
+                minerAddresses[currentIndex],
+                startTime,
+                endTime
             )
         }
 

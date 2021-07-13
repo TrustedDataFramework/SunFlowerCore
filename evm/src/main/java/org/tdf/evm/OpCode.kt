@@ -4,7 +4,7 @@ object OpCodes {
     val NAMES = arrayOfNulls<String>(256)
 
     fun nameOf(op: Int): String {
-        return NAMES[op]!!
+        return NAMES[op] ?: throw RuntimeException("unknown op code $op")
     }
 
     fun isOpCOde(op: Int): Boolean {
@@ -280,6 +280,8 @@ object OpCodes {
     // ========================
     // Memory, Storage and Flow Operations
     // ========================
+
+    const val CHAINID = 0x46
 
     /**
      * (0x50) Remove item from stack
@@ -989,6 +991,7 @@ object OpCodes {
 
 
         NAMES[GASLIMIT] = "GASLIMIT"
+        NAMES[CHAINID] = "CHAINID"
 
         // ========================
         // Memory, Storage and Flow Operations

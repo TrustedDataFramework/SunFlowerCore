@@ -35,4 +35,9 @@ public class PoWValidator extends AbstractValidator {
     public ValidateResult validate(RepositoryReader rd, Header dependency, Transaction transaction) {
         return ValidateResult.success();
     }
+
+    @Override
+    public int getChainId() {
+        return poW.getChainId();
+    }
 }
