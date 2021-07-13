@@ -63,7 +63,7 @@ public class LogInfo1 implements RlpWritable {
             topicsEncoded = new byte[topics.size()][];
             int i = 0;
             for (Uint256 topic : topics) {
-                byte[] topicData = topic.getData();
+                byte[] topicData = topic.getByte32();
                 topicsEncoded[i] = Rlp.encodeBytes(topicData);
                 ++i;
             }
@@ -84,7 +84,7 @@ public class LogInfo1 implements RlpWritable {
     public Bloom getBloom() {
         Bloom ret = Bloom.create(HashUtil.sha3(address));
         for (Uint256 topic : topics) {
-            byte[] topicData = topic.getData();
+            byte[] topicData = topic.getByte32();
             ret.or(Bloom.create(HashUtil.sha3(topicData)));
         }
         return ret;
@@ -97,7 +97,7 @@ public class LogInfo1 implements RlpWritable {
         topicsStr.append("[");
 
         for (Uint256 topic : topics) {
-            String topicStr = toHexString(topic.getData());
+            String topicStr = toHexString(topic.getByte32());
             topicsStr.append(topicStr).append(" ");
         }
         topicsStr.append("]");

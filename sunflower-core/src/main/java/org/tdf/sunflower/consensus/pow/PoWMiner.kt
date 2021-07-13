@@ -59,9 +59,9 @@ class PoWMiner(
         poW.repo.reader.use { rd -> nbits = poW.bios.getNBits(rd, parent.hash) }
         val rd = Random()
         val nonce = ByteArray(NONCE_SIZE)
-        log.info("start finish pow target = {}", nbits.data.hex())
+        log.info("start finish pow target = {}", nbits.byte32.hex())
         working = true
-        while (PoW.compare(PoW.getPoWHash(b), nbits.data) > 0) {
+        while (PoW.compare(PoW.getPoWHash(b), nbits.byte32) > 0) {
             if (!working) {
                 log.info("mining canceled")
                 return null
@@ -77,7 +77,7 @@ class PoWMiner(
     override fun start() {
         stopped = false
         minerExecutor = Executors.newSingleThreadScheduledExecutor()
-        minerExecutor.scheduleAtFixedRate(Runnable {
+        minerExecutor.scheduleAtFixedRate({
             try {
                 tryMine()
             } catch (e: Exception) {

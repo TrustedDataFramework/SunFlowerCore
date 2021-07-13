@@ -78,11 +78,8 @@ interface Header : Chained {
     override val hash: H256
 
     companion object : Codec<Header> {
-        override val encoder: Function<in Header, ByteArray>
-            get() = Function { it.encoded }
-        override val decoder: Function<ByteArray, out Header>
-            get() = Function { Rlp.decode(it, HeaderImpl::class.java) }
-
+        override val encoder: Function<in Header, ByteArray> = Function { it.encoded }
+        override val decoder: Function<ByteArray, out Header> = Function { Rlp.decode(it, HeaderImpl::class.java) }
     }
 
     val impl: HeaderImpl
@@ -233,7 +230,7 @@ data class Block(val header: Header, val body: List<Transaction> = emptyList()) 
 }
 
 @RlpProps("status", "cumulativeGas", "logInfoList", "gasUsed", "result")
-data class TransactionReceipt @RlpCreator constructor(
+data class TransactionReceipt(
     val status: Int = 1,
     val cumulativeGas: Long = 0,
     val logInfoList: List<LogInfo> = emptyList(),
@@ -257,6 +254,16 @@ data class TransactionReceipt @RlpCreator constructor(
     }
 
     companion object {
+        @JvmStatic
+        @RlpCreator
+        fun create(bin: ByteArray, streamId: Long): TransactionReceipt {
+            val li = StreamId.asList(bin, streamId)
+            return TransactionReceipt(
+                li.intAt(0), li.longAt(1), li.valueAt(2, Array<LogInfo>::class.java).toList(),
+                li.longAt(3), li.hex(4)
+            )
+        }
+
         fun calcTrie(receipts: List<TransactionReceipt>): H256 {
             val receiptsTrie: Trie<ByteArray, ByteArray> = TrieImpl()
             if (receipts.isEmpty()) return HashUtil.EMPTY_TRIE_HASH_HEX

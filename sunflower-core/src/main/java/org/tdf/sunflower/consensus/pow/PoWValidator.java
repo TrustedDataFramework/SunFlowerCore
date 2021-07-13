@@ -20,12 +20,12 @@ public class PoWValidator extends AbstractValidator {
         if (!res.getSuccess()) return res;
 
         Uint256 nbits = poW.bios.getNBits(rd, dependency.getHash());
-        if (PoW.compare(PoW.getPoWHash(block), nbits.getData()) > 0)
+        if (PoW.compare(PoW.getPoWHash(block), nbits.getByte32()) > 0)
             return ValidateResult.fault(
                 String.format(
                     "nbits validate failed hash = %s, nbits = %s",
                     HexBytes.fromBytes(PoW.getPoWHash(block)),
-                    HexBytes.fromBytes(nbits.getData())
+                    HexBytes.fromBytes(nbits.getByte32())
                 )
             );
         return res;

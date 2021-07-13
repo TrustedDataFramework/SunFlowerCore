@@ -14,7 +14,6 @@ import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallContext
 import java.math.BigInteger
 import java.util.*
-import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 /**
  * used for node join/exit
@@ -89,7 +88,6 @@ class Authentication(
             }
             "getProposer" -> {
                 val parent = rd.getHeaderByHash(backend.parentHash) ?: throw RuntimeException("block not found")
-                println("args = ${args.contentToString()}")
                 val x = args[0]
                 when(x) {
                     is Array<*> -> {

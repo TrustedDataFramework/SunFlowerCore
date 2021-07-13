@@ -4,10 +4,7 @@ package org.tdf.sunflower.consensus.poa
 import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.crypto.ECDSASignature
 import org.tdf.common.crypto.ECKey
-import org.tdf.common.util.BigEndian
-import org.tdf.common.util.HexBytes
-import org.tdf.common.util.hex
-import org.tdf.common.util.u256
+import org.tdf.common.util.*
 import org.tdf.sunflower.consensus.AbstractValidator
 import org.tdf.sunflower.consensus.poa.PoAUtils.getRawHash
 import org.tdf.sunflower.facade.RepositoryReader
@@ -44,10 +41,13 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
         ) return fault("invalid proposer " + block.body[0].to)
 
         // validate signature
-        val v = BigEndian.decodeInt64(block.nonce.bytes, 0)
-        val r = block.extraData.bytes.u256()
-        val s = vrs.bytesAt(2)
-        val signature = ECDSASignature.fromComponents(r, s, v)
+        val v = block.nonce.bytes.long()
+        val r = block.extraData.bytes
+        val s = block.mixHash.bytes
+        if(v > UByte.MAX_VALUE.toLong())
+            return fault("invalid v in vrs")
+
+        val signature = ECDSASignature.fromComponents(r, s, v.toUByte().toByte())
         val rawHash = getRawHash(block.header)
         // validate signer
         val signer = ECKey.signatureToAddress(rawHash, signature).hex()

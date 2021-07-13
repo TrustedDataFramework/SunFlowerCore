@@ -136,7 +136,7 @@ public class PoWBios extends AbstractBuiltIn {
     @Override
     public Map<HexBytes, HexBytes> getGenesisStorage() {
         Map<HexBytes, HexBytes> ret = new HashMap<>();
-        ret.put(N_BITS_KEY, HexBytes.fromBytes(genesisNbits.getData()));
+        ret.put(N_BITS_KEY, HexBytes.fromBytes(genesisNbits.getByte32()));
         ret.put(TIMESTAMPS_KEY, HexBytes.fromBytes(Rlp.encodeElements()));
         return ret;
     }

@@ -2,6 +2,7 @@ package org.tdf.common.util
 
 import com.github.salpadding.rlpstream.Rlp
 import org.tdf.common.types.Constants
+import org.tdf.common.types.Constants.WORD_SIZE
 import org.tdf.common.types.Uint256
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
@@ -86,6 +87,14 @@ fun ByteArray.u256(): Uint256 {
     return Uint256.of(this)
 }
 
+fun ByteArray.long(): Long {
+    return BigEndian.decodeInt64(this, 0)
+}
+
+fun ByteArray.bn(): BigInteger {
+    return BigInteger(1, this)
+}
+
 fun Long.u256(): Uint256 {
     return Uint256.of(this)
 }
@@ -98,6 +107,6 @@ fun BigInteger.bytes(): ByteArray {
     return BigIntegers.asUnsignedByteArray(this)
 }
 
-fun BigInteger.bytes(i: Int): ByteArray {
-    return BigIntegers.asUnsignedByteArray(i, this)
+fun BigInteger.bytes32(): ByteArray {
+    return BigIntegers.asUnsignedByteArray(WORD_SIZE, this)
 }

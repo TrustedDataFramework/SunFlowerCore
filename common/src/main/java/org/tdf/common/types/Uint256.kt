@@ -15,6 +15,7 @@ import org.tdf.common.types.Uint256.Uint256Deserializer
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.IntSerializer
 import org.tdf.common.util.bytes
+import org.tdf.common.util.bytes32
 import java.math.BigInteger
 import kotlin.math.sign
 
@@ -65,12 +66,12 @@ class Uint256 private constructor(val value: BigInteger) : Number(), RlpWritable
      *
      * @return instance data
      */
-    val data: ByteArray by lazy {
-        value.bytes(WORD_SIZE)
+    val byte32: ByteArray by lazy {
+        value.bytes32()
     }
 
 
-    val noLeading: ByteArray by lazy {
+    val bytes: ByteArray by lazy {
         value.bytes()
     }
 

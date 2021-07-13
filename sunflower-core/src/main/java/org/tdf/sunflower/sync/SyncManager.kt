@@ -176,7 +176,7 @@ class SyncManager(
         when (msg.code) {
             SyncMessage.UNKNOWN -> return
             SyncMessage.STATUS -> {
-                if (limiters.status?.tryAcquire() == true) {
+                if (limiters.status?.tryAcquire() != true) {
                     log.error("receive status message too frequent")
                     return
                 }
@@ -188,7 +188,7 @@ class SyncManager(
             }
             SyncMessage.GET_BLOCKS -> {
                 if (isNotApproved(context)) return
-                if (limiters.blocks?.tryAcquire() == true) {
+                if (limiters.blocks?.tryAcquire() != true) {
                     log.error("receive get-blocks message too frequent")
                     return
                 }

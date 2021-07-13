@@ -15,6 +15,6 @@ object PoAUtils {
         val hash = getRawHash(header)
         val sig = key.sign(hash)
         val l = java.lang.Byte.toUnsignedLong(sig.v)
-        return header.impl.copy(extraData = sig.r.bytes(WORD_SIZE).hex(), mixHash = sig.s.bytes(WORD_SIZE).hex(), nonce = l.bytes8().hex())
+        return header.impl.copy(extraData = sig.r.bytes32().hex(), mixHash = sig.s.bytes32().hex(), nonce = l.bytes8().hex())
     }
 }

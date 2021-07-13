@@ -138,7 +138,7 @@ object WBI {
     }
 
     fun malloc(instance: ModuleInstance, s: Uint256): Int {
-        val bin = s.noLeading
+        val bin = s.bytes
         return malloc(instance, WbiType.UINT_256, bin)
     }
 
