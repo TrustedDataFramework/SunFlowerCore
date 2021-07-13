@@ -4,7 +4,6 @@ import org.tdf.common.types.Uint256
 import org.tdf.common.util.*
 import org.tdf.evm.Digest
 import org.tdf.evm.EvmHost
-import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.types.LogInfo
 import java.math.BigInteger
 
@@ -13,11 +12,10 @@ val sha3 = Digest { src: ByteArray, srcPos: Int, srcLen: Int,
     HashUtil.sha3(src, srcPos, srcLen, dst, dstPos)
 }
 
-class EvmHostImpl(private val executor: VMExecutor, private val rd: RepositoryReader) : EvmHost {
+class EvmHostImpl(private val executor: VMExecutor) : EvmHost {
     val backend: Backend = executor.backend
 
-    override val digest: Digest
-        get() = sha3
+    override val digest: Digest = sha3
 
     override fun getBalance(address: ByteArray): BigInteger {
         return backend.getBalance(address.hex()).value
@@ -51,13 +49,13 @@ class EvmHostImpl(private val executor: VMExecutor, private val rd: RepositoryRe
         value: BigInteger,
         staticCall: Boolean,
     ): ByteArray {
-        val ex = executor.clone()
-        ex.callData = CallData(caller.hex(), value.u256(), receipt.hex(), CallType.CALL, input.hex())
+        val cd = CallData(caller.hex(), value.u256(), receipt.hex(), CallType.CALL, input.hex())
+        var ex = executor.clone().copy(callData = cd)
 
         if (staticCall) {
             // since static call will not modify states, no needs to merge
-            ex.backend = ex.backend.createChild()
-            ex.backend.staticCall = true
+            val backend = executor.backend.createChild(true)
+            ex = ex.copy(backend = backend)
         }
         return ex.executeInternal()
     }
@@ -68,11 +66,11 @@ class EvmHostImpl(private val executor: VMExecutor, private val rd: RepositoryRe
         delegateAddr: ByteArray,
         input: ByteArray
     ): ByteArray {
-        val ex = executor.clone()
-        ex.callData = CallData(
+        val cd = CallData(
             originCaller.hex(), Uint256.ZERO, originContract.hex(),
             CallType.DELEGATE, input.hex(), delegateAddr.hex()
         )
+        val ex = executor.clone().copy(callData = cd)
         return ex.executeInternal()
     }
 
@@ -81,9 +79,9 @@ class EvmHostImpl(private val executor: VMExecutor, private val rd: RepositoryRe
     }
 
     override fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray): ByteArray {
-        val ex = executor.clone()
         val addr = HashUtil.calcNewAddr(caller, backend.getNonce(caller.hex()).bytes()).hex()
-        ex.callData = CallData(caller.hex(), value.u256(), addr, CallType.CREATE, createCode.hex())
+        val cd = CallData(caller.hex(), value.u256(), addr, CallType.CREATE, createCode.hex())
+        val ex = executor.clone().copy(callData = cd)
         ex.executeInternal()
         return addr.bytes
     }

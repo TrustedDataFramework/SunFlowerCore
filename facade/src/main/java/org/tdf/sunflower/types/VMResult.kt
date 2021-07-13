@@ -6,7 +6,6 @@ import org.tdf.sunflower.state.AddrUtil
 
 class VMResult(
     val gasUsed: Long = 0,
-    val contractAddress: HexBytes = AddrUtil.empty(),
     val executionResult: HexBytes = HexBytes.empty(),
     val logs: List<LogInfo> = emptyList(),
     val fee: Uint256 = Uint256.ZERO

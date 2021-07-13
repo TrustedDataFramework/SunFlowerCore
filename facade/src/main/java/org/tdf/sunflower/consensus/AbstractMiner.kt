@@ -63,7 +63,8 @@ abstract class AbstractMiner(
 
 
         val res: VMResult
-        val executor = VMExecutor(rd, tmp, ctx, callData, 0)
+        val executor = VMExecutor.create(rd, tmp, ctx, callData, 0)
+
         res = executor.execute()
         val lastGas = receipts.getOrNull(receipts.size - 1)?.cumulativeGas ?: 0L
 

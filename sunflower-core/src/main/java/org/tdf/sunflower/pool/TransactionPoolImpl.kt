@@ -195,7 +195,7 @@ class TransactionPoolImpl(
                 val child = current!!.createChild()
                 val ctx = CallContext.fromTx(t)
                 val callData = CallData.fromTx(t, false)
-                val vmExecutor = VMExecutor(
+                val vmExecutor = VMExecutor.create(
                     rd,
                     child, ctx, callData,
                     min(t.gasLimit, blockGasLimit)
@@ -288,7 +288,7 @@ class TransactionPoolImpl(
 
     @PostConstruct
     fun initialize() {
-        eventBus.subscribe(NewBestBlock::class.java) { event: NewBestBlock -> onNewBestBlock(event) }
+        eventBus.subscribe(NewBestBlock::class.java) { onNewBestBlock(it) }
         clearScheduler.delay {
             try {
                 clear()

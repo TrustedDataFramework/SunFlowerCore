@@ -48,7 +48,7 @@ internal object JsonRpcUtil {
             args.from.address(),
             args.value.u256(),
             args.to.address(),
-            if (args.to == null || args.to!!.trim().isEmpty()) {
+            if ((args.to ?: "").trim().isEmpty()) {
                 CallType.CREATE
             } else {
                 CallType.CALL

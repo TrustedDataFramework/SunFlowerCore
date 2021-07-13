@@ -21,7 +21,8 @@ class JsonRpcImpl(
     private val accountTrie: AccountTrie,
     private val repo: RepositoryService,
     private val pool: TransactionPool,
-    private val engine: ConsensusEngine
+    private val engine: ConsensusEngine,
+    private val cfg: AppConfig
 ) : JsonRpc {
     private fun getByJsonBlockId(id: String): Block? {
         return repo.reader.use {
@@ -102,8 +103,7 @@ class JsonRpcImpl(
                     if (e == null) {
                         header = rd.bestHeader
                     } else {
-                        e.staticCall = isStatic
-                        return e
+                        return e.createChild(isStatic)
                     }
                 }
                 "earliest" -> header = rd.genesis.header
@@ -187,11 +187,11 @@ class JsonRpcImpl(
             getBackendByBlockId(bnOrId, true).use { backend ->
                 repo.reader.use {
                     val cd = args.toCallData()
-                    val executor = VMExecutor(
+                    val executor = VMExecutor.create(
                         it,
                         backend,
                         args.toCallContext(backend.getNonce(cd.caller), engine.chainId),
-                        cd, AppConfig.INSTANCE.blockGasLimit
+                        cd, cfg.blockGasLimit
                     )
                     return executor.execute().executionResult.jsonHex
                 }
@@ -205,12 +205,12 @@ class JsonRpcImpl(
         getBackendByBlockId("latest", false).use { backend ->
             repo.reader.use { rd ->
                 val callData = args!!.toCallData()
-                val executor = VMExecutor(
+                val executor = VMExecutor.create(
                     rd,
                     backend,
                     args.toCallContext(backend.getNonce(callData.caller), engine.chainId),
                     callData,
-                    AppConfig.INSTANCE.blockGasLimit
+                    cfg.blockGasLimit
                 )
                 return executor.execute().gasUsed.jsonHex
             }

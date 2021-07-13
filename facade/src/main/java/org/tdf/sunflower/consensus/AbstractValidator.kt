@@ -70,7 +70,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             for (tx in block.body.subList(1, block.body.size)) {
                 if (currentGas > blockGasLimit) return fault("block gas overflow")
                 var r: VMResult
-                val executor = VMExecutor(
+                val executor = VMExecutor.create(
                     rd,
                     currentBackend,
                     CallContext.fromTx(tx),
@@ -91,7 +91,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             }
 
             val executor =
-                VMExecutor(
+                VMExecutor.create(
                     rd,
                     currentBackend,
                     CallContext.fromTx(coinbase, chainId),

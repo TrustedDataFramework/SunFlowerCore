@@ -28,7 +28,6 @@ import org.tdf.sunflower.consensus.poa.PoA
 import org.tdf.sunflower.consensus.pos.PoS
 import org.tdf.sunflower.consensus.pow.PoW
 import org.tdf.sunflower.controller.JsonRpc
-import org.tdf.sunflower.controller.JsonRpcFilter
 import org.tdf.sunflower.facade.*
 import org.tdf.sunflower.net.PeerServer
 import org.tdf.sunflower.net.PeerServerImpl
@@ -101,9 +100,9 @@ open class Start {
     open fun accountTrie(
         databaseStoreFactory: DatabaseStoreFactory,
         @Qualifier("contractStorageTrie") contractStorageTrie: Trie<HexBytes, HexBytes>,
-        @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes, HexBytes>
+        @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes, HexBytes>,
+        c: AppConfig
     ): AccountTrie {
-        val c = AppConfig.get()
         return AccountTrie(
             databaseStoreFactory.create('a'),
             contractCodeStore,
@@ -202,7 +201,7 @@ open class Start {
 
     // storage root of contract store
     @Bean
-    open fun contractStorageTrie(factory: DatabaseStoreFactory): Trie<HexBytes, HexBytes> {
+    open fun contractStorageTrie(factory: DatabaseStoreFactory, c: AppConfig): Trie<HexBytes, HexBytes> {
         val ret = TrieImpl(
             NoDeleteStore(
                 factory.create('o')
@@ -210,7 +209,6 @@ open class Start {
             Codecs.hex,
             Codecs.hex
         )
-        val c = AppConfig.get()
         return if (c.isTrieSecure) SecureTrie(ret) else ret
     }
 
@@ -246,13 +244,6 @@ open class Start {
         return exporter
     }
 
-    @Bean
-    open fun loggingFilter(filter: JsonRpcFilter): FilterRegistrationBean<JsonRpcFilter> {
-        val registrationBean = FilterRegistrationBean<JsonRpcFilter>()
-        registrationBean.filter = filter
-        registrationBean.addUrlPatterns("/")
-        return registrationBean
-    }
 
     companion object {
         @JvmField

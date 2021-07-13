@@ -547,7 +547,7 @@ public class MutableBigInteger {
      * Returns true iff this MutableBigInteger is odd.
      */
     public boolean isOdd() {
-        return !isZero() && ((value[offset + intLen - 1] & 1) == 1);
+        return isZero() ? false : ((value[offset + intLen - 1] & 1) == 1);
     }
 
     /**

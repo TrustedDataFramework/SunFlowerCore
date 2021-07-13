@@ -20,7 +20,7 @@ class BackendImpl(
     private val modifiedStorage: MutableMap<HexBytes, MutableMap<HexBytes, HexBytes>> = mutableMapOf(),
     override val builtins: Map<HexBytes, BuiltinContract> = mutableMapOf(),
     override val bios: Map<HexBytes, BuiltinContract> = mutableMapOf(),
-    override var staticCall: Boolean,
+    override val staticCall: Boolean,
     // address -> code
     private val codeStore: Store<HexBytes, HexBytes>,
     private val codeCache: MutableMap<HexBytes, HexBytes> = mutableMapOf(),
@@ -36,7 +36,7 @@ class BackendImpl(
         return aInTrie ?: Account.empty()
     }
 
-    override fun createChild(): BackendImpl {
+    override fun createChild(staticCall: Boolean): BackendImpl {
         return BackendImpl(
             parent,
             this,

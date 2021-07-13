@@ -68,7 +68,6 @@ class AppConfig(private val properties: PropertyLike) {
     val isTrieSecure: Boolean = reader.getAsBool("sunflower.trie.secure")
 
     companion object {
-        @JvmStatic
         fun get(): AppConfig {
             return INSTANCE
         }

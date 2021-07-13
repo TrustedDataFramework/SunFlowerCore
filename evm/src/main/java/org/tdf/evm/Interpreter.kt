@@ -32,11 +32,6 @@ class EvmCallData(
     val code: ByteArray = emptyByteArray,
 )
 
-class ExecuteResult(
-    val gasUsed: Long = 0L,
-    val ret: ByteArray = emptyByteArray
-)
-
 interface EvmHost {
     val digest: Digest
 
@@ -117,9 +112,7 @@ class Interpreter(
 
         while (pc < callData.code.size) {
             op = callData.code[pc].toUByte().toInt()
-            hook?.let {
-                it.onOp(op)
-            }
+            hook?.onOp(op)
             beforeExecute()
 
 

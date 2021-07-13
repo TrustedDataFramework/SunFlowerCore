@@ -45,7 +45,8 @@ class SyncManager(
     accountTrie: AccountTrie,
     @Qualifier("contractStorageTrie") contractStorageTrie: Trie<HexBytes, HexBytes>,
     @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes, HexBytes>,
-    miner: Miner
+    miner: Miner,
+    private val cfg: AppConfig
 ) : PeerServerListener, Closeable {
     private val mtx = LogLock(ReentrantLock(), "sync-queue")
 
@@ -58,10 +59,10 @@ class SyncManager(
     private val miner: Miner
     private val limiters: Limiters
     private val receivedTransactions = CacheBuilder.newBuilder()
-        .maximumSize(AppConfig.get().p2pTransactionCacheSize.toLong())
+        .maximumSize(cfg.p2pTransactionCacheSize.toLong())
         .build<HexBytes, Boolean>()
     private val receivedProposals = CacheBuilder.newBuilder()
-        .maximumSize(AppConfig.get().p2pProposalCacheSize.toLong())
+        .maximumSize(cfg.p2pProposalCacheSize.toLong())
         .build<HexBytes, Boolean>()
 
 

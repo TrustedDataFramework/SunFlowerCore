@@ -64,9 +64,9 @@ interface Backend : AutoCloseable {
     fun dbRemove(address: HexBytes, key: HexBytes)
     fun getCode(address: HexBytes): HexBytes
     fun setCode(address: HexBytes, code: HexBytes)
-    var staticCall: Boolean
+    val staticCall: Boolean
     val parentBackend: Backend?
-    fun createChild(): Backend
+    fun createChild(staticCall: Boolean = false): Backend
 
     // merge modifications, return the new state root
     fun merge(): HexBytes

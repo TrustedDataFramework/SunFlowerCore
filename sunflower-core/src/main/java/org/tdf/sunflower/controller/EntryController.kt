@@ -29,7 +29,6 @@ class EntryController constructor(
     private val accountTrie: AccountTrie,
     private val peerServer: PeerServer,
     private val repo: RepositoryService,
-    private val consensusEngine: ConsensusEngine,
 ) {
 
     private fun <T> getBlockOrHeader(

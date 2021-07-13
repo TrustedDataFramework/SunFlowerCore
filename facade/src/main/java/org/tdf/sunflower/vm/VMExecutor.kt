@@ -35,48 +35,26 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 data class VMExecutor(
-    var rd: RepositoryReader,
-    var backend: Backend,
+    val rd: RepositoryReader,
+    val backend: Backend,
     val ctx: CallContext,
-    var callData: CallData,
-    var limit: Limit,
+    val callData: CallData,
+    val limit: Limit,
     val logs: MutableList<LogInfo>,
     val depth: Int = 0,
 ) {
-    // gas limit hook
-
-
-    constructor(rd: RepositoryReader, backend: Backend, ctx: CallContext, callData: CallData, gasLimit: Long) : this(
-        rd,
-        backend,
-        ctx,
-        callData,
-        Limit(gasLimit),
-        mutableListOf()
-    )
-
     fun clone(): VMExecutor {
         if (depth + 1 == MAX_CALL_DEPTH) throw RuntimeException("vm call depth overflow")
-        return VMExecutor(rd, backend, ctx, callData.clone(), limit, logs, depth + 1)
+        return copy(depth = depth + 1)
     }
 
     fun execute(): VMResult {
-        // 1. increase sender nonce
         val n = backend.getNonce(ctx.origin)
-        if (n != ctx.txNonce && callData.callType !== CallType.COINBASE)
-            throw RuntimeException("invalid nonce")
 
-        var contractAddress: HexBytes = AddrUtil.empty()
+        // no needs to increase nonce when static call
         if (!backend.staticCall && callData.callType === CallType.CALL) {
             backend.setNonce(ctx.origin, n + 1)
             // contract deploy nonce will increase in executeInternal
-        }
-        if (callData.callType === CallType.CREATE) {
-            contractAddress = HashUtil.calcNewAddr(
-                callData.caller.bytes,
-                ctx.txNonce.bytes()
-            ).hex()
-            callData = callData.copy(to = contractAddress)
         }
 
         // 2. set initial gas by payload size
@@ -90,7 +68,6 @@ data class VMExecutor(
 
         return VMResult(
             limit.gas,
-            contractAddress,
             result.hex(),
             logs,
             fee
@@ -198,7 +175,7 @@ data class VMExecutor(
             chainId = ctx.chainId,
             gasPrice = ctx.gasPrice.value,
         )
-        val host = EvmHostImpl(this, rd)
+        val host = EvmHostImpl(this)
         val interpreter =
             Interpreter(host, ctx, evmCallData, printStream, limit, EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE)
         val ret = interpreter.execute()
@@ -306,6 +283,19 @@ data class VMExecutor(
         const val MAX_LABELS = MAX_FRAMES * 4
         const val MAX_CALL_DEPTH = 8
         const val EVM_MAX_STACK_SIZE = 1024
+
+        fun create(rd: RepositoryReader, backend: Backend, ctx: CallContext, callData: CallData, gasLimit: Long): VMExecutor{
+            var c = callData
+            val n = backend.getNonce(ctx.origin)
+            if (n != ctx.txNonce && callData.callType !== CallType.COINBASE)
+                throw RuntimeException("invalid nonce")
+            if (callData.callType == CallType.CREATE)
+                c = callData.copy(to =  HashUtil.calcNewAddr(
+                    callData.caller.bytes,
+                    ctx.txNonce.bytes()
+                ).hex())
+            return VMExecutor(rd, backend, ctx, c, Limit(gasLimit), mutableListOf())
+        }
 
         // 16 mb
         const val EVM_MAX_MEMORY_SIZE = 1024 * 1024 * 16
