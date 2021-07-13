@@ -242,9 +242,8 @@ class Interpreter(
                 OpCodes.REVERT -> {
                     val off = stack.popU32()
                     val size = stack.popU32()
-                    val reason = String(memory.resizeAndCopy(off, size), StandardCharsets.US_ASCII)
                     afterExecute()
-                    throw RuntimeException(reason.trimEnd { it <= ' ' }.trimStart { it <= ' ' })
+                    throw RevertException(memory.resizeAndCopy(off, size), host.digest)
                 }
                 OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> call(op)
                 OpCodes.CREATE -> create()
@@ -430,8 +429,6 @@ class Interpreter(
                         ).hex()
                     } mem.cap = ${memory.size}"
                 )
-                OpCodes.JUMPI -> {
-                }
                 OpCodes.RETURN -> {
                 }
             }

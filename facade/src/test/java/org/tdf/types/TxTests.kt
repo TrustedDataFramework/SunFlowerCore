@@ -5,7 +5,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.tdf.common.util.*
+import org.tdf.evm.SELECTOR_SIZE
 import org.tdf.sunflower.types.*
+import org.tdf.sunflower.vm.abi.Abi
 
 @RunWith(JUnit4::class)
 class TxTests {
@@ -90,5 +92,28 @@ class TxTests {
                 println(infos.toList())
             }
         }
+    }
+
+    @Test
+    fun test4() {
+        val json = """
+    [{
+        "inputs": [
+            {
+                "name": "err",
+                "type": "string"
+            }
+        ],
+        "name": "Error",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }]
+        """.trimIndent()
+        val abi = Abi.fromJson(json)
+        val err = abi.findFunction { it.name == "Error" }!!
+        val encoded = "08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001343616c6c6572206973206e6f74206f776e657200000000000000000000000000".hex()
+        assert(err.encodeSignature().hex() == encoded.bytes.sliceArray(0 until SELECTOR_SIZE).hex())
+        println(err.decode(encoded.bytes))
     }
 }
