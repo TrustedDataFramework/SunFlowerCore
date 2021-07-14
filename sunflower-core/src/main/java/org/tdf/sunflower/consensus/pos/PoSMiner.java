@@ -121,6 +121,6 @@ public class PoSMiner extends AbstractMiner {
 
     @Override
     protected int getChainId() {
-        return pos.getChainId();
+        throw new UnsupportedOperationException();
     }
 }

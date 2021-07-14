@@ -32,12 +32,7 @@ public class PoWValidator extends AbstractValidator {
     }
 
     @Override
-    public ValidateResult validate(RepositoryReader rd, Header dependency, Transaction transaction) {
-        return ValidateResult.success();
-    }
-
-    @Override
     public int getChainId() {
-        return poW.getChainId();
+        throw new UnsupportedOperationException();
     }
 }

@@ -12,14 +12,13 @@ import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.Block
-import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.types.Transaction
 import org.tdf.sunflower.types.ValidateResult
 import org.tdf.sunflower.types.ValidateResult.Companion.fault
 import org.tdf.sunflower.types.ValidateResult.Companion.success
 
 class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: PoA) : AbstractValidator(accountTrie) {
-    override val chainId: Int = poA.chainId
+    override val chainId: Int = poA.config.chainId
     override fun validate(rd: RepositoryReader, block: Block, dependency: Block): ValidateResult {
         val res = super.commonValidate(rd, block, dependency)
         if (!res.success) return res
@@ -63,10 +62,6 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
         } else res
     }
 
-    // validate pre-pending transaction
-    override fun validate(rd: RepositoryReader, dependency: Header, transaction: Transaction): ValidateResult {
-        return success()
-    }
 
     private fun validateCoinBase(parent: Block, coinBase: Transaction): ValidateResult {
         return if (coinBase.nonce != parent.height + 1) fault("nonce of coin base should be " + parent.height + 1) else success()

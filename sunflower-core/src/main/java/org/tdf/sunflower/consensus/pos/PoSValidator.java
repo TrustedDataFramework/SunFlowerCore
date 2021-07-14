@@ -31,11 +31,6 @@ public class PoSValidator extends AbstractValidator {
     }
 
     @Override
-    public ValidateResult validate(RepositoryReader rd, Header dependency, Transaction transaction) {
-        return ValidateResult.success();
-    }
-
-    @Override
     public int getChainId() {
         throw new UnsupportedOperationException();
     }

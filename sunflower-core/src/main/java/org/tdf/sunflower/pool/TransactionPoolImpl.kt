@@ -29,6 +29,7 @@ import javax.annotation.PostConstruct
 import kotlin.concurrent.withLock
 import kotlin.math.min
 
+
 @Component
 class TransactionPoolImpl(
     private val eventBus: EventBus,
@@ -42,7 +43,7 @@ class TransactionPoolImpl(
         val log: Logger = LoggerFactory.getLogger("txPool")
     }
 
-    // waiting
+    // waiting, sorted by gasPrice
     private val waiting: TreeSet<WaitingInfo> = TreeSet()
 
     private val lock: ReadWriteLock = ReentrantReadWriteLock()
@@ -50,23 +51,24 @@ class TransactionPoolImpl(
     private val writeLock = LogLock(lock.writeLock(), "tp-w")
 
     // dropped transactions
-    override val dropped: Cache<HexBytes, Pair<Transaction, String>> =
+    override val dropped: Cache<HexBytes, Dropped> =
         CacheBuilder.newBuilder()
             .expireAfterWrite(config.expiredIn, TimeUnit.SECONDS)
             .build()
 
-    private lateinit var validator: PendingTransactionValidator
+    private var parentHeader: Header? = null
 
     // pending transaction
-    private var parentHeader: Header? = null
     private val pending: MutableList<WaitingInfo> = mutableListOf()
+    // pending gas used
     private var pendingGas: Long = 0
+    // pending state
     private var current: Backend? = null
+    // pending timestamp
     private var timestamp: Long = 0
 
     private val clearScheduler = FixedDelayScheduler("txPool-clear", config.expiredIn)
     private val executeScheduler = FixedDelayScheduler("txPool-execute", 1)
-    private lateinit var engine: ConsensusEngine
 
     private fun resetInternal(best: Header) {
         parentHeader = best
@@ -75,9 +77,7 @@ class TransactionPoolImpl(
         current = trie.createBackend(best)
     }
 
-    fun setEngine(engine: ConsensusEngine) {
-        validator = engine.validator
-        this.engine = engine
+    fun init() {
         repo.reader.use {
             resetInternal(it.bestHeader)
         }
@@ -91,7 +91,7 @@ class TransactionPoolImpl(
     }
 
     /**
-     *
+     * clear waiting transactions
      */
     private fun clear() {
         val now = System.currentTimeMillis()
@@ -99,10 +99,10 @@ class TransactionPoolImpl(
             return
         }
         try {
-            waiting.removeIf { info: WaitingInfo ->
-                val remove = (now - info.receivedAt) / 1000 > config.expiredIn
+            waiting.removeIf {
+                val remove = (now - it.receivedAt) / 1000 > config.expiredIn
                 if (remove) {
-                    dropped.put(info.tx.hash, Pair(info.tx, "transaction timeout"))
+                    dropped.put(it.tx.hash, Dropped(it.tx, "transaction timeout"))
                 }
                 remove
             }
@@ -124,9 +124,9 @@ class TransactionPoolImpl(
                     errors[tx.hash] = "transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}"
                     continue
                 }
-                val err = dropped.asMap()[tx.hash]
-                if (err != null) {
-                    errors[tx.hash] = err.second
+                val drop = dropped.asMap()[tx.hash]
+                if (drop != null) {
+                    errors[tx.hash] = drop.err
                     continue
                 }
 
@@ -144,19 +144,13 @@ class TransactionPoolImpl(
                     continue
                 }
 
-                if (tx.chainId != engine.chainId) {
+                if (tx.chainId != appCfg.chainId) {
                     errors[tx.hash] = "invalid chainId ${tx.chainId}"
                     continue
                 }
 
-                val h = parentHeader ?: return errors
-                val res = validator.validate(rd, h, tx)
-                if (res.success) {
-                    waiting.add(info)
-                    newCollected.add(tx)
-                } else {
-                    errors[tx.hash] = res.reason
-                }
+                waiting.add(info)
+                newCollected.add(tx)
             }
 
             // try to move transactions from waiting to pending
@@ -211,7 +205,7 @@ class TransactionPoolImpl(
             try {
                 val child = ex.backend.createChild()
                 val ctx = CallContext.fromTx(tx = t, timestamp = ex.timestamp)
-                val callData = CallData.fromTx(t, false)
+                val callData = CallData.fromTx(t)
                 val vmExecutor = VMExecutor.create(
                     ex.rd,
                     child, ctx, callData,
@@ -253,11 +247,6 @@ class TransactionPoolImpl(
 
     override fun pop(rd: RepositoryReader, parentHeader: Header, timestamp: Long): PendingData {
         writeLock.withLock {
-            if (this.parentHeader != null && parentHeader.hash != this.parentHeader!!.hash) {
-                clearPending()
-                log.warn("parent header is not equal, drop pending")
-            }
-
             val ex = Execute(
                 pending.iterator(),
                 trie.createBackend(parentHeader),

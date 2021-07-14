@@ -1,8 +1,6 @@
 package org.tdf.sunflower.facade
 
 import org.tdf.sunflower.types.Block
-import org.tdf.sunflower.types.Header
-import org.tdf.sunflower.types.Transaction
 import org.tdf.sunflower.types.ValidateResult
 import org.tdf.sunflower.types.ValidateResult.Companion.success
 
@@ -20,18 +18,11 @@ interface BlockValidator {
     fun validate(rd: RepositoryReader, block: Block, dependency: Block): ValidateResult
 }
 
-interface PendingTransactionValidator {
-    fun validate(rd: RepositoryReader, dependency: Header, transaction: Transaction): ValidateResult
-}
 
-interface Validator : BlockValidator, PendingTransactionValidator {
+interface Validator : BlockValidator {
     companion object {
         val NONE: Validator = object : Validator {
             override fun validate(rd: RepositoryReader, block: Block, dependency: Block): ValidateResult {
-                return success()
-            }
-
-            override fun validate(rd: RepositoryReader, dependency: Header, transaction: Transaction): ValidateResult {
                 return success()
             }
         }

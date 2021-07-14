@@ -37,8 +37,7 @@ data class CallData(
     val callType: CallType = CallType.COINBASE,
     val data: HexBytes = HexBytes.empty(),
     // for delegate call, address is the delegate address
-    // for create and create2, address is the address of new contract
-    val address: Address = AddrUtil.empty()
+    val delegate: Address = AddrUtil.empty()
 ) {
 
     fun clone(): CallData {
@@ -52,14 +51,10 @@ data class CallData(
         }
 
         @JvmStatic
-        fun fromTx(tx: Transaction, coinbase: Boolean): CallData {
-            var t = CallType.COINBASE
-            val origin = if (coinbase) AddrUtil.empty() else tx.sender
-            if (!coinbase) {
-                t = if (tx.to.isEmpty()) CallType.CREATE else CallType.CALL
-            }
+        fun fromTx(tx: Transaction, callType: CallType? = null): CallData {
+            val t = callType ?: if (tx.to.isEmpty()) CallType.CREATE else CallType.CALL
             return CallData(
-                origin,
+                tx.sender,
                 tx.value,
                 tx.to,
                 t,

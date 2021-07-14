@@ -22,8 +22,8 @@ class AccountTrie(
 ) : AbstractStateTrie<HexBytes, Account>() {
     override val trie: Trie<HexBytes, Account>
 
-    var bios: Map<HexBytes, Builtin> = emptyMap()
-    var builtins: Map<HexBytes, Builtin> = emptyMap()
+    lateinit var bios: Map<HexBytes, Builtin>
+    lateinit var builtins: Map<HexBytes, Builtin>
 
     override val trieStore: Store<ByteArray, ByteArray>
 
@@ -81,7 +81,7 @@ class AccountTrie(
 
         // sync to genesis
         val tmp = trie.revert()
-        genesisStates.forEach { (k: HexBytes, v: Account) -> tmp[k] = v }
+        genesisStates.forEach { tmp[it.key] = it.value }
         log.info("genesis states = {}", Start.MAPPER.writeValueAsString(genesisStates))
         val r = tmp.commit()
         log.info("genesis state root = $r")

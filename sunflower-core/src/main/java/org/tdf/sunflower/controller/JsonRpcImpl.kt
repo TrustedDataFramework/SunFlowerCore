@@ -44,11 +44,11 @@ class JsonRpcImpl(
     }
 
     override fun net_version(): String {
-        return engine.chainId.toString()
+        return cfg.chainId.toString()
     }
 
     override fun eth_chainId(): String {
-        return engine.chainId.jsonHex
+        return cfg.chainId.jsonHex
     }
 
     override fun net_peerCount(): String {
@@ -190,7 +190,7 @@ class JsonRpcImpl(
                     val executor = VMExecutor.create(
                         it,
                         backend,
-                        args.toCallContext(backend.getNonce(cd.caller), engine.chainId),
+                        args.toCallContext(backend.getNonce(cd.caller), cfg.chainId),
                         cd, cfg.blockGasLimit
                     )
                     return executor.execute().executionResult.jsonHex
@@ -208,7 +208,7 @@ class JsonRpcImpl(
                 val executor = VMExecutor.create(
                     rd,
                     backend,
-                    args.toCallContext(backend.getNonce(callData.caller), engine.chainId),
+                    args.toCallContext(backend.getNonce(callData.caller), cfg.chainId),
                     callData,
                     cfg.blockGasLimit
                 )

@@ -2,6 +2,7 @@ package org.tdf.sunflower.types
 
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.JsonNode
+import org.tdf.common.types.Constants.DEFAULT_CHAIN_ID
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.facade.PropertiesWrapper
 import org.tdf.sunflower.facade.PropertyLike
@@ -42,6 +43,8 @@ open class ConsensusConfig(val properties: PropertyLike) {
     val maxMiners: Int
         get() = reader.getAsInt("max-miners")
 
+
+    val chainId: Int get() = genesisJson["chainId"]?.asInt() ?: DEFAULT_CHAIN_ID
 
     val genesisJson: JsonNode by lazy {
         val objectMapper = MapperUtil.OBJECT_MAPPER

@@ -13,6 +13,7 @@ import org.tdf.sunflower.types.BlockValidateResult.Companion.fault
 import org.tdf.sunflower.types.BlockValidateResult.Companion.success
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
+import org.tdf.sunflower.vm.CallType
 import org.tdf.sunflower.vm.VMExecutor
 
 abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, Account>) : Validator {
@@ -77,7 +78,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                     rd,
                     currentBackend,
                     CallContext.fromTx(tx, timestamp = block.createdAt),
-                    CallData.fromTx(tx, false),
+                    CallData.fromTx(tx),
                     Math.min(blockGasLimit - currentGas, tx.gasLimit)
                 )
                 r = executor.execute()
@@ -98,7 +99,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                     rd,
                     currentBackend,
                     CallContext.fromTx(coinbase, chainId, block.createdAt),
-                    CallData.fromTx(coinbase, true),
+                    CallData.fromTx(coinbase, CallType.COINBASE),
                     0
                 )
 

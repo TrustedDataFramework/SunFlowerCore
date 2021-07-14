@@ -7,6 +7,11 @@ import org.tdf.sunflower.types.PendingData
 import org.tdf.sunflower.types.Transaction
 import org.tdf.sunflower.vm.Backend
 
+typealias Dropped = Pair<Transaction, String>
+
+val Dropped.err: String get() = second
+val Dropped.tx: Transaction get() = first
+
 interface TransactionPool {
     // collect transactions into transaction pool, return errors
     fun collect(rd: RepositoryReader, transactions: Collection<Transaction>): Map<HexBytes, String>
@@ -23,5 +28,5 @@ interface TransactionPool {
 
     fun current(): Backend?
 
-    val dropped: Cache<HexBytes, Pair<Transaction, String>>
+    val dropped: Cache<HexBytes, Dropped>
 }

@@ -22,7 +22,7 @@ class PoWMiner(
     private lateinit var minerExecutor: ScheduledExecutorService
 
     override val chainId: Int
-        get() = poW.chainId
+        get() = config.chainId
 
     @Volatile
     private var stopped = false

@@ -18,7 +18,7 @@ class PoAMiner(private val poa: PoA) :
     AbstractMiner(poa.accountTrie, poa.eventBus, poa.config, poa.transactionPool) {
 
     override val chainId: Int
-        get() = poa.chainId
+        get() = poa.config.chainId
 
     private val config: PoAConfig
         get() = poa.config

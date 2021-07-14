@@ -2,19 +2,24 @@ package org.tdf.sunflower.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
+import org.tdf.common.event.EventBus
 import org.tdf.common.serialize.Codecs
 import org.tdf.common.store.Store
 import org.tdf.common.store.StoreWrapper
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.events.NewBestBlock
+import org.tdf.sunflower.facade.DatabaseStoreFactory
 import org.tdf.sunflower.facade.TransactionInfo
 import org.tdf.sunflower.facade.blockHash
 import org.tdf.sunflower.facade.index
+import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.types.*
 import java.util.*
 
-class RepositoryKVImpl(context: ApplicationContext) : AbstractRepository(
-    context
+class RepositoryKVImpl(bus: EventBus,
+                       factory: DatabaseStoreFactory,
+                       accountTrie: AccountTrie) : AbstractRepository(
+    bus, factory, accountTrie
 ) {
     // transaction hash -> transaction
     private val transactionsStore: Store<HexBytes, Transaction>

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.JsonNode
 import org.springframework.core.env.Environment
 import org.tdf.common.crypto.ECKey
+import org.tdf.common.types.Constants
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
@@ -85,6 +86,7 @@ class AppConfig(private val properties: PropertyLike) {
     val vmGasPrice: Uint256 = reader.getAsU256("sunflower.vm.gas-price", Uint256.ZERO)
     val isVmDebug: Boolean = reader.getAsBool("sunflower.vm.debug")
     val isTrieSecure: Boolean = reader.getAsBool("sunflower.trie.secure")
+    val chainId: Int get() = genesisJson["chainId"]?.asInt() ?: Constants.DEFAULT_CHAIN_ID
 
     companion object {
         fun get(): AppConfig {

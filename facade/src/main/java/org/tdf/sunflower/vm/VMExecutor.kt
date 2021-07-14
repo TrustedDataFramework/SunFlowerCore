@@ -142,12 +142,12 @@ data class VMExecutor(
                         isWasm = isWasm(code)
                     }
                     CallType.DELEGATE -> {
-                        val hash = backend.getContractHash(callData.address)
+                        val hash = backend.getContractHash(callData.delegate)
                         // this is a transfer transaction
                         code = if (hash == HashUtil.EMPTY_DATA_HASH_HEX) {
                             HexBytes.EMPTY_BYTES
                         } else {
-                            CACHE[hash, { backend.getCode(callData.address).bytes }]
+                            CACHE[hash, { backend.getCode(callData.delegate).bytes }]
                         }
                         data = callData.data.bytes
                         isWasm = isWasm(code)

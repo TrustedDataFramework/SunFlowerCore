@@ -1,22 +1,21 @@
 package org.tdf.sunflower.service
 
-import org.springframework.context.ApplicationContext
 import org.tdf.common.event.EventBus
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.facade.DatabaseStoreFactory
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.RepositoryWriter
-import org.tdf.sunflower.state.Account
-import org.tdf.sunflower.state.StateTrie
+import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.Header
 
 abstract class AbstractRepository
-    (context: ApplicationContext) : RepositoryReader, RepositoryWriter {
-    protected val eventBus: EventBus = context.getBean(EventBus::class.java)
-    protected val factory: DatabaseStoreFactory = context.getBean(DatabaseStoreFactory::class.java)
+    (
+    protected val eventBus: EventBus,
+    protected val factory: DatabaseStoreFactory,
+    protected val accountTrie: AccountTrie,
+    ) : RepositoryReader, RepositoryWriter {
 
-    lateinit var accountTrie: StateTrie<HexBytes, Account>
 
     var genesisCache: Block? = null
 

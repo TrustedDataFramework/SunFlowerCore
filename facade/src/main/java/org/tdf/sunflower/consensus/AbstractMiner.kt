@@ -14,6 +14,7 @@ import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
+import org.tdf.sunflower.vm.CallType
 import org.tdf.sunflower.vm.VMExecutor
 
 abstract class AbstractMiner(
@@ -59,7 +60,7 @@ abstract class AbstractMiner(
         val body = txs.toMutableList()
         body.add(0, c)
         val ctx = CallContext.fromTx(c, chainId, createdAt)
-        val callData = CallData.fromTx(c, true)
+        val callData = CallData.fromTx(c, CallType.COINBASE)
 
 
         val res: VMResult

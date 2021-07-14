@@ -13,6 +13,4 @@ interface ConsensusEngine {
     // inject configurations, throw exception if configuration is invalid
     fun init(config: ConsensusConfig)
     val name: String
-    val chainId: Int
-        get() = 102
 }

@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.core.env.Environment
@@ -52,7 +51,8 @@ open class Start {
     @Bean
     open fun sunflowerRepository(
         cfg: DatabaseConfig,
-        context: ApplicationContext,
+        bus: EventBus,
+        factory: DatabaseStoreFactory,
         accountTrie: AccountTrie,
     ): RepositoryServiceImpl {
         when (val type = cfg.blockStore) {
@@ -60,11 +60,7 @@ open class Start {
                 throw UnsupportedOperationException()
             }
             "kv" -> {
-                val kv = RepositoryKVImpl(context)
-                kv.accountTrie = accountTrie
-                return RepositoryServiceImpl(
-                    kv
-                )
+                return RepositoryServiceImpl(RepositoryKVImpl(bus, factory, accountTrie))
             }
             else -> throw RuntimeException("unknown block store type: $type")
         }
@@ -166,7 +162,7 @@ open class Start {
         val root = accountTrie.init(engine.alloc, engine.bios, engine.builtins)
         val g = engine.genesisBlock
         repoSrv.writer.use { it.saveGenesis(g.copy(header = g.header.impl.copy(stateRoot = root))) }
-        transactionPool.setEngine(engine)
+        transactionPool.init()
         return engine
     }
 
