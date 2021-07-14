@@ -1,6 +1,5 @@
 package org.tdf.sunflower.facade
 
-import com.google.common.cache.Cache
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.types.PendingData
@@ -19,8 +18,7 @@ interface TransactionPool {
         return collect(rd, setOf(tx))
     }
 
-    // pop at most n packable transactions
-    // if limit < 0, pop all transactions
+
     fun pop(rd: RepositoryReader, parentHeader: Header, timestamp: Long): PendingData
 
     // recollect pending data
@@ -28,5 +26,5 @@ interface TransactionPool {
 
     fun current(): Backend?
 
-    val dropped: Cache<HexBytes, Dropped>
+    val dropped: Map<HexBytes, Dropped>
 }

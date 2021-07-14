@@ -11,5 +11,4 @@ data class Status @RlpCreator constructor(
     val genesisBlockHash: HexBytes,
     val prunedHeight: Long,
     val prunedHash: HexBytes,
-) {
-}
+)

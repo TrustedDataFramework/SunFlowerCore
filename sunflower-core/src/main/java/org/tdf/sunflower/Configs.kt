@@ -18,9 +18,7 @@ object ApplicationConstants {
 
 @ConfigurationProperties(prefix = "sunflower.consensus")
 @Component
-object ConsensusProperties : Properties() {
-    const val CONSENSUS_NAME = "name"
-}
+object ConsensusProperties : Properties()
 
 @ConfigurationProperties(prefix = "sunflower.database")
 @Component

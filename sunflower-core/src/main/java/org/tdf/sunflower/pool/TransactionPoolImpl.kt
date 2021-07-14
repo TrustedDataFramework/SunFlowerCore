@@ -51,10 +51,12 @@ class TransactionPoolImpl(
     private val writeLock = LogLock(lock.writeLock(), "tp-w")
 
     // dropped transactions
-    override val dropped: Cache<HexBytes, Dropped> =
+    val cache: Cache<HexBytes, Dropped> =
         CacheBuilder.newBuilder()
             .expireAfterWrite(config.expiredIn, TimeUnit.SECONDS)
             .build()
+
+    override val dropped: MutableMap<HexBytes, Dropped> get() = cache.asMap()
 
     private var parentHeader: Header? = null
 
@@ -109,7 +111,7 @@ class TransactionPoolImpl(
             waiting.removeIf {
                 val remove = (now - it.receivedAt) / 1000 > config.expiredIn
                 if (remove) {
-                    dropped.put(it.tx.hash, Dropped(it.tx, "transaction timeout"))
+                    dropped[it.tx.hash] = Dropped(it.tx, "transaction timeout")
                 }
                 remove
             }
@@ -131,7 +133,7 @@ class TransactionPoolImpl(
                     errors[tx.hash] = "transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}"
                     continue
                 }
-                val drop = dropped.asMap()[tx.hash]
+                val drop = dropped[tx.hash]
                 if (drop != null) {
                     errors[tx.hash] = drop.err
                     continue
@@ -170,7 +172,7 @@ class TransactionPoolImpl(
             }
 
             transactions.forEach { t ->
-                dropped.asMap()[t.hash]?.let { errors[t.hash] = it.second }
+                this.dropped[t.hash]?.let { errors[t.hash] = it.second }
             }
             if (newCollected.isNotEmpty())
                 eventBus.publish(NewTransactionsCollected(newCollected))
@@ -198,7 +200,7 @@ class TransactionPoolImpl(
             val prevNonce = ex.backend.getNonce(t.sender)
             if (t.nonce < prevNonce) {
                 it.remove()
-                dropped.asMap()[t.hash] = Pair(t, "nonce is too small")
+                this.dropped[t.hash] = Pair(t, "nonce is too small")
                 continue
             }
 
@@ -223,7 +225,7 @@ class TransactionPoolImpl(
 
                 if (res.gasUsed > blockGasLimit) {
                     it.remove()
-                    dropped.asMap()[t.hash] = Pair(t, "gas overflows block gas limit")
+                    this.dropped[t.hash] = Pair(t, "gas overflows block gas limit")
                     continue
                 }
 
@@ -245,7 +247,7 @@ class TransactionPoolImpl(
                 ex.gasUsed += res.gasUsed
                 it.remove()
             } catch (e: Exception) {
-                dropped.asMap()[t.hash] = Pair(t, e.message ?: "execute tx error")
+                this.dropped[t.hash] = Pair(t, e.message ?: "execute tx error")
                 it.remove()
             }
         }

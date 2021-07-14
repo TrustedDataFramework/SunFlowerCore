@@ -262,10 +262,10 @@ class JsonRpcImpl(
     override fun eth_getTransactionReceipt(transactionHash: String): TransactionReceiptDTO? {
         val hash = transactionHash.jsonHex.hex
 
-        val p = pool.dropped.asMap()[hash]
+        val p = pool.dropped[hash]
 
         if (p != null) {
-            return TransactionReceiptDTO.failed(p.first)
+            return TransactionReceiptDTO.failed(p.tx)
         }
 
         repo.reader.use { rd ->

@@ -11,7 +11,7 @@ import org.tdf.sunflower.facade.DatabaseStoreFactory
 @Component
 class DatabaseStoreFactoryImpl(private val config: DatabaseConfig) : DatabaseStoreFactory {
     private val created: MutableSet<Byte> = mutableSetOf()
-    private var base: DatabaseStore
+    private val base: DatabaseStore
     override val directory: String
         get() = config.directory
 
