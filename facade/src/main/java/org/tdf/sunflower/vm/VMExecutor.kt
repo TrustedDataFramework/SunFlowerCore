@@ -105,7 +105,7 @@ data class VMExecutor(
                 val receiver = callData.to
                 val create = callData.callType == CallType.CREATE
 
-                if(create && backend.getCodeSize(callData.to) != 0)
+                if (create && backend.getCodeSize(callData.to) != 0)
                     throw RuntimeException("contract collide")
 
                 when (callData.callType) {
@@ -288,16 +288,24 @@ data class VMExecutor(
         const val MAX_CALL_DEPTH = 8
         const val EVM_MAX_STACK_SIZE = 1024
 
-        fun create(rd: RepositoryReader, backend: Backend, ctx: CallContext, callData: CallData, gasLimit: Long): VMExecutor{
+        fun create(
+            rd: RepositoryReader,
+            backend: Backend,
+            ctx: CallContext,
+            callData: CallData,
+            gasLimit: Long
+        ): VMExecutor {
             var c = callData
             val n = backend.getNonce(ctx.origin)
             if (n != ctx.txNonce && callData.callType !== CallType.COINBASE)
                 throw RuntimeException("invalid nonce")
             if (callData.callType == CallType.CREATE)
-                c = callData.copy(to =  HashUtil.calcNewAddr(
-                    callData.caller.bytes,
-                    ctx.txNonce.bytes()
-                ).hex())
+                c = callData.copy(
+                    to = HashUtil.calcNewAddr(
+                        callData.caller.bytes,
+                        ctx.txNonce.bytes()
+                    ).hex()
+                )
             return VMExecutor(rd, backend, ctx, c, Limit(gasLimit), mutableListOf())
         }
 

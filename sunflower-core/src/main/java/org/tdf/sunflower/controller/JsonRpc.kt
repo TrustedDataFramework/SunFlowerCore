@@ -105,7 +105,11 @@ interface JsonRpc {
         var nonce: String? = null,
     ) {
         @JsonIgnore
-        fun toCallContext(nonce: Long?, chainId: Int, timestamp: Long = System.currentTimeMillis() / 1000): CallContext {
+        fun toCallContext(
+            nonce: Long?,
+            chainId: Int,
+            timestamp: Long = System.currentTimeMillis() / 1000
+        ): CallContext {
             return JsonRpcUtil.toCallContext(this, nonce, chainId, timestamp)
         }
 

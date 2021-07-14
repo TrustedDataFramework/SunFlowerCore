@@ -3,7 +3,10 @@ package org.tdf.sunflower.vm
 import org.tdf.common.store.Store
 import org.tdf.common.trie.Trie
 import org.tdf.common.types.Uint256
-import org.tdf.common.util.*
+import org.tdf.common.util.Address
+import org.tdf.common.util.HashUtil
+import org.tdf.common.util.HexBytes
+import org.tdf.common.util.sha3
 import org.tdf.sunflower.state.Account
 import org.tdf.sunflower.state.Builtin
 import org.tdf.sunflower.types.Header
@@ -198,7 +201,7 @@ class BackendImpl(
 
     override fun getCode(address: HexBytes): HexBytes {
         val ad = replace[address]
-        if(ad != null) {
+        if (ad != null) {
             println("repalce from $address to $ad")
             return getCode(ad)
         }

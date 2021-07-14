@@ -11,7 +11,6 @@ import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.IntSerializer
 import org.tdf.common.util.hex
-import org.tdf.sunflower.facade.ConsensusEngine
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.net.Peer

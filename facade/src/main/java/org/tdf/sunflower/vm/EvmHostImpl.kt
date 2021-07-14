@@ -83,7 +83,7 @@ class EvmHostImpl(private val executor: VMExecutor) : EvmHost {
     }
 
     override fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray, salt: ByteArray?): ByteArray {
-        val addr: HexBytes = if(salt == null) {
+        val addr: HexBytes = if (salt == null) {
             HashUtil.calcNewAddr(caller, backend.getNonce(caller.hex()).bytes()).hex()
         } else {
             HashUtil.calcSaltAddr(caller, createCode, salt).hex()

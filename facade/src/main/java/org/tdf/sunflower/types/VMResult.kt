@@ -2,7 +2,6 @@ package org.tdf.sunflower.types
 
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
-import org.tdf.sunflower.state.AddrUtil
 
 class VMResult(
     val gasUsed: Long = 0,

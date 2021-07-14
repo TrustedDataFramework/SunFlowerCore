@@ -43,7 +43,7 @@ interface Builtin {
     }
 }
 
-class LoggingContract: AbstractBuiltin(Constants.LOGGING_CONTRACT_ADDR) {
+class LoggingContract : AbstractBuiltin(Constants.LOGGING_CONTRACT_ADDR) {
     override val codeSize: Int = 1
     override fun call(
         rd: RepositoryReader,

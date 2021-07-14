@@ -60,10 +60,13 @@ class TransactionPoolImpl(
 
     // pending transaction
     private val pending: MutableList<WaitingInfo> = mutableListOf()
+
     // pending gas used
     private var pendingGas: Long = 0
+
     // pending state
     private var current: Backend? = null
+
     // pending timestamp
     private var timestamp: Long = 0
 
@@ -72,7 +75,11 @@ class TransactionPoolImpl(
 
     private fun resetInternal(best: Header) {
         parentHeader = best
-        timestamp = if (best.height == 0L) { System.currentTimeMillis() / 1000 } else { best.createdAt + conCfg.blockInterval }
+        timestamp = if (best.height == 0L) {
+            System.currentTimeMillis() / 1000
+        } else {
+            best.createdAt + conCfg.blockInterval
+        }
         pending.clear()
         current = trie.createBackend(best)
     }

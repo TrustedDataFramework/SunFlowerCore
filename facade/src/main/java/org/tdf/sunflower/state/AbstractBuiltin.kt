@@ -1,6 +1,9 @@
 package org.tdf.sunflower.state
 
-import org.tdf.common.util.*
+import org.tdf.common.util.FastByteComparisons
+import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
+import org.tdf.common.util.selector
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallContext

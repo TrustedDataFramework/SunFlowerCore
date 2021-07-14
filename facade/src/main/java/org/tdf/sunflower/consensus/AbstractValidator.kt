@@ -50,7 +50,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             if (!isCoinbase && !t.verifySig)
                 return fault("verify signature failed")
 
-            if(!isCoinbase && t.chainId != chainId)
+            if (!isCoinbase && t.chainId != chainId)
                 return fault("invalid chainId ${t.chainId}")
 
             isCoinbase = false

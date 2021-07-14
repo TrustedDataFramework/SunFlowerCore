@@ -2,7 +2,6 @@ package org.tdf.evm
 
 import java.io.PrintStream
 import java.math.BigInteger
-import java.nio.charset.StandardCharsets
 
 internal val emptyByteArray = ByteArray(0)
 internal val emptyAddress = ByteArray(20)
@@ -276,7 +275,7 @@ class Interpreter(
             return "0x" + this.toString(16)
         }
 
-    private fun ByteArray.sha3(): ByteArray{
+    private fun ByteArray.sha3(): ByteArray {
         val out = ByteArray(SlotUtils.SLOT_BYTE_ARRAY_SIZE)
         host.digest.digest(this, 0, this.size, out, 0)
         return out
@@ -466,7 +465,11 @@ class Interpreter(
         val value = stack.popBigInt()
         val off = stack.popU32()
         val size = stack.popU32()
-        val salt: ByteArray? = if(create2) { stack.popBytes() } else { null }
+        val salt: ByteArray? = if (create2) {
+            stack.popBytes()
+        } else {
+            null
+        }
         val input = memory.resizeAndCopy(off, size)
         val addr = host.create(callData.receipt, value, input, salt)
         stack.pushLeftPadding(addr)

@@ -1,7 +1,6 @@
 package org.tdf.sunflower.service
 
 import org.slf4j.LoggerFactory
-import org.springframework.context.ApplicationContext
 import org.tdf.common.event.EventBus
 import org.tdf.common.serialize.Codecs
 import org.tdf.common.store.Store
@@ -16,9 +15,11 @@ import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.types.*
 import java.util.*
 
-class RepositoryKVImpl(bus: EventBus,
-                       factory: DatabaseStoreFactory,
-                       accountTrie: AccountTrie) : AbstractRepository(
+class RepositoryKVImpl(
+    bus: EventBus,
+    factory: DatabaseStoreFactory,
+    accountTrie: AccountTrie
+) : AbstractRepository(
     bus, factory, accountTrie
 ) {
     // transaction hash -> transaction

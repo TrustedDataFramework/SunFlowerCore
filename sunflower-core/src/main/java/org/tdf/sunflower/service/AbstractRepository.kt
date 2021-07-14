@@ -14,7 +14,7 @@ abstract class AbstractRepository
     protected val eventBus: EventBus,
     protected val factory: DatabaseStoreFactory,
     protected val accountTrie: AccountTrie,
-    ) : RepositoryReader, RepositoryWriter {
+) : RepositoryReader, RepositoryWriter {
 
 
     var genesisCache: Block? = null
