@@ -19,8 +19,8 @@ interface StateTrie<ID, S> {
     // init genesis states
     fun init(
         alloc: Map<HexBytes, Account>,
-        bios: List<BuiltinContract>,
-        builtins: List<BuiltinContract>
+        bios: List<Builtin>,
+        builtins: List<Builtin>
     ): HexBytes
 
     val trie: Trie<ID, S>

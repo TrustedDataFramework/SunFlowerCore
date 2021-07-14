@@ -3,7 +3,7 @@ package org.tdf.sunflower.vm
 import org.tdf.common.store.Store
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
-import org.tdf.sunflower.state.BuiltinContract
+import org.tdf.sunflower.state.Builtin
 
 interface Backend : AutoCloseable {
     fun subBalance(addr: HexBytes, amount: Uint256) {
@@ -53,8 +53,8 @@ interface Backend : AutoCloseable {
         return gas
     }
 
-    val builtins: Map<HexBytes, BuiltinContract>
-    val bios: Map<HexBytes, BuiltinContract>
+    val builtins: Map<HexBytes, Builtin>
+    val bios: Map<HexBytes, Builtin>
     fun dbSet(address: HexBytes, key: HexBytes, value: HexBytes)
 
     // return empty byte array if key not found

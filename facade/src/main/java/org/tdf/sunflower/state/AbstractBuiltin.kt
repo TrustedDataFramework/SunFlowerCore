@@ -1,21 +1,16 @@
 package org.tdf.sunflower.state
 
-import org.tdf.common.util.FastByteComparisons
-import org.tdf.common.util.HexBytes
-import org.tdf.common.util.hex
-import org.tdf.common.util.selector
+import org.tdf.common.util.*
 import org.tdf.sunflower.facade.RepositoryReader
-import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.vm.abi.Abi
 
-abstract class AbstractBuiltIn protected constructor(
-    override var address: HexBytes,
-    protected var accounts: StateTrie<HexBytes, Account>,
-    protected var repo: RepositoryService
-) : BuiltinContract {
+
+abstract class AbstractBuiltin protected constructor(
+    override val address: HexBytes,
+) : Builtin {
 
     private fun getSelector(data: HexBytes): ByteArray {
         return data.bytes.selector()
@@ -37,14 +32,13 @@ abstract class AbstractBuiltIn protected constructor(
         return abi.findFunction { it.name == method }!!
     }
 
-    override fun view(rd: RepositoryReader, blockHash: HexBytes, method: String, vararg args: Any): List<*> {
-        val parent = rd.getHeaderByHash(blockHash)!!
+    override fun view(rd: RepositoryReader, backend: Backend, method: String, vararg args: Any): List<*> {
         val func = getFunction(method)
         val encoded = func.encode(*args)
         val callData = CallData(data = encoded.hex())
         return call(
             rd,
-            accounts.createBackend(parent, isStatic = true),
+            backend,
             CallContext(),
             callData,
             method,

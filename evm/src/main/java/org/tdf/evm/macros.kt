@@ -10,3 +10,4 @@ internal fun String.ascii(): ByteArray{
 internal fun ByteArray.int(off: Int, len: Int): Int {
     return BigInteger(this.sliceArray(off until off + len)).intValueExact()
 }
+

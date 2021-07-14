@@ -21,10 +21,9 @@ import java.util.*
 class Authentication(
     private val nodes: Collection<HexBytes>,
     address: HexBytes,
-    accounts: StateTrie<HexBytes, Account>,
-    repo: RepositoryService,
+    private val accounts: StateTrie<HexBytes, Account>,
     private val config: ConsensusConfig
-) : AbstractBuiltIn(address, accounts, repo) {
+) : AbstractBuiltin(address) {
 
     override val abi: Abi
         get() = Authentication.abi
@@ -111,7 +110,8 @@ class Authentication(
     }
 
     fun getProposer(rd: RepositoryReader, parentHash: HexBytes, now: Long): Proposer {
-        val li = view(rd, parentHash, "getProposer", BigInteger.valueOf(now))
+        val parent = rd.getHeaderByHash(parentHash) ?: throw RuntimeException("header $parentHash not found")
+        val li = view(rd, accounts.createBackend(parent, isStatic = true), "getProposer", BigInteger.valueOf(now))
         val address = li[0] as ByteArray
         val start = li[1] as BigInteger
         val end = li[2] as BigInteger

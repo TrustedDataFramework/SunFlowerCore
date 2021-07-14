@@ -8,11 +8,12 @@ import org.tdf.common.util.*;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.facade.RepositoryReader;
 import org.tdf.sunflower.facade.RepositoryService;
-import org.tdf.sunflower.state.AbstractBuiltIn;
+import org.tdf.sunflower.state.AbstractBuiltin;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.Constants;
 import org.tdf.sunflower.state.StateTrie;
 import org.tdf.sunflower.types.ConsensusConfig;
+import org.tdf.sunflower.types.Header;
 import org.tdf.sunflower.vm.Backend;
 import org.tdf.sunflower.vm.CallContext;
 import org.tdf.sunflower.vm.CallData;
@@ -31,7 +32,7 @@ interface PowBios {
 }
  */
 @Slf4j(topic = "pow")
-public class PoWBios extends AbstractBuiltIn {
+public class PoWBios extends AbstractBuiltin {
     public static final String ABI_JSON = "[{\"inputs\":[],\"name\":\"nbits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"update\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]";
     public static final Abi ABI = Abi.fromJson(ABI_JSON);
     public static final Abi.Function UPDATE = ABI.findFunction(f -> f.name.equals("update"));
@@ -44,11 +45,12 @@ public class PoWBios extends AbstractBuiltIn {
     private final Uint256 genesisNbits;
 
     private final ConsensusConfig config;
+    private final StateTrie<HexBytes, Account> accounts;
 
     public PoWBios(HexBytes nbits, ConsensusConfig config,
-                   StateTrie<HexBytes, Account> accounts,
-                   RepositoryService repository) {
-        super(Constants.POW_BIOS_ADDR, accounts, repository);
+                   StateTrie<HexBytes, Account> accounts) {
+        super(Constants.POW_BIOS_ADDR);
+        this.accounts = accounts;
         this.genesisNbits = Uint256.of(nbits.getBytes());
         this.config = config;
     }
@@ -57,7 +59,8 @@ public class PoWBios extends AbstractBuiltIn {
         RepositoryReader rd,
         HexBytes parentHash
     ) {
-        List<?> r = view(rd, parentHash, "nbits");
+        Header parent = rd.getHeaderByHash(parentHash);
+        List<?> r = view(rd, accounts.createBackend(parent, true, parent.getStateRoot()), "nbits");
         return Uint256.of((BigInteger) r.get(0));
     }
 

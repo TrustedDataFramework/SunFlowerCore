@@ -5,7 +5,7 @@ import org.tdf.common.store.Store
 import org.tdf.common.trie.Trie
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.state.Account
-import org.tdf.sunflower.state.BuiltinContract
+import org.tdf.sunflower.state.Builtin
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.ConsensusConfig
@@ -45,9 +45,9 @@ abstract class AbstractConsensusEngine : ConsensusEngine {
     open val alloc: Map<HexBytes, Account>
         get() = emptyMap()
 
-    open val builtins: List<BuiltinContract>
+    open val builtins: List<Builtin>
         get() = emptyList()
-    open val bios: List<BuiltinContract>
+    open val bios: List<Builtin>
         get() = emptyList()
 
 

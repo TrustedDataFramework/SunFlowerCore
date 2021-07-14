@@ -9,10 +9,9 @@ import org.tdf.common.store.PrefixStore
 import org.tdf.common.store.Store
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.*
-import org.tdf.sunflower.consensus.pos.ascii
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.state.AccountTrie
-import org.tdf.sunflower.state.BuiltinContract
+import org.tdf.sunflower.state.Builtin
 import org.tdf.sunflower.state.Constants
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallContext
@@ -23,7 +22,7 @@ import java.util.*
 import java.util.AbstractMap.SimpleImmutableEntry
 import java.util.function.Predicate
 
-class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : BuiltinContract {
+class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : Builtin {
     lateinit var accountTrie: AccountTrie
 
     private fun getValue(stateRoot: HexBytes, key: HexBytes): HexBytes? {

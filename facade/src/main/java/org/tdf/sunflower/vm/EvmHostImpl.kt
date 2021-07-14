@@ -40,6 +40,11 @@ class EvmHostImpl(private val executor: VMExecutor) : EvmHost {
         return backend.getCode(addr.hex()).bytes
     }
 
+    override fun getCodeSize(addr: ByteArray): Int {
+        val b = backend.builtins[addr.hex()] ?: return getCode(addr).size
+        return b.codeSize
+    }
+
 
     override fun call(
         caller: ByteArray,
@@ -50,12 +55,12 @@ class EvmHostImpl(private val executor: VMExecutor) : EvmHost {
         staticCall: Boolean,
     ): ByteArray {
         val cd = CallData(caller.hex(), value.u256(), receipt.hex(), CallType.CALL, input.hex())
-        var ex = executor.clone().copy(callData = cd)
+        val ex = executor.clone().copy(callData = cd)
 
         if (staticCall) {
             // since static call will not modify states, no needs to merge
             val backend = executor.backend.createChild(true)
-            ex = ex.copy(backend = backend)
+            return ex.copy(backend = backend).executeInternal()
         }
         return ex.executeInternal()
     }
@@ -87,6 +92,6 @@ class EvmHostImpl(private val executor: VMExecutor) : EvmHost {
     }
 
     override fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>) {
-        executor.logs.add(LogInfo(contract.hex(), topics.map { it.hex().h256() }, data.hex()))
+        executor.logs.add(LogInfo(contract.hex(), topics.map { it.hex() }, data.hex()))
     }
 }

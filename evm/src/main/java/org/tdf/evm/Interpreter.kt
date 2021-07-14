@@ -43,6 +43,8 @@ interface EvmHost {
 
     fun getCode(addr: ByteArray): ByteArray
 
+    fun getCodeSize(addr: ByteArray): Int
+
     fun call(
         caller: ByteArray,
         receipt: ByteArray,
@@ -167,7 +169,7 @@ class Interpreter(
                 OpCodes.RETURNDATASIZE -> stack.pushInt(ret.size)
                 OpCodes.RETURNDATACOPY -> stack.dataCopy(memory, ret)
                 OpCodes.GASPRICE -> stack.push(ctx.gasPrice)
-                OpCodes.EXTCODESIZE -> stack.pushInt(host.getCode(stack.popAddress()).size)
+                OpCodes.EXTCODESIZE -> stack.pushInt(host.getCodeSize(stack.popAddress()))
                 OpCodes.EXTCODECOPY -> stack.dataCopy(memory, host.getCode(stack.popAddress()))
 
                 OpCodes.EXTCODEHASH -> {
@@ -177,8 +179,8 @@ class Interpreter(
                     stack.pushLeftPadding(bytes)
                 }
 
-                OpCodes.BLOCKHASH, OpCodes.COINBASE -> throw RuntimeException("unsupported op code")
-                OpCodes.TIMESTAMP -> throw RuntimeException("unsupported op code")
+                OpCodes.BLOCKHASH, OpCodes.COINBASE -> throw RuntimeException("unsupported op code $op")
+                OpCodes.TIMESTAMP -> throw RuntimeException("unsupported op code $op")
                 OpCodes.NUMBER -> stack.pushLong(ctx.number)
                 OpCodes.DIFFICULTY -> stack.push(ctx.difficulty)
                 OpCodes.GASLIMIT -> stack.push(SlotUtils.NEGATIVE_ONE)
@@ -247,7 +249,7 @@ class Interpreter(
                 }
                 OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> call(op)
                 OpCodes.CREATE -> create()
-                else -> throw RuntimeException("unhandled op ${OpCodes.nameOf(op)}")
+                else -> throw RuntimeException("unsupported op $op")
             }
             afterExecute()
             pc++
@@ -271,11 +273,17 @@ class Interpreter(
             return "0x" + this.toString(16)
         }
 
+    private fun ByteArray.sha3(): ByteArray{
+        val out = ByteArray(SlotUtils.SLOT_BYTE_ARRAY_SIZE)
+        host.digest.digest(this, 0, this.size, out, 0)
+        return out
+    }
 
     private fun logInfo() {
         vmLog?.let {
             it.println("go pc = $pc input = ${callData.input.hex()} code size = ${callData.code.size} caller = ${callData.caller.hex()} receipt = ${callData.receipt.hex()} value = ${callData.value}")
             it.println("code = ${callData.code.hex()}")
+            it.println("code hash = ${callData.code.sha3().hex()}")
         }
     }
 

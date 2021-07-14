@@ -7,7 +7,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.state.Account;
 import org.tdf.sunflower.state.AccountTrie;
-import org.tdf.sunflower.state.BuiltinContract;
+import org.tdf.sunflower.state.Builtin;
 import org.tdf.sunflower.types.ConsensusConfig;
 
 import java.util.*;
@@ -41,7 +41,7 @@ public class PoS extends AbstractConsensusEngine {
     }
 
     @Override
-    public List<BuiltinContract> getBuiltins() {
+    public List<Builtin> getBuiltins() {
         return Collections.singletonList(minerContract);
     }
 

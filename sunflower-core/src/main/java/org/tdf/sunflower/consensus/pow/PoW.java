@@ -8,7 +8,7 @@ import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.BuiltinContract;
+import org.tdf.sunflower.state.Builtin;
 import org.tdf.sunflower.types.Block;
 import org.tdf.sunflower.types.ConsensusConfig;
 
@@ -50,7 +50,7 @@ public class PoW extends AbstractConsensusEngine {
     }
 
     @Override
-    public List<BuiltinContract> getBios() {
+    public List<Builtin> getBios() {
         return Collections.singletonList(bios);
     }
 
@@ -59,7 +59,7 @@ public class PoW extends AbstractConsensusEngine {
     public void init(ConsensusConfig config) {
         this.config = config;
         genesis = new Genesis(config.getGenesisJson());
-        this.bios = new PoWBios(genesis.getNbits(), config, getAccountTrie(), getRepo());
+        this.bios = new PoWBios(genesis.getNbits(), config, getAccountTrie());
         setGenesisBlock(genesis.getBlock());
 
         setValidator(new PoWValidator(this));

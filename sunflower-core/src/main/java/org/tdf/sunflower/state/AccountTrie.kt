@@ -22,8 +22,8 @@ class AccountTrie(
 ) : AbstractStateTrie<HexBytes, Account>() {
     override val trie: Trie<HexBytes, Account>
 
-    var bios: Map<HexBytes, BuiltinContract> = emptyMap()
-    var builtins: Map<HexBytes, BuiltinContract> = emptyMap()
+    var bios: Map<HexBytes, Builtin> = emptyMap()
+    var builtins: Map<HexBytes, Builtin> = emptyMap()
 
     override val trieStore: Store<ByteArray, ByteArray>
 
@@ -62,8 +62,8 @@ class AccountTrie(
 
     override fun init(
         alloc: Map<HexBytes, Account>,
-        bios: List<BuiltinContract>,
-        builtins: List<BuiltinContract>
+        bios: List<Builtin>,
+        builtins: List<Builtin>
     ): HexBytes {
         this.builtins = builtins.associateBy { it.address }
         this.bios = bios.associateBy { it.address }

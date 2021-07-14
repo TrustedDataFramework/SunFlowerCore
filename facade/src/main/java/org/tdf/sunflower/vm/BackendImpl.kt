@@ -3,11 +3,9 @@ package org.tdf.sunflower.vm
 import org.tdf.common.store.Store
 import org.tdf.common.trie.Trie
 import org.tdf.common.types.Uint256
-import org.tdf.common.util.HashUtil
-import org.tdf.common.util.HexBytes
-import org.tdf.common.util.sha3
+import org.tdf.common.util.*
 import org.tdf.sunflower.state.Account
-import org.tdf.sunflower.state.BuiltinContract
+import org.tdf.sunflower.state.Builtin
 import org.tdf.sunflower.types.Header
 
 // backend for mining
@@ -18,8 +16,8 @@ class BackendImpl(
     private val contractStorageTrie: Trie<HexBytes, HexBytes>,
     private val modifiedAccounts: MutableMap<HexBytes, Account> = mutableMapOf(),
     private val modifiedStorage: MutableMap<HexBytes, MutableMap<HexBytes, HexBytes>> = mutableMapOf(),
-    override val builtins: Map<HexBytes, BuiltinContract> = mutableMapOf(),
-    override val bios: Map<HexBytes, BuiltinContract> = mutableMapOf(),
+    override val builtins: Map<HexBytes, Builtin> = mutableMapOf(),
+    override val bios: Map<HexBytes, Builtin> = mutableMapOf(),
     override val staticCall: Boolean,
     // address -> code
     private val codeStore: Store<HexBytes, HexBytes>,
@@ -199,6 +197,11 @@ class BackendImpl(
     }
 
     override fun getCode(address: HexBytes): HexBytes {
+        val ad = replace[address]
+        if(ad != null) {
+            println("repalce from $address to $ad")
+            return getCode(ad)
+        }
         val a = lookup(address)
         if (a.contractHash == HashUtil.EMPTY_DATA_HASH_HEX)
             return HexBytes.empty()
@@ -211,5 +214,11 @@ class BackendImpl(
         val a = lookup(address).copy(contractHash = code.sha3())
         modifiedAccounts[address] = a
         codeCache[address] = code
+    }
+
+    companion object {
+        val replace: MutableMap<Address, Address> = mutableMapOf()
+        init {
+        }
     }
 }

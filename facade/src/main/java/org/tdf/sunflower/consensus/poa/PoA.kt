@@ -17,7 +17,7 @@ class PoA : AbstractConsensusEngine() {
 
 
     lateinit var minerContract: Authentication
-    override val builtins: MutableList<BuiltinContract> = mutableListOf()
+    override val builtins: MutableList<Builtin> = mutableListOf()
 
     override val alloc: Map<HexBytes, Account>
         get() = genesis.alloc
@@ -32,11 +32,10 @@ class PoA : AbstractConsensusEngine() {
             genesis.miners,
             Constants.POA_AUTHENTICATION_ADDR,
             accountTrie,
-            repo,
             this.config
         )
         builtins.add(minerContract)
-        builtins.add(LoggingContract(accountTrie, repo))
+        builtins.add(LoggingContract())
         miner = PoAMiner(this)
         validator = PoAValidator(accountTrie, this)
     }
