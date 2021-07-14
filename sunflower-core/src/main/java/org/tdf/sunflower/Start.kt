@@ -38,6 +38,7 @@ import org.tdf.sunflower.types.ConsensusConfig
 import org.tdf.sunflower.types.PropertyReader
 import org.tdf.sunflower.util.FileUtils
 import org.tdf.sunflower.util.MapperUtil
+import org.tdf.sunflower.vm.BackendImpl
 import org.tdf.sunflower.vm.VMExecutor
 import java.io.File
 import java.net.URL
@@ -261,6 +262,7 @@ open class Start {
 
         private fun loadConstants(env: Environment) {
             AppConfig.INSTANCE = AppConfig(env)
+            BackendImpl.replace.putAll(AppConfig.INSTANCE.replace)
         }
 
         private fun loadLibs(path: String) {

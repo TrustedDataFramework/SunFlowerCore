@@ -91,7 +91,7 @@ class JsonRpcImpl(
         return repo.reader.use { it.bestHeader.height.jsonHex }
     }
 
-    private fun getBackendByBlockId(blockId: String, isStatic: Boolean): Backend {
+    private fun getBackendByBlockId(blockId: String, staticCall: Boolean): Backend {
         val header: Header
         repo.reader.use { rd ->
             when (blockId.trim()) {
@@ -103,7 +103,7 @@ class JsonRpcImpl(
                     if (e == null) {
                         header = rd.bestHeader
                     } else {
-                        return e.createChild(isStatic)
+                        return e.createChild(staticCall)
                     }
                 }
                 "earliest" -> header = rd.genesis.header
@@ -111,7 +111,7 @@ class JsonRpcImpl(
                     header = rd.getCanonicalHeader(blockId.jsonHex.long)!!
                 }
             }
-            return accountTrie.createBackend(header, isStatic)
+            return accountTrie.createBackend(parent = header, staticCall = staticCall)
         }
     }
 

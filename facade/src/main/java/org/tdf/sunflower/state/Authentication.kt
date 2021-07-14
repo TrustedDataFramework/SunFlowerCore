@@ -3,7 +3,6 @@ package org.tdf.sunflower.state
 import org.tdf.common.util.*
 import org.tdf.sunflower.consensus.Proposer
 import org.tdf.sunflower.facade.RepositoryReader
-import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.state.AddrUtil.empty
 import org.tdf.sunflower.types.ConsensusConfig
 import org.tdf.sunflower.types.Header
@@ -111,7 +110,7 @@ class Authentication(
 
     fun getProposer(rd: RepositoryReader, parentHash: HexBytes, now: Long): Proposer {
         val parent = rd.getHeaderByHash(parentHash) ?: throw RuntimeException("header $parentHash not found")
-        val li = view(rd, accounts.createBackend(parent, isStatic = true), "getProposer", BigInteger.valueOf(now))
+        val li = view(rd, accounts.createBackend(parent, staticCall = true), "getProposer", BigInteger.valueOf(now))
         val address = li[0] as ByteArray
         val start = li[1] as BigInteger
         val end = li[2] as BigInteger

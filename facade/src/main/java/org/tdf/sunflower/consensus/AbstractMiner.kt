@@ -34,7 +34,7 @@ abstract class AbstractMiner(
         parent: Block,
         createdAt: Long = System.currentTimeMillis() / 1000
     ): BlockCreateResult {
-        val (txs, rs, current) = pool.pop(parent.header)
+        val (txs, rs, current) = pool.pop(rd, parent.header, createdAt)
         val zipped = txs.zip(rs)
         val receipts = rs.toMutableList()
 
@@ -47,7 +47,7 @@ abstract class AbstractMiner(
         // get a trie at parent block's state
         // modifications to the trie will not persisted until flush() called
         val coinbase = createCoinBase(parent.height + 1)
-        val tmp = current ?: accountTrie.createBackend(parent.header, false, parent.stateRoot)
+        val tmp = current ?: accountTrie.createBackend(parent = parent.header)
 
         val totalFee = zipped
             .map { it.first.gasPrice * it.second.gasUsed.u256() }
@@ -58,7 +58,7 @@ abstract class AbstractMiner(
         val c = coinbase.copy(value = coinbase.value + totalFee)
         val body = txs.toMutableList()
         body.add(0, c)
-        val ctx = CallContext.fromTx(c, chainId)
+        val ctx = CallContext.fromTx(c, chainId, createdAt)
         val callData = CallData.fromTx(c, true)
 
 

@@ -24,9 +24,6 @@ abstract class AbstractGenesis(protected var parsed: JsonNode) {
     val gasLimit: Long
         get() = parsed["gasLimit"]?.asLong() ?: 0
 
-    val gasLimitHex: HexBytes
-        get() = HexBytes.fromBytes(ByteUtil.longToBytesNoLeadZeroes(gasLimit))
-
     val alloc: Map<HexBytes, Account>
         get() {
             val alloc = parsed["alloc"] ?: return emptyMap()

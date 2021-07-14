@@ -13,7 +13,6 @@ import org.tdf.lotusvm.ModuleInstance
 import org.tdf.lotusvm.runtime.ResourceFactory.createMemory
 import org.tdf.lotusvm.runtime.ResourceFactory.createStack
 import org.tdf.sunflower.facade.RepositoryReader
-import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.types.LogInfo
 import org.tdf.sunflower.types.VMResult
 import org.tdf.sunflower.vm.ModuleValidator.validate
@@ -104,7 +103,11 @@ data class VMExecutor(
                 // if call context is evm, else web assembly
                 val isWasm: Boolean
                 val receiver = callData.to
-                val create = callData.callType === CallType.CREATE
+                val create = callData.callType == CallType.CREATE
+
+                if(create && backend.getCodeSize(callData.to) != 0)
+                    throw RuntimeException("contract collide")
+
                 when (callData.callType) {
                     CallType.CREATE -> {
                         isWasm = isWasm(callData.data.bytes)
@@ -112,11 +115,11 @@ data class VMExecutor(
                         // increase sender nonce
                         val n = backend.getNonce(callData.caller)
                         if (isWasm) {
-                            create(callData.data.bytes).use { tmpModule ->
+                            create(callData.data.bytes).use {
                                 // validate module
-                                validate(tmpModule, false)
+                                validate(it, false)
                                 code = dropInit(callData.data.bytes)
-                                data = extractInitData(tmpModule)
+                                data = extractInitData(it)
                                 backend.setCode(receiver, code.hex())
                             }
                         } else {
@@ -139,12 +142,12 @@ data class VMExecutor(
                         isWasm = isWasm(code)
                     }
                     CallType.DELEGATE -> {
-                        val hash = backend.getContractHash(callData.delegateAddr)
+                        val hash = backend.getContractHash(callData.address)
                         // this is a transfer transaction
                         code = if (hash == HashUtil.EMPTY_DATA_HASH_HEX) {
                             HexBytes.EMPTY_BYTES
                         } else {
-                            CACHE[hash, { backend.getCode(callData.delegateAddr).bytes }]
+                            CACHE[hash, { backend.getCode(callData.address).bytes }]
                         }
                         data = callData.data.bytes
                         isWasm = isWasm(code)
@@ -174,6 +177,7 @@ data class VMExecutor(
             number = backend.height,
             chainId = ctx.chainId,
             gasPrice = ctx.gasPrice.value,
+            timestamp = ctx.timestamp
         )
         val host = EvmHostImpl(this)
         val interpreter =

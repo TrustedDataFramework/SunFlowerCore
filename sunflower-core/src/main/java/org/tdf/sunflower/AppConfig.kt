@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import org.springframework.core.env.Environment
 import org.tdf.common.crypto.ECKey
 import org.tdf.common.types.Uint256
+import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.sunflower.facade.PropertyLike
 import org.tdf.sunflower.types.ConsensusConfig
 import org.tdf.sunflower.types.PropertyReader
@@ -52,13 +54,30 @@ class AppConfig(private val properties: PropertyLike) {
     val p2pTransactionCacheSize: Int = reader.getAsInt("sunflower.cache.p2p.transaction")
     val p2pProposalCacheSize: Int = reader.getAsInt("sunflower.cache.p2p.proposal")
 
-    val blockGasLimit: Long by lazy {
+    val genesisJson: JsonNode by lazy {
         val objectMapper = MapperUtil.OBJECT_MAPPER
             .enable(JsonParser.Feature.ALLOW_COMMENTS)
         val `in` = FileUtils.getInputStream(
             properties.getProperty("sunflower.consensus.genesis")
         )
-        val n = objectMapper.readValue(`in`, JsonNode::class.java)
+        return@lazy objectMapper.readValue(`in`, JsonNode::class.java)
+    }
+
+    val replace: Map<HexBytes, HexBytes> by lazy {
+        val n = genesisJson
+        val alloc = n["replace"] ?: return@lazy emptyMap()
+        val r: MutableMap<HexBytes, HexBytes> = mutableMapOf()
+        val it = alloc.fieldNames()
+        while (it.hasNext()) {
+            val k = it.next()
+            val v = alloc[k].asText()
+            r[k.hex()] = v.hex()
+        }
+        return@lazy r
+    }
+
+    val blockGasLimit: Long by lazy {
+        val n = genesisJson
         if (n["gasLimit"] == null) ConsensusConfig.DEFAULT_BLOCK_GAS_LIMIT else n["gasLimit"].asLong()
     }
 

@@ -30,21 +30,17 @@ class AccountTrie(
 
     override fun createBackend(
         parent: Header,
-        isStatic: Boolean,
+        staticCall: Boolean,
         root: HexBytes,
     ): Backend {
         return BackendImpl(
-            parent,
-            null,
-            trie.revert(root),
-            contractStorageTrie,
-            mutableMapOf(),
-            mutableMapOf(),
-            builtins,
-            bios,
-            isStatic,
-            contractCodeStore,
-            mutableMapOf(),
+            parent = parent,
+            trie = trie.revert(root),
+            contractStorageTrie = contractStorageTrie,
+            builtins = builtins,
+            bios = bios,
+            staticCall = staticCall,
+            codeStore = contractCodeStore,
         )
     }
 

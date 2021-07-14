@@ -1,6 +1,7 @@
 package org.tdf.sunflower.vm
 
 import org.tdf.common.types.Uint256
+import org.tdf.common.util.Address
 import org.tdf.common.util.HashUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.state.AddrUtil
@@ -12,28 +13,32 @@ data class CallContext(
     val txNonce: Long = 0,
     val gasPrice: Uint256 = Uint256.ZERO,
     val chainId: Int = 0,
+    val timestamp: Long = 0,
 ) {
     companion object {
         @JvmStatic
-        fun fromTx(tx: Transaction, chainId: Int = tx.chainId ?: 0): CallContext {
+        fun fromTx(tx: Transaction, chainId: Int = tx.chainId ?: 0, timestamp: Long = 0): CallContext {
             return CallContext(
                 tx.sender,
                 tx.hash,
                 tx.nonce,
                 tx.gasPrice,
-                chainId
+                chainId,
+                timestamp
             )
         }
     }
 }
 
 data class CallData(
-    val caller: HexBytes = AddrUtil.empty(),
+    val caller: Address = AddrUtil.empty(),
     val value: Uint256 = Uint256.ZERO,
-    val to: HexBytes = AddrUtil.empty(),
+    val to: Address = AddrUtil.empty(),
     val callType: CallType = CallType.COINBASE,
     val data: HexBytes = HexBytes.empty(),
-    val delegateAddr: HexBytes = AddrUtil.empty()
+    // for delegate call, address is the delegate address
+    // for create and create2, address is the address of new contract
+    val address: Address = AddrUtil.empty()
 ) {
 
     fun clone(): CallData {

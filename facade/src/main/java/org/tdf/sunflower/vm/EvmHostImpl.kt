@@ -41,8 +41,7 @@ class EvmHostImpl(private val executor: VMExecutor) : EvmHost {
     }
 
     override fun getCodeSize(addr: ByteArray): Int {
-        val b = backend.builtins[addr.hex()] ?: return getCode(addr).size
-        return b.codeSize
+        return backend.getCodeSize(addr.hex())
     }
 
 
@@ -83,8 +82,12 @@ class EvmHostImpl(private val executor: VMExecutor) : EvmHost {
         TODO("Not yet implemented")
     }
 
-    override fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray): ByteArray {
-        val addr = HashUtil.calcNewAddr(caller, backend.getNonce(caller.hex()).bytes()).hex()
+    override fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray, salt: ByteArray?): ByteArray {
+        val addr: HexBytes = if(salt == null) {
+            HashUtil.calcNewAddr(caller, backend.getNonce(caller.hex()).bytes()).hex()
+        } else {
+            HashUtil.calcSaltAddr(caller, createCode, salt).hex()
+        }
         val cd = CallData(caller.hex(), value.u256(), addr, CallType.CREATE, createCode.hex())
         val ex = executor.clone().copy(callData = cd)
         ex.executeInternal()

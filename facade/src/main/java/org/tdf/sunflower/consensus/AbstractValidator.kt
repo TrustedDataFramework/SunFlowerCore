@@ -46,9 +46,12 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             } catch (e: Exception) {
                 return fault(e.message!!)
             }
-            if (!isCoinbase && !t.verifySig) {
+            if (!isCoinbase && !t.verifySig)
                 return fault("verify signature failed")
-            }
+
+            if(!isCoinbase && t.chainId != chainId)
+                return fault("invalid chainId ${t.chainId}")
+
             isCoinbase = false
         }
         if (!parent.isParentOf(block) || parent.height + 1 != block.height) {
@@ -62,7 +65,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
         }
         var totalFee = Uint256.ZERO
         val results: MutableMap<HexBytes, VMResult> = mutableMapOf()
-        val currentBackend = accountTrie.createBackend(parent.header, false, parent.stateRoot)
+        val currentBackend = accountTrie.createBackend(parent = parent.header)
         var currentGas: Long = 0
         val receipts: MutableList<TransactionReceipt> = mutableListOf()
         try {
@@ -73,7 +76,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                 val executor = VMExecutor.create(
                     rd,
                     currentBackend,
-                    CallContext.fromTx(tx),
+                    CallContext.fromTx(tx, timestamp = block.createdAt),
                     CallData.fromTx(tx, false),
                     Math.min(blockGasLimit - currentGas, tx.gasLimit)
                 )
@@ -94,10 +97,11 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                 VMExecutor.create(
                     rd,
                     currentBackend,
-                    CallContext.fromTx(coinbase, chainId),
+                    CallContext.fromTx(coinbase, chainId, block.createdAt),
                     CallData.fromTx(coinbase, true),
                     0
                 )
+
             val r = executor.execute()
             currentGas += r.gasUsed
 

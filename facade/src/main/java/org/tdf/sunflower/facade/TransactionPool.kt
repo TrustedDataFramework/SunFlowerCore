@@ -16,7 +16,7 @@ interface TransactionPool {
 
     // pop at most n packable transactions
     // if limit < 0, pop all transactions
-    fun pop(parentHeader: Header): PendingData
+    fun pop(rd: RepositoryReader, parentHeader: Header, timestamp: Long): PendingData
 
     // recollect pending data
     fun reset(parent: Header)

@@ -2,6 +2,7 @@ package org.tdf.sunflower.vm
 
 import org.tdf.common.store.Store
 import org.tdf.common.types.Uint256
+import org.tdf.common.util.Address
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.state.Builtin
 
@@ -27,6 +28,11 @@ interface Backend : AutoCloseable {
     val trieRoot: HexBytes
     val parentHash: HexBytes
     fun getBalance(address: HexBytes): Uint256
+
+    fun getCodeSize(address: Address): Int {
+        val b = builtins[address] ?: return getCode(address).size
+        return b.codeSize
+    }
 
     // only used for bios contract
     fun setBalance(address: HexBytes, balance: Uint256)

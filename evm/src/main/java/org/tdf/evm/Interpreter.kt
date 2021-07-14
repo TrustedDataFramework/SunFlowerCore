@@ -19,6 +19,7 @@ class EvmContext(
     val difficulty: BigInteger = BigInteger.ZERO,
     // gas price
     val gasPrice: BigInteger = BigInteger.ZERO,
+    val timestamp: Long = 0
 )
 
 /**
@@ -64,9 +65,10 @@ interface EvmHost {
     fun drop(address: ByteArray)
 
     /**
-     * create contract, return the address of new contract
+     * create contract, return the address of new contract, execute create2 when salt is nonnull
      */
-    fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray): ByteArray
+    fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray, salt: ByteArray? = null): ByteArray
+
 
     fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>)
 }
@@ -180,7 +182,7 @@ class Interpreter(
                 }
 
                 OpCodes.BLOCKHASH, OpCodes.COINBASE -> throw RuntimeException("unsupported op code $op")
-                OpCodes.TIMESTAMP -> throw RuntimeException("unsupported op code $op")
+                OpCodes.TIMESTAMP -> stack.pushLong(ctx.timestamp)
                 OpCodes.NUMBER -> stack.pushLong(ctx.number)
                 OpCodes.DIFFICULTY -> stack.push(ctx.difficulty)
                 OpCodes.GASLIMIT -> stack.push(SlotUtils.NEGATIVE_ONE)
@@ -249,6 +251,7 @@ class Interpreter(
                 }
                 OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> call(op)
                 OpCodes.CREATE -> create()
+                OpCodes.CREATE2 -> create(true)
                 else -> throw RuntimeException("unsupported op $op")
             }
             afterExecute()
@@ -459,12 +462,14 @@ class Interpreter(
         }
     }
 
-    fun create() {
+    fun create(create2: Boolean = false) {
         val value = stack.popBigInt()
         val off = stack.popU32()
         val size = stack.popU32()
+        val salt: ByteArray? = if(create2) { stack.popBytes() } else { null }
         val input = memory.resizeAndCopy(off, size)
-        stack.pushLeftPadding(host.create(callData.receipt, value, input))
+        val addr = host.create(callData.receipt, value, input, salt)
+        stack.pushLeftPadding(addr)
     }
 
     fun call(op: Int) {

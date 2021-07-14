@@ -31,7 +31,7 @@ interface StateTrie<ID, S> {
 
     fun createBackend(
         parent: Header,
-        isStatic: Boolean = false,
-        root: HexBytes = parent.stateRoot
+        staticCall: Boolean = false,
+        root: HexBytes = parent.stateRoot,
     ): Backend
 }

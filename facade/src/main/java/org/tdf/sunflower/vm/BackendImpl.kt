@@ -218,7 +218,5 @@ class BackendImpl(
 
     companion object {
         val replace: MutableMap<Address, Address> = mutableMapOf()
-        init {
-        }
     }
 }
