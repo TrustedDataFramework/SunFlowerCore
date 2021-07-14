@@ -28,7 +28,7 @@ public class Node {
     // if hash is not null, resolve rlp encoded from db
     private byte[] hash;
     // for lazy load, read only
-    private Store<byte[], byte[]> readOnlyCache;
+    private final Store<byte[], byte[]> readOnlyCache;
     // if node is branch node, the length of children is 17
     // the first 16 element is children, and the 17th element is value
     // if node is extension node or leaf node, the length of children is 2

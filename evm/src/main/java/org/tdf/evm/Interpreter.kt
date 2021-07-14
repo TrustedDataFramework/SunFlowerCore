@@ -90,9 +90,6 @@ class Interpreter(
     private val memory = MemoryImpl(maxMemorySize)
     private var ret: ByteArray = emptyByteArray
 
-    var reverted: Boolean = false
-        private set
-
     var op: Int = 0
 
     private var memOff: Long = 0

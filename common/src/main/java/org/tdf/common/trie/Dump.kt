@@ -12,8 +12,4 @@ internal class Dump : ScannerAction {
         }
         return true
     }
-
-    fun getPairs(): Map<HexBytes, HexBytes> {
-        return pairs
-    }
 }
