@@ -509,9 +509,7 @@ class Interpreter(
 
 
         memory.resize(retOff, retSize)
-        if (retSize.toInt() != ret.size)
-            throw RuntimeException("unexpected return size")
-        memory.write(retOff.toInt(), ret, 0, retSize.toInt())
+        memory.write(retOff.toInt(), ret, 0, Math.min(retSize.toInt(), ret.size))
         stack.pushOne()
     }
 }
