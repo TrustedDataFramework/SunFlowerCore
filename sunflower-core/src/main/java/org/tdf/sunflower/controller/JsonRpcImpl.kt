@@ -312,7 +312,10 @@ class JsonRpcImpl(
     }
 
     fun JsonNode.addresses(): List<Address> {
-        return Start.MAPPER.convertValue(this, Array<String>::class.java).map { it.address() }
+        if (isArray)
+            return Start.MAPPER.convertValue(this, Array<String>::class.java).map { it.address() }
+        require(!isObject) { "invalid address format: $this" }
+        return listOf(asText().address())
     }
 
     fun JsonNode.h256s(): List<H256> {
@@ -320,43 +323,29 @@ class JsonRpcImpl(
     }
 
     override fun eth_getLogs(fr: JsonRpc.FilterRequest): List<Any> {
-        return CompletableFuture.supplyAsync { eth_getLogs_internal(fr) }
+        return CompletableFuture.supplyAsync { getLogsInternal(fr) }
             .get(cfg.rpcTimeOut.toLong(), TimeUnit.SECONDS)
     }
 
-    private fun eth_getLogs_internal(fr: JsonRpc.FilterRequest): List<Any> {
-        println(fr)
-
-        val addrs: List<Address>? = if (fr.address != null) {
-            if (fr.address.isArray) {
-                fr.address.addresses()
-            } else {
-                require(!fr.address.isObject) { "invalid address format: ${fr.address}" }
-                listOf(fr.address.asText().address())
-            }
-        } else {
-            null
-        }
+    private fun getLogsInternal(fr: JsonRpc.FilterRequest): List<Any> {
+        val addrs: List<Address>? = fr.address?.addresses()
 
         val topics: MutableList<List<H256>> = mutableListOf()
 
-        if (fr.topics != null) {
-            fr.topics.forEach {
-                if (it == null) {
-                    return@forEach
-                }
-                if (it.isArray) {
-                    topics.add(it.h256s())
-                    return@forEach
-                }
-                if (it.isObject)
-                    throw RuntimeException("invalid topic $it")
-                topics.add(listOf(it.asText().h256()))
+        fr.topics?.forEach {
+            if (it == null) {
+                return@forEach
             }
+            if (it.isArray) {
+                topics.add(it.h256s())
+                return@forEach
+            }
+            if (it.isObject)
+                throw RuntimeException("invalid topic $it")
+            topics.add(listOf(it.asText().h256()))
         }
 
         val f = LogFilterV2(addrs, topics)
-
         val blockFrom: Block?
         val blockTo: Block?
         val logs: MutableList<JsonRpc.LogFilterElement> = mutableListOf()
