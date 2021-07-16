@@ -14,6 +14,7 @@ import org.tdf.common.types.Hashed
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.*
 import org.tdf.sunflower.facade.RepositoryReader
+import org.tdf.sunflower.facade.receipt
 import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.types.TxUtils.*
 import java.math.BigInteger
@@ -528,7 +529,7 @@ data class LogFilterV2(val address: List<Address>?, val topics: List<List<H256>>
 
 
     init {
-        if (topics.any { it.isEmpty() })
+        if (topics.any { it.isEmpty() } || topics.sumOf { it.size } == 0)
             throw RuntimeException("invalid topics: empty list found")
     }
 
@@ -548,11 +549,11 @@ data class LogFilterV2(val address: List<Address>?, val topics: List<List<H256>>
         r
     }
 
-    val blooms: List<Bloom> by lazy {
+    private val blooms: List<Bloom> by lazy {
         infos.map { it.bloom }
     }
 
-    fun onReceipt(infoIdx: Int, tx: Transaction, r: TransactionReceipt, b: Block, txIdx: Int, cb: OnLogMatch) {
+    private fun onReceipt(infoIdx: Int, tx: Transaction, r: TransactionReceipt, b: Block, txIdx: Int, cb: OnLogMatch) {
         val bl = blooms[infoIdx]
         if (!bl.belongsTo(r.bloom))
             return
@@ -564,8 +565,8 @@ data class LogFilterV2(val address: List<Address>?, val topics: List<List<H256>>
     }
 
 
-    fun onTx(infoIdx: Int, rd: RepositoryReader, b: Block, tx: Transaction, i: Int, cb: OnLogMatch) {
-        val r = rd.getTransactionInfo(tx.hash)!!.first.receipt
+    private fun onTx(infoIdx: Int, rd: RepositoryReader, b: Block, tx: Transaction, i: Int, cb: OnLogMatch) {
+        val r = rd.getTransactionInfo(tx.hash)!!.receipt
         onReceipt(infoIdx, tx, r, b, i, cb)
     }
 

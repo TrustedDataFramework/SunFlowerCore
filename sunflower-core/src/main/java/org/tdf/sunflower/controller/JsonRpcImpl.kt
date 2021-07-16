@@ -382,7 +382,6 @@ class JsonRpcImpl(
                 for (i in blockFrom.height..bTo.height) {
                     val b = rd.getCanonicalBlock(i) ?: throw RuntimeException("header at $i not found")
                     f.onBlock(rd, b) { info, bk, txIdx, tx, logIdx ->
-                        println(info)
                         logs.add(JsonRpc.LogFilterElement.create(info, bk, txIdx, tx, logIdx))
                     }
                 }
