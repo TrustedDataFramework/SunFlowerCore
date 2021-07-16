@@ -11,6 +11,9 @@ dependencies {
     compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"
     compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-properties:${jacksonVersion}"
     compileOnly "com.google.guava:guava:${guavaVersion}"
+
+    testImplementation "com.google.guava:guava:${guavaVersion}"
+
     implementation "org.tdf:lotusvm:${lotusvmVersion}"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}"
     api "org.apache.commons:commons-lang3:${commonsLang3Version}"

@@ -5,4 +5,5 @@ object Constants {
     const val BLOOM_SIZE = 256
     const val NONCE_SIZE = 8
     const val DEFAULT_CHAIN_ID = 102
+    const val ADDRESS_SIZE = 20
 }

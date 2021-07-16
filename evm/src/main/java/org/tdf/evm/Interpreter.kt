@@ -183,6 +183,7 @@ class Interpreter(
                 OpCodes.DIFFICULTY -> stack.push(ctx.difficulty)
                 OpCodes.GASLIMIT -> stack.push(SlotUtils.NEGATIVE_ONE)
                 OpCodes.CHAINID -> stack.pushInt(ctx.chainId)
+                OpCodes.SELFBALANCE -> stack.push(host.getBalance(callData.receipt))
                 OpCodes.POP -> stack.drop()
                 OpCodes.MLOAD -> stack.mload(memory)
                 OpCodes.MSTORE -> stack.mstore(memory)

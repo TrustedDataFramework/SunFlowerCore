@@ -1,12 +1,49 @@
 package org.tdf.common.util
 
 import com.github.salpadding.rlpstream.Rlp
-import org.tdf.common.types.Constants
+import org.tdf.common.types.Constants.ADDRESS_SIZE
 import org.tdf.common.types.Constants.WORD_SIZE
 import org.tdf.common.types.Uint256
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
+class Permutation<T> (private val col: List<List<T>>) {
+    init {
+        if(col.any { it.isEmpty() })
+            throw RuntimeException("invalid permutation: empty list found")
+    }
+
+    private val indices = IntArray(col.size)
+    private val max = col.map { it.size - 1 }.toIntArray()
+    private var eof = false
+
+
+    fun next(): List<T>? {
+        if(eof)
+            return null
+        eof = indices.contentEquals(max)
+        val r = mutableListOf<T>()
+
+        for(i in indices.indices) {
+            r.add(col[i][indices[i]])
+        }
+        inc()
+        return r
+    }
+
+    private fun inc() {
+        var carry = 1
+        for(i in indices.indices) {
+            if(indices[i] == max[i] && carry == 1) {
+                indices[i] = 0
+                carry = 1
+            } else {
+                indices[i] += carry
+                carry = 0
+            }
+        }
+    }
+}
 
 /**
  * abi encoded selector part
@@ -34,7 +71,7 @@ fun <T> HexBytes.decode(clazz: Class<T>): T {
 }
 
 fun HexBytes.h256(): H256 {
-    if (this.size != Constants.WORD_SIZE)
+    if (this.size != WORD_SIZE)
         throw RuntimeException("invalid word size")
     return this
 }
@@ -69,6 +106,20 @@ fun String.hex(): HexBytes {
 
 fun String.u256(): Uint256 {
     return Uint256.of(this.hex().bytes)
+}
+
+fun String.h256(): HexBytes {
+    val r = this.hex()
+    if(r.size != WORD_SIZE)
+        throw RuntimeException("invalid hash $this size = ${r.size}")
+    return r
+}
+
+fun String.address(): Address {
+    val r = this.hex()
+    if(r.size != ADDRESS_SIZE)
+        throw RuntimeException("invalid address $this size = ${r.size}")
+    return r
 }
 
 fun String.ascii(): ByteArray {

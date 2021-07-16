@@ -283,6 +283,8 @@ object OpCodes {
 
     const val CHAINID = 0x46
 
+    const val SELFBALANCE = 0x47
+
     /**
      * (0x50) Remove item from stack
      */
@@ -992,6 +994,7 @@ object OpCodes {
 
         NAMES[GASLIMIT] = "GASLIMIT"
         NAMES[CHAINID] = "CHAINID"
+        NAMES[SELFBALANCE] = "SELFBALANCE"
 
         // ========================
         // Memory, Storage and Flow Operations

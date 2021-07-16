@@ -247,6 +247,7 @@ class TransactionPoolImpl(
                 ex.gasUsed += res.gasUsed
                 it.remove()
             } catch (e: Exception) {
+                e.printStackTrace()
                 this.dropped[t.hash] = Pair(t, e.message ?: "execute tx error")
                 it.remove()
             }

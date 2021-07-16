@@ -1,6 +1,8 @@
 package org.tdf.sunflower.controller
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.databind.JsonNode
+import org.tdf.common.util.H256
 import org.tdf.sunflower.controller.JsonRpcUtil.toCallData
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.LogInfo
@@ -49,7 +51,7 @@ interface JsonRpc {
 
     fun eth_call(args: CallArguments, bnOrId: String): String
 
-    fun eth_estimateGas(args: CallArguments?): String
+    fun eth_estimateGas(args: CallArguments): String
 
     fun eth_getBlockByHash(blockHash: String, fullTx: Boolean?): BlockResult?
 
@@ -82,7 +84,7 @@ interface JsonRpc {
     fun eth_getFilterLogs(id: String?): Array<Any?>?
 
 
-    fun eth_getLogs(fr: FilterRequest?): Array<Any?>?
+    fun eth_getLogs(fr: FilterRequest): List<Any>
 
     //    String eth_resend();
     //    String eth_pendingTransactions();
@@ -95,14 +97,14 @@ interface JsonRpc {
     fun personal_signAndSendTransaction(tx: CallArguments?, password: String?): String?
 
     data class CallArguments(
-        var from: String? = null,
-        var to: String? = null,
-        var gas: String? = null,
-        var gasPrice: String? = null,
-        var value: String? = null,
-        var data // compiledCode
+        val from: String? = null,
+        val to: String? = null,
+        val gas: String? = null,
+        val gasPrice: String? = null,
+        val value: String? = null,
+        val data // compiledCode
         : String? = null,
-        var nonce: String? = null,
+        val nonce: String? = null,
     ) {
         @JsonIgnore
         fun toCallContext(
@@ -169,11 +171,11 @@ interface JsonRpc {
 
 
     data class FilterRequest(
-        var fromBlock: String? = null,
-        var toBlock: String? = null,
-        var address: Any? = null,
-        var topics: Array<Any> = emptyArray(),
-        var blockHash // EIP-234: makes fromBlock = toBlock = blockHash
+        val fromBlock: String? = null,
+        val toBlock: String? = null,
+        val address: JsonNode? = null,
+        val topics: List<JsonNode?>? = null,
+        val blockHash // EIP-234: makes fromBlock = toBlock = blockHash
         : String? = null,
     )
 

@@ -87,6 +87,7 @@ class AppConfig(private val properties: PropertyLike) {
     val isVmDebug: Boolean = reader.getAsBool("sunflower.vm.debug")
     val isTrieSecure: Boolean = reader.getAsBool("sunflower.trie.secure")
     val chainId: Int get() = genesisJson["chainId"]?.asInt() ?: Constants.DEFAULT_CHAIN_ID
+    val rpcTimeOut: Int get() = reader.getAsInt("sunflower.rpc.timeout", Int.MAX_VALUE)
 
     companion object {
         fun get(): AppConfig {

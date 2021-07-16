@@ -2,6 +2,7 @@ package org.tdf.sunflower.state
 
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallContext
@@ -53,7 +54,11 @@ class LoggingContract : AbstractBuiltin(Constants.LOGGING_CONTRACT_ADDR) {
         method: String,
         vararg args: Any
     ): List<*> {
-        println(args[0])
+        val a = args[0]
+        when(a) {
+            is String -> println(a)
+            is ByteArray -> println(a.hex())
+        }
         return emptyList<Any>()
     }
 
@@ -74,7 +79,19 @@ class LoggingContract : AbstractBuiltin(Constants.LOGGING_CONTRACT_ADDR) {
         "outputs": [],
         "stateMutability": "pure",
         "type": "function"
-    }
+    },
+    {
+        "inputs": [
+            {
+                "name": "arg",
+                "type": "address"
+            }
+        ],
+        "name": "log",
+        "outputs": [],
+        "stateMutability": "pure",
+        "type": "function"
+    }    
 ]
         """
         val ABI = Abi.fromJson(abiJson)

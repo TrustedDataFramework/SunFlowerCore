@@ -13,6 +13,7 @@ import org.tdf.common.types.Constants.WORD_SIZE
 import org.tdf.common.types.Hashed
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.*
+import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.types.TxUtils.*
 import java.math.BigInteger
@@ -50,6 +51,15 @@ interface Header : Chained {
     val receiptsRoot: H256
 
     /**
+     * Block -> Transaction[]
+     * Transaction -> LogInfo[]
+     * LogInfo -> address, topic[]
+     *
+     * topic[].bloom() = topic[].map { it.sha3().bloom() }.reduce { x, y -> x | y }
+     * LogInfo.bloom() = address.sha3().bloom() | topic[].bloom()
+     * Transaction.bloom() = LogInfo[].map { it.bloom() }.reduce{ x, y -> x | y }
+     * Block.bloom() = Transaction[].map { it.bloom() }.reduce{ x, y -> x | y }
+     *
      * logs bloom
      */
     val logsBloom: H2048
@@ -146,7 +156,11 @@ data class HeaderImpl @RlpCreator constructor(
      * receipts root
      */
     override val receiptsRoot: H256 = HashUtil.EMPTY_TRIE_HASH_HEX,
+
+
     /**
+     * Log(address, topics)
+     *
      * logs bloom
      */
     override val logsBloom: H2048 = Bloom.EMPTY,
@@ -499,3 +513,62 @@ data class TransactionIndex @RlpCreator constructor(
     val blockHash: HexBytes,
     val i: Int,
 )
+
+typealias Topics = List<H256>
+
+data class LogFilterV2(val address: List<Address>, val topics: List<List<H256>>) {
+    init {
+        if (topics.any { it.isEmpty() })
+            throw RuntimeException("invalid topics: empty list found")
+    }
+
+    val infos: List<LogInfo> by lazy {
+        val p = Permutation(topics)
+        val r: MutableList<LogInfo> = mutableListOf()
+        while (true) {
+            val n = p.next() ?: break
+            address.forEach {
+                r.add(LogInfo(it, n))
+            }
+        }
+        r
+    }
+
+    val blooms: List<Bloom> by lazy {
+        infos.map{ it.bloom }
+    }
+
+    fun onReceipt(infoIdx: Int, tx: Transaction, r: TransactionReceipt, b: Block, txIdx: Int, cb: OnLogMatch) {
+        val bl = blooms[infoIdx]
+        if(!bl.belongsTo(r.bloom))
+            return
+        for (i in r.logInfoList.indices) {
+            val info = r.logInfoList[i]
+            if (!bl.belongsTo(info.bloom)) continue
+            cb.onLogMatch(info, b, txIdx, tx, i)
+        }
+    }
+
+
+    fun onTx(infoIdx: Int, rd: RepositoryReader, b: Block, tx: Transaction, i: Int, cb: OnLogMatch) {
+        val r = rd.getTransactionInfo(tx.hash)!!.first.receipt
+        onReceipt(infoIdx, tx, r, b, i, cb)
+    }
+
+    fun onBlock(rd: RepositoryReader, b: Block, cb: OnLogMatch) {
+        val logsBloom = Bloom(b.logsBloom.bytes)
+
+        for(i in blooms.indices) {
+            if(!blooms[i].belongsTo(logsBloom))
+                continue
+            for (j in b.body.indices) {
+                onTx(i, rd, b, b.body[j], j, cb)
+            }
+        }
+
+    }
+}
+
+fun interface OnLogMatch {
+    fun onLogMatch(info: LogInfo, b: Block, txIdx: Int, tx: Transaction, logIdx: Int)
+}

@@ -45,10 +45,22 @@ public class Bloom {
         }
     }
 
+    // this or other = this <=> other <= this
     public boolean matches(Bloom topicBloom) {
         Bloom copied = copy();
         copied.or(topicBloom);
         return this.equals(copied);
+    }
+
+    // x | y = y => y contains x
+    public boolean belongsTo(Bloom other) {
+        for (int i = 0; i < data.length; i++) {
+            int x = data[i] & 0xff;
+            int y = other.data[i] & 0xff;
+            if ((x | y) != y)
+                return false;
+        }
+        return true;
     }
 
     public byte[] getData() {

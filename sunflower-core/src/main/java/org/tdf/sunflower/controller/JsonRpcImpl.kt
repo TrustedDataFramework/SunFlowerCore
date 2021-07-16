@@ -1,19 +1,22 @@
 package org.tdf.sunflower.controller
 
+import com.fasterxml.jackson.databind.JsonNode
 import org.springframework.stereotype.Service
-import org.tdf.common.util.sha3
+import org.tdf.common.util.*
 import org.tdf.sunflower.AppConfig
+import org.tdf.sunflower.Start
 import org.tdf.sunflower.controller.JsonRpc.BlockResult
 import org.tdf.sunflower.controller.JsonRpc.CallArguments
 import org.tdf.sunflower.facade.*
 import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.state.AddrUtil
-import org.tdf.sunflower.types.Block
-import org.tdf.sunflower.types.Header
-import org.tdf.sunflower.types.Transaction
+import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.VMExecutor
 import java.math.BigInteger
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 
 @Service
@@ -21,9 +24,10 @@ class JsonRpcImpl(
     private val accountTrie: AccountTrie,
     private val repo: RepositoryService,
     private val pool: TransactionPool,
-    private val engine: ConsensusEngine,
     private val cfg: AppConfig
 ) : JsonRpc {
+    val filterCnt = AtomicInteger(1)
+
     private fun getByJsonBlockId(id: String): Block? {
         return repo.reader.use {
             when (id.trim().lowercase()) {
@@ -201,10 +205,10 @@ class JsonRpcImpl(
         }
     }
 
-    override fun eth_estimateGas(args: CallArguments?): String {
+    override fun eth_estimateGas(args: CallArguments): String {
         getBackendByBlockId("latest", false).use { backend ->
             repo.reader.use { rd ->
-                val callData = args!!.toCallData()
+                val callData = args.toCallData()
                 val executor = VMExecutor.create(
                     rd,
                     backend,
@@ -307,8 +311,83 @@ class JsonRpcImpl(
         return arrayOfNulls(0)
     }
 
-    override fun eth_getLogs(fr: JsonRpc.FilterRequest?): Array<Any?>? {
-        return arrayOfNulls(0)
+    fun JsonNode.addresses(): List<Address> {
+        return Start.MAPPER.convertValue(this, Array<String>::class.java).map { it.address() }
+    }
+
+    fun JsonNode.h256s(): List<H256> {
+        return Start.MAPPER.convertValue(this, Array<String>::class.java).map { it.h256() }
+    }
+
+    override fun eth_getLogs(fr: JsonRpc.FilterRequest): List<Any> {
+        return CompletableFuture.supplyAsync { eth_getLogs_internal(fr) }
+            .get(cfg.rpcTimeOut.toLong(), TimeUnit.SECONDS)
+    }
+
+    private fun eth_getLogs_internal(fr: JsonRpc.FilterRequest): List<Any> {
+        println(fr)
+
+        val addrs: List<Address> = if (fr.address != null) {
+            if (fr.address.isArray) {
+                fr.address.addresses()
+            } else {
+                require(!fr.address.isObject) { "invalid address format: ${fr.address}" }
+                listOf(fr.address.asText().address())
+            }
+        } else {
+            throw RuntimeException("address is empty")
+        }
+
+        val topics: MutableList<List<H256>> = mutableListOf()
+
+        if (fr.topics != null) {
+            fr.topics.forEach {
+                if (it == null) {
+                    return@forEach
+                }
+                if (it.isArray) {
+                    topics.add(it.h256s())
+                    return@forEach
+                }
+                if (it.isObject)
+                    throw RuntimeException("invalid topic $it")
+                topics.add(listOf(it.asText().h256()))
+            }
+        }
+
+        val f = LogFilterV2(addrs, topics)
+
+        val blockFrom: Block?
+        val blockTo: Block?
+        val logs: MutableList<JsonRpc.LogFilterElement> = mutableListOf()
+
+        repo.reader.use { rd ->
+            if (fr.blockHash != null) {
+                val b =
+                    rd.getBlockByHash(fr.blockHash.h256()) ?: throw RuntimeException("block ${fr.blockHash} not found")
+                blockFrom = b
+                val canonical = rd.getCanonicalHeader(b.height)!!
+                if (b.hash != canonical.hash) {
+                    throw RuntimeException("block ${fr.blockHash} is not canonical")
+                }
+                blockTo = blockFrom
+            } else {
+                blockFrom = fr.fromBlock?.let { getByJsonBlockId(it) }
+                blockTo = fr.toBlock?.let { getByJsonBlockId(it) }
+            }
+
+            if (blockFrom != null) {
+                val bTo = blockTo ?: rd.bestBlock
+
+                for (i in blockFrom.height..bTo.height) {
+                    val b = rd.getCanonicalBlock(i) ?: throw RuntimeException("header at $i not found")
+                    f.onBlock(rd, b) { info, bk, txIdx, tx, logIdx ->
+                        logs.add(JsonRpc.LogFilterElement.create(info, bk, txIdx, tx, logIdx))
+                    }
+                }
+            }
+        }
+        return logs
     }
 
     override fun eth_getWork(): List<Any?>? {
