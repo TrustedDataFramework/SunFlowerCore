@@ -514,33 +514,47 @@ data class TransactionIndex @RlpCreator constructor(
     val i: Int,
 )
 
-typealias Topics = List<H256>
+data class LogFilterV2(val address: List<Address>?, val topics: List<List<H256>>) {
+    internal class MockInfo(val address: Address? = null, val topics: List<H256>) {
+        val bloom: Bloom by lazy {
+            val ret = address?.bytes?.sha3()?.let { Bloom.create(it) } ?: Bloom()
+            for (topic in topics) {
+                ret.or(Bloom.create(topic.sha3().bytes))
+            }
+            ret
+        }
 
-data class LogFilterV2(val address: List<Address>, val topics: List<List<H256>>) {
+    }
+
+
     init {
         if (topics.any { it.isEmpty() })
             throw RuntimeException("invalid topics: empty list found")
     }
 
-    val infos: List<LogInfo> by lazy {
+    private val infos: List<MockInfo> by lazy {
         val p = Permutation(topics)
-        val r: MutableList<LogInfo> = mutableListOf()
+        val r: MutableList<MockInfo> = mutableListOf()
         while (true) {
             val n = p.next() ?: break
-            address.forEach {
-                r.add(LogInfo(it, n))
+            if (address == null) {
+                r.add(MockInfo(topics = n))
+            } else {
+                address.forEach {
+                    r.add(MockInfo(it, n))
+                }
             }
         }
         r
     }
 
     val blooms: List<Bloom> by lazy {
-        infos.map{ it.bloom }
+        infos.map { it.bloom }
     }
 
     fun onReceipt(infoIdx: Int, tx: Transaction, r: TransactionReceipt, b: Block, txIdx: Int, cb: OnLogMatch) {
         val bl = blooms[infoIdx]
-        if(!bl.belongsTo(r.bloom))
+        if (!bl.belongsTo(r.bloom))
             return
         for (i in r.logInfoList.indices) {
             val info = r.logInfoList[i]
@@ -558,8 +572,8 @@ data class LogFilterV2(val address: List<Address>, val topics: List<List<H256>>)
     fun onBlock(rd: RepositoryReader, b: Block, cb: OnLogMatch) {
         val logsBloom = Bloom(b.logsBloom.bytes)
 
-        for(i in blooms.indices) {
-            if(!blooms[i].belongsTo(logsBloom))
+        for (i in blooms.indices) {
+            if (!blooms[i].belongsTo(logsBloom))
                 continue
             for (j in b.body.indices) {
                 onTx(i, rd, b, b.body[j], j, cb)

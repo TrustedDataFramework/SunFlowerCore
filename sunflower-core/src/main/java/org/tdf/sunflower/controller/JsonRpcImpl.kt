@@ -327,7 +327,7 @@ class JsonRpcImpl(
     private fun eth_getLogs_internal(fr: JsonRpc.FilterRequest): List<Any> {
         println(fr)
 
-        val addrs: List<Address> = if (fr.address != null) {
+        val addrs: List<Address>? = if (fr.address != null) {
             if (fr.address.isArray) {
                 fr.address.addresses()
             } else {
@@ -335,7 +335,7 @@ class JsonRpcImpl(
                 listOf(fr.address.asText().address())
             }
         } else {
-            throw RuntimeException("address is empty")
+            null
         }
 
         val topics: MutableList<List<H256>> = mutableListOf()
@@ -382,6 +382,7 @@ class JsonRpcImpl(
                 for (i in blockFrom.height..bTo.height) {
                     val b = rd.getCanonicalBlock(i) ?: throw RuntimeException("header at $i not found")
                     f.onBlock(rd, b) { info, bk, txIdx, tx, logIdx ->
+                        println(info)
                         logs.add(JsonRpc.LogFilterElement.create(info, bk, txIdx, tx, logIdx))
                     }
                 }
