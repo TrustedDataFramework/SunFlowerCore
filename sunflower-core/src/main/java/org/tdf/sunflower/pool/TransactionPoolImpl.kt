@@ -29,7 +29,6 @@ import javax.annotation.PostConstruct
 import kotlin.concurrent.withLock
 import kotlin.math.min
 
-
 @Component
 class TransactionPoolImpl(
     private val eventBus: EventBus,

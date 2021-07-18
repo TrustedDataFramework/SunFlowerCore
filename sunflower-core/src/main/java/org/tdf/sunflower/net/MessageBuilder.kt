@@ -7,6 +7,7 @@ import org.tdf.common.util.sha3
 import org.tdf.sunflower.proto.*
 import org.tdf.sunflower.proto.Nothing
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.min
 
 class MessageBuilder(val self: PeerImpl, private val config: PeerServerConfig) {
     private val nonce = AtomicLong()
@@ -55,7 +56,7 @@ class MessageBuilder(val self: PeerImpl, private val config: PeerServerConfig) {
         val total = serialized.size / config.maxPacketSize +
                 if (serialized.size % config.maxPacketSize == 0) 0 else 1
         while (remained > 0) {
-            val size = Math.min(remained, config.maxPacketSize)
+            val size = min(remained, config.maxPacketSize)
             val bodyBytes = ByteArray(size)
             System.arraycopy(serialized, current, bodyBytes, 0, size)
             builder.body = ByteString.copyFrom(bodyBytes)

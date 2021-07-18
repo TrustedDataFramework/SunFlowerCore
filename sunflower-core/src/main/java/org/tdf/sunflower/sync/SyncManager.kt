@@ -32,6 +32,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.locks.ReentrantLock
 import javax.annotation.PostConstruct
 import kotlin.math.abs
+import kotlin.math.min
 
 /**
  * sync manager for full-nodes
@@ -199,7 +200,7 @@ class SyncManager(
                     val blocks = it.getBlocksBetween(
                         getBlocks.startHeight,
                         getBlocks.stopHeight,
-                        Math.min(syncConfig.maxBlocksTransfer, getBlocks.limit),
+                        min(syncConfig.maxBlocksTransfer, getBlocks.limit),
                         getBlocks.descend
                     )
                     context.response(SyncMessage.encode(SyncMessage.BLOCKS, blocks))

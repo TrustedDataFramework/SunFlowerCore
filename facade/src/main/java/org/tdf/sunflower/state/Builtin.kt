@@ -10,7 +10,7 @@ import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.vm.abi.Abi
 
 interface Builtin {
-    val codeSize: Int get() = 0
+    val codeSize: Int get() = 1
     val address: HexBytes
     val genesisStorage: Map<HexBytes, HexBytes>
         get() = emptyMap()
@@ -45,7 +45,6 @@ interface Builtin {
 }
 
 class LoggingContract : AbstractBuiltin(Constants.LOGGING_CONTRACT_ADDR) {
-    override val codeSize: Int = 1
     override fun call(
         rd: RepositoryReader,
         backend: Backend,

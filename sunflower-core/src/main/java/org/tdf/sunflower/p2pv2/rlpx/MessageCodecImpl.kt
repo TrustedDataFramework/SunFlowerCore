@@ -19,6 +19,7 @@ import org.tdf.sunflower.p2pv2.p2p.P2PMessageDecoder
 import org.tdf.sunflower.p2pv2.server.Channel
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.min
 
 @Component
 class MessageCodecImpl(val cfg: AppConfig) : MessageCodec(), Loggers {
@@ -160,7 +161,7 @@ class MessageCodecImpl(val cfg: AppConfig) : MessageCodec(), Loggers {
         val bytes: ByteArray = Rlp.encode(msg)
         var curPos = 0
         while (curPos < bytes.size) {
-            val newPos = Math.min(curPos + maxFramePayloadSize, bytes.size)
+            val newPos = min(curPos + maxFramePayloadSize, bytes.size)
             val frameBytes =
                 if (curPos == 0 && newPos == bytes.size) bytes else Arrays.copyOfRange(bytes, curPos, newPos)
             ret.add(Frame(code, frameBytes))

@@ -7,6 +7,14 @@ import org.tdf.common.types.Uint256
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
+fun Int.min(other: Int): Int {
+    return if(this < other) { this } else { other }
+}
+
+fun Long.min(other: Long): Long {
+    return if(this < other) { this } else { other }
+}
+
 class Permutation<T> (private val col: List<List<T>>) {
     init {
         if(col.any { it.isEmpty() })
