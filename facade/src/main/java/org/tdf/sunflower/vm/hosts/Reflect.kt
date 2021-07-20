@@ -1,6 +1,7 @@
 package org.tdf.sunflower.vm.hosts
 
 import org.tdf.common.util.HexBytes
+import org.tdf.common.util.hex
 import org.tdf.lotusvm.Module
 import org.tdf.lotusvm.runtime.HostFunction
 import org.tdf.lotusvm.types.FunctionType
@@ -26,12 +27,7 @@ class Reflect(private val executor: VMExecutor) : HostFunction("_reflect", FUNCT
                 Module.create(code.bytes).use {
                     ModuleValidator.validate(it, true)
                     // drop init code
-                    executor
-                        .backend
-                        .setCode(
-                            executor.callData.to,
-                            HexBytes.fromBytes(WBI.dropInit(code.bytes))
-                        )
+                    executor.backend.setCode(executor.callData.to, WBI.dropInit(code.bytes).hex())
                     return 0
                 }
             }

@@ -130,24 +130,18 @@ data class VMExecutor(
                         // increase nonce here to avoid conflicts
                         backend.setNonce(callData.caller, n + 1)
                     }
-                    CallType.CALL -> {
-                        val hash = backend.getContractHash(receiver)
+                    CallType.CALL, CallType.DELEGATE -> {
+                        val codeAddr = if (callData.callType == CallType.DELEGATE) {
+                            callData.delegate
+                        } else {
+                            receiver
+                        }
+                        val hash = backend.getContractHash(codeAddr)
                         // this is a transfer transaction
                         code = if (hash == HashUtil.EMPTY_DATA_HASH_HEX) {
                             HexBytes.EMPTY_BYTES
                         } else {
                             CACHE[hash, { backend.getCode(receiver).bytes }]
-                        }
-                        data = callData.data.bytes
-                        isWasm = isWasm(code)
-                    }
-                    CallType.DELEGATE -> {
-                        val hash = backend.getContractHash(callData.delegate)
-                        // this is a transfer transaction
-                        code = if (hash == HashUtil.EMPTY_DATA_HASH_HEX) {
-                            HexBytes.EMPTY_BYTES
-                        } else {
-                            CACHE[hash, { backend.getCode(callData.delegate).bytes }]
                         }
                         data = callData.data.bytes
                         isWasm = isWasm(code)

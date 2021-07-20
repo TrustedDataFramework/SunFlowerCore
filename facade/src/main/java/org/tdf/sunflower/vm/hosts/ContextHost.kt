@@ -26,9 +26,9 @@ class ContextHost(
     }
 
     object ContextType {
-        const val THIS_ADDRESS: Long = 0x644836c2
-        const val MSG_SENDER: Long = 0xb2f2618c
-        const val MSG_VALUE: Long = 0x6db8129b
+        const val THIS_ADDRESS: Long = 0x644836c2 // keccak256(this)
+        const val MSG_SENDER: Long = 0xb2f2618c // keccak256(msg.sender)
+        const val MSG_VALUE: Long = 0x6db8129b  // keccak256(msg.value)
     }
 
     companion object {

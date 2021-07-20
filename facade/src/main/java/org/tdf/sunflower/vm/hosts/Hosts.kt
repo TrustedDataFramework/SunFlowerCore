@@ -10,5 +10,5 @@ class Hosts(
     val u256: U256Host? = null,
 ) {
     val all: Set<HostFunction>
-        get() = listOfNotNull(context, db, transfer, reflect, u256).toHashSet()
+        get() = listOfNotNull(context, db, transfer, reflect, u256, Log()).toHashSet()
 }
