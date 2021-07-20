@@ -2,6 +2,7 @@ package org.tdf.evm
 
 import java.io.PrintStream
 import java.math.BigInteger
+import kotlin.math.min
 
 internal val emptyByteArray = ByteArray(0)
 internal val emptyAddress = ByteArray(20)
@@ -217,7 +218,7 @@ class Interpreter(
                 // push(code[pc+1:pc+1+n]), push n is right padded
                 in OpCodes.PUSH1..OpCodes.PUSH32 -> {
                     val size = op - OpCodes.PUSH1 + 1
-                    val n = Math.min(size, callData.code.size - pc - 1)
+                    val n = min(size, callData.code.size - pc - 1)
                     stack.pushLeftPadding(callData.code, pc + 1, n)
                     pc += size
                 }
@@ -510,7 +511,7 @@ class Interpreter(
 
 
         memory.resize(retOff, retSize)
-        memory.write(retOff.toInt(), ret, 0, Math.min(retSize.toInt(), ret.size))
+        memory.write(retOff.toInt(), ret, 0, min(retSize.toInt(), ret.size))
         stack.pushOne()
     }
 }

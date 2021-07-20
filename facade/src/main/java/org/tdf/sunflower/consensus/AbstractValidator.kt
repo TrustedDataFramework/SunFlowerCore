@@ -3,6 +3,7 @@ package org.tdf.sunflower.consensus
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
+import org.tdf.common.util.min
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.TransactionInfo
 import org.tdf.sunflower.facade.Validator
@@ -79,7 +80,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                     currentBackend,
                     CallContext.fromTx(tx, timestamp = block.createdAt),
                     CallData.fromTx(tx),
-                    Math.min(blockGasLimit - currentGas, tx.gasLimit)
+                    (blockGasLimit - currentGas).min(tx.gasLimit)
                 )
                 r = executor.execute()
                 results[tx.hash] = r

@@ -30,7 +30,7 @@ interface Backend : AutoCloseable {
     fun getBalance(address: HexBytes): Uint256
 
     fun getCodeSize(address: Address): Int {
-        val b = builtins[address] ?: return getCode(address).size
+        val b = (bios[address] ?: builtins[address]) ?: return getCode(address).size
         return b.codeSize
     }
 

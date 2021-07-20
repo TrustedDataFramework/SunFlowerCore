@@ -24,6 +24,7 @@ import org.tdf.sunflower.p2pv2.rlpx.discover.NodeManager
 import org.tdf.sunflower.p2pv2.rlpx.discover.NodeStatistics
 import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
+import kotlin.math.min
 
 @Component
 @Scope("prototype")
@@ -71,7 +72,7 @@ class ChannelImpl @Autowired constructor(
         val handler = FrameCodecHandler(frameCodec, this)
         ctx.pipeline().addLast("medianFrameCodec", handler)
 
-        if (SnappyCodec.isSupported(Math.min(cfg.defaultP2PVersion, helloRemote.p2pVersion))) {
+        if (SnappyCodec.isSupported(min(cfg.defaultP2PVersion, helloRemote.p2pVersion))) {
             dev.info("snappy codec added")
             ctx.pipeline().addLast("snappyCodec", SnappyCodec(this))
             net.debug("${ctx.channel()}: use snappy compression")

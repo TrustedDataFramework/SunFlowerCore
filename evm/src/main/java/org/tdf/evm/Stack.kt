@@ -3,6 +3,7 @@ package org.tdf.evm
 import org.tdf.evm.SlotUtils.*
 import java.math.BigInteger
 import java.util.*
+import kotlin.math.min
 
 fun interface Digest {
     // dst[dstPos:] = sha3(src[srcPos:srcPos+srcLen])
@@ -883,7 +884,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
     override fun callDataLoad(input: ByteArray) {
         val offInt = unsignedMin(popU32(), input.size.toLong()).toInt()
-        val len = Math.min(SLOT_BYTE_ARRAY_SIZE, input.size - offInt)
+        val len = min(SLOT_BYTE_ARRAY_SIZE, input.size - offInt)
         Arrays.fill(tempBytes, 0)
         System.arraycopy(input, offInt, tempBytes, 0, len)
         pushZero()
@@ -918,7 +919,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         // assert valid memOff, len
         mem.resize(memOff, len)
         val dataOffInt = unsignedMin(dataOff, data.size.toLong()).toInt()
-        val lenInt = Math.min(len.toInt(), data.size - dataOffInt)
+        val lenInt = min(len.toInt(), data.size - dataOffInt)
         mem.writeRightPad(memOff.toInt(), data, len.toInt(), dataOffInt, lenInt)
     }
 
