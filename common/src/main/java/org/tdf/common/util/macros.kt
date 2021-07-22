@@ -112,6 +112,12 @@ fun String.hex(): HexBytes {
     return HexBytes.fromHex(this)
 }
 
+fun String.bn(): BigInteger {
+    if(this.startsWith("0x"))
+        return BigInteger(this, 16)
+    return BigInteger(this)
+}
+
 fun String.u256(): Uint256 {
     if(this.startsWith("0x"))
         return Uint256.of(this.hex().bytes)

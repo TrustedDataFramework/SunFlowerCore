@@ -141,7 +141,7 @@ data class VMExecutor(
                         code = if (hash == HashUtil.EMPTY_DATA_HASH_HEX) {
                             HexBytes.EMPTY_BYTES
                         } else {
-                            CACHE[hash, { backend.getCode(receiver).bytes }]
+                            CACHE[hash, { backend.getCode(codeAddr).bytes }]
                         }
                         data = callData.data.bytes
                         isWasm = isWasm(code)

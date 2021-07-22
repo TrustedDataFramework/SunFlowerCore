@@ -24,6 +24,8 @@ class BackendImpl(
     override val staticCall: Boolean,
     // address -> code
     private val codeStore: Store<HexBytes, HexBytes>,
+
+    // code hash -> code
     private val codeCache: MutableMap<HexBytes, HexBytes> = mutableMapOf(),
     override val height: Long = parent.height + 1,
 ) : Backend {
@@ -49,18 +51,16 @@ class BackendImpl(
             bios,
             staticCall,
             codeStore,
-            mutableMapOf(),
+            codeCache,
         )
     }
 
     private fun mergeInternal(
         accounts: MutableMap<HexBytes, Account>,
         storage: MutableMap<HexBytes, MutableMap<HexBytes, HexBytes>>,
-        code: MutableMap<HexBytes, HexBytes>
     ) {
-        parentBackend?.mergeInternal(accounts, storage, code)
-        modifiedAccounts.forEach { (key: HexBytes, value: Account) -> accounts[key] = value }
-        codeCache.forEach { (key: HexBytes, value: HexBytes) -> code[key] = value }
+        parentBackend?.mergeInternal(accounts, storage)
+        modifiedAccounts.forEach { accounts[it.key] = it.value }
         for ((key, value) in modifiedStorage) {
             storage.putIfAbsent(key, mutableMapOf())
             storage[key]!!.putAll(value)
@@ -75,19 +75,16 @@ class BackendImpl(
     override fun merge(): HexBytes {
         val accounts: MutableMap<HexBytes, Account> = mutableMapOf()
         val storage: MutableMap<HexBytes, MutableMap<HexBytes, HexBytes>> = mutableMapOf()
-        val code = mutableMapOf<HexBytes, HexBytes>()
-        mergeInternal(accounts, storage, code)
+        mergeInternal(accounts, storage)
+
         val modified: MutableSet<HexBytes> = mutableSetOf()
         modified.addAll(accounts.keys)
         modified.addAll(storage.keys)
-        modified.addAll(code.keys)
+
         val tmpTrie = trie.revert(trie.rootHash)
         for (addr in modified) {
-            var a = accounts[addr]
             // some account has not touched, but storage or code modified
-            if (a == null) {
-                a = lookup(addr)
-            }
+            var a = accounts[addr] ?: lookup(addr)
             val s = contractStorageTrie.revert(a.storageRoot)
             val map: Map<HexBytes, HexBytes> = storage.getOrDefault(addr, emptyMap())
             for ((key, value) in map) {
@@ -103,11 +100,8 @@ class BackendImpl(
                 tmpTrie[addr] = a
             else
                 tmpTrie.remove(addr)
-        }
-        for ((key, value) in codeCache) {
-            codeStore[
-                    tmpTrie[key]!!.contractHash
-            ] = value
+
+            codeCache[a.contractHash]?.let { codeStore[a.contractHash] = it }
         }
         return tmpTrie.commit()
     }
@@ -188,35 +182,29 @@ class BackendImpl(
         dbSet(address, key, HexBytes.empty())
     }
 
-    private fun lookupCode(address: HexBytes): HexBytes {
-        val h = codeCache[address]
-        if (h != null)
-            return h
-        if (parentBackend != null)
-            return parentBackend.lookupCode(address)
-        val a = lookup(address)
-        val code = codeStore[a.contractHash]
-        return code ?: HexBytes.empty()
+    private fun lookupCode(h: HexBytes): HexBytes {
+        return (codeCache[h] ?: codeStore[h]) ?: HexBytes.empty()
     }
 
     override fun getCode(address: HexBytes): HexBytes {
         val ad = replace[address]
         if (ad != null) {
-            println("repalce from $address to $ad")
+            println("replace from $address to $ad")
             return getCode(ad)
         }
         val a = lookup(address)
         if (a.contractHash == HashUtil.EMPTY_DATA_HASH_HEX)
             return HexBytes.empty()
-        return lookupCode(address)
+        return lookupCode(a.contractHash)
     }
 
     override fun setCode(address: HexBytes, code: HexBytes) {
         if (staticCall)
             throw RuntimeException("cannot set balance in static call")
-        val a = lookup(address).copy(contractHash = code.sha3())
+        val h = code.sha3()
+        val a = lookup(address).copy(contractHash = h)
         modifiedAccounts[address] = a
-        codeCache[address] = code
+        codeCache[h] = code
     }
 
     companion object {

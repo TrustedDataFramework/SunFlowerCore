@@ -8,9 +8,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.spongycastle.util.encoders.Hex
-import org.tdf.common.util.ByteUtil
-import org.tdf.common.util.HashUtil
-import org.tdf.common.util.HexBytes
+import org.tdf.common.util.*
+import org.tdf.evm.address
+import org.tdf.sunflower.vm.abi.Abi
 import java.io.PrintStream
 import java.math.BigInteger
 import java.nio.file.Files
@@ -75,6 +75,10 @@ class MockEvmHost : EvmHost {
         TODO("Not yet implemented")
     }
 
+    override fun getCodeSize(addr: ByteArray): Int {
+        TODO("Not yet implemented")
+    }
+
     override fun call(
         caller: ByteArray,
         receipt: ByteArray,
@@ -121,7 +125,7 @@ class MockEvmHost : EvmHost {
     override fun drop(address: ByteArray) {
     }
 
-    override fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray): ByteArray {
+    override fun create(caller: ByteArray, value: BigInteger, createCode: ByteArray, salt: ByteArray?): ByteArray {
         val cal = getOrCreate(caller)
         val nonce = cal.nonce
         cal.nonce++
@@ -134,11 +138,12 @@ class MockEvmHost : EvmHost {
             getLogFile()
         )
 
-
         val con = getOrCreate(newAddr)
         con.code = interpreter.execute()
         return newAddr
     }
+
+
 
     override fun log(contract: ByteArray, data: ByteArray, topics: List<ByteArray>) {
     }
@@ -175,5 +180,25 @@ class VMTests {
         val r = mock.call(ZERO_ADDRESS, con, Hex.decode("893d20e8"))
 
         assertEquals(Hex.toHexString(owner), Hex.toHexString(r.address()))
+    }
+
+
+    @Test
+    fun testHashContract() {
+        val objectMapper: ObjectMapper = jacksonObjectMapper()
+        val codeJson = TestUtil.readClassPathFile("contracts/Hasher.json")
+        val node = objectMapper.readValue(codeJson, JsonNode::class.java)
+        val abi = Abi.fromJson(node["abi"].toString())
+        val code = node.get("bytecode").asText().hex()
+        val owner = "8bb3194c582a9f70bdc079e4c20cde4a7fc3c807".hex()
+        val mock = MockEvmHost()
+
+        val con = mock.create(owner.bytes, BigInteger.ZERO, code.bytes)
+        val input = abi.findFunction { it.name == "MiMCSponge" }.encode(
+            "21663839004416932945382355908790599225266501822907911457504978515578255421292".bn(),
+            "0".bn()
+        )
+        val r = mock.call(ZERO_ADDRESS, con, input, BigInteger.ZERO, true)
+        println(r.hex())
     }
 }

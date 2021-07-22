@@ -258,8 +258,10 @@ class Interpreter(
         return emptyByteArray
     }
 
+
+
     fun ByteArray.hex(start: Int = 0, end: Int = this.size): String {
-        return "0x" + this.sliceArray(start until end).joinToString("") {
+        return "0x" + this.sliceArray(start until min(end, this.size)).joinToString("") {
             java.lang.String.format("%02x", it)
         }
     }

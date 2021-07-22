@@ -159,6 +159,7 @@ class LoggingContract : AbstractBuiltin(Constants.LOGGING_CONTRACT_ADDR) {
         when(a) {
             is String -> println(a)
             is ByteArray -> println(a.hex())
+            is BigInteger -> println(a)
         }
         return emptyList<Any>()
     }
@@ -192,7 +193,19 @@ class LoggingContract : AbstractBuiltin(Constants.LOGGING_CONTRACT_ADDR) {
         "outputs": [],
         "stateMutability": "pure",
         "type": "function"
-    }    
+    },
+    {
+        "inputs": [
+            {
+                "name": "arg",
+                "type": "uint256"
+            }
+        ],
+        "name": "log",
+        "outputs": [],
+        "stateMutability": "pure",
+        "type": "function"
+    }        
 ]
         """
         val ABI = Abi.fromJson(abiJson)
