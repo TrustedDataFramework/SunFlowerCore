@@ -16,6 +16,7 @@ dependencies {
     implementation project(':common')
     implementation project(':facade')
     implementation project(':evm')
+    implementation project(':natives')
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 

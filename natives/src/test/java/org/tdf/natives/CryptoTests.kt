@@ -18,7 +18,11 @@ class CryptoTests {
 
         println(sig.hex())
 
-        val re = Crypto.sm2Verify(2, "ffff".hex().bytes, pub, sig)
-        println(re)
+        try {
+            val re = Crypto.sm2Verify(2, "ffff".hex().bytes, "ff".hex().bytes, sig)
+            println(re)
+        } catch (e: Error) {
+            println("xxx")
+        }
     }
 }
