@@ -16,6 +16,11 @@ object WBI {
     const val WBI_MALLOC = "__malloc"
     const val WBI_PEEK = "__peek"
     const val WBI_CHANGE_TYPE = "__change_t"
+    const val WBI_MALLOC_256 = "__malloc_256"
+    const val WBI_MALLOC_512 = "__malloc_512"
+
+    val REVERSED = setOf(WBI_MALLOC, WBI_PEEK, WBI_CHANGE_TYPE, WBI_MALLOC_256, WBI_MALLOC_512)
+
 
     @JvmStatic
     fun dropInit(code: ByteArray): ByteArray {
@@ -116,11 +121,23 @@ object WBI {
             WbiType.UINT_256 -> {
                 return Uint256.of(bin)
             }
-            WbiType.BYTES, WbiType.ADDRESS -> {
+            WbiType.BYTES, WbiType.ADDRESS, WbiType.BYTES_32 -> {
                 return bin.hex()
             }
         }
         throw RuntimeException("unexpected")
+    }
+
+    fun mallocWords(instance: ModuleInstance, data: LongArray): Int {
+        val p =
+        when(data.size) {
+            4 -> instance.execute(WBI_MALLOC_256, *data)[0]
+            8 -> instance.execute(WBI_MALLOC_512, *data)[0]
+            else -> throw RuntimeException("invalid size")
+        }
+        if(p > Int.MAX_VALUE)
+            throw RuntimeException("malloc failed: pointer is negative")
+        return p.toInt()
     }
 
     fun malloc(instance: ModuleInstance, type: Long, bin: ByteArray): Int {
@@ -138,8 +155,13 @@ object WBI {
     }
 
     fun malloc(instance: ModuleInstance, s: Uint256): Int {
-        val bin = s.bytes
-        return malloc(instance, WbiType.UINT_256, bin)
+        val bin = s.byte32
+        val data = LongArray(4)
+        data[0] = BigEndian.decodeInt64(bin, 0)
+        data[1] = BigEndian.decodeInt64(bin, 8)
+        data[2] = BigEndian.decodeInt64(bin, 16)
+        data[3] = BigEndian.decodeInt64(bin, 24)
+        return mallocWords(instance, data)
     }
 
     fun mallocBytes(instance: ModuleInstance, bin: HexBytes): Int {

@@ -235,7 +235,7 @@ data class VMExecutor(
                         abi.findConstructor()?.outputs
                             ?: emptyList()
                     } else {
-                        abi.findFunction { it.name.equals(r.name) }.outputs!!
+                        abi.findFunction { it.name == r.name }.outputs!!
                     }
 
 
@@ -258,13 +258,17 @@ data class VMExecutor(
                                 val addr = peek(instance, rets[i].toInt(), WbiType.ADDRESS) as HexBytes
                                 results.add(addr.bytes)
                             }
+                            "bool" -> results.add(rets[i] != 0L)
+                            "bytes" -> results.add((peek(instance, rets[i].toInt(), WbiType.BYTES) as HexBytes).bytes)
                             else -> {
                                 if (type.name.endsWith("]") || type.name.endsWith(")")) {
                                     throw RuntimeException("array or tuple is not supported")
                                 }
-                                if (type.name.startsWith("bytes")) {
-                                    val bytes = peek(instance, rets[i].toInt(), WbiType.BYTES) as HexBytes
+                                if (type.name != "bytes" && type.name.startsWith("bytes")) {
+                                    val bytes = peek(instance, rets[i].toInt(), WbiType.BYTES_32) as HexBytes
                                     results.add(bytes.bytes)
+                                } else {
+                                    throw RuntimeException("unsupported type ${type.name}")
                                 }
                             }
                         }

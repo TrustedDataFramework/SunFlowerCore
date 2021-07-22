@@ -187,8 +187,9 @@ class JsonRpcImpl(
 
     override fun eth_call(args: CallArguments, bnOrId: String): String {
         val start = System.currentTimeMillis()
+        println("eth_call start")
         try {
-            getBackendByBlockId(bnOrId, true).use { backend ->
+            getBackendByBlockId(bnOrId, false).use { backend ->
                 repo.reader.use {
                     val cd = args.toCallData()
                     val executor = VMExecutor.create(
@@ -201,6 +202,7 @@ class JsonRpcImpl(
                 }
             }
         } finally {
+            println("eth_call end")
             println("eth call use " + (System.currentTimeMillis() - start) + " ms")
         }
     }

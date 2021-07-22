@@ -125,13 +125,15 @@ class TransactionPoolImpl(
         writeLock.withLock {
             val newCollected: MutableList<Transaction> = mutableListOf()
             for (tx in transactions) {
-                if (pending.any { it.tx.hash == tx.hash } || rd.containsTransaction(tx.hash))
-                    continue
-
+                println(tx)
                 if (tx.gasPrice < appCfg.vmGasPrice) {
                     errors[tx.hash] = "transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}"
                     continue
                 }
+
+                if (pending.any { it.tx.hash == tx.hash } || rd.containsTransaction(tx.hash))
+                    continue
+
                 val drop = dropped[tx.hash]
                 if (drop != null) {
                     errors[tx.hash] = drop.err

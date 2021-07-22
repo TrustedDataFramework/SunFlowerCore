@@ -113,7 +113,9 @@ fun String.hex(): HexBytes {
 }
 
 fun String.u256(): Uint256 {
-    return Uint256.of(this.hex().bytes)
+    if(this.startsWith("0x"))
+        return Uint256.of(this.hex().bytes)
+    return Uint256.of(BigInteger(this))
 }
 
 fun String.h256(): HexBytes {

@@ -587,3 +587,4 @@ data class LogFilterV2(val address: List<Address>?, val topics: List<List<H256>>
 fun interface OnLogMatch {
     fun onLogMatch(info: LogInfo, b: Block, txIdx: Int, tx: Transaction, logIdx: Int)
 }
+

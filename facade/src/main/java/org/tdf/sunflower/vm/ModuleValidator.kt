@@ -51,7 +51,7 @@ object ModuleValidator {
         val hostsCount: Int = m.importSection?.imports?.filter { x -> x.type == ImportType.TYPE_INDEX }?.count() ?: 0
         for (export in m.exportSection?.exports ?: emptyList()) {
             // skip wbi functions
-            if (export.name == WBI.WBI_CHANGE_TYPE || export.name == WBI.WBI_MALLOC || export.name == WBI.WBI_PEEK)
+            if (WBI.REVERSED.contains(export.name))
                 continue
             if (export.type == ExportType.FUNCTION_INDEX) {
                 val typeIdx = m.functionSection!!.typeIndices[export.index - hostsCount]
