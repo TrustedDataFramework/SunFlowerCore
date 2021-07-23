@@ -39,6 +39,38 @@ JNIEXPORT jboolean JNICALL Java_org_tdf_natives_Crypto_sm2Verify
 JNIEXPORT jbyteArray JNICALL Java_org_tdf_natives_Crypto_sm2Sign
   (JNIEnv *, jclass, jlong, jbyteArray, jbyteArray);
 
+/*
+ * Class:     org_tdf_natives_Crypto
+ * Method:    mlsagGetSk
+ * Signature: (J)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_tdf_natives_Crypto_mlsagGetSk
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     org_tdf_natives_Crypto
+ * Method:    mlsagPkFromSk
+ * Signature: ([BZ)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_tdf_natives_Crypto_mlsagPkFromSk
+  (JNIEnv *, jclass, jbyteArray, jboolean);
+
+/*
+ * Class:     org_tdf_natives_Crypto
+ * Method:    mlsagSign
+ * Signature: ([[B[B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_tdf_natives_Crypto_mlsagSign
+  (JNIEnv *, jclass, jobjectArray, jbyteArray);
+
+/*
+ * Class:     org_tdf_natives_Crypto
+ * Method:    mlsagVerify
+ * Signature: ([B[[B[B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_tdf_natives_Crypto_mlsagVerify
+  (JNIEnv *, jclass, jbyteArray, jobjectArray, jbyteArray);
+
 #ifdef __cplusplus
 }
 #endif

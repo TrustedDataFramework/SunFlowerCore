@@ -1,25 +1,5 @@
 package org.tdf.natives;
 
-/*
- * JNIUtil.java
- *
- * This source file is part of the FoundationDB open source project
- *
- * Copyright 2013-2018 Apple Inc. and the FoundationDB project authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -32,8 +12,6 @@ import java.io.OutputStream;
  */
 public class JNIUtil {
     private static final String SEPARATOR = "/";
-    private static final String LOADABLE_PREFIX = "FDB_LIBRARY_PATH_";
-    private static final String TEMPFILE_PREFIX = "fdbjni";
     private static final String TEMPFILE_SUFFIX = ".library";
 
     private static class OS {
@@ -69,19 +47,6 @@ public class JNIUtil {
             throw new NullPointerException("Library name must not be null");
         }
 
-        String libPathToLoad = null;
-        try {
-            String prop = LOADABLE_PREFIX + libName.toUpperCase();
-            libPathToLoad = System.getProperty(prop);
-        } catch(SecurityException e) {
-            // eat
-        }
-
-        if(libPathToLoad != null) {
-            System.load(libPathToLoad);
-            return;
-        }
-
         OS os = getRunningOS();
         String path = getPath(os, libName);
 
@@ -92,6 +57,7 @@ public class JNIUtil {
         File exported;
 
         try {
+            // copy from library class path as tempory file
             exported = exportResource(path, libName);
         }
         catch (IOException e) {
@@ -154,7 +120,9 @@ public class JNIUtil {
     }
 
     private static File saveStreamAsTempFile(InputStream resource, String name) throws IOException {
-        File f = File.createTempFile(name.length() > 0 ? name : TEMPFILE_PREFIX, TEMPFILE_SUFFIX);
+        if(name == null || name.isEmpty())
+            throw new RuntimeException("invalid filename");
+        File f = File.createTempFile(name, TEMPFILE_SUFFIX);
         FileOutputStream outputStream = new FileOutputStream(f);
         copyStream(resource, outputStream);
         outputStream.flush();
@@ -176,19 +144,19 @@ public class JNIUtil {
     }
 
     private static OS getRunningOS() {
-        String osname = System.getProperty("os.name").toLowerCase();
+        String osName = System.getProperty("os.name").toLowerCase();
         String arch = System.getProperty("os.arch");
         if (!arch.equals("amd64") && !arch.equals("x86_64") && !arch.equals("aarch64")) {
             throw new IllegalStateException("Unknown or unsupported arch: " + arch);
         }
-        if (osname.startsWith("windows")) {
+        if (osName.startsWith("windows")) {
             return new OS("windows", arch, /* canDeleteEager */ false);
-        } else if (osname.startsWith("linux")) {
+        } else if (osName.startsWith("linux")) {
             return new OS("linux", arch, /* canDeleteEager */ true);
-        } else if (osname.startsWith("mac") || osname.startsWith("darwin")) {
+        } else if (osName.startsWith("mac") || osName.startsWith("darwin")) {
             return new OS("osx", arch, /* canDeleteEager */ true);
         } else {
-            throw new IllegalStateException("Unknown or unsupported OS: " + osname);
+            throw new IllegalStateException("Unknown or unsupported OS: " + osName);
         }
     }
 

@@ -335,7 +335,7 @@ class JsonRpcImpl(
         val topics: MutableList<List<H256>> = mutableListOf()
 
         fr.topics?.forEach {
-            if (it == null) {
+            if (it == null || it.isNull) {
                 return@forEach
             }
             if (it.isArray) {
