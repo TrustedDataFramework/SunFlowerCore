@@ -6,10 +6,17 @@ import org.tdf.lotusvm.Module
 import org.tdf.lotusvm.ModuleInstance
 import org.tdf.sunflower.vm.abi.Abi
 import org.tdf.sunflower.vm.abi.WbiType
-import java.io.ByteArrayOutputStream
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
+/**
+ * TODO:
+ * 1. instead of json, use custom sections named with __abi like foo(address,address)returns(uint256)
+ * ident=[a-zA-Z_][a-zA-Z0-9_]{0,127}
+ * type = (address|uintx|intx|bytes|string)
+ * $ident\((($type,)*$type)?\)(returns\($type\))?
+ * 2. use wasmer instead of lotusvm
+ */
 object WBI {
     const val ABI_SECTION_NAME = "__abi";
     const val INIT_SECTION_NAME = "__init"
@@ -22,24 +29,10 @@ object WBI {
     val REVERSED = setOf(WBI_MALLOC, WBI_PEEK, WBI_CHANGE_TYPE, WBI_MALLOC_256, WBI_MALLOC_512)
 
 
-    @JvmStatic
     fun dropInit(code: ByteArray): ByteArray {
-        Module.create(code).use {
-            val out = ByteArrayOutputStream()
-            // drop __init sections
-            var now = 0
-            for (section in it.customSections) {
-                if (section.name == INIT_SECTION_NAME) {
-                    out.write(code, now, section.offset - now)
-                    now = section.limit
-                }
-            }
-            out.write(code, now, code.size - now)
-            return out.toByteArray()
-        }
+        return code;
     }
 
-    @JvmStatic
     fun extractInitData(m: Module): ByteArray {
         return m.customSections.firstOrNull { it.name == INIT_SECTION_NAME }?.data ?: ByteUtil.EMPTY_BYTE_ARRAY
     }

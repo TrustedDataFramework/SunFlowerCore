@@ -22,7 +22,7 @@ import java.util.*
 import java.util.AbstractMap.SimpleImmutableEntry
 import java.util.function.Predicate
 
-class PosPreBuilt(private val nodes: Map<HexBytes, NodeInfo>) : Builtin {
+class PosBuiltin(private val nodes: Map<HexBytes, NodeInfo>) : Builtin {
     lateinit var accountTrie: AccountTrie
 
     private fun getValue(stateRoot: HexBytes, key: HexBytes): HexBytes? {

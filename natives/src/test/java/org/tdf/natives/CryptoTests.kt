@@ -1,12 +1,18 @@
 package org.tdf.natives
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.tdf.common.util.hex
 
+data class Point(val x: String, val y: String)
+
 @RunWith(JUnit4::class)
 class CryptoTests {
+    private val mapper = jacksonObjectMapper();
+
+
 
     @Test
     fun testSign() {
@@ -23,4 +29,9 @@ class CryptoTests {
     }
 
 
+    @Test
+    fun testSchnorr() {
+        val private = Crypto.schnorrGenSigner(0);
+        println(private)
+    }
 }

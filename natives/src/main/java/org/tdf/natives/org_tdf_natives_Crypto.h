@@ -41,35 +41,43 @@ JNIEXPORT jbyteArray JNICALL Java_org_tdf_natives_Crypto_sm2Sign
 
 /*
  * Class:     org_tdf_natives_Crypto
- * Method:    mlsagGetSk
- * Signature: (J)[B
+ * Method:    mlsagVerify
+ * Signature: (J[B[[B[B[[B[[B)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_org_tdf_natives_Crypto_mlsagGetSk
+JNIEXPORT jbyteArray JNICALL Java_org_tdf_natives_Crypto_mlsagVerify
+  (JNIEnv *, jclass, jlong, jbyteArray, jobjectArray, jbyteArray, jobjectArray, jobjectArray);
+
+/*
+ * Class:     org_tdf_natives_Crypto
+ * Method:    schnorrGenSigner
+ * Signature: (J)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_tdf_natives_Crypto_schnorrGenSigner
   (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_tdf_natives_Crypto
- * Method:    mlsagPkFromSk
- * Signature: ([BZ)[B
+ * Method:    schnorrPkFromSk
+ * Signature: ([B)Ljava/lang/String;
  */
-JNIEXPORT jbyteArray JNICALL Java_org_tdf_natives_Crypto_mlsagPkFromSk
-  (JNIEnv *, jclass, jbyteArray, jboolean);
+JNIEXPORT jstring JNICALL Java_org_tdf_natives_Crypto_schnorrPkFromSk
+  (JNIEnv *, jclass, jbyteArray);
 
 /*
  * Class:     org_tdf_natives_Crypto
- * Method:    mlsagSign
- * Signature: ([[B[B)[B
+ * Method:    schnorrRound1
+ * Signature: (I[B[BLjava/lang/String;Ljava/lang/String;)Ljava/lang/String;
  */
-JNIEXPORT jbyteArray JNICALL Java_org_tdf_natives_Crypto_mlsagSign
-  (JNIEnv *, jclass, jobjectArray, jbyteArray);
+JNIEXPORT jstring JNICALL Java_org_tdf_natives_Crypto_schnorrRound1
+  (JNIEnv *, jclass, jint, jbyteArray, jbyteArray, jstring, jstring);
 
 /*
  * Class:     org_tdf_natives_Crypto
- * Method:    mlsagVerify
- * Signature: ([B[[B[B)[B
+ * Method:    schnorrRound2
+ * Signature: ([BLjava/lang/String;Ljava/lang/String;)Ljava/lang/String;
  */
-JNIEXPORT jbyteArray JNICALL Java_org_tdf_natives_Crypto_mlsagVerify
-  (JNIEnv *, jclass, jbyteArray, jobjectArray, jbyteArray);
+JNIEXPORT jstring JNICALL Java_org_tdf_natives_Crypto_schnorrRound2
+  (JNIEnv *, jclass, jbyteArray, jstring, jstring);
 
 #ifdef __cplusplus
 }

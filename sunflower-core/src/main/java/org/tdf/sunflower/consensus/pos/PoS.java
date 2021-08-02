@@ -13,13 +13,13 @@ import org.tdf.sunflower.types.ConsensusConfig;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.tdf.sunflower.consensus.pos.PosPreBuilt.NodeInfo;
+import static org.tdf.sunflower.consensus.pos.PosBuiltin.NodeInfo;
 
 @Slf4j(topic = "pos")
 public class PoS extends AbstractConsensusEngine {
     private ConsensusConfig config;
 
-    private PosPreBuilt minerContract;
+    private PosBuiltin minerContract;
 
     private PoSValidator posValidator;
 
@@ -59,7 +59,7 @@ public class PoS extends AbstractConsensusEngine {
                     new ArrayList<>())));
         }
 
-        this.minerContract = new PosPreBuilt(nodesMap);
+        this.minerContract = new PosBuiltin(nodesMap);
         this.minerContract.setAccountTrie((AccountTrie) getAccountTrie());
 
         this.posMiner = new PoSMiner(getAccountTrie(), getEventBus(), this.config, this);

@@ -6,6 +6,7 @@ import org.tdf.common.types.Constants.WORD_SIZE
 import org.tdf.common.types.Uint256
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
+import java.util.*
 
 fun Int.min(other: Int): Int {
     return if(this < other) { this } else { other }
@@ -97,6 +98,10 @@ fun ByteArray.hex(): HexBytes {
 
 fun ByteArray.sha3(): ByteArray {
     return HashUtil.sha3(this)
+}
+
+fun ByteArray.tail20(): ByteArray {
+    return this.copyOfRange(this.size - 20, this.size)
 }
 
 fun HexBytes.sha3(): HexBytes {

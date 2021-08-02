@@ -13,6 +13,7 @@ import org.tdf.lotusvm.ModuleInstance
 import org.tdf.lotusvm.runtime.ResourceFactory.createMemory
 import org.tdf.lotusvm.runtime.ResourceFactory.createStack
 import org.tdf.sunflower.facade.RepositoryReader
+import org.tdf.sunflower.state.Precompiled
 import org.tdf.sunflower.types.LogInfo
 import org.tdf.sunflower.types.VMResult
 import org.tdf.sunflower.vm.ModuleValidator.validate
@@ -81,6 +82,11 @@ data class VMExecutor(
 
 
     fun executeInternal(): ByteArray {
+        if(Precompiled.PRECOMPILED.containsKey(callData.to)) {
+            val p = Precompiled.PRECOMPILED[callData.to] ?: throw UnsupportedOperationException()
+            return p.execute(callData.data.bytes)
+        }
+
         return when (callData.callType) {
             CallType.COINBASE -> {
                 backend.addBalance(callData.to, callData.value)
