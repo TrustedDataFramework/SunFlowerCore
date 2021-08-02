@@ -1,5 +1,6 @@
 package org.tdf.sunflower.service
 
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 import org.tdf.common.event.EventBus
 import org.tdf.common.util.HexBytes
@@ -33,7 +34,7 @@ abstract class AbstractRepository
             return
         }
         if (o.size > 1 || o.stream().anyMatch { x: Block -> x.hash != b.hash }) {
-            throw RuntimeException("genesis in db not equals to genesis in configuration")
+            log.error("genesis in db not equals to genesis in configuration")
         }
     }
 
@@ -61,5 +62,9 @@ abstract class AbstractRepository
 
     override fun getBlockByHash(hash: HexBytes): Block? {
         return getHeaderByHash(hash)?.let { getBlockFromHeader(it) }
+    }
+
+    companion object {
+        val log = LoggerFactory.getLogger("db")
     }
 }
