@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer
 internal object HexBytesUtil {
     internal class HexBytesSerializer : StdSerializer<HexBytes>(HexBytes::class.java) {
         override fun serialize(value: HexBytes, jgen: JsonGenerator, provider: SerializerProvider) {
-            jgen.writeString(value.hex)
+            jgen.writeString("0x" + value.hex)
         }
     }
 

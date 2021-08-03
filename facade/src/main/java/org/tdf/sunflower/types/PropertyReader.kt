@@ -43,7 +43,7 @@ class PropertyReader(val properties: PropertyLike) {
 
     fun getAsInt(property: String, defaultValue: Int): Int {
         val s = properties.getProperty(property)
-        return if (s == null || s.trim { it <= ' ' }.isEmpty()) defaultValue else s.trim { it <= ' ' }.toInt()
+        return s?.trim { it <= ' ' }?.takeIf { it.isNotEmpty() }?.toInt() ?: defaultValue;
     }
 
     fun getAsPrivate(property: String): HexBytes? {

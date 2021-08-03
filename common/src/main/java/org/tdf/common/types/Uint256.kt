@@ -234,5 +234,12 @@ class Uint256 private constructor(val value: BigInteger) : Number(), RlpWritable
             require(num >= 0) { "num should be non-negative" }
             return Uint256(BigInteger.valueOf(num))
         }
+
+        @JvmStatic
+        fun of(num: String): Uint256 {
+            if(num.startsWith("0x"))
+                return Uint256(BigInteger(num.substring(2), 16))
+            return Uint256(BigInteger(num))
+        }
     }
 }

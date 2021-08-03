@@ -325,8 +325,7 @@ class JsonRpcImpl(
     }
 
     override fun eth_getLogs(fr: JsonRpc.FilterRequest): List<Any> {
-        return CompletableFuture.supplyAsync { getLogsInternal(fr) }
-            .get(cfg.rpcTimeOut.toLong(), TimeUnit.SECONDS)
+        return getLogsInternal(fr)
     }
 
     private fun getLogsInternal(fr: JsonRpc.FilterRequest): List<Any> {

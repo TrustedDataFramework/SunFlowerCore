@@ -5,6 +5,7 @@ import org.tdf.common.types.Uint256
 import org.tdf.common.util.Address
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.state.Builtin
+import org.tdf.sunflower.state.Precompiled
 
 interface Backend : AutoCloseable {
     fun subBalance(addr: HexBytes, amount: Uint256) {

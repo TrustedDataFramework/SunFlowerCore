@@ -2,9 +2,8 @@ package org.tdf.sunflower.state
 
 import org.tdf.common.crypto.ECDSASignature
 import org.tdf.common.crypto.ECKey
-import org.tdf.common.crypto.zksnark.BN128
-import org.tdf.common.crypto.zksnark.BN128Fp
-import org.tdf.common.crypto.zksnark.Fp
+import org.tdf.common.crypto.zksnark.*
+import org.tdf.common.types.Uint256
 import org.tdf.common.util.*
 import org.tdf.common.util.ByteUtil.stripLeadingZeroes
 
@@ -17,8 +16,8 @@ fun validateV(v: ByteArray): Boolean {
     return true
 }
 
-class ECRecover: Precompiled {
-    override val address: HexBytes = "0000000000000000000000000000000000000000000000000000000000000001".hex()
+object ECRecover: Precompiled {
+    override val address: HexBytes = "0x0000000000000000000000000000000000000001".hex()
 
     override fun execute(data: ByteArray): ByteArray {
         val h = ByteArray(32)
@@ -27,11 +26,13 @@ class ECRecover: Precompiled {
         val s = ByteArray(32)
 
 
+
         System.arraycopy(data, 0, h, 0, 32)
         System.arraycopy(data, 32, v, 0, 32)
         System.arraycopy(data, 64, r, 0, 32)
         val sLength = if (data.size < 128) data.size - 96 else 32
         System.arraycopy(data, 96, s, 0, sLength)
+
         val signature: ECDSASignature = ECDSASignature.fromComponents(r, s, v[31])
         if (validateV(v) && signature.validateComponents()) {
             val bytes = ByteArray(32)
@@ -48,8 +49,10 @@ interface Precompiled {
 
         init {
             val contracts = listOf(
-                ECRecover(),
-                BN128Multiplication()
+                ECRecover,
+                BN128Multiplication,
+                BN128Addition,
+                BN128Pairing
             )
 
             contracts.forEach {
@@ -60,6 +63,25 @@ interface Precompiled {
 
     val address: Address
     fun execute(data: ByteArray): ByteArray
+}
+
+object BN128Addition: Precompiled {
+    override val address = "0x0000000000000000000000000000000000000006".hex()
+
+    override fun execute(data: ByteArray): ByteArray {
+        val x1 = parseWord(data, 0)
+        val y1 = parseWord(data, 1)
+        val x2 = parseWord(data, 2)
+        val y2 = parseWord(data, 3)
+
+        val p1 = BN128Fp.create(x1 , y1) ?: throw RuntimeException("invaid point")
+        val p2 = BN128Fp.create(x2 , y2) ?: throw RuntimeException("invaid point")
+
+        val res = p1.add(p2).toEthNotation()
+
+        return encodeRes(res.x().bytes(), res.y().bytes())
+    }
+
 }
 
 
@@ -77,9 +99,9 @@ interface Precompiled {
  * resulting point (x', y'), where x and y encoded as 32-byte left-padded integers<br></br>
  *
  */
-class BN128Multiplication : Precompiled {
+object BN128Multiplication : Precompiled {
     override val address: Address
-        get() = "0000000000000000000000000000000000000000000000000000000000000007".hex()
+        get() = "0x0000000000000000000000000000000000000007".hex()
 
     override fun execute(data: ByteArray): ByteArray {
         val x: ByteArray = parseWord(data, 0)
@@ -90,6 +112,39 @@ class BN128Multiplication : Precompiled {
         val res: BN128<Fp> = p.mul(s.bn()).toEthNotation()
         return encodeRes(res.x().bytes(), res.y().bytes())
     }
+}
+
+object BN128Pairing: Precompiled{
+    private const val PAIR_SIZE = 192
+
+    override val address: Address = "0x0000000000000000000000000000000000000008".hex()
+
+    override fun execute(data: ByteArray): ByteArray {
+        if (data.size % PAIR_SIZE > 0)
+            throw RuntimeException("invalid pair size")
+
+        val check = PairingCheck.create()
+
+        var off = 0
+        while(off < data.size) {
+            val x = parseWord(data, off, 0)
+            val y = parseWord(data, off, 1)
+            val p1 = BN128G1.create(x, y) ?: throw RuntimeException("invalid point")
+            val b = parseWord(data, off, 2)
+            val a = parseWord(data, off, 3)
+            val d = parseWord(data, off, 4)
+            val c = parseWord(data, off, 5)
+            val p2 = BN128G2.create(a, b, c, d) ?: throw RuntimeException("invalid point")
+
+            check.addPair(p1, p2)
+            off += PAIR_SIZE
+        }
+
+        check.run()
+        val re = check.result()
+        return Uint256.of(re).byte32
+    }
+
 }
 
 
@@ -114,6 +169,10 @@ fun parseBytes(input: ByteArray, offset: Int, len: Int): ByteArray {
  */
 fun parseWord(input: ByteArray, idx: Int): ByteArray {
     return parseBytes(input, 32 * idx, 32)
+}
+
+fun parseWord(input: ByteArray, offset: Int, idx: Int): ByteArray {
+    return parseBytes(input, offset + 32 * idx, 32)
 }
 
 private fun encodeRes(w1: ByteArray, w2: ByteArray): ByteArray {

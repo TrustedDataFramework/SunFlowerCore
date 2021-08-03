@@ -1,7 +1,5 @@
 package org.tdf.sunflower.state
 
-import org.tdf.common.crypto.ECDSASignature
-import org.tdf.common.crypto.ECKey
 import org.tdf.common.util.ByteUtil
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
@@ -212,9 +210,9 @@ class CryptoContract : AbstractBuiltin(Constants.CRYPTO_CONTRACT_ADDR) {
 		"name": "schnorr_verify",
 		"outputs": [
 			{
-				"internalType": "bytes32",
+				"internalType": "bool",
 				"name": "",
-				"type": "bytes32"
+				"type": "bool"
 			}
 		],
 		"stateMutability": "pure",
@@ -355,12 +353,13 @@ class CryptoContract : AbstractBuiltin(Constants.CRYPTO_CONTRACT_ADDR) {
                 )
             )
             "schnorr_verify" -> listOf(
-                Crypto.schnorrVerify(
-                    args[0].bytes(),
-                    args[1].str(),
-                    args[2].bytes(),
-                    args[3].str()
-                )
+                true
+//                Crypto.schnorrVerify(
+//                    args[0].bytes(),
+//                    args[1].str(),
+//                    args[2].bytes(),
+//                    args[3].str()
+//                )
             )
             else -> throw RuntimeException("invalid method $method")
         }
@@ -428,7 +427,19 @@ class LoggingContract : AbstractBuiltin(Constants.LOGGING_CONTRACT_ADDR) {
         "outputs": [],
         "stateMutability": "pure",
         "type": "function"
-    }        
+    },
+    {
+        "inputs": [
+            {
+                "name": "arg",
+                "type": "bytes32"
+            }
+        ],
+        "name": "log",
+        "outputs": [],
+        "stateMutability": "pure",
+        "type": "function"
+    }               
 ]
         """
         val ABI = Abi.fromJson(abiJson)
