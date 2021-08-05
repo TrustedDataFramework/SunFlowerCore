@@ -13,7 +13,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Collections;
-import java.util.Random;
 
 import static java.util.Arrays.copyOfRange;
 import static org.tdf.common.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -46,6 +45,36 @@ public class HashUtil {
         EMPTY_DATA_HASH_HEX = HexBytes.fromBytes(EMPTY_DATA_HASH);
     }
 
+    /**
+     * @param input
+     *            - data for hashing
+     * @return - sha256 hash of the data
+     */
+    public static byte[] sha256(byte[] input) {
+        try {
+            MessageDigest sha256digest = MessageDigest.getInstance("SHA-256");
+            return sha256digest.digest(input);
+        } catch (NoSuchAlgorithmException e) {
+            LOG.error("Can't find such algorithm", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * @param data
+     *            - message to hash
+     * @return - reipmd160 hash of the message
+     */
+    public static byte[] ripemd160(byte[] data) {
+        Digest digest = new RIPEMD160Digest();
+        if (data != null) {
+            byte[] resBuf = new byte[digest.getDigestSize()];
+            digest.update(data, 0, data.length);
+            digest.doFinal(resBuf, 0);
+            return resBuf;
+        }
+        throw new NullPointerException("Can't hash a NULL value");
+    }
 
     public static byte[] sha3(byte[] input) {
         MessageDigest digest;

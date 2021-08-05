@@ -6,6 +6,8 @@ import org.tdf.common.crypto.zksnark.*
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.*
 import org.tdf.common.util.ByteUtil.stripLeadingZeroes
+import java.math.BigInteger
+
 
 fun validateV(v: ByteArray): Boolean {
     for (i in 0 until v.size - 1) {
@@ -14,6 +16,31 @@ fun validateV(v: ByteArray): Boolean {
         }
     }
     return true
+}
+
+object Sha256: Precompiled {
+    override val address: Address = "0000000000000000000000000000000000000000000000000000000000000002".hex()
+
+    override fun execute(data: ByteArray): ByteArray {
+        return HashUtil.sha256(data)
+    }
+}
+
+object Ripempd160: Precompiled {
+    override val address: Address = "0000000000000000000000000000000000000000000000000000000000000003".hex()
+
+    override fun execute(data: ByteArray): ByteArray {
+        return HashUtil.ripemd160(data)
+    }
+}
+
+object Identity: Precompiled {
+    override val address: Address = "0000000000000000000000000000000000000000000000000000000000000004".hex()
+
+    override fun execute(data: ByteArray): ByteArray {
+        return data
+    }
+
 }
 
 object ECRecover: Precompiled {
@@ -50,8 +77,12 @@ interface Precompiled {
         init {
             val contracts = listOf(
                 ECRecover,
-                BN128Multiplication,
+                Sha256,
+                Ripempd160,
+                Identity,
+                ModExp,
                 BN128Addition,
+                BN128Multiplication,
                 BN128Pairing
             )
 
@@ -63,6 +94,55 @@ interface Precompiled {
 
     val address: Address
     fun execute(data: ByteArray): ByteArray
+}
+
+object ModExp: Precompiled {
+    override val address: Address = "0000000000000000000000000000000000000000000000000000000000000005".hex()
+    private const val ARGS_OFFSET = 32 * 3 // addresses length part
+    /**
+     * Returns a result of safe addition of two {@code int} values
+     * {@code Integer.MAX_VALUE} is returned if overflow occurs
+     */
+    private fun Int.addSafely(b: Int): Int {
+        val res = this.toLong() + b.toLong()
+        if (res > Int.MAX_VALUE) {
+            throw RuntimeException("addition overflow")
+        }
+        return res.toInt()
+    }
+
+    override fun execute(data: ByteArray): ByteArray {
+        val baseLen = parseLen(data, 0)
+        val expLen = parseLen(data, 1)
+        val modLen = parseLen(data, 2)
+
+        val base = parseArg(data, ARGS_OFFSET, baseLen)
+        val exp = parseArg(data, ARGS_OFFSET.addSafely(baseLen), expLen)
+        val mod = parseArg(data, ARGS_OFFSET.addSafely(baseLen).addSafely(expLen), modLen)
+
+        if (mod == BigInteger.ZERO)
+            return ByteArray(modLen)
+
+        val res = stripLeadingZeroes(base.modPow(exp, mod).toByteArray())
+
+        if (res.size < modLen) {
+            val adjRes = ByteArray(modLen)
+            System.arraycopy(res, 0, adjRes, modLen - res.size, res.size)
+            return adjRes
+        }
+
+        return res
+    }
+
+    private fun parseLen(data: ByteArray, idx: Int): Int {
+        val bytes = parseBytes(data, 32 * idx, 32)
+        return BigInteger(1, bytes).intValueExact()
+    }
+
+    private fun parseArg(data: ByteArray, offset: Int, len: Int): BigInteger {
+        val bytes = parseBytes(data, offset, len)
+        return bytes.bn()
+    }
 }
 
 object BN128Addition: Precompiled {
@@ -175,12 +255,10 @@ fun parseWord(input: ByteArray, offset: Int, idx: Int): ByteArray {
     return parseBytes(input, offset + 32 * idx, 32)
 }
 
-private fun encodeRes(w1: ByteArray, w2: ByteArray): ByteArray {
-    var w1 = w1
-    var w2 = w2
+private fun encodeRes(_w1: ByteArray, _w2: ByteArray): ByteArray {
     val res = ByteArray(64)
-    w1 = stripLeadingZeroes(w1)
-    w2 = stripLeadingZeroes(w2)
+    val w1 = stripLeadingZeroes(_w1)
+    val w2 = stripLeadingZeroes(_w2)
     System.arraycopy(w1, 0, res, 32 - w1.size, w1.size)
     System.arraycopy(w2, 0, res, 64 - w2.size, w2.size)
     return res
