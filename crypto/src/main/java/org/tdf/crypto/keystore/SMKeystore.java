@@ -31,7 +31,7 @@ public class SMKeystore {
 
         byte[] deriveKey = ByteUtils.subArray(
             SM3Util.hash(
-                ks.getCrypto().getSalt().concat(passwordBytes).getBytes()
+                ByteUtils.concatenate(ks.getCrypto().getSalt().getBytes(), passwordBytes.getBytes())
             )
             , 0, 16
         );
