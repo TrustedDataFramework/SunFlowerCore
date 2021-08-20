@@ -1,4 +1,4 @@
-FROM registry.cn-hangzhou.aliyuncs.com/wisdomchain/server_jre8
+FROM adoptopenjdk:11.0.11_9-jre-hotspot
 
 RUN mkdir /app
 WORKDIR /app
