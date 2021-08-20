@@ -11,10 +11,7 @@ data class Point(val x: String, val y: String)
 @RunWith(JUnit4::class)
 class CryptoTests {
     private val mapper = jacksonObjectMapper();
-
-
-
-    @Test
+    
     fun testSign() {
         val private = Crypto.sm3("0x00".hex().bytes).hex()
         println(private)
@@ -29,7 +26,6 @@ class CryptoTests {
     }
 
 
-    @Test
     fun testSchnorr() {
         val private = Crypto.schnorrGenSigner(0);
         println(private)
