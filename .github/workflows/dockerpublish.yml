@@ -89,8 +89,8 @@ jobs:
           docker tag $IMAGE $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION 
           OP='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value":"IMAGE"}]'
-          OP=echo $OP | sed -e "s/IMAGE/$IMAGE_ID:$VERSION/g"
-          kubectl patch statefulset tdos-node --type='json' -p=\'$OP\'
+          OP=$(echo $OP | sed -e "s/IMAGE/$IMAGE_ID:$VERSION/g")
+          kubectl patch statefulset tdos-node --type='json' -p=$OP
           
 
 
