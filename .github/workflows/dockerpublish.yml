@@ -48,7 +48,11 @@ jobs:
           # TKE region
           tke_region: ${{ secrets.QCLOUD_TKE_REGION }}
           # TKE cluster id
-          cluster_id: ${{ secrets.QCLOUD_TKE_CLUSTER_ID }}         
+          cluster_id: ${{ secrets.QCLOUD_TKE_CLUSTER_ID }}     
+          
+      # setup kubectl    
+      - uses: azure/setup-kubectl@v1
+        id: install          
 
       - uses: actions/cache@v1
         with:
@@ -68,7 +72,7 @@ jobs:
       - name: Log into registry
         run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
 
-      - name: Push image
+      - name: Push image and update stateful sets
         run: |
           IMAGE_ID="${{ secrets.DOCKER_HUB_USERNAME }}/$IMAGE"
 
@@ -84,3 +88,11 @@ jobs:
           echo VERSION=$VERSION
           docker tag $IMAGE $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION 
+          OP='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value":"IMAGE"}]'
+          OP=echo $OP | sed -e "s/IMAGE/$IMAGE_ID:$VERSION/g"
+          kubectl patch statefulset tdos-node --type='json' -p=\'$OP\'
+          
+
+
+           
+                
