@@ -35,6 +35,20 @@ jobs:
         with:
           java-version: 11
           distribution: adopt-hotspot
+          
+      - name: Tencent Cloud TKE Cluster Credential Action
+        # You may pin to the exact commit or the version.
+        # uses: TencentCloud/tke-cluster-credential-action@b1071cab5dd4cebc26a6b7905cb42ac66156b29e
+        uses: TencentCloud/tke-cluster-credential-action@v1
+        with:
+          # Tencent Cloud secret id. Should be referred to a encrypted environment variable
+          secret_id: ${{ secrets.QCLOUD_SECRET_ID }}
+          # Tencent Cloud secret key. Should be referred to a encrypted environment variable
+          secret_key: ${{ secrets.QCLOUD_SECRET_KEY }}
+          # TKE region
+          tke_region: ${{ secrets.QCLOUD_TKE_REGION }}
+          # TKE cluster id
+          cluster_id: ${{ secrets.QCLOUD_TKE_CLUSTER_ID }}         
 
       - uses: actions/cache@v1
         with:
