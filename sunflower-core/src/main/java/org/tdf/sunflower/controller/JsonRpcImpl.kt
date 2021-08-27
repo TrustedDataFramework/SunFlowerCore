@@ -14,8 +14,6 @@ import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.VMExecutor
 import java.math.BigInteger
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -34,7 +32,14 @@ class JsonRpcImpl(
                 "earliest" -> it.genesis
                 "latest" -> it.bestBlock
                 "pending" -> null
-                else -> it.getCanonicalBlock(id.jsonHex.long)
+                else -> {
+                    val h = id.jsonHex
+                    if (h.isHash) {
+                        it.getBlockByHash(h.hex)
+                    } else {
+                        it.getCanonicalBlock(h.long)
+                    }
+                }
             }
         }
     }

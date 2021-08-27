@@ -14,6 +14,8 @@ internal value class JsonHex(private val s: String) {
 
     val bytes: ByteArray get() = ByteUtil.hexStringToBytes(s)
 
+    val isHash: Boolean get() = s.startsWith("0x") && s.length == 32 * 2 + 2
+
     val long: Long
         get() {
             if (!s.startsWith("0x")) throw RuntimeException("Incorrect hex syntax")
