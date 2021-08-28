@@ -25,7 +25,6 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import javax.annotation.PostConstruct
 import kotlin.concurrent.withLock
 import kotlin.math.min
 
@@ -308,7 +307,6 @@ class TransactionPoolImpl(
         }
     }
 
-    @PostConstruct
     fun initialize() {
         eventBus.subscribe(NewBestBlock::class.java) { onNewBestBlock(it) }
         clearScheduler.delay {

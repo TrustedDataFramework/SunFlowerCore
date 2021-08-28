@@ -443,8 +443,8 @@ data class Transaction(
 
     fun validate() {
         require(to.size == 0 || to.size == ADDRESS_LENGTH) { "Receive address is not valid" }
-        require(signature?.r?.bytes()?.size ?: 0 <= HASH_LENGTH) { "Signature R is not valid" }
-        require(signature?.s?.bytes()?.size ?: 0 <= HASH_LENGTH) { "Signature S is not valid" }
+        require((signature?.r?.bytes()?.size ?: 0) <= HASH_LENGTH) { "Signature R is not valid" }
+        require((signature?.s?.bytes()?.size ?: 0) <= HASH_LENGTH) { "Signature S is not valid" }
         require(sender.size == ADDRESS_LENGTH) { "Sender is not valid" }
         require(gasLimit >= 0) { "gas limit cannot overflow" }
     }
