@@ -56,46 +56,18 @@ class TransactionPoolImpl(
 
     override val dropped: MutableMap<HexBytes, Dropped> get() = cache.asMap()
 
-    private var parentHeader: Header? = null
-
-    // pending transaction
-    private val pending: MutableList<WaitingInfo> = mutableListOf()
-
-    // pending gas used
-    private var pendingGas: Long = 0
-
-    // pending state
-    private var current: Backend? = null
-
-    // pending timestamp
-    private var timestamp: Long = 0
+    private var pendingRec: PendingRec = PendingRec()
 
     private val clearScheduler = FixedDelayScheduler("txPool-clear", config.expiredIn)
     private val executeScheduler = FixedDelayScheduler("txPool-execute", 1)
 
-    private fun resetInternal(best: Header) {
-        parentHeader = best
-        timestamp = if (best.height == 0L) {
-            System.currentTimeMillis() / 1000
-        } else {
-            best.createdAt + conCfg.blockInterval
-        }
-        pending.clear()
-        current = trie.createBackend(best)
-    }
 
     fun init() {
         repo.reader.use {
-            resetInternal(it.bestHeader)
+            pendingRec.reset(it.bestHeader)
         }
     }
 
-    private fun clearPending() {
-        pending.clear()
-        pendingGas = 0
-        parentHeader = null
-        current = null
-    }
 
     /**
      * clear waiting transactions
@@ -118,19 +90,19 @@ class TransactionPoolImpl(
         }
     }
 
+
     override fun collect(rd: RepositoryReader, transactions: Collection<Transaction>): Map<HexBytes, String> {
         val errors: MutableMap<HexBytes, String> = mutableMapOf()
 
         writeLock.withLock {
             val newCollected: MutableList<Transaction> = mutableListOf()
             for (tx in transactions) {
-                println(tx)
                 if (tx.gasPrice < appCfg.vmGasPrice) {
                     errors[tx.hash] = "transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}"
                     continue
                 }
 
-                if (pending.any { it.tx.hash == tx.hash } || rd.containsTransaction(tx.hash))
+                if (rd.containsTransaction(tx.hash))
                     continue
 
                 val drop = dropped[tx.hash]
@@ -140,7 +112,7 @@ class TransactionPoolImpl(
                 }
 
                 val info = WaitingInfo(System.currentTimeMillis(), tx)
-                if (waiting.contains(info)) continue
+                if (pendingRec.pending.contains(info) || waiting.contains(info)) continue
 
                 try {
                     tx.validate()
@@ -158,18 +130,12 @@ class TransactionPoolImpl(
                     continue
                 }
 
+                log.info("new transaction collected tx hash = ${tx.hash}")
                 waiting.add(info)
                 newCollected.add(tx)
             }
 
-            // try to move transactions from waiting to pending
-            // pendingGas <= blockGasLimit
-            current?.let {
-                val ex = Execute(waiting.iterator(), it, rd, timestamp, pendingGas)
-                val d = execute(ex)
-                pending.addAll(d.first)
-                this.current = ex.backend
-            }
+            pendingRec.execute(rd, waiting.iterator())
 
             transactions.forEach { t ->
                 this.dropped[t.hash]?.let { errors[t.hash] = it.second }
@@ -180,27 +146,59 @@ class TransactionPoolImpl(
         }
     }
 
-    internal data class Execute(
-        val it: MutableIterator<WaitingInfo>,
-        var backend: Backend,
-        var rd: RepositoryReader,
-        var timestamp: Long,
-        var gasUsed: Long
+    internal data class PendingRec(
+        var backend: Backend? = null,
+        var gas: Long = 0,
+        var timestamp: Long = 0,
+        val pending: MutableList<WaitingInfo> = mutableListOf(),
+        val receipts: MutableList<TransactionReceipt> = mutableListOf()
     )
 
-    // remove from waiting if success, keep unchanged if nonce too big, moved to drop if nonce too small or failed
-    private fun execute(ex: Execute): Pair<List<WaitingInfo>, List<TransactionReceipt>> {
-        val it = ex.it
-        val pending = mutableListOf<WaitingInfo>()
-        val receipts = mutableListOf<TransactionReceipt>()
+    private fun PendingRec.clear(){
+        backend = null
+        pending.clear()
+        receipts.clear()
+        timestamp = 0
+        gas = 0
+    }
 
-        while (it.hasNext()) {
-            val n = it.next()
+    private fun PendingRec.rollback(best: Header, timestamp: Long? = null) {
+        val ts = timestamp ?: if (best.height == 0L) {
+            System.currentTimeMillis() / 1000
+        } else {
+            best.createdAt + conCfg.blockInterval
+        }
+        waiting.addAll(pending)
+        pending.clear()
+        receipts.clear()
+        this.timestamp = ts
+        gas = 0
+        backend = trie.createBackend(best)
+    }
+
+    private fun PendingRec.reset(best: Header){
+        pending.clear()
+        receipts.clear()
+        gas = 0
+        backend = trie.createBackend(best)
+        timestamp = if (best.height == 0L) {
+            System.currentTimeMillis() / 1000
+        } else {
+            best.createdAt + conCfg.blockInterval
+        }
+    }
+
+    // remove from waiting if success, keep unchanged if nonce too big, moved to drop if nonce too small or failed
+    private fun PendingRec.execute(rd: RepositoryReader, waiting: MutableIterator<WaitingInfo>) {
+        val backend = this.backend ?: return
+
+        while (waiting.hasNext()) {
+            val n = waiting.next()
             val t = n.tx
-            val prevNonce = ex.backend.getNonce(t.sender)
+            val prevNonce = backend.getNonce(t.sender)
             if (t.nonce < prevNonce) {
-                it.remove()
-                this.dropped[t.hash] = Pair(t, "nonce is too small")
+                waiting.remove()
+                dropped[t.hash] = Pair(t, "nonce is too small")
                 continue
             }
 
@@ -212,11 +210,11 @@ class TransactionPoolImpl(
 
             // try to execute
             try {
-                val child = ex.backend.createChild()
-                val ctx = CallContext.fromTx(tx = t, timestamp = ex.timestamp)
+                val child = backend.createChild()
+                val ctx = CallContext.fromTx(tx = t, timestamp = this.timestamp)
                 val callData = CallData.fromTx(t)
                 val vmExecutor = VMExecutor.create(
-                    ex.rd,
+                    rd,
                     child, ctx, callData,
                     min(t.gasLimit, blockGasLimit)
                 )
@@ -224,62 +222,67 @@ class TransactionPoolImpl(
                 val res = vmExecutor.execute()
 
                 if (res.gasUsed > blockGasLimit) {
-                    it.remove()
-                    this.dropped[t.hash] = Pair(t, "gas overflows block gas limit")
+                    waiting.remove()
+                    dropped[t.hash] = Pair(t, "gas overflows block gas limit")
                     continue
                 }
 
                 // execute successfully
-                if (ex.gasUsed + res.gasUsed > blockGasLimit) {
+                if (gas + res.gasUsed > blockGasLimit) {
                     continue
                 }
 
                 val receipt = TransactionReceipt(
-                    cumulativeGas = ex.gasUsed + res.gasUsed,
+                    cumulativeGas = gas + res.gasUsed,
                     logInfoList = res.logs,
                     gasUsed = res.gasUsed,
                     result = res.executionResult
                 )
 
-                pending.add(n)
-                receipts.add(receipt)
-                ex.backend = child
-                ex.gasUsed += res.gasUsed
-                it.remove()
+                log.info("add tx ${n.tx.hash} into pending")
+                this.pending.add(n)
+                this.receipts.add(receipt)
+                this.backend = child
+                this.gas += res.gasUsed
+                waiting.remove()
             } catch (e: Exception) {
                 e.printStackTrace()
-                this.dropped[t.hash] = Pair(t, e.message ?: "execute tx error")
-                it.remove()
+                log.info("dropped tx ${n.tx.hash}, execute failed")
+                dropped[t.hash] = Pair(t, e.message ?: "execute tx error")
+                waiting.remove()
             }
         }
-        return Pair(pending, receipts)
     }
 
     override fun pop(rd: RepositoryReader, parentHeader: Header, timestamp: Long): PendingData {
         writeLock.withLock {
-            val ex = Execute(
-                pending.iterator(),
-                trie.createBackend(parentHeader),
-                rd,
-                timestamp,
-                0L
-            )
+            if (parentHeader.hash != this.pendingRec.backend?.parentHash || timestamp != pendingRec.timestamp) {
+                pendingRec.rollback(parentHeader, timestamp)
+                pendingRec.execute(rd, waiting.iterator())
+            }
 
-            val r = execute(ex)
-            clearPending()
-            return PendingData(r.first.map { it.tx }, r.second, ex.backend)
+            val pending = pendingRec.pending.toList().map { it.tx }
+
+            pending.forEach {
+                log.info("pop tx ${it.hash} from pending, ready to packed")
+            }
+
+            val receipts = pendingRec.receipts.toList()
+            val cur = pendingRec.backend
+            pendingRec.clear()
+            return PendingData(pending, receipts, cur)
         }
     }
 
     override fun reset(parent: Header) {
         writeLock.withLock {
-            resetInternal(parent)
+            pendingRec.reset(parent)
         }
     }
 
     override fun current(): Backend? {
         readLock.withLock {
-            return current?.createChild()
+            return pendingRec.backend?.createChild()
         }
     }
 
@@ -288,8 +291,8 @@ class TransactionPoolImpl(
             return
         }
         try {
-            if (event.block.stateRoot == this.parentHeader?.stateRoot) return
-            resetInternal(event.block.header)
+            if (event.block.hash == this.pendingRec.backend?.parentHash) return
+            pendingRec.rollback(event.block)
         } finally {
             writeLock.unlock()
         }
@@ -297,6 +300,8 @@ class TransactionPoolImpl(
 
     internal class WaitingInfo(val receivedAt: Long, val tx: Transaction) : Comparable<WaitingInfo> {
         override fun compareTo(other: WaitingInfo): Int {
+            if(tx.hash == other.tx.hash)
+                return 0
             var cmp = -tx.gasPrice.compareTo(other.tx.gasPrice)
             if (cmp != 0) return cmp
             cmp = tx.sender.compareTo(other.tx.sender)
@@ -307,7 +312,7 @@ class TransactionPoolImpl(
         }
     }
 
-    fun initialize() {
+    init {
         eventBus.subscribe(NewBestBlock::class.java) { onNewBestBlock(it) }
         clearScheduler.delay {
             try {
@@ -315,26 +320,6 @@ class TransactionPoolImpl(
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-        }
-
-        executeScheduler.delay {
-            val r = repo.reader(config.lockTimeout, TimeUnit.SECONDS) ?: return@delay
-            r.use {
-                if (!writeLock.tryLock(config.lockTimeout, TimeUnit.SECONDS))
-                    return@delay
-                try {
-                    val c = current ?: return@delay
-                    val ex = Execute(waiting.iterator(), c, it, timestamp, pendingGas)
-                    val d = execute(ex)
-                    pending.addAll(d.first)
-                    this.current = ex.backend
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                } finally {
-                    writeLock.unlock()
-                }
-            }
-
         }
     }
 }
