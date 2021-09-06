@@ -167,6 +167,8 @@ interface JsonRpc {
         : List<Any>? = null,
         val uncles //: Array - Array of uncle hashes.
         : List<String>? = null,
+
+        var mixHash: String? = null,
     )
 
 

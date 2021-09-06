@@ -24,7 +24,6 @@ class JsonRpcImpl(
     private val pool: TransactionPool,
     private val cfg: AppConfig
 ) : JsonRpc {
-    val filterCnt = AtomicInteger(1)
 
     private fun getByJsonBlockId(id: String): Block? {
         return repo.reader.use {
@@ -420,7 +419,8 @@ class JsonRpcImpl(
             block.transactionsRoot.jsonHex, block.stateRoot.jsonHex, block.receiptsRoot.jsonHex,
             block.coinbase.jsonHex, block.difficulty.jsonHex, BigInteger.ZERO.jsonHex,
             block.extraData.jsonHex, null, block.gasLimit.jsonHex,
-            block.gasUsed.jsonHex, block.createdAt.jsonHex, txs, emptyList()
+            block.gasUsed.jsonHex, block.createdAt.jsonHex, txs, emptyList(),
+            block.mixHash.jsonHex
         )
     }
 }

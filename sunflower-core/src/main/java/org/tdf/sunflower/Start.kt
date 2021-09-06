@@ -13,6 +13,7 @@ import org.springframework.core.env.Environment
 import org.springframework.core.io.ClassPathResource
 import org.springframework.core.io.Resource
 import org.springframework.util.ClassUtils
+import org.springframework.web.filter.CommonsRequestLoggingFilter
 import org.tdf.common.event.EventBus
 import org.tdf.common.serialize.Codecs
 import org.tdf.common.store.JsonStore
