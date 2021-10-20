@@ -196,33 +196,33 @@ class RepositoryKVImpl(
 
     init {
         transactionsStore = StoreWrapper(
-            factory.create('b'),
+            factory.create('b', "transaction"),
             Codecs.hex,
             Transaction.Companion
         )
 
         headerStore = StoreWrapper(
-            factory.create('h'),
+            factory.create('h', "block header"),
             Codecs.hex,
             Header.Companion
         )
         transactionsRoot = StoreWrapper(
-            factory.create('t'),
+            factory.create('t', "transaction root"),
             Codecs.hex,
             Codecs.rlp(Array<HexBytes>::class.java)
         )
         heightIndex = StoreWrapper(
-            factory.create('i'),
+            factory.create('i', "height index"),
             Codecs.rlp(Long::class.java),
             Codecs.rlp(Array<HexBytes>::class.java)
         )
         status = StoreWrapper(
-            factory.create('s'),
+            factory.create('s', "status"),
             Codecs.string,
             Header.Companion
         )
         transactionIndices = StoreWrapper(
-            factory.create('f'),
+            factory.create('f', "transaction index"),
             Codecs.hex,
             Codecs.rlp(Array<TransactionIndex>::class.java)
         )

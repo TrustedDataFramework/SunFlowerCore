@@ -41,7 +41,6 @@ class LevelDb(
             try {
                 log.debug("Opening database")
                 val dbPath = path
-                if (!Files.isSymbolicLink(dbPath.parent)) Files.createDirectories(dbPath.parent)
                 log.debug("Initializing new or existing database: '{}'", directory)
                 db = try {
                     factory.open(dbPath.toFile(), options)

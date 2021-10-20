@@ -15,7 +15,8 @@ class DatabaseStoreFactoryImpl(private val config: DatabaseConfig) : DatabaseSto
     override val directory: String
         get() = config.directory
 
-    override fun create(prefix: Char): Store<ByteArray, ByteArray> {
+    override fun create(prefix: Char, comment: String): Store<ByteArray, ByteArray> {
+        log.info("create storage with prefix {} {}", prefix, comment)
         val b = prefix.code.toByte()
         if (created.contains(b))
             throw RuntimeException("this prefix $prefix had been used")
@@ -34,6 +35,7 @@ class DatabaseStoreFactoryImpl(private val config: DatabaseConfig) : DatabaseSto
     }
 
     init {
+        log.info("load database at directory {} type = {}", config.directory, config.name)
         when (config.name.trim { it <= ' ' }.lowercase()) {
             "leveldb-jni", "leveldb" -> base = LevelDb(JniDBFactory.factory, config.directory)
             "memory" -> base = MemoryDatabaseStore()

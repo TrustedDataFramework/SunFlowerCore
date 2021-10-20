@@ -58,9 +58,16 @@ class AppConfig(private val properties: PropertyLike) {
     val genesisJson: JsonNode by lazy {
         val objectMapper = MapperUtil.OBJECT_MAPPER
             .enable(JsonParser.Feature.ALLOW_COMMENTS)
+
+        val genesis = properties.getProperty("sunflower.consensus.genesis")
+
+        if(genesis.isNullOrBlank())
+            throw RuntimeException("genesis not set")
+
         val `in` = FileUtils.getInputStream(
-            properties.getProperty("sunflower.consensus.genesis")
+            genesis
         )
+        
         return@lazy objectMapper.readValue(`in`, JsonNode::class.java)
     }
 

@@ -13,7 +13,7 @@ internal fun String.bn(): BigInteger {
 }
 
 abstract class AbstractGenesis(protected var parsed: JsonNode) {
-    abstract val block: Block?
+    abstract val block: Block
 
     val timestamp: Long
         get() = parsed["timestamp"]?.asLong() ?: 0L

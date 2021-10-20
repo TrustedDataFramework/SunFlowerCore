@@ -10,6 +10,7 @@ import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.ConsensusConfig
 import org.tdf.sunflower.types.HeaderImpl
+import org.tdf.sunflower.util.FileUtils
 
 abstract class AbstractConsensusEngine : ConsensusEngine {
     // contract storage trie, injected before init() called
@@ -50,6 +51,7 @@ abstract class AbstractConsensusEngine : ConsensusEngine {
     open val bios: List<Builtin>
         get() = emptyList()
 
+    open val code: Map<HexBytes, HexBytes> get() = emptyMap()
 
     companion object {
         @JvmField

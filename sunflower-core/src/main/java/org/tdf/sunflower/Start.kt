@@ -79,8 +79,12 @@ open class Start {
         cfg: ConsensusConfig
     ): Miner {
         val miner = engine.miner
-        if (cfg.enableMining)
+        if (cfg.enableMining) {
+            log.info("start miner")
             miner.start()
+        } else {
+           log.info("mining is not enabled")
+        }
         return miner
     }
 
@@ -102,7 +106,7 @@ open class Start {
         c: AppConfig
     ): AccountTrie {
         return AccountTrie(
-            databaseStoreFactory.create('a'),
+            databaseStoreFactory.create('a', "account trie"),
             contractCodeStore,
             contractStorageTrie,
             c.isTrieSecure
@@ -126,6 +130,8 @@ open class Start {
         @Qualifier("contractStorageTrie") contractStorageTrie: Trie<HexBytes?, HexBytes?>?,
         @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes?, HexBytes?>?
     ): ConsensusEngine {
+
+        log.info("load consensus engine name = {}", cfg.name)
         val engine: ConsensusEngine = when (cfg.name) {
             ApplicationConstants.CONSENSUS_NONE -> {
                 log.warn("none consensus engine selected, please ensure you are in test mode")
@@ -149,9 +155,15 @@ open class Start {
                 PoA()
             }
         }
+
+        log.info("inject dependencies into consensus engine")
         inject(context, engine as AbstractConsensusEngine)
+
+        log.info("initialize consensus engine")
         engine.init(cfg)
+
         val nonNullFields = arrayOf("Miner", "Validator", "AccountTrie", "GenesisBlock", "PeerServerListener")
+
         for (field in nonNullFields) {
             val method = "get$field"
             if (engine.javaClass.getMethod(method).invoke(engine) == null) {
@@ -202,7 +214,7 @@ open class Start {
     open fun contractStorageTrie(factory: DatabaseStoreFactory, c: AppConfig): Trie<HexBytes, HexBytes> {
         val ret = TrieImpl(
             NoDeleteStore(
-                factory.create('o')
+                factory.create('o', "contract storage trie")
             ) { it == null || it.isEmpty() },
             Codecs.hex,
             Codecs.hex
@@ -214,7 +226,7 @@ open class Start {
     @Bean
     open fun contractCodeStore(factory: DatabaseStoreFactory): Store<HexBytes, HexBytes> {
         return StoreWrapper(
-            factory.create('c'),
+            factory.create('c', "contract code hash -> contract code"),
             Codecs.hex,
             Codecs.hex
         )
@@ -280,9 +292,13 @@ open class Start {
 
         @JvmStatic
         fun main(args: Array<String>) {
+            // inject class loader
             FileUtils.setClassLoader(ClassUtils.getDefaultClassLoader())
             val app = SpringApplication(Start::class.java)
+
             app.setDefaultProperties(loadDefaultConfig())
+            log.info("default properties = {}", loadDefaultConfig())
+
             app.addInitializers({
                 loadConstants(it.environment)
                 if (AppConfig.get().isVmDebug) VMExecutor.enableDebug(

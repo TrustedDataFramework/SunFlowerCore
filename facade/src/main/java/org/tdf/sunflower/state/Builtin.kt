@@ -11,7 +11,6 @@ import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.vm.abi.Abi
 import java.math.BigInteger
 
-
 interface Builtin {
     val codeSize: Int get() = 1
     val address: HexBytes

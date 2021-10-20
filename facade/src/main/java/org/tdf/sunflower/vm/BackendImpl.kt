@@ -28,6 +28,7 @@ class BackendImpl(
     // code hash -> code
     private val codeCache: MutableMap<HexBytes, HexBytes> = mutableMapOf(),
     override val height: Long = parent.height + 1,
+    private val consensusCode: Map<HexBytes, HexBytes> = emptyMap()
 ) : Backend {
     // get account without clone
     private fun lookup(address: HexBytes): Account {
@@ -187,6 +188,9 @@ class BackendImpl(
     }
 
     override fun getCode(address: HexBytes): HexBytes {
+        val code = consensusCode[address]
+        if(code != null)
+            return code
         val ad = replace[address]
         if (ad != null) {
             println("replace from $address to $ad")
@@ -199,6 +203,8 @@ class BackendImpl(
     }
 
     override fun setCode(address: HexBytes, code: HexBytes) {
+        if(consensusCode.containsKey(address))
+            throw RuntimeException("cannot set code of consensus")
         if (staticCall)
             throw RuntimeException("cannot set balance in static call")
         val h = code.sha3()
