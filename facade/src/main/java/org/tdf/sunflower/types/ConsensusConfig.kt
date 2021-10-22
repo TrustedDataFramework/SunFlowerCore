@@ -52,12 +52,4 @@ open class ConsensusConfig(val properties: PropertyLike) {
         val stream = FileUtils.getInputStream(properties.getProperty("genesis")!!)
         objectMapper.readValue(stream, JsonNode::class.java)
     }
-
-    val blockGasLimit: Long
-        get() = genesisJson["gasLimit"]?.asLong() ?: DEFAULT_BLOCK_GAS_LIMIT
-
-    companion object {
-        const val DEFAULT_BLOCK_GAS_LIMIT: Long = 60000000
-    }
-
 }

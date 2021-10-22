@@ -18,9 +18,6 @@ import org.tdf.sunflower.vm.CallType
 import org.tdf.sunflower.vm.VMExecutor
 
 abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, Account>) : Validator {
-    open val blockGasLimit: Long
-        get() = 0
-
     abstract val chainId: Int
 
     protected fun commonValidate(rd: RepositoryReader, block: Block, parent: Block): BlockValidateResult {
@@ -73,14 +70,14 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
         try {
             val coinbase = block.body[0]
             for (tx in block.body.subList(1, block.body.size)) {
-                if (currentGas > blockGasLimit) return fault("block gas overflow")
+                if (currentGas > block.gasLimit) return fault("block gas overflow")
                 var r: VMResult
                 val executor = VMExecutor.create(
                     rd,
                     currentBackend,
                     CallContext.fromTx(tx, timestamp = block.createdAt),
                     CallData.fromTx(tx),
-                    (blockGasLimit - currentGas).min(tx.gasLimit)
+                    (block.gasLimit - currentGas).min(tx.gasLimit)
                 )
                 r = executor.execute()
                 results[tx.hash] = r

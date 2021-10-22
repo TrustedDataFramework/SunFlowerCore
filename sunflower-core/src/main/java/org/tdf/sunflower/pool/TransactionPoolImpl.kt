@@ -21,12 +21,14 @@ import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
 import org.tdf.sunflower.vm.VMExecutor
+import java.math.BigInteger
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
 import kotlin.math.min
+import kotlin.properties.Delegates
 
 @Component
 class TransactionPoolImpl(
@@ -61,10 +63,13 @@ class TransactionPoolImpl(
     private val clearScheduler = FixedDelayScheduler("txPool-clear", config.expiredIn)
     private val executeScheduler = FixedDelayScheduler("txPool-execute", 1)
 
+    private lateinit var gasLimit: BigInteger
+
 
     fun init() {
         repo.reader.use {
             pendingRec.reset(it.bestHeader)
+            gasLimit = it.genesis.gasLimit.toBigInteger()
         }
     }
 
@@ -206,7 +211,7 @@ class TransactionPoolImpl(
                 continue
             }
 
-            val blockGasLimit = appCfg.blockGasLimit
+            val blockGasLimit = gasLimit.longValueExact()
 
             // try to execute
             try {

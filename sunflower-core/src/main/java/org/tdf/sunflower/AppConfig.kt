@@ -84,12 +84,6 @@ class AppConfig(private val properties: PropertyLike) {
         return@lazy r
     }
 
-    val blockGasLimit: Long by lazy {
-        val n = genesisJson
-        if (n["gasLimit"] == null) ConsensusConfig.DEFAULT_BLOCK_GAS_LIMIT else n["gasLimit"].asLong()
-    }
-
-
     val vmGasPrice: Uint256 = reader.getAsU256("sunflower.vm.gas-price", Uint256.ZERO)
     val isVmDebug: Boolean = reader.getAsBool("sunflower.vm.debug")
     val isTrieSecure: Boolean = reader.getAsBool("sunflower.trie.secure")

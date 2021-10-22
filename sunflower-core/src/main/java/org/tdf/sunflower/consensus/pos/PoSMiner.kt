@@ -83,27 +83,25 @@ class PoSMiner(
         }
 
         try {
-            repo.reader.use { rd ->
-                val best = rd.bestBlock
-                val p = pos.getProposer(rd, best, OffsetDateTime.now().toEpochSecond(), config.blockInterval.toLong())
+            repo.writer.use {
+                val best = it.bestBlock
+                val now = OffsetDateTime.now().toEpochSecond()
+                val p = pos.getProposer(it, best, now)
 
                 // 判断是否轮到自己出块
-                val o = p?.takeIf { it.first == config.coinbase } ?: return
+                val o = p?.takeIf { x -> x.first == config.coinbase } ?: return
                 log.info("try to mining at height " + (best.height + 1))
 
-                val (block, indices) = createBlock(rd, rd.bestBlock, System.currentTimeMillis() / 1000)
+                val (block, indices) = createBlock(it, it.bestBlock, now)
                 if (block != null) {
                     log.info("mining success block: {}", block.header)
+                    it.writeBlock(block, indices)
                 }
                 eventBus.publish(NewBlockMined(block!!, indices))
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    }
-
-    fun getProposer(parent: Block, currentEpochSeconds: Long): Proposer? {
-        return null
     }
 
     override fun createCoinBase(height: Long): Transaction {

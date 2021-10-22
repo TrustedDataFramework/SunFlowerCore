@@ -22,7 +22,7 @@ abstract class AbstractGenesis(protected var parsed: JsonNode) {
         get() = parsed["gasLimit"]?.asText()?.hex() ?: ByteUtil.ZEROS_32
 
     val gasLimit: Long
-        get() = parsed["gasLimit"]?.asLong() ?: 0
+        get() = parsed["gasLimit"]?.asLong() ?: DEFAULT_BLOCK_GAS_LIMIT
 
     val alloc: Map<HexBytes, Account>
         get() {
@@ -46,5 +46,9 @@ abstract class AbstractGenesis(protected var parsed: JsonNode) {
             li.add(n[i])
         }
         return li
+    }
+
+    companion object {
+        const val DEFAULT_BLOCK_GAS_LIMIT: Long = 60000000
     }
 }

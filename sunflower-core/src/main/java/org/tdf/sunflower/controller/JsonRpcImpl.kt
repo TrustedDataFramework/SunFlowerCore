@@ -24,6 +24,7 @@ class JsonRpcImpl(
     private val pool: TransactionPool,
     private val cfg: AppConfig
 ) : JsonRpc {
+    private val gasLimit: Long
 
     private fun getByJsonBlockId(id: String): Block? {
         return repo.reader.use {
@@ -200,7 +201,8 @@ class JsonRpcImpl(
                         it,
                         backend,
                         args.toCallContext(backend.getNonce(cd.caller), cfg.chainId),
-                        cd, cfg.blockGasLimit
+                        cd,
+                        gasLimit
                     )
                     return executor.execute().executionResult.jsonHex
                 }
@@ -220,7 +222,7 @@ class JsonRpcImpl(
                     backend,
                     args.toCallContext(backend.getNonce(callData.caller), cfg.chainId),
                     callData,
-                    cfg.blockGasLimit
+                    gasLimit
                 )
                 return executor.execute().gasUsed.jsonHex
             }
@@ -422,5 +424,11 @@ class JsonRpcImpl(
             block.gasUsed.jsonHex, block.createdAt.jsonHex, txs, emptyList(),
             block.mixHash.jsonHex
         )
+    }
+
+    init {
+        gasLimit = repo.reader.use {
+           it.genesis.gasLimit
+        }
     }
 }

@@ -66,8 +66,4 @@ class PoAValidator(accountTrie: StateTrie<HexBytes, Account>, private val poA: P
     private fun validateCoinBase(parent: Block, coinBase: Transaction): ValidateResult {
         return if (coinBase.nonce != parent.height + 1) fault("nonce of coin base should be " + parent.height + 1) else success()
     }
-
-    override val blockGasLimit: Long
-        get() = poA.config.blockGasLimit
-
 }
