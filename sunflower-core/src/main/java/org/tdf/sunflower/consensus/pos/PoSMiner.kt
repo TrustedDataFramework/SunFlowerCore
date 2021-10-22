@@ -2,6 +2,7 @@ package org.tdf.sunflower.consensus.pos
 
 import org.slf4j.LoggerFactory
 import org.tdf.common.event.EventBus
+import org.tdf.common.types.Uint256
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING
@@ -14,6 +15,7 @@ import org.tdf.sunflower.consensus.Proposer
 import org.tdf.sunflower.events.NewBlockMined
 import org.tdf.sunflower.types.*
 import java.lang.Exception
+import java.math.BigInteger
 import java.time.OffsetDateTime
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -25,7 +27,6 @@ class PoSMiner(
     private val config: ConsensusConfig,
     private val pos: PoS
 ) : AbstractMiner(accountTrie, eventBus, config, pos.transactionPool) {
-    var minerAddress: HexBytes? = null
     lateinit var repo: RepositoryService
 
     @Volatile
@@ -75,19 +76,21 @@ class PoSMiner(
         if (!config.enableMining || stopped) {
             return
         }
+
         if (config.coinbase == null) {
             log.warn("pos miner: invalid coinbase address {}", config.coinbase)
             return
         }
+
         try {
             repo.reader.use { rd ->
                 val best = rd.bestBlock
+                val p = pos.getProposer(rd, best, OffsetDateTime.now().toEpochSecond(), config.blockInterval.toLong())
+
                 // 判断是否轮到自己出块
-                val o = getProposer(
-                    best,
-                    OffsetDateTime.now().toEpochSecond()
-                )?.takeIf { it.address == minerAddress } ?: return
-                log.debug("try to mining at height " + (best.height + 1))
+                val o = p?.takeIf { it.first == config.coinbase } ?: return
+                log.info("try to mining at height " + (best.height + 1))
+
                 val (block, indices) = createBlock(rd, rd.bestBlock, System.currentTimeMillis() / 1000)
                 if (block != null) {
                     log.info("mining success block: {}", block.header)
@@ -104,7 +107,11 @@ class PoSMiner(
     }
 
     override fun createCoinBase(height: Long): Transaction {
-        return Transaction()
+        return Transaction(
+            nonce = height,
+            value = Uint256.ZERO,
+            to = config.coinbase ?: throw RuntimeException("pos miner: coinbase not found"),
+        )
     }
 
     override val chainId: Int = config.chainId

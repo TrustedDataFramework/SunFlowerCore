@@ -27,6 +27,15 @@ interface RepositoryReader : Closeable {
     fun getCanonicalBlock(height: Long): Block?
     fun getCanonicalHeader(height: Long): Header?
 
+    fun getAncestor(now: HexBytes, ancestor: Long): Header{
+        var c = getHeaderByHash(now)!!
+        require(c.height >= ancestor)
+
+        while (c.height != ancestor)
+            c = getHeaderByHash(c.hashPrev)!!
+        return c
+    }
+
     fun getHeadersBetween(
         startHeight: Long,
         stopHeight: Long,

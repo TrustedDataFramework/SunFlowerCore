@@ -291,6 +291,7 @@ data class VMExecutor(
         const val MAX_LABELS = MAX_FRAMES * 4
         const val MAX_CALL_DEPTH = 8
         const val EVM_MAX_STACK_SIZE = 1024
+        const val GAS_UNLIMITED = Long.MAX_VALUE.shr(8)
 
         fun create(
             rd: RepositoryReader,

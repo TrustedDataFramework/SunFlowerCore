@@ -162,6 +162,8 @@ open class Start {
         log.info("initialize consensus engine")
         engine.init(cfg)
 
+        log.info("consensus engine created chain id = {}", cfg.chainId)
+
         val nonNullFields = arrayOf("Miner", "Validator", "AccountTrie", "GenesisBlock", "PeerServerListener")
 
         for (field in nonNullFields) {
@@ -171,8 +173,11 @@ open class Start {
             }
         }
 
+        val root =
+        repoSrv.reader.use {
+            accountTrie.init(engine.alloc, engine.bios, engine.builtins, engine.code, it)
+        }
         // init accountTrie and genesis block
-        val root = accountTrie.init(engine.alloc, engine.bios, engine.builtins)
         val g = engine.genesisBlock
         repoSrv.writer.use { it.saveGenesis(g.copy(header = g.header.impl.copy(stateRoot = root))) }
         transactionPool.init()

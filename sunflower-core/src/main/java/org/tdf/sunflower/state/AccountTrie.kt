@@ -9,9 +9,11 @@ import org.tdf.common.trie.Trie
 import org.tdf.common.trie.TrieImpl
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.Start
+import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.types.Header
-import org.tdf.sunflower.vm.Backend
-import org.tdf.sunflower.vm.BackendImpl
+import org.tdf.sunflower.vm.*
+import org.tdf.sunflower.vm.abi.Abi
+import org.tdf.sunflower.vm.hosts.Limit
 
 
 class AccountTrie(
@@ -26,7 +28,6 @@ class AccountTrie(
     lateinit var builtins: Map<HexBytes, Builtin>
 
     override val trieStore: Store<ByteArray, ByteArray>
-
 
     override fun createBackend(
         parent: Header,
@@ -59,7 +60,9 @@ class AccountTrie(
     override fun init(
         alloc: Map<HexBytes, Account>,
         bios: List<Builtin>,
-        builtins: List<Builtin>
+        builtins: List<Builtin>,
+        consensusCode: Map<HexBytes, HexBytes>,
+        rd: RepositoryReader
     ): HexBytes {
         this.builtins = builtins.associateBy { it.address }
         this.bios = bios.associateBy { it.address }
@@ -79,13 +82,33 @@ class AccountTrie(
             genesisStates[address] = a
         }
 
+
         // sync to genesis
         val tmp = trie.revert()
         genesisStates.forEach { tmp[it.key] = it.value }
+        tmp.commit()
+
+        val backend = BackendImpl(
+            parent = null,
+            trie = tmp,
+            contractStorageTrie = contractStorageTrie,
+            builtins = this.builtins,
+            bios = this.bios,
+            staticCall = false,
+            codeStore = contractCodeStore,
+        )
+
+        // create consensus code
+        consensusCode.forEach { (t, u) ->
+            log.info("deploy consensus code at address {}", t)
+            val cd = CallData(to = t, callType = CallType.CREATE, data = u)
+            val ex = VMExecutor(rd, backend, CallContext(), cd, Limit(VMExecutor.GAS_UNLIMITED), mutableListOf())
+            ex.execute()
+        }
+
         log.info("genesis states = {}", Start.MAPPER.writeValueAsString(genesisStates))
-        val r = tmp.commit()
+        val r = backend.merge()
         log.info("genesis state root = $r")
-        tmp.flush()
         return r
     }
 
