@@ -8,6 +8,7 @@ import org.tdf.sunflower.ApplicationConstants.MAX_SHUTDOWN_WAITING
 import org.tdf.sunflower.consensus.AbstractMiner
 import org.tdf.sunflower.events.NewBestBlock
 import org.tdf.sunflower.events.NewBlockMined
+import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.types.*
 import java.util.*
@@ -31,7 +32,6 @@ class PoWMiner(
     private var currentMiningHeight: Long = 0
 
     @Volatile
-    private var working = false
     private var task: Future<*>? = null
 
     override fun createCoinBase(height: Long): Transaction {
@@ -50,24 +50,18 @@ class PoWMiner(
         )
     }
 
-    override fun finalizeBlock(parent: Block, block: Block): Block? {
+    override fun finalizeBlock(rd: RepositoryReader, parent: Block, block: Block): Block {
         var nbits: Uint256
         var b = block
         poW.repo.reader.use { rd -> nbits = poW.bios.getNBits(rd, parent.hash) }
         val rd = Random()
         val nonce = ByteArray(NONCE_SIZE)
         log.info("start finish pow target = {}", nbits.byte32.hex())
-        working = true
         while (PoW.compare(PoW.getPoWHash(b), nbits.byte32) > 0) {
-            if (!working) {
-                log.info("mining canceled")
-                return null
-            }
             rd.nextBytes(nonce)
             b = b.copy(header = b.header.impl.copy(nonce = nonce.hex()))
         }
         log.info("pow success")
-        working = false
         return b
     }
 
@@ -85,7 +79,6 @@ class PoWMiner(
 
     override fun stop() {
         if (stopped) return
-        working = false
         minerExecutor!!.shutdown()
         try {
             minerExecutor!!.awaitTermination(MAX_SHUTDOWN_WAITING, TimeUnit.SECONDS)
@@ -106,7 +99,7 @@ class PoWMiner(
             log.warn("pow miner: invalid coinbase address {}", config.coinbase)
             return
         }
-        if (working || task != null) return
+        if (task != null) return
         poW.repo.reader.use { rd ->
             val best = rd.bestBlock
             log.debug("try to mining at height " + (best.height + 1))
@@ -143,7 +136,6 @@ class PoWMiner(
         eventBus.subscribe(NewBestBlock::class.java) { (block) ->
             if (block.height >= currentMiningHeight) {
                 // cancel mining
-                working = false
                 currentMiningHeight = 0
             }
         }

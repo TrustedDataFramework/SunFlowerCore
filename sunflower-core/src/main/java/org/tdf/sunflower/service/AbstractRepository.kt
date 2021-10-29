@@ -32,7 +32,7 @@ abstract class AbstractRepository
             return
         }
         if (o.size > 1 || o.stream().anyMatch { x: Block -> x.hash != b.hash }) {
-//            throw RuntimeException("genesis in db not equals to genesis in configuration")
+            throw RuntimeException("genesis in db not equals to genesis in configuration")
         }
     }
 

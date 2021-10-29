@@ -80,10 +80,6 @@ public class PoWBios extends AbstractBuiltin {
             throw new RuntimeException("call to bios failed, method not found");
         }
 
-        if (callData.getCallType() != CallType.COINBASE) {
-            throw new RuntimeException("update should be called in coinbase transaction");
-        }
-
         // find function by selector
         List<Long> ts = new ArrayList<>(
             Arrays.asList(

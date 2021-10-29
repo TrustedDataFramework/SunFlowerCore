@@ -1,17 +1,16 @@
 package org.tdf.sunflower.consensus.pos
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import lombok.extern.slf4j.Slf4j
 import org.slf4j.LoggerFactory
+import org.tdf.common.types.Uint256
 import org.tdf.common.util.*
 import org.tdf.sunflower.facade.AbstractConsensusEngine
 import org.tdf.sunflower.facade.PropertyLike
 import org.tdf.sunflower.facade.RepositoryReader
+import org.tdf.sunflower.state.*
 import org.tdf.sunflower.types.ConsensusConfig
-import org.tdf.sunflower.state.Account
-import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.util.FileUtils
 import org.tdf.sunflower.util.MapperUtil
@@ -19,7 +18,6 @@ import org.tdf.sunflower.vm.abi.Abi
 import java.math.BigInteger
 
 class PosConfig(val prop: PropertyLike) : ConsensusConfig(prop) {
-    val eraSize = reader.getAsInt("era-size")
     val code = prop.getProperty("code")!!
     val abi = prop.getProperty("abi")!!
 }
@@ -31,22 +29,48 @@ class PoS : AbstractConsensusEngine() {
     private lateinit var posMiner: PoSMiner
     private lateinit var genesis: Genesis
 
+    var eraSize = 0
+    var proposerMinStake = BigInteger.ZERO
+    var maxMiners = 0
+
     lateinit var consensusAbi: Abi
     val consensusAddr = "pos".ascii().sha3().tail20().hex()
     val cache = CacheBuilder.newBuilder().maximumSize(128).build<HexBytes, List<Pair<HexBytes, BigInteger>>>()
 
+    fun getDifficulty(rd: RepositoryReader, parent: Header): Uint256 {
+        val w = accountTrie.createWrapper(rd, parent, consensusAbi, consensusAddr)
+        val r = w.call(
+            "target",
+        )
+        return (r[0] as BigInteger).u256()
+    }
+
+    private fun initMaxMiners(w: ContractWrapper): Int{
+        val l = maxMiners
+        if(l != 0)
+            return l
+
+        val r = w.call(
+            "maxMiners",
+        )[0] as BigInteger
+
+        maxMiners = r.intValueExact()
+        return r.intValueExact()
+    }
 
     fun getProposer(rd: RepositoryReader, parent: Header, now: Long): Triple<HexBytes, Long, Long>? {
         val candidates = getCandidates(rd, parent)
         val w = accountTrie.createWrapper(rd, parent, consensusAbi, consensusAddr)
-        val end = Math.min(candidates.size, POS_MAX_CANDIDATES)
+
+        val maxMiners = initMaxMiners(w)
+        val end = Math.min(candidates.size, maxMiners)
+
         val r = w.call(
             "getProposer",
             parent.coinbase.bytes,
             parent.createdAt.toBigInteger(),
             candidates.map { it.first.bytes }.subList(0, end),
-            now.toBigInteger(),
-            config.blockInterval.toBigInteger()
+            now.toBigInteger()
         )
         if ((r[0] as ByteArray).hex() == AddrUtil.empty())
             return null
@@ -58,7 +82,18 @@ class PoS : AbstractConsensusEngine() {
     }
 
     fun getCandidates(rd: RepositoryReader, parent: Header): List<Pair<HexBytes, BigInteger>> {
-        val origin = parent.height / POS_INTERVAL * POS_INTERVAL
+        if(eraSize == 0) {
+            val w = accountTrie.createWrapper(rd, rd.genesis, consensusAbi, consensusAddr)
+            val newEraSize = w.call("eraSize")[0] as BigInteger
+            this.eraSize = newEraSize.intValueExact()
+        }
+
+        if(proposerMinStake == BigInteger.ZERO) {
+            val w = accountTrie.createWrapper(rd, rd.genesis, consensusAbi, consensusAddr)
+            this.proposerMinStake = w.call("proposerMinStake")[0] as BigInteger
+        }
+
+        val origin = parent.height / eraSize * eraSize
         val h = rd.getAncestor(parent.hash, origin)
         val trie = accountTrie.trie.revert(h.stateRoot)
         val a = trie.get(consensusAddr)!!
@@ -72,8 +107,12 @@ class PoS : AbstractConsensusEngine() {
 
             for (i in 1..n) {
                 val addr = w.call("candidates", i.toBigInteger())[0] as ByteArray
-                val votes = w.call("votes", addr)[0] as BigInteger
-                li.add(Pair(addr.hex(), votes))
+                log.debug("before call scoreOf")
+                val score = w.call("scoreOf", addr)[0] as BigInteger
+                log.debug("after call scoreOf")
+                val stake = w.call("balanceOf", addr)[0] as BigInteger
+                if(stake >= proposerMinStake)
+                    li.add(Pair(addr.hex(), score))
             }
 
             li.sortByDescending { it.second }
@@ -81,6 +120,9 @@ class PoS : AbstractConsensusEngine() {
             li
         }
     }
+
+    override val builtins: List<Builtin>
+        get() = listOf(LoggingContract())
 
     override val alloc: Map<HexBytes, Account>
         get() = genesis.alloc
@@ -111,8 +153,6 @@ class PoS : AbstractConsensusEngine() {
         get() = "pos"
 
     companion object {
-        const val POS_INTERVAL = 5
-        const val POS_MAX_CANDIDATES = 15
         val log = LoggerFactory.getLogger("pos")
     }
 }

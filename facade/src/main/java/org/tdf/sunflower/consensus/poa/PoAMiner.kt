@@ -7,6 +7,7 @@ import org.tdf.common.util.FixedDelayScheduler
 import org.tdf.sunflower.consensus.AbstractMiner
 import org.tdf.sunflower.consensus.poa.config.PoAConfig
 import org.tdf.sunflower.events.NewBlockMined
+import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.types.Block
 import org.tdf.sunflower.types.Header
@@ -41,7 +42,7 @@ class PoAMiner(private val poa: PoA) :
         )
     }
 
-    override fun finalizeBlock(parent: Block, block: Block): Block {
+    override fun finalizeBlock(rd: RepositoryReader, parent: Block, block: Block): Block {
         val key =
             ECKey.fromPrivate(config.privateKey?.bytes ?: throw RuntimeException("poa miner: private key not set"))
         val signed = PoAUtils.sign(key, block)

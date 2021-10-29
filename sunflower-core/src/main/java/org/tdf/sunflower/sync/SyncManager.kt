@@ -101,7 +101,7 @@ class SyncManager(
     }
 
     private val messageExecutor =
-        Executors.newCachedThreadPool(ThreadFactoryBuilder().setNameFormat("SyncManagerMessageHandler-%d").build())
+        Executors.newFixedThreadPool(4, ThreadFactoryBuilder().setNameFormat("SyncManagerMessageHandler-%d").build())
 
     private fun broadcastToApproved(body: ByteArray) {
         val peers = peerServer.peers
@@ -219,7 +219,7 @@ class SyncManager(
                 if (receivedTransactions.asMap().containsKey(root)) return
                 receivedTransactions.put(root, true)
                 repo.reader.use {
-                    transactionPool.collect(it, txs)
+                    transactionPool.collect(it, txs, "p2p")
                 }
                 context.relay()
                 return

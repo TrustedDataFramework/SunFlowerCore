@@ -58,16 +58,16 @@ data class VMExecutor(
         }
 
         // 2. set initial gas by payload size
-        if (callData.callType !== CallType.COINBASE)
-            limit.initialGas = backend.getInitialGas(callData.callType == CallType.CREATE, callData.data.bytes)
+        limit.initialGas = backend.getInitialGas(callData.callType == CallType.CREATE, callData.data.bytes)
+
         val result = executeInternal()
 
         // 3. calculate fee and
-        val fee = limit.gas.u256() * ctx.gasPrice
+        val fee = limit.totalGas.u256() * ctx.gasPrice
         backend.subBalance(ctx.origin, fee)
 
         return VMResult(
-            limit.gas,
+            limit.totalGas,
             result.hex(),
             logs,
             fee
@@ -82,86 +82,74 @@ data class VMExecutor(
 
 
     fun executeInternal(): ByteArray {
-        if(Precompiled.PRECOMPILED.containsKey(callData.to)) {
+        if (Precompiled.PRECOMPILED.containsKey(callData.to)) {
             val p = Precompiled.PRECOMPILED[callData.to] ?: throw UnsupportedOperationException()
             return p.execute(callData.data.bytes)
         }
 
-        return when (callData.callType) {
-            CallType.COINBASE -> {
-                backend.addBalance(callData.to, callData.value)
-                for (bios in backend.bios.values) {
-                    bios.call(rd, backend, ctx, callData)
+        // is prebuilt
+        if (backend.builtins.containsKey(callData.to)) {
+            backend.addBalance(callData.to, callData.value)
+            backend.subBalance(callData.caller, callData.value)
+            val updater = backend.builtins[callData.to]!!
+            return updater.call(rd, backend, ctx, callData)
+        }
+        var code: ByteArray
+        // contract constructor/call arguments
+        var data: ByteArray
+        // if call context is evm, else web assembly
+        val isWasm: Boolean
+        val receiver = callData.to
+        val create = callData.callType == CallType.CREATE
+
+        if (create && backend.getCodeSize(callData.to) != 0)
+            throw RuntimeException("contract collide")
+
+        when (callData.callType) {
+            CallType.CREATE -> {
+                isWasm = isWasm(callData.data.bytes)
+
+                // increase sender nonce
+                val n = backend.getNonce(callData.caller)
+                if (isWasm) {
+                    create(callData.data.bytes).use {
+                        // validate module
+                        validate(it, false)
+                        code = dropInit(callData.data.bytes)
+                        data = extractInitData(it)
+                        backend.setCode(receiver, code.hex())
+                    }
+                } else {
+                    code = callData.data.bytes
+                    data = ByteUtil.EMPTY_BYTE_ARRAY
                 }
-                ByteUtil.EMPTY_BYTE_ARRAY
+
+                // increase nonce here to avoid conflicts
+                backend.setNonce(callData.caller, n + 1)
             }
-            else -> {
-                // is prebuilt
-                if (backend.builtins.containsKey(callData.to)) {
-                    backend.addBalance(callData.to, callData.value)
-                    backend.subBalance(callData.caller, callData.value)
-                    val updater = backend.builtins[callData.to]!!
-                    return updater.call(rd, backend, ctx, callData)
+            CallType.CALL, CallType.DELEGATE -> {
+                val codeAddr = if (callData.callType == CallType.DELEGATE) {
+                    callData.delegate
+                } else {
+                    receiver
                 }
-                var code: ByteArray
-                // contract constructor/call arguments
-                var data: ByteArray
-                // if call context is evm, else web assembly
-                val isWasm: Boolean
-                val receiver = callData.to
-                val create = callData.callType == CallType.CREATE
-
-                if (create && backend.getCodeSize(callData.to) != 0)
-                    throw RuntimeException("contract collide")
-
-                when (callData.callType) {
-                    CallType.CREATE -> {
-                        isWasm = isWasm(callData.data.bytes)
-
-                        // increase sender nonce
-                        val n = backend.getNonce(callData.caller)
-                        if (isWasm) {
-                            create(callData.data.bytes).use {
-                                // validate module
-                                validate(it, false)
-                                code = dropInit(callData.data.bytes)
-                                data = extractInitData(it)
-                                backend.setCode(receiver, code.hex())
-                            }
-                        } else {
-                            code = callData.data.bytes
-                            data = ByteUtil.EMPTY_BYTE_ARRAY
-                        }
-
-                        // increase nonce here to avoid conflicts
-                        backend.setNonce(callData.caller, n + 1)
-                    }
-                    CallType.CALL, CallType.DELEGATE -> {
-                        val codeAddr = if (callData.callType == CallType.DELEGATE) {
-                            callData.delegate
-                        } else {
-                            receiver
-                        }
-                        val hash = backend.getContractHash(codeAddr)
-                        // this is a transfer transaction
-                        code = if (hash == HashUtil.EMPTY_DATA_HASH_HEX) {
-                            HexBytes.EMPTY_BYTES
-                        } else {
-                            CACHE[hash, { backend.getCode(codeAddr).bytes }]
-                        }
-                        data = callData.data.bytes
-                        isWasm = isWasm(code)
-                    }
-                    else -> throw UnsupportedOperationException()
+                val hash = backend.getContractHash(codeAddr)
+                // this is a transfer transaction
+                code = if (hash == HashUtil.EMPTY_DATA_HASH_HEX) {
+                    HexBytes.EMPTY_BYTES
+                } else {
+                    CACHE[hash, { backend.getCode(codeAddr).bytes }]
                 }
-                // call a non-contract account
-                if (code.isEmpty() && !callData.data.isEmpty()) throw RuntimeException("call receiver ${callData.to} not a contract call data = ${callData.data}")
-                backend.addBalance(receiver, callData.value)
-                backend.subBalance(callData.caller, callData.value)
-                if (code.isEmpty()) return ByteUtil.EMPTY_BYTE_ARRAY
-                if (isWasm) executeWasm(create, code, data) else executeEvm(create, code, data)
+                data = callData.data.bytes
+                isWasm = isWasm(code)
             }
         }
+        // call a non-contract account
+        if (code.isEmpty() && !callData.data.isEmpty()) throw RuntimeException("call receiver ${callData.to} not a contract call data = ${callData.data}")
+        backend.addBalance(receiver, callData.value)
+        backend.subBalance(callData.caller, callData.value)
+        if (code.isEmpty()) return ByteUtil.EMPTY_BYTE_ARRAY
+        if (isWasm) return executeWasm(create, code, data) else return executeEvm(create, code, data)
     }
 
     private fun executeEvm(create: Boolean, code: ByteArray, input: ByteArray): ByteArray {
@@ -302,7 +290,7 @@ data class VMExecutor(
         ): VMExecutor {
             var c = callData
             val n = backend.getNonce(ctx.origin)
-            if (n != ctx.txNonce && callData.callType !== CallType.COINBASE)
+            if (n != ctx.txNonce)
                 throw RuntimeException("invalid nonce")
             if (callData.callType == CallType.CREATE)
                 c = callData.copy(

@@ -58,6 +58,8 @@ class TransactionPoolImpl(
 
     override val dropped: MutableMap<HexBytes, Dropped> get() = cache.asMap()
 
+    // pending records
+    // waiting -> pending -> included
     private var pendingRec: PendingRec = PendingRec()
 
     private val clearScheduler = FixedDelayScheduler("txPool-clear", config.expiredIn)
@@ -96,12 +98,17 @@ class TransactionPoolImpl(
     }
 
 
-    override fun collect(rd: RepositoryReader, transactions: Collection<Transaction>): Map<HexBytes, String> {
+    override fun collect(
+        rd: RepositoryReader,
+        transactions: Collection<Transaction>,
+        source: String
+    ): Map<HexBytes, String> {
         val errors: MutableMap<HexBytes, String> = mutableMapOf()
 
         writeLock.withLock {
             val newCollected: MutableList<Transaction> = mutableListOf()
             for (tx in transactions) {
+                log.debug("new tx {} received from {} rpc sender = {}, nonce = {}", tx.hash, source, tx.sender, tx.nonce)
                 if (tx.gasPrice < appCfg.vmGasPrice) {
                     errors[tx.hash] = "transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}"
                     continue
@@ -117,7 +124,9 @@ class TransactionPoolImpl(
                 }
 
                 val info = WaitingInfo(System.currentTimeMillis(), tx)
-                if (pendingRec.pending.contains(info) || waiting.contains(info)) continue
+                if (pendingRec.pending.contains(info) || waiting.contains(info)) {
+                    continue
+                }
 
                 try {
                     tx.validate()
@@ -135,7 +144,7 @@ class TransactionPoolImpl(
                     continue
                 }
 
-                log.info("new transaction collected tx hash = ${tx.hash}")
+                log.debug("add tx {} from {} to waiting sender = {} nonce = {}", tx.hash, source, tx.sender, tx.nonce)
                 waiting.add(info)
                 newCollected.add(tx)
             }
@@ -159,7 +168,7 @@ class TransactionPoolImpl(
         val receipts: MutableList<TransactionReceipt> = mutableListOf()
     )
 
-    private fun PendingRec.clear(){
+    private fun PendingRec.clear() {
         backend = null
         pending.clear()
         receipts.clear()
@@ -181,7 +190,8 @@ class TransactionPoolImpl(
         backend = trie.createBackend(best)
     }
 
-    private fun PendingRec.reset(best: Header){
+    // reset pending record to a header
+    private fun PendingRec.reset(best: Header) {
         pending.clear()
         receipts.clear()
         gas = 0
@@ -195,12 +205,13 @@ class TransactionPoolImpl(
 
     // remove from waiting if success, keep unchanged if nonce too big, moved to drop if nonce too small or failed
     private fun PendingRec.execute(rd: RepositoryReader, waiting: MutableIterator<WaitingInfo>) {
-        val backend = this.backend ?: return
+        var backend = this.backend ?: return
 
         while (waiting.hasNext()) {
             val n = waiting.next()
             val t = n.tx
             val prevNonce = backend.getNonce(t.sender)
+
             if (t.nonce < prevNonce) {
                 waiting.remove()
                 dropped[t.hash] = Pair(t, "nonce is too small")
@@ -213,7 +224,6 @@ class TransactionPoolImpl(
 
             val blockGasLimit = gasLimit.longValueExact()
 
-            // try to execute
             try {
                 val child = backend.createChild()
                 val ctx = CallContext.fromTx(tx = t, timestamp = this.timestamp)
@@ -233,6 +243,7 @@ class TransactionPoolImpl(
                 }
 
                 // execute successfully
+                // skip high gas transaction
                 if (gas + res.gasUsed > blockGasLimit) {
                     continue
                 }
@@ -244,15 +255,16 @@ class TransactionPoolImpl(
                     result = res.executionResult
                 )
 
-                log.info("add tx ${n.tx.hash} into pending")
+                log.debug("add tx {} to pending, ready to pack, sender = {}, nonce = {}", n.tx.hash, n.tx.sender, n.tx.nonce)
                 this.pending.add(n)
                 this.receipts.add(receipt)
-                this.backend = child
+                backend = child
+                this.backend = backend
                 this.gas += res.gasUsed
                 waiting.remove()
             } catch (e: Exception) {
                 e.printStackTrace()
-                log.info("dropped tx ${n.tx.hash}, execute failed")
+                log.info("dropped tx ${n.tx.hash}, execute failed, gas limit = ${n.tx.gasLimit}")
                 dropped[t.hash] = Pair(t, e.message ?: "execute tx error")
                 waiting.remove()
             }
@@ -267,10 +279,6 @@ class TransactionPoolImpl(
             }
 
             val pending = pendingRec.pending.toList().map { it.tx }
-
-            pending.forEach {
-                log.info("pop tx ${it.hash} from pending, ready to packed")
-            }
 
             val receipts = pendingRec.receipts.toList()
             val cur = pendingRec.backend
@@ -305,7 +313,7 @@ class TransactionPoolImpl(
 
     internal class WaitingInfo(val receivedAt: Long, val tx: Transaction) : Comparable<WaitingInfo> {
         override fun compareTo(other: WaitingInfo): Int {
-            if(tx.hash == other.tx.hash)
+            if (tx.hash == other.tx.hash)
                 return 0
             var cmp = -tx.gasPrice.compareTo(other.tx.gasPrice)
             if (cmp != 0) return cmp

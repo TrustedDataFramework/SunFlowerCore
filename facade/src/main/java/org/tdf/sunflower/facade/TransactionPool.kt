@@ -13,9 +13,9 @@ val Dropped.tx: Transaction get() = first
 
 interface TransactionPool {
     // collect transactions into transaction pool, return errors
-    fun collect(rd: RepositoryReader, transactions: Collection<Transaction>): Map<HexBytes, String>
-    fun collect(rd: RepositoryReader, tx: Transaction): Map<HexBytes, String> {
-        return collect(rd, setOf(tx))
+    fun collect(rd: RepositoryReader, transactions: Collection<Transaction>, source: String): Map<HexBytes, String>
+    fun collect(rd: RepositoryReader, tx: Transaction, source: String): Map<HexBytes, String> {
+        return collect(rd, setOf(tx), source)
     }
 
 
@@ -26,5 +26,5 @@ interface TransactionPool {
 
     fun current(): Backend?
 
-    val dropped: Map<HexBytes, Dropped>
+    val dropped: MutableMap<HexBytes, Dropped>
 }

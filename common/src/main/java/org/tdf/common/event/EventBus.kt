@@ -10,7 +10,7 @@ import java.util.function.Consumer
 class EventBus(factory: ThreadFactory) {
     private val listenersLock = false
     private var listeners: Map<Class<*>, List<Consumer<Any>>> = mutableMapOf()
-    private val executor = Executors.newCachedThreadPool(factory)
+    private val executor = Executors.newFixedThreadPool(4)
 
     /**
      * subscribe a listener to event

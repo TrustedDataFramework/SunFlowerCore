@@ -34,7 +34,7 @@ data class CallData(
     val caller: Address = AddrUtil.empty(),
     val value: Uint256 = Uint256.ZERO,
     val to: Address = AddrUtil.empty(),
-    val callType: CallType = CallType.COINBASE,
+    val callType: CallType = CallType.CALL,
     val data: HexBytes = HexBytes.empty(),
     // for delegate call, address is the delegate address
     val delegate: Address = AddrUtil.empty()

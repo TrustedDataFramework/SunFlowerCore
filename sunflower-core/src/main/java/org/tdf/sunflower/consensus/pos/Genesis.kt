@@ -15,26 +15,4 @@ class Genesis(parsed: JsonNode) : AbstractGenesis(parsed) {
             val h = HeaderImpl(gasLimit = gasLimit, createdAt = timestamp)
             return Block(h)
         }
-
-    data class MinerInfo(
-        var address: HexBytes,
-        var vote: Long = 0,
-
-        ) {
-        companion object {
-            fun fromJson(n: JsonNode): MinerInfo {
-                return MinerInfo(
-                    n["address"].asText().hex(),
-                    n["vote"].asLong()
-                )
-            }
-        }
-    }
-
-    val miners: List<MinerInfo>
-        get() {
-            return getArray("miners")
-                .map { MinerInfo.fromJson(it) }
-        }
-
 }

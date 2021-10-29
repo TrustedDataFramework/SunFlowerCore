@@ -7,36 +7,25 @@ import org.tdf.lotusvm.runtime.HostFunction
 import org.tdf.lotusvm.runtime.Memory.Companion.PAGE_SIZE
 import org.tdf.lotusvm.runtime.ModuleInstanceImpl
 
-class Limit : Hook, EvmHook {
-    constructor(gasLimit: Long) {
-        y = gasLimit * GAS_MULTIPLIER + GAS_MULTIPLIER - 1
-    }
+class Limit(val gasLimit: Long) : Hook, EvmHook {
 
-    constructor()
 
-    var steps: Long = 0
+    var runtimeGas: Long = 0
         private set
-    private var y: Long = 0
 
     var initialGas: Long = 0
-        set(value) {
-            field = value
-            y -= GAS_MULTIPLIER * value
-            if (y < 0) throw RuntimeException("gas overflow")
-        }
+
+    val totalGas: Long get() = initialGas + runtimeGas
 
     override fun onInstruction(ins: OpCode, module: ModuleInstanceImpl) {
-        steps++
-        if (steps > y) throw RuntimeException("gas overflow")
+        runtimeGas += 100
+        if (totalGas > gasLimit) throw RuntimeException("gas overflow")
     }
 
     override fun onHostFunction(function: HostFunction, module: ModuleInstanceImpl) {
-        steps++
-        if (steps > y) throw RuntimeException("gas overflow")
+        runtimeGas += 100
+        if (totalGas > gasLimit) throw RuntimeException("gas overflow")
     }
-
-    val gas: Long
-        get() = initialGas + steps / GAS_MULTIPLIER
 
     override fun onNewFrame() {}
     override fun onFrameExit() {}
@@ -46,13 +35,12 @@ class Limit : Hook, EvmHook {
 
     // 1 evm op = 200 wasm op
     override fun onOp(op: Int) {
-        steps += 200
-        if (steps > y) throw RuntimeException("gas overflow")
+        runtimeGas += 2000
+        if (totalGas > gasLimit) throw RuntimeException("gas overflow total gas = $totalGas, gasLimit = $gasLimit ")
     }
 
 
     companion object {
         const val MAX_MEMORY: Int = 256 * PAGE_SIZE // memory is limited to less than 256 page = 16mb
-        const val GAS_MULTIPLIER: Long = 100 // gas = steps / gas multipiler
     }
 }

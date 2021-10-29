@@ -24,7 +24,12 @@ class JsonRpcImpl(
     private val pool: TransactionPool,
     private val cfg: AppConfig
 ) : JsonRpc {
-    private val gasLimit: Long
+
+    private val gasLimit: Long by lazy {
+       this.repo.reader.use {
+           it.genesis.gasLimit
+       }
+    }
 
     private fun getByJsonBlockId(id: String): Block? {
         return repo.reader.use {
@@ -184,7 +189,7 @@ class JsonRpcImpl(
 
     override fun eth_sendRawTransaction(rawData: String): String {
         val tx = Transaction.create(rawData.jsonHex.bytes)
-        val errors = repo.reader.use { pool.collect(it, tx) }
+        val errors = repo.reader.use { pool.collect(it, tx, "rpc") }
         if (errors[tx.hash] != null)
             throw RuntimeException(errors[tx.hash])
         return tx.hash.jsonHex
@@ -276,7 +281,8 @@ class JsonRpcImpl(
 
         val p = pool.dropped[hash]
 
-        if (p != null) {
+        if(p != null) {
+            pool.dropped.remove(hash)
             return TransactionReceiptDTO.failed(p.tx)
         }
 
@@ -424,11 +430,5 @@ class JsonRpcImpl(
             block.gasUsed.jsonHex, block.createdAt.jsonHex, txs, emptyList(),
             block.mixHash.jsonHex
         )
-    }
-
-    init {
-        gasLimit = repo.reader.use {
-           it.genesis.gasLimit
-        }
     }
 }

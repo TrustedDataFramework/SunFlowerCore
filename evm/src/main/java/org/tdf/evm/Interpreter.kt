@@ -19,7 +19,8 @@ class EvmContext(
     val difficulty: BigInteger = BigInteger.ZERO,
     // gas price
     val gasPrice: BigInteger = BigInteger.ZERO,
-    val timestamp: Long = 0
+    val timestamp: Long = 0,
+    val coinbase: ByteArray = emptyAddress
 )
 
 /**
@@ -177,8 +178,13 @@ class Interpreter(
                     host.digest.digest(code, 0, code.size, bytes, 0)
                     stack.pushLeftPadding(bytes)
                 }
-
-                OpCodes.BLOCKHASH, OpCodes.COINBASE -> throw RuntimeException("unsupported op code $op")
+                OpCodes.COINBASE -> {
+                   stack.pushLeftPadding(ctx.coinbase)
+                }
+                OpCodes.BLOCKHASH  -> {
+                    stack.drop()
+                    stack.pushZero()
+                }
                 OpCodes.TIMESTAMP -> stack.pushLong(ctx.timestamp)
                 OpCodes.NUMBER -> stack.pushLong(ctx.number)
                 OpCodes.DIFFICULTY -> stack.push(ctx.difficulty)

@@ -14,8 +14,9 @@ import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
-import org.tdf.sunflower.vm.CallType
 import org.tdf.sunflower.vm.VMExecutor
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 abstract class AbstractMiner(
     protected val accountTrie: StateTrie<HexBytes, Account>,
@@ -26,23 +27,28 @@ abstract class AbstractMiner(
 
     protected abstract fun createCoinBase(height: Long): Transaction
     protected abstract fun createHeader(parent: Block, createdAt: Long): Header
-    protected abstract fun finalizeBlock(parent: Block, block: Block): Block?
+
+    open fun finalizeBlock(rd: RepositoryReader, parent: Block, block: Block): Block {
+        return block
+    }
+
     protected abstract val chainId: Int
 
     // TODO:  2. 增加打包超时时间
     protected fun createBlock(
         rd: RepositoryReader,
         parent: Block,
-        createdAt: Long = System.currentTimeMillis() / 1000
+        createdAt: Long = System.currentTimeMillis() / 1000,
+        deadline: Long = Long.MAX_VALUE
     ): BlockCreateResult {
         val (txs, rs, current) = pool.pop(rd, parent.header, createdAt)
         val zipped = txs.zip(rs)
         val receipts = rs.toMutableList()
 
         if (!config.allowEmptyBlock && txs.isEmpty()) {
-            pool.reset(parent.header)
             return BlockCreateResult.empty()
         }
+
         var header = createHeader(parent, createdAt)
 
         // get a trie at parent block's state
@@ -60,12 +66,11 @@ abstract class AbstractMiner(
         val body = txs.toMutableList()
         body.add(0, c)
         val ctx = CallContext.fromTx(c, chainId, createdAt)
-        val callData = CallData.fromTx(c, CallType.COINBASE)
+        val callData = CallData.fromTx(c)
 
 
         val res: VMResult
-        val executor = VMExecutor.create(rd, tmp, ctx, callData, 0)
-
+        val executor = VMExecutor.create(rd, tmp, ctx, callData, c.gasLimit)
         res = executor.execute()
         val lastGas = receipts.getOrNull(receipts.size - 1)?.cumulativeGas ?: 0L
 
@@ -89,9 +94,22 @@ abstract class AbstractMiner(
             logsBloom = TransactionReceipt.bloomOf(receipts).data.hex()
         )
 
-        val blk = finalizeBlock(parent, Block(header, body)) ?: return BlockCreateResult.empty()
-        // the mined block cannot be modified any more
+        val duration = if(deadline == Long.MAX_VALUE) Long.MAX_VALUE else (deadline * 1000 - System.currentTimeMillis())
 
+        val blkFuture = CompletableFuture.supplyAsync {
+            finalizeBlock(rd, parent, Block(header, body))
+        }
+
+        val blk = try {
+            blkFuture.get(duration, TimeUnit.SECONDS) ?: return BlockCreateResult.empty()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            blkFuture.cancel(true)
+            return BlockCreateResult.empty()
+        }
+
+
+        // the mined block cannot be modified any more
         val infos = receipts.mapIndexed { i, r -> TransactionInfo(TransactionIndex(r, blk.hash, i), blk.body[i]) }
         return BlockCreateResult(blk, infos)
     }

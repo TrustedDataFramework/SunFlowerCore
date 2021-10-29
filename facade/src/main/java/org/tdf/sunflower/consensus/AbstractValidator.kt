@@ -29,11 +29,6 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
         // a block should contains exactly one coin base transaction
         if (block.body.isEmpty()) return fault("missing block body")
 
-        // validate coinbase
-        if (block.coinbase != block.body[0].to) {
-            return fault("block coinbase not equals to coinbase tx receiver")
-        }
-
         if (block.gasLimit != rd.genesis.gasLimit)
             return fault("invalid block gas limit")
 
@@ -97,8 +92,8 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                     rd,
                     currentBackend,
                     CallContext.fromTx(coinbase, chainId, block.createdAt),
-                    CallData.fromTx(coinbase, CallType.COINBASE),
-                    0
+                    CallData.fromTx(coinbase),
+                    coinbase.gasLimit
                 )
 
             val r = executor.execute()
