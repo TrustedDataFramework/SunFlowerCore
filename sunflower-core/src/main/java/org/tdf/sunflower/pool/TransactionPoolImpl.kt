@@ -53,7 +53,7 @@ class TransactionPoolImpl(
     // dropped transactions
     val cache: Cache<HexBytes, Dropped> =
         CacheBuilder.newBuilder()
-            .expireAfterWrite(config.expiredIn, TimeUnit.SECONDS)
+            .expireAfterWrite(15, TimeUnit.SECONDS)
             .build()
 
     override val dropped: MutableMap<HexBytes, Dropped> get() = cache.asMap()
@@ -255,12 +255,12 @@ class TransactionPoolImpl(
                     result = res.executionResult
                 )
 
-                log.debug("add tx {} to pending, ready to pack, sender = {}, nonce = {}", n.tx.hash, n.tx.sender, n.tx.nonce)
                 this.pending.add(n)
                 this.receipts.add(receipt)
                 backend = child
                 this.backend = backend
                 this.gas += res.gasUsed
+                log.debug("add tx {} to pending, ready to pack, sender = {}, nonce = {} remaining gas = {}", n.tx.hash, n.tx.sender, n.tx.nonce, blockGasLimit - gas)
                 waiting.remove()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -273,6 +273,7 @@ class TransactionPoolImpl(
 
     override fun pop(rd: RepositoryReader, parentHeader: Header, timestamp: Long): PendingData {
         writeLock.withLock {
+            log.debug("pendings = {}, waitings = {}", this.pendingRec.pending.size, this.waiting.size)
             if (parentHeader.hash != this.pendingRec.backend?.parentHash || timestamp != pendingRec.timestamp) {
                 pendingRec.rollback(parentHeader, timestamp)
                 pendingRec.execute(rd, waiting.iterator())

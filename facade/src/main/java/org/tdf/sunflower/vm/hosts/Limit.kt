@@ -1,6 +1,7 @@
 package org.tdf.sunflower.vm.hosts
 
 import org.tdf.evm.EvmHook
+import org.tdf.evm.OpCodes
 import org.tdf.lotusvm.common.OpCode
 import org.tdf.lotusvm.runtime.Hook
 import org.tdf.lotusvm.runtime.HostFunction
@@ -33,9 +34,17 @@ class Limit(val gasLimit: Long) : Hook, EvmHook {
         if (afterGrow > MAX_MEMORY) println("memory size overflow")
     }
 
-    // 1 evm op = 200 wasm op
+    // 1 evm op = 20 gas
     override fun onOp(op: Int) {
-        runtimeGas += 2000
+        when(op) {
+            OpCodes.SSTORE -> runtimeGas += 5000
+            OpCodes.SHA3, OpCodes.SLOAD, OpCodes.EXTCODESIZE, OpCodes.EXTCODECOPY
+                -> runtimeGas += 200
+            OpCodes.LOG0, OpCodes.LOG1, OpCodes.LOG2, OpCodes.LOG3, OpCodes.LOG4
+                -> runtimeGas += 375 + (op - OpCodes.LOG0) * 375
+            OpCodes.CREATE, OpCodes.CREATE2 -> runtimeGas += 32000
+            else -> runtimeGas += 5
+        }
         if (totalGas > gasLimit) throw RuntimeException("gas overflow total gas = $totalGas, gasLimit = $gasLimit ")
     }
 

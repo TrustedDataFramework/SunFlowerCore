@@ -1,5 +1,6 @@
 package org.tdf.sunflower.consensus
 
+import org.slf4j.LoggerFactory
 import org.tdf.common.event.EventBus
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
@@ -108,9 +109,16 @@ abstract class AbstractMiner(
             return BlockCreateResult.empty()
         }
 
+        txs.forEach {
+           log.debug("pack transaction {} into block at {}, sender = {}, nonce = {}", it.hash, blk.height, it.sender)
+        }
 
         // the mined block cannot be modified any more
         val infos = receipts.mapIndexed { i, r -> TransactionInfo(TransactionIndex(r, blk.hash, i), blk.body[i]) }
         return BlockCreateResult(blk, infos)
+    }
+
+    companion object {
+        val log = LoggerFactory.getLogger("miner")
     }
 }
