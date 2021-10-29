@@ -63,7 +63,6 @@ class TransactionPoolImpl(
     private var pendingRec: PendingRec = PendingRec()
 
     private val clearScheduler = FixedDelayScheduler("txPool-clear", config.expiredIn)
-    private val executeScheduler = FixedDelayScheduler("txPool-execute", 1)
 
     private lateinit var gasLimit: BigInteger
 
