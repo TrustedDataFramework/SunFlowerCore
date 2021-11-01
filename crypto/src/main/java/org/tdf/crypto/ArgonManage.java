@@ -30,8 +30,8 @@ public class ArgonManage {
     public byte[] hash(byte[] in) {
         String password = Hex.toHexString(salt) + Hex.toHexString(in);
         return Jargon2.jargon2Hasher().type(this.type).memoryCost(MEMORY_COST)
-                .timeCost(TIME_COST).parallelism(PARALLELISM).salt(salt)
-                .password(password.getBytes()).rawHash();
+            .timeCost(TIME_COST).parallelism(PARALLELISM).salt(salt)
+            .password(password.getBytes()).rawHash();
     }
 
     public String kdf() {

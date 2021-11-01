@@ -1,0 +1,17 @@
+dependencies {
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+// https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    testImplementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}"
+    testImplementation project(":common")
+
+    testImplementation "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
+    testImplementation "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
+    testImplementation "org.iq80.leveldb:leveldb:${leveldbVersion}"
+
+    testImplementation "org.slf4j:slf4j-api:${slf4jVersion}"
+    testImplementation "org.rocksdb:rocksdbjni:${rocksdbVersion}"
+// https://mvnrepository.com/artifact/org.slf4j/slf4j-nop
+    testImplementation group: 'org.slf4j', name: 'slf4j-nop', version: '1.7.30'
+
+}

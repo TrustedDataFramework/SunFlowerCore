@@ -1,14 +1,16 @@
 package org.tdf.common.trie;
 
+import com.github.salpadding.rlpstream.Constants;
+import com.github.salpadding.rlpstream.Rlp;
+import com.github.salpadding.rlpstream.RlpList;
+import com.github.salpadding.rlpstream.StreamId;
 import org.tdf.common.store.Store;
 import org.tdf.common.util.FastByteComparisons;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPElement;
-import org.tdf.rlp.RLPItem;
-import org.tdf.rlp.RLPList;
 
-import java.util.Map;
-import java.util.function.BiFunction;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.tdf.common.trie.TrieKey.EMPTY;
 
@@ -18,90 +20,65 @@ import static org.tdf.common.trie.TrieKey.EMPTY;
  * https://medium.com/shyft-network-media/understanding-trie-databases-in-ethereum-9f03d2c3325d
  * https://github.com/ethereum/wiki/wiki/Patricia-Tree#optimization
  */
-class Node {
+public class Node {
     static final int BRANCH_SIZE = 17;
     // rlp encoded of this node, for serialization
-    RLPList rlp;
+    byte[] rlp;
     private boolean dirty;
     // if hash is not null, resolve rlp encoded from db
     private byte[] hash;
     // for lazy load, read only
-    private Store<byte[], byte[]> readOnlyCache;
+    private final Store<byte[], byte[]> readOnlyCache;
     // if node is branch node, the length of children is 17
     // the first 16 element is children, and the 17th element is value
     // if node is extension node or leaf node, the length of children is 2
     // the first element is trie key and the second element is value(leaf node) or child node(extension node)
     private Object[] children;
 
-    private HashFunction hashFunction;
-
-
-    private Node(RLPList rlp, boolean dirty, byte[] hash, Store<byte[], byte[]> readOnlyCache, Object[] children, HashFunction hashFunction) {
+    private Node(byte[] rlp, boolean dirty, byte[] hash, Store<byte[], byte[]> readOnlyCache, Object[] children) {
         this.rlp = rlp;
         this.dirty = dirty;
         this.hash = hash;
         this.readOnlyCache = readOnlyCache;
         this.children = children;
-        this.hashFunction = hashFunction;
     }
 
-
-    static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache, HashFunction hashFunction) {
-        return builder()
-                .hash(hash)
-                .readOnlyCache(readOnlyCache)
-                .hashFunction(hashFunction)
-                .build();
-    }
-
-    // create root node from database and reference
-    static Node fromEncoded(byte[] encoded, Store<byte[], byte[]> readOnlyCache, HashFunction hashFunction) {
-        return fromEncoded(RLPElement.fromEncoded(encoded), readOnlyCache, hashFunction);
+    static Node fromRootHash(byte[] hash, Store<byte[], byte[]> readOnlyCache) {
+        return new Node(null, false, hash, readOnlyCache, null);
     }
 
     // create root node from database and reference
     static Node fromEncoded(
-            RLPElement rlp,
-            Store<byte[], byte[]> readOnlyCache,
-            HashFunction hashFunction
+        byte[] rlp,
+        Store<byte[], byte[]> readOnlyCache
     ) {
-        if (rlp.isRLPList())
-            return builder()
-                    .rlp(rlp.asRLPList())
-                    .readOnlyCache(readOnlyCache)
-                    .hashFunction(hashFunction)
-                    .build();
-        return builder()
-                .hash(rlp.asBytes())
-                .readOnlyCache(readOnlyCache)
-                .hashFunction(hashFunction)
-                .build();
+        long streamId = StreamId.decodeElement(rlp, 0, rlp.length, true);
+        if (StreamId.isList(streamId))
+            return new Node(rlp, false, null, readOnlyCache, null);
+        return new Node(null, false, Rlp.decodeBytes(rlp), readOnlyCache, null);
     }
 
-    static Node newBranch(HashFunction hashFunction) {
-        return builder()
-                .children(new Object[BRANCH_SIZE])
-                .hashFunction(hashFunction)
-                .dirty(true).build();
+    static Node fromListIndex(
+        RlpList li,
+        int idx,
+        Store<byte[], byte[]> readOnlyCache
+    ) {
+        if (li.isListAt(idx)) {
+            return new Node(li.rawAt(idx), false, null, readOnlyCache, null);
+        }
+        return new Node(null, false, li.bytesAt(idx), readOnlyCache, null);
     }
 
-    static Node newLeaf(TrieKey key, byte[] value, HashFunction hashFunction) {
-        return builder()
-                .children(new Object[]{key, value})
-                .hashFunction(hashFunction)
-                .dirty(true).build();
+    static Node newBranch() {
+        return new Node(null, true, null, null, new Object[BRANCH_SIZE]);
     }
 
-    static Node newExtension(TrieKey key, Node child, HashFunction hashFunction) {
-        return builder()
-                .children(new Object[]{key, child})
-                .hashFunction(hashFunction)
-                .dirty(true)
-                .build();
+    static Node newLeaf(TrieKey key, byte[] value) {
+        return new Node(null, true, null, null, new Object[]{key, value});
     }
 
-    private static NodeBuilder builder() {
-        return new NodeBuilder();
+    static Node newExtension(TrieKey key, Node child) {
+        return new Node(null, true, null, null, new Object[]{key, child});
     }
 
     private void setDirty() {
@@ -111,48 +88,51 @@ class Node {
     // encode and commit root node to store
     // return rlp encoded
     // if commit is call at root node, force hash is set to true
-    RLPElement commit(
-            Store<byte[], byte[]> cache,
-            boolean forceHash
+    byte[] commit(
+        Store<byte[], byte[]> cache,
+        boolean forceHash
     ) {
         // if child node is dirty, the parent node must be dirty also
-        if (!dirty) return hash != null ? RLPItem.fromBytes(hash) : rlp;
+        if (!dirty) return hash != null ? Rlp.encodeBytes(hash) : rlp;
         Type type = getType();
         switch (type) {
             case LEAF: {
-                rlp = RLPList.createEmpty(2);
-                rlp.add(RLPItem.fromBytes(getKey().toPacked(true)));
-                rlp.add(RLPItem.fromBytes(getValue()));
+                this.rlp = Rlp.encodeElements(
+                    Rlp.encodeBytes(getKey().toPacked(true)),
+                    Rlp.encodeBytes(getValue())
+                );
                 break;
             }
             case EXTENSION: {
-                rlp = RLPList.createEmpty(2);
-                rlp.add(RLPItem.fromBytes(getKey().toPacked(false)));
-                rlp.add(getExtension().commit(cache, false));
+                this.rlp = Rlp.encodeElements(
+                    Rlp.encodeBytes(getKey().toPacked(false)),
+                    getExtension().commit(cache, false)
+                );
                 break;
             }
             default: {
-                rlp = RLPList.createEmpty(BRANCH_SIZE);
+                List<byte[]> elements = new ArrayList<>(BRANCH_SIZE);
                 for (int i = 0; i < BRANCH_SIZE - 1; i++) {
                     Node child = (Node) children[i];
                     if (child == null) {
-                        rlp.add(RLPItem.NULL);
+                        elements.add(Constants.NULL);
                         continue;
                     }
-                    rlp.add(child.commit(cache, false));
+                    elements.add(child.commit(cache, false));
                 }
-                rlp.add(RLPItem.fromBytes(getValue()));
+                elements.add(Rlp.encodeBytes(getValue()));
+                this.rlp = Rlp.encodeElements(elements);
             }
         }
         dispose(cache);
         dirty = false;
-        byte[] raw = rlp.getEncoded();
+        byte[] raw = rlp;
 
         // if encoded size is great than or equals to 32, store node to db and return a hash reference
-        if (raw.length >= hashFunction.getSize() || forceHash) {
-            hash = hashFunction.apply(raw);
-            cache.put(hash, raw);
-            return RLPItem.fromBytes(hash);
+        if (raw.length >= 32 || forceHash) {
+            hash = HashUtil.sha3(raw);
+            cache.set(hash, raw);
+            return Rlp.encodeBytes(hash);
         }
         // clean hash
         return rlp;
@@ -161,12 +141,13 @@ class Node {
     // get actual rlp encoding in the cache
     private void resolve() {
         if (rlp != null || hash == null) return;
-        rlp = readOnlyCache
-                .get(hash)
-                .filter(x -> FastByteComparisons.equal(hash, hashFunction.apply(x)))
-                .map(RLPElement::fromEncoded)
-                .map(RLPElement::asRLPList)
-                .orElseThrow(() -> new RuntimeException("rlp encoding not found in cache"));
+
+        byte[] v = readOnlyCache
+            .get(hash);
+        if (v == null || !FastByteComparisons.equal(hash, HashUtil.sha3(v))) {
+            throw new RuntimeException("rlp encoding not found in cache");
+        }
+        rlp = v;
     }
 
 
@@ -175,27 +156,29 @@ class Node {
         // has parsed
         if (children != null) return;
         resolve();
+        long streamId = StreamId.decodeElement(this.rlp, 0, this.rlp.length, true);
+        RlpList rlp = StreamId.asList(this.rlp, streamId, BRANCH_SIZE);
         if (rlp.size() == 2) {
             children = new Object[2];
-            byte[] packed = rlp.get(0).asBytes();
+            byte[] packed = rlp.bytesAt(0);
             TrieKey key = TrieKey.fromPacked(packed);
             children[0] = key;
             boolean terminal = TrieKey.isTerminal(packed);
             if (terminal) {
-                children[1] = rlp.get(1).asBytes();
+                children[1] = rlp.bytesAt(1);
                 return;
             }
-            children[1] = fromEncoded(rlp.get(1), readOnlyCache, hashFunction);
+            children[1] = fromListIndex(rlp, 1, readOnlyCache);
             return;
         }
         children = new Object[BRANCH_SIZE];
         for (int i = 0; i < BRANCH_SIZE - 1; i++) {
-            if (rlp.get(i).isNull()) continue;
-            children[i] = fromEncoded(rlp.get(i), readOnlyCache, hashFunction);
+            if (rlp.isNullAt(i)) continue;
+            children[i] = fromListIndex(rlp, i, readOnlyCache);
         }
-        RLPItem item = rlp.get(BRANCH_SIZE - 1).asRLPItem();
-        if (item.isNull()) return;
-        children[BRANCH_SIZE - 1] = item.asBytes();
+        byte[] item = rlp.bytesAt(BRANCH_SIZE - 1);
+        if (item.length == 0) return;
+        children[BRANCH_SIZE - 1] = item;
     }
 
     // clean key-value in database
@@ -206,16 +189,12 @@ class Node {
     }
 
     // wrap o to an extension or leaf node
-    private Node newShort(TrieKey key, Object o, HashFunction hashFunction) {
+    private Node newShort(TrieKey key, Object o) {
         // if size of key is zero, no need to wrap child
         if (key.size() == 0 && o instanceof Node) {
             return (Node) o;
         }
-        return builder()
-                .children(new Object[]{key, o})
-                .hashFunction(hashFunction)
-                .dirty(true)
-                .build();
+        return new Node(null, true, null, null, new Object[]{key, o});
     }
 
     public Type getType() {
@@ -263,11 +242,11 @@ class Node {
     }
 
     // deep-first scanning
-    void traverse(TrieKey init, BiFunction<TrieKey, Node, Boolean> action) {
+    void traverse(TrieKey init, ScannerAction action) {
         parse();
         Type type = getType();
         if (type == Type.BRANCH) {
-            if (!action.apply(init, this)) return;
+            if (!action.scan(init, this)) return;
             for (int i = 0; i < BRANCH_SIZE - 1; i++) {
                 if (children[i] == null) continue;
                 ((Node) children[i]).traverse(init.concat(TrieKey.single(i)), action);
@@ -276,12 +255,12 @@ class Node {
         }
         if (type == Type.EXTENSION) {
             TrieKey path = init.concat(getKey());
-            if (!action.apply(path, this)) return;
+            if (!action.scan(path, this)) return;
             getExtension().traverse(path, action);
             return;
         }
         // leaf node
-        action.apply(init.concat(getKey()), this);
+        action.scan(init.concat(getKey()), this);
     }
 
     // for test only
@@ -323,7 +302,7 @@ class Node {
         if ((type == Type.LEAF && commonPrefix.size() == current.size())) {
             dispose(cache);
             byte[] val = getValue();
-            Node newBranch = newBranch(hashFunction);
+            Node newBranch = newBranch();
             children[1] = newBranch;
             newBranch.setValue(val);
             newBranch.branchInsert(key.shift(commonPrefix.size()), value, cache);
@@ -346,12 +325,12 @@ class Node {
         TrieKey tmp = current.shift(commonPrefix.size());
 
         Object o = children[1];
-        Node newBranch = newBranch(hashFunction);
+        Node newBranch = newBranch();
         children[1] = newBranch;
         // reset to common prefix
         children[0] = commonPrefix;
 
-        newBranch.children[tmp.get(0)] = newShort(tmp.shift(), o, hashFunction);
+        newBranch.children[tmp.get(0)] = newShort(tmp.shift(), o);
 
         tmp = key.shift(commonPrefix.size());
         if (tmp.isEmpty()) {
@@ -359,7 +338,7 @@ class Node {
             newBranch.children[BRANCH_SIZE - 1] = value;
             return dirty;
         }
-        newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value, hashFunction);
+        newBranch.children[tmp.get(0)] = newLeaf(tmp.shift(), value);
         return dirty;
     }
 
@@ -413,7 +392,7 @@ class Node {
             this.dirty |= child.insert(key.shift(), value, cache);
             return dirty;
         }
-        child = newLeaf(key.shift(), value, hashFunction);
+        child = newLeaf(key.shift(), value);
         children[key.get(0)] = child;
         setDirty();
         return dirty;
@@ -506,7 +485,7 @@ class Node {
             children[BRANCH_SIZE - 1] = o;
             return;
         }
-        children[key.get(0)] = newShort(key.shift(), o, hashFunction);
+        children[key.get(0)] = newShort(key.shift(), o);
     }
 
     // check the branch node could be compacted
@@ -565,86 +544,9 @@ class Node {
         return this.hash;
     }
 
-    Map<byte[], byte[]> getProof(TrieKey path, Map<byte[], byte[]> map) {
-        if (hash != null) map.put(hash, rlp.getEncoded());
-        switch (getType()) {
-            case BRANCH: {
-                for (int i = 0; i < BRANCH_SIZE - 1; i++) {
-                    if (!path.isEmpty() && path.get(0) == i) {
-                        Node child = ((Node) children[i]);
-                        if (child != null) child.getProof(path.shift(), map);
-                    }
-                }
-                return map;
-            }
-            case LEAF: {
-                return map;
-            }
-            case EXTENSION: {
-                TrieKey matched = path.matchAndShift(getKey());
-
-                if (matched == null || matched.isEmpty()) {
-                    return map;
-                }
-                return getExtension().getProof(matched, map);
-            }
-        }
-        throw new RuntimeException();
-    }
-
     enum Type {
         BRANCH,
         EXTENSION,
         LEAF
-    }
-
-    private static class NodeBuilder {
-        private RLPList rlp;
-        private boolean dirty;
-        private byte[] hash;
-        private Store<byte[], byte[]> readOnlyCache;
-        private Object[] children;
-        private HashFunction hashFunction;
-
-        NodeBuilder() {
-        }
-
-        private Node.NodeBuilder rlp(RLPList rlp) {
-            this.rlp = rlp;
-            return this;
-        }
-
-        private Node.NodeBuilder dirty(boolean dirty) {
-            this.dirty = dirty;
-            return this;
-        }
-
-        private Node.NodeBuilder hash(byte[] hash) {
-            this.hash = hash;
-            return this;
-        }
-
-        private Node.NodeBuilder readOnlyCache(Store<byte[], byte[]> readOnlyCache) {
-            this.readOnlyCache = readOnlyCache;
-            return this;
-        }
-
-        private Node.NodeBuilder children(Object[] children) {
-            this.children = children;
-            return this;
-        }
-
-        private Node.NodeBuilder hashFunction(HashFunction hashFunction) {
-            this.hashFunction = hashFunction;
-            return this;
-        }
-
-        private Node build() {
-            return new Node(rlp, dirty, hash, readOnlyCache, children, hashFunction);
-        }
-
-        public String toString() {
-            return "Node.NodeBuilder(rlp=" + this.rlp + ", dirty=" + this.dirty + ", hash=" + java.util.Arrays.toString(this.hash) + ", readOnlyCache=" + this.readOnlyCache + ", children=" + java.util.Arrays.deepToString(this.children) + ", hashFunction=" + this.hashFunction + ")";
-        }
     }
 }

@@ -1,78 +1,65 @@
 package org.tdf.common.util;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
-
 /**
  * util for big-endian encoding and decoding
  */
 public class BigEndian {
-    private static final BigInteger shadow;
 
-    static {
-        byte[] shadowBits = new byte[32];
-        shadowBits[0] = (byte) 0xff;
-        shadow = new BigInteger(1, shadowBits);
+    public static short decodeInt16(byte[] data, int offset) {
+        return (short) (((data[offset] & 0xff) << 8) | (data[offset + 1] & 0xff));
     }
 
-
-    public static int decodeInt32(byte[] data) {
-        return ByteBuffer.wrap(data)
-                .order(ByteOrder.BIG_ENDIAN)
-                .getInt();
+    public static void encodeInt16(short num, byte[] data, int offset) {
+        data[offset] = (byte) ((num >>> 8) & 0xff);
+        data[offset + 1] = (byte) (num & 0xff);
     }
 
-    // big-endian encoding
+    public static int decodeInt32(byte[] data, int offset) {
+        return ((data[offset] & 0xff) << 24) | ((data[offset + 1] & 0xff) << 16) | ((data[offset + 2] & 0xff) << 8) | (data[offset + 3] & 0xff);
+    }
+
+    public static void encodeInt32(int val, byte[] data, int offset) {
+        data[offset] = (byte) ((val >>> 24) & 0xff);
+        data[offset + 1] = (byte) ((val >>> 16) & 0xff);
+        data[offset + 2] = (byte) ((val >>> 8) & 0xff);
+        data[offset + 3] = (byte) (val & 0xff);
+    }
+
     public static byte[] encodeInt32(int val) {
-        return ByteBuffer.allocate(Integer.BYTES)
-                .order(ByteOrder.BIG_ENDIAN)
-                .putInt(val).array();
+        byte[] r = new byte[4];
+        encodeInt32(val, r, 0);
+        return r;
+    }
+
+    public static byte[] encodeInt64(long val) {
+        byte[] r = new byte[8];
+        encodeInt64(val, r, 0);
+        return r;
     }
 
     // big-endian encoding
-    public static byte[] encodeInt64(long value) {
-        return ByteBuffer.allocate(Long.BYTES)
-                .putLong(value).array();
+    public static void encodeInt64(long n, byte[] data, int offset) {
+        data[offset] = (byte) ((n >> 56) & 0xffL);
+        data[offset + 1] = (byte) ((n >>> 48) & 0xffL);
+        data[offset + 2] = (byte) ((n >>> 40) & 0xffL);
+        data[offset + 3] = (byte) ((n >>> 32) & 0xffL);
+        data[offset + 4] = (byte) ((n >>> 24) & 0xffL);
+        data[offset + 5] = (byte) ((n >>> 16) & 0xffL);
+        data[offset + 6] = (byte) ((n >>> 8) & 0xffL);
+        data[offset + 7] = (byte) (n & 0xffL);
     }
 
-    public static long decodeInt64(byte[] data) {
-        return ByteBuffer.wrap(data).getLong();
+    public static long decodeInt64(byte[] data, int offset) {
+        return ((((long) data[offset]) & 0xffL) << 56) |
+            (((long) data[offset + 1]) & 0xffL) << 48 |
+            (((long) data[offset + 2]) & 0xffL) << 40 |
+            (((long) data[offset + 3]) & 0xffL) << 32 |
+            (((long) data[offset + 4]) & 0xffL) << 24 |
+            (((long) data[offset + 5]) & 0xffL) << 16 |
+            (((long) data[offset + 6]) & 0xffL) << 8 |
+            (((long) data[offset + 7]) & 0xffL)
+            ;
     }
 
-    public static int compareUint256(byte[] a, byte[] b) {
-        return new BigInteger(1, a).compareTo(
-                new BigInteger(1, b)
-        );
-    }
-
-    public static short decodeInt16(byte[] in) {
-        return ByteBuffer.wrap(in).getShort();
-    }
-
-    public static byte[] encodeInt16(short value) {
-        return ByteBuffer.allocate(Short.BYTES)
-                .putShort(value).array();
-    }
-
-    public static byte[] encodeUint256(BigInteger in) {
-        if (in.signum() < 0) {
-            return null;
-        }
-        if (in.signum() == 0) {
-            return new byte[32];
-        }
-        byte[] res = new byte[32];
-        for (int i = 0; i < res.length; i++) {
-            BigInteger tmp = in.and(shadow.shiftRight(i * 8)).shiftRight((res.length - i - 1) * 8);
-            res[i] = tmp.byteValue();
-        }
-        return res;
-    }
-
-    public static BigInteger decodeUint256(byte[] in) {
-        return new BigInteger(1, Arrays.copyOfRange(in, 0, 32));
-    }
 
 }

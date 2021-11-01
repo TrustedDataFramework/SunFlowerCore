@@ -1,4 +1,26 @@
-GET http://localhost:8080/account/87b8f0b097b48b282a5c661babc8096e141bd9fb
+POST http://localhost:80/api/item
+Content-Type: application/json
+
+{}
+
+###
+POST http://localhost:7010
 Accept: application/json
+
+{"method":{"jsonrpc":"2.0","id":1630124092596,"method":"eth_coinbase","params":[]},"id":42,"jsonrpc":"2.0"}
+
+###
+
+POST http://localhost:7010
+Accept: application/json
+
+{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x1", false],"id":1}
+
+###
+
+POST http://host.off.tcwbtc.com:7010
+Accept: application/json
+
+{"jsonrpc":"2.0","method":"eth_getBlockByHash","params":["0x1f2fe6055d11ceadd135f4d31324658eb884eb32f3e2ccf7b205f9ca7708bdb9", false],"id":1}
 
 ###

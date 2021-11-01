@@ -28,7 +28,7 @@ public class SignerTests {
     @Test
     public void test2() {
         SchnorrSigner signer =
-                new SchnorrSigner(7879, 101, 170);
+            new SchnorrSigner(7879, 101, 170);
 
         long sk = 75;
         long beta = signer.getBeta(sk);
@@ -42,7 +42,7 @@ public class SignerTests {
     @Test
     public void test3() {
         DSASigner signer =
-                new DSASigner(7879, 101, 170);
+            new DSASigner(7879, 101, 170);
 
         long sk = 75;
         long beta = signer.getBeta(sk);
@@ -56,7 +56,7 @@ public class SignerTests {
     @Test
     public void test4() {
         ECDSASigner signer =
-                new ECDSASigner(11, 13, 1, 6, new ECCPoint(2, 7));
+            new ECDSASigner(11, 13, 1, 6, new ECCPoint(2, 7));
 
         long sk = 7;
         long[] sig = signer.sign(sk, "123".getBytes());

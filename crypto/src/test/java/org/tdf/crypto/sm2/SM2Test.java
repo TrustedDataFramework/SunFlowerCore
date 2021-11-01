@@ -61,11 +61,11 @@ public class SM2Test {
         byte[] signature0 = sm2PrivateKey0.sign(msg.getBytes());
 
         assertTrue(sm2PublicKey0.verify(msg.getBytes(), signature0) &&
-                sm2PublicKey0.verify(msg.getBytes(), signature1) &&
-                sm2PublicKey1.verify(msg.getBytes(), signature0) &&
-                sm2PublicKey1.verify(msg.getBytes(), signature1) &&
-                sm2PublicKey2.verify(msg.getBytes(), signature0) &&
-                sm2PublicKey2.verify(msg.getBytes(), signature1));
+            sm2PublicKey0.verify(msg.getBytes(), signature1) &&
+            sm2PublicKey1.verify(msg.getBytes(), signature0) &&
+            sm2PublicKey1.verify(msg.getBytes(), signature1) &&
+            sm2PublicKey2.verify(msg.getBytes(), signature0) &&
+            sm2PublicKey2.verify(msg.getBytes(), signature1));
     }
 
     @Test

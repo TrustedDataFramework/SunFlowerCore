@@ -3,8 +3,9 @@ package org.tdf.common.store;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.tdf.common.util.FastByteComparisons;
 
-import java.util.Arrays;
+import java.util.Objects;
 
 @Ignore
 public abstract class NoDeleteStoreTest {
@@ -16,9 +17,9 @@ public abstract class NoDeleteStoreTest {
     @Before
     public void before() {
         store = supplyNoDelete();
-        store.put("a".getBytes(), "1".getBytes());
-        store.put("b".getBytes(), "2".getBytes());
-        store.put("c".getBytes(), "3".getBytes());
+        store.set("a".getBytes(), "1".getBytes());
+        store.set("b".getBytes(), "2".getBytes());
+        store.set("c".getBytes(), "3".getBytes());
         store.flush();
     }
 
@@ -27,16 +28,24 @@ public abstract class NoDeleteStoreTest {
     public void test1() {
         store.remove("a".getBytes());
         store.flush();
-        assert store.containsKey("a".getBytes());
-        assert store.get("a".getBytes()).map(x -> Arrays.equals(x, "1".getBytes())).orElse(false);
+        assert Objects.requireNonNull(store.get("a".getBytes())).length != 0;
+
+        assert FastByteComparisons.equal(
+            Objects.requireNonNull(store.get("a".getBytes())),
+            "1".getBytes()
+        );
+
         store.flush();
-        assert store.containsKey("a".getBytes());
+        assert Objects.requireNonNull(store.get("a".getBytes())).length != 0;
     }
 
     @Test
     public void test2() {
         store.remove("a".getBytes());
-        store.put("a".getBytes(), "11".getBytes());
-        assert Arrays.equals(store.get("a".getBytes()).get(), "11".getBytes());
+        store.set("a".getBytes(), "11".getBytes());
+        assert FastByteComparisons.equal(
+            Objects.requireNonNull(store.get("a".getBytes())),
+            "11".getBytes()
+        );
     }
 }

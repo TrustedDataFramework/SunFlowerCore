@@ -9,42 +9,42 @@ import static io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall;
  *
  */
 @javax.annotation.Generated(
-        value = "by gRPC proto compiler (version 1.25.0)",
-        comments = "Source: sunflower.proto")
+    value = "by gRPC proto compiler (version 1.25.0)",
+    comments = "Source: sunflower.proto")
 public final class EntryGrpc {
 
     public static final String SERVICE_NAME = "Entry";
     private static final int METHODID_ENTRY = 0;
     // Static method descriptors that strictly reflect the proto.
     private static volatile io.grpc.MethodDescriptor<org.tdf.sunflower.proto.Message,
-            org.tdf.sunflower.proto.Message> getEntryMethod;
+        org.tdf.sunflower.proto.Message> getEntryMethod;
     private static volatile io.grpc.ServiceDescriptor serviceDescriptor;
 
     private EntryGrpc() {
     }
 
     @io.grpc.stub.annotations.RpcMethod(
-            fullMethodName = SERVICE_NAME + '/' + "Entry",
-            requestType = org.tdf.sunflower.proto.Message.class,
-            responseType = org.tdf.sunflower.proto.Message.class,
-            methodType = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+        fullMethodName = SERVICE_NAME + '/' + "Entry",
+        requestType = org.tdf.sunflower.proto.Message.class,
+        responseType = org.tdf.sunflower.proto.Message.class,
+        methodType = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
     public static io.grpc.MethodDescriptor<org.tdf.sunflower.proto.Message,
-            org.tdf.sunflower.proto.Message> getEntryMethod() {
+        org.tdf.sunflower.proto.Message> getEntryMethod() {
         io.grpc.MethodDescriptor<org.tdf.sunflower.proto.Message, org.tdf.sunflower.proto.Message> getEntryMethod;
         if ((getEntryMethod = EntryGrpc.getEntryMethod) == null) {
             synchronized (EntryGrpc.class) {
                 if ((getEntryMethod = EntryGrpc.getEntryMethod) == null) {
                     EntryGrpc.getEntryMethod = getEntryMethod =
-                            io.grpc.MethodDescriptor.<org.tdf.sunflower.proto.Message, org.tdf.sunflower.proto.Message>newBuilder()
-                                    .setType(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
-                                    .setFullMethodName(generateFullMethodName(SERVICE_NAME, "Entry"))
-                                    .setSampledToLocalTracing(true)
-                                    .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                                            org.tdf.sunflower.proto.Message.getDefaultInstance()))
-                                    .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                                            org.tdf.sunflower.proto.Message.getDefaultInstance()))
-                                    .setSchemaDescriptor(new EntryMethodDescriptorSupplier("Entry"))
-                                    .build();
+                        io.grpc.MethodDescriptor.<org.tdf.sunflower.proto.Message, org.tdf.sunflower.proto.Message>newBuilder()
+                            .setType(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+                            .setFullMethodName(generateFullMethodName(SERVICE_NAME, "Entry"))
+                            .setSampledToLocalTracing(true)
+                            .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                                org.tdf.sunflower.proto.Message.getDefaultInstance()))
+                            .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                                org.tdf.sunflower.proto.Message.getDefaultInstance()))
+                            .setSchemaDescriptor(new EntryMethodDescriptorSupplier("Entry"))
+                            .build();
                 }
             }
         }
@@ -62,7 +62,7 @@ public final class EntryGrpc {
      * Creates a new blocking-style stub that supports unary and streaming output calls on the service
      */
     public static EntryBlockingStub newBlockingStub(
-            io.grpc.Channel channel) {
+        io.grpc.Channel channel) {
         return new EntryBlockingStub(channel);
     }
 
@@ -70,7 +70,7 @@ public final class EntryGrpc {
      * Creates a new ListenableFuture-style stub that supports unary calls on the service
      */
     public static EntryFutureStub newFutureStub(
-            io.grpc.Channel channel) {
+        io.grpc.Channel channel) {
         return new EntryFutureStub(channel);
     }
 
@@ -81,9 +81,9 @@ public final class EntryGrpc {
                 result = serviceDescriptor;
                 if (result == null) {
                     serviceDescriptor = result = io.grpc.ServiceDescriptor.newBuilder(SERVICE_NAME)
-                            .setSchemaDescriptor(new EntryFileDescriptorSupplier())
-                            .addMethod(getEntryMethod())
-                            .build();
+                        .setSchemaDescriptor(new EntryFileDescriptorSupplier())
+                        .addMethod(getEntryMethod())
+                        .build();
                 }
             }
         }
@@ -99,21 +99,21 @@ public final class EntryGrpc {
          *
          */
         public io.grpc.stub.StreamObserver<org.tdf.sunflower.proto.Message> entry(
-                io.grpc.stub.StreamObserver<org.tdf.sunflower.proto.Message> responseObserver) {
+            io.grpc.stub.StreamObserver<org.tdf.sunflower.proto.Message> responseObserver) {
             return asyncUnimplementedStreamingCall(getEntryMethod(), responseObserver);
         }
 
         @java.lang.Override
         public final io.grpc.ServerServiceDefinition bindService() {
             return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
-                    .addMethod(
-                            getEntryMethod(),
-                            asyncBidiStreamingCall(
-                                    new MethodHandlers<
-                                            org.tdf.sunflower.proto.Message,
-                                            org.tdf.sunflower.proto.Message>(
-                                            this, METHODID_ENTRY)))
-                    .build();
+                .addMethod(
+                    getEntryMethod(),
+                    asyncBidiStreamingCall(
+                        new MethodHandlers<
+                            org.tdf.sunflower.proto.Message,
+                            org.tdf.sunflower.proto.Message>(
+                            this, METHODID_ENTRY)))
+                .build();
         }
     }
 
@@ -140,9 +140,9 @@ public final class EntryGrpc {
          *
          */
         public io.grpc.stub.StreamObserver<org.tdf.sunflower.proto.Message> entry(
-                io.grpc.stub.StreamObserver<org.tdf.sunflower.proto.Message> responseObserver) {
+            io.grpc.stub.StreamObserver<org.tdf.sunflower.proto.Message> responseObserver) {
             return asyncBidiStreamingCall(
-                    getChannel().newCall(getEntryMethod(), getCallOptions()), responseObserver);
+                getChannel().newCall(getEntryMethod(), getCallOptions()), responseObserver);
         }
     }
 
@@ -187,10 +187,10 @@ public final class EntryGrpc {
     }
 
     private static final class MethodHandlers<Req, Resp> implements
-            io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
-            io.grpc.stub.ServerCalls.ServerStreamingMethod<Req, Resp>,
-            io.grpc.stub.ServerCalls.ClientStreamingMethod<Req, Resp>,
-            io.grpc.stub.ServerCalls.BidiStreamingMethod<Req, Resp> {
+        io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
+        io.grpc.stub.ServerCalls.ServerStreamingMethod<Req, Resp>,
+        io.grpc.stub.ServerCalls.ClientStreamingMethod<Req, Resp>,
+        io.grpc.stub.ServerCalls.BidiStreamingMethod<Req, Resp> {
         private final EntryImplBase serviceImpl;
         private final int methodId;
 
@@ -211,11 +211,11 @@ public final class EntryGrpc {
         @java.lang.Override
         @java.lang.SuppressWarnings("unchecked")
         public io.grpc.stub.StreamObserver<Req> invoke(
-                io.grpc.stub.StreamObserver<Resp> responseObserver) {
+            io.grpc.stub.StreamObserver<Resp> responseObserver) {
             switch (methodId) {
                 case METHODID_ENTRY:
                     return (io.grpc.stub.StreamObserver<Req>) serviceImpl.entry(
-                            (io.grpc.stub.StreamObserver<org.tdf.sunflower.proto.Message>) responseObserver);
+                        (io.grpc.stub.StreamObserver<org.tdf.sunflower.proto.Message>) responseObserver);
                 default:
                     throw new AssertionError();
             }
@@ -223,7 +223,7 @@ public final class EntryGrpc {
     }
 
     private static abstract class EntryBaseDescriptorSupplier
-            implements io.grpc.protobuf.ProtoFileDescriptorSupplier, io.grpc.protobuf.ProtoServiceDescriptorSupplier {
+        implements io.grpc.protobuf.ProtoFileDescriptorSupplier, io.grpc.protobuf.ProtoServiceDescriptorSupplier {
         EntryBaseDescriptorSupplier() {
         }
 
@@ -239,14 +239,14 @@ public final class EntryGrpc {
     }
 
     private static final class EntryFileDescriptorSupplier
-            extends EntryBaseDescriptorSupplier {
+        extends EntryBaseDescriptorSupplier {
         EntryFileDescriptorSupplier() {
         }
     }
 
     private static final class EntryMethodDescriptorSupplier
-            extends EntryBaseDescriptorSupplier
-            implements io.grpc.protobuf.ProtoMethodDescriptorSupplier {
+        extends EntryBaseDescriptorSupplier
+        implements io.grpc.protobuf.ProtoMethodDescriptorSupplier {
         private final String methodName;
 
         EntryMethodDescriptorSupplier(String methodName) {

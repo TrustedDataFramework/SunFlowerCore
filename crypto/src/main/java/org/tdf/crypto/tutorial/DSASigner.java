@@ -68,7 +68,7 @@ public class DSASigner {
     @SneakyThrows
     private long shaModQ(byte[] msg) {
         MessageDigest sha =
-                MessageDigest.getInstance("SHA");
+            MessageDigest.getInstance("SHA");
         BigInteger b = new BigInteger(1, sha.digest(msg));
         return b.mod(BigInteger.valueOf(q)).longValue();
     }
@@ -78,13 +78,13 @@ public class DSASigner {
         long gamma = sig[0];
         long delta = sig[1];
         long e1 = zq.mul(
-                shaModQ(msg),
-                zq.inverse(delta)
+            shaModQ(msg),
+            zq.inverse(delta)
         );
         long e2 = zq.mul(gamma, zq.inverse(delta));
         long r = zp.mul(
-                zp.power(alpha, e1),
-                zp.power(beta, e2)
+            zp.power(alpha, e1),
+            zp.power(beta, e2)
         );
         return zq.add(r, 0) == gamma;
     }

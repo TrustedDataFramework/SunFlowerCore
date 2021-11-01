@@ -4,19 +4,24 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.spongycastle.util.encoders.Hex;
-import org.tdf.common.HashUtil;
+import org.tdf.common.TrieUtil;
 import org.tdf.common.serialize.Codecs;
 import org.tdf.common.store.ByteArrayMapStore;
 import org.tdf.common.store.NoDeleteStore;
 import org.tdf.common.store.NoDoubleDeleteStore;
 import org.tdf.common.store.Store;
+import org.tdf.common.util.ByteArrayMap;
+import org.tdf.common.util.ByteUtil;
+import org.tdf.common.util.HexBytes;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RunWith(JUnit4.class)
 public class TrieRollbackTest {
@@ -24,14 +29,11 @@ public class TrieRollbackTest {
     protected Store<byte[], byte[]> delegate;
     protected Store<byte[], byte[]> database;
     protected Trie<String, String> trie;
-    protected List<byte[]> roots;
+    protected List<HexBytes> roots;
     protected Map<String, Map<String, String>> dumps;
-    protected List<Map<byte[], byte[]>> nodes;
+    protected List<Map<HexBytes, HexBytes>> nodes;
     private NoDeleteStore<byte[], byte[]> noDelete;
 
-    private NoDeleteStore<byte[], byte[]> cloneDatabase() {
-        return new NoDeleteStore<>(new ByteArrayMapStore<>(delegate));
-    }
 
     @Before
     public void before() throws Exception {
@@ -39,14 +41,14 @@ public class TrieRollbackTest {
 
         delegate = new ByteArrayMapStore<>();
 
-        noDelete = new NoDeleteStore<>(delegate);
-        database = new NoDoubleDeleteStore<>(noDelete);
+        noDelete = new NoDeleteStore<>(delegate, ByteUtil::isNullOrZeroArray);
+        database = new NoDoubleDeleteStore<>(noDelete, ByteUtil::isNullOrZeroArray);
 
-        trie = Trie.<String, String>builder().hashFunction(HashUtil::sha3)
-                .store(database)
-                .keyCodec(Codecs.STRING)
-                .valueCodec(Codecs.STRING)
-                .build();
+        trie = TrieUtil.<String, String>builder()
+            .store(database)
+            .keyCodec(Codecs.string)
+            .valueCodec(Codecs.string)
+            .build();
 
         roots = new ArrayList<>();
 
@@ -55,7 +57,7 @@ public class TrieRollbackTest {
         nodes = new ArrayList<>();
 
         URL massiveUpload_1 = ClassLoader
-                .getSystemResource("trie/massive-upload.dmp");
+            .getSystemResource("trie/massive-upload.dmp");
 
         File file = new File(massiveUpload_1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
@@ -68,17 +70,17 @@ public class TrieRollbackTest {
             if (keyVal[0].equals("*"))
                 trie.remove(keyVal[1].trim());
             else
-                trie.put(keyVal[0].trim(), keyVal[1].trim());
+                trie.set(keyVal[0].trim(), keyVal[1].trim());
 
-            byte[] rootHash = trie.commit();
+            HexBytes rootHash = trie.commit();
 
             // skip when trie is not modified
-            if (roots.stream().anyMatch(x -> Arrays.equals(x, rootHash))) continue;
+            if (roots.stream().anyMatch(x -> x.equals(rootHash))) continue;
 
             trie.flush();
             roots.add(rootHash);
             nodes.add(trie.dump());
-            dumps.put(Hex.toHexString(rootHash), dump(trie));
+            dumps.put(rootHash.getHex(), dump(trie));
         }
     }
 
@@ -89,9 +91,9 @@ public class TrieRollbackTest {
     // rollback successful
     @Test
     public void test1() {
-        for (byte[] rootHash : roots) {
+        for (HexBytes rootHash : roots) {
             trie = trie.revert(rootHash, database);
-            assert equals(dump(trie), dumps.get(Hex.toHexString(rootHash)));
+            assert equals(dump(trie), dumps.get(rootHash.getHex()));
         }
         for (int i = 0; i < roots.size() - 1; i++) {
             trie = trie.revert(roots.get(i), database);
@@ -102,15 +104,22 @@ public class TrieRollbackTest {
     // get a tree from dumped nodes success
     public void test3() {
         for (int i = 0; i < roots.size(); i++) {
-            Store<byte[], byte[]> db = new ByteArrayMapStore<>(nodes.get(i));
+            Map<byte[], byte[]> m = new ByteArrayMap<>();
+
+            nodes.get(i).forEach((k, v) -> m.put(k.getBytes(), v.getBytes()));
+
+            Store<byte[], byte[]> db = new ByteArrayMapStore<>(m);
             Trie<String, String> trie1 = trie.revert(roots.get(i), db);
-            assert equals(dumps.get(Hex.toHexString(roots.get(i))), dump(trie1));
+            assert equals(dumps.get(roots.get(i).getHex()), dump(trie1));
         }
     }
 
-    private Map<String, String> dump(Store<String, String> store) {
+    private Map<String, String> dump(Trie<String, String> trie) {
         Map<String, String> m = new HashMap<>();
-        store.forEach(m::put);
+        trie.traverse((k, v) -> {
+            m.put(k, v);
+            return true;
+        });
         return m;
     }
 

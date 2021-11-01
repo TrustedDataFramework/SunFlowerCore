@@ -24,8 +24,8 @@ public class SM2Pkcs12Maker {
      * @throws PKCSException
      */
     public KeyStore makePkcs12(PrivateKey privKey, X509Certificate[] chain, char[] passwd)
-            throws KeyStoreException, NoSuchProviderException,
-            NoSuchAlgorithmException, CertificateException, IOException {
+        throws KeyStoreException, NoSuchProviderException,
+        NoSuchAlgorithmException, CertificateException, IOException {
         KeyStore ks = KeyStore.getInstance("PKCS12", "BC");
         ks.load(null, passwd);
         ks.setKeyEntry("User Key", privKey, passwd, chain);
@@ -42,8 +42,8 @@ public class SM2Pkcs12Maker {
      * @throws PKCSException
      */
     public KeyStore makePkcs12(PrivateKey privKey, X509Certificate cert, char[] passwd)
-            throws KeyStoreException, NoSuchProviderException,
-            NoSuchAlgorithmException, CertificateException, IOException {
+        throws KeyStoreException, NoSuchProviderException,
+        NoSuchAlgorithmException, CertificateException, IOException {
         return makePkcs12(privKey, new X509Certificate[]{cert}, passwd);
     }
 }

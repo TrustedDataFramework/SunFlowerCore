@@ -57,7 +57,7 @@ public class CryptoHelpers {
     private static byte[] restore(byte[] msg) {
         byte[] len = new byte[4];
         System.arraycopy(msg, 0, len, 0, len.length);
-        int length = BigEndian.decodeInt32(len);
+        int length = BigEndian.decodeInt32(len, 0);
         byte[] ret = new byte[length];
         System.arraycopy(msg, len.length, ret, 0, length);
         return ret;

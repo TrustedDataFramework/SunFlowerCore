@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
@@ -20,7 +19,7 @@ public class EpochSecondsSerializer extends JsonSerializer<Long> {
     @Override
     public void serialize(Long value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         gen.writeString(FORMATTER.format(Instant.ofEpochMilli(
-                TimeUnit.MILLISECONDS.convert(value, TimeUnit.SECONDS))
+            TimeUnit.MILLISECONDS.convert(value, TimeUnit.SECONDS))
         ));
     }
 }

@@ -4,28 +4,27 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.common.serialize.Codecs;
+import org.tdf.common.util.HexBytes;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnit4.class)
 public class PrefixStoreTest {
 
     @Test
     public void test0() {
-        Store<byte[], byte[]> s = new ByteArrayMapStore<>();
+        Store<HexBytes, HexBytes> s = new MapStore<>();
         PrefixStore<String, String> p = new PrefixStore<>(
-                s,
-                "aaa".getBytes(StandardCharsets.US_ASCII),
-                Codecs.newRLPCodec(String.class),
-                Codecs.newRLPCodec(String.class)
+            s,
+            HexBytes.fromBytes("aaa".getBytes(StandardCharsets.US_ASCII)),
+            Codecs.INSTANCE.rlp(String.class),
+            Codecs.INSTANCE.rlp(String.class)
         );
 
-        p.put("aaa", "bbb");
-        Map<String, String> m = new HashMap<>(p.asMap());
-        assertTrue(m.containsKey("aaa"));
+        p.set("aaa", "bbb");
+//        Map<String, String> m = new HashMap<>(p.asMap());
+        assertEquals("bbb", p.get("aaa"));
     }
 }

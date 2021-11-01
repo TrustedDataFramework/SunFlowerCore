@@ -1,11 +1,10 @@
 package org.tdf.sunflower.consensus.pow;
 
+import org.tdf.common.types.Uint256;
 import org.tdf.common.util.HexBytes;
 import org.tdf.sunflower.consensus.AbstractValidator;
-import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.BlockValidateResult;
-import org.tdf.sunflower.types.Transaction;
-import org.tdf.sunflower.types.ValidateResult;
+import org.tdf.sunflower.facade.RepositoryReader;
+import org.tdf.sunflower.types.*;
 
 public class PoWValidator extends AbstractValidator {
     private final PoW poW;
@@ -16,30 +15,24 @@ public class PoWValidator extends AbstractValidator {
     }
 
     @Override
-    public ValidateResult validate(Block block, Block dependency) {
-        BlockValidateResult res = super.commonValidate(block, dependency);
-        if (!res.isSuccess()) return res;
+    public ValidateResult validate(RepositoryReader rd, Block block, Block dependency) {
+        BlockValidateResult res = super.commonValidate(rd, block, dependency);
+        if (!res.getSuccess()) return res;
 
-        if (block.getVersion() != PoW.BLOCK_VERSION) {
-            return ValidateResult.fault("version not match");
-        }
-        byte[] nbits = poW.getNBits(dependency.getStateRoot().getBytes());
-        if (PoW.compare(PoW.getPoWHash(block), nbits) > 0)
+        Uint256 nbits = poW.bios.getNBits(rd, dependency.getHash());
+        if (PoW.compare(PoW.getPoWHash(block), nbits.getByte32()) > 0)
             return ValidateResult.fault(
-                    String.format(
-                            "nbits validate failed hash = %s, nbits = %s",
-                            HexBytes.fromBytes(PoW.getPoWHash(block)),
-                            HexBytes.fromBytes(nbits)
-                    )
+                String.format(
+                    "nbits validate failed hash = %s, nbits = %s",
+                    HexBytes.fromBytes(PoW.getPoWHash(block)),
+                    HexBytes.fromBytes(nbits.getByte32())
+                )
             );
         return res;
     }
 
     @Override
-    public ValidateResult validate(Transaction transaction) {
-        if (transaction.getVersion() != PoW.TRANSACTION_VERSION) {
-            return ValidateResult.fault("transaction version not match");
-        }
-        return ValidateResult.success();
+    public int getChainId() {
+        throw new UnsupportedOperationException();
     }
 }

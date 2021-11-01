@@ -1,92 +1,142 @@
 package org.tdf.sunflower.consensus.pow;
 
+import com.github.salpadding.rlpstream.Rlp;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.fraction.BigFraction;
-import org.tdf.common.store.Store;
-import org.tdf.common.util.BigEndian;
-import org.tdf.common.util.ByteArrayMap;
-import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPCodec;
-import org.tdf.rlp.RLPList;
+import org.tdf.common.types.Uint256;
+import org.tdf.common.util.*;
 import org.tdf.sunflower.Start;
+import org.tdf.sunflower.facade.RepositoryReader;
+import org.tdf.sunflower.facade.RepositoryService;
+import org.tdf.sunflower.state.AbstractBuiltin;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Bios;
 import org.tdf.sunflower.state.Constants;
+import org.tdf.sunflower.state.StateTrie;
+import org.tdf.sunflower.types.ConsensusConfig;
 import org.tdf.sunflower.types.Header;
+import org.tdf.sunflower.vm.Backend;
+import org.tdf.sunflower.vm.CallContext;
+import org.tdf.sunflower.vm.CallData;
+import org.tdf.sunflower.vm.CallType;
+import org.tdf.sunflower.vm.abi.Abi;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+/*
+interface PowBios {
+    function update();
+
+    function nbits() external public returns (uint256);
+}
+ */
 @Slf4j(topic = "pow")
-public class PoWBios implements Bios {
+public class PoWBios extends AbstractBuiltin {
+    public static final String ABI_JSON = "[{\"inputs\":[],\"name\":\"nbits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"update\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]";
+    public static final Abi ABI = Abi.fromJson(ABI_JSON);
+    public static final Abi.Function UPDATE = ABI.findFunction(f -> f.name.equals("update"));
+
     public static final HexBytes ADDRESS = Constants.POW_BIOS_ADDR;
-    static final byte[] N_BITS_KEY = "nbits".getBytes(StandardCharsets.US_ASCII);
-    static final byte[] TIMESTAMPS_KEY = "ts".getBytes(StandardCharsets.US_ASCII);
+    static final HexBytes N_BITS_KEY = HexBytes.fromBytes("nbits".getBytes(StandardCharsets.US_ASCII));
+    static final HexBytes TIMESTAMPS_KEY = HexBytes.fromBytes("ts".getBytes(StandardCharsets.US_ASCII));
     static final long MAX_ADJUST_RATE = 16;
     static final BigInteger MAX_UINT_256 = new BigInteger("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
-    private final byte[] genesisNbits;
+    private final Uint256 genesisNbits;
 
-    private final PoWConfig config;
+    private final ConsensusConfig config;
+    private final StateTrie<HexBytes, Account> accounts;
 
-    public PoWBios(byte[] nbits, PoWConfig config) {
-        this.genesisNbits = nbits;
+    public PoWBios(HexBytes nbits, ConsensusConfig config,
+                   StateTrie<HexBytes, Account> accounts) {
+        super(Constants.POW_BIOS_ADDR);
+        this.accounts = accounts;
+        this.genesisNbits = Uint256.of(nbits.getBytes());
         this.config = config;
     }
 
-    @Override
-    public Account getGenesisAccount() {
-        return Account.emptyContract(ADDRESS);
+    public Uint256 getNBits(
+        RepositoryReader rd,
+        HexBytes parentHash
+    ) {
+        Header parent = rd.getHeaderByHash(parentHash);
+        List<?> r = view(rd, accounts.createBackend(parent, true, parent.getStateRoot()), "nbits");
+        return Uint256.of((BigInteger) r.get(0));
     }
 
     @Override
     @SneakyThrows
-    public void update(Header header, Store<byte[], byte[]> contractStorage) {
+    public List<?> call(RepositoryReader rd, Backend backend, CallContext ctx, CallData callData, String method, Object... args) {
+
+
+        if (method.equals("nbits")) {
+            HexBytes nbits = backend.dbGet(Constants.POW_BIOS_ADDR, N_BITS_KEY);
+            return Collections.singletonList(
+                ByteUtil.bytesToBigInteger(nbits.getBytes())
+            );
+        }
+
+        if (!method.equals("update")) {
+            throw new RuntimeException("call to bios failed, method not found");
+        }
+
+        // find function by selector
         List<Long> ts = new ArrayList<>(
-                Arrays.asList(RLPCodec.decode(contractStorage.get(TIMESTAMPS_KEY).get(), Long[].class))
+            Arrays.asList(
+                Rlp.decode(
+                    backend.dbGet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY).getBytes(), Long[].class
+                )
+            )
         );
-        ts.add(header.getCreatedAt());
         log.debug("timestamps = {}", Start.MAPPER.writeValueAsString(ts));
         if (ts.size() == config.getBlocksPerEra()) {
-            long duration = ts.get(ts.size() - 1) - ts.get(0);
-            BigFraction rate = new BigFraction(
-                    duration,
-                    Long.valueOf(config.getBlockInterval() * (ts.size() - 1))
+            long x = ts.get(ts.size() - 1) - ts.get(0);
+            long y = config.getBlockInterval() * (ts.size() - 1);
+
+            // x > y * 16 -> x/y > 16
+            if (x > y * MAX_ADJUST_RATE) {
+                x = MAX_ADJUST_RATE;
+                y = 1;
+            }
+
+            // x/y < 1 / 16 <=> x < y / 16 <=> 16 * x < y
+            if (16 * x < y) {
+                x = 1;
+                y = MAX_ADJUST_RATE;
+            }
+
+            BigInteger nbits = ByteUtil.bytesToBigInteger(
+                backend.dbGet(Constants.POW_BIOS_ADDR, N_BITS_KEY).getBytes()
             );
 
-            if (rate.compareTo(new BigFraction(MAX_ADJUST_RATE)) > 0) {
-                rate = new BigFraction(MAX_ADJUST_RATE);
-            }
-
-            if (rate.compareTo(new BigFraction(1, MAX_ADJUST_RATE)) < 0) {
-                rate = new BigFraction(1, MAX_ADJUST_RATE);
-            }
-            BigInteger nbits = BigEndian.decodeUint256(contractStorage.get(N_BITS_KEY).get());
-            nbits = safeTyMul(nbits, rate);
-            contractStorage.put(N_BITS_KEY, BigEndian.encodeUint256(nbits));
-            contractStorage.put(TIMESTAMPS_KEY, RLPList.createEmpty().getEncoded());
+            nbits = safeTyMul(nbits, x, y);
+            backend.dbSet(Constants.POW_BIOS_ADDR, N_BITS_KEY, HexBytes.fromBytes(BigIntegers.asUnsignedByteArray(nbits)));
+            backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, HexBytes.fromBytes(Rlp.encodeElements()));
         } else {
-            contractStorage.put(TIMESTAMPS_KEY, RLPCodec.encode(ts));
+            backend.dbSet(Constants.POW_BIOS_ADDR, TIMESTAMPS_KEY, HexBytes.fromBytes(Rlp.encode(ts)));
         }
-    }
 
-    private BigInteger safeTyMul(BigInteger i, BigFraction f) {
-        i = i.multiply(f.getNumerator());
-        if (i.compareTo(MAX_UINT_256) > 0) {
-            i = MAX_UINT_256;
-        }
-        return i.divide(f.getDenominator());
+        throw new RuntimeException("pow");
     }
 
     @Override
-    public Map<byte[], byte[]> getGenesisStorage() {
-        Map<byte[], byte[]> ret = new ByteArrayMap<>();
-        ret.put(N_BITS_KEY, this.genesisNbits);
-        ret.put(TIMESTAMPS_KEY, RLPList.createEmpty().getEncoded());
+    public Abi getAbi() {
+        return ABI;
+    }
+
+    private BigInteger safeTyMul(BigInteger i, long x, long y) {
+        i = i.multiply(BigInteger.valueOf(x));
+        if (i.compareTo(MAX_UINT_256) > 0) {
+            i = MAX_UINT_256;
+        }
+        return i.divide(BigInteger.valueOf(y));
+    }
+
+    @Override
+    public Map<HexBytes, HexBytes> getGenesisStorage() {
+        Map<HexBytes, HexBytes> ret = new HashMap<>();
+        ret.put(N_BITS_KEY, HexBytes.fromBytes(genesisNbits.getByte32()));
+        ret.put(TIMESTAMPS_KEY, HexBytes.fromBytes(Rlp.encodeElements()));
         return ret;
     }
 }

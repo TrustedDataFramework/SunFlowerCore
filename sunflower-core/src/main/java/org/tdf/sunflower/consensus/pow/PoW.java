@@ -1,50 +1,40 @@
 package org.tdf.sunflower.consensus.pow;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.salpadding.rlpstream.Rlp;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.tdf.common.types.Uint256;
-import org.tdf.common.util.BigEndian;
+import org.tdf.common.util.HashUtil;
 import org.tdf.common.util.HexBytes;
-import org.tdf.rlp.RLPCodec;
 import org.tdf.sunflower.Start;
 import org.tdf.sunflower.facade.AbstractConsensusEngine;
-import org.tdf.sunflower.facade.PeerServerListener;
 import org.tdf.sunflower.state.Account;
-import org.tdf.sunflower.state.Bios;
+import org.tdf.sunflower.state.Builtin;
 import org.tdf.sunflower.types.Block;
-import org.tdf.sunflower.types.CryptoContext;
-import org.tdf.sunflower.util.FileUtils;
-import org.tdf.sunflower.util.MappingUtil;
+import org.tdf.sunflower.types.ConsensusConfig;
 
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
-import static org.tdf.sunflower.consensus.pow.PoWBios.N_BITS_KEY;
 
 @Slf4j(topic = "pow")
 public class PoW extends AbstractConsensusEngine {
-    public static final int BLOCK_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
-    public static final int TRANSACTION_VERSION = BigEndian.decodeInt32(new byte[]{0, 'p', 'o', 'w'});
     private Genesis genesis;
-    private PoWConfig config;
+    private ConsensusConfig config;
+    PoWBios bios;
 
     public PoW() {
 
     }
 
     public static byte[] getPoWHash(Block block) {
-        byte[] d = CryptoContext.hash(RLPCodec.encode(block.getHeader()));
-        return CryptoContext.hash(d);
+        byte[] d = HashUtil.sha3(Rlp.encode(block.getHeader()));
+        return HashUtil.sha3(d);
     }
 
     public static int compare(byte[] x, byte[] y) {
         if (x.length != y.length)
-            throw new RuntimeException("x y length");
+            throw new RuntimeException("compare failed for x and y, length not equal");
         for (int i = 0; i < x.length; i++) {
             int a = Byte.toUnsignedInt(x[i]);
             int b = Byte.toUnsignedInt(y[i]);
@@ -54,49 +44,25 @@ public class PoW extends AbstractConsensusEngine {
         return 0;
     }
 
-    public byte[] getNBits(
-            byte[] stateRoot) {
-        Account a = getAccountTrie().get(stateRoot, PoWBios.ADDRESS).get();
-        return getContractStorageTrie().revert(a.getStorageRoot())
-                .get(N_BITS_KEY).get();
+    @Override
+    public Map<HexBytes, Account> getAlloc() {
+        return genesis.getAlloc();
     }
 
     @Override
-    public List<Account> getGenesisStates() {
-        if (genesis.getAlloc() == null)
-            return Collections.emptyList();
-
-        List<Account> accounts = new ArrayList<>();
-
-        if (genesis.getAlloc() != null) {
-            genesis.getAlloc().forEach((k, v) -> {
-                Account a = new Account(HexBytes.fromHex(k), Uint256.of(v));
-                accounts.add(a);
-            });
-        }
-
-        return accounts;
-    }
-
-    @Override
-    public List<Bios> getBios() {
-        PoWBios bios = new PoWBios(genesis.getNbits().getBytes(), config);
+    public List<Builtin> getBios() {
         return Collections.singletonList(bios);
     }
 
     @Override
     @SneakyThrows
-    public void init(Properties properties) {
-        ObjectMapper objectMapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
-        config = MappingUtil.propertiesToPojo(properties, PoWConfig.class);
-        InputStream in = FileUtils.getInputStream(config.getGenesis());
-        genesis = objectMapper.readValue(in, Genesis.class);
-
-        setGenesisBlock(genesis.get());
-        initStateTrie();
+    public void init(ConsensusConfig config) {
+        this.config = config;
+        genesis = new Genesis(config.getGenesisJson());
+        this.bios = new PoWBios(genesis.getNbits(), config, getAccountTrie());
+        setGenesisBlock(genesis.getBlock());
 
         setValidator(new PoWValidator(this));
-        setPeerServerListener(PeerServerListener.NONE);
 
         setMiner(new PoWMiner(config, getTransactionPool(), this));
         log.info("genesis = {}", Start.MAPPER.writeValueAsString(getGenesisBlock()));

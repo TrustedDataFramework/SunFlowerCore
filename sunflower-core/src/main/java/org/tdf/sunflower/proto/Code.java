@@ -7,7 +7,7 @@ package org.tdf.sunflower.proto;
  * Protobuf enum {@code Code}
  */
 public enum Code
-        implements com.google.protobuf.ProtocolMessageEnum {
+    implements com.google.protobuf.ProtocolMessageEnum {
     /**
      * <pre>
      * empty message
@@ -140,12 +140,12 @@ public enum Code
      */
     public static final int MULTI_PART_VALUE = 7;
     private static final com.google.protobuf.Internal.EnumLiteMap<
-            Code> internalValueMap =
-            new com.google.protobuf.Internal.EnumLiteMap<Code>() {
-                public Code findValueByNumber(int number) {
-                    return Code.forNumber(number);
-                }
-            };
+        Code> internalValueMap =
+        new com.google.protobuf.Internal.EnumLiteMap<Code>() {
+            public Code findValueByNumber(int number) {
+                return Code.forNumber(number);
+            }
+        };
     private static final Code[] VALUES = values();
     private final int value;
 
@@ -201,10 +201,10 @@ public enum Code
     }
 
     public static Code valueOf(
-            com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
         if (desc.getType() != getDescriptor()) {
             throw new java.lang.IllegalArgumentException(
-                    "EnumValueDescriptor is not for this type.");
+                "EnumValueDescriptor is not for this type.");
         }
         if (desc.getIndex() == -1) {
             return UNRECOGNIZED;
@@ -215,7 +215,7 @@ public enum Code
     public final int getNumber() {
         if (this == UNRECOGNIZED) {
             throw new java.lang.IllegalArgumentException(
-                    "Can't get the number of an unknown enum value.");
+                "Can't get the number of an unknown enum value.");
         }
         return value;
     }

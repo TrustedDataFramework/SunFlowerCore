@@ -27,12 +27,12 @@ public class SM2PublicKey extends BCECPublicKey {
     @Override
     public byte[] getEncoded() {
         ASN1OctetString p = ASN1OctetString.getInstance(
-                new X9ECPoint(getQ(), withCompression).toASN1Primitive());
+            new X9ECPoint(getQ(), withCompression).toASN1Primitive());
 
         // stored curve is null if ImplicitlyCa
         SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(
-                new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, ID_SM2_PUBKEY_PARAM),
-                p.getOctets());
+            new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, ID_SM2_PUBKEY_PARAM),
+            p.getOctets());
 
         return KeyUtil.getEncodedSubjectPublicKeyInfo(info);
     }

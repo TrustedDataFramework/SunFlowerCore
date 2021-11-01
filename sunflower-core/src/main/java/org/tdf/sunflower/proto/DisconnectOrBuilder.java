@@ -4,8 +4,8 @@
 package org.tdf.sunflower.proto;
 
 public interface DisconnectOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:Disconnect)
-        com.google.protobuf.MessageOrBuilder {
+    // @@protoc_insertion_point(interface_extends:Disconnect)
+    com.google.protobuf.MessageOrBuilder {
 
     /**
      * <code>string reason = 1;</code>

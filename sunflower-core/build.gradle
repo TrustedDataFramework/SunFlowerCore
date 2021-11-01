@@ -1,92 +1,44 @@
 plugins {
-    id 'org.springframework.boot' version '2.2.0.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
-    id 'java'
-}
-
-group = 'org.tdf'
-version = '1.0.0'
-sourceCompatibility = '1.8'
-
-repositories {
-    // aliyun mirror is too slow for github
-    if (System.getenv("GITHUB") != null && !System.getenv("GITHUB").isEmpty()) {
-        maven {
-            url 'http://maven.aliyun.com/nexus/content/groups/public/'
-        }
-        maven {
-            url 'http://maven.aliyun.com/nexus/content/repositories/jcenter'
-        }
-    }
-    mavenLocal()
-    jcenter()
-    mavenCentral()
-
-    maven {
-        name = "lotusvm"
-        url = uri("https://maven.pkg.github.com/TrustedDataFramework/LotusVM")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
-            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
-
-    maven {
-        name = "java-rlp"
-        url = uri("https://maven.pkg.github.com/TrustedDataFramework/java-rlp")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
-            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
+    id 'org.springframework.boot' version '2.5.6'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 }
 
 dependencies {
-    // dependency without version number are configured by spring dependency management automatically
-    compile 'org.springframework.boot:spring-boot-starter-actuator'
-    compile 'org.springframework.boot:spring-boot-starter-web'
-    compile 'org.postgresql:postgresql'
-    compile 'org.springframework.boot:spring-boot-starter-data-jpa'
-    compile 'org.springframework.boot:spring-boot-starter-websocket'
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-properties:${jacksonVersion}"
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-properties"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}"
+    implementation "commons-io:commons-io:${commonIOVersion}"
 
-    testCompile 'org.springframework.boot:spring-boot-starter-test'
-    testCompile "junit:junit"
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation "junit:junit"
 
-
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
-    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
     compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
-    compile project(':common')
-    compile project(':crypto')
-    compile project(':facade')
-    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-    compile "com.google.guava:guava:${guavaVersion}"
-    compile "commons-cli:commons-cli:${commonsCliVersion}"
-    compile "io.grpc:grpc-all:${gRPCVersion}"
-    compile "org.java-websocket:Java-WebSocket:${webSocketVersion}"
-    compile "org.apache.commons:commons-math3:${math3Version}"
-    compile "com.cedarsoftware:java-util:${cedarsoftwareVersion}" // for deep equals
-    compile "com.madgag.spongycastle:core:${scastleVersion}" // for SHA3 and SECP256K1
-    compile "com.madgag.spongycastle:prov:${scastleVersion}" // for SHA3 and SECP256K1
-    compile "org.bouncycastle:bcprov-jdk15on:${bouncycastleVersion}"
-    compile "org.rocksdb:rocksdbjni:${rocksdbVersion}"
-    compile "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
-    compile "org.apache.commons:commons-collections4:${commonsCollections4Version}"
-    compile "org.apache.commons:commons-lang3:${commonsLang3Version}"
-    compile "com.corundumstudio.socketio:netty-socketio:${nettySocketIOVersion}" // for message push
-    compile "org.tdf:rlp:${rlpVersion}"
-    compile "org.tdf:lotusvm:${lotusvmVersion}"
-    compile "org.springframework.shell:spring-shell-starter:${springShellVersion}"
-    compile "org.slf4j:slf4j-api:${slf4jVersion}"
-    compile "org.slf4j:jul-to-slf4j:${slf4jVersion}"
+    implementation project(':common')
+    implementation project(':facade')
+    implementation project(':evm')
 
-    compile "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
-    compile "org.iq80.leveldb:leveldb:${leveldbVersion}"
-    // for test and dev
-    compile 'com.h2database:h2'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    implementation "com.google.guava:guava:${guavaVersion}"
+    implementation "io.grpc:grpc-protobuf:${gRPCVersion}"
+    implementation "io.grpc:grpc-stub:${gRPCVersion}"
+    implementation "io.grpc:grpc-netty-shaded:${gRPCVersion}"
+
+    implementation "org.java-websocket:Java-WebSocket:${webSocketVersion}"
+    implementation "com.madgag.spongycastle:core:${scastleVersion}" // for SHA3 and SECP256K1
+    implementation "com.madgag.spongycastle:prov:${scastleVersion}" // for SHA3 and SECP256K1
+    implementation "org.iq80.leveldb:leveldb-api:${leveldbVersion}"
+
+    implementation "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
+    implementation "com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6"
+    runtimeOnly 'javax.jws:jsr181-api:1.0-MR1'
+    implementation "org.apache.commons:commons-collections4:${commonsCollections4Version}"
+
+    testApi "org.web3j:core:4.8.4"
+    testImplementation 'com.squareup.okhttp3:okhttp:4.9.0'
+
+    implementation 'org.web3j:core:4.8.5'
+
 }
 
 task copyDependencies(type: Copy) {
