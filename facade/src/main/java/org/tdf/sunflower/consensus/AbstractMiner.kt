@@ -11,6 +11,7 @@ import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.TransactionInfo
 import org.tdf.sunflower.facade.TransactionPool
 import org.tdf.sunflower.state.Account
+import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.CallContext
@@ -63,13 +64,13 @@ abstract class AbstractMiner(
             ?: Uint256.ZERO
 
         // add fee to miners account
-        val c = coinbase.copy(value = coinbase.value + totalFee)
+        val c = coinbase.copy(value = totalFee)
         val body = txs.toMutableList()
         body.add(0, c)
         val ctx = CallContext.fromTx(c, chainId, createdAt)
         val callData = CallData.fromTx(c)
 
-
+        tmp.addBalance(AddrUtil.empty(), totalFee)
         val res: VMResult
         val executor = VMExecutor.create(rd, tmp, ctx, callData, c.gasLimit)
         res = executor.execute()
