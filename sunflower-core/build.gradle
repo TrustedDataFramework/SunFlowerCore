@@ -20,9 +20,9 @@ dependencies {
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     implementation "com.google.guava:guava:${guavaVersion}"
-    implementation "io.grpc:grpc-protobuf:${gRPCVersion}"
-    implementation "io.grpc:grpc-stub:${gRPCVersion}"
-    implementation "io.grpc:grpc-netty-shaded:${gRPCVersion}"
+    compileOnly "io.grpc:grpc-protobuf:${gRPCVersion}"
+    compileOnly "io.grpc:grpc-stub:${gRPCVersion}"
+    compileOnly "io.grpc:grpc-netty-shaded:${gRPCVersion}"
 
     implementation "org.java-websocket:Java-WebSocket:${webSocketVersion}"
     implementation "com.madgag.spongycastle:core:${scastleVersion}" // for SHA3 and SECP256K1
@@ -37,7 +37,7 @@ dependencies {
     testApi "org.web3j:core:4.8.4"
     testImplementation 'com.squareup.okhttp3:okhttp:4.9.0'
 
-    implementation 'org.web3j:core:4.8.5'
+    testImplementation 'org.web3j:core:4.8.5'
 
 }
 
