@@ -1,7 +1,6 @@
 package org.tdf.sunflower.db
 
 import org.fusesource.leveldbjni.JniDBFactory
-import org.iq80.leveldb.impl.Iq80DBFactory
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.tdf.common.store.*
@@ -39,7 +38,6 @@ class DatabaseStoreFactoryImpl(private val config: DatabaseConfig) : DatabaseSto
         when (config.name.trim { it <= ' ' }.lowercase()) {
             "leveldb-jni", "leveldb" -> base = LevelDb(JniDBFactory.factory, config.directory)
             "memory" -> base = MemoryDatabaseStore()
-            "leveldb-iq80" -> base = LevelDb(Iq80DBFactory.factory, config.directory)
             else -> {
                 base = LevelDb(JniDBFactory.factory, config.directory)
                 log.warn("Data source is not supported, default is leveldb")
