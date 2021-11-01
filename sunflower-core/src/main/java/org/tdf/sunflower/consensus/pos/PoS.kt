@@ -96,20 +96,16 @@ class PoS : AbstractConsensusEngine() {
         val origin = parent.height / eraSize * eraSize
         val h = rd.getAncestor(parent.hash, origin)
         val trie = accountTrie.trie.revert(h.stateRoot)
-        val a = trie.get(consensusAddr)!!
+        val a = trie[consensusAddr]!!
 
-        return cache.get(a.storageRoot) {
+        val li = cache.get(a.storageRoot) {
             val w = accountTrie.createWrapper(rd, h, consensusAbi, consensusAddr)
             val n = (w.call("n")[0] as BigInteger).intValueExact()
 
-
-            val li = mutableListOf<Pair<HexBytes, BigInteger>>()
-
+            var li = mutableListOf<Pair<HexBytes, BigInteger>>()
             for (i in 1..n) {
                 val addr = w.call("candidates", i.toBigInteger())[0] as ByteArray
-                log.debug("before call scoreOf")
                 val score = w.call("scoreOf", addr)[0] as BigInteger
-                log.debug("after call scoreOf")
                 val stake = w.call("balanceOf", addr)[0] as BigInteger
                 if(stake >= proposerMinStake)
                     li.add(Pair(addr.hex(), score))
@@ -117,8 +113,14 @@ class PoS : AbstractConsensusEngine() {
 
             li.sortByDescending { it.second }
             log.info("new candidates list created at height {} hash {} list = {}", h.height, h.hash, li)
+
+            if(li.isEmpty()) {
+                val l = w.call("defaultMiners")[0] as Array<*>
+                li = l.map { Pair((it as ByteArray).hex(), BigInteger.ZERO) }.toMutableList()
+            }
             li
         }
+        return li
     }
 
     override val builtins: List<Builtin>
