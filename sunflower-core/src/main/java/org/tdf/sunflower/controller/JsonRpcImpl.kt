@@ -1,6 +1,7 @@
 package org.tdf.sunflower.controller
 
 import com.fasterxml.jackson.databind.JsonNode
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.tdf.common.util.*
 import org.tdf.sunflower.AppConfig
@@ -14,8 +15,6 @@ import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.Backend
 import org.tdf.sunflower.vm.VMExecutor
 import java.math.BigInteger
-import java.util.concurrent.atomic.AtomicInteger
-
 
 @Service
 class JsonRpcImpl(
@@ -94,7 +93,7 @@ class JsonRpcImpl(
     }
 
     override fun eth_gasPrice(): String {
-        return (0).jsonHex
+        return cfg.vmGasPrice.jsonHex
     }
 
     override fun eth_accounts(): Array<String> {
@@ -197,7 +196,7 @@ class JsonRpcImpl(
 
     override fun eth_call(args: CallArguments, bnOrId: String): String {
         val start = System.currentTimeMillis()
-        println("eth_call start")
+        log.debug("eth_call start")
         try {
             getBackendByBlockId(bnOrId, false).use { backend ->
                 repo.reader.use {
@@ -213,8 +212,8 @@ class JsonRpcImpl(
                 }
             }
         } finally {
-            println("eth_call end")
-            println("eth call use " + (System.currentTimeMillis() - start) + " ms")
+            log.debug("eth_call end")
+            log.debug("eth call use " + (System.currentTimeMillis() - start) + " ms")
         }
     }
 
@@ -430,5 +429,9 @@ class JsonRpcImpl(
             block.gasUsed.jsonHex, block.createdAt.jsonHex, txs, emptyList(),
             block.mixHash.jsonHex
         )
+    }
+
+    companion object {
+        val log = LoggerFactory.getLogger("jsonrpc")
     }
 }

@@ -135,7 +135,7 @@ class Interpreter(
                 OpCodes.ADDMOD -> stack.addMod()
                 OpCodes.MULMOD -> stack.mulMod()
                 OpCodes.EXP -> {
-                    opInfo = stack.backU32(1)
+                    opInfo = ((stack.backBigInt(0).bitLength() + 7 ) / 8).toLong()
                     stack.exp()
                 }
                 OpCodes.SIGNEXTEND -> stack.signExtend()
@@ -169,14 +169,27 @@ class Interpreter(
                 OpCodes.CALLDATASIZE -> stack.pushInt(callData.input.size)
 
                 // right padded
-                OpCodes.CALLDATACOPY -> stack.dataCopy(memory, callData.input)
+                OpCodes.CALLDATACOPY -> {
+                    opInfo = stack.backU32(2)
+                    stack.dataCopy(memory, callData.input)
+                }
                 OpCodes.CODESIZE -> stack.pushInt(callData.code.size)
-                OpCodes.CODECOPY -> stack.dataCopy(memory, callData.code)
+                OpCodes.CODECOPY -> {
+                    opInfo = stack.backU32(2)
+                    stack.dataCopy(memory, callData.code)
+                }
                 OpCodes.RETURNDATASIZE -> stack.pushInt(ret.size)
-                OpCodes.RETURNDATACOPY -> stack.dataCopy(memory, ret)
+                OpCodes.RETURNDATACOPY -> {
+                    opInfo = stack.backU32(2)
+                    stack.dataCopy(memory, ret)
+                }
                 OpCodes.GASPRICE -> stack.push(ctx.gasPrice)
                 OpCodes.EXTCODESIZE -> stack.pushInt(host.getCodeSize(stack.popAddress()))
-                OpCodes.EXTCODECOPY -> stack.dataCopy(memory, host.getCode(stack.popAddress()))
+
+                OpCodes.EXTCODECOPY -> {
+                    opInfo = stack.backU32(2)
+                    stack.dataCopy(memory, host.getCode(stack.popAddress()))
+                }
 
                 OpCodes.EXTCODEHASH -> {
                     val code = host.getCode(stack.popAddress())
@@ -202,7 +215,11 @@ class Interpreter(
                 OpCodes.MSTORE -> stack.mstore(memory)
                 OpCodes.MSTORE8 -> stack.mstore8(memory)
                 OpCodes.SLOAD -> stack.pushLeftPadding(host.getStorage(callData.receipt, stack.popBytes()))
-                OpCodes.SSTORE -> host.setStorage(callData.receipt, stack.popBytes(), stack.popBytes())
+                OpCodes.SSTORE -> {
+                    if(host.getStorage(callData.receipt, stack.back(0)).isNotEmpty())
+                        opInfo = 1
+                    host.setStorage(callData.receipt, stack.popBytes(), stack.popBytes())
+                }
                 OpCodes.JUMP -> {
                     jump(stack.popU32())
                     afterExecute()
@@ -245,6 +262,7 @@ class Interpreter(
                     for (i in 0 until n) {
                         topics.add(stack.popBytes())
                     }
+                    opInfo = stack.backU32(1)
                     host.log(callData.receipt, data, topics)
                 }
 
