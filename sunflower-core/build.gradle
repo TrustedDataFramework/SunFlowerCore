@@ -20,7 +20,7 @@ dependencies {
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     implementation "com.google.guava:guava:${guavaVersion}"
-    compileOnly "io.grpc:grpc-protobuf:${gRPCVersion}"
+    implementation "io.grpc:grpc-protobuf:${gRPCVersion}"
     compileOnly "io.grpc:grpc-stub:${gRPCVersion}"
     compileOnly "io.grpc:grpc-netty-shaded:${gRPCVersion}"
 
