@@ -8,7 +8,6 @@ internal class MessageLogger : Plugin {
             "receive {} message from {}:{}",
             context.msg.code, context.remote.host, context.remote.port
         )
-        log.debug(context.message.toString())
     }
 
     override fun onStart(server: PeerServerImpl) {}

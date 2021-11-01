@@ -11,12 +11,6 @@ class PeerServerConfig(private val reader: PropertyReader) {
         const val PREFIX = ""
     }
 
-    val name: String = let {
-        val raw = reader.getAsLowerCased("name")
-        raw.takeIf { it == "grpc" || it == "websocket" }
-            ?: throw RuntimeException("invalid p2p name $raw expecting grpc or websocket")
-    }
-
     private fun PropertyReader.getAsPositive(key: String): Int {
         val raw = this.getAsInt(key)
         return raw.takeIf { it > 0 } ?: throw RuntimeException("invalid $key = $raw, should be positive")
@@ -38,4 +32,6 @@ class PeerServerConfig(private val reader: PropertyReader) {
     val maxPacketSize: Int = reader.getAsPositive("max-packet-size")
     val cacheExpiredAfter: Int = reader.getAsPositive("cache-expired-after")
     val privateKey: HexBytes = reader.getAsPrivate("private-key") ?: ECKey().privKeyBytes.hex()
+
+    val port: Int = reader.getAsInt("port", 0)
 }

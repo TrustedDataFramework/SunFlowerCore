@@ -1,6 +1,5 @@
 package org.tdf.sunflower.net
 
-import org.tdf.sunflower.proto.Code
 import org.tdf.sunflower.proto.Message
 
 class ContextImpl internal constructor(
@@ -15,7 +14,6 @@ class ContextImpl internal constructor(
         private set
     private var disconnected: Boolean = false
     private var blocked: Boolean = false
-    private var decrypted: ByteArray? = null
 
     override fun exit() {
         exited = true
@@ -57,13 +55,5 @@ class ContextImpl internal constructor(
         client.relay(msg, remote)
     }
 
-    override val message: ByteArray
-        get() {
-            if (msg.code == Code.ANOTHER) {
-                if (decrypted != null) return decrypted!!
-                decrypted = msg.body.toByteArray()
-                return decrypted!!
-            }
-            return msg.body.toByteArray()
-        }
+    override val message: ByteArray = msg.body.toByteArray()
 }

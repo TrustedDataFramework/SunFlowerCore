@@ -3,6 +3,8 @@ package org.tdf.sunflower.sync;
 import com.github.salpadding.rlpstream.*;
 import com.github.salpadding.rlpstream.annotation.RlpCreator;
 import org.tdf.common.util.ByteUtil;
+
+import java.util.Arrays;
 import java.util.Optional;
 
 public class SyncMessage implements RlpWritable {
@@ -15,6 +17,18 @@ public class SyncMessage implements RlpWritable {
     public static final int TRANSACTION = 8;
     public static final int GET_ACCOUNTS = 11;
     public static final int ACCOUNTS = 12;
+    public static final String[] MESSAGE_TYPES =  new String[ACCOUNTS + 1];
+
+    static {
+        Arrays.fill(MESSAGE_TYPES, "UNKNOWN");
+        MESSAGE_TYPES[STATUS] = "STATUS";
+        MESSAGE_TYPES[GET_BLOCKS] = "GET_BLOCKS";
+        MESSAGE_TYPES[BLOCKS] = "BLOCKS";
+        MESSAGE_TYPES[PROPOSAL] = "PROPOSAL";
+        MESSAGE_TYPES[TRANSACTION] = "TRANSACTION";
+        MESSAGE_TYPES[GET_ACCOUNTS] = "GET_ACCOUNTS";
+        MESSAGE_TYPES[ACCOUNTS] = "ACCOUNTS";
+    }
 
     private int code;
     private byte[] rawBody;

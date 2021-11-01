@@ -283,6 +283,7 @@ class TransactionPoolImpl(
             val receipts = pendingRec.receipts.toList()
             val cur = pendingRec.backend
             pendingRec.clear()
+            log.debug("pop {} transactions to miner", pending.size)
             return PendingData(pending, receipts, cur)
         }
     }

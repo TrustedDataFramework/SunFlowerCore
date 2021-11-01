@@ -47,15 +47,7 @@ class MessageFilter internal constructor(private val config: PeerServerConfig, c
     private val multiPartCacheLock: Lock = LogLock(ReentrantLock(), "p2p-mp")
     override fun onMessage(context: ContextImpl, server: PeerServerImpl) {
         // cache multi part message
-        if (context.remote.protocol != server.self.protocol) {
-            log.error(
-                "protocol not match received = {}, while {} expected",
-                context.remote.protocol,
-                server.self.protocol
-            )
-            context.block()
-            return
-        }
+
         if (context.msg.code == Code.MULTI_PART) {
             multiPartCacheLock.lock()
             val now = System.currentTimeMillis() / 1000
@@ -100,17 +92,12 @@ class MessageFilter internal constructor(private val config: PeerServerConfig, c
             context.exit()
             return
         }
-        val hash = Util.getRawForSign(context.msg).sha3().hex()
 
+        val hash = Util.getRawForSign(context.msg).sha3().hex()
         // filter message had been received
         if (cache.asMap().containsKey(hash)) {
             context.exit()
         }
-        log.debug(
-            "receive " + context.msg.code
-                    + " from " +
-                    context.remote.host + ":" + context.remote.port
-        )
         cache.put(hash, true)
     }
 

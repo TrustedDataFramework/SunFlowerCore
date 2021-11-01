@@ -43,10 +43,16 @@ class MessageBuilder(val self: PeerImpl, private val config: PeerServerConfig) {
 
     fun buildAnother(body: ByteArray, ttl: Long, remote: Peer): List<Message> {
         val buildResult = buildMessage(Code.ANOTHER, ttl, body)
+
+        // if size of packet < 2m
         if (buildResult.serializedSize <= config.maxPacketSize) {
             return listOf(buildResult)
         }
+
+        // set ttl = total size of build result
+        // set nonce = sequence number
         val serialized = buildResult.toByteArray()
+
         var remained = serialized.size
         var current = 0
         val multiParts: MutableList<Message> = mutableListOf()
@@ -55,8 +61,10 @@ class MessageBuilder(val self: PeerImpl, private val config: PeerServerConfig) {
         var i = 0
         val total = serialized.size / config.maxPacketSize +
                 if (serialized.size % config.maxPacketSize == 0) 0 else 1
+
+        val packSize = 1024 * 1024
         while (remained > 0) {
-            val size = min(remained, config.maxPacketSize)
+            val size = min(remained, packSize)
             val bodyBytes = ByteArray(size)
             System.arraycopy(serialized, current, bodyBytes, 0, size)
             builder.body = ByteString.copyFrom(bodyBytes)
@@ -93,6 +101,7 @@ class MessageBuilder(val self: PeerImpl, private val config: PeerServerConfig) {
             .setTtl(ttl)
             .setNonce(nonce.incrementAndGet())
             .setBody(ByteString.copyFrom(msg))
+
         return builder.setSignature(ByteString.copyFrom(ByteUtil.EMPTY_BYTE_ARRAY)).build()
     }
 }

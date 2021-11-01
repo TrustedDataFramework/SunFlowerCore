@@ -13,13 +13,14 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
-class GRpcChannelOut(var out: StreamObserver<Message>? = null) : ChannelOut {
+class GRpcChannelOut : ChannelOut {
+    lateinit var out: StreamObserver<Message>
     override fun write(message: Message) {
-        out?.onNext(message)
+        out.onNext(message)
     }
 
     override fun close() {
-        out?.onCompleted()
+        out.onCompleted()
     }
 }
 
@@ -40,20 +41,26 @@ class GRpcNetLayer internal constructor(private val port: Int, private val build
     override fun createChannel(host: String, port: Int, vararg listeners: ChannelListener): Channel? {
         return try {
             val ch = ManagedChannelBuilder
-                .forAddress(host, port).usePlaintext().build()
+                .forAddress(host, port).usePlaintext()
+                .build()
+
             val stub = EntryGrpc.newStub(ch)
             val nullOut = GRpcChannelOut()
             val channel = GrpcChannel(builder, nullOut)
-            val out = stub.entry(channel)
-            nullOut.out = out
+            channel.addListeners(*listeners)
+            nullOut.out = stub.entry(channel)
+            log.debug("new connection created to host {} and port {}", host, port)
             channel
-        } catch (ignored: Throwable) {
+        } catch (e: Exception) {
+            e.printStackTrace()
             null
         }
     }
 
     override fun entry(responseObserver: StreamObserver<Message>): StreamObserver<Message> {
-        val ch = GrpcChannel(builder, GRpcChannelOut(responseObserver))
+        val o = GRpcChannelOut()
+        o.out = responseObserver
+        val ch = GrpcChannel(builder, o)
         handler.accept(ch)
         return ch
     }

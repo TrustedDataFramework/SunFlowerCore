@@ -25,7 +25,6 @@ class GrpcChannel(messageBuilder: MessageBuilder, out: ChannelOut) : ProtoChanne
     override fun onCompleted() {
         close("closed by remote")
     }
-
 }
 
 // communicating channel with peer
@@ -95,6 +94,7 @@ open class ProtoChannel(private val messageBuilder: MessageBuilder, val out: Cha
             return
         }
         try {
+            log.debug("write message to peer {} , code = {}",  message.remotePeer, message.code)
             out.write(message)
         } catch (e: Throwable) {
             e.printStackTrace()

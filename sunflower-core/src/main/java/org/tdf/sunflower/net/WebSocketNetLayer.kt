@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
-private class WebSocketClient(host: String, port: Int, builder: MessageBuilder) : WebSocketClient(
+private class WSClient(host: String, port: Int, builder: MessageBuilder) : WebSocketClient(
     URI("ws", "", host, port, "", "", "")
 ) {
     val channel: ProtoChannel = ProtoChannel(builder, WebSocketClientChannelOut(this))
@@ -37,8 +37,8 @@ private class WebSocketClient(host: String, port: Int, builder: MessageBuilder) 
     override fun onError(ex: Exception) {
         channel.error(ex)
     }
-
 }
+
 
 
 internal class WebSocketChannelOut(private val conn: WebSocket) : ChannelOut {
@@ -99,13 +99,15 @@ class WebSocketNetLayer internal constructor(port: Int, private val builder: Mes
         ch.error(ex)
     }
 
-    override fun onStart() {}
+    override fun onStart() {
+        log.info("websocket server is served on port {}", port)
+    }
 
     override fun createChannel(host: String, port: Int, vararg listeners: ChannelListener): Channel? {
         return try {
-            val client = WebSocketClient(host, port, builder)
+            val client = WSClient(host, port, builder)
             client.channel.addListeners(*listeners)
-            if (client.connectBlocking(1, TimeUnit.SECONDS)) {
+            if (client.connectBlocking(5, TimeUnit.SECONDS)) {
                 client.channel
             } else null
         } catch (e: Exception) {

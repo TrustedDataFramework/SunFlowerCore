@@ -72,7 +72,6 @@ class PeerServerImpl(// if non-database provided, use memory database
     override fun start() {
         plugins.forEach { it.onStart(this) }
         netLayer.start()
-        resolveHost()
         log.info(
             "peer server is listening on " +
                     self.encodeURI()
@@ -81,7 +80,8 @@ class PeerServerImpl(// if non-database provided, use memory database
         client.trust(config.trusted)
 
         // connect to stored peers when server restarts
-        peerStore.forEach { k: Map.Entry<String, JsonNode> ->
+        // TODO: discover by udp protocol
+        peerStore.forEach { k ->
             if ("self" == k.key)
                 return
             val peer = PeerImpl.parse(k.value.asText())!!
@@ -117,10 +117,11 @@ class PeerServerImpl(// if non-database provided, use memory database
             throw RuntimeException("failed to load peer server invalid address " + config.address)
         }
         builder = MessageBuilder(self, config)
-        netLayer = if ("grpc" == config.name.trim { it <= ' ' }.lowercase()) {
-            GRpcNetLayer(self.port, builder)
+        val port = if(config.port == 0) self.port else config.port
+        netLayer = if ("grpc" == self.protocol) {
+            GRpcNetLayer(port, builder)
         } else {
-            WebSocketNetLayer(self.port, builder)
+            WebSocketNetLayer(port, builder)
         }
         client = Client(self, config, builder, netLayer)
         client.listener = this

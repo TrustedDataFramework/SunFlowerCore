@@ -58,6 +58,8 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
         // keep self alive
         pingTicker.delay {
             try {
+                log.debug("broadcast ping to peers, peers = {}", server.peers)
+
                 client.broadcast(builder.buildPing())
             } catch (e: Exception) {
                 e.printStackTrace()

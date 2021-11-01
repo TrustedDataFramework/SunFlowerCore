@@ -112,6 +112,7 @@ data class VMExecutor(
                 // increase sender nonce
                 val n = backend.getNonce(callData.caller)
                 if (isWasm) {
+                    require(WASM_ENABLED)
                     create(callData.data.bytes).use {
                         // validate module
                         validate(it, false)
@@ -142,6 +143,8 @@ data class VMExecutor(
                 }
                 data = callData.data.bytes
                 isWasm = isWasm(code)
+                if(isWasm)
+                    require(WASM_ENABLED)
             }
         }
         // call a non-contract account
@@ -280,6 +283,7 @@ data class VMExecutor(
         const val MAX_CALL_DEPTH = 8
         const val EVM_MAX_STACK_SIZE = 1024
         const val GAS_UNLIMITED = Long.MAX_VALUE.shr(8)
+        const val WASM_ENABLED = false
 
         fun create(
             rd: RepositoryReader,

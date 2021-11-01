@@ -131,7 +131,7 @@ class Client(
         }
     }
 
-    fun relay(message: Message, receivedFrom: PeerImpl?) {
+    fun relay(message: Message, receivedFrom: PeerImpl) {
         peersCache.channels
             .filter { it.remote != null && it.remote != receivedFrom }
             .forEach {

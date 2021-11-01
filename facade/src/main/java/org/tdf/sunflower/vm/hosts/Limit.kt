@@ -35,13 +35,33 @@ class Limit(val gasLimit: Long) : Hook, EvmHook {
     }
 
     // 1 evm op = 20 gas
-    override fun onOp(op: Int) {
-        when(op) {
+    override fun onOp(op: Int, extraInfo: Long) {
+        if (op >= OpCodes.LT && op <= OpCodes.SAR) {
+            runtimeGas += 3
+        }
+
+        when (op) {
+            // https://github.com/crytic/evm-opcodes
+            // https://docs.google.com/spreadsheets/d/1n6mRqkBz3iWcOlRem_mO09GtSKEKrAsfO7Frgx18pNU/edit#gid=0
+            OpCodes.STOP -> runtimeGas += 0
+            OpCodes.JUMPDEST -> runtimeGas += 1
+            OpCodes.ADDRESS, in OpCodes.ORIGIN..OpCodes.CALLVALUE, OpCodes.CODESIZE, OpCodes.GASPRICE,
+            OpCodes.RETURNDATASIZE, in OpCodes.COINBASE..OpCodes.POP,
+            OpCodes.CALLDATASIZE,
+            in OpCodes.PC..OpCodes.GAS,
+            -> runtimeGas += 2
+            OpCodes.ADD, OpCodes.SUB, OpCodes.CALLDATALOAD -> runtimeGas += 3
+            in OpCodes.LT..OpCodes.SAR -> runtimeGas += 3
+            in OpCodes.PUSH1..OpCodes.SWAP16 -> runtimeGas += 3
+            OpCodes.MUL, in OpCodes.DIV..OpCodes.SMOD, OpCodes.SIGNEXTEND -> runtimeGas += 5
+            OpCodes.ADDMOD, OpCodes.MULMOD -> runtimeGas += 8
+            OpCodes.EXP -> runtimeGas += if (extraInfo == 0L) 10 else 10 * extraInfo
+            OpCodes.SHA3 -> runtimeGas += 30 + 6 * extraInfo / 32
+            OpCodes.BALANCE, OpCodes.EXTCODESIZE, OpCodes.EXTCODEHASH -> runtimeGas += 700
             OpCodes.SSTORE -> runtimeGas += 5000
-            OpCodes.SHA3, OpCodes.SLOAD, OpCodes.EXTCODESIZE, OpCodes.EXTCODECOPY
-                -> runtimeGas += 200
-            OpCodes.LOG0, OpCodes.LOG1, OpCodes.LOG2, OpCodes.LOG3, OpCodes.LOG4
-                -> runtimeGas += 375 + (op - OpCodes.LOG0) * 375
+            OpCodes.SLOAD -> runtimeGas += 800
+            in OpCodes.LOG0..OpCodes.LOG4
+            -> runtimeGas += 375 + (op - OpCodes.LOG0) * 375
             OpCodes.CREATE, OpCodes.CREATE2 -> runtimeGas += 32000
             else -> runtimeGas += 5
         }

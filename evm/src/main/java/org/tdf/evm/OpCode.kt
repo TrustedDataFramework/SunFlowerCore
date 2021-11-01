@@ -753,7 +753,6 @@ object OpCodes {
      */
     const val SUICIDE = 0xff
 
-
     init {
         NAMES[STOP] = "STOP"
 

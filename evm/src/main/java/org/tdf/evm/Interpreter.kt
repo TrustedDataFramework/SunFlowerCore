@@ -75,7 +75,7 @@ interface EvmHost {
 }
 
 fun interface EvmHook {
-    fun onOp(op: Int)
+    fun onOp(op: Int, extraInfo: Long)
 }
 
 class Interpreter(
@@ -93,6 +93,7 @@ class Interpreter(
     private var ret: ByteArray = emptyByteArray
 
     var op: Int = 0
+    var opInfo: Long = 0
 
     private var memOff: Long = 0
     private var memLen: Long = 0
@@ -114,9 +115,8 @@ class Interpreter(
 
         while (pc < callData.code.size) {
             op = callData.code[pc].toUByte().toInt()
-            hook?.onOp(op)
+            opInfo = 0
             beforeExecute()
-
 
             when (op) {
                 OpCodes.STOP -> {
@@ -134,7 +134,10 @@ class Interpreter(
                 OpCodes.SMOD -> stack.signedMod()
                 OpCodes.ADDMOD -> stack.addMod()
                 OpCodes.MULMOD -> stack.mulMod()
-                OpCodes.EXP -> stack.exp()
+                OpCodes.EXP -> {
+                    opInfo = stack.backU32(1)
+                    stack.exp()
+                }
                 OpCodes.SIGNEXTEND -> stack.signExtend()
                 OpCodes.LT -> stack.lt()
                 OpCodes.GT -> stack.gt()
@@ -150,7 +153,10 @@ class Interpreter(
                 OpCodes.SHL -> stack.shl()
                 OpCodes.SHR -> stack.shr()
                 OpCodes.SAR -> stack.sar()
-                OpCodes.SHA3 -> stack.sha3(memory, host.digest)
+                OpCodes.SHA3 -> {
+                    opInfo = stack.backU32(1)
+                    stack.sha3(memory, host.digest)
+                }
                 // address is left padded
                 OpCodes.ADDRESS -> stack.pushLeftPadding(callData.receipt)
                 OpCodes.BALANCE -> stack.push(host.getBalance(stack.popAddress()))
@@ -405,6 +411,8 @@ class Interpreter(
     }
 
     fun afterExecute() {
+        hook?.onOp(op, opInfo)
+
         vmLog?.let {
             it.println("after execute op ${OpCodes.nameOf(op)} pc = $pc")
 

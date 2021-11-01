@@ -1,6 +1,6 @@
 plugins {
-    id 'org.springframework.boot' version '2.2.0.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+    id 'org.springframework.boot' version '2.5.6'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 }
 
 dependencies {
@@ -16,7 +16,6 @@ dependencies {
     implementation project(':common')
     implementation project(':facade')
     implementation project(':evm')
-    implementation project(':natives')
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
@@ -33,11 +32,7 @@ dependencies {
     implementation "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
     implementation "com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6"
     runtimeOnly 'javax.jws:jsr181-api:1.0-MR1'
-    // https://mvnrepository.com/artifact/org.apache.commons/commons-pool2
-    implementation "io.netty:netty-all:${nettyVersion}"
-    // https://mvnrepository.com/artifact/org.apache.commons/commons-collections4
     implementation "org.apache.commons:commons-collections4:${commonsCollections4Version}"
-    implementation "org.xerial.snappy:snappy-java:1.1.4" // Snappy compression
 
     testApi "org.web3j:core:4.8.4"
     testImplementation 'com.squareup.okhttp3:okhttp:4.9.0'
