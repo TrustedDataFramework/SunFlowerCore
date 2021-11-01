@@ -14,17 +14,20 @@ data class CallContext(
     val gasPrice: Uint256 = Uint256.ZERO,
     val chainId: Int = 0,
     val timestamp: Long = 0,
+    val coinbase: HexBytes = AddrUtil.empty()
 ) {
     companion object {
         @JvmStatic
-        fun fromTx(tx: Transaction, chainId: Int = tx.chainId ?: 0, timestamp: Long = 0): CallContext {
+        fun fromTx(
+            tx: Transaction, chainId: Int = tx.chainId ?: 0, timestamp: Long = 0, coinbase: HexBytes = AddrUtil.empty()): CallContext {
             return CallContext(
                 tx.sender,
                 tx.hash,
                 tx.nonce,
                 tx.gasPrice,
                 chainId,
-                timestamp
+                timestamp,
+                coinbase
             )
         }
     }

@@ -67,7 +67,7 @@ abstract class AbstractMiner(
         val c = coinbase.copy(value = totalFee)
         val body = txs.toMutableList()
         body.add(0, c)
-        val ctx = CallContext.fromTx(c, chainId, createdAt)
+        val ctx = CallContext.fromTx(c, chainId, createdAt, header.coinbase)
         val callData = CallData.fromTx(c)
 
         tmp.addBalance(AddrUtil.empty(), totalFee)

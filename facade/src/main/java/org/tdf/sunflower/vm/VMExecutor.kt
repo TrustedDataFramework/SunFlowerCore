@@ -163,13 +163,16 @@ data class VMExecutor(
             input,
             code
         )
+
         val ctx = EvmContext(
             origin = ctx.origin.bytes,
             number = backend.height,
             chainId = ctx.chainId,
             gasPrice = ctx.gasPrice.value,
-            timestamp = ctx.timestamp
+            timestamp = ctx.timestamp,
+            coinbase = ctx.coinbase.bytes
         )
+
         val host = EvmHostImpl(this)
         val interpreter =
             Interpreter(host, ctx, evmCallData, printStream, limit, EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE)

@@ -20,7 +20,8 @@ class EvmContext(
     // gas price
     val gasPrice: BigInteger = BigInteger.ZERO,
     val timestamp: Long = 0,
-    val coinbase: ByteArray = emptyAddress
+    val coinbase: ByteArray = emptyAddress,
+    val blockHashMap: Map<Long, ByteArray> = emptyMap()
 )
 
 /**
@@ -201,8 +202,12 @@ class Interpreter(
                    stack.pushLeftPadding(ctx.coinbase)
                 }
                 OpCodes.BLOCKHASH  -> {
-                    stack.drop()
-                    stack.pushZero()
+                    val h = stack.popU32()
+                    val hash = ctx.blockHashMap[h]
+                    if(hash == null)
+                        stack.pushZero()
+                    else
+                        stack.pushLeftPadding(hash)
                 }
                 OpCodes.TIMESTAMP -> stack.pushLong(ctx.timestamp)
                 OpCodes.NUMBER -> stack.pushLong(ctx.number)

@@ -15,6 +15,7 @@ import org.tdf.sunflower.events.NewBestBlock
 import org.tdf.sunflower.events.NewTransactionsCollected
 import org.tdf.sunflower.facade.*
 import org.tdf.sunflower.state.Account
+import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.Backend
@@ -225,7 +226,7 @@ class TransactionPoolImpl(
 
             try {
                 val child = backend.createChild()
-                val ctx = CallContext.fromTx(tx = t, timestamp = this.timestamp)
+                val ctx = CallContext.fromTx(tx = t, timestamp = this.timestamp, coinbase = conCfg.coinbase ?: AddrUtil.empty())
                 val callData = CallData.fromTx(t)
                 val vmExecutor = VMExecutor.create(
                     rd,

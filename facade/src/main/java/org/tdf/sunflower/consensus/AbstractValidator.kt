@@ -70,7 +70,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                 val executor = VMExecutor.create(
                     rd,
                     currentBackend,
-                    CallContext.fromTx(tx, timestamp = block.createdAt),
+                    CallContext.fromTx(tx, timestamp = block.createdAt, coinbase = block.coinbase),
                     CallData.fromTx(tx),
                     (block.gasLimit - currentGas).min(tx.gasLimit)
                 )
@@ -91,7 +91,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                 VMExecutor.create(
                     rd,
                     currentBackend,
-                    CallContext.fromTx(coinbase, chainId, block.createdAt),
+                    CallContext.fromTx(coinbase, chainId, block.createdAt, block.coinbase),
                     CallData.fromTx(coinbase),
                     coinbase.gasLimit
                 )
