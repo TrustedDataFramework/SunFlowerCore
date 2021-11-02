@@ -1,7 +1,5 @@
 rootProject.name = 'sunflower-core'
 include 'common'
 include 'sunflower-core'
-include 'crypto'
 include 'facade'
 include 'evm'
-include 'natives'

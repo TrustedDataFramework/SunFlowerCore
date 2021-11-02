@@ -2,8 +2,6 @@ dependencies {
     testImplementation group: 'junit', name: 'junit', version: '4.12'
 
     compileOnly project(':common')
-    compileOnly project(':natives')
-
     testImplementation project(':common')
     compileOnly project(':evm')
     testImplementation project(':evm')
