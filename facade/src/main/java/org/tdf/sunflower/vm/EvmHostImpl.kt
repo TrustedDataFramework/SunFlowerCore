@@ -86,11 +86,15 @@ class EvmHostImpl(private val executor: VMExecutor) : EvmHost {
         val addr: HexBytes = if (salt == null) {
             HashUtil.calcNewAddr(caller, backend.getNonce(caller.hex()).bytes()).hex()
         } else {
-            HashUtil.calcSaltAddr(caller, createCode, salt).hex()
+            val dst = ByteArray(32)
+            sha3.digest(createCode, 0, createCode.size, dst, 0)
+            val a = HashUtil.calcSaltAddr(caller, createCode, salt).hex()
+            a
         }
         val cd = CallData(caller.hex(), value.u256(), addr, CallType.CREATE, createCode.hex())
         val ex = executor.clone().copy(callData = cd)
         ex.executeInternal()
+
         return addr.bytes
     }
 

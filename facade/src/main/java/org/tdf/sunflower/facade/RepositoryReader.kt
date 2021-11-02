@@ -26,6 +26,9 @@ interface RepositoryReader : Closeable {
     fun getBlocksByHeight(height: Long): List<Block>
     fun getCanonicalBlock(height: Long): Block?
     fun getCanonicalHeader(height: Long): Header?
+    fun createBlockHashMap(hash: HexBytes): List<Pair<Long, ByteArray>>
+
+
 
     fun getAncestor(now: HexBytes, ancestor: Long): Header{
         var c = getHeaderByHash(now)!!

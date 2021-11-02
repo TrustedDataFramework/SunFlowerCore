@@ -14,12 +14,13 @@ data class CallContext(
     val gasPrice: Uint256 = Uint256.ZERO,
     val chainId: Int = 0,
     val timestamp: Long = 0,
-    val coinbase: HexBytes = AddrUtil.empty()
+    val coinbase: HexBytes = AddrUtil.empty(),
+    val blockHashMap: Map<Long, ByteArray> = emptyMap()
 ) {
     companion object {
         @JvmStatic
         fun fromTx(
-            tx: Transaction, chainId: Int = tx.chainId ?: 0, timestamp: Long = 0, coinbase: HexBytes = AddrUtil.empty()): CallContext {
+            tx: Transaction, chainId: Int = tx.chainId ?: 0, timestamp: Long = 0, coinbase: HexBytes = AddrUtil.empty(), blockHashMap: Map<Long, ByteArray> = emptyMap()): CallContext {
             return CallContext(
                 tx.sender,
                 tx.hash,
@@ -27,7 +28,8 @@ data class CallContext(
                 tx.gasPrice,
                 chainId,
                 timestamp,
-                coinbase
+                coinbase,
+                blockHashMap
             )
         }
     }

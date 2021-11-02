@@ -4,12 +4,17 @@ import java.nio.charset.StandardCharsets
 
 const val SELECTOR_SIZE = 4
 
-class RevertException(data: ByteArray, digest: Digest) : RuntimeException(msgOf(data, digest)) {
+fun ByteArray.hex(start: Int = 0, end: Int = this.size): String {
+    return "0x" + this.sliceArray(start until kotlin.math.min(end, this.size)).joinToString("") {
+        java.lang.String.format("%02x", it)
+    }
+}
+
+class RevertException(contract: ByteArray, data: ByteArray, digest: Digest) : RuntimeException(msgOf(contract, data, digest)) {
     companion object {
-        fun msgOf(data: ByteArray, digest: Digest): String {
+        fun msgOf(contract: ByteArray, data: ByteArray, digest: Digest): String {
             if (data.size < SELECTOR_SIZE) {
-                System.err.println("data size < 4")
-                return ""
+                return "err: " + contract.hex()
             }
 
             val selector = lazy {
@@ -21,13 +26,13 @@ class RevertException(data: ByteArray, digest: Digest) : RuntimeException(msgOf(
 
             if (!data.sliceArray(0 until SELECTOR_SIZE).contentEquals(selector.value)) {
                 System.err.println("selector != Error(string)")
-                return ""
+                return "err: " + contract.hex()
             }
 
             var off = data.int(SELECTOR_SIZE, SlotUtils.SLOT_BYTE_ARRAY_SIZE)
             val len = data.int(SELECTOR_SIZE + off, SlotUtils.SLOT_BYTE_ARRAY_SIZE)
             off += SELECTOR_SIZE + SlotUtils.SLOT_BYTE_ARRAY_SIZE
-            return String(data.sliceArray(off until off + len), StandardCharsets.UTF_8)
+            return contract.hex() + ": " + String(data.sliceArray(off until off + len), StandardCharsets.UTF_8)
         }
     }
 }

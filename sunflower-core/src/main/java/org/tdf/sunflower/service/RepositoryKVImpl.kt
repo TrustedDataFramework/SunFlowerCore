@@ -1,5 +1,7 @@
 package org.tdf.sunflower.service
 
+import com.google.common.cache.Cache
+import com.google.common.cache.CacheBuilder
 import org.slf4j.LoggerFactory
 import org.tdf.common.event.EventBus
 import org.tdf.common.serialize.Codecs
@@ -40,6 +42,8 @@ class RepositoryKVImpl(
     // transaction hash -> receipts
     private val transactionIndices: Store<HexBytes, Array<TransactionIndex>>
 
+    private val cache: Cache<HexBytes, List<Pair<Long, ByteArray>>> =
+        CacheBuilder.newBuilder().maximumSize(8).build()
 
     override fun saveGenesis(b: Block) {
         super.saveGenesis(b)
@@ -181,6 +185,40 @@ class RepositoryKVImpl(
     override fun getCanonicalHeader(height: Long): Header? {
         val v = getCanonicalHashAt(height)
         return v?.let { getHeaderByHash(it) }
+    }
+
+    override fun createBlockHashMap(hash: HexBytes): List<Pair<Long, ByteArray>> {
+        val m = cache.asMap()[hash]
+        if (m != null)
+            return m
+
+        // lookup by parent
+        val h = getHeaderByHash(hash)!!
+        val prev = cache.asMap()[h.hashPrev]
+
+        if (prev != null) {
+            // parent found, return self + parent
+            // ensure size <= 255
+            val np = prev.subList(if (prev.size < 255) 0 else prev.size - 255, prev.size).toMutableList()
+            // add to last
+            np.add(Pair(h.height, h.hash.bytes))
+            cache.asMap()[hash] = np
+            return np
+        }
+
+        val np = mutableListOf<Pair<Long, ByteArray>>()
+        var now = h
+
+        while (np.size <= 256) {
+            np.add(0, Pair(now.height, now.hash.bytes))
+
+            if (now.height == 0L)
+                break
+            now = getHeaderByHash(now.hashPrev)!!
+        }
+
+        cache.asMap()[hash] = np
+        return np
     }
 
     override fun getTransactionInfo(hash: HexBytes): TransactionInfo? {

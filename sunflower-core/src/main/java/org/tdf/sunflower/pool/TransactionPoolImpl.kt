@@ -226,7 +226,7 @@ class TransactionPoolImpl(
 
             try {
                 val child = backend.createChild()
-                val ctx = CallContext.fromTx(tx = t, timestamp = this.timestamp, coinbase = conCfg.coinbase ?: AddrUtil.empty())
+                val ctx = CallContext.fromTx(tx = t, timestamp = this.timestamp, coinbase = conCfg.coinbase ?: AddrUtil.empty(), blockHashMap = rd.createBlockHashMap(child.parentHash).toMap())
                 val callData = CallData.fromTx(t)
                 val vmExecutor = VMExecutor.create(
                     rd,

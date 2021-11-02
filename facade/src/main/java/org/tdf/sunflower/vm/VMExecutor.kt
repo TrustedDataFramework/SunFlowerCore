@@ -34,6 +34,8 @@ import java.nio.file.StandardOpenOption
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
+class NonContractException(msg: String): RuntimeException(msg)
+
 data class VMExecutor(
     val rd: RepositoryReader,
     val backend: Backend,
@@ -148,7 +150,11 @@ data class VMExecutor(
             }
         }
         // call a non-contract account
-        if (code.isEmpty() && !callData.data.isEmpty()) throw RuntimeException("call receiver ${callData.to} not a contract call data = ${callData.data}")
+        if (code.isEmpty() && !callData.data.isEmpty()) {
+            if(backend.rpcCall)
+                return ByteUtil.EMPTY_BYTE_ARRAY
+            throw NonContractException("call receiver ${callData.to} not a contract call data = ${callData.data}")
+        }
         backend.addBalance(receiver, callData.value)
         backend.subBalance(callData.caller, callData.value)
         if (code.isEmpty()) return ByteUtil.EMPTY_BYTE_ARRAY
@@ -170,7 +176,8 @@ data class VMExecutor(
             chainId = ctx.chainId,
             gasPrice = ctx.gasPrice.value,
             timestamp = ctx.timestamp,
-            coinbase = ctx.coinbase.bytes
+            coinbase = ctx.coinbase.bytes,
+            blockHashMap = ctx.blockHashMap.toMap()
         )
 
         val host = EvmHostImpl(this)

@@ -13,6 +13,8 @@ import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.vm.Backend
+import org.tdf.sunflower.vm.BackendImpl
+import org.tdf.sunflower.vm.NonContractException
 import org.tdf.sunflower.vm.VMExecutor
 import java.math.BigInteger
 
@@ -21,7 +23,8 @@ class JsonRpcImpl(
     private val accountTrie: AccountTrie,
     private val repo: RepositoryService,
     private val pool: TransactionPool,
-    private val cfg: AppConfig
+    private val cfg: AppConfig,
+    private val conCfg: ConsensusConfig,
 ) : JsonRpc {
 
     private val gasLimit: Long by lazy {
@@ -199,16 +202,21 @@ class JsonRpcImpl(
         log.debug("eth_call start")
         try {
             getBackendByBlockId(bnOrId, false).use { backend ->
+                (backend as BackendImpl).rpcCall = true
                 repo.reader.use {
                     val cd = args.toCallData()
                     val executor = VMExecutor.create(
                         it,
                         backend,
-                        args.toCallContext(backend.getNonce(cd.caller), cfg.chainId),
+                        args.toCallContext(backend.getNonce(cd.caller), cfg.chainId, coinbase = conCfg.coinbase ?: AddrUtil.empty()),
                         cd,
                         gasLimit
                     )
-                    return executor.execute().executionResult.jsonHex
+                    try {
+                        return executor.execute().executionResult.jsonHex
+                    } catch (e: NonContractException) {
+                        return "0x"
+                    }
                 }
             }
         } finally {
@@ -224,7 +232,7 @@ class JsonRpcImpl(
                 val executor = VMExecutor.create(
                     rd,
                     backend,
-                    args.toCallContext(backend.getNonce(callData.caller), cfg.chainId),
+                    args.toCallContext(backend.getNonce(callData.caller), cfg.chainId, coinbase = conCfg.coinbase ?: AddrUtil.empty()),
                     callData,
                     gasLimit
                 )

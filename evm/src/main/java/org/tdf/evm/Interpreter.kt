@@ -263,11 +263,11 @@ class Interpreter(
                 in OpCodes.LOG0..OpCodes.LOG4 -> {
                     val n = op - OpCodes.LOG0
                     val topics = mutableListOf<ByteArray>()
+                    opInfo = stack.backU32(1)
                     val data = stack.popMemory(memory)
                     for (i in 0 until n) {
                         topics.add(stack.popBytes())
                     }
-                    opInfo = stack.backU32(1)
                     host.log(callData.receipt, data, topics)
                 }
 
@@ -280,7 +280,7 @@ class Interpreter(
                     val off = stack.popU32()
                     val size = stack.popU32()
                     afterExecute()
-                    throw RevertException(memory.resizeAndCopy(off, size), host.digest)
+                    throw RevertException(callData.receipt, memory.resizeAndCopy(off, size), host.digest)
                 }
                 OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> call(op)
                 OpCodes.CREATE -> create()
@@ -292,7 +292,6 @@ class Interpreter(
         }
         return emptyByteArray
     }
-
 
 
     fun ByteArray.hex(start: Int = 0, end: Int = this.size): String {
@@ -500,6 +499,7 @@ class Interpreter(
     }
 
     fun create(create2: Boolean = false) {
+
         val value = stack.popBigInt()
         val off = stack.popU32()
         val size = stack.popU32()

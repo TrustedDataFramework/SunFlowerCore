@@ -29,7 +29,8 @@ class BackendImpl(
     // code hash -> code
     private val codeCache: MutableMap<HexBytes, HexBytes> = mutableMapOf(),
     override val height: Long = (parent?.height ?: -1) + 1,
-    private val consensusCode: Map<HexBytes, HexBytes> = emptyMap()
+    private val consensusCode: Map<HexBytes, HexBytes> = emptyMap(),
+    override var rpcCall: Boolean = false
 ) : Backend {
     // get account without clone
     private fun lookup(address: HexBytes): Account {

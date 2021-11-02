@@ -32,14 +32,15 @@ internal object JsonRpcUtil {
         return this.notEmptyOrNull()?.jsonHex?.hex ?: HexBytes.empty()
     }
 
-    fun toCallContext(args: JsonRpc.CallArguments, nonce: Long?, chainId: Int, timestamp: Long): CallContext {
+    fun toCallContext(args: JsonRpc.CallArguments, nonce: Long?, chainId: Int, timestamp: Long, coinbase: HexBytes): CallContext {
         return CallContext(
             args.from.address(),
             HashUtil.EMPTY_DATA_HASH_HEX,
             nonce ?: args.nonce.number(),
             args.gasPrice.u256(),
             chainId,
-            timestamp
+            timestamp,
+            coinbase
         )
     }
 

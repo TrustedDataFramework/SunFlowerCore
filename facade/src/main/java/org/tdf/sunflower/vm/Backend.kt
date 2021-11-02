@@ -72,6 +72,7 @@ interface Backend : AutoCloseable {
     fun getCode(address: HexBytes): HexBytes
     fun setCode(address: HexBytes, code: HexBytes)
     val staticCall: Boolean
+    val rpcCall: Boolean
     val parentBackend: Backend?
     fun createChild(staticCall: Boolean = false): Backend
 

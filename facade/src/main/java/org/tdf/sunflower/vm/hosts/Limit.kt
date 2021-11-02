@@ -36,10 +36,6 @@ class Limit(val gasLimit: Long) : Hook, EvmHook {
 
     // 1 evm op = 20 gas
     override fun onOp(op: Int, extraInfo: Long) {
-        if (op >= OpCodes.LT && op <= OpCodes.SAR) {
-            runtimeGas += 3
-        }
-
         when (op) {
             // https://github.com/crytic/evm-opcodes
             // https://docs.google.com/spreadsheets/d/1n6mRqkBz3iWcOlRem_mO09GtSKEKrAsfO7Frgx18pNU/edit#gid=0
@@ -73,7 +69,7 @@ class Limit(val gasLimit: Long) : Hook, EvmHook {
             OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL, OpCodes.CALLCODE -> runtimeGas += 40
             else -> runtimeGas += 5
         }
-        if (totalGas > gasLimit) throw RuntimeException("gas overflow total gas = $totalGas, gasLimit = $gasLimit ")
+        if (totalGas > gasLimit) throw RuntimeException("gas overflow total gas = $totalGas, gasLimit = $gasLimit op = $op")
     }
 
 
