@@ -36,7 +36,6 @@ class PoA : AbstractConsensusEngine() {
         )
         builtins.add(minerContract)
         builtins.add(LoggingContract())
-        builtins.add(CryptoContract())
         miner = PoAMiner(this)
         validator = PoAValidator(accountTrie, this)
     }
