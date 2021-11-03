@@ -102,10 +102,28 @@ class PoS : AbstractConsensusEngine() {
             val w = accountTrie.createWrapper(rd, h, consensusAbi, consensusAddr)
             val n = (w.call("n")[0] as BigInteger).intValueExact()
 
+            val votes = mutableMapOf<HexBytes, BigInteger>()
+
+            var i = 0
+
+            while(true) {
+                val r = w.call("votes", i.toBigInteger()) as Array<*>
+                val to = r[1] as ByteArray
+                val amount = r[2] as BigInteger
+                val score = r[4] as BigInteger
+
+                if(amount == BigInteger.ZERO)
+                    break
+
+                val v = votes[to.hex()] ?: BigInteger.ZERO
+                votes[to.hex()] = v + score
+                i++
+            }
+
             var li = mutableListOf<Pair<HexBytes, BigInteger>>()
-            for (i in 1..n) {
-                val addr = w.call("candidates", i.toBigInteger())[0] as ByteArray
-                val score = w.call("scoreOf", addr)[0] as BigInteger
+            for (k in 1..n) {
+                val addr = w.call("candidates", k.toBigInteger())[0] as ByteArray
+                val score = votes[addr.hex()] ?: BigInteger.ZERO
                 val stake = w.call("balanceOf", addr)[0] as BigInteger
                 if(stake >= proposerMinStake)
                     li.add(Pair(addr.hex(), score))
