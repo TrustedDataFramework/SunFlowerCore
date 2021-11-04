@@ -79,9 +79,9 @@ class PoWMiner(
 
     override fun stop() {
         if (stopped) return
-        minerExecutor!!.shutdown()
+        minerExecutor.shutdown()
         try {
-            minerExecutor!!.awaitTermination(MAX_SHUTDOWN_WAITING, TimeUnit.SECONDS)
+            minerExecutor.awaitTermination(MAX_SHUTDOWN_WAITING, TimeUnit.SECONDS)
             threadPool.awaitTermination(MAX_SHUTDOWN_WAITING, TimeUnit.SECONDS)
             log.info("miner stopped normally")
         } catch (e: InterruptedException) {

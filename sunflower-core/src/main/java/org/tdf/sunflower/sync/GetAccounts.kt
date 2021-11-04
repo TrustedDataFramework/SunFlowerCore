@@ -5,5 +5,4 @@ import com.github.salpadding.rlpstream.annotation.RlpProps
 import org.tdf.common.util.HexBytes
 
 @RlpProps("stateRoot", "maxAccounts")
-data class GetAccounts @RlpCreator constructor(val stateRoot: HexBytes, val maxAccounts: Int) {
-}
+data class GetAccounts @RlpCreator constructor(val stateRoot: HexBytes, val maxAccounts: Int)

@@ -2,7 +2,6 @@ package org.tdf.sunflower.controller
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.JsonNode
-import org.tdf.common.util.H256
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.controller.JsonRpcUtil.toCallData
 import org.tdf.sunflower.state.AddrUtil
@@ -113,9 +112,10 @@ interface JsonRpc {
             nonce: Long?,
             chainId: Int,
             timestamp: Long = System.currentTimeMillis() / 1000,
-            coinbase: HexBytes = AddrUtil.empty()
+            coinbase: HexBytes = AddrUtil.empty(),
+            blockHashMap: Map<Long, ByteArray> = emptyMap()
         ): CallContext {
-            return JsonRpcUtil.toCallContext(this, nonce, chainId, timestamp, coinbase)
+            return JsonRpcUtil.toCallContext(this, nonce, chainId, timestamp, coinbase, blockHashMap)
         }
 
         @JsonIgnore

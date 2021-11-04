@@ -12,7 +12,6 @@ import org.tdf.sunflower.Start
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.vm.*
-import org.tdf.sunflower.vm.abi.Abi
 import org.tdf.sunflower.vm.hosts.Limit
 
 

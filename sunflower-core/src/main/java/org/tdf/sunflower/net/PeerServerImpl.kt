@@ -1,6 +1,5 @@
 package org.tdf.sunflower.net
 
-import com.fasterxml.jackson.databind.JsonNode
 import lombok.extern.slf4j.Slf4j
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -117,7 +116,7 @@ class PeerServerImpl(// if non-database provided, use memory database
             throw RuntimeException("failed to load peer server invalid address " + config.address)
         }
         builder = MessageBuilder(self, config)
-        val port = if(config.port == 0) self.port else config.port
+        val port = if (config.port == 0) self.port else config.port
         netLayer = if ("grpc" == self.protocol) {
             GRpcNetLayer(port, builder)
         } else {

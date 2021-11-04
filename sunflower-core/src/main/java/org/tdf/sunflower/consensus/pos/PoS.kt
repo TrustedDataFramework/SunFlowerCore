@@ -45,9 +45,9 @@ class PoS : AbstractConsensusEngine() {
         return (r[0] as BigInteger).u256()
     }
 
-    private fun initMaxMiners(w: ContractWrapper): Int{
+    private fun initMaxMiners(w: ContractWrapper): Int {
         val l = maxMiners
-        if(l != 0)
+        if (l != 0)
             return l
 
         val r = w.call(
@@ -82,13 +82,13 @@ class PoS : AbstractConsensusEngine() {
     }
 
     fun getCandidates(rd: RepositoryReader, parent: Header): List<Pair<HexBytes, BigInteger>> {
-        if(eraSize == 0) {
+        if (eraSize == 0) {
             val w = accountTrie.createWrapper(rd, rd.genesis, consensusAbi, consensusAddr)
             val newEraSize = w.call("eraSize")[0] as BigInteger
             this.eraSize = newEraSize.intValueExact()
         }
 
-        if(proposerMinStake == BigInteger.ZERO) {
+        if (proposerMinStake == BigInteger.ZERO) {
             val w = accountTrie.createWrapper(rd, rd.genesis, consensusAbi, consensusAddr)
             this.proposerMinStake = w.call("proposerMinStake")[0] as BigInteger
         }
@@ -106,13 +106,13 @@ class PoS : AbstractConsensusEngine() {
 
             var i = 0
 
-            while(true) {
+            while (true) {
                 val r = w.call("votes", i.toBigInteger()) as Array<*>
                 val to = r[1] as ByteArray
                 val amount = r[2] as BigInteger
                 val score = r[4] as BigInteger
 
-                if(amount == BigInteger.ZERO)
+                if (amount == BigInteger.ZERO)
                     break
 
                 val v = votes[to.hex()] ?: BigInteger.ZERO
@@ -125,14 +125,14 @@ class PoS : AbstractConsensusEngine() {
                 val addr = w.call("candidates", k.toBigInteger())[0] as ByteArray
                 val score = votes[addr.hex()] ?: BigInteger.ZERO
                 val stake = w.call("balanceOf", addr)[0] as BigInteger
-                if(stake >= proposerMinStake)
+                if (stake >= proposerMinStake)
                     li.add(Pair(addr.hex(), score))
             }
 
             li.sortByDescending { it.second }
             log.info("new candidates list created at height {} hash {} list = {}", h.height, h.hash, li)
 
-            if(li.isEmpty()) {
+            if (li.isEmpty()) {
                 val l = w.call("defaultMiners")[0] as Array<*>
                 li = l.map { Pair((it as ByteArray).hex(), BigInteger.ZERO) }.toMutableList()
             }

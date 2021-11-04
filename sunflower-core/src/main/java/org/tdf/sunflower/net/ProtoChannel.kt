@@ -94,7 +94,7 @@ open class ProtoChannel(private val messageBuilder: MessageBuilder, val out: Cha
             return
         }
         try {
-            log.debug("write message to peer {} , code = {}",  message.remotePeer, message.code)
+            log.debug("write message to peer {} , code = {}", message.remotePeer, message.code)
             out.write(message)
         } catch (e: Throwable) {
             e.printStackTrace()

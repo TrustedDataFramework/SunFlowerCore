@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 import javax.annotation.PostConstruct
 
 @Component
-class Connector() {
+class Connector {
 
 
     @PostConstruct

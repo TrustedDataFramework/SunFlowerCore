@@ -602,7 +602,7 @@ class Web3Wallet(private val web3: Web3j, val privateKey: String) : Web3j by web
             "0x",
             data.jsonHex
         )
-        val signedMessage = TransactionEncoder.signMessage(raw, 102L, Credentials.create(privateKey));
+        val signedMessage = TransactionEncoder.signMessage(raw, 102L, Credentials.create(privateKey))
         val hex = signedMessage.jsonHex
         return web3.ethSendRawTransaction(hex).send().transactionHash
     }
@@ -628,7 +628,7 @@ class Web3Contract(private val w: Web3Wallet, val addr: String, val abi: String)
             BigInteger.ZERO,
             encoded.jsonHex
         )
-        val signedMessage = TransactionEncoder.signMessage(raw, 102L, Credentials.create(w.privateKey));
+        val signedMessage = TransactionEncoder.signMessage(raw, 102L, Credentials.create(w.privateKey))
         val hex = signedMessage.jsonHex
         return w.ethSendRawTransaction(hex).send().transactionHash
     }

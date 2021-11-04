@@ -9,7 +9,6 @@ import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
 import org.tdf.sunflower.facade.PropertyLike
-import org.tdf.sunflower.types.ConsensusConfig
 import org.tdf.sunflower.types.PropertyReader
 import org.tdf.sunflower.util.FileUtils
 import org.tdf.sunflower.util.MapperUtil
@@ -61,13 +60,13 @@ class AppConfig(private val properties: PropertyLike) {
 
         val genesis = properties.getProperty("sunflower.consensus.genesis")
 
-        if(genesis.isNullOrBlank())
+        if (genesis.isNullOrBlank())
             throw RuntimeException("genesis not set")
 
         val `in` = FileUtils.getInputStream(
             genesis
         )
-        
+
         return@lazy objectMapper.readValue(`in`, JsonNode::class.java)
     }
 

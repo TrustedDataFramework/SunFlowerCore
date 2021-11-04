@@ -29,7 +29,6 @@ import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
 import kotlin.math.min
-import kotlin.properties.Delegates
 
 @Component
 class TransactionPoolImpl(
@@ -108,7 +107,13 @@ class TransactionPoolImpl(
         writeLock.withLock {
             val newCollected: MutableList<Transaction> = mutableListOf()
             for (tx in transactions) {
-                log.debug("new tx {} received from {} rpc sender = {}, nonce = {}", tx.hash, source, tx.sender, tx.nonce)
+                log.debug(
+                    "new tx {} received from {} rpc sender = {}, nonce = {}",
+                    tx.hash,
+                    source,
+                    tx.sender,
+                    tx.nonce
+                )
                 if (tx.gasPrice < appCfg.vmGasPrice) {
                     errors[tx.hash] = "transaction pool: gas price of tx less than vm gas price ${appCfg.vmGasPrice}"
                     continue
@@ -226,7 +231,12 @@ class TransactionPoolImpl(
 
             try {
                 val child = backend.createChild()
-                val ctx = CallContext.fromTx(tx = t, timestamp = this.timestamp, coinbase = conCfg.coinbase ?: AddrUtil.empty(), blockHashMap = rd.createBlockHashMap(child.parentHash).toMap())
+                val ctx = CallContext.fromTx(
+                    tx = t,
+                    timestamp = this.timestamp,
+                    coinbase = conCfg.coinbase ?: AddrUtil.empty(),
+                    blockHashMap = rd.createBlockHashMap(child.parentHash).toMap()
+                )
                 val callData = CallData.fromTx(t)
                 val vmExecutor = VMExecutor.create(
                     rd,
@@ -260,7 +270,13 @@ class TransactionPoolImpl(
                 backend = child
                 this.backend = backend
                 this.gas += res.gasUsed
-                log.debug("add tx {} to pending, ready to pack, sender = {}, nonce = {} remaining gas = {}", n.tx.hash, n.tx.sender, n.tx.nonce, blockGasLimit - gas)
+                log.debug(
+                    "add tx {} to pending, ready to pack, sender = {}, nonce = {} remaining gas = {}",
+                    n.tx.hash,
+                    n.tx.sender,
+                    n.tx.nonce,
+                    blockGasLimit - gas
+                )
                 waiting.remove()
             } catch (e: Exception) {
                 e.printStackTrace()

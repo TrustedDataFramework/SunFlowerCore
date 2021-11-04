@@ -13,7 +13,6 @@ import org.springframework.core.env.Environment
 import org.springframework.core.io.ClassPathResource
 import org.springframework.core.io.Resource
 import org.springframework.util.ClassUtils
-import org.springframework.web.filter.CommonsRequestLoggingFilter
 import org.tdf.common.event.EventBus
 import org.tdf.common.serialize.Codecs
 import org.tdf.common.store.JsonStore
@@ -83,7 +82,7 @@ open class Start {
             log.info("start miner")
             miner.start()
         } else {
-           log.info("mining is not enabled")
+            log.info("mining is not enabled")
         }
         return miner
     }
@@ -174,9 +173,9 @@ open class Start {
         }
 
         val root =
-        repoSrv.reader.use {
-            accountTrie.init(engine.alloc, engine.bios, engine.builtins, engine.code, it)
-        }
+            repoSrv.reader.use {
+                accountTrie.init(engine.alloc, engine.bios, engine.builtins, engine.code, it)
+            }
         // init accountTrie and genesis block
         val g = engine.genesisBlock
         repoSrv.writer.use { it.saveGenesis(g.copy(header = g.header.impl.copy(stateRoot = root))) }

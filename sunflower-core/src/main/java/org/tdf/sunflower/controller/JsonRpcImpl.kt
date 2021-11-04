@@ -28,9 +28,9 @@ class JsonRpcImpl(
 ) : JsonRpc {
 
     private val gasLimit: Long by lazy {
-       this.repo.reader.use {
-           it.genesis.gasLimit
-       }
+        this.repo.reader.use {
+            it.genesis.gasLimit
+        }
     }
 
     private fun getByJsonBlockId(id: String): Block? {
@@ -208,7 +208,11 @@ class JsonRpcImpl(
                     val executor = VMExecutor.create(
                         it,
                         backend,
-                        args.toCallContext(backend.getNonce(cd.caller), cfg.chainId, coinbase = conCfg.coinbase ?: AddrUtil.empty()),
+                        args.toCallContext(
+                            backend.getNonce(cd.caller),
+                            cfg.chainId,
+                            coinbase = conCfg.coinbase ?: AddrUtil.empty()
+                        ),
                         cd,
                         gasLimit
                     )
@@ -232,7 +236,12 @@ class JsonRpcImpl(
                 val executor = VMExecutor.create(
                     rd,
                     backend,
-                    args.toCallContext(backend.getNonce(callData.caller), cfg.chainId, coinbase = conCfg.coinbase ?: AddrUtil.empty()),
+                    args.toCallContext(
+                        backend.getNonce(callData.caller),
+                        cfg.chainId,
+                        coinbase = conCfg.coinbase ?: AddrUtil.empty(),
+                        blockHashMap = rd.createBlockHashMap(backend.parentHash).toMap()
+                    ),
                     callData,
                     gasLimit
                 )
@@ -288,7 +297,7 @@ class JsonRpcImpl(
 
         val p = pool.dropped[hash]
 
-        if(p != null) {
+        if (p != null) {
             pool.dropped.remove(hash)
             return TransactionReceiptDTO.failed(p.tx)
         }

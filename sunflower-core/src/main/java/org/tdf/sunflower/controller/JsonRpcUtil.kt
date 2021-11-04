@@ -32,7 +32,14 @@ internal object JsonRpcUtil {
         return this.notEmptyOrNull()?.jsonHex?.hex ?: HexBytes.empty()
     }
 
-    fun toCallContext(args: JsonRpc.CallArguments, nonce: Long?, chainId: Int, timestamp: Long, coinbase: HexBytes): CallContext {
+    fun toCallContext(
+        args: JsonRpc.CallArguments,
+        nonce: Long?,
+        chainId: Int,
+        timestamp: Long,
+        coinbase: HexBytes,
+        blockHashMap: Map<Long, ByteArray> = emptyMap()
+    ): CallContext {
         return CallContext(
             args.from.address(),
             HashUtil.EMPTY_DATA_HASH_HEX,
@@ -40,7 +47,8 @@ internal object JsonRpcUtil {
             args.gasPrice.u256(),
             chainId,
             timestamp,
-            coinbase
+            coinbase,
+            blockHashMap
         )
     }
 

@@ -20,8 +20,7 @@ class PoSValidator(accountTrie: StateTrie<HexBytes, Account>, private val pos: P
         val p = pos.getProposer(rd, dependency, block.createdAt)
         val eq = p?.first == block.coinbase
 
-        if(!eq)
-        {
+        if (!eq) {
             return fault("invalid proposer " + block.body[0].sender)
         }
 
