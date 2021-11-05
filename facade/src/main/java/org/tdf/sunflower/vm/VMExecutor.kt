@@ -45,7 +45,7 @@ data class VMExecutor(
     val logs: MutableList<LogInfo>,
     val depth: Int = 0,
 ) {
-    fun clone(): VMExecutor {
+    fun fork(): VMExecutor {
         if (depth + 1 == MAX_CALL_DEPTH) throw RuntimeException("vm call depth overflow")
         return copy(depth = depth + 1)
     }

@@ -54,7 +54,7 @@ class EvmHostImpl(private val executor: VMExecutor) : EvmHost {
         staticCall: Boolean,
     ): ByteArray {
         val cd = CallData(caller.hex(), value.u256(), receipt.hex(), CallType.CALL, input.hex())
-        val ex = executor.clone().copy(callData = cd)
+        val ex = executor.fork().copy(callData = cd)
 
         if (staticCall) {
             // since static call will not modify states, no needs to merge
@@ -74,7 +74,7 @@ class EvmHostImpl(private val executor: VMExecutor) : EvmHost {
             originCaller.hex(), Uint256.ZERO, originContract.hex(),
             CallType.DELEGATE, input.hex(), delegateAddr.hex()
         )
-        val ex = executor.clone().copy(callData = cd)
+        val ex = executor.fork().copy(callData = cd)
         return ex.executeInternal()
     }
 
@@ -92,7 +92,7 @@ class EvmHostImpl(private val executor: VMExecutor) : EvmHost {
             a
         }
         val cd = CallData(caller.hex(), value.u256(), addr, CallType.CREATE, createCode.hex())
-        val ex = executor.clone().copy(callData = cd)
+        val ex = executor.fork().copy(callData = cd)
         ex.executeInternal()
 
         return addr.bytes
