@@ -107,7 +107,7 @@ class PoS : AbstractConsensusEngine() {
             var i = 0
 
             while (true) {
-                val r = w.call("votes", i.toBigInteger()) as Array<*>
+                val r = w.call("votes", i.toBigInteger())
                 val to = r[1] as ByteArray
                 val amount = r[2] as BigInteger
                 val score = r[4] as BigInteger

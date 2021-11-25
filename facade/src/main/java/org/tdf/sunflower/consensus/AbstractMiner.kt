@@ -96,7 +96,8 @@ abstract class AbstractMiner(
             logsBloom = TransactionReceipt.bloomOf(receipts).data.hex()
         )
 
-        val duration = if(deadline == Long.MAX_VALUE) Long.MAX_VALUE else (deadline * 1000 - System.currentTimeMillis())
+        val duration =
+            if (deadline == Long.MAX_VALUE) Long.MAX_VALUE else (deadline * 1000 - System.currentTimeMillis())
 
         val blkFuture = CompletableFuture.supplyAsync {
             finalizeBlock(rd, parent, Block(header, body))
@@ -111,11 +112,20 @@ abstract class AbstractMiner(
         }
 
         txs.forEach {
-           log.debug("pack transaction {} into block at {}, sender = {}, nonce = {}", it.hash, blk.height, it.sender)
+            log.debug("pack transaction {} into block at {}, sender = {}, nonce = {}", it.hash, blk.height, it.sender)
         }
 
         // the mined block cannot be modified any more
         val infos = receipts.mapIndexed { i, r -> TransactionInfo(TransactionIndex(r, blk.hash, i), blk.body[i]) }
+
+        // reset log index
+        var i = 0
+        receipts.forEach {
+            it.logInfoList.forEach { t ->
+                t.logIndex = i
+                i++
+            }
+        }
         return BlockCreateResult(blk, infos)
     }
 

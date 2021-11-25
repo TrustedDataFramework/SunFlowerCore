@@ -302,7 +302,8 @@ data class TransactionReceipt(
 data class LogInfo(
     val address: Address = AddrUtil.empty(),
     val topics: List<H256>,
-    val data: HexBytes = HexBytes.empty()
+    val data: HexBytes = HexBytes.empty(),
+    var logIndex: Int = 0,
 ) : RlpWritable {
     override fun writeToBuf(buf: RlpBuffer): Int {
         return buf.writeObject(arrayOf(address, topics, data))
@@ -560,7 +561,7 @@ data class LogFilterV2(val address: List<Address>?, val topics: List<List<H256>>
         for (i in r.logInfoList.indices) {
             val info = r.logInfoList[i]
             if (!bl.belongsTo(info.bloom)) continue
-            cb.onLogMatch(info, b, txIdx, tx, i)
+            cb.onLogMatch(info, b, txIdx, tx, info.logIndex)
         }
     }
 
