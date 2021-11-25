@@ -142,7 +142,7 @@ class PoS : AbstractConsensusEngine() {
     }
 
     override val builtins: List<Builtin>
-        get() = listOf(LoggingContract())
+        get() = listOf()
 
     override val alloc: Map<HexBytes, Account>
         get() = genesis.alloc
@@ -167,6 +167,7 @@ class PoS : AbstractConsensusEngine() {
         consensusAbi = Abi.fromJson(String(bin))
         val c = createCode["object"]
         m[consensusAddr] = c.textValue().hex()
+
     }
 
     override val name: String
