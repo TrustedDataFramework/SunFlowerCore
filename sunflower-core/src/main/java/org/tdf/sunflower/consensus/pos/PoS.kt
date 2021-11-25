@@ -162,10 +162,6 @@ class PoS : AbstractConsensusEngine() {
         validator = posValidator
 
         val m = code as MutableMap
-
-        val codef = FileUtils.getInputStream(this.config.code)
-        println("code file")
-        IOUtils.copy(codef, System.out);
         val createCode =
             MapperUtil.OBJECT_MAPPER.readValue(FileUtils.getInputStream(this.config.code), JsonNode::class.java)
         val bin = FileUtils.getInputStream(this.config.abi).readAllBytes()
