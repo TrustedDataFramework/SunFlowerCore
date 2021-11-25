@@ -15,7 +15,7 @@ class DatabaseStoreFactoryImpl(private val config: DatabaseConfig) : DatabaseSto
         get() = config.directory
 
     override fun create(prefix: Char, comment: String): Store<ByteArray, ByteArray> {
-        log.info("create storage with prefix {} {}", prefix, comment)
+        log.info("create storage with prefix {} {} directory = {}", prefix, comment, config.directory)
         val b = prefix.code.toByte()
         if (created.contains(b))
             throw RuntimeException("this prefix $prefix had been used")
