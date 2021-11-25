@@ -3,6 +3,7 @@ package org.tdf.sunflower.consensus.pos
 import com.fasterxml.jackson.databind.JsonNode
 import com.google.common.cache.CacheBuilder
 import lombok.extern.slf4j.Slf4j
+import org.apache.commons.io.IOUtils
 import org.slf4j.LoggerFactory
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.*
@@ -161,6 +162,10 @@ class PoS : AbstractConsensusEngine() {
         validator = posValidator
 
         val m = code as MutableMap
+
+        val codef = FileUtils.getInputStream(this.config.code)
+        println("code file")
+        IOUtils.copy(codef, System.out);
         val createCode =
             MapperUtil.OBJECT_MAPPER.readValue(FileUtils.getInputStream(this.config.code), JsonNode::class.java)
         val bin = FileUtils.getInputStream(this.config.abi).readAllBytes()
