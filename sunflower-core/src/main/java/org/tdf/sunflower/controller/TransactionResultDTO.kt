@@ -1,8 +1,7 @@
 package org.tdf.sunflower.controller
 
 
-import org.tdf.sunflower.types.Header
-import org.tdf.sunflower.types.Transaction
+import org.tdf.sunflower.types.*
 
 data class TransactionResultDTO(
     val hash: String,
@@ -16,6 +15,9 @@ data class TransactionResultDTO(
     val gasPrice: String,
     val value: String,
     val input: String?,
+    val v: String?,
+    val r: String?,
+    var s: String?,
 ) {
 
     companion object {
@@ -31,7 +33,10 @@ data class TransactionResultDTO(
                 tx.gasLimit.jsonHex,
                 tx.gasPrice.jsonHex,
                 tx.value.jsonHex,
-                tx.data.jsonHex
+                tx.data.jsonHex,
+                tx.vrs?.v?.jsonHex,
+                tx.vrs?.r?.jsonHex,
+                tx.vrs?.s?.jsonHex
             )
         }
     }
