@@ -193,7 +193,7 @@ class JsonRpcImpl(
         val tx = Transaction.create(rawData.jsonHex.bytes)
         val errors = repo.reader.use { pool.collect(it, tx, "rpc") }
         if (errors[tx.hash] != null)
-            throw RuntimeException("error transaction $rawData")
+            throw RuntimeException("error transaction ${errors[tx.hash]}")
         return tx.hash.jsonHex
     }
 
