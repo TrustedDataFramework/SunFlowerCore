@@ -99,6 +99,7 @@ class Interpreter(
     private var memOff: Long = 0
     private var memLen: Long = 0
     private var key: ByteArray = emptyByteArray
+    private var codeSizeLast = emptyByteArray
 
 
     // TODO: code segment check
@@ -185,7 +186,14 @@ class Interpreter(
                     stack.dataCopy(memory, ret)
                 }
                 OpCodes.GASPRICE -> stack.push(ctx.gasPrice)
-                OpCodes.EXTCODESIZE -> stack.pushInt(host.getCodeSize(stack.popAddress()))
+                OpCodes.EXTCODESIZE -> {
+                    val ad = stack.popAddress()
+                    val sz = host.getCodeSize(ad)
+                    stack.pushInt(sz)
+                    if (sz == 0) {
+                       this.codeSizeLast = ad
+                    }
+                }
 
                 OpCodes.EXTCODECOPY -> {
                     opInfo = stack.backU32(2)
@@ -280,7 +288,7 @@ class Interpreter(
                     val off = stack.popU32()
                     val size = stack.popU32()
                     afterExecute()
-                    throw RevertException(callData.receipt, memory.resizeAndCopy(off, size), host.digest)
+                    throw RevertException(callData.receipt, memory.resizeAndCopy(off, size), host.digest, this.codeSizeLast)
                 }
                 OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> call(op)
                 OpCodes.CREATE -> create()

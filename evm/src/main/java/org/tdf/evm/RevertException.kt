@@ -10,11 +10,11 @@ fun ByteArray.hex(start: Int = 0, end: Int = this.size): String {
     }
 }
 
-class RevertException(contract: ByteArray, data: ByteArray, digest: Digest) : RuntimeException(msgOf(contract, data, digest)) {
+class RevertException(contract: ByteArray, data: ByteArray, digest: Digest, lastCodeSize: ByteArray) : RuntimeException(msgOf(contract, data, digest, lastCodeSize)) {
     companion object {
-        fun msgOf(contract: ByteArray, data: ByteArray, digest: Digest): String {
+        fun msgOf(contract: ByteArray, data: ByteArray, digest: Digest, lastCodeSize: ByteArray): String {
             if (data.size < SELECTOR_SIZE) {
-                return "err: " + contract.hex()
+                return "err: " + contract.hex() + " last empty code size= " + lastCodeSize.hex()
             }
 
             val selector = lazy {
@@ -26,7 +26,7 @@ class RevertException(contract: ByteArray, data: ByteArray, digest: Digest) : Ru
 
             if (!data.sliceArray(0 until SELECTOR_SIZE).contentEquals(selector.value)) {
                 System.err.println("selector != Error(string)")
-                return "err: " + contract.hex()
+                return "selector != Error(string) err: " + contract.hex() + " last empty code size = " + lastCodeSize.hex()
             }
 
             var off = data.int(SELECTOR_SIZE, SlotUtils.SLOT_BYTE_ARRAY_SIZE)
