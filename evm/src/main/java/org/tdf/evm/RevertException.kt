@@ -10,11 +10,11 @@ fun ByteArray.hex(start: Int = 0, end: Int = this.size): String {
     }
 }
 
-class RevertException(contract: ByteArray, data: ByteArray, digest: Digest, lastCodeSize: ByteArray) : RuntimeException(msgOf(contract, data, digest, lastCodeSize)) {
+class RevertException(id: Int, contract: ByteArray, data: ByteArray, digest: Digest, lastCodeSize: ByteArray) : RuntimeException(msgOf(id, contract, data, digest, lastCodeSize)) {
     companion object {
-        fun msgOf(contract: ByteArray, data: ByteArray, digest: Digest, lastCodeSize: ByteArray): String {
+        fun msgOf(id: Int, contract: ByteArray, data: ByteArray, digest: Digest, lastCodeSize: ByteArray): String {
             if (data.size < SELECTOR_SIZE) {
-                return "err: " + contract.hex() + " last empty code size= " + lastCodeSize.hex()
+                return "err log id = $id contract = ${contract.hex()} last empty code size = ${lastCodeSize.hex()}"
             }
 
             val selector = lazy {
@@ -26,13 +26,13 @@ class RevertException(contract: ByteArray, data: ByteArray, digest: Digest, last
 
             if (!data.sliceArray(0 until SELECTOR_SIZE).contentEquals(selector.value)) {
                 System.err.println("selector != Error(string)")
-                return "selector != Error(string) err: " + contract.hex() + " last empty code size = " + lastCodeSize.hex()
+                return "err log id = $id selector != Error(string) contract = ${contract.hex()} last empty code = ${lastCodeSize.hex()}"
             }
 
             var off = data.int(SELECTOR_SIZE, SlotUtils.SLOT_BYTE_ARRAY_SIZE)
             val len = data.int(SELECTOR_SIZE + off, SlotUtils.SLOT_BYTE_ARRAY_SIZE)
             off += SELECTOR_SIZE + SlotUtils.SLOT_BYTE_ARRAY_SIZE
-            return contract.hex() + ": " + String(data.sliceArray(off until off + len), StandardCharsets.UTF_8)
+            return "err log id = $id contract = " + contract.hex() + ": " + String(data.sliceArray(off until off + len), StandardCharsets.UTF_8)
         }
     }
 }

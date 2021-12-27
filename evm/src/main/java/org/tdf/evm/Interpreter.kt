@@ -86,7 +86,8 @@ class Interpreter(
     private val vmLog: PrintStream? = null,
     private val hook: EvmHook? = null,
     maxStackSize: Int = Int.MAX_VALUE,
-    maxMemorySize: Int = Int.MAX_VALUE
+    maxMemorySize: Int = Int.MAX_VALUE,
+    var id: Int = 0,
 ) {
     var pc: Int = 0
     private val stack: Stack = StackImpl(maxStackSize)
@@ -288,7 +289,7 @@ class Interpreter(
                     val off = stack.popU32()
                     val size = stack.popU32()
                     afterExecute()
-                    throw RevertException(callData.receipt, memory.resizeAndCopy(off, size), host.digest, this.codeSizeLast)
+                    throw RevertException(this.id, callData.receipt, memory.resizeAndCopy(off, size), host.digest, this.codeSizeLast)
                 }
                 OpCodes.STATICCALL, OpCodes.CALL, OpCodes.DELEGATECALL -> call(op)
                 OpCodes.CREATE -> create()

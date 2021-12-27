@@ -1,6 +1,7 @@
 package org.tdf.sunflower.controller
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import org.apache.commons.io.IOUtils
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
@@ -20,7 +21,9 @@ import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.state.AddrUtil.empty
 import org.tdf.sunflower.types.*
+import java.io.FileInputStream
 import java.util.function.Function
+import javax.servlet.http.HttpServletResponse
 
 @RestController
 @RequestMapping("/rpc")
@@ -83,6 +86,13 @@ class EntryController constructor(
     @GetMapping(value = ["/peers"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun peers(): PeersInfo {
         return PeersInfo(peerServer.peers, peerServer.bootstraps)
+    }
+
+    @GetMapping(value = ["/err-log/{id}"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    fun getLogs(@PathVariable id: String, resp: HttpServletResponse) {
+        val u = System.getProperty("user.dir")
+        val f = FileInputStream("$u/logs/$id.log")
+        IOUtils.copy(f, resp.outputStream)
     }
 
     data class PeersInfo(val peers: List<Peer>, val bootstraps: List<Peer>)

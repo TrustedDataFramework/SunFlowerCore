@@ -183,6 +183,8 @@ data class VMExecutor(
         val host = EvmHostImpl(this)
         val interpreter =
             Interpreter(host, ctx, evmCallData, printStream, limit, EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE)
+
+        interpreter.id = COUNTER.get();
         val ret = interpreter.execute()
         if (create) {
             backend.setCode(callData.to, ret.hex())
@@ -338,7 +340,7 @@ data class VMExecutor(
             get() {
                 if (outDirectory.isEmpty())
                     return null
-                val filename = String.format("%04d.log", COUNTER.incrementAndGet())
+                val filename = String.format("%d.log", COUNTER.incrementAndGet())
                 val path = Paths.get(outDirectory, filename)
                 log.info("write vm debug log to file {}", path)
                 val os = Files.newOutputStream(
