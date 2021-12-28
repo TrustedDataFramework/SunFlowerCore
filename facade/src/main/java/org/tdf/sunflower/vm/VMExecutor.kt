@@ -184,7 +184,7 @@ data class VMExecutor(
         val interpreter =
             Interpreter(host, ctx, evmCallData, printStream, limit, EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE)
 
-        interpreter.id = COUNTER.get();
+        interpreter.id = COUNTER.get()
         val ret = interpreter.execute()
         if (create) {
             backend.setCode(callData.to, ret.hex())
