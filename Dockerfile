@@ -8,4 +8,4 @@ RUN mkdir -p /var/lib/psc
 ENV SUNFLOWER_DATABASE_DIRECTORY /var/lib/psc
 ENV SUNFLOWER_CONSENSUS_ABI /app/abi.json
 ENV SUNFLOWER_CONSENSUS_CODE /app/code.json
-ENTRYPOINT java -jar app.jar
+CMD ["java", "-jar", "app.jar"]
