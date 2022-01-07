@@ -52,12 +52,10 @@ class PoSMiner(
         var b = block
         val rd = Random()
         val nonce = ByteArray(Constants.NONCE_SIZE)
-        log.info("start finish pow target = {}", nbits.byte32.hex())
         while (PoW.compare(PoW.getPoWHash(b), nbits.byte32) > 0) {
             rd.nextBytes(nonce)
             b = b.copy(header = b.header.impl.copy(nonce = nonce.hex()))
         }
-        log.info("pow success")
         return b
     }
 
