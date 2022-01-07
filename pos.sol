@@ -59,10 +59,12 @@ interface IPoS {
 
 contract PoS is IPoS {
     function defaultMiners() external override pure returns (address[] memory) {
-        address[] memory r = new address[](3);
+        address[] memory r = new address[](5);
         r[0] = 0xcCB8f00D1b4B37Cc9a36ee5956cE07371B1b72C7;
         r[1] = 0xEb89161Bd860E218042dF5e8Aa4fB7F445a46c16;
         r[2] = 0x3045459EBDa695fDC5237478dd31242CF0307498;
+        r[3] = 0x819733E67B589b50b46fD1Ca37A16c75B542ebD3;
+        r[4] = 0x83486f520104e10d6bFda34Cc4468Ec6EBD75a42;
         return r;
     }
 
