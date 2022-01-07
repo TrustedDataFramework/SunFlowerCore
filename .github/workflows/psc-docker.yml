@@ -48,7 +48,7 @@ jobs:
           
       - name: build and push
         run: |
-          docker build -t yongyang2021/psc .
-          docker push yongyang2021/psc
+          docker build -t yongyang2021/psc:v1.0 .
+          docker push yongyang2021/psc:v1.0
 
 
