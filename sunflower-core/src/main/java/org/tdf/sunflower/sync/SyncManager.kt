@@ -275,6 +275,7 @@ class SyncManager(
     }
 
     private fun onBlocks(blocks: List<Block>) {
+        log.debug("on blocks len = {} first = {}", blocks.size, blocks.firstOrNull()?.height)
         if (fastSyncing) {
             for (b in blocks) {
                 if (b.hash == fastSyncHash) {
@@ -284,7 +285,10 @@ class SyncManager(
             }
             return
         }
-        if (!mtx.tryLock()) return
+        if (!mtx.tryLock()) {
+            log.debug("try lock failed, discard blocks")
+            return
+        }
         try {
             repo.reader.use { rd ->
                 val best = rd.bestHeader
