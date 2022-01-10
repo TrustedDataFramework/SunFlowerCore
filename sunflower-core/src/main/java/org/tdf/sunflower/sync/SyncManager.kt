@@ -453,11 +453,11 @@ class SyncManager(
                 return
             repo.writer.use { writer ->
                 val best = writer.bestHeader
-                log.debug("write: best header height = {} hash = {}", best.height, best.hash)
+                log.debug("write: best header height = {} hash = {} queue size = {}", best.height, best.hash, queue.size)
                 val orphans: MutableSet<HexBytes> = HashSet()
                 while (it.hasNext()) {
                     val b = it.next()
-                    log.debug("try to write new block height = {} hash = {}", b.height, b.hash)
+//                    log.debug("try to write new block height = {} hash = {}", b.height, b.hash)
                     if (Math.abs(best.height - b.height) > syncConfig.maxHistoryBlocks //                        || b.getHeight() <= repository.getPrunedHeight()
                     ) {
                         log.debug("new block height {} out of history {}, discard", b.height, syncConfig.maxHistoryBlocks)
@@ -470,7 +470,7 @@ class SyncManager(
                         continue
                     }
                     if (orphans.contains(b.hashPrev)) {
-                        log.debug("new block parent hash {} already in orphans, discard", b.hashPrev)
+//                        log.debug("new block parent hash {} already in orphans, discard", b.hashPrev)
                         orphans.add(b.hash)
                         continue
                     }
