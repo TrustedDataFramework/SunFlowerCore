@@ -301,7 +301,9 @@ class SyncManager(
                     if (queue.contains(block)) continue
                     //                if (block.getHeight() <= repository.getPrunedHeight())
 //                    continue;
-                    if (abs(block.height - best.height) > syncConfig.maxPendingBlocks) break
+                    if (abs(block.height - best.height) > syncConfig.maxHistoryBlocks) {
+                        log.debug("block {} out of history size {} best = {}", block.height, syncConfig.maxHistoryBlocks, best.height)
+                    }
                     if (rd.containsHeader(block.hash)) continue
                     queue.add(block)
                 }
