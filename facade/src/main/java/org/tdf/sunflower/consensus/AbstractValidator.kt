@@ -96,7 +96,14 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                     coinbase.gasLimit
                 )
 
-            val r = executor.execute()
+            val r: VMResult
+            try {
+                r = executor.execute()
+            } catch (e: Exception) {
+                println("execute failed for coinbase transaction $coinbase")
+                throw e
+            }
+
             currentGas += r.gasUsed
 
             val receipt = TransactionReceipt(
