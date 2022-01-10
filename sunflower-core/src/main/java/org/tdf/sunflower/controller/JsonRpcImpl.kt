@@ -299,7 +299,8 @@ class JsonRpcImpl(
 
         if (p != null) {
             pool.dropped.remove(hash)
-            return TransactionReceiptDTO.failed(p.tx)
+            log.info("tx dropped info = {}", p)
+            return null
         }
 
         repo.reader.use { rd ->
