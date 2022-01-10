@@ -40,6 +40,8 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             } catch (e: Exception) {
                 return fault(e.message!!)
             }
+            if (isCoinbase && t.value != Uint256.ZERO)
+                return fault("coinbase value should be zero")
             if (!isCoinbase && !t.verifySig)
                 return fault("verify signature failed")
 
