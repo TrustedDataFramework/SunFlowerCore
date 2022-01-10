@@ -29,6 +29,7 @@ import org.tdf.sunflower.types.*
 import java.io.Closeable
 import java.util.*
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import javax.annotation.PostConstruct
 import kotlin.math.abs
@@ -244,8 +245,11 @@ class SyncManager(
                         return
                     }
                     if (it.containsHeader(proposal.hash)) return
-                    if (!mtx.tryLock())
+                    if (!mtx.tryLock(WRITE_P, TimeUnit.SECONDS)) {
+                        log.debug("try lock failed, discard proposal")
                         return
+                    }
+
                     try {
                         queue.add(proposal)
                     } finally {
@@ -285,7 +289,7 @@ class SyncManager(
             }
             return
         }
-        if (!mtx.tryLock()) {
+        if (!mtx.tryLock(BLOCKS_P, TimeUnit.SECONDS)) {
             log.debug("try lock failed, discard blocks")
             return
         }
@@ -439,7 +443,10 @@ class SyncManager(
 
     private fun tryWrite() {
         if (fastSyncing) return
-        if (!mtx.tryLock()) return
+        if (!mtx.tryLock(WRITE_P, TimeUnit.SECONDS)) {
+            log.debug("try lock failed for write blocks")
+            return
+        }
         val it = queue.iterator()
         try {
             if (queue.isEmpty())
@@ -523,5 +530,7 @@ class SyncManager(
 
     companion object {
         val log: Logger = LoggerFactory.getLogger("sync")
+        const val WRITE_P = 10L
+        const val BLOCKS_P = 5L
     }
 }
