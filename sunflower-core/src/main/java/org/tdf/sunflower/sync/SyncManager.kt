@@ -458,9 +458,9 @@ class SyncManager(
                 while (it.hasNext()) {
                     val b = it.next()
                     log.debug("try to write new block height = {} hash = {}", b.height, b.hash)
-                    if (Math.abs(best.height - b.height) > syncConfig.maxBlocksTransfer //                        || b.getHeight() <= repository.getPrunedHeight()
+                    if (Math.abs(best.height - b.height) > syncConfig.maxHistoryBlocks //                        || b.getHeight() <= repository.getPrunedHeight()
                     ) {
-                        log.debug("new block height {} > {}, discard", b.height, best.height + syncConfig.maxBlocksTransfer)
+                        log.debug("new block height {} out of history {}, discard", b.height, syncConfig.maxHistoryBlocks)
                         it.remove()
                         continue
                     }

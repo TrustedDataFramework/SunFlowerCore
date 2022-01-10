@@ -23,6 +23,7 @@ class SyncConfig(properties: SyncConfigProperties) {
     val fastSyncHeight: Long = rd.getAsLong("fast-sync-height", 0)
     val fastSyncHash: HexBytes? = rd.getAsNonNull("fast-sync-hash").takeIf { it.isNotEmpty() }?.hex()
     val maxAccountsTransfer: Int = rd.getAsInt("max-accounts-transfer")
+    val maxHistoryBlocks: Int = rd.getAsInt("max-history-blocks")
     val statusLimit: Long = rd.getAsLong("rate-limits.status", 0)
     val blocksLimit: Long = rd.getAsLong("rate-limits.get-blocks", 0)
 }
