@@ -100,7 +100,7 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             try {
                 r = executor.execute()
             } catch (e: Exception) {
-                println("execute failed for coinbase transaction $coinbase")
+                println("execute failed for coinbase transaction $coinbase at height ${block.height}")
                 throw e
             }
 
