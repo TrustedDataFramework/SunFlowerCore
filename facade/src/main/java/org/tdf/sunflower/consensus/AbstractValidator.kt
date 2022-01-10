@@ -8,6 +8,7 @@ import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.TransactionInfo
 import org.tdf.sunflower.facade.Validator
 import org.tdf.sunflower.state.Account
+import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.state.StateTrie
 import org.tdf.sunflower.types.*
 import org.tdf.sunflower.types.BlockValidateResult.Companion.fault
@@ -40,8 +41,6 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
             } catch (e: Exception) {
                 return fault(e.message!!)
             }
-            if (isCoinbase && t.value != Uint256.ZERO)
-                return fault("coinbase value should be zero")
             if (!isCoinbase && !t.verifySig)
                 return fault("verify signature failed")
 
@@ -98,13 +97,14 @@ abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, 
                     coinbase.gasLimit
                 )
 
-            val r: VMResult
-            try {
-                r = executor.execute()
-            } catch (e: Exception) {
-                println("execute failed for coinbase transaction $coinbase at height ${block.height}")
-                throw e
+
+            // assert fee
+            if (totalFee != coinbase.value) {
+                return fault("total fee $totalFee != coinbase value ${coinbase.value}")
             }
+
+            currentBackend.addBalance(AddrUtil.empty(), totalFee)
+            val r = executor.execute()
 
             currentGas += r.gasUsed
 

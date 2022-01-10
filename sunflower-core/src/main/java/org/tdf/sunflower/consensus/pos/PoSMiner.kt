@@ -48,15 +48,14 @@ class PoSMiner(
     }
 
     override fun finalizeBlock(rd: RepositoryReader, parent: Block, block: Block): Block {
-        var nbits = pos.getDifficulty(rd, parent)
+        val nbits = pos.getDifficulty(rd, parent)
         var b = block
-        val rd = Random()
+        val r = Random()
         val nonce = ByteArray(Constants.NONCE_SIZE)
         while (PoW.compare(PoW.getPoWHash(b), nbits.byte32) > 0) {
-            rd.nextBytes(nonce)
+            r.nextBytes(nonce)
             b = b.copy(header = b.header.impl.copy(nonce = nonce.hex()))
         }
-        assert(b.body.first().value == Uint256.ZERO) { "coinbase value != 0" }
         return b
     }
 
