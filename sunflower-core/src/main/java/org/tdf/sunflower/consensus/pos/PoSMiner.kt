@@ -56,6 +56,7 @@ class PoSMiner(
             rd.nextBytes(nonce)
             b = b.copy(header = b.header.impl.copy(nonce = nonce.hex()))
         }
+        assert(b.body.first().value == Uint256.ZERO) { "coinbase value != 0" }
         return b
     }
 
