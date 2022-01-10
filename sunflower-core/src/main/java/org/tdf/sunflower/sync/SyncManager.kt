@@ -453,28 +453,35 @@ class SyncManager(
                 return
             repo.writer.use { writer ->
                 val best = writer.bestHeader
+                log.debug("write: best header height = {} hash = {}", best.height, best.hash)
                 val orphans: MutableSet<HexBytes> = HashSet()
                 while (it.hasNext()) {
                     val b = it.next()
-                    if (Math.abs(best.height - b.height) > syncConfig.maxAccountsTransfer //                        || b.getHeight() <= repository.getPrunedHeight()
+                    log.debug("try to write new block height = {} hash = {}", b.height, b.hash)
+                    if (Math.abs(best.height - b.height) > syncConfig.maxBlocksTransfer //                        || b.getHeight() <= repository.getPrunedHeight()
                     ) {
+                        log.debug("new block height {} > {}, discard", b.height, best.height + syncConfig.maxBlocksTransfer)
                         it.remove()
                         continue
                     }
                     if (writer.containsHeader(b.hash)) {
+                        log.debug("block hash {} already in chain", b.hash)
                         it.remove()
                         continue
                     }
                     if (orphans.contains(b.hashPrev)) {
+                        log.debug("new block parent hash {} already in orphans, discard", b.hashPrev)
                         orphans.add(b.hash)
                         continue
                     }
                     val o = writer.getBlockByHash(b.hashPrev)
                     if (o == null) {
+                        log.debug("new block is orphan, parent hash not in chain")
                         orphans.add(b.hash)
                         continue
                     }
                     val res = engine.validator.validate(writer, b, o)
+                    log.debug("new block validate result = {}", res.success)
                     if (!res.success) {
                         it.remove()
                         log.error(res.reason)
