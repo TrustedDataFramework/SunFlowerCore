@@ -279,7 +279,7 @@ class SyncManager(
     }
 
     private fun onBlocks(blocks: List<Block>) {
-        log.debug("on blocks len = {} first = {}", blocks.size, blocks.firstOrNull()?.height)
+        log.debug("on blocks len = {} first = {} last = {}", blocks.size, blocks.firstOrNull()?.height, blocks.lastOrNull()?.height)
         if (fastSyncing) {
             for (b in blocks) {
                 if (b.hash == fastSyncHash) {
@@ -453,7 +453,7 @@ class SyncManager(
                 return
             repo.writer.use { writer ->
                 val best = writer.bestHeader
-                log.debug("write: best header height = {} hash = {} queue size = {}", best.height, best.hash, queue.size)
+                log.debug("write: best header height = {} hash = {} queue size = {} first = {}", best.height, best.hash, queue.size, queue.firstOrNull()?.height)
                 val orphans: MutableSet<HexBytes> = HashSet()
                 while (it.hasNext()) {
                     val b = it.next()
