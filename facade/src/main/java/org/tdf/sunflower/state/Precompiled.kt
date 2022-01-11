@@ -60,13 +60,18 @@ object ECRecover: Precompiled {
         val sLength = if (data.size < 128) data.size - 96 else 32
         System.arraycopy(data, 96, s, 0, sLength)
 
+        println("h = ${h.hex()}")
+        println("v = ${v.hex()}")
+        println("r = ${r.hex()}")
+        println("s = ${s.hex()}")
+
         val signature: ECDSASignature = ECDSASignature.fromComponents(r, s, v[31])
         if (validateV(v) && signature.validateComponents()) {
             val bytes = ByteArray(32)
             System.arraycopy(ECKey.signatureToAddress(h, signature), 0, bytes, 32 - 20, 20);
             return bytes
         }
-        throw RuntimeException("erc recover failed")
+        throw RuntimeException("ecrecover failed")
     }
 }
 

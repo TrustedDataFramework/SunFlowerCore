@@ -2,15 +2,12 @@ package org.tdf.sunflower
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
-import com.github.salpadding.rlpstream.Rlp
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.hex
-import org.tdf.natives.Crypto
-import org.tdf.sunflower.p2pv2.eth.message.StatusMessage
 import org.tdf.sunflower.state.BN128Addition
 import org.tdf.sunflower.state.BN128Multiplication
 import org.tdf.sunflower.state.BN128Pairing
@@ -21,15 +18,6 @@ import java.math.BigInteger
 
 @RunWith(JUnit4::class)
 class StatusMessageTest {
-
-
-    @Test
-    fun test() {
-        val hex =
-            "f84f410183c465d2a07a617029159fbeb2c95ace4cda8df778f61d3052d0a64838a625b79c1649ccd5a04fc24894912ef096ebe80dc15601c3bdf967d852c433e762b585d8ad8856cad3c68439c50cdd80"
-        val status = Rlp.decode(HexBytes.decode(hex), StatusMessage::class.java)
-        println("status = $status")
-    }
 
     @Test
     fun test1() {
@@ -51,27 +39,6 @@ class StatusMessageTest {
             "0x18c547e4f7b0f325ad1e56f57e26c745b09a3e503d86e00e5255ff7f715d3d1c000000000000000000000000000000000000000000000000000000000000001c73b1693892219d736caba55bdb67216e485557ea6b6af75f37096c9aa6a5a75feeb940b1d03b21e36b0e47e79769f095fe2ab855bd91e3a38756b7d75a9c4549".hex()
 
         println(ECRecover.execute(data.bytes).hex())
-    }
-
-
-    @Test
-    fun test2() {
-        val msg = "ffff".hex().bytes
-        val mapper = MapperUtil.OBJECT_MAPPER
-        val signers =
-            (0..2).map { mapper.readValue(Crypto.schnorrGenSigner(it.toLong()), SchnorrPrivateKey::class.java) }
-        val pubs = mapper.writeValueAsString(signers.map { it.publicKey })
-        val r1s = mapper.writeValueAsString(signers.map { it.round1 })
-        val r2s = (0..2).map { Crypto.schnorrRound1(it, signers[it].privateKey.bytes, msg, pubs, r1s) }
-            .map { mapper.readValue(it, Round2::class.java) }
-        val sigs = (0..2).map {
-            Crypto.schnorrRound2(
-                r2s[it].prime.bytes,
-                mapper.writeValueAsString(r2s[it].r),
-                r2s.map { it.round2.bytes }.toTypedArray()
-            )
-        }
-        println(sigs.map { it.hex() })
     }
 
 

@@ -33,6 +33,7 @@ import org.tdf.sunflower.net.PeerServerImpl
 import org.tdf.sunflower.pool.TransactionPoolImpl
 import org.tdf.sunflower.service.RepositoryKVImpl
 import org.tdf.sunflower.state.AccountTrie
+import org.tdf.sunflower.state.ECRecover
 import org.tdf.sunflower.types.ConsensusConfig
 import org.tdf.sunflower.types.PropertyReader
 import org.tdf.sunflower.util.FileUtils
