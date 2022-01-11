@@ -296,6 +296,7 @@ open class Start {
 
         @JvmStatic
         fun main(args: Array<String>) {
+            log.debug("class path = {}", System.getProperty("java.class.path"))
             // inject class loader
             FileUtils.setClassLoader(ClassUtils.getDefaultClassLoader())
             val app = SpringApplication(Start::class.java)
