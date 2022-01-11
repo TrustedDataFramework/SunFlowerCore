@@ -84,7 +84,7 @@ class AppConfig(private val properties: PropertyLike) {
     }
 
     val vmGasPrice: Uint256 = reader.getAsU256("sunflower.vm.gas-price", Uint256.ZERO)
-    val isVmDebug: Boolean = reader.getAsBool("sunflower.vm.debug")
+    val vmLogs: String = (reader.properties.getProperty("sunflower.vm.logs") ?: "").trim()
     val isTrieSecure: Boolean = reader.getAsBool("sunflower.trie.secure")
     val chainId: Int get() = genesisJson["chainId"]?.asInt() ?: Constants.DEFAULT_CHAIN_ID
     val rpcTimeOut: Int get() = reader.getAsInt("sunflower.rpc.timeout", Int.MAX_VALUE)

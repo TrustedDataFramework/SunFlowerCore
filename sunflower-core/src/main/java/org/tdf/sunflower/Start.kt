@@ -306,17 +306,13 @@ open class Start {
 
             app.addInitializers({
                 loadConstants(it.environment)
-                if (AppConfig.get().isVmDebug) {
-                    val path = Paths.get(
-                        System.getProperty("user.dir"),
-                        "logs"
-                    ).toString()
-
-                    val f = File(path)
+                if (AppConfig.get().vmLogs.isNotEmpty()) {
+                    val f = File(AppConfig.get().vmLogs)
                     if (!f.exists()) {
                         f.mkdir()
                     }
-                    VMExecutor.enableDebug(path)
+                    log.info("enable vm logs, path = {}", f.path)
+                    VMExecutor.enableDebug(f.path)
                 }
                 val path = it.environment.getProperty("sunflower.libs") ?: return@addInitializers
                 loadLibs(path)

@@ -12,6 +12,7 @@ import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.IntSerializer
 import org.tdf.common.util.hex
+import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.RepositoryService
 import org.tdf.sunflower.net.Peer
@@ -22,6 +23,7 @@ import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.state.AddrUtil.empty
 import org.tdf.sunflower.types.*
 import java.io.FileInputStream
+import java.nio.file.Paths
 import java.util.function.Function
 import javax.servlet.http.HttpServletResponse
 
@@ -88,10 +90,17 @@ class EntryController constructor(
         return PeersInfo(peerServer.peers, peerServer.bootstraps)
     }
 
-    @GetMapping(value = ["/err-log/{id}"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    @GetMapping(value = ["/vm-logs/{id}"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun getLogs(@PathVariable id: String, resp: HttpServletResponse) {
-        val u = System.getProperty("user.dir")
-        val f = FileInputStream("$u/logs/$id.log")
+        val p = AppConfig.get().vmLogs
+
+        if (p.isEmpty()) {
+            resp.writer.write("NO LOGS");
+            resp.writer.close()
+        }
+
+        val path = Paths.get(p,  "$id.log")
+        val f = FileInputStream(path.toString())
         IOUtils.copy(f, resp.outputStream)
     }
 
