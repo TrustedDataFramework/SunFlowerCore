@@ -31,6 +31,9 @@ dependencies {
 
     implementation "org.ethereum:leveldbjni-all:${leveldbJNIVersion}"
     implementation "com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6"
+    implementation "com.google.protobuf:protobuf-java:2.5.0"
+    implementation "com.aliyun.openservices:aliyun-log-logback-appender:0.1.18"
+
     runtimeOnly 'javax.jws:jsr181-api:1.0-MR1'
     implementation "org.apache.commons:commons-collections4:${commonsCollections4Version}"
 
