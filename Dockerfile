@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11:jre-nightly
+FROM openjdk:11.0-jre
 
 WORKDIR /app
 ADD sunflower-core/build/libs/sunflower*.jar /app/app.jar
