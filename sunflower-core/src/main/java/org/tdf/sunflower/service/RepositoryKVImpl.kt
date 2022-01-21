@@ -104,7 +104,10 @@ class RepositoryKVImpl(
     }
 
     override fun writeBlock(b: Block, infos: List<TransactionInfo>) {
+        var n = System.currentTimeMillis()
         writeBlockNoReset(b, infos)
+        log.info("write block no reset use ${(System.currentTimeMillis() - n) / 1000.0}s")
+        n = System.currentTimeMillis();
         val best = bestBlock
         if (Block.BEST_COMPARATOR.compare(best, b) < 0) {
             status[BEST_HEADER] = b.header
@@ -120,6 +123,7 @@ class RepositoryKVImpl(
             }
             eventBus.publish(NewBestBlock(b))
         }
+        log.info("compare best use ${(System.currentTimeMillis() - n) / 1000.0}s")
     }
 
     override fun containsTransaction(hash: HexBytes): Boolean {
