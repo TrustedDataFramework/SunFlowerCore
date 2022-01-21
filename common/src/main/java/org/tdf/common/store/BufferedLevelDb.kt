@@ -50,6 +50,7 @@ class BufferedLevelDb(
     }
 
     private fun flushCache() {
+        println("buffered leveldb flush cap = $cacheCap")
         db.createWriteBatch().use { batch ->
             cache.forEach {
                 if (!it.value.isPresent) {
