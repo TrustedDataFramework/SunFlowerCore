@@ -161,7 +161,7 @@ class RepositoryKVImpl(
             var n = System.currentTimeMillis()
             val info = infos[i]
             val found = transactionIndices[t.hash]
-            log.info("read founds use ${(System.currentTimeMillis() - n) / 1000.0}s")
+            log.info("read founds use ${(System.currentTimeMillis() - n) / 1000.0}s found.length = ${found?.size ?: 0}")
             n = System.currentTimeMillis();
 
             val founds: MutableList<TransactionIndex> = found?.toMutableList() ?: mutableListOf()
