@@ -15,7 +15,6 @@ import org.tdf.sunflower.types.BlockValidateResult.Companion.fault
 import org.tdf.sunflower.types.BlockValidateResult.Companion.success
 import org.tdf.sunflower.vm.CallContext
 import org.tdf.sunflower.vm.CallData
-import org.tdf.sunflower.vm.CallType
 import org.tdf.sunflower.vm.VMExecutor
 
 abstract class AbstractValidator(protected val accountTrie: StateTrie<HexBytes, Account>) : Validator {

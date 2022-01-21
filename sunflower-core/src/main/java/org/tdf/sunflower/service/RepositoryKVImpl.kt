@@ -104,10 +104,7 @@ class RepositoryKVImpl(
     }
 
     override fun writeBlock(b: Block, infos: List<TransactionInfo>) {
-        var n = System.currentTimeMillis()
         writeBlockNoReset(b, infos)
-        log.info("write block no reset use ${(System.currentTimeMillis() - n) / 1000.0}s")
-        n = System.currentTimeMillis();
         val best = bestBlock
         if (Block.BEST_COMPARATOR.compare(best, b) < 0) {
             status[BEST_HEADER] = b.header
@@ -123,7 +120,6 @@ class RepositoryKVImpl(
             }
             eventBus.publish(NewBestBlock(b))
         }
-        log.info("compare best use ${(System.currentTimeMillis() - n) / 1000.0}s")
     }
 
     override fun containsTransaction(hash: HexBytes): Boolean {
@@ -158,26 +154,27 @@ class RepositoryKVImpl(
         // write header into store
         headerStore[block.hash] = block.header
         // save transaction and transaction infos
-        var n = System.currentTimeMillis()
         for (i in block.body.indices) {
             val t = block.body[i]
             // save transaction
             transactionsStore[t.hash] = t
-            log.info("write tx store use ${(System.currentTimeMillis() - n) / 1000.0}s")
-            n = System.currentTimeMillis()
+            var n = System.currentTimeMillis()
             val info = infos[i]
             val found = transactionIndices[t.hash]
+            log.info("read founds use ${(System.currentTimeMillis() - n) / 1000.0}s")
+            n = System.currentTimeMillis();
+
             val founds: MutableList<TransactionIndex> = found?.toMutableList() ?: mutableListOf()
             if (founds.none
                 { it.blockHash == info.blockHash }
             ) {
                 founds.add(info.index)
             }
-            log.info("generate founds use ${(System.currentTimeMillis() - n) / 1000.0}s")
-            n = System.currentTimeMillis()
+            log.info("add index into founds use ${(System.currentTimeMillis() - n) / 1000.0}s")
+            n = System.currentTimeMillis();
+
             transactionIndices[t.hash] = founds.toTypedArray()
             log.info("write founds use ${(System.currentTimeMillis() - n) / 1000.0}s")
-            n = System.currentTimeMillis()
         }
 
 
@@ -185,7 +182,6 @@ class RepositoryKVImpl(
         val txHashes: Array<HexBytes> = block.body.map { it.hash }.toTypedArray()
         transactionsRoot[block.transactionsRoot] = txHashes
 
-        n = System.currentTimeMillis()
 
         // save header index
         val headerHashes: MutableList<HexBytes> = heightIndex[block.height]?.toMutableList() ?: mutableListOf()
