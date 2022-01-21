@@ -12,16 +12,17 @@ import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
 
-class LevelDb(
+open class LevelDb(
     private val factory: DBFactory, // parent directory
     private val directory: String
 ) : DatabaseStore {
-    private lateinit var db: DB
+    protected lateinit var db: DB
 
     private lateinit var dbSettings: DBSettings
 
-    override var alive = false
+    final override var alive = false
         private set
+
     private val resetDbLock: ReadWriteLock = ReentrantReadWriteLock()
 
     override fun init(settings: DBSettings) {

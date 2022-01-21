@@ -27,7 +27,9 @@ class DatabaseStoreFactoryImpl(private val config: DatabaseConfig) : DatabaseSto
     override val name: String
         get() = config.name
 
-    override fun cleanup() {}
+    override fun cleanup() {
+        base.flush()
+    }
 
     companion object {
         private val log = LoggerFactory.getLogger("db")
@@ -39,7 +41,7 @@ class DatabaseStoreFactoryImpl(private val config: DatabaseConfig) : DatabaseSto
             "leveldb-jni", "leveldb" -> base = LevelDb(JniDBFactory.factory, config.directory)
             "memory" -> base = MemoryDatabaseStore()
             else -> {
-                base = LevelDb(JniDBFactory.factory, config.directory)
+                base = BufferedLevelDb(JniDBFactory.factory, config.directory, config.buffer.toLong())
                 log.warn("Data source is not supported, default is leveldb")
             }
         }

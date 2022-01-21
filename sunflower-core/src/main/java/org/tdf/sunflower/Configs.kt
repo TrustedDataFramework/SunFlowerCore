@@ -32,6 +32,7 @@ class DatabaseConfig(properties: DatabaseConfigProperties) {
     val directory: String = rd.getAsNonNull("directory")
     val reset: Boolean = rd.getAsBool("reset")
     val blockStore: String = rd.getAsNonNull("block-store")
+    val buffer: Int = rd.getAsInt("buffer")
 }
 
 @ConfigurationProperties(prefix = "sunflower")
