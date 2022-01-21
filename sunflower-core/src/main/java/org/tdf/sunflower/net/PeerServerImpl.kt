@@ -80,7 +80,8 @@ class PeerServerImpl(// if non-database provided, use memory database
 
         // connect to stored peers when server restarts
         // TODO: discover by udp protocol
-        peerStore.forEach { k ->
+        val keys = peerStore.node.entries.toList()
+        keys.forEach { k ->
             if ("self" == k.key)
                 return
             val peer = PeerImpl.parse(k.value.asText())!!
