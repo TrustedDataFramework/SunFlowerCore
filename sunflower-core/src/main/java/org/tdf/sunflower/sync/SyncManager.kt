@@ -482,7 +482,9 @@ class SyncManager(
                         orphans.add(b.hash)
                         continue
                     }
+                    var n = System.currentTimeMillis();
                     val res = engine.validator.validate(writer, b, o)
+                    log.debug("validate block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
                     log.debug("new block validate result = {}", res.success)
                     if (!res.success) {
                         it.remove()
@@ -491,7 +493,9 @@ class SyncManager(
                     }
                     it.remove()
                     val rs = res as BlockValidateResult
+                    n = System.currentTimeMillis();
                     writer.writeBlock(b, rs.infos)
+                    log.debug("write block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
                 }
             }
         } finally {
