@@ -36,12 +36,12 @@ class DatabaseStoreFactoryImpl(private val config: DatabaseConfig) : DatabaseSto
     }
 
     init {
+        log.info("buffer = ${config.buffer}")
         log.info("load database at directory {} type = {}", config.directory, config.name)
         when (config.name.trim { it <= ' ' }.lowercase()) {
-            "leveldb-jni", "leveldb" -> base = LevelDb(JniDBFactory.factory, config.directory)
+            "leveldb-jni", "leveldb" -> base = BufferedLevelDb(JniDBFactory.factory, config.directory, config.buffer.toLong())
             "memory" -> base = MemoryDatabaseStore()
             else -> {
-                log.info("buffer = ${config.buffer}")
                 base = BufferedLevelDb(JniDBFactory.factory, config.directory, config.buffer.toLong())
                 log.warn("Data source is not supported, default is leveldb")
             }
