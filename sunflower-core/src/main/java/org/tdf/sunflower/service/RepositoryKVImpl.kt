@@ -147,26 +147,24 @@ class RepositoryKVImpl(
 
     private fun writeBlockNoReset(block: Block, infos: List<TransactionInfo>) {
         // ensure the state root exists
-        var n = System.currentTimeMillis()
         val v = accountTrie.trieStore[block.stateRoot.bytes]
         if (block.stateRoot != accountTrie.trie.nullHash
             && (v == null || v.isEmpty())
         ) {
             throw RuntimeException("unexpected error: account trie " + block.stateRoot + " not synced")
         }
-        log.info("ensure state root use ${(System.currentTimeMillis() - n) / 1000.0}s")
-        n = System.currentTimeMillis()
         // if the block has written before
         if (containsHeader(block.hash)) return
         // write header into store
         headerStore[block.hash] = block.header
         // save transaction and transaction infos
-        log.info("write header ${(System.currentTimeMillis() - n) / 1000.0}s")
-        n = System.currentTimeMillis()
+        var n = System.currentTimeMillis()
         for (i in block.body.indices) {
             val t = block.body[i]
             // save transaction
             transactionsStore[t.hash] = t
+            log.info("write tx store use ${(System.currentTimeMillis() - n) / 1000.0}s")
+            n = System.currentTimeMillis()
             val info = infos[i]
             val found = transactionIndices[t.hash]
             val founds: MutableList<TransactionIndex> = found?.toMutableList() ?: mutableListOf()
@@ -175,17 +173,18 @@ class RepositoryKVImpl(
             ) {
                 founds.add(info.index)
             }
+            log.info("generate founds use ${(System.currentTimeMillis() - n) / 1000.0}s")
+            n = System.currentTimeMillis()
             transactionIndices[t.hash] = founds.toTypedArray()
+            log.info("write founds use ${(System.currentTimeMillis() - n) / 1000.0}s")
+            n = System.currentTimeMillis()
         }
 
-        log.info("write indices use ${(System.currentTimeMillis() - n) / 1000.0}s")
-        n = System.currentTimeMillis()
-        
+
         // save transaction root -> tx hashes
         val txHashes: Array<HexBytes> = block.body.map { it.hash }.toTypedArray()
         transactionsRoot[block.transactionsRoot] = txHashes
 
-        log.info("write transactions use ${(System.currentTimeMillis() - n) / 1000.0}s")
         n = System.currentTimeMillis()
 
         // save header index
@@ -193,8 +192,6 @@ class RepositoryKVImpl(
         headerHashes.remove(block.hash)
         headerHashes.add(block.hash)
         heightIndex[block.height] = headerHashes.toTypedArray()
-
-        log.info("write header hash use ${(System.currentTimeMillis() - n) / 1000.0}s")
 
         log.info("write block at height " + block.height + " " + block.header.hash + " to database success")
     }
