@@ -155,14 +155,14 @@ class RepositoryKVImpl(
         headerStore[block.hash] = block.header
         // save transaction and transaction infos
         for (i in block.body.indices) {
+            // skip coinbase transaction
+            if (i == 0)
+                continue
             val t = block.body[i]
             // save transaction
             transactionsStore[t.hash] = t
-            var n = System.currentTimeMillis()
             val info = infos[i]
             val found = transactionIndices[t.hash]
-            log.info("read founds use ${(System.currentTimeMillis() - n) / 1000.0}s found.length = ${found?.size ?: 0}")
-            n = System.currentTimeMillis();
 
             val founds: MutableList<TransactionIndex> = found?.toMutableList() ?: mutableListOf()
             if (founds.none
@@ -170,11 +170,7 @@ class RepositoryKVImpl(
             ) {
                 founds.add(info.index)
             }
-            log.info("add index into founds use ${(System.currentTimeMillis() - n) / 1000.0}s")
-            n = System.currentTimeMillis();
-
             transactionIndices[t.hash] = founds.toTypedArray()
-            log.info("write founds use ${(System.currentTimeMillis() - n) / 1000.0}s")
         }
 
 
