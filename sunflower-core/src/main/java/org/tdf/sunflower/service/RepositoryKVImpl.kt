@@ -155,12 +155,14 @@ class RepositoryKVImpl(
         headerStore[block.hash] = block.header
         // save transaction and transaction infos
         for (i in block.body.indices) {
-            // skip coinbase transaction
-            if (i == 0)
-                continue
             val t = block.body[i]
             // save transaction
             transactionsStore[t.hash] = t
+            
+            // skip coinbase transaction
+            if (i == 0)
+                continue
+
             val info = infos[i]
             val found = transactionIndices[t.hash]
 
