@@ -578,6 +578,7 @@ data class LogFilterV2(val address: List<Address>?, val topics: List<List<H256>>
             if (!blooms[i].belongsTo(logsBloom))
                 continue
             for (j in b.body.indices) {
+                if(j == 0) continue
                 onTx(i, rd, b, b.body[j], j, cb)
             }
         }
