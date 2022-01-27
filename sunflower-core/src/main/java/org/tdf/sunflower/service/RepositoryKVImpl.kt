@@ -90,6 +90,8 @@ class RepositoryKVImpl(
     }
 
     private fun getCanonicalHashAt(height: Long): HexBytes? {
+        val i = heightIndex[height]
+        println("height index ${height} = ${i}")
         return heightIndex[height]?.getOrNull(0)
     }
 
