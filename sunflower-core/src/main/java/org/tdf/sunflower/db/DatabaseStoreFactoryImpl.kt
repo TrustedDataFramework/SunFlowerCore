@@ -1,6 +1,7 @@
 package org.tdf.sunflower.db
 
 import org.fusesource.leveldbjni.JniDBFactory
+import org.iq80.leveldb.impl.Iq80DBFactory
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.tdf.common.store.*
@@ -39,7 +40,8 @@ class DatabaseStoreFactoryImpl(private val config: DatabaseConfig) : DatabaseSto
         log.info("buffer = ${config.buffer}")
         log.info("load database at directory {} type = {}", config.directory, config.name)
         when (config.name.trim { it <= ' ' }.lowercase()) {
-            "leveldb-jni", "leveldb" -> base = BufferedLevelDb(JniDBFactory.factory, config.directory, config.buffer.toLong())
+            "leveldb-jni", "leveldb" -> base = LevelDb(JniDBFactory.factory, config.directory)
+            "leveldb-iq80" -> base = LevelDb(Iq80DBFactory.factory, config.directory)
             "memory" -> base = MemoryDatabaseStore()
             else -> {
                 base = BufferedLevelDb(JniDBFactory.factory, config.directory, config.buffer.toLong())
