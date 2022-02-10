@@ -351,10 +351,8 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     override fun popU32(): Long {
         val top = this.top
         drop()
-        for (i in 0 until SLOT_MAX_INDEX) {
-            if (data[top + i] != 0) {
-                return -1
-            }
+        if (data[top + SLOT_MAX_INDEX - 1] != 0) {
+            return -1
         }
         val r = data[top + SLOT_MAX_INDEX]
         return Integer.toUnsignedLong(r)
