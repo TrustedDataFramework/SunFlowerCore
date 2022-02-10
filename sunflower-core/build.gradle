@@ -24,6 +24,7 @@ dependencies {
     compileOnly "io.grpc:grpc-stub:${gRPCVersion}"
     compileOnly "io.grpc:grpc-netty-shaded:${gRPCVersion}"
 
+    implementation "org.iq80.leveldb:leveldb:${leveldbVersion}"
     implementation "org.java-websocket:Java-WebSocket:${webSocketVersion}"
     implementation "com.madgag.spongycastle:core:${scastleVersion}" // for SHA3 and SECP256K1
     implementation "com.madgag.spongycastle:prov:${scastleVersion}" // for SHA3 and SECP256K1

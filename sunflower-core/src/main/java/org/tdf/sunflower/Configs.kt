@@ -33,6 +33,7 @@ class DatabaseConfig(properties: DatabaseConfigProperties) {
     val reset: Boolean = rd.getAsBool("reset")
     val blockStore: String = rd.getAsNonNull("block-store")
     val buffer: Int = rd.getAsInt("buffer")
+    val canonicalize: Boolean = rd.getAsBool("canonicalize")
 }
 
 @ConfigurationProperties(prefix = "sunflower")

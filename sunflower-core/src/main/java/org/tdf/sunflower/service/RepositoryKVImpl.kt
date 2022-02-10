@@ -18,11 +18,11 @@ import org.tdf.sunflower.types.*
 import java.util.*
 
 class RepositoryKVImpl(
-    bus: EventBus,
-    factory: DatabaseStoreFactory,
-    accountTrie: AccountTrie
+        bus: EventBus,
+        factory: DatabaseStoreFactory,
+        accountTrie: AccountTrie
 ) : AbstractRepository(
-    bus, factory, accountTrie
+        bus, factory, accountTrie
 ) {
     // transaction hash -> transaction
     private val transactionsStore: Store<HexBytes, Transaction>
@@ -43,7 +43,7 @@ class RepositoryKVImpl(
     private val transactionIndices: Store<HexBytes, Array<TransactionIndex>>
 
     private val cache: Cache<HexBytes, List<Pair<Long, ByteArray>>> =
-        CacheBuilder.newBuilder().maximumSize(8).build()
+            CacheBuilder.newBuilder().maximumSize(8).build()
 
     override fun saveGenesis(b: Block) {
         super.saveGenesis(b)
@@ -54,7 +54,7 @@ class RepositoryKVImpl(
 
     override fun getBlockFromHeader(header: Header): Block {
         val txHashes = transactionsRoot[header.transactionsRoot]
-            ?: throw RuntimeException("transactions of header $header not found")
+                ?: throw RuntimeException("transactions of header $header not found")
         return Block(header, txHashes.map { transactionsStore[it]!! })
     }
 
@@ -113,12 +113,39 @@ class RepositoryKVImpl(
                 // reset canonical hash
                 val o = headerStore[hash] ?: break
                 val canonicalHash = getCanonicalHashAt(o.height)
-                if (canonicalHash == hash)
+                if (canonicalHash == hash && hash != b.hash)
                     break
                 setCanonicalHashAt(o.height, hash)
                 hash = o.hashPrev
             }
             eventBus.publish(NewBestBlock(b))
+        }
+    }
+
+    override fun deleteGT(height: Long) {
+        val b = bestHeader
+        val c = getCanonicalHeader(height)!!
+
+        for (i in (c.height+1)..b.height) {
+            // get height indices
+            heightIndex[i]?.forEach {
+                // remove header
+                headerStore.remove(it)
+            }
+            heightIndex.remove(i)
+        }
+        status[BEST_HEADER] = c
+    }
+
+    override fun canonicalize() {
+        val best = bestBlock
+        var hash = best.hash
+        while (true) {
+            // reset canonical hash
+            val o = headerStore[hash]!!
+            if (o.height == 0L) break
+            setCanonicalHashAt(o.height, hash)
+            hash = o.hashPrev
         }
     }
 
@@ -145,7 +172,7 @@ class RepositoryKVImpl(
         // ensure the state root exists
         val v = accountTrie.trieStore[block.stateRoot.bytes]
         if (block.stateRoot != accountTrie.trie.nullHash
-            && (v == null || v.isEmpty())
+                && (v == null || v.isEmpty())
         ) {
             throw RuntimeException("unexpected error: account trie " + block.stateRoot + " not synced")
         }
@@ -158,7 +185,7 @@ class RepositoryKVImpl(
             val t = block.body[i]
             // save transaction
             transactionsStore[t.hash] = t
-            
+
             // skip coinbase transaction
             if (i == 0)
                 continue
@@ -168,7 +195,7 @@ class RepositoryKVImpl(
 
             val founds: MutableList<TransactionIndex> = found?.toMutableList() ?: mutableListOf()
             if (founds.none
-                { it.blockHash == info.blockHash }
+                    { it.blockHash == info.blockHash }
             ) {
                 founds.add(info.index)
             }
@@ -242,35 +269,35 @@ class RepositoryKVImpl(
 
     init {
         transactionsStore = StoreWrapper(
-            factory.create('b', "transaction"),
-            Codecs.hex,
-            Transaction.Companion
+                factory.create('b', "transaction"),
+                Codecs.hex,
+                Transaction.Companion
         )
 
         headerStore = StoreWrapper(
-            factory.create('h', "block header"),
-            Codecs.hex,
-            Header.Companion
+                factory.create('h', "block header"),
+                Codecs.hex,
+                Header.Companion
         )
         transactionsRoot = StoreWrapper(
-            factory.create('t', "transaction root"),
-            Codecs.hex,
-            Codecs.rlp(Array<HexBytes>::class.java)
+                factory.create('t', "transaction root"),
+                Codecs.hex,
+                Codecs.rlp(Array<HexBytes>::class.java)
         )
         heightIndex = StoreWrapper(
-            factory.create('i', "height index"),
-            Codecs.rlp(Long::class.java),
-            Codecs.rlp(Array<HexBytes>::class.java)
+                factory.create('i', "height index"),
+                Codecs.rlp(Long::class.java),
+                Codecs.rlp(Array<HexBytes>::class.java)
         )
         status = StoreWrapper(
-            factory.create('s', "status"),
-            Codecs.string,
-            Header.Companion
+                factory.create('s', "status"),
+                Codecs.string,
+                Header.Companion
         )
         transactionIndices = StoreWrapper(
-            factory.create('f', "transaction index"),
-            Codecs.hex,
-            Codecs.rlp(Array<TransactionIndex>::class.java)
+                factory.create('f', "transaction index"),
+                Codecs.hex,
+                Codecs.rlp(Array<TransactionIndex>::class.java)
         )
     }
 }

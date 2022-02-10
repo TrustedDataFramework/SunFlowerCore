@@ -61,7 +61,16 @@ open class Start {
                 throw UnsupportedOperationException()
             }
             "kv" -> {
-                return RepositoryServiceImpl(RepositoryKVImpl(bus, factory, accountTrie))
+                val kv = RepositoryServiceImpl(RepositoryKVImpl(bus, factory, accountTrie))
+                if(cfg.canonicalize) {
+                    kv.writer.use {
+                        val t0 = System.currentTimeMillis()
+                        it.canonicalize()
+                        val t1 = System.currentTimeMillis()
+                        log.info("canonicalize use ${ (t0 - t1) / 1000.0} ms")
+                    }
+                }
+                return kv
             }
             else -> throw RuntimeException("unknown block store type: $type")
         }
