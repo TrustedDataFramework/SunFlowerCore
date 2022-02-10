@@ -61,7 +61,7 @@ class MemoryImpl(override val limit: Int = Int.MAX_VALUE) : Memory {
     private fun toResize(off: Long, len: Long): Int {
         val i = off + len
         if (off < 0 || len < 0 || i < 0)
-            throw RuntimeException("memory access overflow")
+            throw RuntimeException("memory access overflow off = $off len = $len i = $i")
         if (i > Int.MAX_VALUE)
             throw RuntimeException("memory access overflow")
         return i.toInt()
