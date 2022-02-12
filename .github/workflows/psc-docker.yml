@@ -48,7 +48,8 @@ jobs:
           
       - name: build and push
         run: |
-          docker build -t yongyang2021/psc:v1.0 .
-          docker push yongyang2021/psc:v1.0
+          export V=`cat .docker_tag`
+          docker build -t yongyang2021/psc:$V .
+          docker push yongyang2021/psc:$V
 
 
