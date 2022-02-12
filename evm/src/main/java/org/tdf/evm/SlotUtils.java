@@ -23,6 +23,10 @@ public class SlotUtils {
     private SlotUtils() {
     }
 
+    public static byte int2byte(int i) {
+        return (byte) (i & 0xff);
+    }
+
     /**
      * converts data[offset:offset+4] to 32bit integer in big endian
      */

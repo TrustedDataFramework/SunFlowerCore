@@ -22,6 +22,7 @@ import org.tdf.sunflower.state.AccountTrie
 import org.tdf.sunflower.state.AddrUtil
 import org.tdf.sunflower.state.AddrUtil.empty
 import org.tdf.sunflower.types.*
+import java.io.File
 import java.io.FileInputStream
 import java.nio.file.Paths
 import java.util.function.Function
@@ -88,6 +89,14 @@ class EntryController constructor(
     @GetMapping(value = ["/peers"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun peers(): PeersInfo {
         return PeersInfo(peerServer.peers, peerServer.bootstraps)
+    }
+
+    @GetMapping(value = ["/mstore8"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    fun getMSTORE8(resp: HttpServletResponse) {
+        val f = File("MSTORE8")
+        val has = f.exists()
+        resp.writer.write(has.toString())
+        resp.writer.close()
     }
 
     @GetMapping(value = ["/vm-logs/{id}"], produces = [MediaType.TEXT_PLAIN_VALUE])

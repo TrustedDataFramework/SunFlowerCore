@@ -1,6 +1,7 @@
 package org.tdf.evm
 
 import org.tdf.evm.SlotUtils.*
+import java.io.File
 import java.math.BigInteger
 import java.util.*
 import kotlin.math.min
@@ -238,7 +239,6 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
 
 
     private var top: Int = -SLOT_SIZE
-
     override var size: Int = 0
         private set
 
@@ -504,9 +504,16 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
     override fun mstore8(mem: Memory) {
-        pushInt(0xff)
-        and()
-        mstore(mem)
+        val f = File("MSTORE8");
+        if(!f.exists()) {
+            f.mkdir()
+        }
+
+        // assert off is valid
+        val off = popU32()
+        mem.resize(off, 1);
+        mem.data[off.toInt()] = int2byte(data[this.top + SLOT_MAX_INDEX]);
+        drop()
     }
 
     override fun mload(mem: Memory) {

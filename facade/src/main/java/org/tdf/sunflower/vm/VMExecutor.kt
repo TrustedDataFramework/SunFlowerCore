@@ -25,6 +25,7 @@ import org.tdf.sunflower.vm.WBI.peek
 import org.tdf.sunflower.vm.abi.Abi
 import org.tdf.sunflower.vm.abi.WbiType
 import org.tdf.sunflower.vm.hosts.*
+import java.io.File
 import java.io.PrintStream
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
@@ -33,6 +34,7 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.io.path.exists
 
 class NonContractException(msg: String): RuntimeException(msg)
 
@@ -182,7 +184,7 @@ data class VMExecutor(
 
         val host = EvmHostImpl(this)
         val interpreter =
-            Interpreter(host, ctx, evmCallData, printStream, limit, EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE)
+            Interpreter(host, ctx, evmCallData, printStream(callData.to), limit, EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE)
 
         interpreter.id = COUNTER.get()
         val ret = interpreter.execute()
@@ -336,20 +338,23 @@ data class VMExecutor(
             this.outDirectory = outDirectory
         }
 
-        private val printStream: PrintStream?
-            get() {
-                if (outDirectory.isEmpty())
-                    return null
-                val filename = String.format("%d.log", COUNTER.incrementAndGet())
-                val path = Paths.get(outDirectory, filename)
-                log.info("write vm debug log to file {}", path)
-                val os = Files.newOutputStream(
+        private fun printStream(a: HexBytes): PrintStream? {
+            if (outDirectory.isEmpty())
+                return null
+            val filename = String.format("%d.log", COUNTER.incrementAndGet())
+            val dir = Paths.get(outDirectory, "0x" + a.hex).toFile()
+            if(!dir.exists()) {
+                dir.mkdir()
+            }
+            val path = Paths.get(outDirectory, "0x" + a.hex, filename)
+            log.info("write vm debug log to file {}", path)
+            val os = Files.newOutputStream(
                     path,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE
-                )
-                return PrintStream(os)
-            }
+            )
+            return PrintStream(os)
+        }
     }
 }
