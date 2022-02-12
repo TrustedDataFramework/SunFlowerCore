@@ -15,6 +15,9 @@ internal fun String.bn(): BigInteger {
 abstract class AbstractGenesis(protected var parsed: JsonNode) {
     abstract val block: Block
 
+    val mstore8Block: Long?
+        get() = parsed["config"]?.get("mstore8Block")?.asLong()
+
     val timestamp: Long
         get() = parsed["timestamp"]?.asLong() ?: 0L
 

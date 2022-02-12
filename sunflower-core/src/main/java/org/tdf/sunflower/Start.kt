@@ -24,6 +24,7 @@ import org.tdf.common.trie.Trie
 import org.tdf.common.trie.TrieImpl
 import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.consensus.poa.PoA
+import org.tdf.sunflower.consensus.pos.Genesis
 import org.tdf.sunflower.consensus.pos.PoS
 import org.tdf.sunflower.consensus.pow.PoW
 import org.tdf.sunflower.controller.JsonRpc
@@ -33,7 +34,7 @@ import org.tdf.sunflower.net.PeerServerImpl
 import org.tdf.sunflower.pool.TransactionPoolImpl
 import org.tdf.sunflower.service.RepositoryKVImpl
 import org.tdf.sunflower.state.AccountTrie
-import org.tdf.sunflower.state.ECRecover
+import org.tdf.sunflower.types.AbstractGenesis
 import org.tdf.sunflower.types.ConsensusConfig
 import org.tdf.sunflower.types.PropertyReader
 import org.tdf.sunflower.util.FileUtils
@@ -50,24 +51,33 @@ import java.util.*
 // for example: SPRING_CONFIG_LOCATION=classpath:\application.yml,some-path\custom-config.yml
 open class Start {
     @Bean
+    open fun genesis(cfg: ConsensusConfig): AbstractGenesis {
+        return when (cfg.name) {
+            "pos" -> Genesis(cfg.genesisJson)
+            else -> throw RuntimeException("require pos")
+        }
+    }
+
+    @Bean
     open fun sunflowerRepository(
-        cfg: DatabaseConfig,
-        bus: EventBus,
-        factory: DatabaseStoreFactory,
-        accountTrie: AccountTrie,
+            cfg: DatabaseConfig,
+            bus: EventBus,
+            factory: DatabaseStoreFactory,
+            accountTrie: AccountTrie,
+            genesis: AbstractGenesis
     ): RepositoryServiceImpl {
         when (val type = cfg.blockStore) {
             "rdbms" -> {
                 throw UnsupportedOperationException()
             }
             "kv" -> {
-                val kv = RepositoryServiceImpl(RepositoryKVImpl(bus, factory, accountTrie))
-                if(cfg.canonicalize) {
+                val kv = RepositoryServiceImpl(RepositoryKVImpl(bus, factory, accountTrie, genesis))
+                if (cfg.canonicalize) {
                     kv.writer.use {
                         val t0 = System.currentTimeMillis()
                         it.canonicalize()
                         val t1 = System.currentTimeMillis()
-                        log.info("canonicalize use ${ (t0 - t1) / 1000.0} ms")
+                        log.info("canonicalize use ${(t0 - t1) / 1000.0} ms")
                     }
                 }
                 return kv
@@ -83,9 +93,9 @@ open class Start {
 
     @Bean
     open fun miner(
-        engine: ConsensusEngine,  // this dependency asserts the peer server had been initialized
-        peerServer: PeerServer,
-        cfg: ConsensusConfig
+            engine: ConsensusEngine,  // this dependency asserts the peer server had been initialized
+            peerServer: PeerServer,
+            cfg: ConsensusConfig
     ): Miner {
         val miner = engine.miner
         if (cfg.enableMining) {
@@ -109,16 +119,16 @@ open class Start {
 
     @Bean
     open fun accountTrie(
-        databaseStoreFactory: DatabaseStoreFactory,
-        @Qualifier("contractStorageTrie") contractStorageTrie: Trie<HexBytes, HexBytes>,
-        @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes, HexBytes>,
-        c: AppConfig
+            databaseStoreFactory: DatabaseStoreFactory,
+            @Qualifier("contractStorageTrie") contractStorageTrie: Trie<HexBytes, HexBytes>,
+            @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes, HexBytes>,
+            c: AppConfig
     ): AccountTrie {
         return AccountTrie(
-            databaseStoreFactory.create('a', "account trie"),
-            contractCodeStore,
-            contractStorageTrie,
-            c.isTrieSecure
+                databaseStoreFactory.create('a', "account trie"),
+                contractCodeStore,
+                contractStorageTrie,
+                c.isTrieSecure
         )
     }
 
@@ -128,16 +138,16 @@ open class Start {
 
     @Bean
     open fun consensusEngine(
-        cfg: ConsensusConfig,
-        repoSrv: RepositoryServiceImpl,
-        transactionPool: TransactionPoolImpl,
-        databaseStoreFactory: DatabaseStoreFactory,
-        eventBus: EventBus,
-        syncConfig: SyncConfig,
-        accountTrie: AccountTrie,
-        context: ApplicationContext,
-        @Qualifier("contractStorageTrie") contractStorageTrie: Trie<HexBytes?, HexBytes?>?,
-        @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes?, HexBytes?>?
+            cfg: ConsensusConfig,
+            repoSrv: RepositoryServiceImpl,
+            transactionPool: TransactionPoolImpl,
+            databaseStoreFactory: DatabaseStoreFactory,
+            eventBus: EventBus,
+            syncConfig: SyncConfig,
+            accountTrie: AccountTrie,
+            context: ApplicationContext,
+            @Qualifier("contractStorageTrie") contractStorageTrie: Trie<HexBytes?, HexBytes?>?,
+            @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes?, HexBytes?>?
     ): ConsensusEngine {
 
         log.info("load consensus engine name = {}", cfg.name)
@@ -157,8 +167,8 @@ open class Start {
             } catch (e: Exception) {
                 e.printStackTrace()
                 log.error(
-                    "none available consensus configured by sunflower.consensus.name=" + cfg.name +
-                            " please provide available consensus engine"
+                        "none available consensus configured by sunflower.consensus.name=" + cfg.name +
+                                " please provide available consensus engine"
                 )
                 log.error("roll back to poa consensus")
                 PoA()
@@ -183,9 +193,9 @@ open class Start {
         }
 
         val root =
-            repoSrv.reader.use {
-                accountTrie.init(engine.alloc, engine.bios, engine.builtins, engine.code, it)
-            }
+                repoSrv.reader.use {
+                    accountTrie.init(engine.alloc, engine.bios, engine.builtins, engine.code, it)
+                }
         // init accountTrie and genesis block
         val g = engine.genesisBlock
         repoSrv.writer.use { it.saveGenesis(g.copy(header = g.header.impl.copy(stateRoot = root))) }
@@ -196,9 +206,9 @@ open class Start {
     // create peer server from properties
     @Bean
     open fun peerServer(
-        properties: PeerServerProperties,
-        engine: ConsensusEngine,
-        factory: DatabaseStoreFactory
+            properties: PeerServerProperties,
+            engine: ConsensusEngine,
+            factory: DatabaseStoreFactory
     ): PeerServer {
         val rd = PropertyReader(PropertiesWrapper(properties))
         if (rd.getAsLowerCased("name") == "none") {
@@ -207,7 +217,7 @@ open class Start {
 
         val persist = rd.getAsBool("persist")
         val store = if (persist && "memory" != factory.name) JsonStore(
-            Paths.get(factory.directory, "peers.json").toString(), MAPPER
+                Paths.get(factory.directory, "peers.json").toString(), MAPPER
         ) else JsonStore("\$memory", MAPPER)
 
         val peerServer: PeerServer = PeerServerImpl(store, engine, properties)
@@ -219,7 +229,7 @@ open class Start {
     @Bean
     open fun eventBus(): EventBus {
         return EventBus(
-            ThreadFactoryBuilder().setNameFormat("EventBus-%d").build()
+                ThreadFactoryBuilder().setNameFormat("EventBus-%d").build()
         )
     }
 
@@ -227,11 +237,11 @@ open class Start {
     @Bean
     open fun contractStorageTrie(factory: DatabaseStoreFactory, c: AppConfig): Trie<HexBytes, HexBytes> {
         val ret = TrieImpl(
-            NoDeleteStore(
-                factory.create('o', "contract storage trie")
-            ) { it == null || it.isEmpty() },
-            Codecs.hex,
-            Codecs.hex
+                NoDeleteStore(
+                        factory.create('o', "contract storage trie")
+                ) { it == null || it.isEmpty() },
+                Codecs.hex,
+                Codecs.hex
         )
         return if (c.isTrieSecure) SecureTrie(ret) else ret
     }
@@ -240,22 +250,22 @@ open class Start {
     @Bean
     open fun contractCodeStore(factory: DatabaseStoreFactory): Store<HexBytes, HexBytes> {
         return StoreWrapper(
-            factory.create('c', "contract code hash -> contract code"),
-            Codecs.hex,
-            Codecs.hex
+                factory.create('c', "contract code hash -> contract code"),
+                Codecs.hex,
+                Codecs.hex
         )
     }
 
     // inject application context into consensus engine
     private fun inject(
-        context: ApplicationContext,
-        engine: AbstractConsensusEngine
+            context: ApplicationContext,
+            engine: AbstractConsensusEngine
     ) {
         engine.eventBus = context.getBean(EventBus::class.java)
         engine.transactionPool = context.getBean(TransactionPool::class.java)
         engine.repo = context.getBean(RepositoryService::class.java)
         engine.contractStorageTrie =
-            context.getBean("contractStorageTrie", Trie::class.java) as Trie<HexBytes, HexBytes>
+                context.getBean("contractStorageTrie", Trie::class.java) as Trie<HexBytes, HexBytes>
         engine.contractCodeStore = context.getBean("contractCodeStore", Store::class.java) as Store<HexBytes, HexBytes>
         engine.accountTrie = context.getBean(AccountTrie::class.java)
     }

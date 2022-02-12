@@ -20,10 +20,12 @@ import java.util.*
 class RepositoryKVImpl(
         bus: EventBus,
         factory: DatabaseStoreFactory,
-        accountTrie: AccountTrie
+        accountTrie: AccountTrie,
+        override val genesisCfg: AbstractGenesis
 ) : AbstractRepository(
         bus, factory, accountTrie
 ) {
+
     // transaction hash -> transaction
     private val transactionsStore: Store<HexBytes, Transaction>
 

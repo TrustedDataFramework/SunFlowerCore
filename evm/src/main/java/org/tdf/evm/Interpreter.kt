@@ -21,7 +21,8 @@ class EvmContext(
     val gasPrice: BigInteger = BigInteger.ZERO,
     val timestamp: Long = 0,
     val coinbase: ByteArray = emptyAddress,
-    val blockHashMap: Map<Long, ByteArray> = emptyMap()
+    val blockHashMap: Map<Long, ByteArray> = emptyMap(),
+    val mstore8Block: Long? = null
 )
 
 /**
@@ -90,7 +91,7 @@ class Interpreter(
     var id: Int = 0,
 ) {
     var pc: Int = 0
-    private val stack: Stack = StackImpl(maxStackSize)
+    private val stack: Stack = HardForkStack(maxStackSize, ctx)
     private val memory = MemoryImpl(maxMemorySize)
     private var ret: ByteArray = emptyByteArray
 

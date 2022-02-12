@@ -1,10 +1,7 @@
 package org.tdf.sunflower.facade
 
 import org.tdf.common.util.HexBytes
-import org.tdf.sunflower.types.Block
-import org.tdf.sunflower.types.Header
-import org.tdf.sunflower.types.Transaction
-import org.tdf.sunflower.types.TransactionIndex
+import org.tdf.sunflower.types.*
 import java.io.Closeable
 
 typealias TransactionInfo = Pair<TransactionIndex, Transaction>
@@ -17,6 +14,7 @@ val TransactionInfo.i: Int get() = first.i
 
 interface RepositoryReader : Closeable {
     val genesis: Block
+    val genesisCfg: AbstractGenesis
     fun containsHeader(hash: HexBytes): Boolean
     val bestHeader: Header
     val bestBlock: Block
