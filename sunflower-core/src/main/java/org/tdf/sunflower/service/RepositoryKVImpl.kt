@@ -152,6 +152,10 @@ class RepositoryKVImpl(
             val o = headerStore[hash]!!
             if (o.height == 0L) break
             setCanonicalHashAt(o.height, hash)
+            heightIndex[o.height]?.filter { it != hash }?.forEach {
+                headerStore.remove(it)
+            }
+            heightIndex[o.height] = arrayOf(hash)
             hash = o.hashPrev
         }
     }
