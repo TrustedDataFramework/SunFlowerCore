@@ -59,14 +59,21 @@ class PoSMiner(
         return b
     }
 
+    @Volatile
+    private var working: Boolean = false
+
     override fun start() {
         stopped = false
         minerExecutor = Executors.newSingleThreadScheduledExecutor()
         minerExecutor.scheduleAtFixedRate({
+            if(working) return@scheduleAtFixedRate
             try {
+                working = true
                 tryMine()
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                working = false
             }
         }, 0, 1, TimeUnit.SECONDS)
     }
