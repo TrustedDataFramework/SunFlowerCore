@@ -104,11 +104,13 @@ class RepositoryKVImpl(
     }
 
     override fun writeBlock(b: Block, infos: List<TransactionInfo>) {
+        begin("writeBlock")
         writeBlockNoReset(b, infos)
         val best = bestBlock
         if (Block.BEST_COMPARATOR.compare(best, b) < 0) {
             status[BEST_HEADER] = b.header
             var hash = b.hash
+            begin("reset canonical hash")
             while (true) {
                 // reset canonical hash
                 val o = headerStore[hash] ?: break
@@ -118,15 +120,19 @@ class RepositoryKVImpl(
                 setCanonicalHashAt(o.height, hash)
                 hash = o.hashPrev
             }
+            end()
+            begin("publish event")
             eventBus.publish(NewBestBlock(b))
+            end()
         }
+        end()
     }
 
     override fun deleteGT(height: Long) {
         val b = bestHeader
         val c = getCanonicalHeader(height)!!
 
-        for (i in (c.height+1)..b.height) {
+        for (i in (c.height + 1)..b.height) {
             // get height indices
             heightIndex[i]?.forEach {
                 // remove header
@@ -169,17 +175,24 @@ class RepositoryKVImpl(
     }
 
     private fun writeBlockNoReset(block: Block, infos: List<TransactionInfo>) {
+        begin("writeBlockNoReset")
         // ensure the state root exists
+        begin("accountTrie.trieStore")
         val v = accountTrie.trieStore[block.stateRoot.bytes]
         if (block.stateRoot != accountTrie.trie.nullHash
                 && (v == null || v.isEmpty())
         ) {
             throw RuntimeException("unexpected error: account trie " + block.stateRoot + " not synced")
         }
+        end()
         // if the block has written before
         if (containsHeader(block.hash)) return
         // write header into store
+        begin("set header store")
         headerStore[block.hash] = block.header
+        end()
+
+        begin("save transaction and infos")
         // save transaction and transaction infos
         for (i in block.body.indices) {
             val t = block.body[i]
@@ -201,20 +214,35 @@ class RepositoryKVImpl(
             }
             transactionIndices[t.hash] = founds.toTypedArray()
         }
+        end()
 
-
+        begin("save tx roots")
         // save transaction root -> tx hashes
         val txHashes: Array<HexBytes> = block.body.map { it.hash }.toTypedArray()
         transactionsRoot[block.transactionsRoot] = txHashes
+        end()
 
-
+        begin("save header index")
         // save header index
         val headerHashes: MutableList<HexBytes> = heightIndex[block.height]?.toMutableList() ?: mutableListOf()
         headerHashes.remove(block.hash)
         headerHashes.add(block.hash)
         heightIndex[block.height] = headerHashes.toTypedArray()
+        end()
 
         log.info("write block at height " + block.height + " " + block.header.hash + " to database success")
+        end()
+    }
+
+    private val li: Stack<Pair<String, Long>> = Stack()
+
+    fun begin(msg: String) {
+        li.push(Pair(msg, System.currentTimeMillis()))
+    }
+
+    fun end() {
+        val x = li.pop()
+        log.debug("${x.first} consume ${(System.currentTimeMillis() - x.second) / 1000.0} second")
     }
 
     override fun getCanonicalHeader(height: Long): Header? {
