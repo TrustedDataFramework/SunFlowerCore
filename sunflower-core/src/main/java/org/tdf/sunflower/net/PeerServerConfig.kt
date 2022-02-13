@@ -26,6 +26,7 @@ class PeerServerConfig(private val reader: PropertyReader) {
 
     val bootstraps: List<URI> = reader.getAsList("bootstraps").map { URI(it) }
     val trusted: List<URI> = reader.getAsList("trusted").map { URI(it) }
+    val blocks: Set<HexBytes> = reader.getAsList("blocks").map { it.hex() }.toSet()
 
     val persist: Boolean = reader.getAsBool("persist")
     val discoverRate: Int = reader.getAsPositive("discover-rate")
