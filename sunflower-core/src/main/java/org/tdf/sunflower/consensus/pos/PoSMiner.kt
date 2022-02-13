@@ -135,8 +135,8 @@ class PoSMiner(
             repo.writer.use {
                 log.info("mining success block: {}", b.header)
                 it.writeBlock(b, indices)
-                eventBus.publish(NewBlockMined(b, indices))
             }
+            eventBus.publish(NewBlockMined(b, indices))
         } catch (e: Exception) {
             e.printStackTrace()
         }
