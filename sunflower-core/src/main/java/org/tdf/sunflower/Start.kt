@@ -150,7 +150,6 @@ open class Start {
                 // another engine: pow, pos, pow+pos, vrf
                 PoA()
             ApplicationConstants.CONSENSUS_VRF -> throw UnsupportedOperationException()
-            ApplicationConstants.CONSENSUS_POW -> PoW()
             ApplicationConstants.CONSENSUS_POS -> PoS()
             else -> try {
                 customClassLoader.loadClass(cfg.name).create() as ConsensusEngine
