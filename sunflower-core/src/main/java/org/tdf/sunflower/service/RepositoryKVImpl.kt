@@ -117,6 +117,7 @@ class RepositoryKVImpl(
                 val canonicalHash = getCanonicalHashAt(o.height)
                 if (canonicalHash == hash && hash != b.hash)
                     break
+                log.debug("reset {} from {} to hash {}", o.height, canonicalHash, hash)
                 setCanonicalHashAt(o.height, hash)
                 hash = o.hashPrev
             }
@@ -236,11 +237,13 @@ class RepositoryKVImpl(
 
     private val li: Stack<Pair<String, Long>> = Stack()
 
-    fun begin(msg: String) {
+    private fun begin(msg: String) {
+        if(!log.isDebugEnabled) return
         li.push(Pair(msg, System.currentTimeMillis()))
     }
 
-    fun end() {
+    private fun end() {
+        if(!log.isDebugEnabled) return
         val x = li.pop()
         log.debug("${x.first} consume ${(System.currentTimeMillis() - x.second) / 1000.0} second")
     }
