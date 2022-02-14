@@ -7,6 +7,6 @@
   },
   "chainId": 6999,
   "config": {
-    "mstore8Block": null
+    "mstore8Block": 513000
   }
 }
