@@ -66,6 +66,9 @@ class JsonStore(private val jsonFile: String, private val mapper: ObjectMapper) 
         return node[k]
     }
 
+    fun clear() {
+        node.clear()
+    }
 
     override operator fun set(k: String, v: JsonNode) {
         node[k] = v
