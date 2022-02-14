@@ -14,6 +14,7 @@ import org.tdf.sunflower.types.Header
 import org.tdf.sunflower.types.HeaderImpl
 import org.tdf.sunflower.types.Transaction
 import java.time.OffsetDateTime
+import java.util.concurrent.CompletableFuture
 
 class PoAMiner(private val poa: PoA) :
     AbstractMiner(poa.accountTrie, poa.eventBus, poa.config, poa.transactionPool) {
@@ -42,11 +43,11 @@ class PoAMiner(private val poa: PoA) :
         )
     }
 
-    override fun finalizeBlock(rd: RepositoryReader, parent: Block, block: Block): Block {
+    override fun finalizeBlock(f: Any, parent: Block, block: Block): CompletableFuture<Block> {
         val key =
             ECKey.fromPrivate(config.privateKey?.bytes ?: throw RuntimeException("poa miner: private key not set"))
         val signed = PoAUtils.sign(key, block)
-        return Block(signed, block.body)
+        return CompletableFuture.completedFuture(Block(signed, block.body))
     }
 
     @Synchronized
@@ -80,12 +81,12 @@ class PoAMiner(private val poa: PoA) :
             )
             if (p.address != config.coinbase) return
             log.debug("try to mining at height " + (best.height + 1))
-            val b = createBlock(it, it.bestBlock, now)
-            if (b.block != null) {
-                log.info("mining success block: {}", b.block.header)
-                it.writeBlock(b.block, b.indices)
-                eventBus.publish(NewBlockMined(b.block, b.indices))
-            }
+//            val b = createBlock(it, it.bestBlock, now)
+//            if (b.block != null) {
+//                log.info("mining success block: {}", b.block.header)
+//                it.writeBlock(b.block, b.indices)
+//                eventBus.publish(NewBlockMined(b.block, b.indices))
+//            }
         }
     }
 

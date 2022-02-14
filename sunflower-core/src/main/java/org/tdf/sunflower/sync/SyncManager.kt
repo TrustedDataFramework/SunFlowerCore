@@ -40,15 +40,15 @@ import kotlin.math.min
  */
 @Component
 class SyncManager(
-    private val peerServer: PeerServer, private val engine: ConsensusEngine,
-    private val repo: RepositoryService,
-    private val transactionPool: TransactionPool, private val syncConfig: SyncConfig,
-    private val eventBus: EventBus,
-    accountTrie: AccountTrie,
-    @Qualifier("contractStorageTrie") contractStorageTrie: Trie<HexBytes, HexBytes>,
-    @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes, HexBytes>,
-    miner: Miner,
-    private val cfg: AppConfig
+        private val peerServer: PeerServer, private val engine: ConsensusEngine,
+        private val repo: RepositoryService,
+        private val transactionPool: TransactionPool, private val syncConfig: SyncConfig,
+        private val eventBus: EventBus,
+        accountTrie: AccountTrie,
+        @Qualifier("contractStorageTrie") contractStorageTrie: Trie<HexBytes, HexBytes>,
+        @Qualifier("contractCodeStore") contractCodeStore: Store<HexBytes, HexBytes>,
+        miner: Miner,
+        private val cfg: AppConfig
 ) : PeerServerListener, Closeable {
     private val mtx = LogLock(ReentrantLock(), "sync-queue")
 
@@ -61,11 +61,11 @@ class SyncManager(
     private val miner: Miner
     private val limiters: Limiters
     private val receivedTransactions = CacheBuilder.newBuilder()
-        .maximumSize(cfg.p2pTransactionCacheSize.toLong())
-        .build<HexBytes, Boolean>()
+            .maximumSize(cfg.p2pTransactionCacheSize.toLong())
+            .build<HexBytes, Boolean>()
     private val receivedProposals = CacheBuilder.newBuilder()
-        .maximumSize(cfg.p2pProposalCacheSize.toLong())
-        .build<HexBytes, Boolean>()
+            .maximumSize(cfg.p2pProposalCacheSize.toLong())
+            .build<HexBytes, Boolean>()
 
 
     // lock when accounts received, avoid concurrent handling
@@ -102,7 +102,7 @@ class SyncManager(
     }
 
     private val messageExecutor =
-        Executors.newFixedThreadPool(4, ThreadFactoryBuilder().setNameFormat("SyncManagerMessageHandler-%d").build())
+            Executors.newFixedThreadPool(4, ThreadFactoryBuilder().setNameFormat("SyncManagerMessageHandler-%d").build())
 
     private fun broadcastToApproved(body: ByteArray) {
         val peers = peerServer.peers
@@ -139,21 +139,21 @@ class SyncManager(
 
         eventBus.subscribe(NewBlockMined::class.java) { (block) ->
             broadcastToApproved(
-                SyncMessage.encode(
-                    SyncMessage.PROPOSAL, Proposal(
-                        block
+                    SyncMessage.encode(
+                            SyncMessage.PROPOSAL, Proposal(
+                            block
                     )
-                )
+                    )
             )
         }
         eventBus.subscribe(
-            NewTransactionsCollected::class.java
+                NewTransactionsCollected::class.java
         ) { e: NewTransactionsCollected ->
             broadcastToApproved(
-                SyncMessage.encode(
-                    SyncMessage.TRANSACTION,
-                    e.transactions
-                )
+                    SyncMessage.encode(
+                            SyncMessage.TRANSACTION,
+                            e.transactions
+                    )
             )
         }
         eventBus.subscribe(NewBlocksReceived::class.java) { e: NewBlocksReceived -> onBlocks(e.blocks) }
@@ -199,10 +199,10 @@ class SyncManager(
                 val getBlocks = msg.getBodyAs(GetBlocks::class.java)
                 repo.reader.use {
                     val blocks = it.getBlocksBetween(
-                        getBlocks.startHeight,
-                        getBlocks.stopHeight,
-                        min(syncConfig.maxBlocksTransfer, getBlocks.limit),
-                        getBlocks.descend
+                            getBlocks.startHeight,
+                            getBlocks.stopHeight,
+                            min(syncConfig.maxBlocksTransfer, getBlocks.limit),
+                            getBlocks.descend
                     )
                     context.response(SyncMessage.encode(SyncMessage.BLOCKS, blocks))
                 }
@@ -212,9 +212,9 @@ class SyncManager(
             SyncMessage.TRANSACTION -> {
                 if (isNotApproved(context)) return
                 val txs = listOf(
-                    *msg.getBodyAs(
-                        Array<Transaction>::class.java
-                    )
+                        *msg.getBodyAs(
+                                Array<Transaction>::class.java
+                        )
                 )
                 val root = Transaction.calcTxTrie(txs)
                 if (receivedTransactions.asMap().containsKey(root)) return
@@ -263,14 +263,14 @@ class SyncManager(
             }
             SyncMessage.BLOCKS -> {
                 val blocks = msg.getBodyAs(
-                    Array<Block>::class.java
+                        Array<Block>::class.java
                 )
                 log.debug(
-                    "blocks received from start = ${blocks?.getOrNull(0)?.height} stop = ${
-                        blocks?.getOrNull(
-                            blocks.size - 1
-                        )?.height
-                    }"
+                        "blocks received from start = ${blocks?.getOrNull(0)?.height} stop = ${
+                            blocks?.getOrNull(
+                                    blocks.size - 1
+                            )?.height
+                        }"
                 )
                 onBlocks(blocks.asList())
                 return
@@ -336,19 +336,19 @@ class SyncManager(
             if (!fastSyncEnabled) return
             if (fastSyncBlock == null) {
                 ctx.response(
-                    SyncMessage.encode(
-                        SyncMessage.GET_BLOCKS,
-                        GetBlocks(fastSyncHeight, fastSyncHeight, false, syncConfig.maxBlocksTransfer)
-                    )
+                        SyncMessage.encode(
+                                SyncMessage.GET_BLOCKS,
+                                GetBlocks(fastSyncHeight, fastSyncHeight, false, syncConfig.maxBlocksTransfer)
+                        )
                 )
                 log.info("fetch fast sync block at height {}", fastSyncHeight)
             }
             if (fastSyncBlock != null && fastSyncAddresses == null) {
                 ctx.response(
-                    SyncMessage.encode(
-                        SyncMessage.GET_ACCOUNTS,
-                        GetAccounts(fastSyncBlock!!.stateRoot, syncConfig.maxAccountsTransfer)
-                    )
+                        SyncMessage.encode(
+                                SyncMessage.GET_ACCOUNTS,
+                                GetAccounts(fastSyncBlock!!.stateRoot, syncConfig.maxAccountsTransfer)
+                        )
                 )
                 log.info("fast syncing: fetch accounts... ")
             }
@@ -369,17 +369,17 @@ class SyncManager(
                 log.debug("try to fetch orphans, head height {} hash {}", b.height, b.hash)
                 // remote: prune < b <= best
                 val getBlocks = GetBlocks(
-                    s.prunedHeight, b.height, true,
-                    syncConfig.maxBlocksTransfer
+                        s.prunedHeight, b.height, true,
+                        syncConfig.maxBlocksTransfer
                 ).clip()
                 ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks))
             }
         }
         if (s.bestBlockHeight >= best.height && s.bestBlockHash != best.hash) {
             val getBlocks = GetBlocks(
-                Math.max(s.prunedHeight, best.height),
-                s.bestBlockHeight, false,
-                syncConfig.maxBlocksTransfer
+                    Math.max(s.prunedHeight, best.height),
+                    s.bestBlockHeight, false,
+                    syncConfig.maxBlocksTransfer
             ).clip()
             log.debug("request for blocks start = ${getBlocks.startHeight} stop = ${getBlocks.stopHeight}")
             ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks))
@@ -453,50 +453,48 @@ class SyncManager(
         try {
             if (queue.isEmpty())
                 return
-            repo.writer.use { writer ->
-                val best = writer.bestHeader
-                log.debug("write: best header height = {} hash = {} queue size = {} first = {}", best.height, best.hash, queue.size, queue.firstOrNull()?.height)
-                val orphans: MutableSet<HexBytes> = HashSet()
-                while (it.hasNext()) {
-                    val b = it.next()
+            val best = repo.reader.use { rd -> rd.bestHeader }
+            log.debug("write: best header height = {} hash = {} queue size = {} first = {}", best.height, best.hash, queue.size, queue.firstOrNull()?.height)
+            val orphans: MutableSet<HexBytes> = HashSet()
+            while (it.hasNext()) {
+                val b = it.next()
 //                    log.debug("try to write new block height = {} hash = {}", b.height, b.hash)
-                    if (Math.abs(best.height - b.height) > syncConfig.maxHistoryBlocks //                        || b.getHeight() <= repository.getPrunedHeight()
-                    ) {
-                        log.debug("new block height {} out of history {}, discard", b.height, syncConfig.maxHistoryBlocks)
-                        it.remove()
-                        continue
-                    }
-                    if (writer.containsHeader(b.hash)) {
-                        log.debug("block hash {} already in chain", b.hash)
-                        it.remove()
-                        continue
-                    }
-                    if (orphans.contains(b.hashPrev)) {
-//                        log.debug("new block parent hash {} already in orphans, discard", b.hashPrev)
-                        orphans.add(b.hash)
-                        continue
-                    }
-                    val o = writer.getBlockByHash(b.hashPrev)
-                    if (o == null) {
-                        log.debug("new block is orphan, parent hash not in chain")
-                        orphans.add(b.hash)
-                        continue
-                    }
-                    var n = System.currentTimeMillis();
-                    val res = engine.validator.validate(writer, b, o)
-                    log.debug("validate block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
-                    log.debug("new block validate result = {}", res.success)
-                    if (!res.success) {
-                        it.remove()
-                        log.error(res.reason)
-                        continue
-                    }
+                if (Math.abs(best.height - b.height) > syncConfig.maxHistoryBlocks //                        || b.getHeight() <= repository.getPrunedHeight()
+                ) {
+                    log.debug("new block height {} out of history {}, discard", b.height, syncConfig.maxHistoryBlocks)
                     it.remove()
-                    val rs = res as BlockValidateResult
-                    n = System.currentTimeMillis();
-                    writer.writeBlock(b, rs.infos)
-                    log.debug("write block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
+                    continue
                 }
+                if (repo.reader.use { rd -> rd.containsHeader(b.hash) }) {
+                    log.debug("block hash {} already in chain", b.hash)
+                    it.remove()
+                    continue
+                }
+                if (orphans.contains(b.hashPrev)) {
+//                        log.debug("new block parent hash {} already in orphans, discard", b.hashPrev)
+                    orphans.add(b.hash)
+                    continue
+                }
+                val o = repo.reader.use { rd -> rd.getBlockByHash(b.hashPrev) }
+                if (o == null) {
+                    log.debug("new block is orphan, parent hash not in chain")
+                    orphans.add(b.hash)
+                    continue
+                }
+                var n = System.currentTimeMillis()
+                val res = repo.reader.use { rd -> engine.validator.validate(rd, b, o) }
+                log.debug("validate block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
+                log.debug("new block validate result = {}", res.success)
+                if (!res.success) {
+                    it.remove()
+                    log.error(res.reason)
+                    continue
+                }
+                it.remove()
+                val rs = res as BlockValidateResult
+                n = System.currentTimeMillis()
+                repo.writer.use { w -> w.writeBlock(b, rs.infos) }
+                log.debug("write block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
             }
         } finally {
             mtx.unlock()
@@ -509,12 +507,12 @@ class SyncManager(
             val best = rd.bestHeader
             val genesis = rd.genesis
             val status = Status(
-                best.height,
-                best.hash,
-                genesis.hash,
-                0,
-                HashUtil.EMPTY_DATA_HASH_HEX //                repository.getPrunedHeight(),
-                //                repository.getPrunedHash()
+                    best.height,
+                    best.hash,
+                    genesis.hash,
+                    0,
+                    HashUtil.EMPTY_DATA_HASH_HEX //                repository.getPrunedHeight(),
+                    //                repository.getPrunedHash()
             )
             broadcastToApproved(SyncMessage.encode(SyncMessage.STATUS, status))
         }

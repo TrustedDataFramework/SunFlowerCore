@@ -30,25 +30,24 @@ abstract class AbstractMiner(
     protected abstract fun createCoinBase(height: Long): Transaction
     protected abstract fun createHeader(parent: Block, createdAt: Long): Header
 
-    open fun finalizeBlock(rd: RepositoryReader, parent: Block, block: Block): Block {
-        return block
+    open fun finalizeBlock(ctx: Any, parent: Block, block: Block): CompletableFuture<Block> {
+        return CompletableFuture.completedFuture(block)
     }
 
     protected abstract val chainId: Int
 
-    // TODO:  2. 增加打包超时时间
     protected fun createBlock(
+        fin: Any,
         rd: RepositoryReader,
         parent: Block,
         createdAt: Long = System.currentTimeMillis() / 1000,
-        deadline: Long = Long.MAX_VALUE
-    ): BlockCreateResult {
+    ): CompletableFuture<BlockCreateResult> {
         val (txs, rs, current) = pool.pop(rd, parent.header, createdAt)
         val zipped = txs.zip(rs)
         val receipts = rs.toMutableList()
 
         if (!config.allowEmptyBlock && txs.isEmpty()) {
-            return BlockCreateResult.empty()
+            return CompletableFuture.completedFuture(BlockCreateResult.empty())
         }
 
         var header = createHeader(parent, createdAt)
@@ -96,37 +95,22 @@ abstract class AbstractMiner(
             logsBloom = TransactionReceipt.bloomOf(receipts).data.hex()
         )
 
-        val duration =
-            if (deadline == Long.MAX_VALUE) Long.MAX_VALUE else (deadline * 1000 - System.currentTimeMillis())
 
-        val blkFuture = CompletableFuture.supplyAsync {
-            finalizeBlock(rd, parent, Block(header, body))
-        }
-
-        val blk = try {
-            blkFuture.get(duration, TimeUnit.SECONDS) ?: return BlockCreateResult.empty()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            blkFuture.cancel(true)
-            return BlockCreateResult.empty()
-        }
-
-        txs.forEach {
-            log.debug("pack transaction {} into block at {}, sender = {}, nonce = {}", it.hash, blk.height, it.sender)
-        }
+        val blkFuture = finalizeBlock(fin, parent, Block(header, body))
 
         // the mined block cannot be modified any more
-        val infos = receipts.mapIndexed { i, r -> TransactionInfo(TransactionIndex(r, blk.hash, i), blk.body[i]) }
-
-        // reset log index
-        var i = 0
-        receipts.forEach {
-            it.logInfoList.forEach { t ->
-                t.logIndex = i
-                i++
+        return blkFuture.thenApply {
+            val infos = receipts.mapIndexed { i, r -> TransactionInfo(TransactionIndex(r, it.hash, i), it.body[i]) }
+            // reset log index
+            var i = 0
+            receipts.forEach {
+                it.logInfoList.forEach { t ->
+                    t.logIndex = i
+                    i++
+                }
             }
+            BlockCreateResult(it, infos)
         }
-        return BlockCreateResult(blk, infos)
     }
 
     companion object {
