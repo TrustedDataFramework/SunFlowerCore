@@ -213,10 +213,9 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         if (i < 0 || i >= size)
             throw RuntimeException("stack underflow")
         val idx = size - 1 - i
-        for (j in 0 until SLOT_MAX_INDEX) {
-            if (data[idx * SLOT_SIZE + j] != 0) {
-                return -1
-            }
+
+        if (data[idx * SLOT_SIZE + SLOT_MAX_INDEX - 1] != 0) {
+            return -1
         }
         return Integer.toUnsignedLong(data[idx * SLOT_SIZE + SLOT_MAX_INDEX])
     }

@@ -13,6 +13,8 @@ import org.tdf.lotusvm.ModuleInstance
 import org.tdf.lotusvm.runtime.ResourceFactory.createMemory
 import org.tdf.lotusvm.runtime.ResourceFactory.createStack
 import org.tdf.sunflower.facade.RepositoryReader
+import org.tdf.sunflower.state.Constants
+import org.tdf.sunflower.state.LoggingContract
 import org.tdf.sunflower.state.Precompiled
 import org.tdf.sunflower.types.LogInfo
 import org.tdf.sunflower.types.VMResult
@@ -131,11 +133,14 @@ data class VMExecutor(
                 backend.setNonce(callData.caller, n + 1)
             }
             CallType.CALL, CallType.DELEGATE -> {
+                // if is debug
+
                 val codeAddr = if (callData.callType == CallType.DELEGATE) {
                     callData.delegate
                 } else {
                     receiver
                 }
+
                 val hash = backend.getContractHash(codeAddr)
                 // this is a transfer transaction
                 code = if (hash == HashUtil.EMPTY_DATA_HASH_HEX) {

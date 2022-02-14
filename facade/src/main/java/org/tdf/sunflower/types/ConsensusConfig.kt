@@ -43,6 +43,8 @@ open class ConsensusConfig(val properties: PropertyLike) {
     val maxMiners: Int
         get() = reader.getAsInt("max-miners")
 
+    val debug: Boolean
+        get() = reader.getAsBool("debug")
 
     val chainId: Int get() = genesisJson["chainId"]?.asInt() ?: DEFAULT_CHAIN_ID
 

@@ -142,8 +142,11 @@ class PoS : AbstractConsensusEngine() {
         return li
     }
 
+
+    val _builtins: MutableList<Builtin> = mutableListOf()
+
     override val builtins: List<Builtin>
-        get() = listOf()
+        get() = _builtins
 
     override val alloc: Map<HexBytes, Account>
         get() = genesis.alloc
@@ -151,6 +154,10 @@ class PoS : AbstractConsensusEngine() {
     override val code: Map<HexBytes, HexBytes> = mutableMapOf()
 
     override fun init(config: ConsensusConfig) {
+        if(config.debug) {
+            _builtins.add(LoggingContract())
+        }
+
         this.config = PosConfig(config.properties)
         genesis = Genesis(config.genesisJson)
         genesisBlock = genesis.block

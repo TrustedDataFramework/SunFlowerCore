@@ -69,6 +69,7 @@ class AccountTrie(
         val genesisStates: MutableMap<HexBytes, Account> = alloc.toMutableMap()
 
         for (c in (bios + builtins)) {
+            if(c.pure) continue
             val address = c.address
 
             val trie = contractStorageTrie.revert()

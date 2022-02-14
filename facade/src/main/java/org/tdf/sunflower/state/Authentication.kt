@@ -24,6 +24,8 @@ class Authentication(
     private val config: ConsensusConfig
 ) : AbstractBuiltin(address) {
 
+    override val pure: Boolean
+        get() = false
     override val abi: Abi
         get() = Authentication.abi
 

@@ -139,4 +139,9 @@ public class PoWBios extends AbstractBuiltin {
         ret.put(TIMESTAMPS_KEY, HexBytes.fromBytes(Rlp.encodeElements()));
         return ret;
     }
+
+    @Override
+    public boolean getPure() {
+        return false;
+    }
 }

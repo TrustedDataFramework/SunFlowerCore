@@ -14,6 +14,7 @@ import java.math.BigInteger
 interface Builtin {
     val codeSize: Int get() = 1
     val address: HexBytes
+    val pure: Boolean
     val genesisStorage: Map<HexBytes, HexBytes>
         get() = emptyMap()
 
@@ -48,6 +49,9 @@ interface Builtin {
 
 
 class LoggingContract : AbstractBuiltin(Constants.LOGGING_CONTRACT_ADDR) {
+    override val pure: Boolean
+        get() = true
+
     override fun call(
         rd: RepositoryReader,
         backend: Backend,
