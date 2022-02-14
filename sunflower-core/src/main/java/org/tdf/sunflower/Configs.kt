@@ -34,6 +34,7 @@ class DatabaseConfig(properties: DatabaseConfigProperties) {
     val blockStore: String = rd.getAsNonNull("block-store")
     val buffer: Int = rd.getAsInt("buffer")
     val canonicalize: Boolean = rd.getAsBool("canonicalize")
+    val deleteGT: Long = rd.getAsLong("delete-gt", -1L)
 }
 
 @ConfigurationProperties(prefix = "sunflower")

@@ -80,6 +80,11 @@ open class Start {
                         log.info("canonicalize use ${(t0 - t1) / 1000.0} ms")
                     }
                 }
+                if(cfg.deleteGT >= 0) {
+                    kv.writer.use {
+                        it.deleteGT(cfg.deleteGT)
+                    }
+                }
                 return kv
             }
             else -> throw RuntimeException("unknown block store type: $type")

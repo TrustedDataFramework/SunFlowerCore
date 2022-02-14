@@ -1,18 +1,39 @@
 package org.tdf.sunflower.net
 
+import com.github.salpadding.rlpstream.Rlp
+import com.github.salpadding.rlpstream.annotation.RlpCreator
+import com.github.salpadding.rlpstream.annotation.RlpProps
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.tdf.sunflower.proto.Code
 import org.tdf.sunflower.proto.Message
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetAddress
 import java.net.URI
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
+
+@RlpProps("code", "n", "uri")
+data class PingPong @RlpCreator constructor(val code: Int, val n: Int, val uri: String)
 
 class Client(
     val self: PeerImpl,
     val config: PeerServerConfig,
     val builder: MessageBuilder,
     private val netLayer: NetLayer,
-) : ChannelListener {
+) : ChannelListener, AutoCloseable {
+    private val buf: ByteArray = ByteArray(256)
+    private val tailBuf: ByteArray = ByteArray(512)
+    val socket = DatagramSocket(self.port)
+    val ex = Executors.newSingleThreadExecutor()
+    val n = AtomicInteger()
+
+    @Volatile
+    private var udpListening: Boolean = true
+
     val peersCache: PeersCache = PeersCache(self, config)
 
     // listener for channel event
@@ -33,14 +54,14 @@ class Client(
     fun bootstrap(uris: Collection<URI>) {
         for (uri in uris) {
             log.info("bootstrap peer {}", uri.toString())
-            connect(uri.host, uri.port) { peersCache.bootstraps[it] = true }
+            pingUdp(uri.host, uri.port) { peersCache.bootstraps[it] = true }
         }
     }
 
     fun trust(trusted: Collection<URI>) {
         for (uri in trusted) {
             log.info("bootstrap trusted peer {}", uri.toString())
-            connect(uri.host, uri.port) { peersCache.trusted[it] = true }
+            pingUdp(uri.host, uri.port) { peersCache.trusted[it] = true }
         }
     }
 
@@ -72,6 +93,7 @@ class Client(
             .getChannel(peer.id)
         if (ch != null)
             return ch
+
         return netLayer
             .createChannel(peer.host, peer.port, this, listener)
             ?.takeIf { it.isAlive }
@@ -86,6 +108,7 @@ class Client(
             }
 
         if (ch != null) return ch
+
         ch = netLayer
             .createChannel(host, port, *listeners)
 
@@ -146,8 +169,83 @@ class Client(
             }
     }
 
-
+    // val a = InetAddress.getByName(host)
+// val packet = DatagramPacket(ping, ping.size, a, port)
     companion object {
         val log: Logger = LoggerFactory.getLogger("net")
+    }
+
+    private val maxHandlers = 1024
+    val handlers: Array<Pair<Int, Consumer<PeerImpl>>?> = arrayOfNulls(maxHandlers)
+
+    // ping and get channel
+    private fun pingUdp(host: String, port: Int, handle: Consumer<PeerImpl>) {
+        val a = InetAddress.getByName(host)
+        val nonce = n.incrementAndGet()
+        handlers[nonce % maxHandlers] = Pair(nonce, handle)
+        val b = PingPong(0, n.incrementAndGet(), self.encodeURI())
+        val buf = Rlp.encode(b)
+        val p = DatagramPacket(buf, buf.size, a, port)
+        socket.send(p)
+    }
+
+    private fun handlePingPong() {
+        while (udpListening) {
+            try {
+                val req = DatagramPacket(buf, buf.size)
+                socket.receive(req)
+
+                val address: InetAddress = req.address
+                val port: Int = req.port
+
+                System.arraycopy(buf, 0, tailBuf, tailBuf.size - req.length, req.length)
+                val p = Rlp.decode(tailBuf, tailBuf.size - req.length, PingPong::class.java)
+
+                if (p.code == 1) {
+                    val pong = PingPong(1, p.n, self.encodeURI())
+                    val e = Rlp.encode(pong)
+                    val resp = DatagramPacket(e, e.size, address, port)
+                    socket.send(resp)
+                    continue
+                }
+
+                val peer = PeerImpl.parse(p.uri) ?: continue
+                val h = handlers[p.n % maxHandlers] ?: continue
+                if (h.first != p.n) continue
+
+                handlers[p.n % maxHandlers] = null
+                val ch = peersCache
+                    .getChannel(peer.id)
+
+                if (ch != null) {
+                    h.second.accept(peer)
+                    continue
+                }
+
+                val ft = CompletableFuture.supplyAsync {
+                    netLayer.createChannel(peer.host, peer.port, this, listener)
+                }
+
+                ft.thenAccept {
+                    if (it != null) h.second.accept(peer)
+                }
+                continue
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Thread.sleep(100)
+            }
+        }
+    }
+
+    init {
+        ex.submit {
+            this.handlePingPong()
+        }
+    }
+
+    override fun close() {
+        udpListening = false
+        socket.close()
+        ex.shutdown()
     }
 }

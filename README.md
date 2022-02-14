@@ -102,10 +102,13 @@ bash sunflower-core/docker/build.sh -i your_name_space/your_repository_name:tag 
 
 ## p2p 
 
-1. message send by udp: ping, pong
+1. message send by udp: ping, pong, status
 2. peers are category as 
-  - receive ping only, connection could only be established by other
-  - receive pong only, connection could only be established by self
+  - receive ping only: connection could only be established by other
+  - receive pong only: connection could only be established by self
   - ping, pong both received, connection could be established by both
 
-3. Ping/Pong = (0, string)
+
+3. Ping/Pong = (0, string), (1, string)
+4. the peer server maintain a websocket connection pool, only connect to peer received pong < 
+5. sync message only send to connected peers, for messge < 512 byte, optimized to udp protocol
