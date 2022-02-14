@@ -5,6 +5,7 @@ import com.github.salpadding.rlpstream.annotation.RlpCreator
 import com.github.salpadding.rlpstream.annotation.RlpProps
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.proto.Code
 import org.tdf.sunflower.proto.Message
 import java.net.DatagramPacket
@@ -41,7 +42,13 @@ class Client(
     var listener = ChannelListener.NONE
 
     fun broadcast(message: Message) {
-        peersCache.channels.forEach { it.write(message) }
+        val ids = mutableSetOf<HexBytes>()
+        peersCache.channels.forEach {
+            val r = it.remote ?: return@forEach
+            if(ids.contains(r.id)) return@forEach
+            ids.add(r.id)
+            it.write(message)
+        }
     }
 
     fun dial(peer: Peer, message: Message) {
