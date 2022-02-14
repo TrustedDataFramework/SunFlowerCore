@@ -99,3 +99,13 @@ bash sunflower-core/docker/build.sh -i your_name_space/your_repository_name:tag 
 - /rpc/account/{address} display account 
 - /rpc/config display application configuration
 
+
+## p2p 
+
+1. message send by udp: ping, pong
+2. peers are category as 
+  - receive ping only, connection could only be established by other
+  - receive pong only, connection could only be established by self
+  - ping, pong both received, connection could be established by both
+
+3. Ping/Pong = (0, string)
