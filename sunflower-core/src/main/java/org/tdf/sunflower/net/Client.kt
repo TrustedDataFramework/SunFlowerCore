@@ -27,7 +27,8 @@ class Client(
 ) : ChannelListener, AutoCloseable {
     private val buf: ByteArray = ByteArray(256)
     private val tailBuf: ByteArray = ByteArray(512)
-    val socket = DatagramSocket(self.port)
+    val serverSocket = DatagramSocket(self.port)
+
     val ex = Executors.newSingleThreadExecutor()
     val n = AtomicInteger()
 
@@ -183,32 +184,32 @@ class Client(
         val a = InetAddress.getByName(host)
         val nonce = n.incrementAndGet()
         handlers[nonce % maxHandlers] = Pair(nonce, handle)
-        val b = PingPong(0, n.incrementAndGet(), self.encodeURI())
+        val b = PingPong(0, nonce, self.encodeURI())
         val buf = Rlp.encode(b)
         val p = DatagramPacket(buf, buf.size, a, port)
-        log.info("send packet to {} {}", p.address, p.port)
-        socket.send(p)
+        log.info("send packet {} to {} {}", b, p.address, p.port)
+        serverSocket.send(p)
     }
 
     private fun handlePingPong() {
         while (udpListening) {
             try {
                 val req = DatagramPacket(buf, buf.size)
-                socket.receive(req)
+                serverSocket.receive(req)
 
-                log.info("receive udp packet from {} {}", req.address, req.port)
                 val address: InetAddress = req.address
                 val port: Int = req.port
 
                 System.arraycopy(buf, 0, tailBuf, tailBuf.size - req.length, req.length)
                 val p = Rlp.decode(tailBuf, tailBuf.size - req.length, PingPong::class.java)
+                log.info("receive {} from {} {}", p, req.address, req.port)
 
-                log.info("received {}", p)
-                if (p.code == 1) {
+                if (p.code == 0) {
                     val pong = PingPong(1, p.n, self.encodeURI())
                     val e = Rlp.encode(pong)
                     val resp = DatagramPacket(e, e.size, address, port)
-                    socket.send(resp)
+                    log.info("send {} to {} {}", pong, address, port)
+                    serverSocket.send(resp)
                     continue
                 }
 
@@ -248,7 +249,7 @@ class Client(
 
     override fun close() {
         udpListening = false
-        socket.close()
+        serverSocket.close()
         ex.shutdown()
     }
 }

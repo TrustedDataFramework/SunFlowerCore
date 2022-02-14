@@ -28,7 +28,7 @@ gradle-app.setting
 /wasmer/go
 
 # rocksdb and leveldb
-database
+/database*
 *.log
 
 # rust builds
