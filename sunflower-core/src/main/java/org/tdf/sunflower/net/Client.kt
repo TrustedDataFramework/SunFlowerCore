@@ -166,7 +166,7 @@ class Client(
         val b = PingPong(0, nonce, self.encodeURI())
         val buf = Rlp.encode(b)
         val p = DatagramPacket(buf, buf.size, a, port)
-        log.info("send packet {} to {} {}", b, p.address, p.port)
+        log.debug("send packet {} to {} {}", b, p.address, p.port)
         serverSocket.send(p)
     }
 
@@ -181,13 +181,13 @@ class Client(
 
                 System.arraycopy(buf, 0, tailBuf, tailBuf.size - req.length, req.length)
                 val p = Rlp.decode(tailBuf, tailBuf.size - req.length, PingPong::class.java)
-                log.info("receive {} from {} {}", p, req.address, req.port)
+                log.debug("receive {} from {} {}", p, req.address, req.port)
 
                 if (p.code == 0) {
                     val pong = PingPong(1, p.n, self.encodeURI())
                     val e = Rlp.encode(pong)
                     val resp = DatagramPacket(e, e.size, address, port)
-                    log.info("send {} to {} {}", pong, address, port)
+                    log.debug("send {} to {} {}", pong, address, port)
                     serverSocket.send(resp)
                     continue
                 }
