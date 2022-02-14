@@ -82,6 +82,7 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
         server.peerStore.putAll(
             client.peersCache.peers.map { AbstractMap.SimpleEntry(it.id.hex, TextNode(it.encodeURI())) }
         )
+        server.peerStore.flush()
 
         lookup()
         cache.half()
