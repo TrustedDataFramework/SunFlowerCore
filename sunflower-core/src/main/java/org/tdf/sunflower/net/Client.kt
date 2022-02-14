@@ -197,6 +197,8 @@ class Client(
                 if (h.first != p.n) continue
 
                 handlers[p.n % maxHandlers] = null
+
+                if(peer == self) continue
                 val ch = peersCache
                     .getChannel(peer.id)
 
