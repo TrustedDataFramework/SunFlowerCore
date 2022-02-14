@@ -1,6 +1,7 @@
 package org.tdf.evm
 
 import org.tdf.evm.SlotUtils.*
+import java.io.File
 import java.math.BigInteger
 import java.util.*
 import kotlin.math.min
@@ -208,7 +209,7 @@ interface Stack {
     fun popMemory(mem: Memory): ByteArray
 }
 
-class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
+open class StackImpl(protected val limit: Int = Int.MAX_VALUE, protected val ctx: EvmContext) : Stack {
     override fun backU32(i: Int): Long {
         if (i < 0 || i >= size)
             throw RuntimeException("stack underflow")
@@ -236,10 +237,9 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
     }
 
 
-    private var top: Int = -SLOT_SIZE
-
+    protected var top: Int = -SLOT_SIZE
     override var size: Int = 0
-        private set
+        protected set
 
     override fun popAddress(): ByteArray {
         if (size == 0)
@@ -251,7 +251,7 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         return r
     }
 
-    private var data: IntArray = IntArray(SLOT_SIZE * INITIAL_CAP)
+    protected var data: IntArray = IntArray(SLOT_SIZE * INITIAL_CAP)
 
     private var cap: Int = INITIAL_CAP
 
@@ -940,4 +940,21 @@ class StackImpl(private val limit: Int = Int.MAX_VALUE) : Stack {
         val P_MAX = P_2_256 - BigInteger.ONE
         val P_SIGNED_MAX = BigInteger.valueOf(2).pow(255) - BigInteger.ONE
     }
+}
+
+class HardForkStack(limit: Int = Int.MAX_VALUE, ctx: EvmContext): StackImpl(limit, ctx) {
+    override fun mstore8(mem: Memory) {
+        val h = ctx.mstore8Block
+
+        if(h == null || ctx.number < h) {
+            super.mstore8(mem)
+            return
+        }
+        // assert off is valid
+        val off = popU32()
+        mem.resize(off, 1);
+        mem.data[off.toInt()] = int2byte(data[this.top + SLOT_MAX_INDEX]);
+        drop()
+    }
+
 }

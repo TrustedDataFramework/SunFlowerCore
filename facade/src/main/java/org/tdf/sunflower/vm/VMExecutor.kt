@@ -36,16 +36,16 @@ import java.nio.file.StandardOpenOption
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class NonContractException(msg: String): RuntimeException(msg)
+class NonContractException(msg: String) : RuntimeException(msg)
 
 data class VMExecutor(
-    val rd: RepositoryReader,
-    val backend: Backend,
-    val ctx: CallContext,
-    val callData: CallData,
-    val limit: Limit,
-    val logs: MutableList<LogInfo>,
-    val depth: Int = 0,
+        val rd: RepositoryReader,
+        val backend: Backend,
+        val ctx: CallContext,
+        val callData: CallData,
+        val limit: Limit,
+        val logs: MutableList<LogInfo>,
+        val depth: Int = 0,
 ) {
     fun fork(): VMExecutor {
         if (depth + 1 == MAX_CALL_DEPTH) throw RuntimeException("vm call depth overflow")
@@ -71,10 +71,10 @@ data class VMExecutor(
         backend.subBalance(ctx.origin, fee)
 
         return VMResult(
-            limit.totalGas,
-            result.hex(),
-            logs,
-            fee
+                limit.totalGas,
+                result.hex(),
+                logs,
+                fee
         )
     }
 
@@ -150,13 +150,13 @@ data class VMExecutor(
                 }
                 data = callData.data.bytes
                 isWasm = isWasm(code)
-                if(isWasm)
+                if (isWasm)
                     require(WASM_ENABLED)
             }
         }
         // call a non-contract account
         if (code.isEmpty() && !callData.data.isEmpty()) {
-            if(backend.rpcCall)
+            if (backend.rpcCall)
                 return ByteUtil.EMPTY_BYTE_ARRAY
             throw NonContractException("call receiver ${callData.to} not a contract call data = ${callData.data}")
         }
@@ -168,26 +168,27 @@ data class VMExecutor(
 
     private fun executeEvm(create: Boolean, code: ByteArray, input: ByteArray): ByteArray {
         val evmCallData = EvmCallData(
-            callData.caller.bytes,
-            callData.to.bytes,
-            callData.value.value,
-            input,
-            code
+                callData.caller.bytes,
+                callData.to.bytes,
+                callData.value.value,
+                input,
+                code
         )
 
         val ctx = EvmContext(
-            origin = ctx.origin.bytes,
-            number = backend.height,
-            chainId = ctx.chainId,
-            gasPrice = ctx.gasPrice.value,
-            timestamp = ctx.timestamp,
-            coinbase = ctx.coinbase.bytes,
-            blockHashMap = ctx.blockHashMap.toMap()
+                origin = ctx.origin.bytes,
+                number = backend.height,
+                chainId = ctx.chainId,
+                gasPrice = ctx.gasPrice.value,
+                timestamp = ctx.timestamp,
+                coinbase = ctx.coinbase.bytes,
+                blockHashMap = ctx.blockHashMap.toMap(),
+                mstore8Block = rd.genesisCfg.mstore8Block
         )
 
         val host = EvmHostImpl(this)
         val interpreter =
-            Interpreter(host, ctx, evmCallData, printStream, limit, EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE)
+                Interpreter(host, ctx, evmCallData, printStream(callData.to), limit, EVM_MAX_STACK_SIZE, EVM_MAX_MEMORY_SIZE)
 
         interpreter.id = COUNTER.get()
         val ret = interpreter.execute()
@@ -205,11 +206,11 @@ data class VMExecutor(
         val dbFunctions = DBFunctions(backend, callData.to)
 
         val hosts = Hosts(
-            context = ContextHost(callData),
-            reflect = Reflect(this),
-            transfer = Transfer(backend, callData.to),
-            db = dbFunctions,
-            u256 = U256Host()
+                context = ContextHost(callData),
+                reflect = Reflect(this),
+                transfer = Transfer(backend, callData.to),
+                db = dbFunctions,
+                u256 = U256Host()
         )
 
 
@@ -217,17 +218,17 @@ data class VMExecutor(
             createMemory().use { mem ->
                 create(code).use { module ->
                     val instance = ModuleInstance.builder()
-                        .stackAllocator(stack)
-                        .module(module)
-                        .memory(mem)
-                        .hooks(setOf(limit))
-                        .hostFunctions(hosts.all)
-                        .build()
+                            .stackAllocator(stack)
+                            .module(module)
+                            .memory(mem)
+                            .hooks(setOf(limit))
+                            .hostFunctions(hosts.all)
+                            .build()
 
                     val abi: Abi = module.customSections
-                        .firstOrNull { it.name == WBI.ABI_SECTION_NAME }
-                        ?.let { Abi.fromJson(String(it.data, StandardCharsets.UTF_8)) }
-                        ?: throw RuntimeException("abi not found in creation code")
+                            .firstOrNull { it.name == WBI.ABI_SECTION_NAME }
+                            ?.let { Abi.fromJson(String(it.data, StandardCharsets.UTF_8)) }
+                            ?: throw RuntimeException("abi not found in creation code")
 
                     val rets: LongArray
                     val r: InjectResult = inject(create, abi, instance, data.hex())
@@ -247,7 +248,7 @@ data class VMExecutor(
 
                     val outputs: List<Abi.Entry.Param> = if (create) {
                         abi.findConstructor()?.outputs
-                            ?: emptyList()
+                                ?: emptyList()
                     } else {
                         abi.findFunction { it.name == r.name }.outputs!!
                     }
@@ -303,11 +304,11 @@ data class VMExecutor(
         const val WASM_ENABLED = false
 
         fun create(
-            rd: RepositoryReader,
-            backend: Backend,
-            ctx: CallContext,
-            callData: CallData,
-            gasLimit: Long
+                rd: RepositoryReader,
+                backend: Backend,
+                ctx: CallContext,
+                callData: CallData,
+                gasLimit: Long
         ): VMExecutor {
             var c = callData
             val n = backend.getNonce(ctx.origin)
@@ -315,10 +316,10 @@ data class VMExecutor(
                 throw RuntimeException("invalid nonce")
             if (callData.callType == CallType.CREATE)
                 c = callData.copy(
-                    to = HashUtil.calcNewAddr(
-                        callData.caller.bytes,
-                        ctx.txNonce.bytes()
-                    ).hex()
+                        to = HashUtil.calcNewAddr(
+                                callData.caller.bytes,
+                                ctx.txNonce.bytes()
+                        ).hex()
                 )
             return VMExecutor(rd, backend, ctx, c, Limit(gasLimit), mutableListOf())
         }
@@ -327,10 +328,10 @@ data class VMExecutor(
         const val EVM_MAX_MEMORY_SIZE = 1024 * 1024 * 16
 
         val CACHE: Cache<HexBytes, ByteArray> = CacheBuilder
-            .newBuilder()
-            .weigher { k: Any, v: Any -> (v as ByteArray).size + (k as HexBytes).size }
-            .maximumWeight(1024L * 1024L * 8L) // 8mb cache for contracts
-            .build()
+                .newBuilder()
+                .weigher { k: Any, v: Any -> (v as ByteArray).size + (k as HexBytes).size }
+                .maximumWeight(1024L * 1024L * 8L) // 8mb cache for contracts
+                .build()
 
         private val COUNTER = AtomicInteger()
         private val WASM_MAGIC = byteArrayOf(0x00, 0x61, 0x73, 0x6d)
@@ -341,20 +342,23 @@ data class VMExecutor(
             this.outDirectory = outDirectory
         }
 
-        private val printStream: PrintStream?
-            get() {
-                if (outDirectory.isEmpty())
-                    return null
-                val filename = String.format("%d.log", COUNTER.incrementAndGet())
-                val path = Paths.get(outDirectory, filename)
-                log.info("write vm debug log to file {}", path)
-                val os = Files.newOutputStream(
+        private fun printStream(a: HexBytes): PrintStream? {
+            if (outDirectory.isEmpty())
+                return null
+            val filename = String.format("%d.log", COUNTER.incrementAndGet())
+            val dir = Paths.get(outDirectory, "0x" + a.hex).toFile()
+            if (!dir.exists()) {
+                dir.mkdir()
+            }
+            val path = Paths.get(outDirectory, "0x" + a.hex, filename)
+            log.info("write vm debug log to file {}", path)
+            val os = Files.newOutputStream(
                     path,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE
-                )
-                return PrintStream(os)
-            }
+            )
+            return PrintStream(os)
+        }
     }
 }

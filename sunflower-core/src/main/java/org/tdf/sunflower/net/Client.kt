@@ -32,12 +32,14 @@ class Client(
 
     fun bootstrap(uris: Collection<URI>) {
         for (uri in uris) {
+            log.info("bootstrap peer {}", uri.toString())
             connect(uri.host, uri.port) { peersCache.bootstraps[it] = true }
         }
     }
 
     fun trust(trusted: Collection<URI>) {
         for (uri in trusted) {
+            log.info("bootstrap trusted peer {}", uri.toString())
             connect(uri.host, uri.port) { peersCache.trusted[it] = true }
         }
     }
