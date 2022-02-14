@@ -45,76 +45,56 @@ class Client(
     }
 
     fun dial(peer: Peer, message: Message) {
-        getChannel(peer)?.write(message)
+        getChannel(peer) { it.write(message) }
     }
 
     fun dial(host: String, port: Int, message: Message) {
-        getChannel(host, port, this, listener)?.write(message)
+        getChannel(host, port) { it.write(message) }
     }
 
     fun bootstrap(uris: Collection<URI>) {
         for (uri in uris) {
             log.info("bootstrap peer {}", uri.toString())
-            pingUdp(uri.host, uri.port) { peersCache.bootstraps[it] = true }
+            pingUdp(uri.host, uri.port, { peersCache.bootstraps[it] = true }, {})
         }
     }
 
     fun trust(trusted: Collection<URI>) {
         for (uri in trusted) {
             log.info("bootstrap trusted peer {}", uri.toString())
-            pingUdp(uri.host, uri.port) { peersCache.trusted[it] = true }
+            pingUdp(uri.host, uri.port, { peersCache.trusted[it] = true }, {})
         }
     }
 
-    // functional interface for connect to bootstrap and trusted peer
-    // consumer may be called more than once
-    // usually called when server starts
-    private fun connect(host: String, port: Int, cb: Consumer<PeerImpl>) {
-        val remote = getChannel(host, port, listener, object : ChannelListener {
-            override fun onConnect(remote: PeerImpl, channel: Channel) {
-                cb.accept(remote)
-                addPeer(remote, channel)
-            }
-
-            override fun onMessage(message: Message, channel: Channel) {}
-            override fun onError(throwable: Throwable, channel: Channel) {}
-            override fun onClose(channel: Channel) {}
-        })?.remote
-        // if the connection had already created, onConnect will not triggered
-        // but the peer will be handled here
-        remote?.let { cb.accept(it) }
-    }
 
     // try to get channel from cache, if channel not exists in cache,
     // create from net layer
-    private fun getChannel(peer: Peer): Channel? {
+    private fun getChannel(peer: Peer, handle: Consumer<Channel>) {
         // cannot create channel connect to your self
-        if (peer == self) return null
+        if (peer == self) return
         val ch = peersCache
             .getChannel(peer.id)
-        if (ch != null)
-            return ch
-
-        return netLayer
-            .createChannel(peer.host, peer.port, this, listener)
-            ?.takeIf { it.isAlive }
+        if (ch != null) {
+            handle.accept(ch)
+            return
+        }
+        pingUdp(peer.host, peer.port, {}, handle)
     }
 
     // try to get channel from cache, if channel not exists in cache,
     // create from net layer
-    private fun getChannel(host: String, port: Int, vararg listeners: ChannelListener): Channel? {
-        var ch = peersCache.channels
+    private fun getChannel(host: String, port: Int, handle: Consumer<Channel>) {
+        val ch = peersCache.channels
             .firstOrNull {
                 it.remote?.host == host && it.remote?.port == port
             }
 
-        if (ch != null) return ch
+        if (ch != null) {
+            handle.accept(ch)
+            return
+        }
 
-        ch = netLayer
-            .createChannel(host, port, *listeners)
-
-        ch?.write(builder.buildPing())
-        return ch?.takeIf { it.isAlive }
+        pingUdp(host, port, {}, handle)
     }
 
     override fun onConnect(remote: PeerImpl, channel: Channel) {
@@ -135,7 +115,6 @@ class Client(
         }
         val o = peersCache.getChannel(remote)
         if (o != null && o.isAlive) {
-            log.error("the channel to $remote had been created")
             return
         }
         peersCache.keep(remote, channel)
@@ -177,13 +156,13 @@ class Client(
     }
 
     private val maxHandlers = 1024
-    val handlers: Array<Pair<Int, Consumer<PeerImpl>>?> = arrayOfNulls(maxHandlers)
+    val handlers: Array<Triple<Int, Consumer<PeerImpl>, Consumer<Channel>>?> = arrayOfNulls(maxHandlers)
 
     // ping and get channel
-    private fun pingUdp(host: String, port: Int, handle: Consumer<PeerImpl>) {
+    private fun pingUdp(host: String, port: Int, handle: Consumer<PeerImpl>, chHandle: Consumer<Channel>) {
         val a = InetAddress.getByName(host)
         val nonce = n.incrementAndGet()
-        handlers[nonce % maxHandlers] = Pair(nonce, handle)
+        handlers[nonce % maxHandlers] = Triple(nonce, handle, chHandle)
         val b = PingPong(0, nonce, self.encodeURI())
         val buf = Rlp.encode(b)
         val p = DatagramPacket(buf, buf.size, a, port)
@@ -231,7 +210,10 @@ class Client(
                 }
 
                 ft.thenAccept {
-                    if (it != null) h.second.accept(peer)
+                    if (it != null) {
+                        h.second.accept(peer)
+                        h.third.accept(it)
+                    }
                 }
                 continue
             } catch (e: Exception) {
