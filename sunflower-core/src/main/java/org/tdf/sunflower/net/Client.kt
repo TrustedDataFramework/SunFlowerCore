@@ -3,6 +3,8 @@ package org.tdf.sunflower.net
 import com.github.salpadding.rlpstream.Rlp
 import com.github.salpadding.rlpstream.annotation.RlpCreator
 import com.github.salpadding.rlpstream.annotation.RlpProps
+import com.google.common.cache.Cache
+import com.google.common.cache.CacheBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.tdf.sunflower.proto.Code
@@ -13,6 +15,7 @@ import java.net.InetAddress
 import java.net.URI
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
 
@@ -20,10 +23,10 @@ import java.util.function.Consumer
 data class PingPong @RlpCreator constructor(val code: Int, val n: Int, val uri: String)
 
 class Client(
-    val self: PeerImpl,
-    val config: PeerServerConfig,
-    val builder: MessageBuilder,
-    private val netLayer: NetLayer,
+        val self: PeerImpl,
+        val config: PeerServerConfig,
+        val builder: MessageBuilder,
+        private val netLayer: NetLayer,
 ) : ChannelListener, AutoCloseable {
     private val buf: ByteArray = ByteArray(256)
     private val tailBuf: ByteArray = ByteArray(512)
@@ -73,7 +76,7 @@ class Client(
         // cannot create channel connect to your self
         if (peer == self) return
         val ch = peersCache
-            .getChannel(peer.id)
+                .getChannel(peer.id)
         if (ch != null) {
             handle.accept(ch)
             return
@@ -85,9 +88,9 @@ class Client(
     // create from net layer
     private fun getChannel(host: String, port: Int, handle: Consumer<Channel>) {
         val ch = peersCache.channels
-            .firstOrNull {
-                it.remote?.host == host && it.remote?.port == port
-            }
+                .firstOrNull {
+                    it.remote?.host == host && it.remote?.port == port
+                }
 
         if (ch != null) {
             handle.accept(ch)
@@ -99,8 +102,8 @@ class Client(
 
     override fun onConnect(remote: PeerImpl, channel: Channel) {
         if (!config.discovery &&
-            !peersCache.bootstraps.containsKey(remote) &&
-            !peersCache.trusted.containsKey(remote)
+                !peersCache.bootstraps.containsKey(remote) &&
+                !peersCache.trusted.containsKey(remote)
         ) {
             channel.close("discovery is not enabled accept bootstraps and trusted only")
             return
@@ -124,10 +127,10 @@ class Client(
     override fun onError(throwable: Throwable, channel: Channel) {
         throwable.printStackTrace()
         channel.remote
-            ?.let {
-                peersCache.half(it)
-                log.error("error found decrease the score of peer " + it + " " + throwable.message)
-            }
+                ?.let {
+                    peersCache.half(it)
+                    log.error("error found decrease the score of peer " + it + " " + throwable.message)
+                }
     }
 
     override fun onClose(channel: Channel) {
@@ -138,15 +141,15 @@ class Client(
 
     fun relay(message: Message, receivedFrom: PeerImpl) {
         peersCache.channels
-            .filter { it.remote != null && it.remote != receivedFrom }
-            .forEach {
-                if (message.code == Code.ANOTHER) {
-                    val msg = message.body.toByteArray()
-                    it.write(builder.buildMessage(Code.ANOTHER, message.ttl - 1, msg))
-                    return@forEach
+                .filter { it.remote != null && it.remote != receivedFrom }
+                .forEach {
+                    if (message.code == Code.ANOTHER) {
+                        val msg = message.body.toByteArray()
+                        it.write(builder.buildMessage(Code.ANOTHER, message.ttl - 1, msg))
+                        return@forEach
+                    }
+                    it.write(builder.buildRelay(message))
                 }
-                it.write(builder.buildRelay(message))
-            }
     }
 
     // val a = InetAddress.getByName(host)
@@ -160,6 +163,11 @@ class Client(
 
     // ping and get channel
     private fun pingUdp(host: String, port: Int, handle: Consumer<PeerImpl>, chHandle: Consumer<Channel>) {
+        if(cache.asMap().containsKey("${host}:${port}")) {
+            return
+        }
+        cache.asMap()["${host}:${port}"] = 1
+        
         val a = InetAddress.getByName(host)
         val nonce = n.incrementAndGet()
         handlers[nonce % maxHandlers] = Triple(nonce, handle, chHandle)
@@ -169,6 +177,9 @@ class Client(
         log.debug("send packet {} to {} {}", b, p.address, p.port)
         serverSocket.send(p)
     }
+
+    // debounce connection
+    private val cache: Cache<String, Int> = CacheBuilder.newBuilder().expireAfterWrite(100, TimeUnit.MILLISECONDS).build<String, Int>()
 
     private fun handlePingPong() {
         while (udpListening) {
@@ -198,14 +209,15 @@ class Client(
 
                 handlers[p.n % maxHandlers] = null
 
-                if(peer == self) continue
+                if (peer == self) continue
                 val ch = peersCache
-                    .getChannel(peer.id)
+                        .getChannel(peer.id)
 
                 if (ch != null) {
                     h.second.accept(peer)
                     continue
                 }
+
 
                 val ft = CompletableFuture.supplyAsync {
                     netLayer.createChannel(peer.host, peer.port, this, listener)
