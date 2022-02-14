@@ -186,6 +186,7 @@ class Client(
         val b = PingPong(0, n.incrementAndGet(), self.encodeURI())
         val buf = Rlp.encode(b)
         val p = DatagramPacket(buf, buf.size, a, port)
+        log.info("send packet to {} {}", p.address, p.port)
         socket.send(p)
     }
 
@@ -195,6 +196,7 @@ class Client(
                 val req = DatagramPacket(buf, buf.size)
                 socket.receive(req)
 
+                log.info("receive udp packet from {} {}", req.address, req.port)
                 val address: InetAddress = req.address
                 val port: Int = req.port
 
