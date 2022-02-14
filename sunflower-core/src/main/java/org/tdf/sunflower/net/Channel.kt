@@ -45,4 +45,7 @@ interface Channel {
 
     // bind listener to the channel
     fun addListeners(vararg listeners: ChannelListener)
+
+    // 0 = self as client, 1 = self as server
+    val direction: Int
 }

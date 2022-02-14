@@ -9,6 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 interface ChannelOut {
     fun write(message: Message)
     fun close()
+    val direction: Int
 }
 
 
@@ -107,6 +108,9 @@ open class ProtoChannel(private val messageBuilder: MessageBuilder, val out: Cha
     override fun addListeners(vararg listeners: ChannelListener) {
         this.listeners.addAll(listeners)
     }
+
+    override val direction: Int
+        get() = out.direction
 
 
     companion object {

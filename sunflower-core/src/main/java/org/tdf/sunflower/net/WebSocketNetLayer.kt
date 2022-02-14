@@ -41,6 +41,9 @@ private class WSClient(host: String, port: Int, builder: MessageBuilder) : WebSo
 
 
 internal class WebSocketChannelOut(private val conn: WebSocket) : ChannelOut {
+    override val direction: Int
+        get() = 1
+
     override fun write(message: Message) {
         conn.send(message.toByteArray())
     }
@@ -55,6 +58,9 @@ internal class WebSocketChannelOut(private val conn: WebSocket) : ChannelOut {
 }
 
 internal class WebSocketClientChannelOut(private val client: WebSocketClient) : ChannelOut {
+    override val direction: Int
+        get() = 0
+
     override fun write(message: Message) {
         client.send(message.toByteArray())
     }

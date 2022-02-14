@@ -135,6 +135,7 @@ class PeerServerImpl(// if non-database provided, use memory database
     }
 
     override fun onConnect(remote: PeerImpl, channel: Channel) {
+        log.info("new connection {} channel direction = {}", remote, channel.direction)
         for (plugin in plugins) {
             plugin.onNewPeer(remote, this)
         }

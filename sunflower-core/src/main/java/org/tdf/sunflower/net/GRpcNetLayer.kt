@@ -13,7 +13,7 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
-class GRpcChannelOut : ChannelOut {
+class GRpcChannelOut(override val direction: Int) : ChannelOut {
     lateinit var out: StreamObserver<Message>
     override fun write(message: Message) {
         out.onNext(message)
@@ -45,7 +45,7 @@ class GRpcNetLayer internal constructor(private val port: Int, private val build
                 .build()
 
             val stub = EntryGrpc.newStub(ch)
-            val nullOut = GRpcChannelOut()
+            val nullOut = GRpcChannelOut(0)
             val channel = GrpcChannel(builder, nullOut)
             channel.addListeners(*listeners)
             nullOut.out = stub.entry(channel)
@@ -58,7 +58,7 @@ class GRpcNetLayer internal constructor(private val port: Int, private val build
     }
 
     override fun entry(responseObserver: StreamObserver<Message>): StreamObserver<Message> {
-        val o = GRpcChannelOut()
+        val o = GRpcChannelOut(1)
         o.out = responseObserver
         val ch = GrpcChannel(builder, o)
         handler.accept(ch)
