@@ -203,6 +203,7 @@ class Client(
                 System.arraycopy(buf, 0, tailBuf, tailBuf.size - req.length, req.length)
                 val p = Rlp.decode(tailBuf, tailBuf.size - req.length, PingPong::class.java)
 
+                log.info("received {}", p)
                 if (p.code == 1) {
                     val pong = PingPong(1, p.n, self.encodeURI())
                     val e = Rlp.encode(pong)
