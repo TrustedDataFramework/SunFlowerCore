@@ -456,6 +456,11 @@ class SyncManager(
             val best = repo.reader.use { rd -> rd.bestHeader }
             log.debug("write: best header height = {} hash = {} queue size = {} first = {}", best.height, best.hash, queue.size, queue.firstOrNull()?.height)
             val orphans: MutableSet<HexBytes> = HashSet()
+
+            // tail's references = 0
+            val refers: MutableMap<HexBytes, Int> = mutableMapOf()
+            val toWrites: MutableMap<HexBytes, Block> = mutableMapOf()
+
             while (it.hasNext()) {
                 val b = it.next()
 //                    log.debug("try to write new block height = {} hash = {}", b.height, b.hash)
@@ -475,26 +480,48 @@ class SyncManager(
                     orphans.add(b.hash)
                     continue
                 }
-                val o = repo.reader.use { rd -> rd.getBlockByHash(b.hashPrev) }
-                if (o == null) {
-                    log.debug("new block is orphan, parent hash not in chain")
-                    orphans.add(b.hash)
-                    continue
+
+                if (toWrites.containsKey(b.hashPrev) || repo.reader.use { rd -> rd.containsHeader(b.hashPrev) }) {
+                    toWrites[b.hash] = b
+                    refers[b.hashPrev] = (refers[b.hashPrev] ?: 0) + 1
                 }
-                var n = System.currentTimeMillis()
-                val res = repo.reader.use { rd -> engine.validator.validate(rd, b, o) }
-                log.debug("validate block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
-                log.debug("new block validate result = {}", res.success)
-                if (!res.success) {
-                    it.remove()
-                    log.error(res.reason)
-                    continue
+
+                orphans.add(b.hash)
+            }
+
+            val tails = toWrites.values.filter { (refers[it.hash] ?: 0) == 0 }
+                    .sortedWith(Block.BEST_COMPARATOR).reversed()
+
+
+            tails.forEach { tail ->
+                val li = mutableListOf<Block>()
+                var b = tail
+
+                while (true) {
+                    li.add(b)
+                    b = toWrites[b.hashPrev] ?: break
                 }
-                it.remove()
-                val rs = res as BlockValidateResult
-                n = System.currentTimeMillis()
-                repo.writer.use { w -> w.writeBlock(b, rs.infos) }
-                log.debug("write block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
+
+                li.reverse()
+
+                li.forEach {
+                    var n = System.currentTimeMillis()
+                    val p = toWrites[it.hashPrev] ?: repo.reader.use { rd -> rd.getBlockByHash(it.hashPrev) }
+                    val res = repo.reader.use { rd -> engine.validator.validate(rd, b, p!!) }
+                    log.debug("validate block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
+                    log.debug("new block validate result = {}", res.success)
+                    if (!res.success) {
+                        queue.remove(it)
+                        log.error(res.reason)
+                        return@forEach
+                    }
+                    queue.remove(it)
+                    val rs = res as BlockValidateResult
+                    n = System.currentTimeMillis()
+                    repo.writer.use { w -> w.writeBlock(b, rs.infos) }
+                    log.debug("write block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
+                }
+
             }
         } finally {
             mtx.unlock()
