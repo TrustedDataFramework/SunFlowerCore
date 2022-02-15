@@ -371,19 +371,17 @@ class SyncManager(
             }
         }
 
+        // a dummy lock/unlock
         if (!mtx.tryLock()) return
-        try {
-            if (s.bestBlockHeight >= best.height && s.bestBlockHash != best.hash) {
-                val getBlocks = GetBlocks(
-                        Math.max(s.prunedHeight, best.height),
-                        s.bestBlockHeight, false,
-                        syncConfig.maxBlocksTransfer
-                ).clip()
-                log.debug("request for blocks start = ${getBlocks.startHeight} stop = ${getBlocks.stopHeight}")
-                ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks))
-            }
-        } finally {
-            mtx.unlock()
+        mtx.unlock()
+        if (s.bestBlockHeight >= best.height && s.bestBlockHash != best.hash) {
+            val getBlocks = GetBlocks(
+                    Math.max(s.prunedHeight, best.height),
+                    s.bestBlockHeight, false,
+                    syncConfig.maxBlocksTransfer
+            ).clip()
+            log.debug("request for blocks start = ${getBlocks.startHeight} stop = ${getBlocks.stopHeight}")
+            ctx.response(SyncMessage.encode(SyncMessage.GET_BLOCKS, getBlocks))
         }
     }
 
@@ -493,7 +491,7 @@ class SyncManager(
                     .sortedWith(Block.BEST_COMPARATOR).reversed()
 
 
-            if(log.isTraceEnabled) {
+            if (log.isTraceEnabled) {
                 log.trace("toWrites = {}", toWrites.values.map { it.height }.joinToString(","))
                 log.trace("tails = {}", tails.map { it.height }.joinToString(","))
             }
