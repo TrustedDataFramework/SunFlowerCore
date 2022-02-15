@@ -465,20 +465,20 @@ class SyncManager(
 
             while (it.hasNext()) {
                 val b = it.next()
-                log.debug("found pending block height = {} hash = {}", b.height, b.hash)
+                log.trace("found pending block height = {} hash = {}", b.height, b.hash)
                 if (Math.abs(best.height - b.height) > syncConfig.maxHistoryBlocks //                        || b.getHeight() <= repository.getPrunedHeight()
                 ) {
-                    log.debug("new block height {} out of history {}, discard", b.height, syncConfig.maxHistoryBlocks)
+                    log.trace("new block height {} out of history {}, discard", b.height, syncConfig.maxHistoryBlocks)
                     it.remove()
                     continue
                 }
                 if (repo.reader.use { rd -> rd.containsHeader(b.hash) }) {
-                    log.debug("block hash {} already in chain", b.hash)
+                    log.trace("block hash {} already in chain", b.hash)
                     it.remove()
                     continue
                 }
                 if (orphans.contains(b.hashPrev)) {
-                    log.debug("new block parent hash {} already in orphans, discard", b.hashPrev)
+                    log.trace("new block parent hash {} already in orphans, discard", b.hashPrev)
                     orphans.add(b.hash)
                     continue
                 }
@@ -493,9 +493,9 @@ class SyncManager(
                     .sortedWith(Block.BEST_COMPARATOR).reversed()
 
 
-            if(log.isDebugEnabled) {
-                log.debug("toWrites = {}", toWrites.values.map { it.height }.joinToString(","))
-                log.debug("tails = {}", tails.map { it.height }.joinToString(","))
+            if(log.isTraceEnabled) {
+                log.trace("toWrites = {}", toWrites.values.map { it.height }.joinToString(","))
+                log.trace("tails = {}", tails.map { it.height }.joinToString(","))
             }
 
             tails.forEach l0@{ tail ->
