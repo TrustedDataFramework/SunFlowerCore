@@ -513,8 +513,9 @@ class SyncManager(
                 li.forEach l1@{
                     var n = System.currentTimeMillis()
                     if (succeed.contains(it.hash)) return@l1
-                    val p = toWrites[it.hashPrev] ?: repo.reader.use { rd -> rd.getBlockByHash(it.hashPrev) }
-                    val res = repo.reader.use { rd -> engine.validator.validate(rd, it, p!!) }
+                    val p0 = toWrites[it.hashPrev] ?: repo.reader.use { rd -> rd.getBlockByHash(it.hashPrev) }
+                    val p = p0 ?: return@l1
+                    val res = repo.reader.use { rd -> engine.validator.validate(rd, it, p) }
                     log.debug("validate block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
                     log.debug("new block validate result = {}", res.success)
                     if (!res.success) {
