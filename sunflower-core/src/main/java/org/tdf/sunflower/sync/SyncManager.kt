@@ -460,6 +460,7 @@ class SyncManager(
             // tail's references = 0
             val refers: MutableMap<HexBytes, Int> = mutableMapOf()
             val toWrites: MutableMap<HexBytes, Block> = mutableMapOf()
+            val succeed = mutableSetOf<HexBytes>()
 
             while (it.hasNext()) {
                 val b = it.next()
@@ -493,7 +494,7 @@ class SyncManager(
                     .sortedWith(Block.BEST_COMPARATOR).reversed()
 
 
-            tails.forEach { tail ->
+            tails.forEach l0@{ tail ->
                 val li = mutableListOf<Block>()
                 var b = tail
 
@@ -504,8 +505,9 @@ class SyncManager(
 
                 li.reverse()
 
-                li.forEach {
+                li.forEach l1@{
                     var n = System.currentTimeMillis()
+                    if(succeed.contains(it.hash)) return@l1
                     val p = toWrites[it.hashPrev] ?: repo.reader.use { rd -> rd.getBlockByHash(it.hashPrev) }
                     val res = repo.reader.use { rd -> engine.validator.validate(rd, b, p!!) }
                     log.debug("validate block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
@@ -513,12 +515,13 @@ class SyncManager(
                     if (!res.success) {
                         queue.remove(it)
                         log.error(res.reason)
-                        return@forEach
+                        return@l0
                     }
                     queue.remove(it)
                     val rs = res as BlockValidateResult
                     n = System.currentTimeMillis()
                     repo.writer.use { w -> w.writeBlock(b, rs.infos) }
+                    succeed.add(it.hash)
                     log.debug("write block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
                 }
 
