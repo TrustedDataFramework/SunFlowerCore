@@ -525,7 +525,7 @@ class SyncManager(
                     queue.remove(it)
                     val rs = res as BlockValidateResult
                     n = System.currentTimeMillis()
-                    repo.writer.use { w -> w.writeBlock(b, rs.infos) }
+                    repo.writer.use { w -> w.writeBlock(it, rs.infos) }
                     succeed.add(it.hash)
                     log.debug("write block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
                 }
