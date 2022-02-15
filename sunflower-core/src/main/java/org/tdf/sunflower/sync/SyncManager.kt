@@ -52,7 +52,7 @@ class SyncManager(
 ) : PeerServerListener, Closeable {
     private val mtx = LogLock(ReentrantLock(), "sync-queue")
 
-    private val queue = TreeSet(Block.FAT_COMPARATOR)
+    private val queue = TreeSet(Block.BEST_COMPARATOR)
     private val accountTrie: StateTrie<HexBytes, Account>
     private val fastSyncHeight: Long
     private val fastSyncHash: HexBytes?
@@ -296,7 +296,7 @@ class SyncManager(
         try {
             repo.reader.use { rd ->
                 val best = rd.bestHeader
-                val sorted = blocks.sortedWith(Block.FAT_COMPARATOR)
+                val sorted = blocks.sortedWith(Block.BEST_COMPARATOR)
                 for (block in sorted) {
                     if (queue.contains(block)) continue
                     //                if (block.getHeight() <= repository.getPrunedHeight())
