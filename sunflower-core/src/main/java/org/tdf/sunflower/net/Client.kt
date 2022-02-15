@@ -163,19 +163,21 @@ class Client(
 
     // ping and get channel
     private fun pingUdp(host: String, port: Int, handle: Consumer<PeerImpl>, chHandle: Consumer<Channel>) {
-        if(cache.asMap().containsKey("${host}:${port}")) {
-            return
-        }
-        cache.asMap()["${host}:${port}"] = 1
+        CompletableFuture.runAsync {
+            if(cache.asMap().containsKey("${host}:${port}")) {
+                return@runAsync
+            }
+            cache.asMap()["${host}:${port}"] = 1
 
-        val a = InetAddress.getByName(host)
-        val nonce = n.incrementAndGet()
-        handlers[nonce % maxHandlers] = Triple(nonce, handle, chHandle)
-        val b = PingPong(0, nonce, self.encodeURI())
-        val buf = Rlp.encode(b)
-        val p = DatagramPacket(buf, buf.size, a, port)
-        log.debug("send packet {} to {} {}", b, p.address, p.port)
-        serverSocket.send(p)
+            val a = InetAddress.getByName(host)
+            val nonce = n.incrementAndGet()
+            handlers[nonce % maxHandlers] = Triple(nonce, handle, chHandle)
+            val b = PingPong(0, nonce, self.encodeURI())
+            val buf = Rlp.encode(b)
+            val p = DatagramPacket(buf, buf.size, a, port)
+            log.debug("send packet {} to {} {}", b, p.address, p.port)
+            serverSocket.send(p)
+        }
     }
 
     // debounce connection
