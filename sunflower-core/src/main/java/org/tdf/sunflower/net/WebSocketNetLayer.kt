@@ -116,6 +116,7 @@ class WebSocketNetLayer internal constructor(port: Int, private val builder: Mes
                 client.channel
             } else null
         } catch (e: Exception) {
+            log.info("failed to connect to {} {}", host, port)
             if(log.isDebugEnabled) {
                 log.error("DEBUG", e)
             }
