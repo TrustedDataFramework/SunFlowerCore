@@ -496,9 +496,10 @@ class SyncManager(
 
 
             if(log.isDebugEnabled) {
+                log.debug("toWrites = {}", toWrites.values.map { it.height }.joinToString(","))
                 log.debug("tails = {}", tails.map { it.height }.joinToString(","))
             }
-            
+
             tails.forEach l0@{ tail ->
                 val li = mutableListOf<Block>()
                 var b = tail
