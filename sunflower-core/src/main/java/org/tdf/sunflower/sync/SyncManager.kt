@@ -184,9 +184,7 @@ class SyncManager(
                     return
                 }
                 val s = msg.getBodyAs(Status::class.java)
-                repo.reader.use {
-                    onStatus(context, server, s, it)
-                }
+                onStatus(context, server, s)
                 return
             }
             SyncMessage.GET_BLOCKS -> {
@@ -197,16 +195,15 @@ class SyncManager(
                 }
                 if (fastSyncing) return
                 val getBlocks = msg.getBodyAs(GetBlocks::class.java)
-                repo.reader.use {
-                    val blocks = it.getBlocksBetween(
+                val blocks = repo.reader.use {
+                    it.getBlocksBetween(
                             getBlocks.startHeight,
                             getBlocks.stopHeight,
                             min(syncConfig.maxBlocksTransfer, getBlocks.limit),
                             getBlocks.descend
                     )
-                    context.response(SyncMessage.encode(SyncMessage.BLOCKS, blocks))
                 }
-
+                context.response(SyncMessage.encode(SyncMessage.BLOCKS, blocks))
                 return
             }
             SyncMessage.TRANSACTION -> {
@@ -234,27 +231,25 @@ class SyncManager(
                     context.relay()
                     return
                 }
-                repo.reader.use {
-                    val best = it.bestHeader
-                    if (receivedProposals.asMap().containsKey(proposal.hash)) {
-                        return
-                    }
-                    receivedProposals.put(proposal.hash, true)
-                    context.relay()
-                    if (Math.abs(proposal.height - best.height) > syncConfig.maxPendingBlocks) {
-                        return
-                    }
-                    if (it.containsHeader(proposal.hash)) return
-                    if (!mtx.tryLock(WRITE_P, TimeUnit.SECONDS)) {
-                        log.debug("try lock failed, discard proposal")
-                        return
-                    }
+                val best = repo.reader.use { it.bestHeader }
+                if (receivedProposals.asMap().containsKey(proposal.hash)) {
+                    return
+                }
+                receivedProposals.put(proposal.hash, true)
+                context.relay()
+                if (Math.abs(proposal.height - best.height) > syncConfig.maxPendingBlocks) {
+                    return
+                }
+                if (repo.reader.use { it.containsHeader(proposal.hash) }) return
+                if (!mtx.tryLock(WRITE_P, TimeUnit.SECONDS)) {
+                    log.debug("try lock failed, discard proposal")
+                    return
+                }
 
-                    try {
-                        queue.add(proposal)
-                    } finally {
-                        mtx.unlock()
-                    }
+                try {
+                    queue.add(proposal)
+                } finally {
+                    mtx.unlock()
                 }
                 return
             }
@@ -324,7 +319,7 @@ class SyncManager(
     //        this.miner.start();
     //        clearFastSyncCache();
     //    }
-    private fun onStatus(ctx: Context, server: PeerServer, s: Status, rd: RepositoryReader) {
+    private fun onStatus(ctx: Context, server: PeerServer, s: Status) {
         if (fastSyncing) {
             val fastSyncEnabled = (s.prunedHeight < fastSyncHeight
                     || s.prunedHash == fastSyncHash)
@@ -354,18 +349,18 @@ class SyncManager(
             }
             return
         }
-        val best = rd.bestHeader
+        val best = repo.reader.use { it.bestHeader }
         var orphans: List<Block?> = emptyList()
         // try to sync orphans
         if (mtx.tryLock()) {
             orphans = try {
-                getOrphansInternal(rd)
+                repo.reader.use { getOrphansInternal(it) }
             } finally {
                 mtx.unlock()
             }
         }
         for (b in orphans) {
-            if (b != null && s.bestBlockHeight >= b.height && b.height > s.prunedHeight && !rd.containsHeader(b.hashPrev)) {
+            if (b != null && s.bestBlockHeight >= b.height && b.height > s.prunedHeight && !repo.reader.use { it.containsHeader(b.hashPrev) }) {
                 log.debug("try to fetch orphans, head height {} hash {}", b.height, b.hash)
                 // remote: prune < b <= best
                 val getBlocks = GetBlocks(
@@ -376,7 +371,7 @@ class SyncManager(
             }
         }
 
-        if(!mtx.tryLock()) return
+        if (!mtx.tryLock()) return
         try {
             if (s.bestBlockHeight >= best.height && s.bestBlockHash != best.hash) {
                 val getBlocks = GetBlocks(
@@ -513,7 +508,7 @@ class SyncManager(
 
                 li.forEach l1@{
                     var n = System.currentTimeMillis()
-                    if(succeed.contains(it.hash)) return@l1
+                    if (succeed.contains(it.hash)) return@l1
                     val p = toWrites[it.hashPrev] ?: repo.reader.use { rd -> rd.getBlockByHash(it.hashPrev) }
                     val res = repo.reader.use { rd -> engine.validator.validate(rd, b, p!!) }
                     log.debug("validate block consume ${(System.currentTimeMillis() - n) / 1000.0}s")
