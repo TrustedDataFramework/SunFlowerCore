@@ -487,8 +487,6 @@ class SyncManager(
                     toWrites[b.hash] = b
                     refers[b.hashPrev] = (refers[b.hashPrev] ?: 0) + 1
                 }
-
-                orphans.add(b.hash)
             }
 
             val tails = toWrites.values.filter { (refers[it.hash] ?: 0) == 0 }
