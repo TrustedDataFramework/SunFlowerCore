@@ -495,6 +495,10 @@ class SyncManager(
                     .sortedWith(Block.BEST_COMPARATOR).reversed()
 
 
+            if(log.isDebugEnabled) {
+                log.debug("tails = {}", tails.map { it.height }.joinToString(","))
+            }
+            
             tails.forEach l0@{ tail ->
                 val li = mutableListOf<Block>()
                 var b = tail
@@ -505,6 +509,7 @@ class SyncManager(
                 }
 
                 li.reverse()
+                log.debug("tail height = {}, chain size = {}", tail.height, li.size)
 
                 li.forEach l1@{
                     var n = System.currentTimeMillis()
