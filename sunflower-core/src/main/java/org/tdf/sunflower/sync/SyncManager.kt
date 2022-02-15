@@ -353,12 +353,11 @@ class SyncManager(
         var orphans: List<Block?> = emptyList()
         // try to sync orphans
         if (mtx.tryLock()) {
-            orphans = try {
-                repo.reader.use { getOrphansInternal(it) }
-            } finally {
-                mtx.unlock()
-            }
+            // dummy lock/unlock
+            mtx.unlock()
+            orphans = repo.reader.use { getOrphansInternal(it) }
         }
+
         for (b in orphans) {
             if (b != null && s.bestBlockHeight >= b.height && b.height > s.prunedHeight && !repo.reader.use { it.containsHeader(b.hashPrev) }) {
                 log.debug("try to fetch orphans, head height {} hash {}", b.height, b.hash)
