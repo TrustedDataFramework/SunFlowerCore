@@ -9,7 +9,7 @@ interface Channel {
     /**
      * write message to channel
      */
-    fun write(message: Message)
+    fun write(message: Message, ctx: UdpCtx? = null)
 
     /**
      * close the channel
@@ -23,18 +23,18 @@ interface Channel {
      */
     fun close(reason: String)
     val isAlive: Boolean
-        get() = !isClosed
+        get() = !closed
 
 
     /**
      * whether the channel is closed
      */
-    val isClosed: Boolean
+    val closed: Boolean
 
     /**
      * notify listeners new message received
      */
-    fun message(message: Message)
+    fun message(message: Message, udp: Boolean = false)
 
     /**
      * notify listeners error
@@ -45,6 +45,8 @@ interface Channel {
 
     // bind listener to the channel
     fun addListeners(vararg listeners: ChannelListener)
+
+    val listeners: List<ChannelListener>
 
     // 0 = self as client, 1 = self as server
     val direction: Int

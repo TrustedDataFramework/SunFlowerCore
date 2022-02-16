@@ -69,7 +69,7 @@ class PropertyReader(val properties: PropertyLike) {
 
     fun getAsAddress(property: String): Address? {
         val s = properties.getProperty(property)
-        val addr = s?.hex()
+        val addr = s?.lowercase()?.hex()
         if (addr != null && addr.size != Transaction.ADDRESS_LENGTH)
             throw RuntimeException("invalid address $addr length is ${addr.size}")
         return addr

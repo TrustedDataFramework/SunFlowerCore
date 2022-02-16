@@ -7,6 +7,8 @@ import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.tdf.common.util.ByteUtil
+import org.tdf.common.util.HexBytes
 import org.tdf.sunflower.proto.Code
 import org.tdf.sunflower.proto.Message
 import java.net.DatagramPacket
@@ -19,18 +21,20 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
 
-@RlpProps("code", "n", "uri")
-data class PingPong @RlpCreator constructor(val code: Int, val n: Int, val uri: String)
+@RlpProps("code", "n", "uri", "data")
+data class UdpPacket @RlpCreator constructor(val code: Int, val n: Int, val uri: String, val data: ByteArray)
 
 class Client(
         val self: PeerImpl,
         val config: PeerServerConfig,
         val builder: MessageBuilder,
         private val netLayer: NetLayer,
-) : ChannelListener, AutoCloseable {
+) : ChannelListener, AutoCloseable, UdpCtx {
     private val buf: ByteArray = ByteArray(256)
     private val tailBuf: ByteArray = ByteArray(512)
-    val serverSocket = DatagramSocket(self.port)
+    private val lastUdpCache: Cache<HexBytes, Pair<InetAddress, Int>> = CacheBuilder.newBuilder().expireAfterWrite(15, TimeUnit.SECONDS).build<HexBytes, Pair<InetAddress, Int>>()
+
+    override val socket = DatagramSocket(self.port)
 
     val ex = Executors.newSingleThreadExecutor()
     val n = AtomicInteger()
@@ -152,8 +156,6 @@ class Client(
                 }
     }
 
-    // val a = InetAddress.getByName(host)
-// val packet = DatagramPacket(ping, ping.size, a, port)
     companion object {
         val log: Logger = LoggerFactory.getLogger("net")
     }
@@ -164,7 +166,7 @@ class Client(
     // ping and get channel
     private fun pingUdp(host: String, port: Int, handle: Consumer<PeerImpl>, chHandle: Consumer<Channel>) {
         CompletableFuture.runAsync {
-            if(cache.asMap().containsKey("${host}:${port}")) {
+            if (cache.asMap().containsKey("${host}:${port}")) {
                 return@runAsync
             }
             cache.asMap()["${host}:${port}"] = 1
@@ -172,82 +174,98 @@ class Client(
             val a = InetAddress.getByName(host)
             val nonce = n.incrementAndGet()
             handlers[nonce % maxHandlers] = Triple(nonce, handle, chHandle)
-            val b = PingPong(0, nonce, self.encodeURI())
+            val b = UdpPacket(0, nonce, self.encodeURI(), ByteUtil.EMPTY_BYTE_ARRAY)
             val buf = Rlp.encode(b)
             val p = DatagramPacket(buf, buf.size, a, port)
             log.debug("send packet {} to {} {}", b, p.address, p.port)
-            serverSocket.send(p)
+            socket.send(p)
         }
     }
 
     // debounce connection
     private val cache: Cache<String, Int> = CacheBuilder.newBuilder().expireAfterWrite(100, TimeUnit.MILLISECONDS).build<String, Int>()
 
-    private fun handlePingPong() {
+    private fun handleUdp() {
         while (udpListening) {
             try {
                 val req = DatagramPacket(buf, buf.size)
-                serverSocket.receive(req)
+                socket.receive(req)
 
                 val address: InetAddress = req.address
                 val port: Int = req.port
 
                 System.arraycopy(buf, 0, tailBuf, tailBuf.size - req.length, req.length)
-                val p = Rlp.decode(tailBuf, tailBuf.size - req.length, PingPong::class.java)
+                val p = Rlp.decode(tailBuf, tailBuf.size - req.length, UdpPacket::class.java)
                 log.debug("receive {} from {} {}", p, req.address, req.port)
 
                 if (p.code == 0) {
-                    val pong = PingPong(1, p.n, self.encodeURI())
+                    val pong = UdpPacket(1, p.n, self.encodeURI(), ByteUtil.EMPTY_BYTE_ARRAY)
                     val e = Rlp.encode(pong)
                     val resp = DatagramPacket(e, e.size, address, port)
                     log.debug("send {} to {} {}", pong, address, port)
-                    serverSocket.send(resp)
+                    socket.send(resp)
                     continue
                 }
 
-                val peer = PeerImpl.parse(p.uri) ?: continue
-                val h = handlers[p.n % maxHandlers] ?: continue
-                if (h.first != p.n) continue
+                if (p.code == 1) {
+                    val peer = PeerImpl.parse(p.uri) ?: continue
+                    lastUdpCache.asMap()[peer.id] = Pair(req.address, req.port)
 
-                handlers[p.n % maxHandlers] = null
+                    val h = handlers[p.n % maxHandlers] ?: continue
+                    if (h.first != p.n) continue
 
-                if (peer == self) continue
-                val ch = peersCache
-                        .getChannel(peer.id)
+                    handlers[p.n % maxHandlers] = null
 
-                if (ch != null) {
-                    h.second.accept(peer)
-                    continue
-                }
+                    if (peer == self) continue
+                    val ch = peersCache
+                            .getChannel(peer.id)
 
-
-                val ft = CompletableFuture.supplyAsync {
-                    netLayer.createChannel(peer.host, peer.port, this, listener)
-                }
-
-                ft.thenAccept {
-                    if (it != null) {
+                    if (ch != null) {
                         h.second.accept(peer)
-                        h.third.accept(it)
+                        continue
+                    }
+
+
+                    val ft = CompletableFuture.supplyAsync {
+                        netLayer.createChannel(peer.host, peer.port, this, listener)
+                    }
+
+                    ft.thenAccept {
+                        if (it != null) {
+                            h.second.accept(peer)
+                            h.third.accept(it)
+                        }
+                    }
+                }
+
+                if (p.code == 2) {
+                    val msg = Message.parseFrom(p.data)
+                    val peer = PeerImpl.parse(msg.remotePeer) ?: continue
+                    lastUdpCache.asMap()[peer.id] = Pair(req.address, req.port)
+                    val ch = peersCache.getChannel(peer.id) ?: continue
+                    CompletableFuture.runAsync {
+                        (ch as ProtoChannel).message(msg, true)
                     }
                 }
                 continue
             } catch (e: Exception) {
                 e.printStackTrace()
-                Thread.sleep(100)
             }
         }
     }
 
     init {
         ex.submit {
-            this.handlePingPong()
+            this.handleUdp()
         }
     }
 
     override fun close() {
         udpListening = false
-        serverSocket.close()
+        socket.close()
         ex.shutdown()
     }
+
+    override val lastUdp: Map<HexBytes, Pair<InetAddress, Int>>
+        get() = lastUdpCache.asMap()
 }

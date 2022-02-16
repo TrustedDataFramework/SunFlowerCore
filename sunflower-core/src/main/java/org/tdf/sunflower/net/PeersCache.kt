@@ -161,7 +161,7 @@ class PeersCache(
                 val p = b.peer
                 p.score -= if (p.score < 8) p.score else 8
                 p.score /= 2
-                p.score == 0L || b.channel.isClosed
+                p.score == 0L || b.channel.closed
             }.map { it.peer }
 
         toRemoves.forEach { x: PeerImpl -> remove(x.id, " the score of $x is 0") }
