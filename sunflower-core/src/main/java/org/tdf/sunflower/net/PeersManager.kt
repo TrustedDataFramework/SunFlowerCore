@@ -58,8 +58,6 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
         // keep self alive
         pingTicker.delay {
             try {
-                log.debug("broadcast ping to peers, peers = {}", server.peers)
-
                 client.broadcast(builder.buildPing())
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -115,17 +113,17 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
             return
         }
 
-        // query for neighbours when neighbours is not empty
+        // query for neighbours when neighbours are not empty
         if (cache.size() > 0) {
             client.broadcast(builder.buildLookup())
             cache.trusted.keys.forEach { client.dial(it, builder.buildPing()) }
             return
         }
 
-        // query for peers from bootstraps and trusted when neighbours is empty
-        arrayOf(cache.bootstraps, cache.trusted)
-            .flatMap { it.keys }
-            .forEach { client.dial(it, builder.buildLookup()) }
+        // query for peers from bootstraps and trusted when neighbours are empty
+        arrayOf(config.bootstraps, config.trusted)
+            .flatMap { it }
+            .forEach { client.dial(it.host, it.port, builder.buildLookup()) }
     }
 
     override fun onNewPeer(peer: PeerImpl, server: PeerServerImpl) {}
