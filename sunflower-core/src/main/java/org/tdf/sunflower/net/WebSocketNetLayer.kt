@@ -62,7 +62,9 @@ internal class WebSocketClientChannelOut(private val client: WebSocketClient) : 
         get() = 0
 
     override fun write(message: Message) {
-        client.send(message.toByteArray())
+        val data = message.toByteArray()
+        WebSocketNetLayer.log.debug("message = {} size = {}", message, data.size)
+        client.send(data)
     }
 
     override fun close() {
@@ -135,6 +137,6 @@ class WebSocketNetLayer internal constructor(port: Int, private val builder: Mes
 
 
     companion object {
-        private val log = LoggerFactory.getLogger("net")
+        val log = LoggerFactory.getLogger("net")
     }
 }
