@@ -32,7 +32,7 @@ class Client(
 ) : ChannelListener, AutoCloseable, UdpCtx {
     private val buf: ByteArray = ByteArray(256)
     private val tailBuf: ByteArray = ByteArray(512)
-    private val lastUdpCache: Cache<HexBytes, Pair<InetAddress, Int>> = CacheBuilder.newBuilder().expireAfterWrite(15, TimeUnit.SECONDS).build<HexBytes, Pair<InetAddress, Int>>()
+    private val lastUdpCache: Cache<HexBytes, Pair<InetAddress, Int>> = CacheBuilder.newBuilder().expireAfterWrite(ProtoChannel.UDP_DELAY * 1L, TimeUnit.MILLISECONDS).build<HexBytes, Pair<InetAddress, Int>>()
 
     override val socket = DatagramSocket(self.port)
 
