@@ -7,7 +7,7 @@ interface ChannelListener {
     fun onConnect(remote: PeerImpl, channel: Channel)
 
     // when new message received
-    fun onMessage(message: Message, channel: Channel)
+    fun onMessage(message: Message, channel: Channel, udp: Boolean = false)
 
     // when error occurred
     fun onError(throwable: Throwable, channel: Channel)
@@ -18,7 +18,7 @@ interface ChannelListener {
     companion object {
         val NONE: ChannelListener = object : ChannelListener {
             override fun onConnect(remote: PeerImpl, channel: Channel) {}
-            override fun onMessage(message: Message, channel: Channel) {}
+            override fun onMessage(message: Message, channel: Channel, udp: Boolean) {}
             override fun onError(throwable: Throwable, channel: Channel) {}
             override fun onClose(channel: Channel) {}
         }

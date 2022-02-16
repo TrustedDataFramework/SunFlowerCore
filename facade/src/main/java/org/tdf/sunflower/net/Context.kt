@@ -28,4 +28,6 @@ interface Context {
 
     // get remote peer
     val remote: Peer
+
+    val udp: Boolean
 }

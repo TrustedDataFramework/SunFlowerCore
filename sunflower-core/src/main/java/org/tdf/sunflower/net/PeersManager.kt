@@ -21,12 +21,12 @@ class PeersManager internal constructor(private val config: PeerServerConfig) : 
         context.keep()
         when (context.msg.code) {
             Code.PING -> {
-                context.channel.write(builder.buildPong())
+                context.channel.write(builder.buildPong(), client)
                 return
             }
             Code.LOOK_UP -> {
                 context.channel.write(
-                    builder.buildPeers(server.peers)
+                    builder.buildPeers(server.peers), client
                 )
                 return
             }

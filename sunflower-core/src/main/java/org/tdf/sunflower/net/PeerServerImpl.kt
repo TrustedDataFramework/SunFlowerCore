@@ -50,7 +50,7 @@ class PeerServerImpl(// if non-database provided, use memory database
             .filter { ch: Channel -> ch.remote != null }
             .forEach { ch: Channel ->
                 builder.buildAnother(message, config.maxTTL.toLong(), ch.remote!!)
-                    .forEach { ch.write(it) }
+                    .forEach { ch.write(it, client) }
             }
     }
 
@@ -141,14 +141,14 @@ class PeerServerImpl(// if non-database provided, use memory database
         }
     }
 
-    override fun onMessage(message: Message, channel: Channel) {
+    override fun onMessage(message: Message, channel: Channel, udp: Boolean) {
         val peer = channel.remote
         if (peer == null) {
             channel.close("failed to parse peer " + message.remotePeer)
             throw RuntimeException("failed to parse peer")
         }
         val context =
-            ContextImpl(channel = channel, client = client, msg = message, builder = builder, remote = peer)
+            ContextImpl(channel = channel, client = client, msg = message, builder = builder, remote = peer, udp = udp)
 
         for (plugin in plugins) {
             if (context.exited) break

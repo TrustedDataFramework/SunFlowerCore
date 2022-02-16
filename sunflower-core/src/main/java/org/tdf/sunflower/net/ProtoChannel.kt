@@ -58,7 +58,7 @@ open class ProtoChannel(private val messageBuilder: MessageBuilder, private val 
 
         listeners.forEach {
             if (closed) return
-            it.onMessage(message, this)
+            it.onMessage(message, this, udp)
         }
     }
 
@@ -126,7 +126,8 @@ open class ProtoChannel(private val messageBuilder: MessageBuilder, private val 
     }
 
     private fun writeUDP(socket: DatagramSocket, address: InetAddress, port: Int, message: Message) {
-        val p = UdpPacket(2, 0, "", message.toByteArray())
+        log.debug("write udp message to peer {} , code = {}", message.remotePeer, message.code)
+        val p = UdpPacket(2, 0, "", HexBytes.fromBytes(message.toByteArray()))
         val bin = Rlp.encode(p)
         val packet = DatagramPacket(bin, bin.size, address, port)
         socket.send(packet)
@@ -139,7 +140,7 @@ open class ProtoChannel(private val messageBuilder: MessageBuilder, private val 
             return
         }
         try {
-            log.debug("write message to peer {} , code = {}", message.remotePeer, message.code)
+            log.debug("write tcp message to peer {} , code = {}", message.remotePeer, message.code)
             out.write(message)
         } catch (e: Throwable) {
             e.printStackTrace()

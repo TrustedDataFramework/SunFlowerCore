@@ -62,9 +62,7 @@ internal class WebSocketClientChannelOut(private val client: WebSocketClient) : 
         get() = 0
 
     override fun write(message: Message) {
-        val data = message.toByteArray()
-        WebSocketNetLayer.log.debug("message = {} size = {}", message, data.size)
-        client.send(data)
+        client.send(message.toByteArray())
     }
 
     override fun close() {

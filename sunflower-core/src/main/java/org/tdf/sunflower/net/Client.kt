@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
 
 @RlpProps("code", "n", "uri", "data")
-data class UdpPacket @RlpCreator constructor(val code: Int, val n: Int, val uri: String, val data: ByteArray)
+data class UdpPacket @RlpCreator constructor(val code: Int, val n: Int, val uri: String, val data: HexBytes)
 
 class Client(
         val self: PeerImpl,
@@ -48,15 +48,15 @@ class Client(
     var listener = ChannelListener.NONE
 
     fun broadcast(message: Message) {
-        peersCache.channels.forEach { it.write(message) }
+        peersCache.channels.forEach { it.write(message, this) }
     }
 
     fun dial(peer: Peer, message: Message) {
-        getChannel(peer) { it.write(message) }
+        getChannel(peer) { it.write(message, this) }
     }
 
     fun dial(host: String, port: Int, message: Message) {
-        getChannel(host, port) { it.write(message) }
+        getChannel(host, port) { it.write(message, this) }
     }
 
     fun bootstrap(uris: Collection<URI>) {
@@ -127,7 +127,7 @@ class Client(
         peersCache.keep(remote, channel)
     }
 
-    override fun onMessage(message: Message, channel: Channel) {}
+    override fun onMessage(message: Message, channel: Channel, udp: Boolean) {}
     override fun onError(throwable: Throwable, channel: Channel) {
         throwable.printStackTrace()
         channel.remote
@@ -149,10 +149,10 @@ class Client(
                 .forEach {
                     if (message.code == Code.ANOTHER) {
                         val msg = message.body.toByteArray()
-                        it.write(builder.buildMessage(Code.ANOTHER, message.ttl - 1, msg))
+                        it.write(builder.buildMessage(Code.ANOTHER, message.ttl - 1, msg), this)
                         return@forEach
                     }
-                    it.write(builder.buildRelay(message))
+                    it.write(builder.buildRelay(message), this)
                 }
     }
 
@@ -174,7 +174,7 @@ class Client(
             val a = InetAddress.getByName(host)
             val nonce = n.incrementAndGet()
             handlers[nonce % maxHandlers] = Triple(nonce, handle, chHandle)
-            val b = UdpPacket(0, nonce, self.encodeURI(), ByteUtil.EMPTY_BYTE_ARRAY)
+            val b = UdpPacket(0, nonce, self.encodeURI(), HexBytes.empty())
             val buf = Rlp.encode(b)
             val p = DatagramPacket(buf, buf.size, a, port)
             log.debug("send packet {} to {} {}", b, p.address, p.port)
@@ -199,7 +199,7 @@ class Client(
                 log.debug("receive {} from {} {}", p, req.address, req.port)
 
                 if (p.code == 0) {
-                    val pong = UdpPacket(1, p.n, self.encodeURI(), ByteUtil.EMPTY_BYTE_ARRAY)
+                    val pong = UdpPacket(1, p.n, self.encodeURI(), HexBytes.empty())
                     val e = Rlp.encode(pong)
                     val resp = DatagramPacket(e, e.size, address, port)
                     log.debug("send {} to {} {}", pong, address, port)
@@ -239,7 +239,7 @@ class Client(
                 }
 
                 if (p.code == 2) {
-                    val msg = Message.parseFrom(p.data)
+                    val msg = Message.parseFrom(p.data.bytes)
                     val peer = PeerImpl.parse(msg.remotePeer) ?: continue
                     lastUdpCache.asMap()[peer.id] = Pair(req.address, req.port)
                     val ch = peersCache.getChannel(peer.id) ?: continue

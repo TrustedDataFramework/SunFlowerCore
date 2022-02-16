@@ -8,6 +8,7 @@ class ContextImpl internal constructor(
     val channel: Channel,
     val builder: MessageBuilder,
     val client: Client,
+    override val udp: Boolean = false
 ) : Context {
     private var relayed: Boolean = false
     var exited: Boolean = false
@@ -45,7 +46,7 @@ class ContextImpl internal constructor(
         if (exited || blocked || disconnected) return
         for (msg in messages) {
             builder.buildAnother(msg, 1, remote)
-                .forEach { channel.write(it) }
+                .forEach { channel.write(it, client) }
         }
     }
 

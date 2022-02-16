@@ -5,9 +5,11 @@ import org.slf4j.LoggerFactory
 internal class MessageLogger : Plugin {
     override fun onMessage(context: ContextImpl, server: PeerServerImpl) {
         log.debug(
-            "receive {} message from {}:{}",
-            context.msg.code, context.remote.host, context.remote.port
+            "receive {} message from {}:{} udp = {} size = ${context.msg.serializedSize}",
+            context.msg.code, context.remote.host, context.remote.port,
+            context.udp
         )
+        log.debug("data = {}", context.msg)
     }
 
     override fun onStart(server: PeerServerImpl) {}

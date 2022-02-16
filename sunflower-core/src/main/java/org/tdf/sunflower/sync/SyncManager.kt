@@ -175,7 +175,7 @@ class SyncManager(
         val o = SyncMessage.decode(context.message)
         if (!o.isPresent) return
         val msg = o.get()
-        log.debug("receive {} message from {}", SyncMessage.MESSAGE_TYPES[msg.code], context.remote)
+        log.debug("receive {} message from {} udp = {}", SyncMessage.MESSAGE_TYPES[msg.code], context.remote, context.udp)
         when (msg.code) {
             SyncMessage.UNKNOWN -> return
             SyncMessage.STATUS -> {
