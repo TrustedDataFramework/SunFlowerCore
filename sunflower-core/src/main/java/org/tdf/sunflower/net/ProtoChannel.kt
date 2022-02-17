@@ -126,7 +126,7 @@ open class ProtoChannel(private val messageBuilder: MessageBuilder, private val 
     }
 
     private fun writeUDP(socket: DatagramSocket, address: InetAddress, port: Int, message: Message) {
-        log.debug("write udp message to peer {} , code = {} ch = {} data = {} ", message.remotePeer, message.code, remote, message)
+        log.debug("write udp message to peer {} , code = {} ch = {} inet = {} port = {} data = {} ", message.remotePeer, message.code, remote, address, port, message)
         val p = UdpPacket(2, 0, "", HexBytes.fromBytes(message.toByteArray()))
         val bin = Rlp.encode(p)
         val packet = DatagramPacket(bin, bin.size, address, port)
