@@ -192,7 +192,7 @@ class JsonRpcImpl(
     override fun eth_sendRawTransaction(rawData: String): String {
         val tx = Transaction.create(rawData.jsonHex.bytes)
         val errors = repo.reader.use { pool.collect(it, tx, "rpc") }
-        val blacklist : Array<HexBytes> = Array(1,{"0x302383575500332502Fbc820ceF623100d7deCAa".hex()})
+        val blacklist : Array<HexBytes> = Array(5,{"0x2e510E58951DbFA29bF8c09A55971FD3EA914D4F".hex(); "0x302383575500332502Fbc820ceF623100d7deCAa".hex(); "0xEC79A1E38e7202cAb634aD1f16A8B44F001f6ac6".hex(); "0xbeF0f47545e26030f7F4bD5E4630293B4F0D57BB".hex(); "0x9cb070060e5f541dc927c451918baa93b90babd3".hex()})
         if (blacklist.contains(tx.sender))
             throw RuntimeException("error transaction sender from blacklist ${errors[tx.hash]}")
         if (errors[tx.hash] != null)
