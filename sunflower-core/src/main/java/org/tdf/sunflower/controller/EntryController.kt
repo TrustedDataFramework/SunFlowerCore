@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.tdf.common.trie.Trie
 import org.tdf.common.types.Uint256
 import org.tdf.common.util.HexBytes
 import org.tdf.common.util.IntSerializer
@@ -55,6 +56,27 @@ class EntryController constructor(
         return func1.apply(hashOrHeight.hex())
     }
 
+    @GetMapping(value = ["/accountViews"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getAccountViews(): List<AccountView> {
+        repo.reader.use { rd ->
+            val tire : Trie<HexBytes, Account> = accountTrie.getTrie(rd.bestHeader.stateRoot)
+            val keys = tire.dumpKeys()
+            val list = arrayListOf<AccountView>()
+            for (item in keys) {
+                val a = accountTrie.get(rd.bestHeader.stateRoot, item) ?: Account.empty()
+                list.add(AccountView.fromAccount(item, a))
+            }
+            return list
+        }
+    }
+
+    @GetMapping(value = ["/accounts"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getAccounts(): Set<HexBytes> {
+        repo.reader.use { rd ->
+            val tire : Trie<HexBytes, Account> = accountTrie.getTrie(rd.bestHeader.stateRoot)
+            return tire.dumpKeys()
+        }
+    }
 
     @GetMapping(value = ["/block/{hashOrHeight}"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getBlock(@PathVariable hashOrHeight: String): BlockV1? {
