@@ -71,10 +71,14 @@ class EntryController constructor(
     }
 
     @GetMapping(value = ["/accounts"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getAccounts(): Set<HexBytes> {
+    fun getAccounts(): List<HexBytes> {
         repo.reader.use { rd ->
             val tire : Trie<HexBytes, Account> = accountTrie.getTrie(rd.bestHeader.stateRoot)
-            return tire.dumpKeys()
+            val set = arrayListOf<HexBytes>()
+            for (item in tire.dumpKeys()) {
+                set.add(item)
+            }
+            return set
         }
     }
 
