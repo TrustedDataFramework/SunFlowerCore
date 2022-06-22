@@ -4,15 +4,10 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import org.apache.commons.io.IOUtils
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.tdf.common.trie.Trie
 import org.tdf.common.types.Uint256
-import org.tdf.common.util.HexBytes
-import org.tdf.common.util.IntSerializer
-import org.tdf.common.util.hex
+import org.tdf.common.util.*
 import org.tdf.sunflower.AppConfig
 import org.tdf.sunflower.facade.RepositoryReader
 import org.tdf.sunflower.facade.RepositoryService
@@ -56,29 +51,18 @@ class EntryController constructor(
         return func1.apply(hashOrHeight.hex())
     }
 
-    @GetMapping(value = ["/accountViews"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getAccountViews(): List<AccountView> {
+    @PostMapping(value = ["/accountViews"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getAccountViews(@RequestBody(required = true ) accounts: RequestAccounts): List<AccountView> {
+        val accountList: List<HexBytes> = accounts.addressList.map { HexBytes.fromHex(it) }
         repo.reader.use { rd ->
-            val tire : Trie<HexBytes, Account> = accountTrie.getTrie(rd.bestHeader.stateRoot)
-            val keys = tire.dumpKeys()
+            val tire: Trie<HexBytes, Account> = accountTrie.getTrie(rd.bestHeader.stateRoot)
+            tire.entries()
             val list = arrayListOf<AccountView>()
-            for (item in keys) {
+            for (item in accountList) {
                 val a = accountTrie.get(rd.bestHeader.stateRoot, item) ?: Account.empty()
                 list.add(AccountView.fromAccount(item, a))
             }
             return list
-        }
-    }
-
-    @GetMapping(value = ["/accounts"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getAccounts(): List<HexBytes> {
-        repo.reader.use { rd ->
-            val tire : Trie<HexBytes, Account> = accountTrie.getTrie(rd.bestHeader.stateRoot)
-            val set = arrayListOf<HexBytes>()
-            for (item in tire.dumpKeys()) {
-                set.add(item)
-            }
-            return set
         }
     }
 
