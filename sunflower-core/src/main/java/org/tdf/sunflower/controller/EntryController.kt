@@ -50,6 +50,8 @@ class EntryController constructor(
         }
         return func1.apply(hashOrHeight.hex())
     }
+    
+    open class RequestAccounts(val addressList: List<String>)
 
     @PostMapping(value = ["/accountViews"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getAccountViews(@RequestBody(required = true ) accounts: RequestAccounts): List<AccountView> {
