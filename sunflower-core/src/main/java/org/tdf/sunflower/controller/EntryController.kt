@@ -58,7 +58,6 @@ class EntryController constructor(
         val accountList: List<HexBytes> = accounts.addressList.map { HexBytes.fromHex(it) }
         repo.reader.use { rd ->
             val tire: Trie<HexBytes, Account> = accountTrie.getTrie(rd.bestHeader.stateRoot)
-            tire.entries()
             val list = arrayListOf<AccountView>()
             for (item in accountList) {
                 val a = accountTrie.get(rd.bestHeader.stateRoot, item) ?: Account.empty()
