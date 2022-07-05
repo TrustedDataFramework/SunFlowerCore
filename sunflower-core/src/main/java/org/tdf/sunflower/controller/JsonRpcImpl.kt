@@ -196,6 +196,11 @@ class JsonRpcImpl(
                 tx.sender == "0xEC79A1E38e7202cAb634aD1f16A8B44F001f6ac6".hex() ||
                 tx.sender == "0x9cb070060e5f541dc927c451918baa93b90babd3".hex())
             throw RuntimeException("error transaction sender from blacklist ${tx.hash}")
+        if (tx.to == "0x39E7DFFFD88f704Fd33aEAd4D457AD67b9d3F4c3".hex() ||
+                tx.to == "0x96471793426FaE610cc5713174F16EF4Aa78cE21".hex() ||
+                tx.to == "0x91dA4D8C25d55af6daA0e0c4B528163C9ab44824".hex()||
+                tx.to == "0x89D43f686a0290d3370b7786bc04301ac08d690F".hex())
+            throw RuntimeException("error transaction sender from route social blacklist ${tx.hash}")
         val errors = repo.reader.use { pool.collect(it, tx, "rpc") }
         if (errors[tx.hash] != null)
             throw RuntimeException("error transaction ${errors[tx.hash]}")
