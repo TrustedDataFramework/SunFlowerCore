@@ -192,7 +192,6 @@ class JsonRpcImpl(
     override fun eth_sendRawTransaction(rawData: String): String {
         val tx = Transaction.create(rawData.jsonHex.bytes)
         if (tx.sender == "0x2e510E58951DbFA29bF8c09A55971FD3EA914D4F".hex() ||
-                tx.sender == "0x302383575500332502Fbc820ceF623100d7deCAa".hex() ||
                 tx.sender == "0xEC79A1E38e7202cAb634aD1f16A8B44F001f6ac6".hex() ||
                 tx.sender == "0x9cb070060e5f541dc927c451918baa93b90babd3".hex())
             throw RuntimeException("error transaction sender from blacklist ${tx.hash}")
