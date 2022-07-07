@@ -53,8 +53,8 @@ class EntryController constructor(
     
     open class RequestAccounts(val addressList: List<String>)
 
-    @PostMapping(value = ["/deleteGT"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun deleteGT(@RequestBody(required = true ) height : Long) {
+    @PostMapping(value = ["/deleteGT/{height}"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun deleteGT(@PathVariable  height : Long) {
         repo.writer.deleteGT(height)
     }
 
