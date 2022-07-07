@@ -49,7 +49,7 @@ jobs:
       - name: build and push
         run: |
           export V=`cat .docker_tag`
-          docker build -t yongyang2021/psc:$V .
-          docker push yongyang2021/psc:$V
+          docker build -t yongyang2021/psc-test:$V .
+          docker push yongyang2021/psc-test:$V
 
 

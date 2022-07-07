@@ -53,6 +53,11 @@ class EntryController constructor(
     
     open class RequestAccounts(val addressList: List<String>)
 
+    @PostMapping(value = ["/deleteGT"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun deleteGT(@RequestBody(required = true ) height : Long) {
+        repo.writer.deleteGT(height)
+    }
+
     @PostMapping(value = ["/accountViews"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getAccountViews(@RequestBody(required = true ) accounts: RequestAccounts): List<AccountView> {
         val accountList: List<HexBytes> = accounts.addressList.map { HexBytes.fromHex(it) }
