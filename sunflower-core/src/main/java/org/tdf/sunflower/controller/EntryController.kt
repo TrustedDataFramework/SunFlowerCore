@@ -53,10 +53,10 @@ class EntryController constructor(
     
     open class RequestAccounts(val addressList: List<String>)
 
-    @PostMapping(value = ["/deleteGT/{height}"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun deleteGT(@PathVariable  height : Long) {
-        repo.writer.deleteGT(height)
-    }
+//    @PostMapping(value = ["/deleteGT/{height}"], produces = [MediaType.APPLICATION_JSON_VALUE])
+//    fun deleteGT(@PathVariable  height : Long) {
+//        repo.writer.deleteGT(height)
+//    }
 
     @PostMapping(value = ["/accountViews"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getAccountViews(@RequestBody(required = true ) accounts: RequestAccounts): List<AccountView> {
