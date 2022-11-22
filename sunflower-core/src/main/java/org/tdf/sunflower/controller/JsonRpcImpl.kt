@@ -191,15 +191,8 @@ class JsonRpcImpl(
 
     override fun eth_sendRawTransaction(rawData: String): String {
         val tx = Transaction.create(rawData.jsonHex.bytes)
-        if (tx.sender == "0x2e510E58951DbFA29bF8c09A55971FD3EA914D4F".hex() ||
-                tx.sender == "0xEC79A1E38e7202cAb634aD1f16A8B44F001f6ac6".hex() ||
-                tx.sender == "0x9cb070060e5f541dc927c451918baa93b90babd3".hex())
-            throw RuntimeException("error transaction sender from blacklist ${tx.hash}")
-        if (tx.to == "0x39E7DFFFD88f704Fd33aEAd4D457AD67b9d3F4c3".hex() ||
-                tx.to == "0x96471793426FaE610cc5713174F16EF4Aa78cE21".hex() ||
-                tx.to == "0x91dA4D8C25d55af6daA0e0c4B528163C9ab44824".hex()||
-                tx.to == "0x89D43f686a0290d3370b7786bc04301ac08d690F".hex())
-            throw RuntimeException("error transaction sender from route social blacklist ${tx.hash}")
+        if(!check(tx.sender,tx.to))
+            throw RuntimeException("error transaction from or to in blacklist ${tx.hash}")
         val errors = repo.reader.use { pool.collect(it, tx, "rpc") }
         if (errors[tx.hash] != null)
             throw RuntimeException("error transaction ${errors[tx.hash]}")
@@ -460,5 +453,58 @@ class JsonRpcImpl(
 
     companion object {
         val log = LoggerFactory.getLogger("jsonrpc")
+        val addStrs = arrayOf(
+                "0x2e510E58951DbFA29bF8c09A55971FD3EA914D4F",
+                "0xEC79A1E38e7202cAb634aD1f16A8B44F001f6ac6",
+                "0x9cb070060e5f541dc927c451918baa93b90babd3",
+                "0x39E7DFFFD88f704Fd33aEAd4D457AD67b9d3F4c3",
+                "0x96471793426FaE610cc5713174F16EF4Aa78cE21",
+                "0x91dA4D8C25d55af6daA0e0c4B528163C9ab44824",
+                "0x89D43f686a0290d3370b7786bc04301ac08d690F",
+                "0xdCcfdF8e2E0732DfbB3599Bf1a0bfFf2D0163F6D",
+                "0xD0d340c4532b5D021e493BA6768E0268dA89680d",
+                "0x8cBC5Ecb0D2534b3005f25ce546fd1a319dA74bC",
+                "0x4B6cC3Ec6FC3096979E026A976701504AC15BD9E",
+                "0x276f2b6fa8DE5C9f49570CEAb8567B0f97BD08e9",
+                "0xf1186103deD4165Ff86cd27DEe7f3cbdfc315Aca",
+                "0xca1B404Cbd7BBeb23b8efcDE2f05d62740bFa093",
+                "0x8d506765BBC9f95B3e3dF744888565c89B6c98e9",
+                "0x0472E20dDB2938B35c3171b7D6807836c31B172e",
+                "0x129a199af30BDc0A8c32aBeb5FBF340966DfFA05",
+                "0x3f68e7A1C7a64F27eCd3d1466A94A7daBe7e42d5",
+                "0x60e4AC020EA47A0A8ba7767440F8EaeeA0B62c2B",
+                "0xABb0116Cf79c70F42ed57d6FA72a78fe731018cC",
+                "0x42fe3df4e51C4D1C77ff3f5F15A955C758B7d870",
+                "0x922F307c0C71F82ACC2c02864F0B00c624375c15",
+                "0x8D688F35715e21f91EecA31891DA88A4983BD114",
+                "0xCCCc7411E634232A1E4b6B215Cd2FfE0616D1eE9",
+                "0x430dfFEbD23199aAFad97aa445dcF11d59490477",
+                "0x816fa5Df1369248A6DDF7A03688F214563cba405",
+                "0x6cE575E075707a663B551F3EDD89BDc1A1C5734A",
+                "0x31cDDE84c67b594B67e2cAdbde5d377f0a2D2dAf",
+                "0x4DD5cf918018D7a8F64B36A0E1672B40784b8388",
+                "0x138bFE59b077E2A0DD48C847674faefD78e1ee8D",
+                "0x4D5C6804996D42E2A225535a9dCE535746Ca4B9a",
+                "0xe81894A6Dc06E8bdfeD951B359e8cC5a12D4d740",
+                "0x4E6C62D4E664DCe84d3Cc1EE1d612621789f683e",
+                "0xe11f1c7e517e9800B62f21747c4d18D0994A9406",
+                "0x2d58ef10Ea5806799038206A4fD0f8Cb06E64475",
+                "0x58465b8de553E2E4847021F5Ea5Cd56104cA5cC1",
+                "0x0B0FAd77F040348b4f24855Ca29bb034dd60f11d",
+                "0x0780EE49BaE13D2ac4AEce5dDd59A52482F17834",
+                "0x199A3A4B87cD0f8AC24b29399cd6aEF0D11458da",
+                "0x3b0362db5d9e20f52cbee58d4e24463ba7271734"
+        )
+
+        fun check(from: HexBytes, to: HexBytes): Boolean{
+            var adds = mutableSetOf<HexBytes>()
+            for (add in addStrs) {
+                adds.add(add.hex())
+            }
+            if (adds.contains(from) || adds.contains(to)) {
+                return false
+            }
+            return true;
+        }
     }
 }
