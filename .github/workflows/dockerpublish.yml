@@ -51,7 +51,7 @@ jobs:
           cluster_id: ${{ secrets.QCLOUD_TKE_CLUSTER_ID }}     
           
       # setup kubectl    
-      - uses: azure/setup-kubectl@v1
+      - uses: azure/setup-kubectl@v3
         id: install          
 
       - uses: actions/cache@v1
